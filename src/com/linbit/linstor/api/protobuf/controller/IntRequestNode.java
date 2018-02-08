@@ -18,10 +18,10 @@ public class IntRequestNode extends BaseProtoApiCall
 {
     private final Controller controller;
 
-    public IntRequestNode(Controller controller)
+    public IntRequestNode(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

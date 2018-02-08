@@ -290,14 +290,15 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
     private String getObjectDescriptionInline(String nodeName1Str, String nodeName2Str)
     {
-        return "node connection between nodes '" + nodeName1Str + "' and '" + nodeName2Str+ "'";
+        return "node connection between nodes '" + nodeName1Str + "' and '" + nodeName2Str + "'";
     }
 
     private NodeConnectionData createNodeConn(NodeData node1, NodeData node2)
     {
+        NodeConnectionData nodeConnection;
         try
         {
-            return NodeConnectionData.getInstance(
+            nodeConnection = NodeConnectionData.getInstance(
                 currentAccCtx.get(),
                 node1,
                 node2,
@@ -329,6 +330,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_EXISTS_NODE_CONN
             );
         }
+        return nodeConnection;
     }
 
     private NodeConnectionData loadNodeConn(String nodeName1, String nodeName2, boolean failIfNull)
@@ -336,9 +338,10 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeData node1 = loadNode(nodeName1, true);
         NodeData node2 = loadNode(nodeName2, true);
 
+        NodeConnectionData nodeConn;
         try
         {
-            NodeConnectionData nodeConn = NodeConnectionData.getInstance(
+            nodeConn = NodeConnectionData.getInstance(
                 currentAccCtx.get(),
                 node1,
                 node2,
@@ -355,7 +358,6 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                     ApiConsts.FAIL_NOT_FOUND_NODE_CONN
                 );
             }
-            return nodeConn;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -376,22 +378,26 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 "loading node connection between nodes '" + nodeName1 + "' and '" + nodeName2 + "'."
             );
         }
+        return nodeConn;
     }
 
     private Props getProps(NodeConnectionData nodeConn)
     {
+        Props props;
         try
         {
-            return nodeConn.getProps(currentAccCtx.get());
+            props = nodeConn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "accessing properties of node connection '" + currentNodeName1.get() + "' <-> '" + currentNodeName2.get() + "'.",
+                "accessing properties of node connection '" + currentNodeName1.get() + "' <-> '" +
+                    currentNodeName2.get() + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE_CONN
             );
         }
+        return props;
     }
 
     private void updateSatellites(NodeConnectionData nodeConn)

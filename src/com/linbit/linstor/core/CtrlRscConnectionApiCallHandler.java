@@ -34,7 +34,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         AccessContext apiCtxRef
     )
     {
-        super (
+        super(
             apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_RSC_CONN,
@@ -307,9 +307,10 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Resource rsc1 = loadRsc(node1, rscName);
         Resource rsc2 = loadRsc(node2, rscName);
 
+        ResourceConnectionData rscConn;
         try
         {
-            return ResourceConnectionData.getInstance(
+            rscConn = ResourceConnectionData.getInstance(
                 currentAccCtx.get(),
                 rsc1,
                 rsc2,
@@ -341,6 +342,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 "creating " + getObjectDescription()
             );
         }
+        return rscConn;
     }
 
     private ResourceConnectionData loadRscConn(
@@ -357,9 +359,10 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Resource rsc1 = loadRsc(node1, rscName);
         Resource rsc2 = loadRsc(node2, rscName);
 
+        ResourceConnectionData rscConn;
         try
         {
-            return ResourceConnectionData.getInstance(
+            rscConn = ResourceConnectionData.getInstance(
                 currentAccCtx.get(),
                 rsc1,
                 rsc2,
@@ -387,13 +390,15 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 "loading " + getObjectDescription()
             );
         }
+        return rscConn;
     }
 
     private Resource loadRsc(NodeData node, ResourceName rscName) throws ApiCallHandlerFailedException
     {
+        Resource rsc;
         try
         {
-            return node.getResource(
+            rsc = node.getResource(
                 currentAccCtx.get(),
                 rscName
             );
@@ -406,13 +411,15 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
+        return rsc;
     }
 
     private Props getProps(ResourceConnectionData rscConn) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return rscConn.getProps(currentAccCtx.get());
+            props = rscConn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -422,6 +429,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
+        return props;
     }
 
     private void updateSatellites(ResourceConnectionData rscConn)

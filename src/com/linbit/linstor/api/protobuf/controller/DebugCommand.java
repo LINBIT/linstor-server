@@ -31,6 +31,7 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class DebugCommand extends BaseProtoApiCall
 {
+    @SuppressWarnings("unused")
     private Controller ctrl;
     private CoreServices coreSvcs;
 

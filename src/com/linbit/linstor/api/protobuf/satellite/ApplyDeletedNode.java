@@ -16,10 +16,10 @@ public class ApplyDeletedNode extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ApplyDeletedNode(Satellite satellite)
+    public ApplyDeletedNode(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

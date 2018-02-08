@@ -168,15 +168,15 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     // set primary
                     errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
-                    ((ResourceData)rsc).unsetCreatePrimary();
+                    ((ResourceData) rsc).unsetCreatePrimary();
                     setResourcePrimary(rsc);
                 }
                 else
                 {
                     createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
 
-                    if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null
-                        && rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DISKLESS))
+                    if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
+                        rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DISKLESS))
                     {
                         errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
                         sendRequestPrimaryResource(
@@ -418,7 +418,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 switch (diskState)
                 {
                     case DISKLESS:
-                        if(!drbdVlm.isClient())
+                        if (!drbdVlm.isClient())
                         {
                             vlmState.setDiskFailed(true);
                             rscState.setRequiresAdjust(true);
@@ -547,8 +547,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 detailsMsg = "The faulty storage pool name is '" + spNameStr + "'";
             }
             throw new VolumeException(
-                "An invalid storage pool name is specified for volume " + vlmState.getVlmNr().value + " of resource '"
-                + rscName.displayValue,
+                "An invalid storage pool name is specified for volume " + vlmState.getVlmNr().value +
+                    " of resource '" + rscName.displayValue,
                 getAbortMsg(rscName, vlmState.getVlmNr()),
                 "An invalid storage pool name was specified for the volume",
                 "Correct the property that selects the storage pool for this volume.\n" +
@@ -749,7 +749,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
-            VolumeStateDevManager vlmState = (VolumeStateDevManager)vlmStateBase;
+            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
             try
             {
                 // Check backend storage
@@ -791,8 +791,8 @@ class DrbdDeviceHandler implements DeviceHandler
                             try
                             {
                                 System.out.println(
-                                    "Checking resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
-                                    " meta data"
+                                    "Checking resource " + rscName.displayValue + " Volume " +
+                                    vlmState.getVlmNr().value + " meta data"
                                 );
                                 vlmState.setHasMetaData(drbdUtils.hasMetaData(
                                     vlmState.getDriver().getVolumePath(vlmState.getStorVlmName()),
@@ -892,7 +892,7 @@ class DrbdDeviceHandler implements DeviceHandler
         // Create volume meta data
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
-            VolumeStateDevManager vlmState = (VolumeStateDevManager)vlmStateBase;
+            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
             try
             {
                 if (!(vlmState.isSkip() || vlmState.isMarkedForDelete()))
@@ -960,7 +960,7 @@ class DrbdDeviceHandler implements DeviceHandler
         // Delete volumes
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
-            VolumeStateDevManager vlmState = (VolumeStateDevManager)vlmStateBase;
+            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
 
             try
             {
@@ -1055,7 +1055,8 @@ class DrbdDeviceHandler implements DeviceHandler
         throws ResourceException
     {
         ResourceName rscName = rsc.getDefinition().getName();
-        try {
+        try
+        {
             drbdUtils.primary(rscName, true, false);
             // setting to secondary because of two reasons:
             // * bug in drbdsetup: cannot down a primary resource
@@ -1348,17 +1349,17 @@ class DrbdDeviceHandler implements DeviceHandler
 
     static class ResourceException extends LinStorException
     {
-        public ResourceException(String message)
+        ResourceException(String message)
         {
             super(message);
         }
 
-        public ResourceException(String message, Throwable cause)
+        ResourceException(String message, Throwable cause)
         {
             super(message, cause);
         }
 
-        public ResourceException(
+        ResourceException(
             String message,
             String descriptionText,
             String causeText,
@@ -1369,7 +1370,7 @@ class DrbdDeviceHandler implements DeviceHandler
             super(message, descriptionText, causeText, correctionText, detailsText, null);
         }
 
-        public ResourceException(
+        ResourceException(
             String message,
             String descriptionText,
             String causeText,
@@ -1384,17 +1385,17 @@ class DrbdDeviceHandler implements DeviceHandler
 
     static class VolumeException extends LinStorException
     {
-        public VolumeException(String message)
+        VolumeException(String message)
         {
             super(message);
         }
 
-        public VolumeException(String message, Throwable cause)
+        VolumeException(String message, Throwable cause)
         {
             super(message, cause);
         }
 
-        public VolumeException(
+        VolumeException(
             String message,
             String descriptionText,
             String causeText,
@@ -1405,7 +1406,7 @@ class DrbdDeviceHandler implements DeviceHandler
             super(message, descriptionText, causeText, correctionText, detailsText, null);
         }
 
-        public VolumeException(
+        VolumeException(
             String message,
             String descriptionText,
             String causeText,

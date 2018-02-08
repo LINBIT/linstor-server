@@ -6,7 +6,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass.MsgIntPrimary;
 import com.linbit.linstor.security.AccessContext;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,13 +17,14 @@ import java.util.UUID;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class PrimaryResource extends BaseProtoApiCall {
+public class PrimaryResource extends BaseProtoApiCall
+{
     private final Satellite satellite;
 
-    public PrimaryResource(Satellite satellite)
+    public PrimaryResource(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override
@@ -48,7 +49,7 @@ public class PrimaryResource extends BaseProtoApiCall {
     )
         throws IOException
     {
-        MsgIntPrimaryOuterClass.MsgIntPrimary msgReqPrimary = MsgIntPrimaryOuterClass.MsgIntPrimary.parseDelimitedFrom(msgDataIn);
+        MsgIntPrimary msgReqPrimary = MsgIntPrimary.parseDelimitedFrom(msgDataIn);
         satellite.getApiCallHandler().handlePrimaryResource(
             controllerPeer,
             msgId,

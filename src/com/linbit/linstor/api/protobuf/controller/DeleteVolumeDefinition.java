@@ -3,6 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.linstor.api.ApiCallRc;
@@ -22,7 +23,8 @@ import java.io.InputStream;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class DeleteVolumeDefinition  extends BaseProtoApiCall {
+public class DeleteVolumeDefinition  extends BaseProtoApiCall
+{
     private Controller controller;
 
     public DeleteVolumeDefinition(Controller controllerRef)

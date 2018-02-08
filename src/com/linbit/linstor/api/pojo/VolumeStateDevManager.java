@@ -4,7 +4,8 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.storage.StorageDriver;
 
-public class VolumeStateDevManager extends VolumeState {
+public class VolumeStateDevManager extends VolumeState
+{
 
     /**
      * Indicates whether the resource should be deleted
@@ -25,7 +26,7 @@ public class VolumeStateDevManager extends VolumeState {
     /**
      * Reference to the storage driver for the storage backend volume
      */
-    protected StorageDriver driver    = null;
+    protected StorageDriver driver = null;
 
     /**
      * Name of the storage pool that is selected for the storage backend volume
@@ -35,63 +36,77 @@ public class VolumeStateDevManager extends VolumeState {
     /**
      * Name of the storage backend volume as known to the storage driver
      */
-    protected String storVlmName      = null;
+    protected String storVlmName = null;
 
-    public VolumeStateDevManager(VolumeNumber volNrRef, long netSizeSpec) {
+    public VolumeStateDevManager(VolumeNumber volNrRef, long netSizeSpec)
+    {
         vlmNr = volNrRef;
         netSize = netSizeSpec;
     }
 
-    public boolean isMarkedForDelete() {
+    public boolean isMarkedForDelete()
+    {
         return markedForDelete;
     }
 
-    public void setMarkedForDelete(boolean markedForDelete) {
-        this.markedForDelete = markedForDelete;
+    public void setMarkedForDelete(boolean markedForDeleteRef)
+    {
+        markedForDelete = markedForDeleteRef;
     }
 
-    public boolean isSkip() {
+    public boolean isSkip()
+    {
         return skip;
     }
 
-    public void setSkip(boolean skip) {
-        this.skip = skip;
+    public void setSkip(boolean skipRef)
+    {
+        skip = skipRef;
     }
 
-    public boolean isDriverKnown() {
+    public boolean isDriverKnown()
+    {
         return driverKnown;
     }
 
-    public void setDriverKnown(boolean driverKnown) {
-        this.driverKnown = driverKnown;
+    public void setDriverKnown(boolean driverKnownRef)
+    {
+        driverKnown = driverKnownRef;
     }
 
-    public StorageDriver getDriver() {
+    public StorageDriver getDriver()
+    {
         return driver;
     }
 
-    public void setDriver(StorageDriver driver) {
-        this.driver = driver;
+    public void setDriver(StorageDriver driverRef)
+    {
+        driver = driverRef;
     }
 
-    public StorPoolName getStorPoolName() {
+    public StorPoolName getStorPoolName()
+    {
         return storPoolName;
     }
 
-    public void setStorPoolName(StorPoolName storPoolName) {
-        this.storPoolName = storPoolName;
+    public void setStorPoolName(StorPoolName storPoolNameRef)
+    {
+        storPoolName = storPoolNameRef;
     }
 
-    public String getStorVlmName() {
+    public String getStorVlmName()
+    {
         return storVlmName;
     }
 
-    public void setStorVlmName(String storVlmName) {
-        this.storVlmName = storVlmName;
+    public void setStorVlmName(String storVlmNameRef)
+    {
+        storVlmName = storVlmNameRef;
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         StringBuilder vlmStateString = new StringBuilder();
         vlmStateString.append("    Volume ").append(getVlmNr().value).append("\n");
         vlmStateString.append("        skip          = ").append(isSkip()).append("\n");

@@ -12,13 +12,13 @@ import org.slf4j.event.Level;
 
 class StltRscDfnApiCallHandler
 {
-    private Satellite satelliteRef;
+    private Satellite satellite;
     private AccessContext apiCtx;
 
-    public StltRscDfnApiCallHandler(Satellite satelliteRef, AccessContext apiCtx)
+    StltRscDfnApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
     {
-        this.satelliteRef = satelliteRef;
-        this.apiCtx = apiCtx;
+        satellite = satelliteRef;
+        apiCtx = apiCtxRef;
     }
 
     public void primaryResource(
@@ -26,27 +26,31 @@ class StltRscDfnApiCallHandler
         UUID rscUuid
     )
     {
-        satelliteRef.getErrorReporter().logInfo("Primary Resource %s", rscNameStr);
+        satellite.getErrorReporter().logInfo("Primary Resource %s", rscNameStr);
         try
         {
             ResourceName rscName = new ResourceName(rscNameStr);
 
-            ResourceDefinition rscDfn = satelliteRef.rscDfnMap.get(rscName);
+            ResourceDefinition rscDfn = satellite.rscDfnMap.get(rscName);
             if (rscDfn != null)
             {
                 // set primary boolean
-                ResourceData rscData = (ResourceData)rscDfn.getResource(this.apiCtx, satelliteRef.getLocalNode().getName());
+                ResourceData rscData = (ResourceData) rscDfn.getResource(
+                    this.apiCtx,
+                    satellite.getLocalNode().getName()
+                );
                 rscData.setCreatePrimary();
-                satelliteRef.getErrorReporter().logInfo("Primary bool set on Resource %s", rscNameStr);
+                satellite.getErrorReporter().logInfo("Primary bool set on Resource %s", rscNameStr);
 
-                satelliteRef.getDeviceManager().getUpdateTracker().checkResource(rscUuid, rscName);
+                satellite.getDeviceManager().getUpdateTracker().checkResource(rscUuid, rscName);
             }
         }
         catch (InvalidNameException ignored)
         {
         }
-        catch (AccessDeniedException accExc) {
-            satelliteRef.getErrorReporter().reportError(
+        catch (AccessDeniedException accExc)
+        {
+            satellite.getErrorReporter().reportError(
                 Level.ERROR,
                 new ImplementationError(
                     "Worker access context not authorized to perform a required operation",

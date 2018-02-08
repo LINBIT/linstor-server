@@ -22,10 +22,10 @@ public class ModifyVolumeDefinition extends BaseProtoApiCall
 {
     private final Controller controller;
 
-    public ModifyVolumeDefinition(Controller controller)
+    public ModifyVolumeDefinition(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

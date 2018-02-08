@@ -13,7 +13,7 @@ import com.linbit.linstor.api.pojo.ResourceState;
 
 public interface CtrlClientSerializer
 {
-    public Builder builder(String apiCall, int msgId);
+    Builder builder(String apiCall, int msgId);
 
     public interface Builder
     {
@@ -26,9 +26,9 @@ public interface CtrlClientSerializer
         Builder storPoolDfnList(List<StorPoolDefinition.StorPoolDfnApi> storPoolDfns);
         Builder storPoolList(List<StorPool.StorPoolApi> storPools);
         Builder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
-        Builder resourceList(final List<Resource.RscApi> rscs, final Collection<ResourceState> rscStates);
+        Builder resourceList(List<Resource.RscApi> rscs, Collection<ResourceState> rscStates);
 
-        Builder apiVersion(final long features, final String controllerInfo);
+        Builder apiVersion(long features, String controllerInfo);
 
         Builder ctrlCfgSingleProp(String namespace, String key, String value);
         Builder ctrlCfgProps(Map<String, String> map);

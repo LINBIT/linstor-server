@@ -24,49 +24,49 @@ public interface ApiCtrlAccessors
     /*
      * Global config accessor
      */
-    public ReadWriteLock getCtrlConfigLock();
-    public ObjectProtection getCtrlConfProtection();
-    public Props getCtrlConf();
+    ReadWriteLock getCtrlConfigLock();
+    ObjectProtection getCtrlConfProtection();
+    Props getCtrlConf();
 
     /*
      * Node accessors
      */
-    public Map<NodeName, Node> getNodesMap();
-    public ObjectProtection getNodesMapProtection();
-    public ReadWriteLock getNodesMapLock();
+    Map<NodeName, Node> getNodesMap();
+    ObjectProtection getNodesMapProtection();
+    ReadWriteLock getNodesMapLock();
 
     /*
      * ResourceDefinition accessors
      */
-    public Map<ResourceName, ResourceDefinition> getRscDfnMap();
-    public ObjectProtection getRscDfnMapProtection();
-    public ReadWriteLock getRscDfnMapLock();
-    public String generateSharedSecret();
+    Map<ResourceName, ResourceDefinition> getRscDfnMap();
+    ObjectProtection getRscDfnMapProtection();
+    ReadWriteLock getRscDfnMapLock();
+    String generateSharedSecret();
 
-    public short getDefaultPeerCount();
-    public int getDefaultAlStripes();
+    short getDefaultPeerCount();
+    int getDefaultAlStripes();
 
     /*
      * StorPoolDefinition accessors
      */
-    public Map<StorPoolName, StorPoolDefinition> getStorPoolDfnMap();
-    public ObjectProtection getStorPoolDfnMapProtection();
-    public ReadWriteLock getStorPoolDfnMapLock();
-    public String getDefaultStorPoolName();
+    Map<StorPoolName, StorPoolDefinition> getStorPoolDfnMap();
+    ObjectProtection getStorPoolDfnMapProtection();
+    ReadWriteLock getStorPoolDfnMapLock();
+    String getDefaultStorPoolName();
 
     /*
      * Other accessors
      */
-    public ErrorReporter getErrorReporter();
-    public DbConnectionPool getDbConnPool();
+    ErrorReporter getErrorReporter();
+    DbConnectionPool getDbConnPool();
 
-    public TcpConnector getNetComConnector(ServiceName dfltConSvcName);
-    public void connectSatellite(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node);
-    public MetaDataApi getMetaDataApi();
+    TcpConnector getNetComConnector(ServiceName dfltConSvcName);
+    void connectSatellite(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node);
+    MetaDataApi getMetaDataApi();
 
-    public int getFreeTcpPort() throws ExhaustedPoolException;
-    public int getFreeMinorNr() throws ExhaustedPoolException;
+    int getFreeTcpPort() throws ExhaustedPoolException;
+    int getFreeMinorNr() throws ExhaustedPoolException;
 
-    public void reloadTcpPortRange();
-    public void reloadMinorNrRange();
+    void reloadTcpPortRange();
+    void reloadMinorNrRange();
 }

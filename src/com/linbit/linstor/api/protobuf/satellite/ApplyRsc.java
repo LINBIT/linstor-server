@@ -37,10 +37,10 @@ public class ApplyRsc extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ApplyRsc(Satellite satellite)
+    public ApplyRsc(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

@@ -22,10 +22,10 @@ public class ModifyResource extends BaseProtoApiCall
 {
     private final Controller controller;
 
-    public ModifyResource(Controller controller)
+    public ModifyResource(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

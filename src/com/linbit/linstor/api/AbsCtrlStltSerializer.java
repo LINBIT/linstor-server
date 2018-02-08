@@ -9,7 +9,6 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -24,12 +23,12 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     protected final AccessContext serializerCtx;
 
     public AbsCtrlStltSerializer(
-        final ErrorReporter errReporter,
-        final AccessContext serializerCtx
+        final ErrorReporter errReporterRef,
+        final AccessContext serializerCtxRef
     )
     {
-        this.errorReporter = errReporter;
-        this.serializerCtx = serializerCtx;
+        errorReporter = errReporterRef;
+        serializerCtx = serializerCtxRef;
     }
 
     @Override
@@ -43,7 +42,7 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         protected final ByteArrayOutputStream baos;
         protected boolean exceptionOccured = false;
 
-        public BuilderImpl(String apiCall, int msgId)
+        BuilderImpl(String apiCall, int msgId)
         {
             baos = new ByteArrayOutputStream();
 

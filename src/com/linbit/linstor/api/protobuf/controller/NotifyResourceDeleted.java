@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
@@ -22,7 +22,8 @@ import java.io.InputStream;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class NotifyResourceDeleted extends BaseProtoApiCall {
+public class NotifyResourceDeleted extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public NotifyResourceDeleted(Controller controllerRef)

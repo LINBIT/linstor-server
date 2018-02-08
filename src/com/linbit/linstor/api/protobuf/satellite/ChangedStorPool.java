@@ -24,10 +24,10 @@ public class ChangedStorPool extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ChangedStorPool(Satellite satellite)
+    public ChangedStorPool(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

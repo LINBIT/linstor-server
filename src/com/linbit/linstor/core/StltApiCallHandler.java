@@ -67,7 +67,8 @@ public class StltApiCallHandler
         dataToApply = new TreeMap<>();
     }
 
-    public CtrlStltSerializer getInterComSerializer() {
+    public CtrlStltSerializer getInterComSerializer()
+    {
         return interComSerializer;
     }
 
@@ -460,16 +461,16 @@ public class StltApiCallHandler
         private NodePojo nodePojo;
         private String deletedNodeName;
 
-        public ApplyNodeData(NodePojo nodePojo)
+        ApplyNodeData(NodePojo nodePojoRef)
         {
-            this.nodePojo = nodePojo;
-            this.deletedNodeName = null;
+            nodePojo = nodePojoRef;
+            deletedNodeName = null;
         }
 
-        public ApplyNodeData(String nodeName)
+        ApplyNodeData(String nodeNameRef)
         {
-            this.nodePojo = null;
-            this.deletedNodeName = nodeName;
+            nodePojo = null;
+            deletedNodeName = nodeNameRef;
         }
 
         @Override
@@ -512,14 +513,14 @@ public class StltApiCallHandler
         private RscPojo rscPojo;
         private String deletedRscName;
 
-        public ApplyRscData(RscPojo rscPojo)
+        ApplyRscData(RscPojo rscPojoRef)
         {
-            this.rscPojo = rscPojo;
+            rscPojo = rscPojoRef;
         }
 
-        public ApplyRscData(String rscName)
+        ApplyRscData(String rscNameRef)
         {
-            this.deletedRscName = rscName;
+            deletedRscName = rscNameRef;
         }
 
         @Override
@@ -564,14 +565,14 @@ public class StltApiCallHandler
         private StorPoolPojo storPoolPojo;
         private String deletedStorPoolName;
 
-        public ApplyStorPoolData(StorPoolPojo storPoolPojo)
+        ApplyStorPoolData(StorPoolPojo storPoolPojoRef)
         {
-            this.storPoolPojo = storPoolPojo;
+            storPoolPojo = storPoolPojoRef;
         }
 
-        public ApplyStorPoolData(String storPoolName)
+        ApplyStorPoolData(String storPoolNameRef)
         {
-            this.deletedStorPoolName = storPoolName;
+            deletedStorPoolName = storPoolNameRef;
         }
 
         @Override

@@ -474,7 +474,8 @@ public final class Controller extends LinStor implements CoreServices
                 invalidNameExc
             );
         }
-        finally {
+        finally
+        {
             storPoolDfnMapLock.writeLock().unlock();
         }
     }
@@ -1674,7 +1675,7 @@ public final class Controller extends LinStor implements CoreServices
             for (Node node : nodes)
             {
                 errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, apiCtrlAccessors);
+                CtrlNodeApiCallHandler.startConnecting(node, initCtx, apiCtrlAccessors);
             }
             errorLogRef.logInfo("Reconnect requests sent");
         }

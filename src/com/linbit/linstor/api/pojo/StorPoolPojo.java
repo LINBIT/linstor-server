@@ -23,32 +23,32 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final Long updateId;
 
     public StorPoolPojo(
-        final UUID storPoolUuid,
-        final UUID nodeUuid,
-        final String nodeName,
-        final String storPoolName,
-        final UUID storPoolDfnUuid,
-        final String driver,
-        final Map<String, String> storPoolProps,
-        final Map<String, String> storPoolDfnProps,
-        final List<Volume.VlmApi> vlms,
-        final Map<String, String> storPoolStaticTraits,
-        final Long fullSyncId,
-        final Long updateId
+        final UUID storPoolUuidRef,
+        final UUID nodeUuidRef,
+        final String nodeNameRef,
+        final String storPoolNameRef,
+        final UUID storPoolDfnUuidRef,
+        final String driverRef,
+        final Map<String, String> storPoolPropsRef,
+        final Map<String, String> storPoolDfnPropsRef,
+        final List<Volume.VlmApi> vlmsRef,
+        final Map<String, String> storPoolStaticTraitsRef,
+        final Long fullSyncIdRef,
+        final Long updateIdRef
     )
     {
-        this.storPoolUuid = storPoolUuid;
-        this.nodeUuid = nodeUuid;
-        this.nodeName = nodeName;
-        this.storPoolName = storPoolName;
-        this.storPoolDfnUuid = storPoolDfnUuid;
-        this.driver = driver;
-        this.storPoolProps = storPoolProps;
-        this.storPoolDfnProps = storPoolDfnProps;
-        this.vlms = vlms;
-        this.storPoolStaticTraits = storPoolStaticTraits;
-        this.fullSyncId = fullSyncId;
-        this.updateId = updateId;
+        storPoolUuid = storPoolUuidRef;
+        nodeUuid = nodeUuidRef;
+        nodeName = nodeNameRef;
+        storPoolName = storPoolNameRef;
+        storPoolDfnUuid = storPoolDfnUuidRef;
+        driver = driverRef;
+        storPoolProps = storPoolPropsRef;
+        storPoolDfnProps = storPoolDfnPropsRef;
+        vlms = vlmsRef;
+        storPoolStaticTraits = storPoolStaticTraitsRef;
+        fullSyncId = fullSyncIdRef;
+        updateId = updateIdRef;
     }
 
     @Override
@@ -99,7 +99,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     }
 
     @Override
-    public List<Volume.VlmApi> getVlmList() {
+    public List<Volume.VlmApi> getVlmList()
+    {
         return vlms;
     }
 

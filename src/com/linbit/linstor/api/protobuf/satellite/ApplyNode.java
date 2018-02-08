@@ -26,10 +26,10 @@ public class ApplyNode extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ApplyNode(Satellite satellite)
+    public ApplyNode(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

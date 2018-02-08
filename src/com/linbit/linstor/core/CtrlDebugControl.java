@@ -6,5 +6,5 @@ import com.linbit.linstor.dbcp.DbConnectionPool;
 public interface CtrlDebugControl extends CommonDebugControl
 {
     Controller getModuleInstance();
-    public DbConnectionPool getDbConnectionPool();
+    DbConnectionPool getDbConnectionPool();
 }

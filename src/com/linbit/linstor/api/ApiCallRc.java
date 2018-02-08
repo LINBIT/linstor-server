@@ -27,7 +27,7 @@ public interface ApiCallRc
      * To escape the special meaning of "${" as the initiator of a variable
      * in the message, escape the dollar sign with a backslash (e.g. "\${").
      */
-    public static interface RcEntry
+    public interface RcEntry
     {
         /**
          * Numeric return code describing the result of an operation

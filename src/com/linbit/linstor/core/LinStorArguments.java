@@ -6,21 +6,24 @@ public class LinStorArguments
 
     private boolean startDebugConsole;
 
-    public LinStorArguments() {
-        this.workingDirectory = "";
-    }
-
-    public void setWorkingDirectory(final String workingDirectory) {
-        this.workingDirectory = workingDirectory;
-    }
-
-    public String getWorkingDirectory() {
-        return this.workingDirectory;
-    }
-
-    public void setStartDebugConsole(final boolean startDebugConsole)
+    public LinStorArguments()
     {
-        this.startDebugConsole = startDebugConsole;
+        workingDirectory = "";
+    }
+
+    public void setWorkingDirectory(final String workingDirectoryRef)
+    {
+        workingDirectory = workingDirectoryRef;
+    }
+
+    public String getWorkingDirectory()
+    {
+        return workingDirectory;
+    }
+
+    public void setStartDebugConsole(final boolean startDebugConsoleRef)
+    {
+        startDebugConsole = startDebugConsoleRef;
     }
 
     public boolean startDebugConsole()

@@ -17,7 +17,8 @@ import java.util.UUID;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class RequestPrimaryResource extends BaseProtoApiCall {
+public class RequestPrimaryResource extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public RequestPrimaryResource(Controller controllerRef)

@@ -14,7 +14,7 @@ class CtrlAuthenticationApiCallHandler
     private CtrlStltSerializer serializer;
     private AccessContext apiCtx;
 
-    public CtrlAuthenticationApiCallHandler(
+    CtrlAuthenticationApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlStltSerializer serializerRef,
         AccessContext apiCtxRef
@@ -30,7 +30,8 @@ class CtrlAuthenticationApiCallHandler
         try
         {
             Node peerNode = peer.getNode();
-            apiCtrlAccessors.getErrorReporter().logDebug("Sending authentication to satellite '" + peerNode.getName() + "'");
+            apiCtrlAccessors.getErrorReporter().logDebug("Sending authentication to satellite '" +
+                peerNode.getName() + "'");
             // TODO make the shared secret customizable
             peer.sendMessage(
                 serializer

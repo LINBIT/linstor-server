@@ -21,6 +21,7 @@
 
 package com.linbit.linstor.api;
 
+@SuppressWarnings({"checkstyle:magicnumber", "checkstyle:constantname"})
 public class ApiConsts
 {
     /*

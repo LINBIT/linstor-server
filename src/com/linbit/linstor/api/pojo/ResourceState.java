@@ -5,7 +5,8 @@ import java.util.Map;
 
 import com.linbit.linstor.VolumeNumber;
 
-public class ResourceState {
+public class ResourceState
+{
     private String rscName;
     private String nodeName;
 
@@ -15,76 +16,90 @@ public class ResourceState {
 
     private Map<VolumeNumber, ? extends VolumeState> volumeMap;
 
-    public ResourceState() {
-
+    public ResourceState()
+    {
     }
 
     public ResourceState(
-        String rscName,
-        String nodeName,
-        boolean isPresent,
-        boolean requiresAdjust,
-        boolean isPrimary,
+        String rscNameRef,
+        String nodeNameRef,
+        boolean isPresentRef,
+        boolean requiresAdjustRef,
+        boolean isPrimaryRef,
         Map<VolumeNumber, ? extends VolumeState> volumes
-    ) {
-        this.rscName = rscName;
-        this.nodeName = nodeName;
-        this.isPresent = isPresent;
-        this.requiresAdjust = requiresAdjust;
-        this.isPrimary = isPrimary;
-        this.volumeMap = volumes;
+    )
+    {
+        rscName = rscNameRef;
+        nodeName = nodeNameRef;
+        isPresent = isPresentRef;
+        requiresAdjust = requiresAdjustRef;
+        isPrimary = isPrimaryRef;
+        volumeMap = volumes;
     }
 
-    public String getRscName() {
+    public String getRscName()
+    {
         return rscName;
     }
 
-    public void setRscName(String rscName) {
-        this.rscName = rscName;
+    public void setRscName(String rscNameRef)
+    {
+        rscName = rscNameRef;
     }
 
-    public String getNodeName() {
+    public String getNodeName()
+    {
         return nodeName;
     }
 
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
+    public void setNodeName(String nodeNameRef)
+    {
+        nodeName = nodeNameRef;
     }
 
-    public boolean isPresent() {
+    public boolean isPresent()
+    {
         return isPresent;
     }
 
-    public void setPresent(boolean present) {
+    public void setPresent(boolean present)
+    {
         isPresent = present;
     }
 
-    public boolean requiresAdjust() {
+    public boolean requiresAdjust()
+    {
         return requiresAdjust;
     }
 
-    public void setRequiresAdjust(boolean requiresAdjust) {
-        this.requiresAdjust = requiresAdjust;
+    public void setRequiresAdjust(boolean requiresAdjustRef)
+    {
+        requiresAdjust = requiresAdjustRef;
     }
 
-    public boolean isPrimary() {
+    public boolean isPrimary()
+    {
         return isPrimary;
     }
 
-    public void setPrimary(boolean primary) {
+    public void setPrimary(boolean primary)
+    {
         isPrimary = primary;
     }
 
-    public Collection<? extends VolumeState> getVolumes() {
+    public Collection<? extends VolumeState> getVolumes()
+    {
         return volumeMap.values();
     }
 
-    public void setVolumes(Map<VolumeNumber, ? extends VolumeState> volumes) {
+    public void setVolumes(Map<VolumeNumber, ? extends VolumeState> volumes)
+    {
         this.volumeMap = volumes;
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         StringBuilder rscActions = new StringBuilder();
         rscActions.append("Resource '").append(rscName).append("'\n");
         rscActions.append("    isPresent = ").append(this.isPresent()).append("\n");

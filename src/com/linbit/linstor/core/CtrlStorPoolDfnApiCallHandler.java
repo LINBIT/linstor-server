@@ -199,7 +199,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                     nodeNames.append(storPoolIterator.next().getNode().getName().displayValue)
                              .append("', '");
                 }
-                nodeNames.setLength(nodeNames.length() - 3); // cut the last ", '"
+                nodeNames.setLength(nodeNames.length() - ", '".length());
 
                 addAnswer(
                     getObjectDescription() + " has still storage pools on node(s): " + nodeNames + ".",
@@ -267,22 +267,24 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
     private Iterator<StorPool> getPrivilegedStorPoolIterator(StorPoolDefinitionData storPoolDfn)
     {
+        Iterator<StorPool> iterator;
         try
         {
-            return storPoolDfn.iterateStorPools(apiCtx);
+            iterator = storPoolDfn.iterateStorPools(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterator;
     }
 
-    byte[] listStorPoolDefinitions(int msgId, AccessContext accCtx, Peer client)
+    byte[] listStorPoolDefinitions(int msgId, AccessContext accCtx)
     {
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
             for (StorPoolDefinition storPoolDfn : apiCtrlAccessors.getStorPoolDfnMap().values())
             {
                 try
@@ -332,9 +334,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
     private StorPoolDefinitionData createStorPool(String storPoolNameStr)
     {
+        StorPoolDefinitionData storPoolDfn;
         try
         {
-            return StorPoolDefinitionData.getInstance(
+            storPoolDfn = StorPoolDefinitionData.getInstance(
                 currentAccCtx.get(),
                 asStorPoolName(storPoolNameStr),
                 currentTransMgr.get(),
@@ -365,6 +368,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 "creating " + getObjectDescriptionInline()
             );
         }
+        return storPoolDfn;
     }
 
     private Map<String, String> getObjRefs(String storPoolNameStr)
@@ -419,9 +423,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
     private Props getProps(StorPoolDefinitionData storPoolDfn)
     {
+        Props props;
         try
         {
-            return storPoolDfn.getProps(currentAccCtx.get());
+            props = storPoolDfn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -431,6 +436,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
+        return props;
     }
 
     private void updateSatellites(StorPoolDefinitionData storPoolDfn)

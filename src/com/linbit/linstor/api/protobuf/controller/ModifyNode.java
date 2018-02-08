@@ -22,10 +22,10 @@ public class ModifyNode extends BaseProtoApiCall
 {
     private final Controller controller;
 
-    public ModifyNode(Controller controller)
+    public ModifyNode(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

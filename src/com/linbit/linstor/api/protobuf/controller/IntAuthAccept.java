@@ -17,10 +17,10 @@ public class IntAuthAccept extends BaseProtoApiCall
 {
     private Controller controller;
 
-    public IntAuthAccept(Controller controller)
+    public IntAuthAccept(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

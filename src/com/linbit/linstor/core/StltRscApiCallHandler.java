@@ -57,7 +57,7 @@ class StltRscApiCallHandler
     private final Satellite satellite;
     private final AccessContext apiCtx;
 
-    public StltRscApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
+    StltRscApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
     {
         satellite = satelliteRef;
         apiCtx = apiCtxRef;
@@ -86,8 +86,8 @@ class StltRscApiCallHandler
                 transMgr.commit();
             }
 
-            satellite.getErrorReporter().logInfo("Resource definition '" + rscNameStr + "' and the corresponding resource"
-                + " removed by Controller.");
+            satellite.getErrorReporter().logInfo("Resource definition '" + rscNameStr +
+                "' and the corresponding resource" + " removed by Controller.");
 
             Map<ResourceName, Set<NodeName>> updatedRscs = new TreeMap<>();
             updatedRscs.put(rscName, new TreeSet<NodeName>());
@@ -152,13 +152,14 @@ class StltRscApiCallHandler
                     .append(nodeName.displayValue)
                     .append("', '");
             }
-            msgBuilder.setLength(msgBuilder.length() - 3); // 3 == ", '".length()
+            msgBuilder.setLength(msgBuilder.length() - ", '".length());
             msgBuilder.append(".");
 
             satellite.getErrorReporter().logInfo(msgBuilder.toString());
         }
     }
 
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public UpdatedObjects applyChanges(RscPojo rscRawData, SatelliteTransactionMgr transMgr)
         throws DivergentDataException, InvalidNameException, ValueOutOfRangeException,
         AccessDeniedException, SQLException, ImplementationError, InvalidIpAddressException
@@ -755,7 +756,7 @@ class StltRscApiCallHandler
         private final Map<ResourceName, Set<NodeName>> createdRscMap;
         private final Map<ResourceName, Set<NodeName>> updatedRscMap;
 
-        public UpdatedObjects(
+        UpdatedObjects(
             Map<ResourceName, Set<NodeName>> createdRscMapRef,
             Map<ResourceName, Set<NodeName>> updatedRscMapRef
         )

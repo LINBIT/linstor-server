@@ -1,11 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.storage.StorageDriver;
 
-public class VolumeState {
+public class VolumeState
+{
     protected VolumeNumber vlmNr;
     protected MinorNumber minorNr;
 
@@ -48,105 +47,126 @@ public class VolumeState {
      */
     protected long grossSize = 0L;
 
-    public VolumeState() {
+    public VolumeState()
+    {
     }
 
     public VolumeState(
-        VolumeNumber vlmNr,
-        MinorNumber minorNr,
-        boolean isPresent,
-        boolean hasDisk,
-        boolean hasMetaData,
-        boolean checkMetaData,
-        boolean diskFailed,
-        long netSize,
-        long grossSize
-    ) {
-        this.vlmNr = vlmNr;
-        this.minorNr = minorNr;
-        this.isPresent = isPresent;
-        this.hasDisk = hasDisk;
-        this.hasMetaData = hasMetaData;
-        this.checkMetaData = checkMetaData;
-        this.diskFailed = diskFailed;
-        this.netSize = netSize;
-        this.grossSize = grossSize;
+        VolumeNumber vlmNrRef,
+        MinorNumber minorNrRef,
+        boolean isPresentRef,
+        boolean hasDiskRef,
+        boolean hasMetaDataRef,
+        boolean checkMetaDataRef,
+        boolean diskFailedRef,
+        long netSizeRef,
+        long grossSizeRef
+    )
+    {
+        vlmNr = vlmNrRef;
+        minorNr = minorNrRef;
+        isPresent = isPresentRef;
+        hasDisk = hasDiskRef;
+        hasMetaData = hasMetaDataRef;
+        checkMetaData = checkMetaDataRef;
+        diskFailed = diskFailedRef;
+        netSize = netSizeRef;
+        grossSize = grossSizeRef;
     }
 
-    public VolumeNumber getVlmNr() {
+    public VolumeNumber getVlmNr()
+    {
         return vlmNr;
     }
 
-    public MinorNumber getMinorNr() {
+    public MinorNumber getMinorNr()
+    {
         return minorNr;
     }
 
-    public boolean isPresent() {
+    public boolean isPresent()
+    {
         return isPresent;
     }
 
-    public boolean hasDisk() {
+    public boolean hasDisk()
+    {
         return hasDisk;
     }
 
-    public boolean hasMetaData() {
+    public boolean hasMetaData()
+    {
         return hasMetaData;
     }
 
-    public boolean isCheckMetaData() {
+    public boolean isCheckMetaData()
+    {
         return checkMetaData;
     }
 
-    public boolean isDiskFailed() {
+    public boolean isDiskFailed()
+    {
         return diskFailed;
     }
 
-    public long getNetSize() {
+    public long getNetSize()
+    {
         return netSize;
     }
 
-    public long getGrossSize() {
+    public long getGrossSize()
+    {
         return grossSize;
     }
 
-    public void setVlmNr(VolumeNumber vlmNr) {
-        this.vlmNr = vlmNr;
+    public void setVlmNr(VolumeNumber vlmNrRef)
+    {
+        vlmNr = vlmNrRef;
     }
 
-    public void setMinorNr(MinorNumber minorNr) {
-        this.minorNr = minorNr;
+    public void setMinorNr(MinorNumber minorNrRef)
+    {
+        this.minorNr = minorNrRef;
     }
 
-    public void setPresent(boolean present) {
+    public void setPresent(boolean present)
+    {
         isPresent = present;
     }
 
-    public void setHasDisk(boolean hasDisk) {
-        this.hasDisk = hasDisk;
+    public void setHasDisk(boolean hasDiskRef)
+    {
+        hasDisk = hasDiskRef;
     }
 
-    public void setHasMetaData(boolean hasMetaData) {
-        this.hasMetaData = hasMetaData;
+    public void setHasMetaData(boolean hasMetaDataRef)
+    {
+        hasMetaData = hasMetaDataRef;
     }
 
-    public void setCheckMetaData(boolean checkMetaData) {
-        this.checkMetaData = checkMetaData;
+    public void setCheckMetaData(boolean checkMetaDataRef)
+    {
+        checkMetaData = checkMetaDataRef;
     }
 
-    public void setDiskFailed(boolean diskFailed) {
-        this.diskFailed = diskFailed;
+    public void setDiskFailed(boolean diskFailedRef)
+    {
+        diskFailed = diskFailedRef;
     }
 
-    public void setNetSize(long netSize) {
-        this.netSize = netSize;
+    public void setNetSize(long netSizeRef)
+    {
+        netSize = netSizeRef;
     }
 
-    public void setGrossSize(long grossSize) {
-        this.grossSize = grossSize;
+    public void setGrossSize(long grossSizeRef)
+    {
+        grossSize = grossSizeRef;
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         StringBuilder vlmStateString = new StringBuilder();
         vlmStateString.append("    Volume ").append(getVlmNr().value).append("\n");
         vlmStateString.append("        isPresent     = ").append(isPresent()).append("\n");

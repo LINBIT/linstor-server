@@ -15,7 +15,8 @@ import java.io.InputStream;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class ListNode extends BaseProtoApiCall {
+public class ListNode extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public ListNode(Controller controllerRef)
@@ -48,7 +49,7 @@ public class ListNode extends BaseProtoApiCall {
     {
         client.sendMessage(
             controller.getApiCallHandler()
-                .listNode(msgId, accCtx, client)
+                .listNode(msgId, accCtx)
         );
     }
 }

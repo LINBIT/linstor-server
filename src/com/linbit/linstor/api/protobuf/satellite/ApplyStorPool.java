@@ -21,10 +21,10 @@ public class ApplyStorPool extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ApplyStorPool(Satellite satellite)
+    public ApplyStorPool(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

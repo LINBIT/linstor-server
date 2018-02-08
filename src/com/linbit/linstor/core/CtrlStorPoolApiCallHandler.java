@@ -45,7 +45,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         AccessContext apiCtxRef
     )
     {
-        super (
+        super(
             apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL,
@@ -198,7 +198,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        try(
+        try (
             AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
@@ -322,12 +322,13 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    byte[] listStorPools(int msgId, AccessContext accCtx, Peer client)
+    byte[] listStorPools(int msgId, AccessContext accCtx)
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
-        try {
+        try
+        {
             apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
             for (StorPoolDefinition storPoolDfn : apiCtrlAccessors.getStorPoolDfnMap().values())
             {
                 try
@@ -401,17 +402,18 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private StorPoolData createStorPool (String nodeNameStr, String storPoolNameStr, String driver)
+    private StorPoolData createStorPool(String nodeNameStr, String storPoolNameStr, String driver)
     {
         NodeData node = loadNode(nodeNameStr, true);
         StorPoolDefinitionData storPoolDef = loadStorPoolDfn(storPoolNameStr, false);
 
+        StorPoolData storPool;
         try
         {
             if (storPoolDef == null)
             {
                 // implicitly create storage pool definition if it doesn't exist
-                storPoolDef = StorPoolDefinitionData.getInstance( // accDeniedExc2, dataAlreadyExistsExc0
+                storPoolDef = StorPoolDefinitionData.getInstance(
                     currentAccCtx.get(),
                     asStorPoolName(storPoolNameStr),
                     currentTransMgr.get(),
@@ -420,7 +422,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 );
             }
 
-            return StorPoolData.getInstance(
+            storPool = StorPoolData.getInstance(
                 currentAccCtx.get(),
                 node,
                 storPoolDef,
@@ -453,6 +455,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 "creating " + getObjectDescriptionInline()
             );
         }
+        return storPool;
     }
 
     private void updateStorPoolDfnMap(StorPoolData storPool)
@@ -472,9 +475,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     private Collection<Volume> getVolumes(StorPoolData storPool)
     {
+        Collection<Volume> volumes;
         try
         {
-            return storPool.getVolumes(currentAccCtx.get());
+            volumes = storPool.getVolumes(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -484,6 +488,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
+        return volumes;
     }
 
     private void delete(StorPoolData storPool)
@@ -512,7 +517,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + currentNodeNameStr.get() + ", Storage pool name: " +currentStorPoolNameStr.get();
+        return "Node: " + currentNodeNameStr.get() + ", Storage pool name: " + currentStorPoolNameStr.get();
     }
 
     @Override
@@ -553,9 +558,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     protected final Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return storPool.getProps(currentAccCtx.get());
+            props = storPool.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -566,5 +572,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
+        return props;
     }
 }

@@ -104,7 +104,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             for (VolumeDefinition.VlmDfnApi vlmDfnApi : volDescrMap)
             {
-//                currentVlmDfnApi = vlmDfnApi;
+                // currentVlmDfnApi = vlmDfnApi;
 
                 volNr = getVlmNr(vlmDfnApi, rscDfn, apiCtx);
                 MinorNumber minorNr = getMinor(vlmDfnApi);
@@ -439,12 +439,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    byte[] listResourceDefinitions(int msgId, AccessContext accCtx, Peer client)
+    byte[] listResourceDefinitions(int msgId, AccessContext accCtx)
     {
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
             for (ResourceDefinition rscdfn : apiCtrlAccessors.getRscDfnMap().values())
             {
                 try
@@ -568,7 +568,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private ResourceDefinitionData createRscDfn(
         String rscNameStr,
         String transportTypeStr,
-        Integer portInt,
+        Integer portIntRef,
         String secret
     )
     {
@@ -594,6 +594,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         ResourceName rscName = asRscName(rscNameStr);
 
+        Integer portInt = portIntRef;
         if (portInt == null)
         {
             try
@@ -605,15 +606,16 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 throw asExc(
                     exc,
                     "Could not find free tcp port in range " +
-                    TcpPortNumber.PORT_NR_MIN+ " - " + TcpPortNumber.PORT_NR_MAX,
+                    TcpPortNumber.PORT_NR_MIN + " - " + TcpPortNumber.PORT_NR_MAX,
                     ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
                 );
             }
         }
 
+        ResourceDefinitionData rscDfn;
         try
         {
-            return ResourceDefinitionData.getInstance(
+            rscDfn = ResourceDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscName,
                 asTcpPortNumber(portInt),
@@ -648,13 +650,15 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_EXISTS_RSC_DFN
             );
         }
+        return rscDfn;
     }
 
     private TcpPortNumber asTcpPortNumber(int portInt)
     {
+        TcpPortNumber tcpPortNumber;
         try
         {
-            return new TcpPortNumber(portInt);
+            tcpPortNumber = new TcpPortNumber(portInt);
         }
         catch (ValueOutOfRangeException valOutOfRangeExc)
         {
@@ -664,6 +668,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_RSC_PORT
             );
         }
+        return tcpPortNumber;
     }
 
     private void checkGrossSize(
@@ -697,9 +702,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         long size
     )
     {
+        VolumeDefinitionData vlmDfn;
         try
         {
-            return VolumeDefinitionData.getInstance(
+            vlmDfn = VolumeDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 volNr,
@@ -746,6 +752,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_VLM_SIZE
             );
         }
+        return vlmDfn;
     }
 
     private void delete(ResourceDefinitionData rscDfn)
@@ -816,14 +823,16 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
     private Iterator<Resource> getPrivilegedRscIterator(ResourceDefinitionData rscDfn)
     {
+        Iterator<Resource> iterator;
         try
         {
-            return rscDfn.iterateResource(apiCtx);
+            iterator = rscDfn.iterateResource(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterator;
     }
 
     static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)

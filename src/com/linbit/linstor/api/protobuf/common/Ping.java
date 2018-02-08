@@ -7,7 +7,6 @@ import java.io.InputStream;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -20,8 +19,6 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class Ping extends BaseProtoApiCall
 {
-    private LinStor      ctrl;
-    private CoreServices coreSvcs;
 
     @Override
     public String getName()
@@ -35,23 +32,18 @@ public class Ping extends BaseProtoApiCall
         return "Ping: Communication test. Responds with a Pong message.";
     }
 
-    public Ping(
-        LinStor      ctrlRef,
-        CoreServices    coreSvcsRef
-    )
+    public Ping(CoreServices coreSvcsRef)
     {
         super(coreSvcsRef.getErrorReporter());
-        ctrl = ctrlRef;
-        coreSvcs = coreSvcsRef;
     }
 
     @Override
     public void executeImpl(
-        AccessContext   accCtx,
-        Message         msg,
-        int             msgId,
-        InputStream     msgDataIn,
-        Peer            client
+        AccessContext accCtx,
+        Message msg,
+        int msgId,
+        InputStream msgDataIn,
+        Peer client
     )
         throws IOException
     {

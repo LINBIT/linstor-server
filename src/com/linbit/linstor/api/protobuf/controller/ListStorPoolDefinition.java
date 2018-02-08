@@ -15,7 +15,8 @@ import java.io.InputStream;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class ListStorPoolDefinition extends BaseProtoApiCall {
+public class ListStorPoolDefinition extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public ListStorPoolDefinition(Controller controllerRef)
@@ -48,7 +49,7 @@ public class ListStorPoolDefinition extends BaseProtoApiCall {
     {
         client.sendMessage(
             controller.getApiCallHandler()
-                .listStorPoolDefinition(msgId, accCtx, client)
+                .listStorPoolDefinition(msgId, accCtx)
         );
     }
 }

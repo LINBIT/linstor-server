@@ -28,13 +28,11 @@ import com.linbit.linstor.security.AccessContext;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class UpdateStates extends BaseProtoApiCall {
-    private final Controller controller;
-
+public class UpdateStates extends BaseProtoApiCall
+{
     public UpdateStates(Controller controllerRef)
     {
         super(controllerRef.getErrorReporter());
-        controller = controllerRef;
     }
 
     @Override
@@ -49,11 +47,14 @@ public class UpdateStates extends BaseProtoApiCall {
         return "Updates state of satellite resources and volumes";
     }
 
-    private ResourceState fromProtoRscState(RscStateOuterClass.RscState protoRscState) {
+    private ResourceState fromProtoRscState(RscStateOuterClass.RscState protoRscState)
+    {
         Map<VolumeNumber, VolumeState> volumes = new TreeMap<>();
 
-        for(VlmStateOuterClass.VlmState protoVlmState : protoRscState.getVlmStatesList()) {
-            try {
+        for (VlmStateOuterClass.VlmState protoVlmState : protoRscState.getVlmStatesList())
+        {
+            try
+            {
                 VolumeNumber volNr = new VolumeNumber(protoVlmState.getVlmNr());
                 volumes.put(volNr, new VolumeState(
                     volNr,
@@ -67,7 +68,9 @@ public class UpdateStates extends BaseProtoApiCall {
                     protoVlmState.getGrossSize()
                     )
                 );
-            } catch (ValueOutOfRangeException e) {
+            }
+            catch (ValueOutOfRangeException exc)
+            {
                 // ignore because this is sent from the satellite and creation of illegal
                 // volume/minor numbers should never be possible
             }
@@ -92,15 +95,21 @@ public class UpdateStates extends BaseProtoApiCall {
         int msgId,
         InputStream msgDataIn,
         Peer client
-    ) throws IOException {
+    )
+        throws IOException
+    {
 
         Map<ResourceName, ResourceState> resourceStateMap = new HashMap<>();
         RscStateOuterClass.RscState protoRscState;
-        while ((protoRscState = RscStateOuterClass.RscState.parseDelimitedFrom(msgDataIn)) != null) {
+        while ((protoRscState = RscStateOuterClass.RscState.parseDelimitedFrom(msgDataIn)) != null)
+        {
             ResourceState rscState = fromProtoRscState(protoRscState);
-            try {
+            try
+            {
                 resourceStateMap.put(new ResourceName(rscState.getRscName()), rscState);
-            } catch (InvalidNameException e) {
+            }
+            catch (InvalidNameException exc)
+            {
                 // ignored should not happen
             }
         }

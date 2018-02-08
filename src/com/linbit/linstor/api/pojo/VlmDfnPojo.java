@@ -3,6 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.VolumeDefinition;
@@ -13,7 +14,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class VlmDfnPojo implements VolumeDefinition.VlmDfnApi {
+public class VlmDfnPojo implements VolumeDefinition.VlmDfnApi
+{
     private final UUID uuid;
     private final Integer volumeNr;
     private final Integer minorNr;
@@ -22,48 +24,55 @@ public class VlmDfnPojo implements VolumeDefinition.VlmDfnApi {
     private final Map<String, String> props;
 
     public VlmDfnPojo(
-            final UUID uuid,
-            final Integer volumeNr,
-            final Integer minorNr,
-            final long size,
-            final long flags,
-            Map<String, String> props)
+        final UUID uuidRef,
+        final Integer volumeNrRef,
+        final Integer minorNrRef,
+        final long sizeRef,
+        final long flagsRef,
+        Map<String, String> propsRef
+    )
     {
-        this.uuid = uuid;
-        this.volumeNr = volumeNr;
-        this.minorNr = minorNr;
-        this.size = size;
-        this.flags = flags;
-        this.props = props;
+        uuid = uuidRef;
+        volumeNr = volumeNrRef;
+        minorNr = minorNrRef;
+        size = sizeRef;
+        flags = flagsRef;
+        props = propsRef;
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         return uuid;
     }
 
     @Override
-    public Integer getVolumeNr() {
+    public Integer getVolumeNr()
+    {
         return volumeNr;
     }
 
     @Override
-    public Integer getMinorNr() {
+    public Integer getMinorNr()
+    {
         return minorNr;
     }
 
     @Override
-    public long getSize() {
+    public long getSize()
+    {
         return size;
     }
 
     @Override
-    public long getFlags() {
+    public long getFlags()
+    {
         return flags;
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         return props;
     }
 

@@ -20,6 +20,7 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
     public static final String CONSOLE_PROMPT = "Command ==> ";
 
     private boolean loadedCmds  = false;
+    @SuppressWarnings("unused")
     private boolean exitFlag    = false;
 
     public static final String[] GNRC_COMMAND_CLASS_LIST =

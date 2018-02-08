@@ -15,7 +15,8 @@ import java.io.InputStream;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class ListResourceDefinition extends BaseProtoApiCall {
+public class ListResourceDefinition extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public ListResourceDefinition(Controller controllerRef)
@@ -48,7 +49,7 @@ public class ListResourceDefinition extends BaseProtoApiCall {
     {
         client.sendMessage(
             controller.getApiCallHandler()
-                .listResourceDefinition(msgId, accCtx, client)
+                .listResourceDefinition(msgId, accCtx)
         );
     }
 }

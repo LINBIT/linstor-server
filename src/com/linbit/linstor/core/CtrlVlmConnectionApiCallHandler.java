@@ -349,9 +349,10 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Volume sourceVolume = getVlm(rsc1, vlmNrInt);
         Volume targetVolume = getVlm(rsc2, vlmNrInt);
 
+        VolumeConnectionData vlmConn;
         try
         {
-            return VolumeConnectionData.getInstance(
+            vlmConn = VolumeConnectionData.getInstance(
                 currentAccCtx.get(),
                 sourceVolume,
                 targetVolume,
@@ -383,6 +384,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 "creating " + getObjectDescriptionInline()
             );
         }
+        return vlmConn;
     }
 
     private VolumeConnectionData loadVlmConn(
@@ -402,9 +404,10 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Volume vlm1 = getVlm(rsc1, vlmNr);
         Volume vlm2 = getVlm(rsc2, vlmNr);
 
+        VolumeConnectionData vlmConn;
         try
         {
-            return VolumeConnectionData.getInstance(
+            vlmConn = VolumeConnectionData.getInstance(
                 currentAccCtx.get(),
                 vlm1,
                 vlm2,
@@ -432,13 +435,15 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 "loading " + getObjectDescriptionInline()
             );
         }
+        return vlmConn;
     }
 
     private Resource getRsc(NodeData node, String rscNameStr) throws ApiCallHandlerFailedException
     {
+        Resource rsc;
         try
         {
-            return node.getResource(currentAccCtx.get(), asRscName(rscNameStr));
+            rsc = node.getResource(currentAccCtx.get(), asRscName(rscNameStr));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -448,6 +453,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
+        return rsc;
     }
 
     private Volume getVlm(Resource rsc, int vlmNr)
@@ -457,9 +463,10 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
     private Props getProps(VolumeConnectionData vlmConn)
     {
+        Props props;
         try
         {
-            return vlmConn.getProps(currentAccCtx.get());
+            props = vlmConn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -469,6 +476,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_VLM_CONN
             );
         }
+        return props;
     }
 
     private void delete(VolumeConnectionData vlmConn)

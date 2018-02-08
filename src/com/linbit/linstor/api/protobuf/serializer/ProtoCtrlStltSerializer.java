@@ -36,7 +36,7 @@ import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
@@ -115,7 +115,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 
     // no fullSync- or update-id needed
     @Override
-    public void writeChangedStorPool(UUID storPoolUuid, String storPoolName, ByteArrayOutputStream baos) throws IOException
+    public void writeChangedStorPool(UUID storPoolUuid, String storPoolName, ByteArrayOutputStream baos)
+        throws IOException
     {
         appendObjectId(storPoolUuid, storPoolName, baos);
     }
@@ -263,7 +264,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 
 
     @Override
-    public void writeResourceState(String nodeName, ResourceState rscState, ByteArrayOutputStream baos) throws IOException
+    public void writeResourceState(String nodeName, ResourceState rscState, ByteArrayOutputStream baos)
+        throws IOException
     {
         ProtoCommonSerializer.buildResourceState(nodeName, rscState)
             .writeDelimitedTo(baos);
@@ -337,7 +339,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
      */
     private void appendObjectId(UUID objUuid, String objName, ByteArrayOutputStream baos) throws IOException
     {
-        MsgIntObjectIdOuterClass.MsgIntObjectId.Builder msgBuilder = MsgIntObjectIdOuterClass.MsgIntObjectId.newBuilder();
+        MsgIntObjectId.Builder msgBuilder = MsgIntObjectId.newBuilder();
         if (objUuid != null)
         {
             msgBuilder.setUuid(objUuid.toString());
@@ -348,7 +350,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             .writeDelimitedTo(baos);
     }
 
-    private MsgIntStorPoolData buildStorPoolDataMsg(StorPool storPool, long fullSyncTimestamp, long updateId) throws AccessDeniedException
+    private MsgIntStorPoolData buildStorPoolDataMsg(StorPool storPool, long fullSyncTimestamp, long updateId)
+        throws AccessDeniedException
     {
         StorPoolDefinition storPoolDfn = storPool.getDefinition(serializerCtx);
         MsgIntStorPoolData message = MsgIntStorPoolData.newBuilder()
@@ -462,8 +465,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 
     private class ResourceSerializerHelper
     {
-
-        private MsgIntRscData buildResourceDataMsg(Resource localResource, long fullSyncTimestamp, long updateId) throws AccessDeniedException
+        private MsgIntRscData buildResourceDataMsg(Resource localResource, long fullSyncTimestamp, long updateId)
+            throws AccessDeniedException
         {
             List<Resource> otherResources = new ArrayList<>();
             Iterator<Resource> rscIterator = localResource.getDefinition().iterateResource(serializerCtx);

@@ -47,7 +47,7 @@ public class CreateStorPool extends BaseProtoApiCall
     )
         throws IOException
     {
-        MsgCrtStorPool msgCreateStorPool= MsgCrtStorPool.parseDelimitedFrom(msgDataIn);
+        MsgCrtStorPool msgCreateStorPool = MsgCrtStorPool.parseDelimitedFrom(msgDataIn);
         StorPool storPool = msgCreateStorPool.getStorPool();
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().createStoragePool(

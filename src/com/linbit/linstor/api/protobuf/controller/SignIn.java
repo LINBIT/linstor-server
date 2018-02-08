@@ -84,10 +84,6 @@ public class SignIn extends BaseProtoApiCall
             {
                 rcEntry.setDetailsFormat("A problem report was filed under report ID " + reportId);
             }
-            if (idNameText != null)
-            {
-                rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
-            }
             reply.addEntry(rcEntry);
         }
         catch (InvalidNameException nameExc)

@@ -65,12 +65,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
 
-    private static final ServiceName devMgrName;
+    private static final ServiceName DEV_MGR_SVC_NAME;
     static
     {
         try
         {
-            devMgrName = new ServiceName("DeviceManager");
+            DEV_MGR_SVC_NAME = new ServiceName("DeviceManager");
         }
         catch (InvalidNameException invName)
         {
@@ -80,7 +80,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             );
         }
     }
+
     public static final String SVC_INFO = "Manages storage, transport and replication resources";
+
     private ServiceName devMgrInstName;
 
     private DeviceHandler drbdHnd;
@@ -106,7 +108,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         updTracker = new StltUpdateTrackerImpl(sched);
         rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         svcThr = null;
-        devMgrInstName = devMgrName;
+        devMgrInstName = DEV_MGR_SVC_NAME;
         drbdHnd = new DrbdDeviceHandler(stltInstance, wrkCtx, coreSvcs);
         workQ = workQRef;
 
@@ -117,7 +119,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     /**
      * Dispatch resource to a specific handler depending on type
      */
-    void dispatchResource(AccessContext wrkCtx, Resource rsc, SyncPoint phaseLockRef)
+    void dispatchResource(AccessContext wrkCtxRef, Resource rsc, SyncPoint phaseLockRef)
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
@@ -520,7 +522,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     private void deletedObjectsCleanup(
-        final AccessContext wrkCtx,
+        final AccessContext wrkCtxRef,
         final Set<NodeName> localDelNodeSet,
         final Set<ResourceName> localDelRscSet,
         final Set<VolumeDefinition.Key> localDelVlmSet
@@ -555,12 +557,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     {
                         // Delete the resource from all nodes
                         Map<NodeName, Resource> rscMap = new TreeMap<>();
-                        curRscDfn.copyResourceMap(wrkCtx, rscMap);
+                        curRscDfn.copyResourceMap(wrkCtxRef, rscMap);
                         for (Resource delRsc : rscMap.values())
                         {
                             Node peerNode = delRsc.getAssignedNode();
                             delRsc.setConnection(transMgr);
-                            delRsc.delete(wrkCtx);
+                            delRsc.delete(wrkCtxRef);
                             if (peerNode != stltInstance.getLocalNode())
                             {
                                 if (!(peerNode.getResourceCount() >= 1))
@@ -689,7 +691,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public ServiceName getServiceName()
     {
-        return devMgrName;
+        return DEV_MGR_SVC_NAME;
     }
 
     @Override

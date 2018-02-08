@@ -3,6 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.Volume;
@@ -13,7 +14,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class VlmPojo implements Volume.VlmApi {
+public class VlmPojo implements Volume.VlmApi
+{
     private final String storagePoolName;
     private final UUID storagePoolUuid;
     private final UUID vlmDfnUuid;
@@ -26,76 +28,87 @@ public class VlmPojo implements Volume.VlmApi {
     private final Map<String, String> vlmProps;
 
     public VlmPojo(
-        final String storagePoolName,
-        final UUID storagePoolUuid,
-        final UUID vlmDfnUuid,
-        final UUID vlmUuid,
-        final String blockDevice,
-        final String metaDisk,
-        final int vlmNr,
-        final int vlmMinorNr,
-        final long vlmFlags,
-        final Map<String, String> vlmProps)
+        final String storagePoolNameRef,
+        final UUID storagePoolUuidRef,
+        final UUID vlmDfnUuidRef,
+        final UUID vlmUuidRef,
+        final String blockDeviceRef,
+        final String metaDiskRef,
+        final int vlmNrRef,
+        final int vlmMinorNrRef,
+        final long vlmFlagsRef,
+        final Map<String, String> vlmPropsRef
+    )
     {
-        this.storagePoolName = storagePoolName;
-        this.storagePoolUuid = storagePoolUuid;
-        this.vlmDfnUuid = vlmDfnUuid;
-        this.vlmUuid = vlmUuid;
-        this.blockDevice = blockDevice;
-        this.metaDisk = metaDisk;
-        this.vlmNr = vlmNr;
-        this.vlmMinorNr = vlmMinorNr;
-        this.vlmFlags = vlmFlags;
-        this.vlmProps = vlmProps;
+        storagePoolName = storagePoolNameRef;
+        storagePoolUuid = storagePoolUuidRef;
+        vlmDfnUuid = vlmDfnUuidRef;
+        vlmUuid = vlmUuidRef;
+        blockDevice = blockDeviceRef;
+        metaDisk = metaDiskRef;
+        vlmNr = vlmNrRef;
+        vlmMinorNr = vlmMinorNrRef;
+        vlmFlags = vlmFlagsRef;
+        vlmProps = vlmPropsRef;
     }
 
     @Override
-    public String getStorPoolName() {
+    public String getStorPoolName()
+    {
         return storagePoolName;
     }
 
     @Override
-    public UUID getStorPoolUuid() {
+    public UUID getStorPoolUuid()
+    {
         return storagePoolUuid;
     }
 
     @Override
-    public UUID getVlmDfnUuid() {
+    public UUID getVlmDfnUuid()
+    {
         return vlmDfnUuid;
     }
 
     @Override
-    public UUID getVlmUuid() {
+    public UUID getVlmUuid()
+    {
         return vlmUuid;
     }
 
     @Override
-    public String getBlockDevice() {
+    public String getBlockDevice()
+    {
         return blockDevice;
     }
 
     @Override
-    public String getMetaDisk() {
+    public String getMetaDisk()
+    {
         return metaDisk;
     }
 
     @Override
-    public int getVlmNr() {
+    public int getVlmNr()
+    {
         return vlmNr;
     }
 
     @Override
-    public int getVlmMinorNr() {
+    public int getVlmMinorNr()
+    {
         return vlmMinorNr;
     }
 
     @Override
-    public long getFlags() {
+    public long getFlags()
+    {
         return vlmFlags;
     }
 
     @Override
-    public Map<String, String> getVlmProps() {
+    public Map<String, String> getVlmProps()
+    {
         return vlmProps;
     }
 

@@ -22,10 +22,10 @@ public class ModifyStorPoolDefinition extends BaseProtoApiCall
 {
     private final Controller controller;
 
-    public ModifyStorPoolDefinition(Controller controller)
+    public ModifyStorPoolDefinition(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

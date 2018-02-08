@@ -31,7 +31,7 @@ class StltNodeApiCallHandler
     private Satellite satellite;
     private AccessContext apiCtx;
 
-    public StltNodeApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
+    StltNodeApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
     {
         satellite = satelliteRef;
         apiCtx = apiCtxRef;
@@ -103,13 +103,14 @@ class StltNodeApiCallHandler
         Lock reConfReadLock = satellite.reconfigurationLock.readLock();
         Lock nodesWriteLock = satellite.nodesMapLock.writeLock();
 
+        NodeData node;
         try
         {
             reConfReadLock.lock();
             nodesWriteLock.lock();
 
             NodeFlag[] nodeFlags = NodeFlag.restoreFlags(nodePojo.getNodeFlags());
-            NodeData node = NodeData.getInstanceSatellite(
+            node = NodeData.getInstanceSatellite(
                 apiCtx,
                 nodePojo.getUuid(),
                 new NodeName(nodePojo.getName()),
@@ -172,13 +173,13 @@ class StltNodeApiCallHandler
                     netIf.setAddress(apiCtx, ipAddress);
                 }
             }
-            return node;
         }
         finally
         {
             nodesWriteLock.unlock();
             reConfReadLock.unlock();
         }
+        return node;
     }
 
     private void checkUuid(NodeData node, NodePojo nodePojo) throws DivergentUuidsException

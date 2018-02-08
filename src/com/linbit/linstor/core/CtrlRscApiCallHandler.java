@@ -73,7 +73,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         AccessContext apiCtxRef
     )
     {
-        super (
+        super(
             apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_RSC,
@@ -260,7 +260,8 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 vlmCreatedRcEntry.setMessageFormat(
                     "Volume with number '" + entry.getKey() + "' on resource '" +
                         entry.getValue().getResourceDefinition().getName().displayValue + "' on node '" +
-                        entry.getValue().getResource().getAssignedNode().getName().displayValue + "' successfully created"
+                        entry.getValue().getResource().getAssignedNode().getName().displayValue +
+                        "' successfully created"
                 );
                 vlmCreatedRcEntry.setDetailsFormat(
                     "Volume UUID is: " + entry.getValue().getUuid().toString()
@@ -297,14 +298,16 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     private boolean isDiskless(ResourceData rsc)
     {
+        boolean isDiskless;
         try
         {
-            return rsc.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS);
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS);
         }
         catch (AccessDeniedException implError)
         {
             throw asImplError(implError);
         }
+        return isDiskless;
     }
 
     private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
@@ -593,13 +596,13 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    byte[] listResources(int msgId, AccessContext accCtx, Peer client)
+    byte[] listResources(int msgId, AccessContext accCtx)
     {
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
         List<ResourceState> rscStates = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
             apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);
             for (ResourceDefinition rscDfn : apiCtrlAccessors.getRscDfnMap().values())
             {
@@ -628,9 +631,11 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 {
                     final Map<ResourceName, ResourceState> resourceStateMap = peer.getResourceStates();
 
-                    if (resourceStateMap != null) {
+                    if (resourceStateMap != null)
+                    {
                         ArrayList<ResourceState> stateCopy = new ArrayList<>(resourceStateMap.values());
-                        for (ResourceState rscState : stateCopy) {
+                        for (ResourceState rscState : stateCopy)
+                        {
                             rscState.setNodeName(node.getName().getDisplayName());
                             rscStates.add(rscState);
                         }
@@ -793,9 +798,10 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 flagList
             )
         );
+        ResourceData rsc;
         try
         {
-            return ResourceData.getInstance(
+            rsc = ResourceData.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 node,
@@ -829,6 +835,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_EXISTS_RSC
             );
         }
+        return rsc;
     }
 
     private VolumeData createVolume(
@@ -838,12 +845,13 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         VlmApi vlmApi
     )
     {
+        VolumeData vlm;
         try
         {
             String blockDevice = vlmApi == null ? null : vlmApi.getBlockDevice();
             String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
 
-            return VolumeData.getInstance(
+            vlm = VolumeData.getInstance(
                 currentAccCtx.get(),
                 rsc,
                 vlmDfn,
@@ -879,6 +887,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 "creating " + getObjectDescriptionInline()
             );
         }
+        return vlm;
     }
 
     protected final VolumeDefinitionData loadVlmDfn(
@@ -898,9 +907,10 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     )
         throws ApiCallHandlerFailedException
     {
+        VolumeDefinitionData vlmDfn;
         try
         {
-            VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstance(
+            vlmDfn = VolumeDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 vlmNr,
@@ -914,17 +924,20 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             if (failIfNull && vlmDfn == null)
             {
+                String rscName = rscDfn.getName().displayValue;
                 throw asExc(
                     null,
-                    "Volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' not found.",
-                    "The specified volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' could not be found in the database",
+                    "Volume definition with number '" + vlmNr.value + "' on resource definition '" +
+                        rscName + "' not found.",
+                    "The specified volume definition with number '" + vlmNr.value + "' on resource definition '" +
+                        rscName + "' could not be found in the database",
                     null, // details
-                    "Create a volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' first.",
+                    "Create a volume definition with number '" + vlmNr.value + "' on resource definition '" +
+                        rscName + "' first.",
                     ApiConsts.FAIL_NOT_FOUND_VLM_DFN
                 );
             }
 
-            return vlmDfn;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -945,25 +958,29 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 "loading " + getObjectDescriptionInline()
             );
         }
+        return vlmDfn;
     }
 
     private Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
     {
+        Iterator<VolumeDefinition> iterator;
         try
         {
-            return rscDfn.iterateVolumeDfn(apiCtx);
+            iterator = rscDfn.iterateVolumeDfn(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterator;
     }
 
     protected final Props getProps(Resource rsc) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return rsc.getProps(currentAccCtx.get());
+            props = rsc.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -974,24 +991,27 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
+        return props;
     }
 
     protected final Props getProps(Volume vlm) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return vlm.getProps(currentAccCtx.get());
+            props = vlm.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value + "' " +
-                "on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
+                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value +
+                    "' on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
                 "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
+        return props;
     }
 
     private void markDeleted(ResourceData rscData)
@@ -1086,26 +1106,30 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     private boolean isMarkedForDeletion(ResourceDefinition rscDfn)
     {
+        boolean isMarkedForDeletion;
         try
         {
-            return rscDfn.getFlags().isSet(apiCtx, RscDfnFlags.DELETE);
+            isMarkedForDeletion = rscDfn.getFlags().isSet(apiCtx, RscDfnFlags.DELETE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return isMarkedForDeletion;
     }
 
     private boolean isMarkedForDeletion(Node node)
     {
+        boolean isMarkedForDeletion;
         try
         {
-            return node.getFlags().isSet(apiCtx, NodeFlag.DELETE);
+            isMarkedForDeletion = node.getFlags().isSet(apiCtx, NodeFlag.DELETE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return isMarkedForDeletion;
     }
 
     private void addRscDfnDeletedAnswer(ResourceName rscName, UUID rscDfnUuid)

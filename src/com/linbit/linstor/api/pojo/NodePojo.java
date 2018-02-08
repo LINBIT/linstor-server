@@ -22,30 +22,30 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final Long updateId;
 
     public NodePojo(
-        final UUID nodeUuid,
-        final String nodeName,
-        final String nodeType,
-        final long nodeFlags,
-        final List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
-        final List<NodeConnPojo> nodeConns,
-        final Map<String, String> nodeProps,
-        final boolean connected,
-        final UUID disklessStorPoolUuid,
-        final Long fullSyncId,
-        final Long updateId
+        final UUID nodeUuidRef,
+        final String nodeNameRef,
+        final String nodeTypeRef,
+        final long nodeFlagsRef,
+        final List<NetInterface.NetInterfaceApi> nodeNetInterfacesRef,
+        final List<NodeConnPojo> nodeConnsRef,
+        final Map<String, String> nodePropsRef,
+        final boolean connectedRef,
+        final UUID disklessStorPoolUuidRef,
+        final Long fullSyncIdRef,
+        final Long updateIdRef
     )
     {
-        this.nodeUuid = nodeUuid;
-        this.nodeName = nodeName;
-        this.nodeType = nodeType;
-        this.nodeFlags = nodeFlags;
-        this.nodeNetInterfaces = nodeNetInterfaces;
-        this.nodeConns = nodeConns;
-        this.nodeProps = nodeProps;
-        this.disklessStorPoolUuid = disklessStorPoolUuid;
-        this.isConnected = connected;
-        this.fullSyncId = fullSyncId;
-        this.updateId = updateId;
+        nodeUuid = nodeUuidRef;
+        nodeName = nodeNameRef;
+        nodeType = nodeTypeRef;
+        nodeFlags = nodeFlagsRef;
+        nodeNetInterfaces = nodeNetInterfacesRef;
+        nodeConns = nodeConnsRef;
+        nodeProps = nodePropsRef;
+        disklessStorPoolUuid = disklessStorPoolUuidRef;
+        isConnected = connectedRef;
+        fullSyncId = fullSyncIdRef;
+        updateId = updateIdRef;
     }
 
     @Override
@@ -55,7 +55,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     }
 
     @Override
-    public String getType() {
+    public String getType()
+    {
         return nodeType;
     }
 

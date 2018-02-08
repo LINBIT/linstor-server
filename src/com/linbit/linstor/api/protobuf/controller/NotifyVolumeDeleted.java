@@ -6,7 +6,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm;
 import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
@@ -17,7 +17,8 @@ import java.io.InputStream;
  * @author rpeinthor
  */
 @ProtobufApiCall
-public class NotifyVolumeDeleted extends BaseProtoApiCall {
+public class NotifyVolumeDeleted extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public NotifyVolumeDeleted(Controller controllerRef)
@@ -48,7 +49,7 @@ public class NotifyVolumeDeleted extends BaseProtoApiCall {
     )
         throws IOException
     {
-        MsgIntDelVlmOuterClass.MsgIntDelVlm msgDelVlm = MsgIntDelVlmOuterClass.MsgIntDelVlm.parseDelimitedFrom(msgDataIn);
+        MsgIntDelVlm msgDelVlm = MsgIntDelVlm.parseDelimitedFrom(msgDataIn);
         controller.getApiCallHandler().volumeDeleted(
             accCtx,
             client,

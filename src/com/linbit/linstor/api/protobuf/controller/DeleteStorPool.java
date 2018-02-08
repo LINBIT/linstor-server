@@ -46,7 +46,7 @@ public class DeleteStorPool extends BaseProtoApiCall
     )
         throws IOException
     {
-        MsgDelStorPool msgDeleteStorPool= MsgDelStorPool.parseDelimitedFrom(msgDataIn);
+        MsgDelStorPool msgDeleteStorPool = MsgDelStorPool.parseDelimitedFrom(msgDataIn);
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().deleteStoragePool(
             accCtx,

@@ -21,68 +21,86 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 public class RecreateDb
 {
+    private static final int MAX_IDLE = 100;
+    private static final int MIN_IDLE = 10;
+
     public static void main(String[] args) throws Exception
     {
-        if(args.length < 1)
+        if (args.length < 1)
         {
             System.err.println("Usage: database.cfg <init.sql>");
-            return;
         }
-        if(!args[0].toLowerCase().endsWith(".cfg"))
+        else
+        if (!args[0].toLowerCase().endsWith(".cfg"))
         {
            System.err.println("First file must be the database config");
-           return;
         }
-
-        Properties props = new Properties();
-        try (FileInputStream inStream = new FileInputStream(new File(args[0]))) {
-            props.loadFromXML(inStream);
-        }
-
-        String url = props.getProperty("connection-url");
-        String dir = url.substring("jdbc:derby:".length(), url.indexOf(";create=true"));
-
-        if (!dir.equals("") && !dir.equals("/"))
+        else
         {
-            ProcessBuilder pb = new ProcessBuilder("rm", "-rf", dir);
-            pb.start().waitFor();
-        }
-
-        try (PoolingDataSource<PoolableConnection> dataSource = initConnectionProvider(args[0]);
-            Connection con = dataSource.getConnection()) {
-            if (args.length > 1)
+            Properties props = new Properties();
+            try (FileInputStream inStream = new FileInputStream(new File(args[0])))
             {
-                for (int i = 1; i < args.length; i++)
-                {
-                    BufferedReader br = new BufferedReader(new FileReader(args[i]));
-                    runSql(con, args[i], br);
-                }
+                props.loadFromXML(inStream);
             }
-            else
+
+            String url = props.getProperty("connection-url");
+            String dir = url.substring("jdbc:derby:".length(), url.indexOf(";create=true"));
+
+            if (!dir.equals("") && !dir.equals("/"))
             {
-                try (BufferedReader br =
-                        new BufferedReader(new InputStreamReader(
-                                RecreateDb.class.getResourceAsStream("/resource/drbd-init-derby.sql")))) {
-                    runSql(con, "jar:///resource/drbd-init-derby.sql", br);
+                ProcessBuilder pb = new ProcessBuilder("rm", "-rf", dir);
+                pb.start().waitFor();
+            }
+
+            try (PoolingDataSource<PoolableConnection> dataSource = initConnectionProvider(args[0]);
+                Connection con = dataSource.getConnection())
+            {
+                if (args.length > 1)
+                {
+                    for (int idx = 1; idx < args.length; idx++)
+                    {
+                        BufferedReader br = new BufferedReader(new FileReader(args[idx]));
+                        runSql(con, args[idx], br);
+                        br.close();
+                    }
+                }
+                else
+                {
+                    try (BufferedReader br =
+                        new BufferedReader(
+                            new InputStreamReader(
+                                RecreateDb.class.getResourceAsStream("/resource/drbd-init-derby.sql")
+                            )
+                        )
+                    )
+                    {
+                        runSql(con, "jar:///resource/drbd-init-derby.sql", br);
+                    }
                 }
             }
         }
     }
 
-    private static PoolingDataSource<PoolableConnection> initConnectionProvider(String cfg) throws InvalidPropertiesFormatException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+    private static PoolingDataSource<PoolableConnection> initConnectionProvider(String cfg)
+        throws InvalidPropertiesFormatException, IOException, InstantiationException,
+        IllegalAccessException, ClassNotFoundException
     {
         Class.forName("org.apache.derby.jdbc.ClientDriver").newInstance();
         Properties dbProps = new Properties();
-        try (FileInputStream fis = new FileInputStream(cfg)) {
+        try (FileInputStream fis = new FileInputStream(cfg))
+        {
             dbProps.loadFromXML(fis);
         }
 
-        ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbProps.getProperty("connection-url"), dbProps);
+        ConnectionFactory connFactory = new DriverManagerConnectionFactory(
+            dbProps.getProperty("connection-url"),
+            dbProps
+        );
         PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMinIdle(10);
-        poolConfig.setMaxIdle(100);
+        poolConfig.setMinIdle(MIN_IDLE);
+        poolConfig.setMaxIdle(MAX_IDLE);
         poolConfig.setBlockWhenExhausted(true);
         poolConfig.setFairness(true);
 

@@ -221,7 +221,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
 
         fullSyncId = new AtomicLong(2); // just don't start with 0 making sure the controller
-                                        // mirrors our fullSyncId
+        // mirrors our fullSyncId
+
         awaitedUpdateId = new AtomicLong(0);
 
         // Initialize conf props
@@ -695,7 +696,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
                         )
                     );
                 }
-                catch (SystemServiceStartException sysSvcStartExc )
+                catch (SystemServiceStartException sysSvcStartExc)
                 {
                     String errorMsg = sysSvcStartExc.getMessage();
                     if (errorMsg == null)
@@ -936,7 +937,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     public long getNextFullSyncId()
     {
-        long fullSyncId;
+        long nextFullSyncId;
         try
         {
             reconfigurationLock.writeLock().lock();
@@ -944,7 +945,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             rscDfnMapLock.writeLock().lock();
             storPoolDfnMapLock.writeLock().lock();
 
-            fullSyncId = this.fullSyncId.incrementAndGet();
+            nextFullSyncId = fullSyncId.incrementAndGet();
 
             awaitedUpdateId.set(0);
             currentFullSyncApplied = false;
@@ -956,7 +957,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             nodesMapLock.writeLock().unlock();
             reconfigurationLock.writeLock().unlock();
         }
-        return fullSyncId;
+        return nextFullSyncId;
     }
 
     public void setFullSyncApplied()

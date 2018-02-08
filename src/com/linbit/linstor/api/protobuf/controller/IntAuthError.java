@@ -18,12 +18,9 @@ import java.io.InputStream;
 @ProtobufApiCall
 public class IntAuthError extends BaseProtoApiCall
 {
-    private Controller controller;
-
-    public IntAuthError(Controller controller)
+    public IntAuthError(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
     }
 
     @Override

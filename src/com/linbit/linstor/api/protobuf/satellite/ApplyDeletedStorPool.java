@@ -16,10 +16,10 @@ public class ApplyDeletedStorPool extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ApplyDeletedStorPool(Satellite satellite)
+    public ApplyDeletedStorPool(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

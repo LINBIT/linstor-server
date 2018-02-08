@@ -42,15 +42,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
 {
     protected enum ApiCallType
     {
-        CREATE (ApiConsts.MASK_CRT),
-        MODIFY (ApiConsts.MASK_MOD),
-        DELETE (ApiConsts.MASK_DEL);
+        CREATE(ApiConsts.MASK_CRT),
+        MODIFY(ApiConsts.MASK_MOD),
+        DELETE(ApiConsts.MASK_DEL);
 
         private long opMask;
 
-        private ApiCallType(long opMask)
+        ApiCallType(long opMaskRef)
         {
-            this.opMask = opMask;
+            opMask = opMaskRef;
         }
     }
 
@@ -84,9 +84,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         internalComSerializer = serializerRef;
     }
 
-    public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocals)
+    public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocalsRef)
     {
-        this.customThreadLocals = customThreadLocals;
+        customThreadLocals = customThreadLocalsRef;
     }
 
     protected AbsApiCallHandler setContext(
@@ -154,9 +154,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final NodeName asNodeName(String nodeNameStr) throws ApiCallHandlerFailedException
     {
+        NodeName nodeName;
         try
         {
-            return new NodeName(nodeNameStr);
+            nodeName = new NodeName(nodeNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -166,6 +167,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_INVLD_NODE_NAME
             );
         }
+        return nodeName;
     }
 
     /**
@@ -179,9 +181,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final ResourceName asRscName(String rscNameStr) throws ApiCallHandlerFailedException
     {
+        ResourceName resourceName;
         try
         {
-            return new ResourceName(rscNameStr);
+            resourceName = new ResourceName(rscNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -191,6 +194,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_INVLD_RSC_NAME
             );
         }
+        return resourceName;
     }
 
     /**
@@ -204,10 +208,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final VolumeNumber asVlmNr(int vlmNr) throws ApiCallHandlerFailedException
     {
+        VolumeNumber volumeNumber;
         try
         {
-            return new VolumeNumber(vlmNr);
-
+            volumeNumber = new VolumeNumber(vlmNr);
         }
         catch (ValueOutOfRangeException valOutOfRangeExc)
         {
@@ -218,6 +222,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_INVLD_VLM_NR
             );
         }
+        return volumeNumber;
     }
 
     /**
@@ -231,9 +236,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final StorPoolName asStorPoolName(String storPoolNameStr) throws ApiCallHandlerFailedException
     {
+        StorPoolName storPoolName;
         try
         {
-            return new StorPoolName(storPoolNameStr);
+            storPoolName = new StorPoolName(storPoolNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -243,6 +249,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_INVLD_STOR_POOL_NAME
             );
         }
+        return storPoolName;
     }
 
     /**
@@ -301,9 +308,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected final NodeData loadNode(NodeName nodeName, boolean failIfNull) throws ApiCallHandlerFailedException
     {
+        NodeData node;
         try
         {
-            NodeData node = NodeData.getInstance(
+            node = NodeData.getInstance(
                 currentAccCtx.get(),
                 nodeName,
                 null,
@@ -324,7 +332,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                     ApiConsts.FAIL_NOT_FOUND_NODE
                 );
             }
-            return node;
         }
         catch (AccessDeniedException accDenied)
         {
@@ -345,6 +352,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 getAction("creating", "modifying", "deleting") + " node '" + nodeName.displayValue + "'"
             );
         }
+        return node;
     }
 
     protected final ResourceDefinitionData loadRscDfn(
@@ -362,9 +370,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
     )
         throws ApiCallHandlerFailedException
     {
+        ResourceDefinitionData rscDfn;
         try
         {
-            ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstance(
+            rscDfn = ResourceDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscName,
                 null, // port
@@ -379,16 +388,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
             if (failIfNull && rscDfn == null)
             {
                 throw asExc(
-                    null,
-                    "Resource definition '" + rscName.displayValue + "' not found.",
-                    "The specified resource definition '" + rscName.displayValue + "' could not be found in the database",
+                    null, // throwable
+                    "Resource definition '" + rscName.displayValue + "' not found.", // error msg
+                    "The specified resource definition '" + rscName.displayValue +
+                        "' could not be found in the database", // cause
                     null, // details
-                    "Create a resource definition with the name '" + rscName.displayValue + "' first.",
+                    "Create a resource definition with the name '" + rscName.displayValue + "' first.", // correction
                     ApiConsts.FAIL_NOT_FOUND_RSC_DFN
                 );
             }
 
-            return rscDfn;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -409,6 +418,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asSqlExc(sqlExc, "loading resource definition '" + rscName.displayValue + "'.");
         }
+        return rscDfn;
     }
 
     protected ResourceData loadRsc(String nodeName, String rscName, boolean failIfNull)
@@ -417,9 +427,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Node node = loadNode(nodeName, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
 
+        ResourceData rscData;
         try
         {
-            ResourceData rscData = ResourceData.getInstance(
+            rscData = ResourceData.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 node,
@@ -433,7 +444,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             {
                 throw asExc(
                     null,
-                    "Resource '" + rscName+ "' on node '" + nodeName + "' not found.",
+                    "Resource '" + rscName + "' on node '" + nodeName + "' not found.",
                     "The specified resource '" + rscName + "' on node '" + nodeName + "' could not " +
                         "be found in the database",
                     null, // details
@@ -441,8 +452,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                     ApiConsts.FAIL_NOT_FOUND_RSC_DFN
                 );
             }
-
-            return rscData;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -466,9 +475,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 "loading resource '" + rscName + "' on node '" + nodeName + "'."
             );
         }
+        return rscData;
     }
 
-    protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull) throws ApiCallHandlerFailedException
+    protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
+        throws ApiCallHandlerFailedException
     {
         return loadStorPoolDfn(asStorPoolName(storPoolNameStr), failIfNull);
     }
@@ -479,9 +490,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
     )
         throws ApiCallHandlerFailedException
     {
+        StorPoolDefinitionData storPoolDfn;
         try
         {
-            StorPoolDefinitionData storPoolDfn = StorPoolDefinitionData.getInstance(
+            storPoolDfn = StorPoolDefinitionData.getInstance(
                 currentAccCtx.get(),
                 storPoolName,
                 currentTransMgr.get(),
@@ -494,14 +506,14 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 throw asExc(
                     null,
                     "Storage pool definition '" + storPoolName.displayValue + "' not found.",
-                    "The specified storage pool definition '" + storPoolName.displayValue + "' could not be found in the database",
+                    "The specified storage pool definition '" + storPoolName.displayValue +
+                        "' could not be found in the database",
                     null, // details
                     "Create a storage pool definition '" + storPoolName.displayValue + "' first.",
                     ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN
                 );
             }
 
-            return storPoolDfn;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -525,6 +537,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 "loading storage pool definition '" + storPoolName.displayValue + "'"
             );
         }
+        return storPoolDfn;
     }
 
     protected final StorPoolData loadStorPool(
@@ -534,9 +547,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
     )
         throws ApiCallHandlerFailedException
     {
+        StorPoolData storPool;
         try
         {
-            StorPoolData storPool = StorPoolData.getInstance(
+            storPool = StorPoolData.getInstance(
                 currentAccCtx.get(),
                 node,
                 storPoolDfn,
@@ -550,15 +564,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
             {
                 throw asExc(
                     null,
-                    "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" + node.getName().displayValue + "' not found.",
-                    "The specified storage pool '" + storPoolDfn.getName().displayValue + "' on node '" + node.getName().displayValue + "' could not be found in the database",
+                    "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
+                        node.getName().displayValue + "' not found.",
+                    "The specified storage pool '" + storPoolDfn.getName().displayValue +
+                        "' on node '" + node.getName().displayValue + "' could not be found in the database",
                     null, // details
-                    "Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" + node.getName().displayValue + "' first.",
+                    "Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
+                            node.getName().displayValue + "' first.",
                     ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN
-                    );
+                );
             }
-
-            return storPool;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -582,13 +597,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 "loading " + getObjectDescriptionInline()
             );
         }
+        return storPool;
     }
 
     protected final Props getProps(Node node) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return node.getProps(currentAccCtx.get());
+            props = node.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -598,13 +615,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
+        return props;
     }
 
     protected final Props getProps(ResourceDefinitionData rscDfn) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return rscDfn.getProps(currentAccCtx.get());
+            props = rscDfn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -614,13 +633,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
+        return props;
     }
 
     protected final Props getProps(VolumeDefinition vlmDfn) throws ApiCallHandlerFailedException
     {
+        Props props;
         try
         {
-            return vlmDfn.getProps(currentAccCtx.get());
+            props = vlmDfn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -631,6 +652,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
+        return props;
     }
 
     /**
@@ -746,7 +768,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param retCode
      */
     protected final void report(
-        Throwable throwable,
+        Throwable throwableRef,
         String errorMsg,
         String causeMsg,
         String detailsMsg,
@@ -754,6 +776,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         long retCode
     )
     {
+        Throwable throwable = throwableRef;
         if (throwable == null)
         {
             throwable = new LinStorException(errorMsg);
@@ -782,14 +805,14 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * Adds a new {@link ApiCallRcEntry} to the current {@link ApiCallRc}.
      * @param msg
      * @param cause
-     * @param details
+     * @param detailsRef
      * @param correction
      * @param retCode
      */
     protected final void addAnswer(
         String msg,
         String cause,
-        String details,
+        String detailsRef,
         String correction,
         long retCode
     )
@@ -804,6 +827,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
             String objDescription = getObjectDescription();
 
+            String details = detailsRef;
             if (details == null)
             {
                 details = objDescription;
@@ -845,7 +869,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param accCtx
      * @param peer
      */
-    protected void reportStatic (
+    protected void reportStatic(
         Throwable exc,
         ApiCallType type,
         String objDescr,
@@ -904,7 +928,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param peer
      */
     protected static final void reportStatic(
-        Throwable throwable,
+        Throwable throwableRef,
         String errorMsg,
         long retCode,
         Map<String, String> objRefs,
@@ -913,8 +937,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         ApiCtrlAccessors apiCtrlAccessors,
         AccessContext accCtx,
         Peer peer
-        )
+    )
     {
+        Throwable throwable = throwableRef;
         if (throwable == null)
         {
             throwable = new LinStorException(errorMsg);
@@ -959,7 +984,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param peer
      */
     protected static final void reportStatic(
-        Throwable throwable,
+        Throwable throwableRef,
         String errorMsg,
         String causeMsg,
         String detailsMsg,
@@ -973,6 +998,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Peer peer
     )
     {
+        Throwable throwable = throwableRef;
         if (throwable == null)
         {
             throwable = new LinStorException(errorMsg);
@@ -1159,7 +1185,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param retCode
      * @return
      */
-    protected final ApiCallHandlerFailedException asAccDeniedExc(AccessDeniedException accDeniedExc, String action, long retCode)
+    protected final ApiCallHandlerFailedException asAccDeniedExc(
+        AccessDeniedException accDeniedExc,
+        String action,
+        long retCode
+    )
     {
         AccessContext accCtx = currentAccCtx.get();
         return asExc(
@@ -1222,8 +1252,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         );
     }
 
-    protected final ApiCallHandlerFailedException asImplError(Throwable throwable)
+    protected final ApiCallHandlerFailedException asImplError(Throwable throwableRef)
     {
+        Throwable throwable = throwableRef;
         if (!(throwable instanceof ImplementationError))
         {
             throwable = new ImplementationError(throwable);
@@ -1239,14 +1270,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
     {
+        TransactionMgr transactionMgr;
         try
         {
-            return new TransactionMgr(apiCtrlAccessors.getDbConnPool().getConnection());
+            transactionMgr = new TransactionMgr(apiCtrlAccessors.getDbConnPool().getConnection());
         }
         catch (SQLException sqlExc)
         {
             throw asSqlExc(sqlExc, "creating a new transaction manager");
         }
+        return transactionMgr;
     }
 
     protected final void commit() throws ApiCallHandlerFailedException

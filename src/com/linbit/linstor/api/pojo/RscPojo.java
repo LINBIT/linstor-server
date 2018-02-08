@@ -24,32 +24,32 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     private final Long updateId;
 
     public RscPojo(
-        final String rscName,
-        final String nodeName,
-        final UUID nodeUuid,
-        final ResourceDefinition.RscDfnApi rscDefinition,
-        final UUID localRscUuid,
-        final long localRscFlags,
-        final int localRscNodeId,
-        final Map<String, String> localRscProps,
-        final List<Volume.VlmApi> localVlms,
-        final List<OtherRscPojo> otherRscList,
-        final Long fullSyncId,
-        final Long updateId
+        final String rscNameRef,
+        final String nodeNameRef,
+        final UUID nodeUuidRef,
+        final ResourceDefinition.RscDfnApi rscDefinitionRef,
+        final UUID localRscUuidRef,
+        final long localRscFlagsRef,
+        final int localRscNodeIdRef,
+        final Map<String, String> localRscPropsRef,
+        final List<Volume.VlmApi> localVlmsRef,
+        final List<OtherRscPojo> otherRscListRef,
+        final Long fullSyncIdRef,
+        final Long updateIdRef
     )
     {
-        this.rscName = rscName;
-        this.nodeName = nodeName;
-        this.nodeUuid = nodeUuid;
-        this.rscDefinition = rscDefinition;
-        this.localRscUuid = localRscUuid;
-        this.localRscFlags = localRscFlags;
-        this.localRscNodeId = localRscNodeId;
-        this.localRscProps = localRscProps;
-        this.localVlms = localVlms;
-        this.otherRscs = otherRscList;
-        this.fullSyncId = fullSyncId;
-        this.updateId = updateId;
+        rscName = rscNameRef;
+        nodeName = nodeNameRef;
+        nodeUuid = nodeUuidRef;
+        rscDefinition = rscDefinitionRef;
+        localRscUuid = localRscUuidRef;
+        localRscFlags = localRscFlagsRef;
+        localRscNodeId = localRscNodeIdRef;
+        localRscProps = localRscPropsRef;
+        localVlms = localVlmsRef;
+        otherRscs = otherRscListRef;
+        fullSyncId = fullSyncIdRef;
+        updateId = updateIdRef;
     }
 
     @Override
@@ -144,12 +144,14 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         return localRscProps;
     }
 
     @Override
-    public List<? extends Volume.VlmApi> getVlmList() {
+    public List<? extends Volume.VlmApi> getVlmList()
+    {
         return localVlms;
     }
 
@@ -190,32 +192,32 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         private final UUID nodeDisklessStorPoolUuid;
 
         public OtherRscPojo(
-            String nodeName,
-            UUID nodeUuid,
-            String nodeType,
-            long nodeFlags,
-            UUID nodeDisklessStorPoolUuid,
-            Map<String, String> nodeProps,
-            List<OtherNodeNetInterfacePojo> netIfPojos,
-            UUID rscUuid,
-            int rscNodeId,
-            long rscFlags,
-            Map<String, String> rscProps,
-            List<Volume.VlmApi> vlms
+            String nodeNameRef,
+            UUID nodeUuidRef,
+            String nodeTypeRef,
+            long nodeFlagsRef,
+            UUID nodeDisklessStorPoolUuidRef,
+            Map<String, String> nodePropsRef,
+            List<OtherNodeNetInterfacePojo> netIfPojosRef,
+            UUID rscUuidRef,
+            int rscNodeIdRef,
+            long rscFlagsRef,
+            Map<String, String> rscPropsRef,
+            List<Volume.VlmApi> vlmsRef
         )
         {
-            this.nodeName = nodeName;
-            this.nodeUuid = nodeUuid;
-            this.nodeType = nodeType;
-            this.nodeFlags = nodeFlags;
-            this.nodeDisklessStorPoolUuid = nodeDisklessStorPoolUuid;
-            this.nodeProps = nodeProps;
-            this.netInterfacefPojos = netIfPojos;
-            this.rscUuid = rscUuid;
-            this.rscNodeId = rscNodeId;
-            this.rscFlags = rscFlags;
-            this.rscProps = rscProps;
-            this.vlms = vlms;
+            nodeName = nodeNameRef;
+            nodeUuid = nodeUuidRef;
+            nodeType = nodeTypeRef;
+            nodeFlags = nodeFlagsRef;
+            nodeDisklessStorPoolUuid = nodeDisklessStorPoolUuidRef;
+            nodeProps = nodePropsRef;
+            netInterfacefPojos = netIfPojosRef;
+            rscUuid = rscUuidRef;
+            rscNodeId = rscNodeIdRef;
+            rscFlags = rscFlagsRef;
+            rscProps = rscPropsRef;
+            vlms = vlmsRef;
         }
 
         public String getNodeName()

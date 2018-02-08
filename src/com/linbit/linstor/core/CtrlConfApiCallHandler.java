@@ -147,7 +147,7 @@ public class CtrlConfApiCallHandler
             apiCtrlAccessors.getCtrlConfProtection().requireAccess(accCtx, AccessType.CHANGE);
 
             String fullKey;
-            if (namespace != null && namespace.trim() != "")
+            if (namespace != null && !"".equals(namespace.trim()))
             {
                 fullKey = namespace + "/" + key;
             }
@@ -267,7 +267,7 @@ public class CtrlConfApiCallHandler
         }
         catch (NumberFormatException | ValueOutOfRangeException exc)
         {
-            String errorMsg ;
+            String errorMsg;
             long rc;
             if (exc instanceof NumberFormatException)
             {
@@ -351,7 +351,7 @@ public class CtrlConfApiCallHandler
         }
         catch (NumberFormatException | ValueOutOfRangeException exc)
         {
-            String errorMsg ;
+            String errorMsg;
             long rc;
             if (exc instanceof NumberFormatException)
             {

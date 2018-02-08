@@ -11,7 +11,7 @@ import com.linbit.linstor.api.pojo.ResourceState;
 
 public interface CtrlStltSerializer
 {
-    public Builder builder(String apiCall, int msgId);
+    Builder builder(String apiCall, int msgId);
 
     public interface Builder
     {
@@ -51,7 +51,7 @@ public interface CtrlStltSerializer
         /*
          * Satellite -> Controller
          */
-        Builder resourceState(final String nodeName, final ResourceState rsc);
+        Builder resourceState(String nodeName, ResourceState rsc);
 
         Builder notifyResourceDeleted(String nodeName, String resourceName, UUID rscUuid);
         Builder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr, UUID vlmUuid);

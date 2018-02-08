@@ -16,10 +16,10 @@ public class ApplyDeletedRsc extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ApplyDeletedRsc(Satellite satellite)
+    public ApplyDeletedRsc(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

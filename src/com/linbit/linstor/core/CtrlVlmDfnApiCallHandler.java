@@ -330,10 +330,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
             // mark volumes to delete
             Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(accCtx);
-            while(itVolumes.hasNext())
+            while (itVolumes.hasNext())
             {
-                Volume v = itVolumes.next();
-                v.markDeleted(accCtx);
+                Volume vlm = itVolumes.next();
+                vlm.markDeleted(accCtx);
             }
 
             vlmDfn.markDeleted(accCtx);
@@ -387,9 +387,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private VolumeDefinitionData loadVlmDfn(String rscName, int vlmNr)
     {
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+        VolumeDefinitionData vlmDfn;
         try
         {
-            return VolumeDefinitionData.getInstance(
+            vlmDfn = VolumeDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 new VolumeNumber(vlmNr),
@@ -405,7 +406,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "loading volume definition '" + vlmNr + "' from resource definition '"+ rscName + "'",
+                "loading volume definition '" + vlmNr + "' from resource definition '" + rscName + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
@@ -428,25 +429,29 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 "loading " + getObjectDescriptionInline()
             );
         }
+        return vlmDfn;
     }
 
     private Iterator<Resource> getRscIterator(ResourceDefinition rscDfn)
     {
+        Iterator<Resource> iterator;
         try
         {
-            return rscDfn.iterateResource(apiCtx);
+            iterator = rscDfn.iterateResource(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterator;
     }
 
     private VolumeNumber getOrGenerateVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
     {
+        VolumeNumber vlmNr;
         try
         {
-            return CtrlRscDfnApiCallHandler.getVlmNr(vlmDfnApi, rscDfn, accCtx);
+            vlmNr = CtrlRscDfnApiCallHandler.getVlmNr(vlmDfnApi, rscDfn, accCtx);
         }
         catch (ValueOutOfRangeException valOORangeExc)
         {
@@ -469,6 +474,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_POOL_EXHAUSTED_VLM_NR
             );
         }
+        return vlmNr;
     }
 
     private MinorNumber getOrGenerateMinorNr(VlmDfnApi vlmDfnApi)
@@ -520,9 +526,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VlmDfnFlags[] vlmDfnInitFlags
     )
     {
+        VolumeDefinitionData vlmDfn;
         try
         {
-            return VolumeDefinitionData.getInstance(
+            vlmDfn = VolumeDefinitionData.getInstance(
                 accCtx,
                 rscDfn,
                 volNr,
@@ -566,7 +573,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             throw asExc(
                 mdExc,
                 String.format(
-                    "The " + getObjectDescriptionInline() +" has an invalid size of '%d'. " +
+                    "The " + getObjectDescriptionInline() + " has an invalid size of '%d'. " +
                         "Valid sizes range from %d to %d.",
                     size,
                     MetaData.DRBD_MIN_NET_kiB,
@@ -575,13 +582,15 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_VLM_SIZE
             );
         }
+        return vlmDfn;
     }
 
     private Props getVlmDfnProps(VolumeDefinitionData vlmDfn)
     {
+        Props props;
         try
         {
-            return vlmDfn.getProps(currentAccCtx.get());
+            props = vlmDfn.getProps(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -591,6 +600,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
+        return props;
     }
 
     private void adjustRscVolumes(Resource rsc)
@@ -613,7 +623,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 linStorExc,
                 "An exception occured while adjusting resources.",
                 ApiConsts.FAIL_UNKNOWN_ERROR // TODO somehow find out if the exception is caused
-                // by a missing storpool (not deployed yet?), and return a more meaningful RC
+            // by a missing storpool (not deployed yet?), and return a more meaningful RC
             );
         }
     }
@@ -630,9 +640,15 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 rscNameStr
             );
             vlmDfnCrtSuccessEntry.setMessageFormat(successMessage);
-            vlmDfnCrtSuccessEntry.putVariable(ApiConsts.KEY_RSC_DFN, vlmDfn.getResourceDefinition().getName().displayValue);
+            vlmDfnCrtSuccessEntry.putVariable(
+                ApiConsts.KEY_RSC_DFN,
+                vlmDfn.getResourceDefinition().getName().displayValue
+            );
             vlmDfnCrtSuccessEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-            vlmDfnCrtSuccessEntry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
+            vlmDfnCrtSuccessEntry.putVariable(
+                ApiConsts.KEY_MINOR_NR,
+                Integer.toString(vlmDfn.getMinorNr(apiCtx).value)
+            );
             vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
             vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
@@ -647,9 +663,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private long getVlmDfnSize(VolumeDefinitionData vlmDfn)
     {
+        long volumeSize;
         try
         {
-            return vlmDfn.getVolumeSize(currentAccCtx.get());
+            volumeSize = vlmDfn.getVolumeSize(currentAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -659,6 +676,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
+        return volumeSize;
     }
 
     private void setVlmDfnSize(VolumeDefinitionData vlmDfn, Long size)
@@ -684,9 +702,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private boolean hasDeployedVolumes(VolumeDefinitionData vlmDfn)
     {
+        boolean hasVolumes;
         try
         {
-            return vlmDfn.iterateVolumes(currentAccCtx.get()).hasNext();
+            hasVolumes = vlmDfn.iterateVolumes(currentAccCtx.get()).hasNext();
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -696,6 +715,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
+        return hasVolumes;
     }
 
     private void setMinorNr(VolumeDefinitionData vlmDfn, Integer minorNr)
@@ -723,9 +743,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private MinorNumber toMinorNr(Integer minorNr)
     {
+        MinorNumber minorNumber;
         try
         {
-            return new MinorNumber(minorNr);
+            minorNumber = new MinorNumber(minorNr);
         }
         catch (ValueOutOfRangeException valOutOfRangeExc)
         {
@@ -735,6 +756,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_MINOR_NR
             );
         }
+        return minorNumber;
     }
 
     private AbsApiCallHandler setContext(
@@ -766,7 +788,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         return this;
     }
 
-    private Map<String, String> getObjRefs (String rscName, Integer vlmNr)
+    private Map<String, String> getObjRefs(String rscName, Integer vlmNr)
     {
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscName);
@@ -777,7 +799,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         return objRefs;
     }
 
-    private Map<String, String> getVariables (String rscName, Integer vlmNr)
+    private Map<String, String> getVariables(String rscName, Integer vlmNr)
     {
         Map<String, String> vars = new TreeMap<>();
         vars.put(ApiConsts.KEY_RSC_NAME, rscName);

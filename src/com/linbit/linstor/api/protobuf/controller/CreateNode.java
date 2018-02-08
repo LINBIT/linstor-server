@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
@@ -16,7 +15,6 @@ import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgCrtNodeOuterClass.MsgCrtNode;
-import com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.SatelliteConnectionOuterClass;

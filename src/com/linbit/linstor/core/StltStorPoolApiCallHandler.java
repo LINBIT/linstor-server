@@ -24,10 +24,10 @@ class StltStorPoolApiCallHandler
     private final Satellite satellite;
     private final AccessContext apiCtx;
 
-    public StltStorPoolApiCallHandler(Satellite satellite, AccessContext apiCtx)
+    StltStorPoolApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
     {
-        this.satellite = satellite;
-        this.apiCtx = apiCtx;
+        satellite = satelliteRef;
+        apiCtx = apiCtxRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -52,8 +52,8 @@ class StltStorPoolApiCallHandler
                 transMgr.commit();
             }
 
-            satellite.getErrorReporter().logInfo("Storage pool definition '" + storPoolNameStr + "' and the "+
-                "corresponding storage pool was removed by Controller.");
+            satellite.getErrorReporter().logInfo("Storage pool definition '" + storPoolNameStr +
+                "' and the corresponding storage pool was removed by Controller.");
 
             Set<StorPoolName> storPoolSet = new TreeSet<>();
             storPoolSet.add(storPoolName);
@@ -109,7 +109,7 @@ class StltStorPoolApiCallHandler
         StorPoolDefinition storPoolDfnToRegister = null;
 
         // TODO: uncomment the next line once the localNode gets requested from the controller
-//          checkUuid(satellite.localNode, storPoolRaw);
+        // checkUuid(satellite.localNode, storPoolRaw);
 
         storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
         NodeData localNode = satellite.getLocalNode();

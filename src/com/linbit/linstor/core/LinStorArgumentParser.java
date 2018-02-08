@@ -12,10 +12,11 @@ import java.io.File;
 
 public class LinStorArgumentParser
 {
+    private static final String CONTROLLER_DIRECTORY = "controller_directory";
+    private static final String DEBUG_CONSOLE = "debug_console";
+
     static LinStorArguments parseCommandLine(String[] args)
     {
-        final String CONTROLLER_DIRECTORY = "controller_directory";
-        final String DEBUG_CONSOLE = "debug_console";
         Options opts = new Options();
         opts.addOption(Option.builder("h").longOpt("help").required(false).build());
         opts.addOption(Option.builder("c").longOpt(CONTROLLER_DIRECTORY).hasArg().required(false).build());
@@ -23,19 +24,22 @@ public class LinStorArgumentParser
 
         CommandLineParser parser = new DefaultParser();
         LinStorArguments cArgs = new LinStorArguments();
-        try {
+        try
+        {
             CommandLine cmd = parser.parse(opts, args);
 
-            if (cmd.hasOption("help")) {
+            if (cmd.hasOption("help"))
+            {
                 HelpFormatter helpFrmt = new HelpFormatter();
                 helpFrmt.printHelp("Controller", opts);
                 System.exit(0);
             }
 
-            if (cmd.hasOption(CONTROLLER_DIRECTORY)) {
+            if (cmd.hasOption(CONTROLLER_DIRECTORY))
+            {
                 cArgs.setWorkingDirectory(cmd.getOptionValue(CONTROLLER_DIRECTORY) + "/");
-                File f = new File(cArgs.getWorkingDirectory());
-                if(!f.exists() || !f.isDirectory())
+                File workingDir = new File(cArgs.getWorkingDirectory());
+                if (!workingDir.exists() || !workingDir.isDirectory())
                 {
                     System.err.println("Error: Given controller runtime directory does not exist or is no directory");
                     System.exit(2);
@@ -47,7 +51,8 @@ public class LinStorArgumentParser
                 cArgs.setStartDebugConsole(true);
             }
         }
-        catch (ParseException pExc) {
+        catch (ParseException pExc)
+        {
             System.err.println("Command line parse error: " + pExc.getMessage());
             System.exit(1);
         }

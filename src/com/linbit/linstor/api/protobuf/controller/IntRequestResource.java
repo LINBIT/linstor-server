@@ -18,10 +18,10 @@ public class IntRequestResource extends BaseProtoApiCall
 {
     private Controller controller;
 
-    public IntRequestResource(Controller controller)
+    public IntRequestResource(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

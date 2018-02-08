@@ -39,34 +39,34 @@ public class ApiCallRcImpl implements ApiCallRc
         private String detailsFormat;
         private Map<String, String> variables = new HashMap<>();
 
-        public void setReturnCode(long returnCode)
+        public void setReturnCode(long returnCodeRef)
         {
-            this.returnCode = returnCode;
+            returnCode = returnCodeRef;
         }
 
         public void setReturnCodeBit(long bitMask)
         {
-            this.returnCode |= bitMask;
+            returnCode |= bitMask;
         }
 
-        public void setMessageFormat(String messageFormat)
+        public void setMessageFormat(String messageFormatRef)
         {
-            this.messageFormat = messageFormat;
+            messageFormat = messageFormatRef;
         }
 
-        public void setCauseFormat(String causeFormat)
+        public void setCauseFormat(String causeFormatRef)
         {
-            this.causeFormat = causeFormat;
+            causeFormat = causeFormatRef;
         }
 
-        public void setCorrectionFormat(String correctionFormat)
+        public void setCorrectionFormat(String correctionFormatRef)
         {
-            this.correctionFormat = correctionFormat;
+            correctionFormat = correctionFormatRef;
         }
 
-        public void setDetailsFormat(String detailsFormat)
+        public void setDetailsFormat(String detailsFormatRef)
         {
-            this.detailsFormat = detailsFormat;
+            detailsFormat = detailsFormatRef;
         }
 
         public void putObjRef(String key, String value)

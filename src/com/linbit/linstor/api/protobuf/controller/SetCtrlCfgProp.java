@@ -18,10 +18,10 @@ public class SetCtrlCfgProp extends BaseProtoApiCall
 {
     private Controller controller;
 
-    public SetCtrlCfgProp(Controller controller)
+    public SetCtrlCfgProp(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

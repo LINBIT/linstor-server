@@ -18,10 +18,10 @@ public class IntRequestStorPool extends BaseProtoApiCall
 {
     private Controller controller;
 
-    public IntRequestStorPool(Controller controller)
+    public IntRequestStorPool(Controller controllerRef)
     {
-        super(controller.getErrorReporter());
-        this.controller = controller;
+        super(controllerRef.getErrorReporter());
+        controller = controllerRef;
     }
 
     @Override

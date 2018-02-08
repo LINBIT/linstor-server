@@ -22,12 +22,12 @@ public abstract class AbsCtrlClientSerializer implements CtrlClientSerializer
     protected final AccessContext serializerCtx;
 
     public AbsCtrlClientSerializer(
-        final ErrorReporter errReporter,
-        final AccessContext serializerCtx
+        final ErrorReporter errReporterRef,
+        final AccessContext serializerCtxRef
     )
     {
-        this.errorReporter = errReporter;
-        this.serializerCtx = serializerCtx;
+        errorReporter = errReporterRef;
+        serializerCtx = serializerCtxRef;
     }
 
     @Override
@@ -41,7 +41,7 @@ public abstract class AbsCtrlClientSerializer implements CtrlClientSerializer
         protected final ByteArrayOutputStream baos;
         protected boolean exceptionOccured = false;
 
-        public BuilderImpl(String apiCall, int msgId)
+        BuilderImpl(String apiCall, int msgId)
         {
             baos = new ByteArrayOutputStream();
 
@@ -207,10 +207,14 @@ public abstract class AbsCtrlClientSerializer implements CtrlClientSerializer
     public abstract void writeRscDfnList(List<RscDfnApi> rscDfns, ByteArrayOutputStream baos)
         throws IOException;
 
-    public abstract void writeRscList(List<RscApi> rscs, Collection<ResourceState> rscStates, ByteArrayOutputStream baos)
+    public abstract void writeRscList(
+        List<RscApi> rscs,
+        Collection<ResourceState> rscStates,
+        ByteArrayOutputStream baos
+    )
         throws IOException;
 
-    public abstract void writeApiVersion(final long features, final String controllerInfo, ByteArrayOutputStream baos)
+    public abstract void writeApiVersion(long features, String controllerInfo, ByteArrayOutputStream baos)
         throws IOException;
 
     public abstract void writeCtrlCfgSingleProp(String namespace, String key, String value, ByteArrayOutputStream baos)

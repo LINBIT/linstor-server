@@ -172,7 +172,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
     private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)
     {
-        return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
+        return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" +
+            nodeNameStr + "'";
     }
 
     private Map<String, String> getObjRefs(String nodeNameStr, String rscNameStr, Integer vlmNr)
@@ -220,38 +221,44 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
     private Iterator<Volume> getVolumeIterator(VolumeDefinition vlmDfn)
     {
+        Iterator<Volume> iterator;
         try
         {
-            return vlmDfn.iterateVolumes(apiCtx);
+            iterator = vlmDfn.iterateVolumes(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterator;
     }
 
     private boolean isMarkedAsClean(Volume vlm)
     {
+        boolean isMarkedAsClean;
         try
         {
-            return vlm.getFlags().isSet(apiCtx, VlmFlags.CLEAN);
+            isMarkedAsClean = vlm.getFlags().isSet(apiCtx, VlmFlags.CLEAN);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return isMarkedAsClean;
     }
 
     private boolean isMarkedForDeletion(VolumeDefinition vlmDfn)
     {
+        boolean isMarkedAsDeleted;
         try
         {
-            return vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE);
+            isMarkedAsDeleted = vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return isMarkedAsDeleted;
     }
 
     private void delete(VolumeDefinition vlmDfn)

@@ -25,10 +25,10 @@ public class ChangedRsc extends BaseProtoApiCall
 {
     private final Satellite satellite;
 
-    public ChangedRsc(Satellite satellite)
+    public ChangedRsc(Satellite satelliteRef)
     {
-        super(satellite.getErrorReporter());
-        this.satellite = satellite;
+        super(satelliteRef.getErrorReporter());
+        satellite = satelliteRef;
     }
 
     @Override

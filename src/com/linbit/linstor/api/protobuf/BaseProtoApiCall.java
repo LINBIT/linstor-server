@@ -92,7 +92,6 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         for (RcEntry apiCallEntry : apiCallRc.getEntries())
         {
             Builder msgApiCallResponseBuilder = MsgApiCallResponse.newBuilder();
-            MsgApiCallResponse protoMsg;
 
             msgApiCallResponseBuilder.setRetCode(apiCallEntry.getReturnCode());
             if (apiCallEntry.getCauseFormat() != null)
@@ -114,7 +113,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
             msgApiCallResponseBuilder.addAllObjRefs(fromMap(apiCallEntry.getObjRefs()));
             msgApiCallResponseBuilder.addAllVariables(fromMap(apiCallEntry.getVariables()));
 
-            protoMsg = msgApiCallResponseBuilder.build();
+            MsgApiCallResponse protoMsg = msgApiCallResponseBuilder.build();
 
             try
             {
@@ -183,7 +182,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         System.arraycopy(protoHeaderBytes, 0, apiCallData, 0, protoHeaderBytes.length);
 
         // copy proto message data into apicalldata if there is any
-        if(protoMsgsBytes.length > 0)
+        if (protoMsgsBytes.length > 0)
         {
             System.arraycopy(protoMsgsBytes, 0, apiCallData, protoHeaderBytes.length, protoMsgsBytes.length);
         }

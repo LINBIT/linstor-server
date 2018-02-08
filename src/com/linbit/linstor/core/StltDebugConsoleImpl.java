@@ -14,141 +14,141 @@ import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 
 class StltDebugConsoleImpl extends BaseDebugConsole
+{
+    private final Satellite satellite;
+
+    private boolean loadedCmds  = false;
+    private boolean exitFlag    = false;
+
+    public static final String CONSOLE_PROMPT = "Command ==> ";
+
+    public static final String[] GNRC_COMMAND_CLASS_LIST =
     {
-        private final Satellite satellite;
+    };
+    public static final String GNRC_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
+    public static final String[] STLT_COMMAND_CLASS_LIST =
+    {
+        "CmdDisplayThreads",
+        "CmdDisplayContextInfo",
+        "CmdDisplayServices",
+        "CmdDisplaySecLevel",
+        "CmdDisplayModuleInfo",
+        "CmdDisplayVersion",
+        "CmdStartService",
+        "CmdEndService",
+        "CmdDisplayConnections",
+        "CmdCloseConnection",
+        "CmdDisplaySystemStatus",
+        "CmdDisplayApis",
+        "CmdDisplayNodes",
+        "CmdDisplayStorPoolDfn",
+        "CmdDisplayStorPool",
+        "CmdDisplayResourceDfn",
+        "CmdDisplayResource",
+        "CmdDisplayLockStatus",
+        "CmdDisplayConfValue",
+        "CmdDisplayObjectStatistics",
+        "CmdDisplayTraceMode",
+        "CmdSetTraceMode",
+        "CmdDisplayReport",
+        "CmdDisplayReportList",
+        "CmdRunDeviceManager",
+        "CmdDisplayObjProt",
+        "CmdTestErrorLog",
+        "CmdShutdown"
+    };
+    public static final String STLT_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
 
-        private boolean loadedCmds  = false;
-        private boolean exitFlag    = false;
+    private StltDebugControl debugCtl;
 
-        public static final String CONSOLE_PROMPT = "Command ==> ";
+    StltDebugConsoleImpl(
+        Satellite satelliteRef,
+        AccessContext accCtx,
+        Map<ServiceName, SystemService> systemServicesMap,
+        Map<String, Peer> peerMap,
+        CommonMessageProcessor msgProc
+    )
+    {
+        super(accCtx, satelliteRef);
+        ErrorCheck.ctorNotNull(StltDebugConsoleImpl.class, Satellite.class, satelliteRef);
+        ErrorCheck.ctorNotNull(StltDebugConsoleImpl.class, AccessContext.class, accCtx);
 
-        public static final String[] GNRC_COMMAND_CLASS_LIST =
+        satellite = satelliteRef;
+        loadedCmds = false;
+        debugCtl = new StltDebugControlImpl(
+            satellite,
+            systemServicesMap,
+            peerMap,
+            msgProc
+        );
+    }
+
+    public void stdStreamsConsole()
+    {
+        stdStreamsConsole(CONSOLE_PROMPT);
+    }
+
+    public void loadDefaultCommands(
+        PrintStream debugOut,
+        PrintStream debugErr
+    )
+    {
+        if (!loadedCmds)
         {
-        };
-        public static final String GNRC_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
-        public static final String[] STLT_COMMAND_CLASS_LIST =
-        {
-            "CmdDisplayThreads",
-            "CmdDisplayContextInfo",
-            "CmdDisplayServices",
-            "CmdDisplaySecLevel",
-            "CmdDisplayModuleInfo",
-            "CmdDisplayVersion",
-            "CmdStartService",
-            "CmdEndService",
-            "CmdDisplayConnections",
-            "CmdCloseConnection",
-            "CmdDisplaySystemStatus",
-            "CmdDisplayApis",
-            "CmdDisplayNodes",
-            "CmdDisplayStorPoolDfn",
-            "CmdDisplayStorPool",
-            "CmdDisplayResourceDfn",
-            "CmdDisplayResource",
-            "CmdDisplayLockStatus",
-            "CmdDisplayConfValue",
-            "CmdDisplayObjectStatistics",
-            "CmdDisplayTraceMode",
-            "CmdSetTraceMode",
-            "CmdDisplayReport",
-            "CmdDisplayReportList",
-            "CmdRunDeviceManager",
-            "CmdDisplayObjProt",
-            "CmdTestErrorLog",
-            "CmdShutdown"
-        };
-        public static final String STLT_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
-
-        private StltDebugControl debugCtl;
-
-        StltDebugConsoleImpl(
-            Satellite satelliteRef,
-            AccessContext accCtx,
-            Map<ServiceName, SystemService> systemServicesMap,
-            Map<String, Peer> peerMap,
-            CommonMessageProcessor msgProc
-        )
-        {
-            super(accCtx, satelliteRef);
-            ErrorCheck.ctorNotNull(StltDebugConsoleImpl.class, Satellite.class, satelliteRef);
-            ErrorCheck.ctorNotNull(StltDebugConsoleImpl.class, AccessContext.class, accCtx);
-
-            satellite = satelliteRef;
-            loadedCmds = false;
-            debugCtl = new StltDebugControlImpl(
-                satellite,
-                systemServicesMap,
-                peerMap,
-                msgProc
-            );
-        }
-
-        public void stdStreamsConsole()
-        {
-            stdStreamsConsole(CONSOLE_PROMPT);
-        }
-
-        public void loadDefaultCommands(
-            PrintStream debugOut,
-            PrintStream debugErr
-        )
-        {
-            if (!loadedCmds)
+            for (String cmdClassName : STLT_COMMAND_CLASS_LIST)
             {
-                for (String cmdClassName : STLT_COMMAND_CLASS_LIST)
-                {
-                    loadCommand(debugOut, debugErr, cmdClassName);
-                }
+                loadCommand(debugOut, debugErr, cmdClassName);
             }
-            loadedCmds = true;
         }
+        loadedCmds = true;
+    }
 
-        @Override
-        public void loadCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String cmdClassName
-        )
+    @Override
+    public void loadCommand(
+        PrintStream debugOut,
+        PrintStream debugErr,
+        String cmdClassName
+    )
+    {
+        try
         {
+            Class<? extends Object> cmdClass = Class.forName(
+                STLT_COMMAND_CLASS_PKG + "." + cmdClassName
+            );
             try
             {
-                Class<? extends Object> cmdClass = Class.forName(
-                    STLT_COMMAND_CLASS_PKG + "." + cmdClassName
-                );
-                try
+                CommonDebugCmd cmnDebugCmd = (CommonDebugCmd) cmdClass.newInstance();
+                cmnDebugCmd.commonInitialize(satellite, satellite, debugCtl, this);
+                if (cmnDebugCmd instanceof SatelliteDebugCmd)
                 {
-                    CommonDebugCmd cmnDebugCmd = (CommonDebugCmd) cmdClass.newInstance();
-                    cmnDebugCmd.commonInitialize(satellite, satellite, debugCtl, this);
-                    if (cmnDebugCmd instanceof SatelliteDebugCmd)
-                    {
-                        SatelliteDebugCmd debugCmd = (SatelliteDebugCmd) cmnDebugCmd;
-                        debugCmd.initialize(satellite, satellite, debugCtl, this);
-                    }
-
-                    // FIXME: Detect and report name collisions
-                    for (String cmdName : cmnDebugCmd.getCmdNames())
-                    {
-                        commandMap.put(cmdName.toUpperCase(), cmnDebugCmd);
-                    }
+                    SatelliteDebugCmd debugCmd = (SatelliteDebugCmd) cmnDebugCmd;
+                    debugCmd.initialize(satellite, satellite, debugCtl, this);
                 }
-                catch (IllegalAccessException | InstantiationException instantiateExc)
+
+                // FIXME: Detect and report name collisions
+                for (String cmdName : cmnDebugCmd.getCmdNames())
                 {
-                    satellite.getErrorReporter().reportError(instantiateExc);
+                    commandMap.put(cmdName.toUpperCase(), cmnDebugCmd);
                 }
             }
-            catch (ClassNotFoundException cnfExc)
+            catch (IllegalAccessException | InstantiationException instantiateExc)
             {
-                satellite.getErrorReporter().reportError(cnfExc);
+                satellite.getErrorReporter().reportError(instantiateExc);
             }
         }
-
-        @Override
-        public void unloadCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String cmdClassName
-        )
+        catch (ClassNotFoundException cnfExc)
         {
-            // TODO: Implement
+            satellite.getErrorReporter().reportError(cnfExc);
         }
     }
+
+    @Override
+    public void unloadCommand(
+        PrintStream debugOut,
+        PrintStream debugErr,
+        String cmdClassName
+    )
+    {
+        // TODO: Implement
+    }
+}

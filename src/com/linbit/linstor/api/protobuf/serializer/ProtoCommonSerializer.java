@@ -22,7 +22,8 @@ public class ProtoCommonSerializer
             .setIsPrimary(rscState.isPrimary());
 
         // volumes
-        for (VolumeState vlmState : rscState.getVolumes()) {
+        for (VolumeState vlmState : rscState.getVolumes())
+        {
             VlmStateOuterClass.VlmState.Builder vlmStateBuilder = VlmStateOuterClass.VlmState.newBuilder();
 
             vlmStateBuilder

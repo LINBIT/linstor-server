@@ -3,6 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.ResourceDefinition;
@@ -15,7 +16,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class RscDfnPojo implements ResourceDefinition.RscDfnApi {
+public class RscDfnPojo implements ResourceDefinition.RscDfnApi
+{
 
     private final UUID uuid;
     private final String name;
@@ -27,58 +29,65 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi {
     private final List<VolumeDefinition.VlmDfnApi> vlmdfns;
 
     public RscDfnPojo(
-        final UUID uuid,
-        final String name,
-        final int port,
-        final String secret,
-        final long flags,
-        final String transportType,
-        final Map<String, String> props,
-        final List<VolumeDefinition.VlmDfnApi> vlmdfns
+        final UUID uuidRef,
+        final String nameRef,
+        final int portRef,
+        final String secretRef,
+        final long flagsRef,
+        final String transportTypeRef,
+        final Map<String, String> propsRef,
+        final List<VolumeDefinition.VlmDfnApi> vlmdfnsRef
     )
     {
-        this.uuid = uuid;
-        this.name = name;
-        this.port = port;
-        this.secret = secret;
-        this.flags = flags;
-        this.transportType = transportType;
-        this.props = props;
-        this.vlmdfns = vlmdfns;
+        uuid = uuidRef;
+        name = nameRef;
+        port = portRef;
+        secret = secretRef;
+        flags = flagsRef;
+        transportType = transportTypeRef;
+        props = propsRef;
+        vlmdfns = vlmdfnsRef;
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         return uuid;
     }
 
     @Override
-    public String getResourceName() {
+    public String getResourceName()
+    {
         return name;
     }
 
     @Override
-    public int getPort() {
+    public int getPort()
+    {
         return port;
     }
 
     @Override
-    public String getSecret() {
+    public String getSecret()
+    {
         return secret;
     }
 
     @Override
-    public long getFlags() {
+    public long getFlags()
+    {
         return flags;
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         return props;
     }
 
     @Override
-    public List<VolumeDefinition.VlmDfnApi> getVlmDfnList() {
+    public List<VolumeDefinition.VlmDfnApi> getVlmDfnList()
+    {
         return vlmdfns;
     }
 

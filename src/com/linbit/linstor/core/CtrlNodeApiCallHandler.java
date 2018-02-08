@@ -62,11 +62,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializer,
-        CtrlClientSerializer clientComSerializer
+        CtrlClientSerializer clientComSerializerRef
     )
     {
         super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer);
-        this.clientComSerializer = clientComSerializer;
+        clientComSerializer = clientComSerializerRef;
     }
 
     /**
@@ -75,7 +75,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
      * In any case an {@link ApiCallRc} is returned. The list of {@link ApiCallRcEntry}s describe the success
      * or failure of the operation. <br />
      * <br />
-     * All return codes from this method are masked with {@link ApiConsts#MASK_NODE} and {@link ApiConsts#MASK_CRT}.<br />
+     * All return codes from this method are masked with {@link ApiConsts#MASK_NODE} and
+     * {@link ApiConsts#MASK_CRT}.<br />
      * <br />
      * Following return codes can be returned:
      * <ul>
@@ -84,8 +85,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
      *      change any nodes at all (controller.nodesMapLockProt)
      *  </li>
      *  <li>{@link ApiConsts#FAIL_MISSING_NETCOM} when the list of network interface apis is empty</li>
-     *  <li>{@link ApiConsts#FAIL_INVLD_NET_NAME} when the list of network interface apis contains an invalid {@link NetInterfaceName}</li>
-     *  <li>{@link ApiConsts#FAIL_INVLD_NET_ADDR} when the list of network interface apis contains an invalid {@link LsIpAddress}</li>
+     *  <li>
+     *      {@link ApiConsts#FAIL_INVLD_NET_NAME} when the list of network interface apis contains an invalid
+     *      {@link NetInterfaceName}
+     *  </li>
+     *  <li>
+     *      {@link ApiConsts#FAIL_INVLD_NET_ADDR} when the list of network interface apis contains an invalid
+     *      {@link LsIpAddress}
+     *  </li>
      *  <li>{@link ApiConsts#FAIL_MISSING_STLT_CONN} when the list of satellite connection apis is empty</li>
      *  <li>{@link ApiConsts#FAIL_INVLD_NODE_NAME} when the {@link NodeName} is invalid</li>
      *  <li>{@link ApiConsts#FAIL_INVLD_NODE_TYPE} when the {@link NodeType} is invalid</li>
@@ -174,7 +181,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                 if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                 {
-                    startConnecting(node, accCtx, client, apiCtrlAccessors);
+                    startConnecting(node, accCtx, apiCtrlAccessors);
                 }
             }
         }
@@ -396,17 +403,17 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    byte[] listNodes(int msgId, AccessContext accCtx, Peer client)
+    byte[] listNodes(int msgId, AccessContext accCtx)
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for (Node n : apiCtrlAccessors.getNodesMap().values())
+            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW); // accDeniedExc1
+            for (Node node : apiCtrlAccessors.getNodesMap().values())
             {
                 try
                 {
-                    nodes.add(n.getApiData(accCtx, null, null));
+                    nodes.add(node.getApiData(accCtx, null, null));
                     // fullSyncId and updateId null, as they are not going to be serialized by
                     // .nodeList anyways
                 }
@@ -494,14 +501,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     public static void startConnecting(
         Node node,
         AccessContext accCtx,
-        Peer client,
         ApiCtrlAccessors apiCtrlAccessors
     )
     {
         try
         {
             SatelliteConnection satelliteConnection = node.getSatelliteConnection(accCtx);
-            if (satelliteConnection != null ) {
+            if (satelliteConnection != null)
+            {
                 EncryptionType type = satelliteConnection.getEncryptionType();
                 String serviceType;
                 switch (type)
@@ -584,9 +591,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
     private NodeType asNodeType(String nodeTypeStr) throws ApiCallHandlerFailedException
     {
+        NodeType nodeType;
         try
         {
-            return NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
+            nodeType = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
         }
         catch (IllegalArgumentException illegalArgExc)
         {
@@ -603,14 +611,16 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_NODE_TYPE
             );
         }
+        return nodeType;
     }
 
     private NodeData createNode(NodeName nodeName, NodeType type)
         throws ApiCallHandlerFailedException
     {
+        NodeData node;
         try
         {
-            return NodeData.getInstance(
+            node = NodeData.getInstance(
                 currentAccCtx.get(),
                 nodeName,
                 type,
@@ -654,14 +664,16 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             throw handleSqlExc(sqlExc);
         }
+        return node;
     }
 
     private NetInterfaceName asNetInterfaceName(String netIfNameStr)
         throws ApiCallHandlerFailedException
     {
+        NetInterfaceName netInterfaceName;
         try
         {
-            return new NetInterfaceName(netIfNameStr);
+            netInterfaceName = new NetInterfaceName(netIfNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -671,6 +683,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_NET_NAME
             );
         }
+        return netInterfaceName;
     }
 
     private LsIpAddress asLsIpAddress(String ipAddrStr)
@@ -687,9 +700,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_NET_ADDR
             );
         }
+        LsIpAddress lsIpAddress;
         try
         {
-            return new LsIpAddress(ipAddrStr);
+            lsIpAddress = new LsIpAddress(ipAddrStr);
         }
         catch (InvalidIpAddressException invalidIpExc)
         {
@@ -702,13 +716,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_NET_ADDR
             );
         }
+        return lsIpAddress;
     }
 
     private TcpPortNumber asTcpPortNumber(int port)
     {
+        TcpPortNumber tcpPortNumber;
         try
         {
-            return new TcpPortNumber(port);
+            tcpPortNumber = new TcpPortNumber(port);
         }
         catch (Exception exc)
         {
@@ -718,13 +734,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_NET_PORT
             );
         }
+        return tcpPortNumber;
     }
 
     private EncryptionType asEncryptionType(String encryptionTypeStr)
     {
+        EncryptionType encryptionType;
         try
         {
-            return EncryptionType.valueOfIgnoreCase(encryptionTypeStr);
+            encryptionType = EncryptionType.valueOfIgnoreCase(encryptionTypeStr);
         }
         catch (Exception exc)
         {
@@ -734,6 +752,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_NET_TYPE
             );
         }
+        return encryptionType;
     }
 
     private void reportMissingNetInterfaces()
@@ -769,9 +788,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     )
         throws ApiCallHandlerFailedException
     {
+        NetInterfaceData netIf;
         try
         {
-            return NetInterfaceData.getInstance(
+            netIf = NetInterfaceData.getInstance(
                 currentAccCtx.get(),
                 node,
                 netName,
@@ -804,6 +824,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             throw handleSqlExc(sqlExc);
         }
+        return netIf;
     }
 
     private void createSatelliteConnection(
@@ -855,9 +876,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
     private NetInterface getNetInterface(Node node, NetInterfaceName niName)
     {
+        NetInterface netInterface;
         try
         {
-            return node.getNetInterface(currentAccCtx.get(), niName);
+            netInterface = node.getNetInterface(currentAccCtx.get(), niName);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -867,18 +889,21 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
+        return netInterface;
     }
 
     private Iterator<Resource> getRscIterator(NodeData nodeData) throws ApiCallHandlerFailedException
     {
+        Iterator<Resource> iterator;
         try
         {
-            return nodeData.iterateResources(apiCtx);
+            iterator = nodeData.iterateResources(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterator;
     }
 
     private void markDeleted(Resource rsc) throws ApiCallHandlerFailedException
@@ -904,26 +929,30 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
     private Iterator<StorPool> getStorPoolIterator(NodeData node) throws ApiCallHandlerFailedException
     {
+        Iterator<StorPool> iterateStorPools;
         try
         {
-            return node.iterateStorPools(apiCtx);
+            iterateStorPools = node.iterateStorPools(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return iterateStorPools;
     }
 
     private boolean hasVolumes(StorPool storPool) throws ApiCallHandlerFailedException
     {
+        boolean hasVolumes;
         try
         {
-            return !storPool.getVolumes(apiCtx).isEmpty();
+            hasVolumes = !storPool.getVolumes(apiCtx).isEmpty();
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
+        return hasVolumes;
     }
 
     private void delete(StorPool storPool) throws ApiCallHandlerFailedException

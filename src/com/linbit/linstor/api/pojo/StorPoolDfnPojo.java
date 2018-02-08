@@ -8,34 +8,39 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class StorPoolDfnPojo implements StorPoolDefinition.StorPoolDfnApi {
+public class StorPoolDfnPojo implements StorPoolDefinition.StorPoolDfnApi
+{
 
     private final UUID uuid;
     private final String name;
     private final Map<String, String> props;
 
     public StorPoolDfnPojo(
-        final UUID uuid,
-        final String name,
-        final Map<String, String> props)
+        final UUID uuidRef,
+        final String nameRef,
+        final Map<String, String> propsRef
+    )
     {
-        this.uuid = uuid;
-        this.name = name;
-        this.props = props;
+        uuid = uuidRef;
+        name = nameRef;
+        props = propsRef;
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         return uuid;
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return name;
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         return props;
     }
 

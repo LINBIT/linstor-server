@@ -1,8 +1,8 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.*;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
@@ -136,10 +136,11 @@ public class CtrlApiCallHandler
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
         List<SatelliteConnectionApi> satelliteConnectionApis,
-        Map<String, String> props
+        Map<String, String> propsRef
     )
     {
         ApiCallRc apiCallRc;
+        Map<String, String> props = propsRef;
         if (props == null)
         {
             props = Collections.emptyMap();
@@ -235,17 +236,19 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listNode(int msgId, AccessContext accCtx, Peer client)
+    public byte[] listNode(int msgId, AccessContext accCtx)
     {
+        byte[] listNodes;
         try
         {
             apiCtrlAccessors.getNodesMapLock().readLock().lock();
-            return nodeApiCallHandler.listNodes(msgId, accCtx, client);
+            listNodes = nodeApiCallHandler.listNodes(msgId, accCtx);
         }
         finally
         {
             apiCtrlAccessors.getNodesMapLock().readLock().unlock();
         }
+        return listNodes;
     }
 
     /**
@@ -265,24 +268,27 @@ public class CtrlApiCallHandler
         Peer client,
         String resourceName,
         Integer port,
-        String secret,
+        String secretRef,
         String transportType,
-        Map<String, String> props,
-        List<VolumeDefinition.VlmDfnApi> volDescrMap
+        Map<String, String> propsRef,
+        List<VlmDfnApi> vlmDescrMapRef
     )
     {
         ApiCallRc apiCallRc;
+        String secret = secretRef;
         if (secret == null || secret.trim().isEmpty())
         {
             secret = apiCtrlAccessors.generateSharedSecret();
         }
+        Map<String, String> props = propsRef;
         if (props == null)
         {
             props = Collections.emptyMap();
         }
-        if (volDescrMap == null)
+        List<VlmDfnApi> vlmDescrMap = vlmDescrMapRef;
+        if (vlmDescrMap == null)
         {
-            volDescrMap = Collections.emptyList();
+            vlmDescrMap = Collections.emptyList();
         }
         try
         {
@@ -295,7 +301,7 @@ public class CtrlApiCallHandler
                 secret,
                 transportType,
                 props,
-                volDescrMap
+                vlmDescrMapRef
             );
         }
         finally
@@ -384,17 +390,19 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResourceDefinition(int msgId, AccessContext accCtx, Peer client)
+    public byte[] listResourceDefinition(int msgId, AccessContext accCtx)
     {
+        byte[] listResourceDefinitions;
         try
         {
             apiCtrlAccessors.getRscDfnMapLock().readLock().lock();
-            return rscDfnApiCallHandler.listResourceDefinitions(msgId, accCtx, client);
+            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId, accCtx);
         }
         finally
         {
             apiCtrlAccessors.getRscDfnMapLock().readLock().unlock();
         }
+        return listResourceDefinitions;
     }
 
     /**
@@ -410,10 +418,11 @@ public class CtrlApiCallHandler
         AccessContext accCtx,
         Peer client,
         String rscName,
-        List<VlmDfnApi> vlmDfnApiList
+        List<VlmDfnApi> vlmDfnApiListRef
     )
     {
         ApiCallRc apiCallRc;
+        List<VlmDfnApi> vlmDfnApiList = vlmDfnApiListRef;
         if (vlmDfnApiList == null)
         {
             vlmDfnApiList = Collections.emptyList();
@@ -457,12 +466,15 @@ public class CtrlApiCallHandler
         int vlmNr,
         Long size,
         Integer minorNr,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
         ApiCallRc apiCallRc;
 
+
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();
@@ -544,11 +556,13 @@ public class CtrlApiCallHandler
         String nodeName,
         String rscName,
         List<String> flagList,
-        Map<String, String> rscPropsMap,
-        List<Volume.VlmApi> vlmApiDataList
+        Map<String, String> rscPropsMapRef,
+        List<Volume.VlmApi> vlmApiDataListRef
     )
     {
         ApiCallRc apiCallRc;
+        Map<String, String> rscPropsMap = rscPropsMapRef;
+        List<Volume.VlmApi> vlmApiDataList = vlmApiDataListRef;
         if (rscPropsMap == null)
         {
             rscPropsMap = Collections.emptyMap();
@@ -599,12 +613,13 @@ public class CtrlApiCallHandler
         UUID rscUuid,
         String nodeName,
         String rscName,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
         ApiCallRc apiCallRc;
-
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();
@@ -676,19 +691,21 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResource(int msgId, AccessContext accCtx, Peer client)
+    public byte[] listResource(int msgId, AccessContext accCtx)
     {
+        byte[] listResources;
         try
         {
             apiCtrlAccessors.getRscDfnMapLock().readLock().lock();
             apiCtrlAccessors.getNodesMapLock().readLock().lock();
-            return rscApiCallHandler.listResources(msgId, accCtx, client);
+            listResources = rscApiCallHandler.listResources(msgId, accCtx);
         }
         finally
         {
             apiCtrlAccessors.getRscDfnMapLock().readLock().unlock();
             apiCtrlAccessors.getNodesMapLock().readLock().unlock();
         }
+        return listResources;
     }
 
     /**
@@ -793,9 +810,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        if (storPoolDfnPropsMap == null)
+        Map<String, String> storPoolDfnProps = storPoolDfnPropsMap;
+        if (storPoolDfnProps == null)
         {
-            storPoolDfnPropsMap = Collections.emptyMap();
+            storPoolDfnProps = Collections.emptyMap();
         }
         try
         {
@@ -804,7 +822,7 @@ public class CtrlApiCallHandler
                 accCtx,
                 client,
                 storPoolName,
-                storPoolDfnPropsMap
+                storPoolDfnProps
             );
         }
         finally
@@ -821,8 +839,8 @@ public class CtrlApiCallHandler
      * @param client
      * @param storPoolDfnUuid optional, if given checked against persisted UUID
      * @param storPoolName required
-     * @param overrideProps optional
-     * @param deletePropKeys optional
+     * @param overridePropsRef optional
+     * @param deletePropKeysRef optional
      * @return
      */
     public ApiCallRc modifyStorPoolDfn(
@@ -830,12 +848,14 @@ public class CtrlApiCallHandler
         Peer client,
         UUID storPoolDfnUuid,
         String storPoolName,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
         ApiCallRc apiCallRc;
 
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();
@@ -897,30 +917,34 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listStorPoolDefinition(int msgId, AccessContext accCtx, Peer client)
+    public byte[] listStorPoolDefinition(int msgId, AccessContext accCtx)
     {
+        byte[] listStorPoolDefinitions;
         try
         {
             apiCtrlAccessors.getStorPoolDfnMapLock().readLock().lock();
-            return storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId, accCtx, client);
+            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId, accCtx);
         }
         finally
         {
             apiCtrlAccessors.getStorPoolDfnMapLock().readLock().unlock();
         }
+        return listStorPoolDefinitions;
     }
 
-    public byte[] listStorPool(int msgId, AccessContext accCtx, Peer client)
+    public byte[] listStorPool(int msgId, AccessContext accCtx)
     {
+        byte[] listStorPools;
         try
         {
             apiCtrlAccessors.getStorPoolDfnMapLock().readLock().lock();
-            return storPoolApiCallHandler.listStorPools(msgId, accCtx, client);
+            listStorPools = storPoolApiCallHandler.listStorPools(msgId, accCtx);
         }
         finally
         {
             apiCtrlAccessors.getStorPoolDfnMapLock().readLock().unlock();
         }
+        return listStorPools;
     }
 
     /**
@@ -944,9 +968,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        if (storPoolPropsMap == null)
+        Map<String, String> storPoolProps = storPoolPropsMap;
+        if (storPoolProps == null)
         {
-            storPoolPropsMap = Collections.emptyMap();
+            storPoolProps = Collections.emptyMap();
         }
         try
         {
@@ -959,7 +984,7 @@ public class CtrlApiCallHandler
                 nodeName,
                 storPoolName,
                 driver,
-                storPoolPropsMap
+                storPoolProps
             );
         }
         finally
@@ -979,17 +1004,24 @@ public class CtrlApiCallHandler
      * @param storPoolUuid optional, if given checked against persisted UUID
      * @param nodeName required
      * @param storPoolName required
-     * @param overrideProps optional
-     * @param deletePropKeys optional
+     * @param overridePropsRef optional
+     * @param deletePropKeysRef optional
      * @return
      */
     public ApiCallRc modifyStorPool(
-        AccessContext accCtx, Peer client, UUID storPoolUuid, String nodeName, String storPoolName,
-        Map<String, String> overrideProps, Set<String> deletePropKeys
+        AccessContext accCtx,
+        Peer client,
+        UUID storPoolUuid,
+        String nodeName,
+        String storPoolName,
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
         ApiCallRc apiCallRc;
 
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();
@@ -1080,9 +1112,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        if (nodeConnPropsMap == null)
+        Map<String, String> nodeConnProps = nodeConnPropsMap;
+        if (nodeConnProps == null)
         {
-            nodeConnPropsMap = Collections.emptyMap();
+            nodeConnProps = Collections.emptyMap();
         }
         try
         {
@@ -1092,7 +1125,7 @@ public class CtrlApiCallHandler
                 client,
                 nodeName1,
                 nodeName2,
-                nodeConnPropsMap
+                nodeConnProps
             );
         }
         finally
@@ -1110,8 +1143,8 @@ public class CtrlApiCallHandler
      * @param nodeConnUuid optional, if given checks against persisted uuid
      * @param nodeName1 required
      * @param nodeName2 required
-     * @param overrideProps optional, can be empty
-     * @param deletePropKeys optional, can be empty
+     * @param overridePropsRef optional, can be empty
+     * @param deletePropKeysRef optional, can be empty
      * @return
      */
     public ApiCallRc modifyNodeConn(
@@ -1120,10 +1153,12 @@ public class CtrlApiCallHandler
         UUID nodeConnUuid,
         String nodeName1,
         String nodeName2,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();
@@ -1208,9 +1243,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        if (rscConnPropsMap == null)
+        Map<String, String> rscConnProps = rscConnPropsMap;
+        if (rscConnProps == null)
         {
-            rscConnPropsMap = Collections.emptyMap();
+            rscConnProps = Collections.emptyMap();
         }
         try
         {
@@ -1222,7 +1258,7 @@ public class CtrlApiCallHandler
                 nodeName1,
                 nodeName2,
                 rscName,
-                rscConnPropsMap
+                rscConnProps
             );
         }
         finally
@@ -1241,8 +1277,8 @@ public class CtrlApiCallHandler
      * @param nodeName1 required
      * @param nodeName2 required
      * @param rscName required
-     * @param overrideProps optional
-     * @param deletePropKeys optional
+     * @param overridePropsRef optional
+     * @param deletePropKeysRef optional
      * @return
      */
     public ApiCallRc modifyRscConn(
@@ -1252,12 +1288,14 @@ public class CtrlApiCallHandler
         String nodeName1,
         String nodeName2,
         String rscName,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
         ApiCallRc apiCallRc;
 
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();
@@ -1351,9 +1389,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        if (vlmConnPropsMap == null)
+        Map<String, String> vlmConnProps = vlmConnPropsMap;
+        if (vlmConnProps == null)
         {
-            vlmConnPropsMap = Collections.emptyMap();
+            vlmConnProps = Collections.emptyMap();
         }
         try
         {
@@ -1366,7 +1405,7 @@ public class CtrlApiCallHandler
                 nodeName2,
                 rscName,
                 vlmNr,
-                vlmConnPropsMap
+                vlmConnProps
             );
         }
         finally
@@ -1386,8 +1425,8 @@ public class CtrlApiCallHandler
      * @param nodeName2 required
      * @param rscName required
      * @param vlmNr required
-     * @param overrideProps optional
-     * @param deletePropKeys optional
+     * @param overridePropsRef optional
+     * @param deletePropKeysRef optional
      * @return
      */
     public ApiCallRc modifyVlmConn(
@@ -1398,12 +1437,14 @@ public class CtrlApiCallHandler
         String nodeName2,
         String rscName,
         int vlmNr,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
     )
     {
         ApiCallRc apiCallRc;
 
+        Map<String, String> overrideProps = overridePropsRef;
+        Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
         {
             overrideProps = Collections.emptyMap();

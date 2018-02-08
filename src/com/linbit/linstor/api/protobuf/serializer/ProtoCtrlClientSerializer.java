@@ -22,10 +22,10 @@ import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.proto.MsgApiVersionOuterClass;
+import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
-import com.linbit.linstor.proto.MsgLstRscDfnOuterClass;
+import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
@@ -102,7 +102,7 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
     @Override
     public void writeRscDfnList(List<RscDfnApi> rscDfns, ByteArrayOutputStream baos) throws IOException
     {
-        MsgLstRscDfnOuterClass.MsgLstRscDfn.Builder msgListRscDfnsBuilder = MsgLstRscDfnOuterClass.MsgLstRscDfn.newBuilder();
+        MsgLstRscDfn.Builder msgListRscDfnsBuilder = MsgLstRscDfn.newBuilder();
 
         for (ResourceDefinition.RscDfnApi apiRscDfn: rscDfns)
         {
@@ -142,7 +142,7 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
         final String controllerInfo,
         ByteArrayOutputStream baos) throws IOException
     {
-        MsgApiVersionOuterClass.MsgApiVersion.Builder msgApiVersion = MsgApiVersionOuterClass.MsgApiVersion.newBuilder();
+        MsgApiVersion.Builder msgApiVersion = MsgApiVersion.newBuilder();
 
         // set features
         msgApiVersion.setVersion(Controller.API_VERSION);

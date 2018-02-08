@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.logging.BaseErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.ReconnectorTask;
