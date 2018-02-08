@@ -116,22 +116,16 @@ public abstract class LinStor
     private ErrorReporter errorLog;
 
     // Synchronization lock for major global changes
-    public final ReadWriteLock reconfigurationLock;
+    public ReadWriteLock reconfigurationLock;
 
     // Synchronization locks for linstor object maps
-    public final ReadWriteLock nodesMapLock;
-    public final ReadWriteLock rscDfnMapLock;
-    public final ReadWriteLock storPoolDfnMapLock;
+    public ReadWriteLock nodesMapLock;
+    public ReadWriteLock rscDfnMapLock;
+    public ReadWriteLock storPoolDfnMapLock;
 
 
     LinStor()
     {
-        // Initialize synchronization
-        reconfigurationLock = new ReentrantReadWriteLock(true);
-        nodesMapLock        = new ReentrantReadWriteLock(true);
-        rscDfnMapLock       = new ReentrantReadWriteLock(true);
-        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
-
         // Initialize system services
         timerEventSvc = new CoreTimerImpl();
 

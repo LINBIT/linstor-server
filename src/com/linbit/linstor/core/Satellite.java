@@ -184,6 +184,12 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         throws IOException
     {
         // Initialize synchronization
+        reconfigurationLock = new ReentrantReadWriteLock(true);
+        nodesMapLock        = new ReentrantReadWriteLock(true);
+        rscDfnMapLock       = new ReentrantReadWriteLock(true);
+        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
+
+        // Initialize synchronization
         stltConfLock        = new ReentrantReadWriteLock(true);
 
         // Initialize security contexts

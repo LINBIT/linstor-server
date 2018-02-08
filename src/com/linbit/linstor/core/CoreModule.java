@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
@@ -19,10 +20,17 @@ import javax.inject.Named;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class CoreModule extends AbstractModule
 {
     public static final String CONTROLLER_PROPS = "ControllerProps";
+
+    public static final String RECONFIGURATION_LOCK = "reconfigurationLock";
+    public static final String NODES_MAP_LOCK = "nodesMapLock";
+    public static final String RSC_DFN_MAP_LOCK = "rscDfnMapLock";
+    public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
 
@@ -37,6 +45,15 @@ public class CoreModule extends AbstractModule
 
         bind(StorPoolDefinitionMap.class).toInstance(new StorPoolDefinitionMapImpl());
         bind(new TypeLiteral<Map<StorPoolName, StorPoolDefinition>>() {}).to(StorPoolDefinitionMap.class);
+
+        bind(ReadWriteLock.class).annotatedWith(Names.named(RECONFIGURATION_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(NODES_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(RSC_DFN_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(STOR_POOL_DFN_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
     }
 
     @Provides

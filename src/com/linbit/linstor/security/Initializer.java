@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStorArguments;
@@ -78,6 +79,7 @@ public final class Initializer
         Injector injector = Guice.createInjector(
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
+            new LinStorModule(initCtx),
             new CoreModule(),
             new DbDriversModule(initCtx),
             new DbConnectionPoolModule()

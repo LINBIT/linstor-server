@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.SecurityModule;
@@ -348,6 +349,15 @@ public final class Controller extends LinStor implements CoreServices
     {
         try
         {
+            reconfigurationLock = injector.getInstance(
+                Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
+            nodesMapLock = injector.getInstance(
+                Key.get(ReadWriteLock.class, Names.named(CoreModule.NODES_MAP_LOCK)));
+            rscDfnMapLock = injector.getInstance(
+                Key.get(ReadWriteLock.class, Names.named(CoreModule.RSC_DFN_MAP_LOCK)));
+            storPoolDfnMapLock = injector.getInstance(
+                Key.get(ReadWriteLock.class, Names.named(CoreModule.STOR_POOL_DFN_MAP_LOCK)));
+
             reconfigurationLock.writeLock().lock();
 
             shutdownFinished = false;
@@ -374,9 +384,11 @@ public final class Controller extends LinStor implements CoreServices
             idAuthentication = injector.getInstance(Authentication.class);
             roleAuthorization = injector.getInstance(Authorization.class);
 
-            initializeSecurityObjects(errorLogRef, initCtx);
-
             ctrlConf = injector.getInstance(Key.get(Props.class, Names.named(CoreModule.CONTROLLER_PROPS)));
+
+            // Object protection loading has a hidden dependency on initializing the security objects
+            // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP)
+            initializeSecurityObjects(errorLogRef, initCtx);
 
             nodesMapProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(SecurityModule.NODES_MAP_PROT)));
@@ -389,7 +401,8 @@ public final class Controller extends LinStor implements CoreServices
             shutdownProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(SecurityModule.SHUTDOWN_PROT)));
 
-            initializeDisklessStorPoolDfn(errorLogRef, initCtx);
+            disklessStorPoolDfn = injector.getInstance(
+                Key.get(StorPoolDefinitionData.class, Names.named(LinStorModule.DISKLESS_STOR_POOL_DFN)));
 
             // Initialize tasks
             reconnectorTask = new ReconnectorTask(this);
@@ -432,48 +445,6 @@ public final class Controller extends LinStor implements CoreServices
         finally
         {
             reconfigurationLock.writeLock().unlock();
-        }
-    }
-
-    private void initializeDisklessStorPoolDfn(ErrorReporter errorLogRef, AccessContext initCtx)
-        throws AccessDeniedException
-    {
-        try
-        {
-            storPoolDfnMapLock.writeLock().lock();
-            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-
-            disklessStorPoolDfn = StorPoolDefinitionData.getInstance(
-                initCtx,
-                new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
-                transMgr,
-                true,
-                false
-            );
-
-            transMgr.commit();
-
-            storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
-            dbConnPool.returnConnection(transMgr);
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            errorLogRef.reportError(sqlExc);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ImplementationError(
-                "Invalid name for default diskless stor pool: " + invalidNameExc.invalidName,
-                invalidNameExc
-            );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
         }
     }
 
