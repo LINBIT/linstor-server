@@ -21,8 +21,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.security.DbAccessor;
+import com.linbit.linstor.security.SecurityModule;
 import org.slf4j.event.Level;
 
 import com.linbit.ImplementationError;
@@ -375,7 +378,18 @@ public final class Controller extends LinStor implements CoreServices
 
             initializeSecurityObjects(errorLogRef, initCtx);
 
-            initializeObjectProtection(initCtx);
+            ctrlConf = loadPropsContainer();
+
+            nodesMapProt = injector.getInstance(
+                Key.get(ObjectProtection.class, Names.named(SecurityModule.NODES_MAP_PROT)));
+            rscDfnMapProt = injector.getInstance(
+                Key.get(ObjectProtection.class, Names.named(SecurityModule.RSC_DFN_MAP_PROT)));
+            storPoolDfnMapProt = injector.getInstance(
+                Key.get(ObjectProtection.class, Names.named(SecurityModule.STOR_POOL_DFN_MAP_PROT)));
+            ctrlConfProt = injector.getInstance(
+                Key.get(ObjectProtection.class, Names.named(SecurityModule.CTRL_CONF_PROT)));
+            shutdownProt = injector.getInstance(
+                Key.get(ObjectProtection.class, Names.named(SecurityModule.SHUTDOWN_PROT)));
 
             initializeDisklessStorPoolDfn(errorLogRef, initCtx);
 
@@ -902,73 +916,6 @@ public final class Controller extends LinStor implements CoreServices
             "Current security level is %s",
             SecurityLevel.get().name()
         );
-    }
-
-    private void initializeObjectProtection(final AccessContext initCtx)
-        throws SQLException, InitializationException
-    {
-        TransactionMgr transMgr = null;
-        try
-        {
-            transMgr = new TransactionMgr(dbConnPool);
-
-            // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
-            nodesMapProt = ObjectProtection.getInstance(
-                initCtx,
-                ObjectProtection.buildPath(this, "nodesMap"),
-                true,
-                transMgr
-            );
-            rscDfnMapProt = ObjectProtection.getInstance(
-                initCtx,
-                ObjectProtection.buildPath(this, "rscDfnMap"),
-                true,
-                transMgr
-            );
-            storPoolDfnMapProt = ObjectProtection.getInstance(
-                initCtx,
-                ObjectProtection.buildPath(this, "storPoolMap"),
-                true,
-                transMgr
-            );
-
-            // initializing controller serial propsCon + OP
-            ctrlConf = loadPropsContainer();
-            ctrlConfProt = ObjectProtection.getInstance(
-                initCtx,
-                ObjectProtection.buildPath(this, "conf"),
-                true,
-                transMgr
-            );
-
-            shutdownProt = ObjectProtection.getInstance(
-                initCtx,
-                ObjectProtection.buildPath(this, "shutdown"),
-                true,
-                transMgr
-            );
-
-            shutdownProt.setConnection(transMgr);
-            // Set CONTROL access for the SYSTEM role on shutdown
-            shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
-
-            transMgr.commit();
-        }
-        catch (Exception exc)
-        {
-            if (transMgr != null)
-            {
-                transMgr.rollback();
-            }
-            throw new InitializationException("Failed to load object protection definitions", exc);
-        }
-        finally
-        {
-            if (transMgr != null)
-            {
-                dbConnPool.returnConnection(transMgr);
-            }
-        }
     }
 
     private void loadCoreObjects(AccessContext initCtx)
