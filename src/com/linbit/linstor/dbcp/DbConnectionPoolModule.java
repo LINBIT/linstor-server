@@ -3,11 +3,11 @@ package com.linbit.linstor.dbcp;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.AccessDeniedException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class DbConnectionPoolModule extends AbstractModule
     @Override
     protected void configure()
     {
-
+        bind(ControllerDatabase.class).to(DbConnectionPool.class);
     }
 
     private Properties loadDatabaseConfiguration(LinStorArguments args)

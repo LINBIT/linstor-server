@@ -370,9 +370,8 @@ public final class Controller extends LinStor implements CoreServices
             rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
             storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
-            initializeAuthentication(errorLogRef, initCtx);
-
-            initializeAuthorization(errorLogRef, initCtx);
+            idAuthentication = injector.getInstance(Authentication.class);
+            roleAuthorization = injector.getInstance(Authorization.class);
 
             initializeSecurityObjects(errorLogRef, initCtx);
 
@@ -881,51 +880,6 @@ public final class Controller extends LinStor implements CoreServices
             return minorNrPool.autoAllocate(
                 minorNrRangeMin,
                 minorNrRangeMax
-            );
-        }
-    }
-
-    private void initializeAuthentication(final ErrorReporter errorLogRef, final AccessContext initCtx)
-        throws InitializationException
-    {
-        errorLogRef.logInfo("Initializing authentication subsystem");
-
-        try
-        {
-            idAuthentication = new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "The initialization security context does not have the necessary " +
-                    "privileges to create the authentication subsystem",
-                accExc
-            );
-        }
-        catch (NoSuchAlgorithmException algoExc)
-        {
-            throw new InitializationException(
-                "Initialization of the authentication subsystem failed because the " +
-                    "required hashing algorithm is not supported on this platform",
-                algoExc
-            );
-        }
-    }
-
-    private void initializeAuthorization(final ErrorReporter errorLogRef, final AccessContext initCtx)
-    {
-        errorLogRef.logInfo("Initializing authorization subsystem");
-
-        try
-        {
-            roleAuthorization = new Authorization(initCtx, dbConnPool, securityDbDriver);
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "The initialization security context does not have the necessary " +
-                    "privileges to create the authorization subsystem",
-                accExc
             );
         }
     }
