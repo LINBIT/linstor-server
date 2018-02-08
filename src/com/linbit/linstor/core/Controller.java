@@ -387,7 +387,7 @@ public final class Controller extends LinStor implements CoreServices
             taskScheduleService.addTask(new GarbageCollectorTask());
 
             // Initialize the message processor
-            msgProc = new CommonMessageProcessor(this, workerThrPool);
+            msgProc = injector.getInstance(CommonMessageProcessor.class);
 
             errorLogRef.logInfo("Initializing test APIs");
             LinStor.loadApiCalls(msgProc, this, this, apiType);

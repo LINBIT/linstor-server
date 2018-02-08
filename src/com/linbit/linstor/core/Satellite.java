@@ -322,7 +322,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
                 // Initialize the message processor
                 // errorLogRef.logInfo("Initializing API call dispatcher");
-                msgProc = new CommonMessageProcessor(this, workerThrPool);
+                msgProc = new CommonMessageProcessor(errorLogRef, workerThrPool);
 
 
                 // Set CONTROL access for the SYSTEM role on shutdown
