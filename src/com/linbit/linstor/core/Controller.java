@@ -370,6 +370,8 @@ public final class Controller extends LinStor implements CoreServices
             minorNrPool = injector.getInstance(MinorNrPool.class);
             tcpPortNrPool = injector.getInstance(TcpPortPool.class);
 
+            workerThrPool = injector.getInstance(WorkerPool.class);
+
             // Initialize tasks
             reconnectorTask = new ReconnectorTask(this);
             pingTask = new PingTask(this, reconnectorTask);
@@ -382,7 +384,8 @@ public final class Controller extends LinStor implements CoreServices
 
             taskScheduleService.addTask(new GarbageCollectorTask());
 
-            initializeWorkerThreadPool(initCtx);
+            // Initialize the message processor
+            msgProc = new CommonMessageProcessor(this, workerThrPool);
 
             errorLogRef.logInfo("Initializing test APIs");
             LinStor.loadApiCalls(msgProc, this, this, apiType);
@@ -908,33 +911,6 @@ public final class Controller extends LinStor implements CoreServices
     public void reloadMinorNrRange()
     {
         minorNrPool.reloadRange();
-    }
-
-    private void initializeWorkerThreadPool(final AccessContext initCtx)
-    {
-        try
-        {
-            int cpuCount = getCpuCount();
-            int thrCount = MathUtils.bounds(MIN_WORKER_COUNT, cpuCount, MAX_CPU_COUNT);
-            int qSize = thrCount * getWorkerQueueFactor();
-            qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-            setWorkerThreadCount(initCtx, thrCount);
-            setWorkerQueueSize(initCtx, qSize);
-            workerThrPool = WorkerPool.initialize(
-                thrCount, qSize, true, "MainWorkerPool", getErrorReporter(),
-                dbConnPool
-            );
-
-            // Initialize the message processor
-            msgProc = new CommonMessageProcessor(this, workerThrPool);
-        }
-        catch (AccessDeniedException accessDeniedException)
-        {
-            throw new ImplementationError(
-                "Failed to initialize the worker thread pool",
-                accessDeniedException
-            );
-        }
     }
 
     private void initNetComServices(
