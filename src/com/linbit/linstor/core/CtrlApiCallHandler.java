@@ -278,7 +278,7 @@ public class CtrlApiCallHandler
         String secret = secretRef;
         if (secret == null || secret.trim().isEmpty())
         {
-            secret = apiCtrlAccessors.generateSharedSecret();
+            secret = SharedSecretGenerator.generateSharedSecret();
         }
         Map<String, String> props = propsRef;
         if (props == null)

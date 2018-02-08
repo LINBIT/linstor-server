@@ -41,7 +41,6 @@ public interface ApiCtrlAccessors
     Map<ResourceName, ResourceDefinition> getRscDfnMap();
     ObjectProtection getRscDfnMapProtection();
     ReadWriteLock getRscDfnMapLock();
-    String generateSharedSecret();
 
     short getDefaultPeerCount();
     int getDefaultAlStripes();

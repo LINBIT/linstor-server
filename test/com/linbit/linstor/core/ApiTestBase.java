@@ -191,11 +191,6 @@ public abstract class ApiTestBase extends DerbyBase
         return new SatelliteConnectionApiTestImpl(netIfName, port, encryptionType);
     }
 
-    public String generateSharedSecret()
-    {
-        return testApiCtrlAccessors.generateSharedSecret();
-    }
-
     protected void expectRc(long index, long expectedRc, RcEntry rcEntry)
     {
         if (rcEntry.getReturnCode() != expectedRc)

@@ -95,11 +95,6 @@ public final class Controller extends LinStor implements CoreServices
     // System module information
     public static final String MODULE = "Controller";
 
-    // Random data size for automatic DRBD shared secret generation
-    // The random data will be Base64 encoded, so the length of the
-    // shared secret string will be (SECRET_LEN + 2) / 3 * 4
-    private static final int DRBD_SHARED_SECRET_SIZE = 15;
-
     // Maximum time to wait for services to shut down
     private static final long SVC_SHUTDOWN_WAIT_TIME = 10000L;
 
@@ -767,19 +762,6 @@ public final class Controller extends LinStor implements CoreServices
         // routines or from another task that already runs on the main worker pool
         // can potentially deadlock if the worker pool's queue is full
         connectRunnable.run();
-    }
-
-    /**
-     * Generates a random value for a DRBD resource's shared secret
-     *
-     * @return a 20 character long random String
-     */
-    public String generateSharedSecret()
-    {
-        byte[] randomBytes = new byte[DRBD_SHARED_SECRET_SIZE];
-        new SecureRandom().nextBytes(randomBytes);
-        String secret = Base64.encode(randomBytes);
-        return secret;
     }
 
     public MetaDataApi getMetaDataApi()

@@ -119,12 +119,6 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     }
 
     @Override
-    public String generateSharedSecret()
-    {
-        return controller.generateSharedSecret();
-    }
-
-    @Override
     public void connectSatellite(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node)
     {
         controller.connectSatellite(inetSocketAddress, tcpConnector, node);
