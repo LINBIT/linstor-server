@@ -93,7 +93,7 @@ public abstract class LinStor
     // ============================================================
     // Core system services
     //
-    private CoreTimer timerEventSvc;
+    protected CoreTimer timerEventSvc;
 
     // Database drivers
     protected static DbAccessor securityDbDriver;
@@ -116,9 +116,6 @@ public abstract class LinStor
 
     LinStor()
     {
-        // Initialize system services
-        timerEventSvc = new CoreTimerImpl();
-
         // Initialize system variables
         cpuCount = Runtime.getRuntime().availableProcessors();
 

@@ -224,10 +224,6 @@ public final class Controller extends LinStor implements CoreServices
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
-        {
-            CoreTimer timer = super.getTimer();
-            systemServicesMap.put(timer.getInstanceName(), timer);
-        }
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -332,6 +328,12 @@ public final class Controller extends LinStor implements CoreServices
 
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
+
+            timerEventSvc = injector.getInstance(CoreTimer.class);
+            {
+                CoreTimer timer = super.getTimer();
+                systemServicesMap.put(timer.getInstanceName(), timer);
+            }
 
             securityDbDriver = injector.getInstance(DbAccessor.class);
             persistenceDbDriver = injector.getInstance(DatabaseDriver.class);

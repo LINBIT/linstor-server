@@ -49,6 +49,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.timer.CoreTimerImpl;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -184,6 +185,9 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
         throws IOException
     {
+        // Initialize system services
+        timerEventSvc = new CoreTimerImpl();
+
         // Initialize synchronization
         reconfigurationLock = new ReentrantReadWriteLock(true);
         nodesMapLock        = new ReentrantReadWriteLock(true);

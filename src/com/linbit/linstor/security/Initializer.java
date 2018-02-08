@@ -16,6 +16,7 @@ import com.linbit.linstor.dbdrivers.DbDriversModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.timer.CoreTimerModule;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -81,6 +82,7 @@ public final class Initializer
         Injector injector = Guice.createInjector(
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
+            new CoreTimerModule(),
             new LinbitModule(),
             new LinStorModule(initCtx),
             new CoreModule(),
