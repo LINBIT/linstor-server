@@ -109,8 +109,6 @@ public final class Controller extends LinStor implements CoreServices
     // Maximum time to wait for services to shut down
     private static final long SVC_SHUTDOWN_WAIT_TIME = 10000L;
 
-    private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
-
     private static final String PROPSCON_KEY_NETCOM = "netcom";
     private static final String PROPSCON_KEY_NETCOM_BINDADDR = "bindaddress";
     private static final String PROPSCON_KEY_NETCOM_PORT = "port";
@@ -378,7 +376,7 @@ public final class Controller extends LinStor implements CoreServices
 
             initializeSecurityObjects(errorLogRef, initCtx);
 
-            ctrlConf = loadPropsContainer();
+            ctrlConf = injector.getInstance(Key.get(Props.class, Names.named(CoreModule.CONTROLLER_PROPS)));
 
             nodesMapProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(SecurityModule.NODES_MAP_PROT)));
@@ -1130,27 +1128,6 @@ public final class Controller extends LinStor implements CoreServices
                 accessDeniedException
             );
         }
-    }
-
-    private Props loadPropsContainer()
-        throws SQLException
-    {
-        Props propsContainer;
-        TransactionMgr transMgr = null;
-        try
-        {
-            transMgr = new TransactionMgr(dbConnPool);
-            propsContainer = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
-            transMgr.commit();
-        }
-        finally
-        {
-            if (transMgr != null)
-            {
-                dbConnPool.returnConnection(transMgr);
-            }
-        }
-        return propsContainer;
     }
 
     private void initNetComServices(
