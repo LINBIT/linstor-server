@@ -1,8 +1,12 @@
 GIT = git
 MAKE = make
 
+GENRES=./generated-resources
+VERSINFO=$(GENRES)/version-info.properties
+
 # echo v0.1 to get it started
 VERSION := $(shell echo $(shell git describe --tags || echo "v0.1") | sed -e 's/^v//;s/^[^0-9]*//;s/-/./;s/\(.*\)-g/\1-/')
+GITHASH := $(shell git rev-parse HEAD)
 
 .PHONY: .filelist
 .filelist:
@@ -13,8 +17,9 @@ VERSION := $(shell echo $(shell git describe --tags || echo "v0.1") | sed -e 's/
 	@$(GIT) submodule foreach --quiet 'git ls-files | sed -e "s,^,$$path/,"' | \
 		grep -v "gitignore\|gitmodules" >> .filelist
 	@[ -s .filelist ] # assert there is something in .filelist now
-	@echo .filelist >> .filelist ; \
-		echo "./.filelist updated."
+	@echo $(VERSINFO) >> .filelist
+	@echo .filelist >> .filelist
+	echo "./.filelist updated."
 
 
 tgz:
@@ -48,5 +53,11 @@ check-all-committed:
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
 
-tarball: check-all-committed check-submods .filelist
+tarball: check-all-committed check-submods versioninfo .filelist
 	$(MAKE) tgz
+
+versioninfo:
+	mkdir $(GENRES) || true
+	echo "version=$(VERSION)" > $(VERSINFO)
+	echo "git.commit.id=$(GITHASH)" >> $(VERSINFO)
+	echo "build.time=$$(date -u)" >> $(VERSINFO)
