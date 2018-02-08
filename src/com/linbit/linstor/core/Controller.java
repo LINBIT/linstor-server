@@ -17,7 +17,6 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.inject.Injector;
@@ -25,6 +24,8 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.numberpool.MinorNrPool;
+import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.SecurityModule;
 import org.slf4j.event.Level;
@@ -36,16 +37,13 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.WorkerPool;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.InitializationException;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -53,8 +51,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.debug.DebugConsole;
@@ -67,7 +63,6 @@ import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -89,8 +84,6 @@ import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.linstor.numberpool.BitmapPool;
-import com.linbit.linstor.numberpool.NumberPool;
 
 /**
  * linstor controller prototype
@@ -124,8 +117,6 @@ public final class Controller extends LinStor implements CoreServices
     private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
     static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
-    static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
-    static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
 
     public static final int API_VERSION = 0;
 
@@ -134,12 +125,6 @@ public final class Controller extends LinStor implements CoreServices
     public static final int DEFAULT_AL_STRIPES = 1;
     public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
 
-    // we will load the ranges from the database, but if the database contains
-    // invalid ranges (e.g. -1 for port), we will fall back to these defaults
-    private static final int DEFAULT_TCP_PORT_MIN = 7000;
-    private static final int DEFAULT_TCP_PORT_MAX = 7999;
-    private static final int DEFAULT_MINOR_NR_MIN = 1000;
-    private static final int DEFAULT_MINOR_NR_MAX = 49999;
     public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
 
     private final Injector injector;
@@ -215,13 +200,8 @@ public final class Controller extends LinStor implements CoreServices
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
     ObjectProtection storPoolDfnMapProt;
 
-    final NumberPool tcpPortNrPool;
-    final NumberPool minorNrPool;
-
-    private int tcpPortRangeMin;
-    private int tcpPortRangeMax;
-    private int minorNrRangeMin;
-    private int minorNrRangeMax;
+    TcpPortPool tcpPortNrPool;
+    MinorNrPool minorNrPool;
 
     private ApiCtrlAccessorImpl apiCtrlAccessors;
 
@@ -269,13 +249,6 @@ public final class Controller extends LinStor implements CoreServices
 
         taskScheduleService = new TaskScheduleService(this);
         systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
-
-        // the corresponding protectionObjects will be initialized in the initialize method
-        // after the initialization of the database
-
-        // Initialize the number caches
-        tcpPortNrPool = new BitmapPool(TcpPortNumber.PORT_NR_MAX + 1);
-        minorNrPool = new BitmapPool(MinorNumber.MINOR_NR_MAX + 1);
 
         apiCtrlAccessors = new ApiCtrlAccessorImpl(this);
 
@@ -404,6 +377,9 @@ public final class Controller extends LinStor implements CoreServices
             disklessStorPoolDfn = injector.getInstance(
                 Key.get(StorPoolDefinitionData.class, Names.named(LinStorModule.DISKLESS_STOR_POOL_DFN)));
 
+            minorNrPool = injector.getInstance(MinorNrPool.class);
+            tcpPortNrPool = injector.getInstance(TcpPortPool.class);
+
             // Initialize tasks
             reconnectorTask = new ReconnectorTask(this);
             pingTask = new PingTask(this, reconnectorTask);
@@ -412,7 +388,6 @@ public final class Controller extends LinStor implements CoreServices
 
             errorLogRef.logInfo("Core objects load from database is in progress");
             loadCoreObjects(initCtx);
-            initNumberPools(initCtx);
             errorLogRef.logInfo("Core objects load from database completed");
 
             taskScheduleService.addTask(new GarbageCollectorTask());
@@ -846,25 +821,12 @@ public final class Controller extends LinStor implements CoreServices
 
     public int getFreeTcpPort() throws ExhaustedPoolException
     {
-        synchronized (tcpPortNrPool)
-        {
-            return tcpPortNrPool.autoAllocate(
-                tcpPortRangeMin,
-                tcpPortRangeMax
-            );
-        }
+        return tcpPortNrPool.getFreeTcpPort();
     }
-
 
     public int getFreeMinorNr() throws ExhaustedPoolException
     {
-        synchronized (minorNrPool)
-        {
-            return minorNrPool.autoAllocate(
-                minorNrRangeMin,
-                minorNrRangeMax
-            );
-        }
+        return minorNrPool.getFreeMinorNr();
     }
 
     private void initializeSecurityObjects(final ErrorReporter errorLogRef, final AccessContext initCtx)
@@ -953,125 +915,14 @@ public final class Controller extends LinStor implements CoreServices
         }
     }
 
-    /**
-     * Initializes the number allocation caches
-     *
-     * Caller must have write-locked the reconfigurationLock
-     */
-    private void initNumberPools(AccessContext initCtx)
-    {
-        try
-        {
-            reloadMinorNrRange();
-            reloadTcpPortRange();
-
-            for (ResourceDefinition curRscDfn : rscDfnMap.values())
-            {
-                TcpPortNumber portNr = curRscDfn.getPort(initCtx);
-                tcpPortNrPool.allocate(portNr.value);
-                Iterator<VolumeDefinition> vlmIter = curRscDfn.iterateVolumeDfn(initCtx);
-                while (vlmIter.hasNext())
-                {
-                    VolumeDefinition curVlmDfn = vlmIter.next();
-                    MinorNumber minorNr = curVlmDfn.getMinorNr(initCtx);
-                    minorNrPool.allocate(minorNr.value);
-                }
-            }
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "An " + accExc.getClass().getSimpleName() + " exception was generated " +
-                "during number allocation cache initialization",
-                accExc
-            );
-        }
-    }
-
     public void reloadTcpPortRange()
     {
-        String strRange;
-        Matcher matcher;
-        boolean useDefaults;
-        try
-        {
-            strRange = ctrlConf.getProp(PROPSCON_KEY_TCP_PORT_RANGE);
-            useDefaults = true;
-            if (strRange != null)
-            {
-                matcher = RANGE_PATTERN.matcher(strRange);
-                if (matcher.find())
-                {
-                    try
-                    {
-                        tcpPortRangeMin = Integer.parseInt(matcher.group("min"));
-                        tcpPortRangeMax = Integer.parseInt(matcher.group("max"));
-
-                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMin);
-                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMax);
-                        useDefaults = false;
-                    }
-                    catch (ValueOutOfRangeException | NumberFormatException ignored)
-                    {
-                    }
-                }
-            }
-            if (useDefaults)
-            {
-                tcpPortRangeMin = DEFAULT_TCP_PORT_MIN;
-                tcpPortRangeMax = DEFAULT_TCP_PORT_MAX;
-            }
-        }
-        catch (InvalidKeyException invldKeyExc)
-        {
-            throw new ImplementationError(
-                "Controller configuration key was invalid: " + invldKeyExc.invalidKey,
-                invldKeyExc
-            );
-        }
+        tcpPortNrPool.reloadRange();
     }
 
     public void reloadMinorNrRange()
     {
-        String strRange;
-        try
-        {
-            strRange = ctrlConf.getProp(PROPSCON_KEY_MINOR_NR_RANGE);
-            Matcher matcher;
-            boolean useDefaults = true;
-
-            if (strRange != null)
-            {
-                matcher = RANGE_PATTERN.matcher(strRange);
-                if (matcher.find())
-                {
-                    try
-                    {
-                        minorNrRangeMin = Integer.parseInt(matcher.group("min"));
-                        minorNrRangeMax = Integer.parseInt(matcher.group("max"));
-
-                        MinorNumber.minorNrCheck(minorNrRangeMin);
-                        MinorNumber.minorNrCheck(minorNrRangeMax);
-                        useDefaults = false;
-                    }
-                    catch (ValueOutOfRangeException | NumberFormatException ignored)
-                    {
-                    }
-                }
-            }
-            if (useDefaults)
-            {
-                minorNrRangeMin = DEFAULT_MINOR_NR_MIN;
-                minorNrRangeMax = DEFAULT_MINOR_NR_MAX;
-            }
-        }
-        catch (InvalidKeyException invldKeyExc)
-        {
-            throw new ImplementationError(
-                "Controller configuration key was invalid: " + invldKeyExc.invalidKey,
-                invldKeyExc
-            );
-        }
+        minorNrPool.reloadRange();
     }
 
     private void initializeWorkerThreadPool(final AccessContext initCtx)

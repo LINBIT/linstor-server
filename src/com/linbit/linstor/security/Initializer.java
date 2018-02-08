@@ -14,6 +14,7 @@ import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DbDriversModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -82,7 +83,8 @@ public final class Initializer
             new LinStorModule(initCtx),
             new CoreModule(),
             new DbDriversModule(initCtx),
-            new DbConnectionPoolModule()
+            new DbConnectionPoolModule(),
+            new NumberPoolModule(initCtx)
         );
 
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX, cArgs);

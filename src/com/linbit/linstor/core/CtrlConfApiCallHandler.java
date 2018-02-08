@@ -8,6 +8,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.Builder;
+import com.linbit.linstor.numberpool.MinorNrPoolImpl;
+import com.linbit.linstor.numberpool.TcpPortPoolImpl;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -47,10 +49,10 @@ public class CtrlConfApiCallHandler
             }
             switch (fullKey)
             {
-                case Controller.PROPSCON_KEY_TCP_PORT_RANGE:
+                case TcpPortPoolImpl.PROPSCON_KEY_TCP_PORT_RANGE:
                     setTcpPort(accCtx, key, namespace, value, apiCallRc);
                     break;
-                case Controller.PROPSCON_KEY_MINOR_NR_RANGE:
+                case MinorNrPoolImpl.PROPSCON_KEY_MINOR_NR_RANGE:
                     setMinorNr(accCtx, key, namespace, value, apiCallRc);
                     break;
                 // TODO: check for other properties
@@ -161,10 +163,10 @@ public class CtrlConfApiCallHandler
             {
                 switch (fullKey)
                 {
-                    case Controller.PROPSCON_KEY_TCP_PORT_RANGE:
+                    case TcpPortPoolImpl.PROPSCON_KEY_TCP_PORT_RANGE:
                         apiCtrlAccessors.reloadTcpPortRange();
                         break;
-                    case Controller.PROPSCON_KEY_MINOR_NR_RANGE:
+                    case MinorNrPoolImpl.PROPSCON_KEY_MINOR_NR_RANGE:
                         apiCtrlAccessors.reloadMinorNrRange();
                         break;
                     // TODO: check for other properties
