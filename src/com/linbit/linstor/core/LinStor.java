@@ -435,6 +435,8 @@ public abstract class LinStor
      * @param directoryPath
      * @param pkgsToload
      */
+    @SuppressWarnings("checkstyle:descendanttoken")
+    // checkstyle complains about the return of the inner-class-method
     private static int loadApiCallsFromDirectory(
         final CommonMessageProcessor msgProc,
         final LinStor componentRef,

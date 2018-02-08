@@ -461,41 +461,41 @@ INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROL
     VALUES ('/sys/controller/nodesMap', 'SYSTEM', 'SYSADM', 'SHARED');
 -- ACL: Nodes map
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/nodesMap', 'SYSTEM', 15);
+    VALUES ('/sys/controller/nodesMap', 'SYSTEM', 15);
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/nodesMap', 'USER', 7);
+    VALUES ('/sys/controller/nodesMap', 'USER', 7);
 
 -- Owner - Resource definition map
 INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME)
     VALUES ('/sys/controller/rscDfnMap', 'SYSTEM', 'SYSADM', 'SHARED');
 -- ACL: Resource definition map
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/rscDfnMap', 'SYSTEM', 15);
+    VALUES ('/sys/controller/rscDfnMap', 'SYSTEM', 15);
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/rscDfnMap', 'USER', 7);
+    VALUES ('/sys/controller/rscDfnMap', 'USER', 7);
 
 -- Owner - Storage pool map
 INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME)
     VALUES ('/sys/controller/storPoolMap', 'SYSTEM', 'SYSADM', 'SHARED');
 -- ACL: Storage pool map
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/storPoolMap', 'SYSTEM', 15);
+    VALUES ('/sys/controller/storPoolMap', 'SYSTEM', 15);
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/storPoolMap', 'USER', 7);
+    VALUES ('/sys/controller/storPoolMap', 'USER', 7);
 
 -- Owner - System configuration properties
 INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME)
     VALUES ('/sys/controller/conf', 'SYSTEM', 'SYSADM', 'SYSTEM');
 -- ACL: System configuration properties
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/conf', 'SYSTEM', 15);
+    VALUES ('/sys/controller/conf', 'SYSTEM', 15);
 
 -- Owner - System shutdown request
 INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME)
     VALUES ('/sys/controller/shutdown', 'SYSTEM', 'SYSADM', 'SYSTEM');
 -- ACL: System shutdown request
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/shutdown', 'SYSTEM', 15);
+    VALUES ('/sys/controller/shutdown', 'SYSTEM', 15);
 
 
 -- Default storage pool definition
@@ -525,16 +525,16 @@ INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
 -- TEST ENTRIES FOR TESTING WITH ANONYMOUS CONNECTIONS (ID: PUBLIC / ROLE: PUBLIC / DOMAIN: PUBLIC)
 -- Allow inserting and deleting nodes
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/nodesMap', 'PUBLIC', 7);
+    VALUES ('/sys/controller/nodesMap', 'PUBLIC', 7);
 
 -- Allow inserting and deleting resource definitions
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/rscDfnMap', 'PUBLIC', 7);
+    VALUES ('/sys/controller/rscDfnMap', 'PUBLIC', 7);
 
 -- Allow inserting and deleting storage pool definitions
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/storPoolMap', 'PUBLIC', 7);
+    VALUES ('/sys/controller/storPoolMap', 'PUBLIC', 7);
 
 -- Allow viewing the system configuration
 INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)
-	VALUES ('/sys/controller/conf', 'PUBLIC', 1);
+    VALUES ('/sys/controller/conf', 'PUBLIC', 1);

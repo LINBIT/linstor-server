@@ -250,7 +250,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             Collection<StorPool> values = new ArrayList<>(storPools.values());
             for(StorPool storPool : values)
             {
-                storPool.delete(accCtx);;
+                storPool.delete(accCtx);
             }
 
             objProt.delete(accCtx);

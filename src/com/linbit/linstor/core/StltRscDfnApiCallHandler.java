@@ -27,7 +27,8 @@ class StltRscDfnApiCallHandler
     )
     {
         satelliteRef.getErrorReporter().logInfo("Primary Resource %s", rscNameStr);
-        try {
+        try
+        {
             ResourceName rscName = new ResourceName(rscNameStr);
 
             ResourceDefinition rscDfn = satelliteRef.rscDfnMap.get(rscName);
@@ -40,8 +41,11 @@ class StltRscDfnApiCallHandler
 
                 satelliteRef.getDeviceManager().getUpdateTracker().checkResource(rscUuid, rscName);
             }
-        } catch (InvalidNameException _ignore) {
-        } catch (AccessDeniedException accExc) {
+        }
+        catch (InvalidNameException ignored)
+        {
+        }
+        catch (AccessDeniedException accExc) {
             satelliteRef.getErrorReporter().reportError(
                 Level.ERROR,
                 new ImplementationError(

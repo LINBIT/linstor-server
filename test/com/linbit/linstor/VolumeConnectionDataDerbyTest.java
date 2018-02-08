@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -85,10 +84,15 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_VOLUME_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_VOLUME_CONNECTIONS);
+        assertEquals(
+            TBL_VOLUME_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
+            5,
+            TBL_COL_COUNT_VOLUME_CONNECTIONS
+        );
 
         transMgr = new TransactionMgr(getConnection());
 

@@ -375,6 +375,7 @@ public class ProtobufIO
     private class ProtobufIOWorker implements Runnable
     {
         @Override
+        @SuppressWarnings("DescendantToken")
         public void run()
         {
             StringBuilder sb = new StringBuilder();
@@ -433,40 +434,38 @@ public class ProtobufIO
                             .append(apiCall)
                             .append("\n");
                     }
-                    if (apiCall.equals(ApiConsts.API_VERSION))
+                    if (!apiCall.equals(ApiConsts.API_VERSION))
                     {
-                        continue; // we are using the most current version :)
+                        while (bais.available() > 0)
+                        {
+                            MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
+                            long retCode = response.getRetCode();
+                            String message = response.getMessageFormat();
+                            String cause = response.getCauseFormat();
+                            String correction = response.getCorrectionFormat();
+                            String details = response.getDetailsFormat();
+                            Map<String, String> objRefsMap = asMap(response.getObjRefsList());
+                            Map<String, String> variablesMap = asMap(response.getVariablesList());
+
+                            callback(protoHeader.getMsgId(), retCode, message, cause, correction,
+                                details, objRefsMap, variablesMap);
+
+                            formatMessage(
+                                sb,
+                                protoHeader.getMsgId(),
+                                responseIdx++,
+                                retCode,
+                                message,
+                                cause,
+                                correction,
+                                details,
+                                objRefsMap,
+                                variablesMap
+                            );
+                            sb.append("\n");
+                        }
+                        println(sb.toString());
                     }
-
-                    while (bais.available() > 0)
-                    {
-                        MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
-                        long retCode = response.getRetCode();
-                        String message = response.getMessageFormat();
-                        String cause = response.getCauseFormat();
-                        String correction = response.getCorrectionFormat();
-                        String details = response.getDetailsFormat();
-                        Map<String, String> objRefsMap = asMap(response.getObjRefsList());
-                        Map<String, String> variablesMap = asMap(response.getVariablesList());
-
-                        callback(protoHeader.getMsgId(), retCode, message, cause, correction,
-                            details, objRefsMap, variablesMap);
-
-                        formatMessage(
-                            sb,
-                            protoHeader.getMsgId(),
-                            responseIdx++,
-                            retCode,
-                            message,
-                            cause,
-                            correction,
-                            details,
-                            objRefsMap,
-                            variablesMap
-                        );
-                        sb.append("\n");
-                    }
-                    println(sb.toString());
                 }
                 catch (IOException ioExc)
                 {

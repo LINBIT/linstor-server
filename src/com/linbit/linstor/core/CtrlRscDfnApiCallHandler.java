@@ -420,11 +420,13 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 );
             }
         }
-        catch (InvalidKeyException | InvalidValueException | AccessDeniedException _ignore)  { }
+        catch (InvalidKeyException | InvalidValueException | AccessDeniedException ignored)
+        {
+        }
         catch (SQLException sqlExc)
         {
             String errorMessage = String.format(
-                "A database error occured while trying to rollback the deletion of "+
+                "A database error occured while trying to rollback the deletion of " +
                     "resource definition '%s'.",
                 rscNameStr
             );

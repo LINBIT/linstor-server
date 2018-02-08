@@ -97,25 +97,25 @@ public class RecreateDb
     {
         System.out.println("running sql file: " + sqlFilePath);
         StringBuilder cmdBuilder = new StringBuilder();
-        for (String line; (line = br.readLine()) != null;)
+        for (String line = br.readLine(); line != null; line = br.readLine())
         {
-            line = line.trim();
-            if (!line.startsWith("--"))
+            String trimmedLine = line.trim();
+            if (!trimmedLine.startsWith("--"))
             {
-                cmdBuilder.append("\n").append(line);
-                if (line.endsWith(";"))
+                cmdBuilder.append("\n").append(trimmedLine);
+                if (trimmedLine.endsWith(";"))
                 {
-                    cmdBuilder.setLength(cmdBuilder.length()-1); // cut the ;
+                    cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
                     String cmd = cmdBuilder.toString();
                     cmdBuilder.setLength(0);
                     try (PreparedStatement stmt = con.prepareStatement(cmd))
                     {
                         stmt.executeUpdate();
                     }
-                    catch (Throwable t)
+                    catch (Throwable throwable)
                     {
                         System.err.println(cmd);
-                        throw t;
+                        throw throwable;
                     }
                 }
             }

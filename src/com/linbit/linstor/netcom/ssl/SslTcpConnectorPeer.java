@@ -174,6 +174,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      * @return true if and only if the handshake is finished.
      * @throws IOException
      */
+    @SuppressWarnings("checkstyle:descendanttoken")
+    // checkstyle complains about multiple defaults inside switch (although there are nested switches)
     boolean doHandshake(
         final SocketChannel socketChannel,
         final SSLEngine engine

@@ -7,6 +7,8 @@ import static com.linbit.linstor.security.AccessType.VIEW;
 import static com.linbit.linstor.security.Privilege.*;
 import static org.junit.Assert.*;
 
+import com.linbit.ImplementationError;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,6 +70,11 @@ public class AccessControlListTest
                 case CONTROL:
                     expectException &= !accCtx.privEffective.hasPrivileges(PRIV_OBJ_CONTROL);
                     break;
+                default:
+                    throw new ImplementationError(
+                        "AccessType-enum has been extended without extending this switch",
+                        null
+                    );
             }
 
             if (expectException)

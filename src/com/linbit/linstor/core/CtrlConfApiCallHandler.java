@@ -37,7 +37,7 @@ public class CtrlConfApiCallHandler
             apiCtrlAccessors.getCtrlConfProtection().requireAccess(accCtx, AccessType.CHANGE);
 
             String fullKey;
-            if (namespace != null && namespace.trim() != "")
+            if (namespace != null && !"".equals(namespace.trim()))
             {
                 fullKey = namespace + "/" + key;
             }
@@ -54,6 +54,8 @@ public class CtrlConfApiCallHandler
                     setMinorNr(accCtx, key, namespace, value, apiCallRc);
                     break;
                 // TODO: check for other properties
+                default:
+                    // ignore - for now
             }
         }
         catch (Exception exc)
@@ -166,6 +168,8 @@ public class CtrlConfApiCallHandler
                         apiCtrlAccessors.reloadMinorNrRange();
                         break;
                     // TODO: check for other properties
+                    default:
+                        // ignore - for now
                 }
             }
         }

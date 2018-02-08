@@ -65,15 +65,23 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
         OutputData vgsOut = callChecked("zpool", "get", "size", "-Hp", poolName);
         String stringSize = new String(vgsOut.stdoutData).trim();
         String[] lines = stringSize.split("\n");
+
+        Long ret = null;
+
         for (String line : lines)
         {
             String[] columns = line.split("\t"); // forced by -p (parsable) option
             if (columns[0].equals(poolName))
             {
-                return  Long.parseLong(columns[2]) >> 10; // convert to kiB
+                ret = Long.parseLong(columns[2]) >> 10; // convert to kiB
+                break;
             }
         }
-        throw new RuntimeException("Could not find zpool: " + poolName);
+        if (ret == null)
+        {
+            throw new RuntimeException("Could not find zpool: " + poolName);
+        }
+        return ret;
     }
 
     @Override

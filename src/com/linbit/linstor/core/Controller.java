@@ -1204,14 +1204,14 @@ public final class Controller extends LinStor implements CoreServices
                 {
                     try
                     {
-                        tcpPortRangeMin= Integer.parseInt(matcher.group("min"));
+                        tcpPortRangeMin = Integer.parseInt(matcher.group("min"));
                         tcpPortRangeMax = Integer.parseInt(matcher.group("max"));
 
                         TcpPortNumber.tcpPortNrCheck(tcpPortRangeMin);
                         TcpPortNumber.tcpPortNrCheck(tcpPortRangeMax);
                         useDefaults = false;
                     }
-                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    catch (ValueOutOfRangeException | NumberFormatException ignored)
                     {
                     }
                 }
@@ -1254,7 +1254,7 @@ public final class Controller extends LinStor implements CoreServices
                         MinorNumber.minorNrCheck(minorNrRangeMax);
                         useDefaults = false;
                     }
-                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    catch (ValueOutOfRangeException | NumberFormatException ignored)
                     {
                     }
                 }

@@ -19,7 +19,9 @@ public class StringUtils {
         StringBuilder sb = new StringBuilder();
         Iterator<?> iter = col.iterator();
         if (iter.hasNext())
+        {
             sb.append(iter.next().toString());
+        }
         while (iter.hasNext()) {
             sb.append(delim);
             sb.append(iter.next().toString());

@@ -184,7 +184,7 @@ public class DbConnectionPool implements ControllerDatabase
                         ret |= !conn.isClosed();
                         conn.close();
                     }
-                    catch (SQLException e)
+                    catch (SQLException ignored)
                     {
                     }
                 }

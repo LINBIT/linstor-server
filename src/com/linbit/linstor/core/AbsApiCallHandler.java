@@ -273,20 +273,25 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final String getAction(String crtAction, String modAction, String delAction, ApiCallType apiCallType)
     {
+        String retStr;
         switch (apiCallType)
         {
             case CREATE:
-                return crtAction;
+                retStr = crtAction;
+                break;
             case DELETE:
-                return delAction;
+                retStr = delAction;
+                break;
             case MODIFY:
-                return modAction;
+                retStr = modAction;
+                break;
             default:
                 throw new ImplementationError(
                     "Unknown api call type: " + apiCallType,
                     null
                 );
         }
+        return retStr;
     }
 
     protected final NodeData loadNode(String nodeNameStr, boolean failIfNull) throws ApiCallHandlerFailedException

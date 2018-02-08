@@ -221,7 +221,7 @@ public class ChildProcessHandler
             waitFor(killTimeout);
             killed = true;
         }
-        catch (ChildProcessTimeoutException timeoutExc)
+        catch (ChildProcessTimeoutException ignored)
         {
         }
         return killed;

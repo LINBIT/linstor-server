@@ -177,6 +177,7 @@ public class CommonMessageProcessor implements MessageProcessor
                             msgType, client.getConnectorInstanceName()
                         );
                     }
+                    break;
             }
         }
         catch (IllegalMessageStateException msgExc)

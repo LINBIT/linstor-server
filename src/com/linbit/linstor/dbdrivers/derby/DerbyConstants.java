@@ -124,10 +124,6 @@ public class DerbyConstants
     public static final String PROP_KEY       = "PROP_KEY";
     public static final String PROP_VALUE     = "PROP_VALUE";
 
-    // SEC_CONFIGURATION keys
-    public static final String KEY_SEC_LEVEL       = "SECURITYLEVEL";
-    public static final String KEY_DSP_SEC_LEVEL   = "SecurityLevel";
-
     private DerbyConstants()
     {
     }

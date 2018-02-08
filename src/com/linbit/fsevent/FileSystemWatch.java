@@ -131,7 +131,7 @@ public class FileSystemWatch implements Runnable, SystemService
                 // whereas the timeout-less poll() does not seem to be interruptible
                 polledKey = wSvc.poll(1, TimeUnit.DAYS);
             }
-            catch (InterruptedException intrExc)
+            catch (InterruptedException ignored)
             {
             }
             if (polledKey != null)

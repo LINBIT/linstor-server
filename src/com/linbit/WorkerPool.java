@@ -93,7 +93,7 @@ public class WorkerPool implements WorkQueue
                 {
                     wait();
                 }
-                catch (InterruptedException interrupt)
+                catch (InterruptedException ignored)
                 {
                 }
             }
@@ -127,7 +127,7 @@ public class WorkerPool implements WorkQueue
                     {
                         workQueue.wait();
                     }
-                    catch (InterruptedException interrupt)
+                    catch (InterruptedException ignored)
                     {
                     }
                 }

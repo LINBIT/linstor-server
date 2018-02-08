@@ -57,10 +57,14 @@ public class NodeApiData implements Node.NodeApi {
     }
 
     @Override
-    public Boolean isConnected() {
+    public Boolean isConnected()
+    {
+        Boolean connected = null;
         if (node.hasConnected())
-            return node.getConnected();
-        return null;
+        {
+            connected = node.getConnected();
+        }
+        return connected;
     }
 
     @Override

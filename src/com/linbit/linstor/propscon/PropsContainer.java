@@ -432,7 +432,7 @@ public class PropsContainer implements Props
                     }
                 }
             }
-            catch (InvalidKeyException keyExc)
+            catch (InvalidKeyException ignored)
             {
             }
         }

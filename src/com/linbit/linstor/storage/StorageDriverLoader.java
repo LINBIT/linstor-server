@@ -5,7 +5,7 @@ import java.util.List;
 
 public class StorageDriverLoader
 {
-    private static List<StorageDriverKind> FACTORIES = Arrays.asList(
+    private static final List<StorageDriverKind> FACTORIES = Arrays.asList(
         new DisklessDriverKind(),
         new LvmDriverKind(),
         new LvmThinDriverKind(),
@@ -14,15 +14,20 @@ public class StorageDriverLoader
 
     public static StorageDriverKind getKind(String simpleName)
     {
+        StorageDriverKind ret = null;
         for (StorageDriverKind factory : FACTORIES)
         {
             if (factory.getDriverName().equals(simpleName))
             {
-                return factory;
+                ret = factory;
+                break;
             }
         }
-
-        throw new IllegalArgumentException("Unknown storage driver " + simpleName);
+        if (ret == null)
+        {
+            throw new IllegalArgumentException("Unknown storage driver " + simpleName);
+        }
+        return ret;
     }
 
     private StorageDriverLoader()

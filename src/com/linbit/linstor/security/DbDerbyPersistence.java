@@ -16,6 +16,9 @@ import com.linbit.linstor.logging.ErrorReporter;
  */
 public class DbDerbyPersistence implements DbAccessor
 {
+    public static final String KEY_SEC_LEVEL     = "SECURITYLEVEL";
+    public static final String KEY_DSP_SEC_LEVEL = "SecurityLevel";
+
     private static final String SLCT_SIGNIN_ENTRY =
         "SELECT " +
         TBL_SEC_IDENTITIES + "." + IDENTITY_NAME + ", " +
@@ -128,6 +131,7 @@ public class DbDerbyPersistence implements DbAccessor
         return dbQuery(dbConn, SLCT_SEC_LEVEL);
     }
 
+    @Override
     public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
     {
         // Delete any existing security level entry

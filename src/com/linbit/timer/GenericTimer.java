@@ -541,7 +541,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                         }
                         container.wait(waitTime);
                     }
-                    catch (InterruptedException ex)
+                    catch (InterruptedException ignored)
                     {
                     }
                     if (ENABLE_DEBUG)

@@ -116,15 +116,20 @@ public class TransactionMgr
     static public boolean isCalledFromTransactionMgr(String methodName)
     {
         StackTraceElement[] stack = new Throwable().getStackTrace();
+        boolean ret = false;
         for (StackTraceElement elem : stack)
         {
             if (elem.getClassName().equals(TransactionMgr.class.getName()) && elem.getMethodName().equals(methodName))
             {
-                return true;
+                ret = true;
+                break;
             }
         }
 
-        //throw new ImplementationError(methodName + " not called from TransactionMgr.", null);
-        return false;
+        // if (!ret)
+        // {
+        //     throw new ImplementationError(methodName + " not called from TransactionMgr.", null);
+        // }
+        return ret;
     }
 }

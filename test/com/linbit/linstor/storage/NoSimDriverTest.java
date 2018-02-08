@@ -735,15 +735,15 @@ public abstract class NoSimDriverTest
         {
             volumesRemoved = 0;
             volumesFailedToRemove = 0;
-            for (String identifier : identifiers)
+            for (String untrimmedIdentifier : identifiers)
             {
-                identifier = identifier.trim();
+                String identifier = untrimmedIdentifier.trim();
                 if (identifier.startsWith(baseIdentifier))
                 {
                     volumeFound = true;
                     log("      found volume [%s], trying to remove...", identifier);
                     removeVolume(identifier);
-//                    callChecked("lvremove", "-f", poolName + File.separator + identifier);
+                    // callChecked("lvremove", "-f", poolName + File.separator + identifier);
                     log(" done %n");
 
                     log("         verifying remove...");
@@ -753,7 +753,7 @@ public abstract class NoSimDriverTest
                     {
                         if (id.equals(identifier))
                         {
-    //                        fail("Failed to remove test volume [%s] in cleanup", identifier);
+                            // fail("Failed to remove test volume [%s] in cleanup", identifier);
                             log(
                                 "         Failed to remove test volume [%s] - maybe because of dependencies " +
                                 "- will retry",

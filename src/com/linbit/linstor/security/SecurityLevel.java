@@ -2,8 +2,6 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -103,11 +101,11 @@ public enum SecurityLevel
                 String secLvlKey = rslt.getString(1);
                 String secLvlValue = rslt.getString(2);
 
-                if (!secLvlKey.equals(DerbyConstants.KEY_SEC_LEVEL))
+                if (!secLvlKey.equals(DbDerbyPersistence.KEY_SEC_LEVEL))
                 {
                     throw new ImplementationError(
                         "Security level database query returned incorrect key '" + secLvlKey + "'\n" +
-                        "instead of expected key '" + DerbyConstants.KEY_SEC_LEVEL + "'",
+                        "instead of expected key '" + DbDerbyPersistence.KEY_SEC_LEVEL + "'",
                         null
                     );
                 }

@@ -24,10 +24,10 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 {
-	private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
-	private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
-	private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
-	private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
+    private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
+    private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
+    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
     CtrlVlmConnectionApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,

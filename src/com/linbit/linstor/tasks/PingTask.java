@@ -1,7 +1,9 @@
 package com.linbit.linstor.tasks;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Peer;
@@ -32,10 +34,10 @@ public class PingTask implements Task
     @Override
     public long run()
     {
-        for (int idx = 0; idx < peerList.size(); ++idx)
-        {
-            final Peer peer = peerList.get(idx);
+        final List<Peer> peersToRemove = new ArrayList<>();
 
+        for (final Peer peer : peerList)
+        {
             final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
             boolean reconnect = false;
@@ -59,8 +61,7 @@ public class PingTask implements Task
                 controller.getErrorReporter().logTrace(
                     "Connection to peer " + peer.getId() + " lost. Removed from pingList, added to reconnectList."
                 );
-                peerList.remove(peer);
-                --idx;
+                peersToRemove.add(peer);
                 try
                 {
                     reconnector.add(peer.getConnector().reconnect(peer));
@@ -72,6 +73,7 @@ public class PingTask implements Task
                 }
             }
         }
+        peerList.removeAll(peersToRemove);
         return PING_SLEEP;
     }
 }

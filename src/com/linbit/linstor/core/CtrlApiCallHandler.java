@@ -1224,7 +1224,7 @@ public class CtrlApiCallHandler
                 rscName,
                 rscConnPropsMap
             );
-		}
+        }
         finally
         {
             apiCtrlAccessors.getRscDfnMapLock().writeLock().unlock();

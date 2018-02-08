@@ -146,7 +146,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             commit();
 
             updateSatellites(storPoolDfn);
-            reportSuccess(storPoolDfn.getUuid());;
+            reportSuccess(storPoolDfn.getUuid());
         }
         catch (ApiCallHandlerFailedException ignore)
         {
