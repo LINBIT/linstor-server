@@ -77,67 +77,30 @@ jar {
 }
 
 /////////////////////////// Version Info ///////////////////////////
-task versionInfo(type: VersionInfoTask) {
-    outputDir = file("$projectDir/generated-resources")
-    inputProperty = version
-    version = getVersionString()
-}
-
-class VersionInfoTask extends DefaultTask {
-    @OutputDirectory
-    File outputDir
-
-    @Input
-    def inputProperty
-
-    String unknownVersion
-
-    VersionInfoTask() {
-        outputs.upToDateWhen { false }
-    }
-
-    def getGitHash() {
-        def stdOut = new ByteArrayOutputStream()
+task versionInfo() {
+    String propsFile = "$projectDir/generated-resources/version-info.properties"
+    File gitFolder = file("$projectDir/.git")
+    if (gitFolder.exists())
+    {
         try {
+            def stdOut = new ByteArrayOutputStream()
+            def stdErr = new ByteArrayOutputStream()
             project.exec {
-                commandLine 'git', 'rev-parse', 'HEAD'
+                commandLine 'make', 'versioninfo'
                 standardOutput = stdOut
+                errorOutput = stdErr
             }
         } catch (ExecException exc) {
-            stdOut.write(inputProperty.getBytes())
+            throw new RuntimeException("Cannot generate version.", exc)
         }
-        return stdOut.toString().trim()
     }
-
-    def getVersionString() {
-        def stdOut = new ByteArrayOutputStream()
-        try {
-            project.exec {
-                commandLine 'git', 'describe', '--tags'
-                standardOutput = stdOut
-            }
-        } catch (ExecException exc) {
-            try {
-                stdOut.write(Files.readAllBytes(Paths.get(outputDir.toString(), "fallback-version")))
-            } catch (NoSuchFileException exc2) {
-                throw new RuntimeException("Could not determine version.", exc2);
-            }
-        }
-        String out = stdOut.toString()
-        if (out.startsWith("v")) {
-            out = out.substring(1)
-        }
-        return out.trim()
+    Properties props = new Properties()
+    try {
+        props.load(new FileInputStream(propsFile))
+    } catch (Exception exc) {
+        throw new RuntimeException("Cannot read version.", exc)
     }
-
-    @TaskAction
-    def generateVersionInfo() {
-        File file = new File(outputDir, "version-info.properties")
-        file.delete()
-        file << "version=${getVersionString()}\n"
-        file << "git.commit.id=${getGitHash()}\n"
-        file << "build.time=${new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())}\n"
-    }
+    version = props.get("version")
 }
 
 processResources.dependsOn versionInfo
