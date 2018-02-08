@@ -10,9 +10,9 @@ public class ConfigModule extends AbstractModule
     public static final String CONFIG_AL_STRIPES = "configAlStripes";
     public static final String CONFIG_STOR_POOL_NAME = "configStorPoolName";
 
-    private static final short DEFAULT_PEER_COUNT = 31;
+    public static final short DEFAULT_PEER_COUNT = 31;
     private static final long DEFAULT_AL_SIZE = 32;
-    private static final int DEFAULT_AL_STRIPES = 1;
+    public static final int DEFAULT_AL_STRIPES = 1;
     public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
 
     @Override

@@ -18,6 +18,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.core.ApiCtrlAccessors;
+import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -153,24 +154,15 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     }
 
     @Override
-    public String generateSharedSecret()
-    {
-        byte[] randomBytes = new byte[15];
-        new SecureRandom().nextBytes(randomBytes);
-        String secret = Base64.encode(randomBytes);
-        return secret;
-    }
-
-    @Override
     public short getDefaultPeerCount()
     {
-        return Controller.DEFAULT_PEER_COUNT;
+        return ConfigModule.DEFAULT_PEER_COUNT;
     }
 
     @Override
     public int getDefaultAlStripes()
     {
-        return Controller.DEFAULT_AL_STRIPES;
+        return ConfigModule.DEFAULT_AL_STRIPES;
     }
 
     @Override
@@ -194,7 +186,7 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     @Override
     public String getDefaultStorPoolName()
     {
-        return Controller.DEFAULT_STOR_POOL_NAME;
+        return ConfigModule.DEFAULT_STOR_POOL_NAME;
     }
 
     @Override
