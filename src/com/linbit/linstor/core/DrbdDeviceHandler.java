@@ -498,7 +498,7 @@ class DrbdDeviceHandler implements DeviceHandler
             spNameStr = vlmPrioProps.getProp(ApiConsts.KEY_STOR_POOL_NAME);
             if (spNameStr == null)
             {
-                spNameStr = Controller.DEFAULT_STOR_POOL_NAME;
+                spNameStr = ConfigModule.DEFAULT_STOR_POOL_NAME;
             }
 
             StorPoolName spName = new StorPoolName(spNameStr);

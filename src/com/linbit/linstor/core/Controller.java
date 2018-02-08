@@ -120,11 +120,6 @@ public final class Controller extends LinStor implements CoreServices
 
     public static final int API_VERSION = 0;
 
-    public static final short DEFAULT_PEER_COUNT = 31;
-    public static final long DEFAULT_AL_SIZE = 32;
-    public static final int DEFAULT_AL_STRIPES = 1;
-    public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
-
     public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
 
     private final Injector injector;
@@ -204,11 +199,6 @@ public final class Controller extends LinStor implements CoreServices
     MinorNrPool minorNrPool;
 
     private ApiCtrlAccessorImpl apiCtrlAccessors;
-
-    private short defaultPeerCount = DEFAULT_PEER_COUNT;
-    private long defaultAlSize = DEFAULT_AL_SIZE;
-    private int defaultAlStripes = DEFAULT_AL_STRIPES;
-    private String defaultStorPoolName = DEFAULT_STOR_POOL_NAME;
 
     private ReconnectorTask reconnectorTask;
     private PingTask pingTask;
@@ -796,22 +786,17 @@ public final class Controller extends LinStor implements CoreServices
 
     public short getDefaultPeerCount()
     {
-        return defaultPeerCount;
+        return injector.getInstance(Key.get(Short.class, Names.named(ConfigModule.CONFIG_PEER_COUNT)));
     }
 
     public int getDefaultAlStripes()
     {
-        return defaultAlStripes;
-    }
-
-    public long getDefaultAlSize()
-    {
-        return defaultAlSize;
+        return injector.getInstance(Key.get(Integer.class, Names.named(ConfigModule.CONFIG_AL_STRIPES)));
     }
 
     public String getDefaultStorPoolName()
     {
-        return defaultStorPoolName;
+        return injector.getInstance(Key.get(String.class, Names.named(ConfigModule.CONFIG_STOR_POOL_NAME)));
     }
 
     public CtrlApiCallHandler getApiCallHandler()
