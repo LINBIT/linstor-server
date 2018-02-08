@@ -13,6 +13,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 
@@ -20,6 +21,7 @@ import javax.inject.Named;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -45,6 +47,9 @@ public class CoreModule extends AbstractModule
 
         bind(StorPoolDefinitionMap.class).toInstance(new StorPoolDefinitionMapImpl());
         bind(new TypeLiteral<Map<StorPoolName, StorPoolDefinition>>() {}).to(StorPoolDefinitionMap.class);
+
+        bind(PeerMap.class).toInstance(new PeerMapImpl());
+        bind(new TypeLiteral<Map<String, Peer>>() {}).to(PeerMap.class);
 
         bind(ReadWriteLock.class).annotatedWith(Names.named(RECONFIGURATION_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
@@ -92,18 +97,27 @@ public class CoreModule extends AbstractModule
     {
     }
 
+    public interface PeerMap extends Map<String, Peer>
+    {
+    }
+
     private static class NodesMapImpl
-        extends HashMap<NodeName, Node> implements NodesMap
+        extends TreeMap<NodeName, Node> implements NodesMap
     {
     }
 
     private static class ResourceDefinitionMapImpl
-        extends HashMap<ResourceName, ResourceDefinition> implements ResourceDefinitionMap
+        extends TreeMap<ResourceName, ResourceDefinition> implements ResourceDefinitionMap
     {
     }
 
     private static class StorPoolDefinitionMapImpl
-        extends HashMap<StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
+        extends TreeMap<StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
+    {
+    }
+
+    private static class PeerMapImpl
+        extends TreeMap<String, Peer> implements PeerMap
     {
     }
 }

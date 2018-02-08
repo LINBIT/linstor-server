@@ -161,7 +161,7 @@ public final class Controller extends LinStor implements CoreServices
     private final TaskScheduleService taskScheduleService;
 
     // Map of connected peers
-    private final Map<String, Peer> peerMap;
+    private Map<String, Peer> peerMap;
 
     // Map of network communications connectors
     final Map<ServiceName, TcpConnector> netComConnectors;
@@ -227,9 +227,6 @@ public final class Controller extends LinStor implements CoreServices
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
-
-        // Initialize connected peers map
-        peerMap = new TreeMap<>();
 
         apiType = ApiType.PROTOBUF;
 
@@ -342,6 +339,7 @@ public final class Controller extends LinStor implements CoreServices
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
             // Initialize LinStor objects maps
+            peerMap = injector.getInstance(CoreModule.PeerMap.class);
             nodesMap = injector.getInstance(CoreModule.NodesMap.class);
             rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
             storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
