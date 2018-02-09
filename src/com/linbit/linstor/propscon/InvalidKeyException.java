@@ -11,8 +11,8 @@ public class InvalidKeyException extends Exception
 
     public final String invalidKey;
 
-    public InvalidKeyException(String invalidKey)
+    public InvalidKeyException(String invalidKeyValue)
     {
-        this.invalidKey = invalidKey;
+        invalidKey = invalidKeyValue;
     }
 }

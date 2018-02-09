@@ -16,39 +16,39 @@ import java.util.Set;
  */
 public interface Props extends TransactionObject, Iterable<Map.Entry<String, String>>
 {
-    public String getProp(String key)
+    String getProp(String key)
         throws InvalidKeyException;
-    public String getProp(String key, String namespace)
+    String getProp(String key, String namespace)
         throws InvalidKeyException;
 
-    public String setProp(String key, String value)
+    String setProp(String key, String value)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException;
-    public String setProp(String key, String value, String namespace)
+    String setProp(String key, String value, String namespace)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException;
 
-    public String removeProp(String key)
+    String removeProp(String key)
         throws InvalidKeyException, AccessDeniedException, SQLException;
-    public String removeProp(String key, String namespace)
+    String removeProp(String key, String namespace)
         throws InvalidKeyException, AccessDeniedException, SQLException;
 
-    public void clear() throws AccessDeniedException, SQLException;
+    void clear() throws AccessDeniedException, SQLException;
 
-    public int size();
-    public boolean isEmpty();
+    int size();
+    boolean isEmpty();
 
-    public String getPath();
+    String getPath();
 
-    public Map<String, String> map();
-    public Set<Map.Entry<String, String>> entrySet();
-    public Set<String> keySet();
-    public Collection<String> values();
+    Map<String, String> map();
+    Set<Map.Entry<String, String>> entrySet();
+    Set<String> keySet();
+    Collection<String> values();
 
     @Override
-    public Iterator<Map.Entry<String, String>> iterator();
-    public Iterator<String> keysIterator();
-    public Iterator<String> valuesIterator();
+    Iterator<Map.Entry<String, String>> iterator();
+    Iterator<String> keysIterator();
+    Iterator<String> valuesIterator();
 
-    public Props getNamespace(String namespace)
+    Props getNamespace(String namespace)
         throws InvalidKeyException;
-    public Iterator<String> iterateNamespaces();
+    Iterator<String> iterateNamespaces();
 }

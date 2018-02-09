@@ -135,7 +135,7 @@ public class PropsContainer implements Props
             catch (InvalidKeyException invalidKeyExc)
             {
                 throw new LinStorSqlRuntimeException(
-                    "PropsContainer could not be loaded as a persisted key has been changed in the database to an invalid value.",
+                    "PropsContainer could not be loaded because a key in the database has an invalid value.",
                     invalidKeyExc
                 );
             }
@@ -674,7 +674,7 @@ public class PropsContainer implements Props
             safePath = sanitizePath(path, false);
         }
 
-        String pathElements[] = new String[2];
+        String[] pathElements= new String[2];
         int index = safePath.lastIndexOf('/');
         int pathLength;
         if (index != -1)
@@ -1012,12 +1012,12 @@ public class PropsContainer implements Props
                     targetContainer.modifySize(1);
                 }
             }
-            catch (InvalidKeyException | SQLException e)
+            catch (InvalidKeyException | SQLException exc)
             {
                 // cannot happen
                 throw new ImplementationError(
                     "Rolling back propsContainer threw an exception.",
-                    e
+                    exc
                 );
             }
         }
@@ -1068,7 +1068,7 @@ public class PropsContainer implements Props
     {
         if (initialized)
         {
-            Set<Entry<String,String>> entrySet = rootContainer.entrySet();
+            Set<Entry<String, String>> entrySet = rootContainer.entrySet();
             for (Entry<String, String> entry : entrySet)
             {
                 cache(entry.getKey(), entry.getValue());
@@ -1226,22 +1226,23 @@ public class PropsContainer implements Props
         }
 
         @Override
-        public String remove(Object key)
+        public String remove(final Object key)
         {
             String value = null;
             boolean unknownType = false;
             Exception unknownTypeCause = null;
             try
             {
-                if (key instanceof Map.Entry)
+                Object effKey = key;
+                if (effKey instanceof Map.Entry)
                 {
-                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>) key;
-                    key = entry.getKey();
+                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>) effKey;
+                    effKey = entry.getKey();
                 }
 
-                if (key instanceof String)
+                if (effKey instanceof String)
                 {
-                    value = container.removeProp((String) key, null);
+                    value = container.removeProp((String) effKey, null);
                 }
                 else
                 {
@@ -1671,7 +1672,9 @@ public class PropsContainer implements Props
             }
             else
             {
-                throw new IllegalArgumentException("Key must be either a String or an instance of Map.Entry<String, ?>");
+                throw new IllegalArgumentException(
+                    "Key must be either a String or an instance of Map.Entry<String, ?>"
+                );
             }
             return container.map().containsKey(key);
         }
@@ -1772,9 +1775,9 @@ public class PropsContainer implements Props
             {
                 changed = container.setAllProps(map, null);
             }
-            catch (InvalidKeyException | InvalidValueException e)
+            catch (InvalidKeyException | InvalidValueException exc)
             {
-                throw new IllegalArgumentException(e);
+                throw new IllegalArgumentException(exc);
             }
             catch (SQLException sqlExc)
             {
@@ -1853,13 +1856,18 @@ public class PropsContainer implements Props
         @Override
         public int compare(String key1, String key2)
         {
+            int result;
             int depth1 = key1.replaceAll("[^/]+", "").length();
             int depth2 = key2.replaceAll("[^/]+", "").length();
             if (depth1 != depth2)
             {
-                return Integer.compare(depth1, depth2);
+                result = Integer.compare(depth1, depth2);
             }
-            return key1.compareTo(key2);
+            else
+            {
+                result = key1.compareTo(key2);
+            }
+            return result;
         }
     }
 
@@ -1939,7 +1947,7 @@ public class PropsContainer implements Props
         }
 
         @Override
-        public boolean addAll(Collection<? extends String> c)
+        public boolean addAll(Collection<? extends String> collObj)
         {
             throw new UnsupportedOperationException("Cannot add values without keys");
         }
@@ -2422,7 +2430,10 @@ public class PropsContainer implements Props
                                         while (pIter.hasNext())
                                         {
                                             Map.Entry<String, String> entry = pIter.next();
-                                            System.out.printf("  @ENTRY     %-30s: %s\n", entry.getKey(), entry.getValue());
+                                            System.out.printf(
+                                                "  @ENTRY     %-30s: %s\n",
+                                                entry.getKey(), entry.getValue()
+                                            );
                                         }
                                         Iterator<PropsContainer> cIter =
                                             ((PropsContainer) con).iterateContainers();
@@ -2664,11 +2675,13 @@ public class PropsContainer implements Props
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         ArrayList<String> pairs = new ArrayList<>();
-        for ( Map.Entry<String, String> entry : this.map().entrySet() ) {
+        for (Map.Entry<String, String> entry : this.map().entrySet())
+        {
             StringBuilder sbPair = new StringBuilder();
             sbPair.append("  \"").append(entry.getKey()).append("\": \"").append(entry.getValue()).append('"');
             pairs.add(sbPair.toString());
