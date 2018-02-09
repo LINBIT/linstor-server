@@ -7,11 +7,15 @@ package com.linbit.drbd.md;
  */
 public class MdCommon
 {
-    protected void checkValid(long size, short peers, int alStripes, long alStripeSize)
+    public static final short   MAX_PEERS           = 0xFF;
+    public static final int     MAX_AL_STRIPES      = 0xFFFF;
+    public static final long    MAX_AL_STRIPE_SIZE  = 0xFFFFFFFFl;
+
+    protected void checkValid(final long size, final short peers, final int alStripes, final long alStripeSize)
         throws IllegalArgumentException
     {
         if (size < 0 || peers < 0 || alStripes < 0 || alStripeSize < 0 ||
-            peers > 0xFF || alStripes > 0xFFFF || alStripeSize > 0xFFFFFFFFl)
+            peers > MAX_PEERS || alStripes > MAX_AL_STRIPES || alStripeSize > MAX_AL_STRIPE_SIZE)
         {
             throw new IllegalArgumentException();
         }

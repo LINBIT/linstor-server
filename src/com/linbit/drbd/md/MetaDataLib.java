@@ -7,7 +7,7 @@ package com.linbit.drbd.md;
  */
 public class MetaDataLib extends MdCommon implements MetaDataApi
 {
-    final public static String NATIVE_LIBRARY_NAME = "DrbdMdCalc";
+    public static final String NATIVE_LIBRARY_NAME = "DrbdMdCalc";
 
     // Loads the external library upon class loading
     static
@@ -16,7 +16,7 @@ public class MetaDataLib extends MdCommon implements MetaDataApi
     }
 
     // Pre-loaded OutOfMemoryError instance required by the JNI functions
-    final public OutOfMemoryError oomError = new OutOfMemoryError();
+    public final OutOfMemoryError oomError = new OutOfMemoryError();
 
 
     @Override
