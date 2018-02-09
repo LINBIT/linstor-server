@@ -85,20 +85,20 @@ public class Base64
         final byte[] outData = new byte[decodedLength];
         final byte[] inData = input.getBytes();
         int outIdx = 0;
-        int b[] = new int[4];
+        int[] buf = new int[4];
         for (int inIdx = 0; inIdx < inData.length; inIdx += 4)
         {
-            b[0] = getAlphabetIndex(inData[inIdx]);
-            b[1] = getAlphabetIndex(inData[inIdx + 1]);
-            b[2] = getAlphabetIndex(inData[inIdx + 2]);
-            b[3] = getAlphabetIndex(inData[inIdx + 3]);
-            outData[outIdx] = (byte) ((b[0] << 2) | (b[1] >> 4));
-            if (b[2] < 64)
+            buf[0] = getAlphabetIndex(inData[inIdx]);
+            buf[1] = getAlphabetIndex(inData[inIdx + 1]);
+            buf[2] = getAlphabetIndex(inData[inIdx + 2]);
+            buf[3] = getAlphabetIndex(inData[inIdx + 3]);
+            outData[outIdx] = (byte) ((buf[0] << 2) | (buf[1] >> 4));
+            if (buf[2] < 64)
             {
-                outData[outIdx + 1] = (byte) ((b[1] << 4) | (b[2] >> 2));
-                if (b[3] < 64)
+                outData[outIdx + 1] = (byte) ((buf[1] << 4) | (buf[2] >> 2));
+                if (buf[3] < 64)
                 {
-                    outData[outIdx + 2] = (byte) ((b[2] << 6) | (b[3]));
+                    outData[outIdx + 2] = (byte) ((buf[2] << 6) | (buf[3]));
                 }
             }
             outIdx += 3;

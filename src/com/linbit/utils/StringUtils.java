@@ -7,7 +7,8 @@ import java.util.Iterator;
  *
  * @author rpeinthor
  */
-public class StringUtils {
+public class StringUtils
+{
     /**
      * Joins a collection into a string with the given delimeter.
      * @param col collection to join.
@@ -22,7 +23,8 @@ public class StringUtils {
         {
             sb.append(iter.next().toString());
         }
-        while (iter.hasNext()) {
+        while (iter.hasNext())
+        {
             sb.append(delim);
             sb.append(iter.next().toString());
         }

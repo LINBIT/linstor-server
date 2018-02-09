@@ -32,9 +32,9 @@ public class TreePrinter
 
         String childrenPrefix = prefix + (isRoot ? "" : (isLast ? PREFIX_SPACE : PREFIX_VLINE));
 
-        for (int i = 0; i < children.size() - 1; i++)
+        for (int idx = 0; idx < children.size() - 1; idx++)
         {
-            print(out, children.get(i), childrenPrefix, false, false);
+            print(out, children.get(idx), childrenPrefix, false, false);
         }
 
         if (children.size() > 0)
@@ -45,19 +45,19 @@ public class TreePrinter
 
     public static class TreePrinterNode
     {
-        private final String name;
+        private final String nodeName;
 
         private final List<TreePrinterNode> children;
 
-        public TreePrinterNode(final String name, final List<TreePrinterNode> children)
+        public TreePrinterNode(final String name, final List<TreePrinterNode> childrenRef)
         {
-            this.name = name;
-            this.children = children;
+            nodeName = name;
+            children = childrenRef;
         }
 
         public String getName()
         {
-            return name;
+            return nodeName;
         }
 
         public List<TreePrinterNode> getChildren()
@@ -76,10 +76,10 @@ public class TreePrinter
 
         private List<TreePrinterNode> children;
 
-        public TreePrinterNodeBuilder(final TreePrinterNodeBuilder parent, final String name)
+        public TreePrinterNodeBuilder(final TreePrinterNodeBuilder parentRef, final String nameRef)
         {
-            this.parent = parent;
-            this.name = name;
+            parent = parentRef;
+            name = nameRef;
 
             children = new ArrayList<>();
         }
@@ -99,9 +99,9 @@ public class TreePrinter
             return new TreePrinterNode(name, children);
         }
 
-        public void setHideIfEmpty(final boolean hideIfEmpty)
+        public void setHideIfEmpty(final boolean hideIfEmptyFlag)
         {
-            this.hideIfEmpty = hideIfEmpty;
+            hideIfEmpty = hideIfEmptyFlag;
         }
 
         public void addChild(TreePrinterNode node)
@@ -121,7 +121,9 @@ public class TreePrinter
 
         public Builder leaf(final String format, final Object... args)
         {
-            current.addChild(new TreePrinterNode(String.format(format, args), Collections.<TreePrinterNode>emptyList()));
+            current.addChild(
+                new TreePrinterNode(String.format(format, args), Collections.<TreePrinterNode>emptyList())
+            );
             return this;
         }
 
