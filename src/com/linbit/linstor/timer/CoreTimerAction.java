@@ -15,11 +15,11 @@ public interface CoreTimerAction extends Action<String>
      * @return Unique identifier
      */
     @Override
-    public String getId();
+    String getId();
 
     /**
      * The action to be performed when the timer is fired
      */
     @Override
-    public void run();
+    void run();
 }

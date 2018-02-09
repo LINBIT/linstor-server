@@ -14,12 +14,12 @@ import com.linbit.timer.Timer;
 public interface CoreTimer extends Timer<String, Action<String>>, SystemService
 {
     @Override
-    public void addDelayedAction(Long delay, Action<String> actionObj)
+    void addDelayedAction(Long delay, Action<String> actionObj)
         throws NegativeTimeException, ValueOutOfRangeException;
 
     @Override
-    public void addScheduledAction(Long scheduledTime, Action<String> actionObj);
+    void addScheduledAction(Long scheduledTime, Action<String> actionObj);
 
     @Override
-    public void cancelAction(String actionId);
+    void cancelAction(String actionId);
 }
