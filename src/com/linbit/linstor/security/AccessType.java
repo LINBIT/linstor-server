@@ -19,7 +19,7 @@ public enum AccessType
 
     private final short accessMask;
 
-    private AccessType(short mask)
+    AccessType(short mask)
     {
         accessMask = mask;
     }

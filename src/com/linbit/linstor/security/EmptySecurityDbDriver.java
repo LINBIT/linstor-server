@@ -10,7 +10,8 @@ import com.linbit.TransactionMgr;
 
 public class EmptySecurityDbDriver implements DbAccessor
 {
-    public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER = new NoOpObjectDatabaseDriver<Object, Object>();
+    public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER =
+        new NoOpObjectDatabaseDriver<Object, Object>();
 
     private final ObjectProtection objProt;
 
@@ -86,7 +87,7 @@ public class EmptySecurityDbDriver implements DbAccessor
         }
 
         @Override
-        public void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
+        public void insertOp(ObjectProtection objProtRef, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -99,7 +100,7 @@ public class EmptySecurityDbDriver implements DbAccessor
 
         @Override
         public void insertAcl(
-            ObjectProtection objProt,
+            ObjectProtection objProtRef,
             Role role,
             AccessType grantedAccess,
             TransactionMgr transMgr
@@ -111,7 +112,7 @@ public class EmptySecurityDbDriver implements DbAccessor
 
         @Override
         public void updateAcl(
-            ObjectProtection objProt,
+            ObjectProtection objProtRef,
             Role role,
             AccessType grantedAccess,
             TransactionMgr transMgr
@@ -122,7 +123,7 @@ public class EmptySecurityDbDriver implements DbAccessor
         }
 
         @Override
-        public void deleteAcl(ObjectProtection objProt, Role role, TransactionMgr transMgr) throws SQLException
+        public void deleteAcl(ObjectProtection objProtRef, Role role, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }

@@ -9,15 +9,15 @@ import com.linbit.TransactionMgr;
 
 public class NoOpSecurityDriver implements DbAccessor
 {
-    private final SingleColumnDatabaseDriver<?, ?> NoOpSingleColDriver = new NoOpSingleColDriver();
+    private final SingleColumnDatabaseDriver<?, ?> noOpSingleColDriver = new NoOpSingleColDriver();
 
-    private final ObjectProtectionDatabaseDriver NoOpObjProtDriver = new NoOpObjectProtectionDriver();
+    private final ObjectProtectionDatabaseDriver noOpObjProtDriver = new NoOpObjectProtectionDriver();
 
     private final ObjectProtection dummyObjProt;
 
     public NoOpSecurityDriver(AccessContext privCtx)
     {
-        dummyObjProt = new ObjectProtection(privCtx, "", NoOpObjProtDriver);
+        dummyObjProt = new ObjectProtection(privCtx, "", noOpObjProtDriver);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class NoOpSecurityDriver implements DbAccessor
     @Override
     public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
     {
-        return NoOpObjProtDriver;
+        return noOpObjProtDriver;
     }
 
     @Override
@@ -130,21 +130,21 @@ public class NoOpSecurityDriver implements DbAccessor
         @Override
         public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier()
         {
-            return (SingleColumnDatabaseDriver<ObjectProtection, Identity>) NoOpSingleColDriver;
+            return (SingleColumnDatabaseDriver<ObjectProtection, Identity>) noOpSingleColDriver;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver()
         {
-            return (SingleColumnDatabaseDriver<ObjectProtection, Role>) NoOpSingleColDriver;
+            return (SingleColumnDatabaseDriver<ObjectProtection, Role>) noOpSingleColDriver;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
         {
-            return (SingleColumnDatabaseDriver<ObjectProtection, SecurityType>) NoOpSingleColDriver;
+            return (SingleColumnDatabaseDriver<ObjectProtection, SecurityType>) noOpSingleColDriver;
         }
     }
 

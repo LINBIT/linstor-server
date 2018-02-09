@@ -7,11 +7,11 @@ import com.linbit.TransactionMgr;
 
 public interface ObjectProtectionDatabaseDriver
 {
-    public void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
+    void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
 
-    public void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException;
+    void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException;
 
-    public void insertAcl(
+    void insertAcl(
         ObjectProtection parent,
         Role role,
         AccessType grantedAccess,
@@ -19,7 +19,7 @@ public interface ObjectProtectionDatabaseDriver
     )
         throws SQLException;
 
-    public void updateAcl(
+    void updateAcl(
         ObjectProtection parent,
         Role role,
         AccessType grantedAccess,
@@ -27,18 +27,18 @@ public interface ObjectProtectionDatabaseDriver
     )
         throws SQLException;
 
-    public void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException;
+    void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException;
 
-    public ObjectProtection loadObjectProtection(
+    ObjectProtection loadObjectProtection(
         String objectPath,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;
 
-    public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier();
+    SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier();
 
-    public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver();
+    SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver();
 
-    public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver();
+    SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver();
 }

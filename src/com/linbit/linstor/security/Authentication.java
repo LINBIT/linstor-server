@@ -22,9 +22,9 @@ import org.slf4j.event.Level;
  */
 public final class Authentication
 {
-    public final static String HASH_ALGORITHM = "SHA-512";
-    public final static int HASH_SIZE = 64;
-    public final static int SALT_SIZE = 16;
+    public static final String HASH_ALGORITHM = "SHA-512";
+    public static final int HASH_SIZE = 64;
+    public static final int SALT_SIZE = 16;
 
     private MessageDigest hashAlgo;
 
@@ -72,10 +72,10 @@ public final class Authentication
             // Position cursor on the first row
             if (signInEntry.next())
             {
-                String storedIdStr = signInEntry.getString(DerbyConstants.IDENTITY_NAME);
-                String storedDfltRoleStr = signInEntry.getString(DerbyConstants.ROLE_NAME);
-                String storedDfltTypeStr = signInEntry.getString(DerbyConstants.DOMAIN_NAME);
-                Long storedDfltRolePrivs = signInEntry.getLong(DerbyConstants.ROLE_PRIVILEGES);
+                final String storedIdStr = signInEntry.getString(DerbyConstants.IDENTITY_NAME);
+                final String storedDfltRoleStr = signInEntry.getString(DerbyConstants.ROLE_NAME);
+                final String storedDfltTypeStr = signInEntry.getString(DerbyConstants.DOMAIN_NAME);
+                final Long storedDfltRolePrivs = signInEntry.getLong(DerbyConstants.ROLE_PRIVILEGES);
 
                 byte[] storedSalt = signInEntry.getBytes(DerbyConstants.PASS_SALT);
                 byte[] storedHash = signInEntry.getBytes(DerbyConstants.PASS_HASH);

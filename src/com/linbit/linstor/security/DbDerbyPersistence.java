@@ -1,6 +1,25 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.DOMAIN_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ENTRY_DSP_KEY;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ENTRY_KEY;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ENTRY_VALUE;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.IDENTITY_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ID_ENABLED;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ID_LOCKED;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PASS_HASH;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PASS_SALT;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ROLE_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ROLE_PRIVILEGES;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_DFLT_ROLES;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_IDENTITIES;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_ID_ROLE_MAP;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_ROLES;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_IDENTITIES_LOAD;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_ROLES_LOAD;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_TYPES_LOAD;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_TYPE_RULES_LOAD;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -80,7 +99,7 @@ public class DbDerbyPersistence implements DbAccessor
         return dbQuery(
             dbConn,
             SLCT_SIGNIN_ENTRY,
-            new String[] { idName.value }
+            new String[] {idName.value}
         );
     }
 
@@ -91,14 +110,14 @@ public class DbDerbyPersistence implements DbAccessor
         return dbQuery(
             dbConn,
             SLCT_ID_ROLE_MAP_ENTRY,
-            new String[] { idName.value, rlName.value }
+            new String[] {idName.value, rlName.value}
         );
     }
 
     @Override
     public ResultSet getDefaultRole(Connection dbConn, IdentityName idName) throws SQLException
     {
-        return dbQuery(dbConn, SLCT_DFLT_ROLE, new String[] { idName.value });
+        return dbQuery(dbConn, SLCT_DFLT_ROLE, new String[] {idName.value});
     }
 
     @Override

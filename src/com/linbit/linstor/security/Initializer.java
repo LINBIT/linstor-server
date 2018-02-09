@@ -17,10 +17,10 @@ import java.sql.SQLException;
  */
 public final class Initializer
 {
-    private AccessContext SYSTEM_CTX;
-    private AccessContext PUBLIC_CTX;
-
-    public Initializer()
+    private static final AccessContext SYSTEM_CTX;
+    private static final AccessContext PUBLIC_CTX;
+    
+    static
     {
         PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
 
@@ -40,7 +40,10 @@ public final class Initializer
             SecurityType.PUBLIC_TYPE,
             publicPrivs
         );
+    }
 
+    public Initializer()
+    {
         try
         {
             AccessContext initCtx = SYSTEM_CTX.clone();
