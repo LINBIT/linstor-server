@@ -29,7 +29,7 @@ public interface SatelliteConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public SatelliteConnectionData load(
+    SatelliteConnectionData load(
         Node node,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
@@ -45,7 +45,7 @@ public interface SatelliteConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr)
+    void create(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr)
         throws SQLException;
 
     /**
@@ -57,16 +57,16 @@ public interface SatelliteConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr)
+    void delete(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr)
         throws SQLException;
 
     /**
      * A special sub-driver to update the persisted port.
      */
-    public SingleColumnDatabaseDriver<SatelliteConnectionData, TcpPortNumber> getSatelliteConnectionPortDriver();
+    SingleColumnDatabaseDriver<SatelliteConnectionData, TcpPortNumber> getSatelliteConnectionPortDriver();
 
     /**
      * A special sub-driver to update the persisted type.
      */
-    public SingleColumnDatabaseDriver<SatelliteConnectionData, EncryptionType> getSatelliteConnectionTypeDriver();
+    SingleColumnDatabaseDriver<SatelliteConnectionData, EncryptionType> getSatelliteConnectionTypeDriver();
 }

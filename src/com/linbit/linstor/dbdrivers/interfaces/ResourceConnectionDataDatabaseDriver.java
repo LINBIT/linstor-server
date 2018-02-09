@@ -39,7 +39,7 @@ public interface ResourceConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public ResourceConnectionData load(
+    ResourceConnectionData load(
         Resource source,
         Resource target,
         boolean logWarnIfNotExists,
@@ -63,7 +63,7 @@ public interface ResourceConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public List<ResourceConnectionData> loadAllByResource(
+    List<ResourceConnectionData> loadAllByResource(
         Resource resource,
         TransactionMgr transMgr
     )
@@ -79,7 +79,7 @@ public interface ResourceConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(ResourceConnectionData resConDfnData, TransactionMgr transMgr) throws SQLException;
+    void create(ResourceConnectionData resConDfnData, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link ResourceConnectionData} from the database
@@ -90,6 +90,6 @@ public interface ResourceConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(ResourceConnectionData resConDfnData, TransactionMgr transMgr) throws SQLException;
+    void delete(ResourceConnectionData resConDfnData, TransactionMgr transMgr) throws SQLException;
 
 }

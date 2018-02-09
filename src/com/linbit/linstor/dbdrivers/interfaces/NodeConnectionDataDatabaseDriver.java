@@ -39,7 +39,7 @@ public interface NodeConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public NodeConnectionData load(
+    NodeConnectionData load(
         Node sourceNode,
         Node targetNode,
         boolean logWarnIfNotExists,
@@ -62,7 +62,7 @@ public interface NodeConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public List<NodeConnectionData> loadAllByNode(
+    List<NodeConnectionData> loadAllByNode(
         Node node,
         TransactionMgr transMgr
     )
@@ -77,7 +77,7 @@ public interface NodeConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
+    void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link NodeConnectionData} from the database
@@ -88,6 +88,6 @@ public interface NodeConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
+    void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
 
 }

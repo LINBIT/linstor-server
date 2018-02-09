@@ -38,7 +38,7 @@ public interface VolumeDefinitionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public VolumeDefinitionData load(
+    VolumeDefinitionData load(
         ResourceDefinition resourceDefinition,
         VolumeNumber volumeNumber,
         boolean logWarnIfNotExists,
@@ -55,7 +55,7 @@ public interface VolumeDefinitionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException;
+    void create(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.VolumeDefinitionData} from the database
@@ -66,20 +66,20 @@ public interface VolumeDefinitionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException;
+    void delete(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted flags.
      */
-    public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence();
+    StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence();
 
     /**
      * A special sub-driver to update the persisted minorNumber.
      */
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver();
+    SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver();
 
     /**
      * A special sub-driver to update the persisted volumeSize.
      */
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver();
+    SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver();
 }

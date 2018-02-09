@@ -35,7 +35,7 @@ public interface ResourceDefinitionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public ResourceDefinitionData load(
+    ResourceDefinitionData load(
         ResourceName resourceName,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
@@ -51,7 +51,7 @@ public interface ResourceDefinitionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException;
+    void create(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link ResourceDefinitionData} from the database
@@ -62,22 +62,22 @@ public interface ResourceDefinitionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException;
+    void delete(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted flags
      */
-    public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence();
+    StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence();
 
     /**
      * A special sub-driver to update the port
      */
-    public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver();
+    SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver();
 
     /**
      * A special sub-driver to update the transport type
      */
-    public SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver();
+    SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver();
 
     /**
      * Checks if the stored primary key already exists in the database.
@@ -90,7 +90,7 @@ public interface ResourceDefinitionDataDatabaseDriver
      *  True if the data record exists. False otherwise.
      * @throws SQLException
      */
-    public boolean exists(ResourceName resourceName, TransactionMgr transMgr)
+    boolean exists(ResourceName resourceName, TransactionMgr transMgr)
         throws SQLException;
 
 }

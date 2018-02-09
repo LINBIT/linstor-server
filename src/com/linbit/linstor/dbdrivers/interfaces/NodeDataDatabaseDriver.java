@@ -35,7 +35,7 @@ public interface NodeDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public NodeData load(
+    NodeData load(
         NodeName nodeName,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
@@ -51,7 +51,7 @@ public interface NodeDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(NodeData nodeData, TransactionMgr transMgr) throws SQLException;
+    void create(NodeData nodeData, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link NodeData} from the database
@@ -62,17 +62,17 @@ public interface NodeDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(NodeData node, TransactionMgr transMgr) throws SQLException;
+    void delete(NodeData node, TransactionMgr transMgr) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted {@link NodeFlag}s. The data record
      * is specified by the primary key stored as instance variables.
      */
-    public StateFlagsPersistence<NodeData> getStateFlagPersistence();
+    StateFlagsPersistence<NodeData> getStateFlagPersistence();
 
     /**
      * A special sub-driver to update the persisted {@link NodeType}. The data record
      * is specified by the primary key stored as instance variables.
      */
-    public SingleColumnDatabaseDriver<NodeData, NodeType> getNodeTypeDriver();
+    SingleColumnDatabaseDriver<NodeData, NodeType> getNodeTypeDriver();
 }

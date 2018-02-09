@@ -36,7 +36,7 @@ public interface ResourceDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public ResourceData load(
+    ResourceData load(
         Node node,
         ResourceName resourceName,
         boolean logWarnIfNotExists,
@@ -73,5 +73,5 @@ public interface ResourceDataDatabaseDriver
     /**
      * A special sub-driver to update the persisted flags.
      */
-    public StateFlagsPersistence<ResourceData> getStateFlagPersistence();
+    StateFlagsPersistence<ResourceData> getStateFlagPersistence();
 }

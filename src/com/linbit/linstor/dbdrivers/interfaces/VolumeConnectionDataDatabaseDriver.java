@@ -38,7 +38,7 @@ public interface VolumeConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public VolumeConnectionData load(
+    VolumeConnectionData load(
         Volume sourceVolume,
         Volume targetVolume,
         boolean logWarnIfNotExists,
@@ -62,7 +62,7 @@ public interface VolumeConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public List<VolumeConnectionData> loadAllByVolume(
+    List<VolumeConnectionData> loadAllByVolume(
         Volume volume,
         TransactionMgr transMgr
     )
@@ -78,7 +78,7 @@ public interface VolumeConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
+    void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.VolumeConnectionData} from the database
@@ -89,5 +89,5 @@ public interface VolumeConnectionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
+    void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
 }

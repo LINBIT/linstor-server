@@ -35,7 +35,7 @@ public interface NetInterfaceDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public NetInterfaceData load(
+    NetInterfaceData load(
         Node node,
         NetInterfaceName netInterfaceName,
         boolean logWarnIfNotExists,
@@ -52,7 +52,7 @@ public interface NetInterfaceDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
+    void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link NetInterfaceData} from the database
@@ -63,10 +63,10 @@ public interface NetInterfaceDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
+    void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted ipAddress.
      */
-    public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver();
+    SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver();
 }

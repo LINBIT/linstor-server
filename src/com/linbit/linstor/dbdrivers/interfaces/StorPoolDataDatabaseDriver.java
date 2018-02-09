@@ -37,7 +37,7 @@ public interface StorPoolDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public StorPoolData load(
+    StorPoolData load(
         Node node,
         StorPoolDefinition storPoolDefinition,
         boolean logWarnIfNotExists,
@@ -54,7 +54,7 @@ public interface StorPoolDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(StorPoolData storPool, TransactionMgr transMgr) throws SQLException;
+    void create(StorPoolData storPool, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.StorPoolData} from the database.
@@ -65,7 +65,7 @@ public interface StorPoolDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException;
+    void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Checks if the stored primary key already exists in the database.
@@ -78,6 +78,6 @@ public interface StorPoolDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void ensureEntryExists(StorPoolData storPool, TransactionMgr transMgr)
+    void ensureEntryExists(StorPoolData storPool, TransactionMgr transMgr)
         throws SQLException;
 }

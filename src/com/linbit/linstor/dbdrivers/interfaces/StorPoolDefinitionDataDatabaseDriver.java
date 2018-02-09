@@ -30,7 +30,7 @@ public interface StorPoolDefinitionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public StorPoolDefinitionData load(
+    StorPoolDefinitionData load(
         StorPoolName storPoolName,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
@@ -46,7 +46,7 @@ public interface StorPoolDefinitionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(StorPoolDefinitionData storPoolDefinition, TransactionMgr transMgr) throws SQLException;
+    void create(StorPoolDefinitionData storPoolDefinition, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.StorPoolDefinitionData} from the database.
@@ -57,5 +57,5 @@ public interface StorPoolDefinitionDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(StorPoolDefinitionData storPoolDefinition, TransactionMgr transMgr) throws SQLException;
+    void delete(StorPoolDefinitionData storPoolDefinition, TransactionMgr transMgr) throws SQLException;
 }

@@ -35,7 +35,7 @@ public interface VolumeDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public VolumeData load(
+    VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefinition,
         boolean logWarnIfNotExists,
@@ -52,7 +52,7 @@ public interface VolumeDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void create(VolumeData volume, TransactionMgr transMgr) throws SQLException;
+    void create(VolumeData volume, TransactionMgr transMgr) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.VolumeData} from the database
@@ -63,10 +63,10 @@ public interface VolumeDataDatabaseDriver
      *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    public void delete(VolumeData volume, TransactionMgr transMgr) throws SQLException;
+    void delete(VolumeData volume, TransactionMgr transMgr) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted flags
      */
-    public StateFlagsPersistence<VolumeData> getStateFlagsPersistence();
+    StateFlagsPersistence<VolumeData> getStateFlagsPersistence();
 }
