@@ -53,7 +53,7 @@ public class DerbyDriver implements DatabaseDriver
 {
     public static final ServiceName DFLT_SERVICE_INSTANCE_NAME;
 
-    public static String DB_CONNECTION_URL = "jdbc:derby:directory:database";
+    public static final String DEFAULT_DB_CONNECTION_URL = "jdbc:derby:directory:database";
 
     static
     {
@@ -91,14 +91,14 @@ public class DerbyDriver implements DatabaseDriver
     public DerbyDriver(
         AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Map<NodeName, Node> nodesMap,
-        Map<ResourceName, ResourceDefinition> rscDfnMap,
-        Map<StorPoolName, StorPoolDefinition> storPoolDfnMap
+        Map<NodeName, Node> nodesMapRef,
+        Map<ResourceName, ResourceDefinition> rscDfnMapRef,
+        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
     )
     {
-        this.nodesMap = nodesMap;
-        this.rscDfnMap = rscDfnMap;
-        this.storPoolDfnMap = storPoolDfnMap;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
+        storPoolDfnMap = storPoolDfnMapRef;
         propsDriver = new PropsConDerbyDriver(errorReporterRef);
         nodeDriver = new NodeDataDerbyDriver(privCtx, errorReporterRef, nodesMap);
         resesourceDefinitionDriver = new ResourceDefinitionDataDerbyDriver(
@@ -195,7 +195,7 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public String getDefaultConnectionUrl()
     {
-        return DB_CONNECTION_URL;
+        return DEFAULT_DB_CONNECTION_URL;
     }
 
     @Override

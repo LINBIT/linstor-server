@@ -29,7 +29,8 @@ public interface DatabaseDriver
     ServiceName getDefaultServiceInstanceName();
 
     /**
-     * Fetches all {@link com.linbit.linstor.Node}s, {@link ResourceDefinition}s and {@link com.linbit.linstor.StorPoolDefinition}s from
+     * Fetches all {@link com.linbit.linstor.Node}s, {@link ResourceDefinition}s and
+     * {@link com.linbit.linstor.StorPoolDefinition}s from
      * the database.
      *
      * @param transMgr
