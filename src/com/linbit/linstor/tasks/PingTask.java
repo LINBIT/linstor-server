@@ -18,10 +18,10 @@ public class PingTask implements Task
     private final Controller controller;
     private final ReconnectorTask reconnector;
 
-    public PingTask(Controller controller, ReconnectorTask reconnector)
+    public PingTask(Controller controllerRef, ReconnectorTask reconnectorRef)
     {
-        this.controller = controller;
-        this.reconnector = reconnector;
+        controller = controllerRef;
+        reconnector = reconnectorRef;
 
         reconnector.setPingTask(this);
     }

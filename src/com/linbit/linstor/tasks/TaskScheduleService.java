@@ -14,7 +14,7 @@ import org.slf4j.event.Level;
 
 public class TaskScheduleService implements SystemService, Runnable
 {
-    public static interface Task
+    public interface Task
     {
         /**
          * When a {@link Task} gets registered in {@link TaskScheduleService}, it will be
@@ -25,7 +25,7 @@ public class TaskScheduleService implements SystemService, Runnable
          * <br>
          * Any negative return value will cancel the Task.
          */
-        public long run();
+        long run();
     }
 
     private static final ServiceName SERVICE_NAME;
@@ -59,9 +59,9 @@ public class TaskScheduleService implements SystemService, Runnable
     private final LinkedList<Task> newTasks = new LinkedList<>();
     private final Controller controller;
 
-    public TaskScheduleService(Controller controller)
+    public TaskScheduleService(Controller controllerRef)
     {
-        this.controller = controller;
+        controller = controllerRef;
         serviceInstanceName = SERVICE_NAME;
     }
 

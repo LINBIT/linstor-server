@@ -17,14 +17,14 @@ public class ReconnectorTask implements Task
     private final Controller controller;
     private PingTask pingTask;
 
-    public ReconnectorTask(Controller controller)
+    public ReconnectorTask(Controller controllerRef)
     {
-        this.controller = controller;
+        controller = controllerRef;
     }
 
-    void setPingTask(PingTask pingTask)
+    void setPingTask(PingTask pingTaskRef)
     {
-        this.pingTask = pingTask;
+        pingTask = pingTaskRef;
     }
 
     public void add(Peer peer)
