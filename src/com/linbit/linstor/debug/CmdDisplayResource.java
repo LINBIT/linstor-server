@@ -123,50 +123,53 @@ public class CmdDisplayResource extends BaseDebugCmd
             ResourceName rscName = rscDfn.getName();
             try
             {
-                Iterator<Resource> rscIter = rscDfn.iterateResource(accCtx);
-
-                TreePrinter.Builder treeBuilder = TreePrinter.builder(
-                    "\u001b[1;37m%-48s\u001b[0m %s",
-                    rscName.displayValue, rscDfn.getUuid().toString().toUpperCase()
-                );
-
-                while (rscIter.hasNext())
+                if (rscDfn.getResourceCount() >= 1)
                 {
-                    Resource rsc = rscIter.next();
-                    ObjectProtection rscProt = rsc.getObjProt();
-                    Node peerNode = rsc.getAssignedNode();
-                    NodeName peerNodeName = peerNode.getName();
+                    Iterator<Resource> rscIter = rscDfn.iterateResource(accCtx);
 
-                    treeBuilder.branch(peerNodeName.displayValue)
-                        .leaf("Resource UUID: %s", rsc.getUuid().toString().toUpperCase())
-                        .leaf("Resource volatile UUID: %s", UuidUtils.dbgInstanceIdString(rsc))
-                        .leaf("Resource definition UUID: %s", rscDfn.getUuid().toString().toUpperCase())
-                        .leaf("Resource definition volatile UUID: %s", UuidUtils.dbgInstanceIdString(rscDfn))
-                        .leaf("Node-ID: %d", rsc.getNodeId().value)
-                        .leaf("Node UUID: %s", peerNode.getUuid().toString().toUpperCase())
-                        .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(peerNode));
+                    TreePrinter.Builder treeBuilder = TreePrinter.builder(
+                        "\u001b[1;37m%-48s\u001b[0m %s",
+                        rscName.displayValue, rscDfn.getUuid().toString().toUpperCase()
+                    );
 
-                    try
+                    while (rscIter.hasNext())
                     {
-                        long flagsBits = rsc.getStateFlags().getFlagsBits(accCtx);
-                        treeBuilder.leaf("Flags: %016X", flagsBits);
-                    }
-                    catch (AccessDeniedException ignored)
-                    {
+                        Resource rsc = rscIter.next();
+                        ObjectProtection rscProt = rsc.getObjProt();
+                        Node peerNode = rsc.getAssignedNode();
+                        NodeName peerNodeName = peerNode.getName();
+
+                        treeBuilder.branch(peerNodeName.displayValue)
+                            .leaf("Resource UUID: %s", rsc.getUuid().toString().toUpperCase())
+                            .leaf("Resource volatile UUID: %s", UuidUtils.dbgInstanceIdString(rsc))
+                            .leaf("Resource definition UUID: %s", rscDfn.getUuid().toString().toUpperCase())
+                            .leaf("Resource definition volatile UUID: %s", UuidUtils.dbgInstanceIdString(rscDfn))
+                            .leaf("Node-ID: %d", rsc.getNodeId().value)
+                            .leaf("Node UUID: %s", peerNode.getUuid().toString().toUpperCase())
+                            .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(peerNode));
+
+                        try
+                        {
+                            long flagsBits = rsc.getStateFlags().getFlagsBits(accCtx);
+                            treeBuilder.leaf("Flags: %016X", flagsBits);
+                        }
+                        catch (AccessDeniedException ignored)
+                        {
+                        }
+
+                        treeBuilder
+                            .leaf(
+                                "Creator: %-24s Owner: %-24s",
+                                rscProt.getCreator().name.displayValue,
+                                rscProt.getOwner().name.displayValue
+                            )
+                            .leaf("Security type: %s", rscProt.getSecurityType().name.displayValue);
+
+                        treeBuilder.endBranch();
                     }
 
-                    treeBuilder
-                        .leaf(
-                            "Creator: %-24s Owner: %-24s",
-                            rscProt.getCreator().name.displayValue,
-                            rscProt.getOwner().name.displayValue
-                        )
-                        .leaf("Security type: %s", rscProt.getSecurityType().name.displayValue);
-
-                    treeBuilder.endBranch();
+                    treeBuilder.print(output);
                 }
-
-                treeBuilder.print(output);
             }
             catch (AccessDeniedException ignored)
             {
