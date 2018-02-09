@@ -79,6 +79,7 @@ jar {
 /////////////////////////// Version Info ///////////////////////////
 task versionInfo() {
     String propsFile = "$projectDir/generated-resources/version-info.properties"
+
     File gitFolder = file("$projectDir/.git")
     if (gitFolder.exists())
     {
@@ -94,13 +95,19 @@ task versionInfo() {
             throw new RuntimeException("Cannot generate version.", exc)
         }
     }
-    Properties props = new Properties()
-    try {
-        props.load(new FileInputStream(propsFile))
-    } catch (Exception exc) {
-        throw new RuntimeException("Cannot read version.", exc)
+
+    if (project.hasProperty('versionOverride')) {
+        logger.warn("Overriding version with $versionOverride")
+        version = versionOverride
+    } else {
+        Properties props = new Properties()
+        try {
+            props.load(new FileInputStream(propsFile))
+        } catch (Exception exc) {
+            throw new RuntimeException("Cannot read version.", exc)
+        }
+        version = props.get("version")
     }
-    version = props.get("version")
 }
 
 processResources.dependsOn versionInfo
