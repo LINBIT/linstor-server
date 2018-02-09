@@ -55,7 +55,12 @@ public class CtrlConfApiCallHandler
                     break;
                 // TODO: check for other properties
                 default:
-                    // ignore - for now
+                {
+                    apiCallRc.addEntry(
+                        String.format("Setting property '%s' is currently not supported.", fullKey),
+                        ApiConsts.FAIL_INVLD_PROP
+                    );
+                }
             }
         }
         catch (Exception exc)
