@@ -26,27 +26,45 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.SecurityModule;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+@Singleton
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeNameStr = new ThreadLocal<>();
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
     private final CtrlClientSerializer clientComSerializer;
+    private final ObjectProtection nodesMapProt;
+    private final ObjectProtection storPoolDfnMapProt;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
+    @Inject
     CtrlStorPoolApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        AccessContext apiCtxRef
+        AccessContext apiCtxRef,
+        @Named(SecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
+        @Named(SecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
     )
     {
         super(
-            apiCtrlAccessorsRef,
+            errorReporterRef,
+            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL,
             interComSerializer
@@ -57,7 +75,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             currentStorPoolNameStr
         );
 
-        super.setNullOnAutoClose(currentNodeNameStr, currentStorPoolNameStr);
+        nodesMapProt = nodesMapProtRef;
+        storPoolDfnMapProt = storPoolDfnMapProtRef;
+        storPoolDfnMap = storPoolDfnMapRef;
     }
 
     public ApiCallRc createStorPool(
@@ -304,7 +324,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidNameException invalidNameExc)
         {
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     "Satellite requested data for invalid storpool name '" + storPoolNameStr + "'.",
                     invalidNameExc
@@ -313,7 +333,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested storpool data.",
                     accDeniedExc
@@ -327,9 +347,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            for (StorPoolDefinition storPoolDfn : apiCtrlAccessors.getStorPoolDfnMap().values())
+            nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+            storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
             {
                 try
                 {
@@ -387,7 +407,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(
+            storPoolDfnMapProt.requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );
@@ -462,7 +482,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            apiCtrlAccessors.getStorPoolDfnMap().put(
+            storPoolDfnMap.put(
                 storPool.getName(),
                 storPool.getDefinition(apiCtx)
             );

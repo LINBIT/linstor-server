@@ -33,26 +33,47 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.SecurityModule;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+@Singleton
 class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
     private final ThreadLocal<VlmDfnApi> currentVlmDfnApi = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ObjectProtection rscDfnMapProt;
+    private final MinorNrPool minorNrPool;
+    private final String defaultStorPoolName;
 
+    @Inject
     CtrlVlmDfnApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessors,
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
-        AccessContext apiCtx
+        AccessContext apiCtx,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(SecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        MinorNrPool minorNrPoolRef,
+        String defaultStorPoolNameRef
     )
     {
         super(
-            apiCtrlAccessors,
+            errorReporterRef,
+            dbConnectionPoolRef,
             apiCtx,
             ApiConsts.MASK_VLM_DFN,
             interComSerializer
@@ -63,6 +84,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             currentVlmDfnApi,
             currentVlmNr
         );
+
+        rscDfnMap = rscDfnMapRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        minorNrPool = minorNrPoolRef;
+        defaultStorPoolName = defaultStorPoolNameRef;
     }
 
     private void updateCurrentKeyNumber(final String key, Integer number)
@@ -171,7 +197,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            apiCtrlAccessors.getRscDfnMap().put(rscDfn.getName(), rscDfn);
+            rscDfnMap.put(rscDfn.getName(), rscDfn);
 
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
@@ -372,7 +398,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.CHANGE);
+            rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -485,7 +511,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             Integer minorNrInt = vlmDfnApi.getMinorNr();
             if (minorNrInt == null)
             {
-                minorNrInt = apiCtrlAccessors.getFreeMinorNr();
+                minorNrInt = minorNrPool.getFreeMinorNr();
             }
             freeMinorNr = new MinorNumber(minorNrInt);
         }
@@ -607,7 +633,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rsc.adjustVolumes(apiCtx, currentTransMgr.get(), apiCtrlAccessors.getDefaultStorPoolName());
+            rsc.adjustVolumes(apiCtx, currentTransMgr.get(), defaultStorPoolName);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -652,7 +678,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
             vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
-            apiCtrlAccessors.getErrorReporter().logInfo(successMessage);
+            errorReporter.logInfo(successMessage);
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -7,6 +7,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
+import com.linbit.linstor.core.CtrlNodeApiCallHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +28,8 @@ import junitparams.JUnitParamsRunner;
 @RunWith(JUnitParamsRunner.class)
 public class NodeApiTest extends ApiTestBase
 {
+    private CtrlNodeApiCallHandler nodeApiCallHandler;
+
     private NodeName testNodeName;
     private NodeType testNodeType;
     private NodeData testNode;
@@ -55,6 +60,19 @@ public class NodeApiTest extends ApiTestBase
         transMgr.commit();
 
         dbConnPool.returnConnection(transMgr);
+
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(
+            errorReporter,
+            dbConnPool,
+            SYS_CTX,
+            new ProtoCtrlStltSerializer(errorReporter, SYS_CTX),
+            new ProtoCtrlClientSerializer(errorReporter, SYS_CTX),
+            ctrlConf,
+            nodesMap,
+            nodesMapProt,
+            satelliteConnector,
+            netComContainer
+        );
     }
 
     @Test
@@ -211,7 +229,7 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return apiCallHandler.createNode(
+            return nodeApiCallHandler.createNode(
                 accCtx,
                 peer,
                 nodeName,
@@ -330,7 +348,7 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return apiCallHandler.modifyNode(
+            return nodeApiCallHandler.modifyNode(
                 accCtx,
                 peer,
                 nodeUuid,

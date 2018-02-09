@@ -8,7 +8,10 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.Builder;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.numberpool.MinorNrPoolImpl;
+import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.numberpool.TcpPortPoolImpl;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -16,19 +19,41 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.SecurityModule;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 
+@Singleton
 public class CtrlConfApiCallHandler
 {
-    private final ApiCtrlAccessors apiCtrlAccessors;
+    private ErrorReporter errorReporter;
     private final CtrlClientSerializer ctrlClientcomSrzl;
+    private final ObjectProtection ctrlConfProt;
+    private final Props ctrlConf;
+    private final TcpPortPool tcpPortPool;
+    private final MinorNrPool minorNrPool;
 
-    public CtrlConfApiCallHandler(ApiCtrlAccessors apiCtrlAccessorsRef, CtrlClientSerializer ctrlClientcomSrzlRef)
+    @Inject
+    public CtrlConfApiCallHandler(
+        ErrorReporter errorReporterRef,
+        CtrlClientSerializer ctrlClientcomSrzlRef,
+        @Named(SecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
+        @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        TcpPortPool tcpPortPoolRef,
+        MinorNrPool minorNrPoolRef
+    )
     {
-        apiCtrlAccessors = apiCtrlAccessorsRef;
+        errorReporter = errorReporterRef;
         ctrlClientcomSrzl = ctrlClientcomSrzlRef;
+        ctrlConfProt = ctrlConfProtRef;
+        ctrlConf = ctrlConfRef;
+        tcpPortPool = tcpPortPoolRef;
+        minorNrPool = minorNrPoolRef;
     }
 
     public ApiCallRc setProp(AccessContext accCtx, String key, String namespace, String value)
@@ -36,7 +61,7 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            apiCtrlAccessors.getCtrlConfProtection().requireAccess(accCtx, AccessType.CHANGE);
+            ctrlConfProt.requireAccess(accCtx, AccessType.CHANGE);
 
             String fullKey;
             if (namespace != null && !"".equals(namespace.trim()))
@@ -101,7 +126,7 @@ public class CtrlConfApiCallHandler
             }
 
             apiCallRc.addEntry(errorMsg, rc);
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 exc,
                 accCtx,
                 null,
@@ -116,8 +141,8 @@ public class CtrlConfApiCallHandler
         byte[] data = null;
         try
         {
-            apiCtrlAccessors.getCtrlConfProtection().requireAccess(accCtx, AccessType.VIEW);
-            Props conf = apiCtrlAccessors.getCtrlConf();
+            ctrlConfProt.requireAccess(accCtx, AccessType.VIEW);
+            Props conf = ctrlConf;
             if (namespace != null && !namespace.trim().equals(""))
             {
                 conf = conf.getNamespace(namespace);
@@ -146,7 +171,7 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            apiCtrlAccessors.getCtrlConfProtection().requireAccess(accCtx, AccessType.CHANGE);
+            ctrlConfProt.requireAccess(accCtx, AccessType.CHANGE);
 
             String fullKey;
             if (namespace != null && !"".equals(namespace.trim()))
@@ -157,17 +182,17 @@ public class CtrlConfApiCallHandler
             {
                 fullKey = key;
             }
-            String oldValue = apiCtrlAccessors.getCtrlConf().removeProp(key, namespace);
+            String oldValue = ctrlConf.removeProp(key, namespace);
 
             if (oldValue != null)
             {
                 switch (fullKey)
                 {
                     case TcpPortPoolImpl.PROPSCON_KEY_TCP_PORT_RANGE:
-                        apiCtrlAccessors.reloadTcpPortRange();
+                        tcpPortPool.reloadRange();
                         break;
                     case MinorNrPoolImpl.PROPSCON_KEY_MINOR_NR_RANGE:
-                        apiCtrlAccessors.reloadMinorNrRange();
+                        minorNrPool.reloadRange();
                         break;
                     // TODO: check for other properties
                     default:
@@ -210,7 +235,7 @@ public class CtrlConfApiCallHandler
             }
 
             apiCallRc.addEntry(errorMsg, rc);
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 exc,
                 accCtx,
                 null,
@@ -229,7 +254,7 @@ public class CtrlConfApiCallHandler
     )
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException
     {
-        Props ctrlCfg = apiCtrlAccessors.getCtrlConf();
+        Props ctrlCfg = ctrlConf;
 
         Matcher matcher = Controller.RANGE_PATTERN.matcher(value);
         if (matcher.find())
@@ -240,7 +265,7 @@ public class CtrlConfApiCallHandler
             )
             {
                 ctrlCfg.setProp(key, value, namespace);
-                apiCtrlAccessors.reloadTcpPortRange();
+                tcpPortPool.reloadRange();
 
                 apiCallRc.addEntry(
                     "The TCP port range was successfully updated to: " + value,
@@ -293,7 +318,7 @@ public class CtrlConfApiCallHandler
                 errorMsg,
                 rc
             );
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 exc,
                 accCtx,
                 null,
@@ -313,7 +338,7 @@ public class CtrlConfApiCallHandler
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
     {
-        Props ctrlCfg = apiCtrlAccessors.getCtrlConf();
+        Props ctrlCfg = ctrlConf;
 
         Matcher matcher = Controller.RANGE_PATTERN.matcher(value);
         if (matcher.find())
@@ -324,7 +349,7 @@ public class CtrlConfApiCallHandler
             )
             {
                 ctrlCfg.setProp(key, value, namespace);
-                apiCtrlAccessors.reloadMinorNrRange();
+                minorNrPool.reloadRange();
 
                 apiCallRc.addEntry(
                     "The Minor range was successfully updated to: " + value,
@@ -377,7 +402,7 @@ public class CtrlConfApiCallHandler
                 errorMsg,
                 rc
             );
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 exc,
                 accCtx,
                 null,

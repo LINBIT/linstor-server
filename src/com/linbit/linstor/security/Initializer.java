@@ -8,8 +8,10 @@ import com.linbit.LinbitModule;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
@@ -84,6 +86,7 @@ public final class Initializer
         Injector injector = Guice.createInjector(
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
+            new ConfigModule(),
             new CoreTimerModule(),
             new MetaDataModule(),
             new LinbitModule(),
@@ -92,7 +95,8 @@ public final class Initializer
             new DbDriversModule(initCtx),
             new DbConnectionPoolModule(),
             new NetComModule(),
-            new NumberPoolModule(initCtx)
+            new NumberPoolModule(initCtx),
+            new CtrlApiCallHandlerModule(initCtx)
         );
 
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX, cArgs);

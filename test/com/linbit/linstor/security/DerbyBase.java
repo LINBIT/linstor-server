@@ -7,18 +7,16 @@ import static org.junit.Assert.fail;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreUtils;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
@@ -72,9 +70,9 @@ public abstract class DerbyBase implements DerbyTestConstants
     private static boolean initialized = false;
     private static DbDerbyPersistence secureDbDriver;
     private static DerbyDriver persistenceDbDriver;
-    protected static HashMap<NodeName, Node> nodesMap;
-    protected static HashMap<ResourceName, ResourceDefinition> rscDfnMap;
-    protected static HashMap<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+    protected static CoreModule.NodesMap nodesMap;
+    protected static CoreModule.ResourceDefinitionMap rscDfnMap;
+    protected static CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     protected static ErrorReporter errorReporter =
 //        new EmptyErrorReporter(true);
@@ -118,9 +116,9 @@ public abstract class DerbyBase implements DerbyTestConstants
             con = dbConnPool.getConnection();
             secureDbDriver = new DbDerbyPersistence(SYS_CTX, errorReporter);
 
-            nodesMap = new HashMap<NodeName, Node>();
-            rscDfnMap = new HashMap<ResourceName, ResourceDefinition>();
-            storPoolDfnMap = new HashMap<StorPoolName, StorPoolDefinition>();
+            nodesMap = new CoreModule.NodesMapImpl();
+            rscDfnMap = new CoreModule.ResourceDefinitionMapImpl();
+            storPoolDfnMap = new CoreModule.StorPoolDefinitionMapImpl();
 
             persistenceDbDriver = new DerbyDriver(
                 SYS_CTX,

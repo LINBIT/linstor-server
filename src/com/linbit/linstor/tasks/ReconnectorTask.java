@@ -4,22 +4,33 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.core.CtrlAuthenticationApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class ReconnectorTask implements Task
 {
     private static final int RECONNECT_SLEEP = 10_000;
 
     private final Object syncObj = new Object();
     private final LinkedList<Peer> peerList = new LinkedList<>();
-    private final Controller controller;
+    private final ErrorReporter errorReporter;
     private PingTask pingTask;
+    private CtrlAuthenticationApiCallHandler authApiCallHandler;
 
-    public ReconnectorTask(Controller controller)
+    @Inject
+    public ReconnectorTask(
+        ErrorReporter errorReporter,
+        CtrlAuthenticationApiCallHandler authApiCallHandler
+    )
     {
-        this.controller = controller;
+        this.errorReporter = errorReporter;
+        this.authApiCallHandler = authApiCallHandler;
     }
 
     void setPingTask(PingTask pingTask)
@@ -41,7 +52,8 @@ public class ReconnectorTask implements Task
         {
             if (peerList.remove(peer) && pingTask != null)
             {
-                controller.getApiCallHandler().completeSatelliteAuthentication(peer);
+                // no locks needed
+                authApiCallHandler.completeAuthentication(peer);
                 pingTask.add(peer);
             }
         }
@@ -56,14 +68,14 @@ public class ReconnectorTask implements Task
             final Peer peer = localList.get(idx);
             if (peer.isConnected(false))
             {
-                controller.getErrorReporter().logTrace(
+                errorReporter.logTrace(
                     "Peer " + peer.getId() + " has connected. Removed from reconnectList, added to pingList."
                 );
                 peerConnected(peer);
             }
             else
             {
-                controller.getErrorReporter().logTrace(
+                errorReporter.logTrace(
                     "Peer " + peer.getId() + " has not connected yet, retrying connect."
                 );
                 try
@@ -77,7 +89,7 @@ public class ReconnectorTask implements Task
                 catch (IOException ioExc)
                 {
                     // TODO: detailed error reporting
-                    controller.getErrorReporter().reportError(ioExc);
+                    errorReporter.reportError(ioExc);
                 }
             }
         }

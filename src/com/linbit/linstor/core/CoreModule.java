@@ -19,7 +19,6 @@ import com.linbit.linstor.propscon.PropsContainer;
 
 import javax.inject.Named;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -33,6 +32,7 @@ public class CoreModule extends AbstractModule
     public static final String NODES_MAP_LOCK = "nodesMapLock";
     public static final String RSC_DFN_MAP_LOCK = "rscDfnMapLock";
     public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";
+    public static final String CTRL_CONF_LOCK = "ctrlConfLock";
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
 
@@ -59,12 +59,14 @@ public class CoreModule extends AbstractModule
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(STOR_POOL_DFN_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_CONF_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
     }
 
     @Provides
     @Singleton
     @Named(CONTROLLER_PROPS)
-    private Props loadPropsContainer(DbConnectionPool dbConnPool)
+    public Props loadPropsContainer(DbConnectionPool dbConnPool)
         throws SQLException
     {
         Props propsContainer;
@@ -101,22 +103,22 @@ public class CoreModule extends AbstractModule
     {
     }
 
-    private static class NodesMapImpl
+    public static class NodesMapImpl
         extends TreeMap<NodeName, Node> implements NodesMap
     {
     }
 
-    private static class ResourceDefinitionMapImpl
+    public static class ResourceDefinitionMapImpl
         extends TreeMap<ResourceName, ResourceDefinition> implements ResourceDefinitionMap
     {
     }
 
-    private static class StorPoolDefinitionMapImpl
+    public static class StorPoolDefinitionMapImpl
         extends TreeMap<StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
     {
     }
 
-    private static class PeerMapImpl
+    public static class PeerMapImpl
         extends TreeMap<String, Peer> implements PeerMap
     {
     }

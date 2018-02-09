@@ -6,7 +6,6 @@ import java.net.SocketAddress;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
@@ -16,7 +15,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 
 import com.google.inject.Injector;
@@ -39,7 +37,6 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
 import com.linbit.WorkerPool;
-import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.CoreServices;
@@ -81,7 +78,6 @@ import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 
 import com.linbit.ExhaustedPoolException;
@@ -132,7 +128,7 @@ public final class Controller extends LinStor implements CoreServices
     // TODO
     private MetaDataApi metaData;
 
-    final CtrlApiCallHandler apiCallHandler;
+    private CtrlApiCallHandler apiCallHandler;
 
     // ============================================================
     // Worker thread pool & message processing dispatcher
@@ -161,15 +157,12 @@ public final class Controller extends LinStor implements CoreServices
 
     private NetComContainer netComContainer;
 
-    // The current API type (e.g ProtoBuf)
-    private final ApiType apiType;
-
     // Shutdown controls
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
 
     // Synchronization lock for the configuration
-    public final ReadWriteLock ctrlConfLock;
+    public ReadWriteLock ctrlConfLock;
 
     // Controller configuration properties
     Props ctrlConf;
@@ -193,8 +186,6 @@ public final class Controller extends LinStor implements CoreServices
     TcpPortPool tcpPortNrPool;
     MinorNrPool minorNrPool;
 
-    private ApiCtrlAccessorImpl apiCtrlAccessors;
-
     private ReconnectorTask reconnectorTask;
     private PingTask pingTask;
 
@@ -204,9 +195,6 @@ public final class Controller extends LinStor implements CoreServices
     public Controller(Injector injectorRef, AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
     {
         injector = injectorRef;
-
-        // Initialize synchronization
-        ctrlConfLock        = new ReentrantReadWriteLock(true);
 
         // Initialize security contexts
         sysCtx = sysCtxRef;
@@ -218,38 +206,8 @@ public final class Controller extends LinStor implements CoreServices
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
 
-        apiType = ApiType.PROTOBUF;
-
         taskScheduleService = new TaskScheduleService(this);
         systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
-
-        apiCtrlAccessors = new ApiCtrlAccessorImpl(this);
-
-        {
-            AccessContext apiCtx = sysCtx.clone();
-            try
-            {
-                apiCtx.getEffectivePrivs().enablePrivileges(
-                    Privilege.PRIV_OBJ_VIEW,
-                    Privilege.PRIV_OBJ_USE,
-                    Privilege.PRIV_OBJ_CHANGE,
-                    Privilege.PRIV_OBJ_CONTROL,
-                    Privilege.PRIV_MAC_OVRD
-                );
-                apiCallHandler = new CtrlApiCallHandler(
-                    apiCtrlAccessors,
-                    apiType,
-                    apiCtx
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ImplementationError(
-                    "Could not create API handler's access context",
-                    accDeniedExc
-                );
-            }
-        }
 
         // Initialize shutdown controls
         shutdownFinished = false;
@@ -303,6 +261,8 @@ public final class Controller extends LinStor implements CoreServices
                 Key.get(ReadWriteLock.class, Names.named(CoreModule.RSC_DFN_MAP_LOCK)));
             storPoolDfnMapLock = injector.getInstance(
                 Key.get(ReadWriteLock.class, Names.named(CoreModule.STOR_POOL_DFN_MAP_LOCK)));
+            ctrlConfLock = injector.getInstance(
+                Key.get(ReadWriteLock.class, Names.named(CoreModule.CTRL_CONF_LOCK)));
 
             reconfigurationLock.writeLock().lock();
 
@@ -366,9 +326,11 @@ public final class Controller extends LinStor implements CoreServices
 
             workerThrPool = injector.getInstance(WorkerPool.class);
 
+            apiCallHandler = injector.getInstance(CtrlApiCallHandler.class);
+
             // Initialize tasks
-            reconnectorTask = new ReconnectorTask(this);
-            pingTask = new PingTask(this, reconnectorTask);
+            reconnectorTask = injector.getInstance(ReconnectorTask.class);
+            pingTask = injector.getInstance(PingTask.class);
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
 
@@ -382,7 +344,7 @@ public final class Controller extends LinStor implements CoreServices
             msgProc = injector.getInstance(CommonMessageProcessor.class);
 
             errorLogRef.logInfo("Initializing test APIs");
-            LinStor.loadApiCalls(msgProc, this, this, apiType);
+            LinStor.loadApiCalls(msgProc, this, this, ApiType.PROTOBUF);
 
             initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM),
@@ -692,75 +654,6 @@ public final class Controller extends LinStor implements CoreServices
         }
 
         return netComSvc != null || sysSvc != null;
-    }
-
-    public void connectSatellite(
-        final InetSocketAddress satelliteAddress,
-        final TcpConnector tcpConnector,
-        final Node node
-    )
-    {
-        Runnable connectRunnable = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try
-                {
-                    Peer peer = tcpConnector.connect(satelliteAddress, node);
-                    {
-                        AccessContext connectorCtx = sysCtx.clone();
-                        connectorCtx.getEffectivePrivs().enablePrivileges(
-                            Privilege.PRIV_MAC_OVRD,
-                            Privilege.PRIV_OBJ_CHANGE
-                        );
-                        node.setPeer(connectorCtx, peer);
-                    }
-                    if (peer.isConnected(false))
-                    {
-                        apiCallHandler.completeSatelliteAuthentication(peer);
-                        pingTask.add(peer);
-                    }
-                    else
-                    {
-                        reconnectorTask.add(peer);
-                    }
-                }
-                catch (IOException ioExc)
-                {
-                    getErrorReporter().reportError(
-                        new LinStorException(
-                            "Cannot connect to satellite",
-                            String.format(
-                                "Establishing connection to satellite (%s:%d) failed",
-                                satelliteAddress.getAddress().getHostAddress(),
-                                satelliteAddress.getPort()
-                            ),
-                            "IOException occured. See cause for further details",
-                            null,
-                            null,
-                            ioExc
-                        )
-                    );
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    getErrorReporter().reportError(
-                        new ImplementationError(
-                            "System context has not enough privileges to set peer for a connecting node",
-                            accDeniedExc
-                        )
-                    );
-                    accDeniedExc.printStackTrace();
-                }
-            }
-        };
-        // This could possibly be offloaded to some specialized worker pool in the future,
-        // but not to the main worker pool used for submitting inbound requests,
-        // because submitting to the main worker pool from the Controller's initialization
-        // routines or from another task that already runs on the main worker pool
-        // can potentially deadlock if the worker pool's queue is full
-        connectRunnable.run();
     }
 
     public MetaDataApi getMetaDataApi()
@@ -1235,7 +1128,8 @@ public final class Controller extends LinStor implements CoreServices
             for (Node node : nodes)
             {
                 errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                CtrlNodeApiCallHandler.startConnecting(node, initCtx, apiCtrlAccessors);
+                CtrlNodeApiCallHandler ctrlNodeApiCallHandler = injector.getInstance(CtrlNodeApiCallHandler.class);
+                ctrlNodeApiCallHandler.startConnecting(node, initCtx);
             }
             errorLogRef.logInfo("Reconnect requests sent");
         }
@@ -1243,10 +1137,5 @@ public final class Controller extends LinStor implements CoreServices
         {
             errorLogRef.logInfo("No known nodes.");
         }
-    }
-
-    public TcpConnector getNetComConnector(ServiceName conSvcName)
-    {
-        return netComContainer.getNetComConnector(conSvcName);
     }
 }

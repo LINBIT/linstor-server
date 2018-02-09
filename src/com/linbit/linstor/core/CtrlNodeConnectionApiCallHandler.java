@@ -15,24 +15,33 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
 
+    @Inject
     CtrlNodeConnectionApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
         super(
-            apiCtrlAccessorsRef,
+            errorReporterRef,
+            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_NODE_CONN,
             interComSerializer

@@ -2,32 +2,30 @@ package com.linbit.linstor.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.linbit.ServiceName;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.api.utils.DummyTcpConnector;
+import com.linbit.linstor.netcom.NetComContainer;
+import com.linbit.linstor.netcom.TcpConnector;
 import org.junit.Assert;
 import org.junit.Before;
 import com.linbit.TransactionMgr;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
 import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.api.utils.ApiCtrlAccessorTestImpl;
-import com.linbit.linstor.api.utils.DummyTcpConnector;
-import com.linbit.linstor.netcom.TcpConnector;
-import com.linbit.linstor.numberpool.BitmapPool;
-import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessContext;
@@ -40,9 +38,18 @@ import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.testclient.ApiRCUtils;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 public abstract class ApiTestBase extends DerbyBase
 {
+    @Mock
+    protected SatelliteConnector satelliteConnector;
+
+    @Mock
+    protected NetComContainer netComContainer;
+
     protected final static long CRT = ApiConsts.MASK_CRT;
     protected final static long DEL = ApiConsts.MASK_DEL;
     protected final static long MOD = ApiConsts.MASK_MOD;
@@ -73,12 +80,6 @@ public abstract class ApiTestBase extends DerbyBase
      * Controller fields END
      */
     private static TcpConnector tcpConnector;
-    private static NumberPool minorNrPool = new BitmapPool(MinorNumber.MINOR_NR_MAX + 1);
-    private static NumberPool tcpPortNrPool = new BitmapPool(TcpPortNumber.PORT_NR_MAX + 1);
-
-
-    private static ApiCtrlAccessorTestImpl testApiCtrlAccessors;
-    protected static CtrlApiCallHandler apiCallHandler;
 
     public ApiTestBase()
     {
@@ -90,6 +91,8 @@ public abstract class ApiTestBase extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
+        MockitoAnnotations.initMocks(this);
+
         metaData = new MetaData();
 
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);
@@ -115,30 +118,7 @@ public abstract class ApiTestBase extends DerbyBase
         transMgr.commit();
         dbConnPool.returnConnection(transMgr);
 
-        testApiCtrlAccessors = new ApiCtrlAccessorTestImpl(
-            ctrlConfProt,
-            ctrlConfLock,
-            ctrlConf,
-            nodesMap,
-            nodesMapProt,
-            nodesMapLock,
-            rscDfnMap,
-            rscDfnMapProt,
-            rscDfnMapLock,
-            storPoolDfnMap,
-            storPoolDfnMapProt,
-            storPoolDfnMapLock,
-            errorReporter,
-            dbConnPool,
-            tcpConnector,
-            metaData
-        );
-
-        apiCallHandler = new CtrlApiCallHandler(
-            testApiCtrlAccessors,
-            ApiType.PROTOBUF,
-            SYS_CTX
-        );
+        Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class))).thenReturn(tcpConnector);
     }
 
     private void create(TransactionMgr transMgr, AccessContext accCtx) throws AccessDeniedException, SQLException
@@ -233,20 +213,24 @@ public abstract class ApiTestBase extends DerbyBase
 
     protected void evaluateTest(AbsApiCallTester currentCall)
     {
-        testApiCtrlAccessors.stltConnectingAttempts.clear();
+        Mockito.reset(satelliteConnector);
 
         ApiCallRc rc = currentCall.executeApiCall();
 
         List<Long> expectedRetCodes = currentCall.retCodes;
         List<RcEntry> actualRetCodes = rc.getEntries();
 
-        assertThat(expectedRetCodes).hasSameSizeAs(actualRetCodes);
+        assertThat(actualRetCodes).hasSameSizeAs(expectedRetCodes);
         for (int idx = 0; idx < expectedRetCodes.size(); idx++)
         {
             expectRc(idx, expectedRetCodes.get(idx), actualRetCodes.get(idx));
         }
 
-        assertThat(currentCall.expectedConnectingAttempts)
-            .hasSameSizeAs(testApiCtrlAccessors.stltConnectingAttempts);
+        Mockito.verify(satelliteConnector, Mockito.times(currentCall.expectedConnectingAttempts.size()))
+            .connectSatellite(
+                Mockito.any(InetSocketAddress.class),
+                Mockito.any(TcpConnector.class),
+                Mockito.any(Node.class)
+            );
     }
 }

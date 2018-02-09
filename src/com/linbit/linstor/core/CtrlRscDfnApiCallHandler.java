@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -26,14 +27,23 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.MinorNrPool;
+import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.SecurityModule;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,26 +54,55 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+@Singleton
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
+    private final short defaultPeerCount;
+    private final int defaultAlStripes;
+    private final long defaultAlSize;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final MinorNrPool minorNrPool;
+    private final ObjectProtection rscDfnMapProt;
+    private final TcpPortPool tcpPortPool;
+    private final MetaDataApi metaDataApi;
 
+    @Inject
     CtrlRscDfnApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        AccessContext apiCtxRef
+        AccessContext apiCtxRef,
+        @Named(ConfigModule.CONFIG_PEER_COUNT) short defaultPeerCountRef,
+        @Named(ConfigModule.CONFIG_AL_STRIPES) int defaultAlStripesRef,
+        @Named(ConfigModule.CONFIG_AL_SIZE) long defaultAlSizeRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        MinorNrPool minorNrPoolRef,
+        @Named(SecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        TcpPortPool tcpPortPoolRef,
+        MetaDataApi metaDataApiRef
     )
     {
         super(
-            apiCtrlAccessorsRef,
+            errorReporterRef,
+            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC_DFN,
             interComSerializer
         );
         super.setNullOnAutoClose(currentRscNameStr);
         clientComSerializer = clientComSerializerRef;
+
+        defaultPeerCount = defaultPeerCountRef;
+        defaultAlStripes = defaultAlStripesRef;
+        defaultAlSize = defaultAlSizeRef;
+        rscDfnMap = rscDfnMapRef;
+        minorNrPool = minorNrPoolRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        tcpPortPool = tcpPortPoolRef;
+        metaDataApi = metaDataApiRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -79,9 +118,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, apiCtrlAccessors.getDefaultPeerCount());
-        int alStripes = getAsInt(props, ApiConsts.KEY_AL_STRIPES, apiCtrlAccessors.getDefaultAlStripes());
-        long alStripeSize = getAsLong(props, ApiConsts.KEY_AL_SIZE, apiCtrlAccessors.getDefaultAlStripes());
+        short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, defaultPeerCount);
+        int alStripes = getAsInt(props, ApiConsts.KEY_AL_STRIPES, defaultAlStripes);
+        long alStripeSize = getAsLong(props, ApiConsts.KEY_AL_SIZE, defaultAlSize);
 
         VolumeNumber volNr;
         try (
@@ -128,7 +167,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            apiCtrlAccessors.getRscDfnMap().put(rscDfn.getName(), rscDfn);
+            rscDfnMap.put(rscDfn.getName(), rscDfn);
 
             for (VolumeDefinitionData vlmDfn : createdVlmDfns)
             {
@@ -149,7 +188,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                 apiCallRc.addEntry(volSuccessEntry);
 
-                apiCtrlAccessors.getErrorReporter().logInfo(successMessage);
+                errorReporter.logInfo(successMessage);
             }
 
             reportSuccess(rscDfn.getUuid());
@@ -183,7 +222,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
-                freeMinorNr = new MinorNumber(apiCtrlAccessors.getFreeMinorNr());
+                freeMinorNr = new MinorNumber(minorNrPool.getFreeMinorNr());
             }
             catch (ValueOutOfRangeException valueOutOfRangExc)
             {
@@ -341,7 +380,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     delete(rscDfn);
                     commit();
 
-                    apiCtrlAccessors.getRscDfnMap().remove(rscName);
+                    rscDfnMap.remove(rscName);
 
                     successMsg = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
                     details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscDfnUuid;
@@ -406,7 +445,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                 commit();
 
-                apiCtrlAccessors.getErrorReporter().logTrace(
+                errorReporter.logTrace(
                     "Primary set for " + satellite.getNode().getName().getDisplayName()
                 );
 
@@ -430,7 +469,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "resource definition '%s'.",
                 rscNameStr
             );
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 sqlExc,
                 accCtx,
                 satellite,
@@ -444,8 +483,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            for (ResourceDefinition rscdfn : apiCtrlAccessors.getRscDfnMap().values())
+            rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            for (ResourceDefinition rscdfn : rscDfnMap.values())
             {
                 try
                 {
@@ -550,7 +589,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(
+            rscDfnMapProt.requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );
@@ -599,7 +638,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
-                portInt = apiCtrlAccessors.getFreeTcpPort();
+                portInt = tcpPortPool.getFreeTcpPort();
             }
             catch (ExhaustedPoolException exc)
             {
@@ -682,7 +721,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            apiCtrlAccessors.getMetaDataApi().getGrossSize(size, peerCount, alStripes, alStripeSize);
+            metaDataApi.getGrossSize(size, peerCount, alStripes, alStripeSize);
         }
         catch (MdException mdExc)
         {

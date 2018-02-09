@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.utils.ApiCtrlAccessorTestImpl.StltConnectingAttempt;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.testclient.ApiRCUtils;

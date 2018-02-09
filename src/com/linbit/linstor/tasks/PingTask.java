@@ -5,22 +5,27 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class PingTask implements Task
 {
     private static final int PING_TIMEOUT = 5_000;
     private static final long PING_SLEEP = 1_000;
 
     private final LinkedList<Peer> peerList = new LinkedList<>();
-    private final Controller controller;
+    private final ErrorReporter errorReporter;
     private final ReconnectorTask reconnector;
 
-    public PingTask(Controller controller, ReconnectorTask reconnector)
+    @Inject
+    public PingTask(ErrorReporter errorReporter, ReconnectorTask reconnector)
     {
-        this.controller = controller;
+        this.errorReporter = errorReporter;
         this.reconnector = reconnector;
 
         reconnector.setPingTask(this);
@@ -58,7 +63,7 @@ public class PingTask implements Task
             }
             if (reconnect)
             {
-                controller.getErrorReporter().logTrace(
+                errorReporter.logTrace(
                     "Connection to peer " + peer.getId() + " lost. Removed from pingList, added to reconnectList."
                 );
                 peersToRemove.add(peer);
@@ -69,7 +74,7 @@ public class PingTask implements Task
                 catch (IOException ioExc)
                 {
                     // TODO: detailed error reporting
-                    controller.getErrorReporter().reportError(ioExc);
+                    errorReporter.reportError(ioExc);
                 }
             }
         }

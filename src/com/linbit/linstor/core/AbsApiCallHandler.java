@@ -32,6 +32,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -64,7 +65,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final ThreadLocal<Map<String, String>> currentObjRefs = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
 
-    protected final ApiCtrlAccessors apiCtrlAccessors;
+    protected final ErrorReporter errorReporter;
+    protected final DbConnectionPool dbConnPool;
     protected final AccessContext apiCtx;
     protected final CtrlStltSerializer internalComSerializer;
 
@@ -72,13 +74,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
 
     protected AbsApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnPoolRef,
         AccessContext apiCtxRef,
         long objMaskRef,
         CtrlStltSerializer serializerRef
     )
     {
-        apiCtrlAccessors = apiCtrlAccessorsRef;
+        errorReporter = errorReporterRef;
+        dbConnPool = dbConnPoolRef;
         apiCtx = apiCtxRef;
         objMask = objMaskRef;
         internalComSerializer = serializerRef;
@@ -139,7 +143,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
         if (transMgr != null)
         {
-            apiCtrlAccessors.getDbConnPool().returnConnection(transMgr);
+            dbConnPool.returnConnection(transMgr);
         }
     }
 
@@ -781,7 +785,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throwable = new LinStorException(errorMsg);
         }
-        apiCtrlAccessors.getErrorReporter().reportError(
+        errorReporter.reportError(
             throwable,
             currentAccCtx.get(),
             currentClient.get(),
@@ -901,7 +905,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             objRefs,
             variables,
             apiCallRc,
-            apiCtrlAccessors,
+            errorReporter,
             accCtx,
             peer
         );
@@ -916,15 +920,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * {@link #addAnswerStatic(String, String, String, String, long, Map, Map, ApiCallRcImpl)} for
      * adding an answer to the {@link ApiCallRcImpl} (cause, details and correction messages are filled
      * with null values).
-     *
-     * @param throwable
-     * @param errorMsg
-     * @param retCode
+     *  @param throwable
      * @param objRefs,
-     * @param variables
      * @param apiCallRc,
      * @param controller,
      * @param accCtx,
+     * @param errorMsg
+     * @param retCode
+     * @param variables
+     * @param errorReporter
      * @param peer
      */
     protected static final void reportStatic(
@@ -934,7 +938,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Map<String, String> objRefs,
         Map<String, String> variables,
         ApiCallRcImpl apiCallRc,
-        ApiCtrlAccessors apiCtrlAccessors,
+        ErrorReporter errorReporter,
         AccessContext accCtx,
         Peer peer
     )
@@ -944,7 +948,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throwable = new LinStorException(errorMsg);
         }
-        apiCtrlAccessors.getErrorReporter().reportError(
+        errorReporter.reportError(
             throwable,
             accCtx,
             peer,
@@ -1173,7 +1177,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             }
             apiCallRc.addEntry(entry);
         }
-        apiCtrlAccessors.getErrorReporter().logInfo(msg);
+        errorReporter.logInfo(msg);
     }
 
     /**
@@ -1273,7 +1277,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         TransactionMgr transactionMgr;
         try
         {
-            transactionMgr = new TransactionMgr(apiCtrlAccessors.getDbConnPool().getConnection());
+            transactionMgr = new TransactionMgr(dbConnPool.getConnection());
         }
         catch (SQLException sqlExc)
         {
@@ -1325,7 +1329,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             }
             finally
             {
-                apiCtrlAccessors.getDbConnPool().returnConnection(transMgr);
+                dbConnPool.returnConnection(transMgr);
             }
         }
     }

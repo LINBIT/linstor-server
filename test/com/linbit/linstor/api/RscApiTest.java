@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
+import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.core.CtrlRscApiCallHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +32,8 @@ import junitparams.JUnitParamsRunner;
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
 {
+    private CtrlRscApiCallHandler rscApiCallHandler;
+
     private NodeName testControllerName;
     private NodeType testControllerType;
     private NodeFlag[] testControllerFlags;
@@ -106,6 +112,19 @@ public class RscApiTest extends ApiTestBase
         transMgr.commit();
 
         dbConnPool.returnConnection(transMgr);
+
+        rscApiCallHandler = new CtrlRscApiCallHandler(
+            errorReporter,
+            dbConnPool,
+            new ProtoCtrlStltSerializer(errorReporter, SYS_CTX),
+            new ProtoCtrlClientSerializer(errorReporter, SYS_CTX),
+            SYS_CTX,
+            rscDfnMapProt,
+            rscDfnMap,
+            nodesMapProt,
+            nodesMap,
+            ConfigModule.DEFAULT_STOR_POOL_NAME
+        );
     }
 
     @Test
@@ -144,7 +163,7 @@ public class RscApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return apiCallHandler.createResource(
+            return rscApiCallHandler.createResource(
                 accCtx,
                 peer,
                 nodeName,
