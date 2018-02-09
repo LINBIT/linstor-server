@@ -87,7 +87,7 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         try
         {
-            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.displayValue);
+            serviceInstanceName = new ServiceName("SSL" + serviceInstanceName.displayValue);
         }
         catch (InvalidNameException nameExc)
         {
@@ -115,6 +115,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         final Node node
     )
     {
+        SslTcpConnectorPeer newPeer;
         try
         {
             InetSocketAddress address = null;
@@ -129,7 +130,7 @@ public class SslTcpConnectorService extends TcpConnectorService
                 address = new InetSocketAddress(host, port);
             }
 
-            return new SslTcpConnectorPeer(
+            newPeer = new SslTcpConnectorPeer(
                 peerId,
                 this,
                 connKey,
@@ -143,5 +144,6 @@ public class SslTcpConnectorService extends TcpConnectorService
         {
             throw new RuntimeException(sslExc);
         }
+        return newPeer;
     }
 }

@@ -19,13 +19,13 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
 
     protected SslTcpConnectorMessage(
         final boolean forSend,
-        final SSLEngine sslEngine,
-        final SslTcpConnectorPeer peer
+        final SSLEngine sslEngineRef,
+        final SslTcpConnectorPeer peerRef
     )
     {
         super(forSend);
-        this.sslEngine = sslEngine;
-        this.peer = peer;
+        sslEngine = sslEngineRef;
+        peer = peerRef;
         encryptedBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getPacketBufferSize());
         decryptedBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getApplicationBufferSize());
         decryptedBuffer.flip(); // pretend that we had a last read or write op, which has consumed all bytes

@@ -53,15 +53,15 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         final SslTcpConnectorService sslConnectorService,
         final SelectionKey connKey,
         final AccessContext peerAccCtx,
-        final SSLContext sslCtx,
-        final InetSocketAddress address,
+        final SSLContext sslCtxRef,
+        final InetSocketAddress peerAddress,
         final Node node
     )
         throws SSLException
     {
         super(peerId, sslConnectorService, connKey, peerAccCtx, node);
-        this.sslCtx = sslCtx;
-        this.address = address;
+        sslCtx = sslCtxRef;
+        address = peerAddress;
 
         clientMode = address != null;
 
@@ -222,7 +222,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                     try
                                     {
                                         result = engine.unwrap(peerNetData, peerAppData);
-                                        // after an unwrap the data is flipped again, thus we can immediately read + flip + unwrap again
+                                        // after an unwrap the data is flipped again, thus we can immediately
+                                        // read + flip + unwrap again
                                     }
                                     catch (SSLException sslExc)
                                     {
@@ -263,7 +264,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                                 }
                                                 break;
                                             default:
-                                                throw new IllegalStateException("Unknown SSL state: " + result.getStatus());
+                                                throw new IllegalStateException("Unknown SSL state: " +
+                                                    result.getStatus());
                                         }
                                         if (result.bytesConsumed() > 0 &&
                                             peerNetData.position() > 0)
@@ -313,7 +315,9 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                         myNetData = enlargePacketBuffer(engine, myNetData);
                                         break;
                                     case BUFFER_UNDERFLOW:
-                                        throw new SSLException("Buffer underflow while handshaking - this should never occur");
+                                        throw new SSLException(
+                                            "Buffer underflow while handshaking - this should never occur"
+                                        );
                                     case CLOSED:
                                         try
                                         {
@@ -354,7 +358,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         case NOT_HANDSHAKING:
                             break;
                         default:
-                            throw new IllegalStateException("Invalid SSL status: " +handshakeStatus);
+                            throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
                     }
                 }
                 while (handshakeStatus == HandshakeStatus.NEED_TASK); // do not wait if NEED_TASK
@@ -411,28 +415,30 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         return enlargeBuffer(buffer, engine.getSession().getApplicationBufferSize());
     }
 
-    protected ByteBuffer enlargeBuffer(ByteBuffer buffer, int sessionProposedCapacity)
+    protected ByteBuffer enlargeBuffer(final ByteBuffer buffer, int sessionProposedCapacity)
     {
+        ByteBuffer newBuffer;
         if (sessionProposedCapacity > buffer.capacity())
         {
-            buffer = ByteBuffer.allocate(sessionProposedCapacity);
+            newBuffer = ByteBuffer.allocate(sessionProposedCapacity);
         }
         else
         {
-            buffer = ByteBuffer.allocate(buffer.capacity() * 2);
+            newBuffer = ByteBuffer.allocate(buffer.capacity() * 2);
         }
-        return buffer;
+        return newBuffer;
     }
 
-    protected ByteBuffer handleBufferUnderflow(SSLEngine engine, ByteBuffer buffer)
+    protected ByteBuffer handleBufferUnderflow(final SSLEngine engine, final ByteBuffer buffer)
     {
+        ByteBuffer adjustedBuffer = buffer;
         if (engine.getSession().getPacketBufferSize() >= buffer.limit())
         {
             ByteBuffer replaceBuffer = enlargePacketBuffer(engine, buffer);
             buffer.flip();
             replaceBuffer.put(buffer);
-            buffer = replaceBuffer;
+            adjustedBuffer = replaceBuffer;
         }
-        return buffer;
+        return adjustedBuffer;
     }
 }

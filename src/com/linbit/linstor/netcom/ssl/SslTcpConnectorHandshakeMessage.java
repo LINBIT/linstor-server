@@ -16,16 +16,16 @@ public class SslTcpConnectorHandshakeMessage extends TcpConnectorMessage
 
     protected SslTcpConnectorHandshakeMessage(
         final boolean forSend,
-        final SslTcpConnectorPeer peer
+        final SslTcpConnectorPeer peerRef
     )
     {
         super(forSend);
-        this.peer = peer;
+        peer = peerRef;
     }
 
-    void setSslEngine(SSLEngine sslEngine)
+    void setSslEngine(SSLEngine sslEngineRef)
     {
-        this.sslEngine = sslEngine;
+        sslEngine = sslEngineRef;
     }
 
     @Override
