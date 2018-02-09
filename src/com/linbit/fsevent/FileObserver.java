@@ -12,5 +12,5 @@ public interface FileObserver
      *
      * @param watchEntry The entry that specifies the file path to watch
      */
-    public void fileEvent(FileSystemWatch.FileEntry watchEntry);
+    void fileEvent(FileSystemWatch.FileEntry watchEntry);
 }

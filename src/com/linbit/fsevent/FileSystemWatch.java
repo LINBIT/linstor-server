@@ -61,7 +61,7 @@ public class FileSystemWatch implements Runnable, SystemService
         }
     }
 
-    public static enum Event
+    public enum Event
     {
         CREATE,
         DELETE,
@@ -713,7 +713,7 @@ public class FileSystemWatch implements Runnable, SystemService
         }
     }
 
-    static abstract class Entry implements Comparable<Entry>
+    abstract static class Entry implements Comparable<Entry>
     {
         final long eventId;
         Path watchFile;
@@ -931,7 +931,7 @@ public class FileSystemWatch implements Runnable, SystemService
         public void waitGroup(long timeout)
             throws NegativeTimeException, ValueOutOfRangeException, FsWatchTimeoutException, InterruptedException
         {
-            if (timeout < 0 )
+            if (timeout < 0)
             {
                 throw new NegativeTimeException();
             }

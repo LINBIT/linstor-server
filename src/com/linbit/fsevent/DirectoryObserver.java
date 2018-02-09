@@ -15,5 +15,5 @@ public interface DirectoryObserver
      * @param watchEntry The entry that specifies the directory that is being watched
      * @param filePath Path of the file that triggered the event
      */
-    public void directoryEvent(FileSystemWatch.DirectoryEntry watchEntry, Path filePath);
+    void directoryEvent(FileSystemWatch.DirectoryEntry watchEntry, Path filePath);
 }

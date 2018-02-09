@@ -13,5 +13,5 @@ public interface EntryGroupObserver
      * @param group The FileEntryGroup that specifies the file paths and events
      *     that have been waited for
      */
-    public void entryGroupEvent(FileSystemWatch.FileEntryGroup group);
+    void entryGroupEvent(FileSystemWatch.FileEntryGroup group);
 }
