@@ -9,9 +9,9 @@ public class InvalidNameException extends Exception
 
     public final String invalidName;
 
-    public InvalidNameException(String message, String invalidName)
+    public InvalidNameException(String message, String invalidNameRef)
     {
         super(message);
-        this.invalidName = invalidName;
+        invalidName = invalidNameRef;
     }
 }

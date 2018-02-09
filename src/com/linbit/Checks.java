@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
  */
 public class Checks
 {
+    // Naming convention exception: IPv4 capitalization
+    @SuppressWarnings("checkstyle:constantname")
     private static final Pattern IPv4_PATTERN = Pattern.compile(
         "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$"
     );
@@ -402,7 +404,7 @@ public class Checks
         {
             if (leftParts[leftParts.length - 1].contains("."))
             {
-             // last part might be ipv4
+                // Last part might be IPv4
                 if (!isIpV4(leftParts[leftParts.length - 1]))
                 {
                     throw new InvalidIpAddressException(addr);

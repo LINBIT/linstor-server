@@ -113,7 +113,7 @@ public class TransactionMgr
         return transObjects.size();
     }
 
-    static public boolean isCalledFromTransactionMgr(String methodName)
+    public static boolean isCalledFromTransactionMgr(String methodName)
     {
         StackTraceElement[] stack = new Throwable().getStackTrace();
         boolean ret = false;
@@ -126,10 +126,6 @@ public class TransactionMgr
             }
         }
 
-        // if (!ret)
-        // {
-        //     throw new ImplementationError(methodName + " not called from TransactionMgr.", null);
-        // }
         return ret;
     }
 }

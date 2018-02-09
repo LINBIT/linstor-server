@@ -11,7 +11,7 @@ import com.linbit.utils.BigIntegerUtils;
  */
 public class SizeConv
 {
-    public static final BigInteger one = BigInteger.valueOf(1L);
+    public static final BigInteger ONE = BigInteger.valueOf(1L);
 
     public enum SizeUnit
     {
@@ -106,34 +106,52 @@ public class SizeConv
     public static final BigInteger FACTOR_B   = BigInteger.valueOf(1L);
 
     // Factor 1,024
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_kiB = BigInteger.valueOf(1024L);
 
     // Factor 1,048,576
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_MiB = BigInteger.valueOf(1048576L);
 
     // Factor 1,073,741,824
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_GiB = BigInteger.valueOf(1073741824L);
 
     // Factor 1,099,511,627,776
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_TiB = BigInteger.valueOf(0x10000000000L);
 
     // Factor 1,125,899,906,842,624
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_PiB = BigInteger.valueOf(0x4000000000000L);
 
     // Factor 1,152,921,504,606,846,976
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_EiB = BigInteger.valueOf(0x1000000000000000L);
 
     // Factor 1,180,591,620,717,411,303,424
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_ZiB = new BigInteger(
-        new byte[] { 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
+        new byte[] {0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
     );
 
     // Factor 1,208,925,819,614,629,174,706,176
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_YiB = new BigInteger(
-        new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
+        new byte[] {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
     );
 
     // Factor 1,000
+    // Naming convention exception: SI unit capitalization rules
+    @SuppressWarnings("checkstyle:constantname")
     public static final BigInteger FACTOR_kB = BigInteger.valueOf(1000L);
 
     // Factor 1,000,000
@@ -179,7 +197,7 @@ public class SizeConv
 
     public static long convertRoundUp(long size, SizeUnit unitIn, SizeUnit unitOut)
     {
-        BigInteger convert= convertRoundUp(BigInteger.valueOf(size), unitIn, unitOut);
+        BigInteger convert = convertRoundUp(BigInteger.valueOf(size), unitIn, unitOut);
         return BigIntegerUtils.longValueExact(convert);
     }
 
@@ -202,7 +220,7 @@ public class SizeConv
         // Quick check for remainder > 0; if any bits are set, the remainder is not zero
         if (quotients[1].bitLength() > 0)
         {
-            result = result.add(one);
+            result = result.add(ONE);
         }
         return result;
     }

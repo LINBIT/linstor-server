@@ -14,18 +14,22 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
 
     private TransactionMgr transMgr;
 
-    public TransactionSimpleObject(PARENT parent, ELEMENT obj, SingleColumnDatabaseDriver<PARENT, ELEMENT> driver)
+    public TransactionSimpleObject(
+        PARENT parentRef,
+        ELEMENT objRef,
+        SingleColumnDatabaseDriver<PARENT, ELEMENT> driverRef
+    )
     {
-        this.parent = parent;
-        object = obj;
-        cachedObject = obj;
-        if (driver == null)
+        parent = parentRef;
+        object = objRef;
+        cachedObject = objRef;
+        if (driverRef == null)
         {
             dbDriver = new NoOpObjectDatabaseDriver<>();
         }
         else
         {
-            dbDriver = driver;
+            dbDriver = driverRef;
         }
     }
 
@@ -81,14 +85,14 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     @Override
     public void commit()
     {
-        assert(TransactionMgr.isCalledFromTransactionMgr("commit"));
+        assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         cachedObject = object;
     }
 
     @Override
     public void rollback()
     {
-        assert(TransactionMgr.isCalledFromTransactionMgr("rollback"));
+        assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         object = cachedObject;
     }
 

@@ -5,9 +5,9 @@ import java.sql.SQLException;
 
 public interface MapDatabaseDriver<T, U>
 {
-    public void insert(Connection con, T key, U value) throws SQLException;
+    void insert(Connection con, T key, U value) throws SQLException;
 
-    public void update(Connection con, T key, U oldValue, U newValue) throws SQLException;
+    void update(Connection con, T key, U oldValue, U newValue) throws SQLException;
 
-    public void delete(Connection con, T key, U value) throws SQLException;
+    void delete(Connection con, T key, U value) throws SQLException;
 }

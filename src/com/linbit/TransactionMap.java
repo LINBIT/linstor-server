@@ -44,36 +44,36 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr)
+    public void setConnection(TransactionMgr transMgrRef)
     {
         if (!hasTransMgr() && isDirtyWithoutTransMgr())
         {
             throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
         }
 
-        if (transMgr != null)
+        if (transMgrRef != null)
         {
-            if (transMgr != this.transMgr)
+            if (transMgrRef != transMgr)
             {
-                transMgr.register(this);
-                con = transMgr.dbCon;
-                this.transMgr = transMgr;
+                transMgrRef.register(this);
+                con = transMgrRef.dbCon;
+                transMgr = transMgrRef;
 
                 // forward transaction manager on keys
-                for (T k : map.keySet())
+                for (T keySet : map.keySet())
                 {
-                    if (k instanceof TransactionObject)
+                    if (keySet instanceof TransactionObject)
                     {
-                        ((TransactionObject) k).setConnection(transMgr);
+                        ((TransactionObject) keySet).setConnection(transMgr);
                     }
                 }
 
                 // forward transaction manager on values
-                for (U v : map.values())
+                for (U valueList : map.values())
                 {
-                    if (v instanceof TransactionObject)
+                    if (valueList instanceof TransactionObject)
                     {
-                        ((TransactionObject) v).setConnection(transMgr);
+                        ((TransactionObject) valueList).setConnection(transMgr);
                     }
                 }
             }
@@ -87,14 +87,14 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     @Override
     public void commit()
     {
-        assert(TransactionMgr.isCalledFromTransactionMgr("commit"));
+        assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         oldValues.clear();
     }
 
     @Override
     public void rollback()
     {
-        assert(TransactionMgr.isCalledFromTransactionMgr("rollback"));
+        assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         for (Entry<T, U> entry : oldValues.entrySet())
         {
             T key = entry.getKey();
@@ -176,9 +176,9 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     }
 
     @Override
-    public void putAll(Map<? extends T, ? extends U> m)
+    public void putAll(Map<? extends T, ? extends U> srcMap)
     {
-        for (Entry<? extends T, ? extends U> entry : m.entrySet())
+        for (Entry<? extends T, ? extends U> entry : srcMap.entrySet())
         {
             put(entry.getKey(), entry.getValue());
         }
