@@ -28,6 +28,8 @@ public class DrbdAdm
 
     public static final int DRBDMETA_NO_VALID_MD_RC = 255;
 
+    public static final int WAIT_CONNECT_RES_TIME = 10;
+
     private Path configPath;
     private CoreServices coreSvcs;
 
@@ -87,7 +89,7 @@ public class DrbdAdm
     )
         throws ExtCmdFailedException
     {
-        waitConnectResource(resourceName, 10);
+        waitConnectResource(resourceName, WAIT_CONNECT_RES_TIME);
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv"));
         if (assumeClean)
@@ -206,7 +208,6 @@ public class DrbdAdm
         // It is probably safer to fail because missing meta data was not detected than
         // to overwrite existing meta data because it was not detected, therefore default
         // to true, indicating that meta data exists
-        boolean mdFlag = true;
         List<String> command = new ArrayList<>();
         command.add(DRBDMETA_UTIL);
         command.add(Integer.toString(minorNr));
@@ -217,6 +218,7 @@ public class DrbdAdm
         command.add("--node-id");
         command.add("0");
 
+        boolean mdFlag = true;
         String[] params = command.toArray(new String[command.size()]);
         ExtCmd utilsCmd = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
         File nullDevice = new File("/dev/null");
@@ -255,11 +257,8 @@ public class DrbdAdm
         String giData = currentGi + ":";
         if (setFlags || history1Gi != null)
         {
-            if (history1Gi == null)
-            {
-                history1Gi = "0";
-            }
-            giData += "0:" + history1Gi + ":0:";
+            String checkedHistory1Gi = history1Gi == null ? "0" : history1Gi;
+            giData += "0:" + checkedHistory1Gi + ":0:";
             if (setFlags)
             {
                 giData += "1:1:";
