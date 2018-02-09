@@ -66,7 +66,7 @@ public class Quorum
                     {
                         changeFlag = true;
                     }
-                    quorumCount ++;
+                    ++quorumCount;
 
                     if (quorumCount < COUNT_MAX)
                     {
