@@ -13,7 +13,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.Calendar;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
@@ -135,10 +134,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
             // Generate and report a null pointer exception if this
             // method is called with a null argument
-            if (errorInfo == null)
-            {
-                errorInfo = new NullPointerException();
-            }
+            final Throwable checkedErrorInfo = errorInfo == null ? new NullPointerException() : errorInfo;
 
             logName = getLogName(reportNr);
             output = openReportFile(logName);
@@ -148,7 +144,11 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
             // Report the error and any nested errors
             int loopCtr = 0;
-            for (Throwable curErrorInfo = errorInfo; curErrorInfo != null; curErrorInfo = curErrorInfo.getCause())
+            for (
+                Throwable curErrorInfo = checkedErrorInfo;
+                curErrorInfo != null;
+                curErrorInfo = curErrorInfo.getCause()
+            )
             {
                 if (loopCtr <= 0)
                 {
