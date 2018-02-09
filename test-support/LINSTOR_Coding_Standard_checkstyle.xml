@@ -257,7 +257,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="TodoComment">
-            <property name="format" value="[Tt][Oo][Dd][Oo]|[Ff][Ii][Xx][Mm][Ee]"/>
+            <property name="format" value="[Tt][Oo][Dd][Oo]"/>
             <property name="severity" value="info"/>
         </module>
 
