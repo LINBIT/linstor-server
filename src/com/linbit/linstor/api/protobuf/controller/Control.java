@@ -13,9 +13,11 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgControlCtrlOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.Privilege;
 
 @ProtobufApiCall
-public class Control extends BaseProtoApiCall {
+public class Control extends BaseProtoApiCall
+{
     private final Controller controller;
 
     public Control(Controller controllerRef)
@@ -51,35 +53,56 @@ public class Control extends BaseProtoApiCall {
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        try {
-            switch (msgControlCtrl.getCommand()) {
-                case ApiConsts.API_CMD_SHUTDOWN: {
-                    controller.hasShutdownAccess(accCtx);
+        try
+        {
+            AccessContext privCtx = accCtx.clone();
+            switch (msgControlCtrl.getCommand())
+            {
+                case ApiConsts.API_CMD_SHUTDOWN:
+                {
+                    try
+                    {
+                        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+                    }
+                    catch (AccessDeniedException ignored)
+                    {
+                    }
+                    controller.requireShutdownAccess(privCtx);
                     ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
                     rcEntry.setMessageFormat("Controller will shutdown now.");
                     apiCallRc.addEntry(rcEntry);
 
-                    this.answerApiCallRc(accCtx, client, msgId, apiCallRc); // send success message now
+                    // FIXME: The success message may not arrive at the client,
+                    //        because sending it races with controller shutdown
+                    this.answerApiCallRc(accCtx, client, msgId, apiCallRc);
                     controller.shutdown(accCtx);
-                    return;
+                    break;
                 }
-                default: {
+                default:
+                {
                     ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
                     rcEntry.setReturnCode(ApiConsts.MASK_ERROR | ApiConsts.UNKNOWN_API_CALL);
                     rcEntry.setMessageFormat(
-                        String.format("API Controller command '%s' is unknown.",
-                            msgControlCtrl.getCommand())
+                        String.format(
+                            "API Controller command '%s' is unknown.",
+                            msgControlCtrl.getCommand()
+                        )
                     );
                     apiCallRc.addEntry(rcEntry);
+                    break;
                 }
             }
         }
-        catch (AccessDeniedException accDenied) {
+        catch (AccessDeniedException accExc)
+        {
             ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.MASK_ERROR | ApiConsts.FAIL_ACC_DENIED_COMMAND);
             rcEntry.setMessageFormat(
-                String.format("Access to command '%s' is denied with the current user context.",
-                    msgControlCtrl.getCommand())
+                String.format(
+                    "Role '%s' is not authorized for command '%s'.",
+                    accCtx.subjectRole.name.displayValue,
+                    msgControlCtrl.getCommand()
+                )
             );
             apiCallRc.addEntry(rcEntry);
         }
