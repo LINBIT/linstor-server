@@ -10,16 +10,34 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import java.io.IOException;
-import java.net.*;
-import java.nio.channels.*;
+import java.net.ConnectException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.IllegalSelectorException;
+import java.nio.channels.NotYetBoundException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import static java.nio.channels.SelectionKey.*;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.event.Level;
-
-import static java.nio.channels.SelectionKey.*;
 
 /**
  * TCP/IP network communication service
@@ -113,7 +131,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             DEFAULT_BIND_INET_ADDRESS,
             DEFAULT_PORT.value
         );
-    };
+    }
 
     // Address that the server socket will be listening on
     private SocketAddress bindAddress;

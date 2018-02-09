@@ -7,5 +7,5 @@ package com.linbit.linstor.netcom;
  */
 public interface TcpConnection
 {
-    public Peer getPeer();
+    Peer getPeer();
 }

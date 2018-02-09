@@ -292,9 +292,9 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void setAuthenticated(boolean authenticated)
+    public void setAuthenticated(boolean authenticatedFlag)
     {
-        this.authenticated = authenticated;
+        authenticated = authenticatedFlag;
     }
 
     protected void nextInMessage()
@@ -308,9 +308,9 @@ public class TcpConnectorPeer implements Peer
         return selKey;
     }
 
-    void setSelectionKey(SelectionKey selKey)
+    void setSelectionKey(SelectionKey selKeyRef)
     {
-        this.selKey = selKey;
+        selKey = selKeyRef;
     }
 
     protected void nextOutMessage()
@@ -467,12 +467,14 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void setResourceStates(final Map<ResourceName, ResourceState> resourceStateMap) {
-        this.resourceStateMap = resourceStateMap;
+    public void setResourceStates(final Map<ResourceName, ResourceState> resourceStateMapRef)
+    {
+        resourceStateMap = resourceStateMapRef;
     }
 
     @Override
-    public Map<ResourceName, ResourceState> getResourceStates() {
+    public Map<ResourceName, ResourceState> getResourceStates()
+    {
         return resourceStateMap;
     }
 

@@ -9,7 +9,7 @@ import com.linbit.ImplementationError;
 // create a common super class for them
 public class TcpHeaderOnlyMessage extends TcpConnectorMessage
 {
-    protected final static byte[] DATA = new byte[0];
+    protected static final byte[] DATA = new byte[0];
     protected final ByteBuffer byteBuffer;
 
     protected TcpHeaderOnlyMessage(int type)

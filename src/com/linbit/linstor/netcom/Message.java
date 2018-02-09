@@ -7,12 +7,12 @@ package com.linbit.linstor.netcom;
  */
 public interface Message
 {
-    public byte[] getData()
+    byte[] getData()
         throws IllegalMessageStateException;
 
-    public void setData(byte[] data)
+    void setData(byte[] data)
         throws IllegalMessageStateException;
 
-    public int getType()
+    int getType()
         throws IllegalMessageStateException;
 }

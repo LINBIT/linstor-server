@@ -208,7 +208,7 @@ public interface Peer
      * Sets the current resource states for this peer(satellite).
      * @param resourceStateMap new resource states.
      */
-    void setResourceStates(final Map<ResourceName, ResourceState> resourceStateMap);
+    void setResourceStates(Map<ResourceName, ResourceState> resourceStateMap);
 
     /**
      * Method to access the current resource states;
