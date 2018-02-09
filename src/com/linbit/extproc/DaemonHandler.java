@@ -8,7 +8,7 @@ import com.linbit.extproc.OutputProxy.Event;
 
 public class DaemonHandler
 {
-    private final static byte DELIMITER = '\n';
+    private static final byte DELIMITER = '\n';
 
     private final ProcessBuilder processBuilder;
     private Process process;
@@ -20,9 +20,9 @@ public class DaemonHandler
 
     private final BlockingDeque<Event> deque;
 
-    public DaemonHandler(final BlockingDeque<Event> deque, final String... command)
+    public DaemonHandler(final BlockingDeque<Event> dequeRef, final String... command)
     {
-        this.deque = deque;
+        deque = dequeRef;
         processBuilder = new ProcessBuilder(command);
         processBuilder.redirectError(Redirect.PIPE);
     }

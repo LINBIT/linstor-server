@@ -6,7 +6,7 @@ import java.util.concurrent.BlockingDeque;
 
 public class OutputProxy implements Runnable
 {
-    public static interface Event // marker interface
+    public interface Event // marker interface
     {
     }
 
@@ -34,15 +34,15 @@ public class OutputProxy implements Runnable
 
     public OutputProxy(
         final InputStream in,
-        final BlockingDeque<Event> deque,
-        final byte delimiter,
-        final boolean useOut
+        final BlockingDeque<Event> dequeRef,
+        final byte delimiterPrm,
+        final boolean useOutPrm
     )
     {
         dataIn = in;
-        this.deque = deque;
-        this.delimiter = delimiter;
-        this.useOut = useOut;
+        deque = dequeRef;
+        delimiter = delimiterPrm;
+        useOut = useOutPrm;
         data = new byte[INIT_DATA_SIZE];
         dataPos = 0;
         dataLimit = 0;
@@ -169,9 +169,9 @@ public class OutputProxy implements Runnable
         {
         }
 
-        public StdOutEvent(byte[] data)
+        public StdOutEvent(byte[] dataRef)
         {
-            this.data = data;
+            data = dataRef;
         }
     }
 
@@ -183,9 +183,9 @@ public class OutputProxy implements Runnable
         {
         }
 
-        public StdErrEvent(byte[] data)
+        public StdErrEvent(byte[] dataRef)
         {
-            this.data = data;
+            data = dataRef;
         }
     }
 
@@ -197,9 +197,9 @@ public class OutputProxy implements Runnable
         {
         }
 
-        public ExceptionEvent(Exception exc)
+        public ExceptionEvent(Exception excRef)
         {
-            this.exc = exc;
+            exc = excRef;
         }
     }
 

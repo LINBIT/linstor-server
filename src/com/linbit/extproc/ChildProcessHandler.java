@@ -27,7 +27,7 @@ public class ChildProcessHandler
     //          termination of the process
     public static final long DEFAULT_KILL_TIMEOUT =  5000;
 
-    public static enum TimeoutType
+    public enum TimeoutType
     {
         WAIT,
         TERM,

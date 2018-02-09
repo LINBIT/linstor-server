@@ -238,17 +238,18 @@ public class OutputReceiver implements Runnable
      * @param lastSearchPos Position where the last search for new lines left off
      * @return new lineOffset for the next call of this method
      */
-    private int logLines(int lineOffset, int lastSearchPos)
+    private int logLines(final int lineOffset, final int lastSearchPos)
     {
+        int updLineOffset = lineOffset;
         for (int idx = lastSearchPos; idx < dataSize; ++idx)
         {
             if (data[idx] == '\n')
             {
-                String logString = new String(data, lineOffset, idx - lineOffset);
+                String logString = new String(data, updLineOffset, idx - updLineOffset);
                 errLog.logDebug("%s", logString);
-                lineOffset = idx + 1;
+                updLineOffset = idx + 1;
             }
         }
-        return lineOffset;
+        return updLineOffset;
     }
 }
