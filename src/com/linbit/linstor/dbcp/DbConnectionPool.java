@@ -96,13 +96,13 @@ public class DbConnectionPool implements ControllerDatabase
     }
 
     @Override
-    public void initializeDataSource(String dbConnectionUrl, Properties props)
+    public void initializeDataSource(String dbConnectionUrlRef, Properties propsRef)
         throws SQLException
     {
-        ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrl);
-        ErrorCheck.ctorNotNull(DbConnectionPool.class, Properties.class, props);
-        this.dbConnectionUrl = dbConnectionUrl;
-        this.props = props;
+        ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrlRef);
+        ErrorCheck.ctorNotNull(DbConnectionPool.class, Properties.class, propsRef);
+        dbConnectionUrl = dbConnectionUrlRef;
+        props = propsRef;
 
         try
         {
