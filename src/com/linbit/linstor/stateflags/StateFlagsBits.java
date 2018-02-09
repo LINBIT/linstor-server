@@ -288,8 +288,9 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
                     }
                 }
                 throw new ImplementationError(
-                    "Initilized StateFlagsBits is missing persistence or transMgr reference. "+
-                        "Maybe you forget to call .setConnection(TransMgr) ?",
+                    "Initilized StateFlagsBits is missing persistence implementation reference " +
+                    " or TransactionManager reference.\n" +
+                    "Possible missing call of .setConnection(TransactionManager)",
                     new NullPointerException(npeMsg)
                 );
             }

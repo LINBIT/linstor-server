@@ -11,43 +11,43 @@ import java.sql.SQLException;
  */
 public interface StateFlags<T extends Flags> extends TransactionObject
 {
-    public void enableAllFlags(AccessContext accCtx)
+    void enableAllFlags(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public void disableAllFlags(AccessContext accCtx)
+    void disableAllFlags(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public void enableFlags(AccessContext accCtx, T... flags)
+    void enableFlags(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
-    public void disableFlags(AccessContext accCtx, T... flags)
+    void disableFlags(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
-    public void enableFlagsExcept(AccessContext accCtx, T... flags)
+    void enableFlagsExcept(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
-    public void resetFlagsTo(AccessContext accCtx, T... flags)
+    void resetFlagsTo(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
-    public void disableFlagsExcept(AccessContext accCtx, T... flags)
+    void disableFlagsExcept(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
-    public boolean isSet(AccessContext accCtx, T... flags)
+    boolean isSet(AccessContext accCtx, T... flags)
         throws AccessDeniedException;
 
-    public boolean isUnset(AccessContext accCtx, T... flags)
+    boolean isUnset(AccessContext accCtx, T... flags)
         throws AccessDeniedException;
 
-    public boolean isSomeSet(AccessContext accCtx, T... flags)
+    boolean isSomeSet(AccessContext accCtx, T... flags)
         throws AccessDeniedException;
 
-    public boolean isSomeUnset(AccessContext accCtx, T... flags)
+    boolean isSomeUnset(AccessContext accCtx, T... flags)
         throws AccessDeniedException;
 
-    public long getFlagsBits(AccessContext accCtx)
+    long getFlagsBits(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public long getValidFlagsBits(AccessContext accCtx)
+    long getValidFlagsBits(AccessContext accCtx)
         throws AccessDeniedException;
 
 }
