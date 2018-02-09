@@ -1,8 +1,6 @@
 package com.linbit.linstor.core;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
@@ -15,7 +13,6 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRcImpl;

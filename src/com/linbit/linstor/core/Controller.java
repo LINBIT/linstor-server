@@ -535,7 +535,8 @@ public final class Controller extends LinStor implements CoreServices
      * @param accCtx AccessContext to check.
      * @throws AccessDeniedException if accCtx doesn't have shutdown access.
      */
-    public void hasShutdownAccess(AccessContext accCtx) throws AccessDeniedException {
+    public void requireShutdownAccess(AccessContext accCtx) throws AccessDeniedException
+    {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
     }
 
@@ -546,7 +547,7 @@ public final class Controller extends LinStor implements CoreServices
 
     public void shutdown(AccessContext accCtx, boolean sysExit) throws AccessDeniedException
     {
-        hasShutdownAccess(accCtx);
+        requireShutdownAccess(accCtx);
 
         ErrorReporter errLog = getErrorReporter();
 

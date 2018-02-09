@@ -163,8 +163,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     deleteResource(rsc, rscDfn, localNode, rscState);
                 }
-                else if (rsc.isCreatePrimary() &&
-                        !rscState.isPrimary())
+                else
+                if (rsc.isCreatePrimary() && !rscState.isPrimary())
                 {
                     // set primary
                     errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
