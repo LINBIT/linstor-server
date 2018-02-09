@@ -10,10 +10,10 @@ import com.linbit.ValueOutOfRangeException;
  */
 public interface Timer<K extends Comparable<K>, V extends Action<K>>
 {
-    public void addDelayedAction(Long delay, V actionObj)
+    void addDelayedAction(Long delay, V actionObj)
         throws NegativeTimeException, ValueOutOfRangeException;
 
-    public void addScheduledAction(Long scheduledTime, V actionObj);
+    void addScheduledAction(Long scheduledTime, V actionObj);
 
-    public void cancelAction(K actionId);
+    void cancelAction(K actionId);
 }

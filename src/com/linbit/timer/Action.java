@@ -14,5 +14,5 @@ public interface Action<K extends Comparable<K>> extends Runnable
      *
      * @return unique identifier of this Action instance
      */
-    public K getId();
+    K getId();
 }
