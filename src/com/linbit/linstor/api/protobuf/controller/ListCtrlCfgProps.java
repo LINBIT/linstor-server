@@ -6,7 +6,6 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgReqCtrlCfgPropsOuterClass.MsgReqCtrlCfgProps;
 import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
@@ -39,13 +38,9 @@ public class ListCtrlCfgProps extends BaseProtoApiCall
     protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
         throws IOException
     {
-        MsgReqCtrlCfgProps protoMsg = MsgReqCtrlCfgProps.parseDelimitedFrom(msgDataIn);
-
         client.sendMessage(
             controller.getApiCallHandler().listCtrlCfg(
                 accCtx,
-                protoMsg.getKey(),
-                protoMsg.getNamespace(),
                 msgId
             )
         );

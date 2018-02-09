@@ -109,26 +109,15 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listProps(AccessContext accCtx, String key, String namespace, int msgId)
+    public byte[] listProps(AccessContext accCtx, int msgId)
     {
         byte[] data = null;
         try
         {
             apiCtrlAccessors.getCtrlConfProtection().requireAccess(accCtx, AccessType.VIEW);
             Props conf = apiCtrlAccessors.getCtrlConf();
-            if (namespace != null && !namespace.trim().equals(""))
-            {
-                conf = conf.getNamespace(namespace);
-            }
             Builder builder = ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId);
-            if (key != null && !key.trim().equals(""))
-            {
-                builder.ctrlCfgSingleProp(namespace, key, conf.getProp(key));
-            }
-            else
-            {
-                builder.ctrlCfgProps(conf.map());
-            }
+            builder.ctrlCfgProps(conf.map());
 
             data = builder.build();
         }

@@ -1655,13 +1655,13 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listCtrlCfg(AccessContext accCtx, String key, String namespace, int msgId)
+    public byte[] listCtrlCfg(AccessContext accCtx, int msgId)
     {
         byte[] data;
         try
         {
             apiCtrlAccessors.getCtrlConfigLock().readLock().lock();
-            data  = ctrlConfApiCallHandler.listProps(accCtx, key, namespace, msgId);
+            data  = ctrlConfApiCallHandler.listProps(accCtx, msgId);
         }
         finally
         {
