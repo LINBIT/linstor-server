@@ -350,7 +350,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
     {
         @Override
-        public void persist(VolumeDefinitionData volumeDefinition, long flags, TransactionMgr transMgr) throws SQLException
+        public void persist(VolumeDefinitionData volumeDefinition, long flags, TransactionMgr transMgr)
+            throws SQLException
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_FLAGS))
             {
@@ -429,7 +430,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private class SizeDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, Long>
     {
         @Override
-        public void update(VolumeDefinitionData volumeDefinition, Long size, TransactionMgr transMgr) throws SQLException
+        public void update(VolumeDefinitionData volumeDefinition, Long size, TransactionMgr transMgr)
+            throws SQLException
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_SIZE))
             {

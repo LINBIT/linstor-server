@@ -248,7 +248,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
             Collection<StorPool> values = new ArrayList<>(storPools.values());
-            for(StorPool storPool : values)
+            for (StorPool storPool : values)
             {
                 storPool.delete(accCtx);
             }
@@ -261,7 +261,8 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     }
 
     @Override
-    public StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+    public StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException
+    {
         return new StorPoolDfnPojo(getUuid(), getName().getDisplayName(), getProps(accCtx).map());
     }
 

@@ -11,11 +11,11 @@ public class LsIpAddress
      * addr has to be IPv4 or IPv6
      * @throws InvalidIpAddressException
      */
-    public LsIpAddress(String addr) throws InvalidIpAddressException
+    public LsIpAddress(String address) throws InvalidIpAddressException
     {
-        Checks.ipAddrCheck(addr);
+        Checks.ipAddrCheck(address);
 
-        this.addr = addr.toUpperCase();
+        addr = address.toUpperCase();
     }
 
     public String getAddress()

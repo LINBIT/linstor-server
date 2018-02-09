@@ -13,13 +13,13 @@ import com.linbit.linstor.security.AccessDeniedException;
  */
 public interface ResourceConnection extends DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public Resource getSourceResource(AccessContext accCtx) throws AccessDeniedException;
+    Resource getSourceResource(AccessContext accCtx) throws AccessDeniedException;
 
-    public Resource getTargetResource(AccessContext accCtx) throws AccessDeniedException;
+    Resource getTargetResource(AccessContext accCtx) throws AccessDeniedException;
 
-    public Props getProps(AccessContext accCtx) throws AccessDeniedException;
+    Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 }

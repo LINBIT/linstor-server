@@ -20,49 +20,49 @@ import java.util.UUID;
  */
 public interface Volume extends TransactionObject, DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public Resource getResource();
+    Resource getResource();
 
-    public ResourceDefinition getResourceDefinition();
+    ResourceDefinition getResourceDefinition();
 
-    public VolumeDefinition getVolumeDefinition();
+    VolumeDefinition getVolumeDefinition();
 
-    public Props getProps(AccessContext accCtx) throws AccessDeniedException;
+    Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
-    public StateFlags<VlmFlags> getFlags();
+    StateFlags<VlmFlags> getFlags();
 
-    public VolumeConnection getVolumeConnection(AccessContext dbCtx, Volume otherVol)
+    VolumeConnection getVolumeConnection(AccessContext dbCtx, Volume otherVol)
         throws AccessDeniedException;
 
-    public void setVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
+    void setVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
         throws AccessDeniedException;
 
-    public void removeVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
+    void removeVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
         throws AccessDeniedException;
 
-    public StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
+    StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
 
-    public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException;
+    String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
-    public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
+    String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
-    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
-    public void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
+    void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
 
-    public void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
+    void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
-    public enum VlmFlags implements Flags
+    enum VlmFlags implements Flags
     {
         CLEAN(1L),
         DELETE(2L);
 
         public final long flagValue;
 
-        private VlmFlags(long value)
+        VlmFlags(long value)
         {
             flagValue = value;
         }

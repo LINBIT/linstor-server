@@ -11,6 +11,8 @@ import com.linbit.ValueOutOfRangeException;
 public class TcpPortNumber implements Comparable<TcpPortNumber>
 {
     public static final int PORT_NR_MIN = 1;
+    // MagicNumber exception: shift value
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int PORT_NR_MAX = (1 << 16) - 1;
 
     private static final String PORT_NR_EXC_FORMAT =

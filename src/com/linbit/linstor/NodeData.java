@@ -147,14 +147,14 @@ public class NodeData extends BaseTransactionObject implements Node
         nodeConnections = new TransactionMap<>(new HashMap<Node, NodeConnection>(), null);
 
         flags = new NodeFlagsImpl(this, objProt, dbDriver.getStateFlagPersistence(), initialFlags);
-        if (type == null)
-        {
-            // Default to creating an AUXILIARY type node
-            type = NodeType.AUXILIARY;
-        }
-        nodeType = new TransactionSimpleObject<NodeData, Node.NodeType>(this, type, dbDriver.getNodeTypeDriver());
 
-        transObjs = Arrays.<TransactionObject> asList(
+        // Default to creating an AUXILIARY type node
+        NodeType checkedType = type == null ? NodeType.AUXILIARY : type;
+        nodeType = new TransactionSimpleObject<NodeData, Node.NodeType>(
+            this, checkedType, dbDriver.getNodeTypeDriver()
+        );
+
+        transObjs = Arrays.<TransactionObject>asList(
             flags,
             nodeType,
             objProt,
@@ -277,7 +277,8 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public int compareTo(Node node) {
+    public int compareTo(Node node)
+    {
         return this.getName().compareTo(node.getName());
     }
 
@@ -477,10 +478,9 @@ public class NodeData extends BaseTransactionObject implements Node
         storPoolMap.remove(pool.getName());
     }
 
-
-    void setDisklessStorPool(StorPoolData disklessStorPool)
+    void setDisklessStorPool(StorPoolData newDisklessStorPool)
     {
-        this.disklessStorPool = disklessStorPool;
+        disklessStorPool = newDisklessStorPool;
     }
 
     @Override
@@ -650,7 +650,7 @@ public class NodeData extends BaseTransactionObject implements Node
             );
         }
 
-        Peer peer = getPeer(accCtx);
+        Peer tmpPeer = getPeer(accCtx);
 
         return new NodePojo(
             getUuid(),
@@ -660,7 +660,7 @@ public class NodeData extends BaseTransactionObject implements Node
             netInterfaces,
             nodeConns,
             getProps(accCtx).map(),
-            peer != null && peer.isConnected(),
+            tmpPeer != null && tmpPeer.isConnected(),
             disklessStorPool.getUuid(),
             fullSyncId,
             updateId
@@ -681,7 +681,12 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeData, NodeFlag>
     {
-        NodeFlagsImpl(NodeData parent, ObjectProtection objProtRef, StateFlagsPersistence<NodeData> persistenceRef, long initialFlags)
+        NodeFlagsImpl(
+            NodeData parent,
+            ObjectProtection objProtRef,
+            StateFlagsPersistence<NodeData> persistenceRef,
+            long initialFlags
+        )
         {
             super(objProtRef, parent, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef, initialFlags);
         }

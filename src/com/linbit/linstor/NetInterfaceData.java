@@ -83,7 +83,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         );
         deleted = new TransactionSimpleObject<>(this, false, null);
 
-        transObjs = Arrays.<TransactionObject> asList(
+        transObjs = Arrays.<TransactionObject>asList(
             niAddress,
             deleted
         );

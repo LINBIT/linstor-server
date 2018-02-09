@@ -56,7 +56,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         ") VALUES (?, ?, ?, ?, ?)";
 
     private static final String DELETE =
-        " DELETE FROM " + TBL_VOL_CON_DFN+
+        " DELETE FROM " + TBL_VOL_CON_DFN +
          " WHERE " + NODE_SRC + " = ? AND " +
                      NODE_DST + " = ? AND " +
                      RES_NAME + " = ? AND " +
@@ -417,7 +417,8 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                 sourceVolume.getResourceDefinition().getName().displayValue,
                 sourceVolume.getVolumeDefinition().getVolumeNumber().value
             );
-        }catch (AccessDeniedException accDeniedException)
+        }
+        catch (AccessDeniedException accDeniedException)
         {
             DerbyDriver.handleAccessDeniedException(accDeniedException);
         }

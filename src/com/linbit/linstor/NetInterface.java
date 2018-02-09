@@ -14,22 +14,22 @@ import java.util.UUID;
  */
 public interface NetInterface extends TransactionObject, DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public NetInterfaceName getName();
+    NetInterfaceName getName();
 
-    public Node getNode();
+    Node getNode();
 
-    public LsIpAddress getAddress(AccessContext accCtx)
+    LsIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
+    LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, SQLException;
 
-    public void delete(AccessContext accCtx)
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     public interface NetInterfaceApi
     {

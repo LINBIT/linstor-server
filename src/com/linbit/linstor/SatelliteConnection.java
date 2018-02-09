@@ -8,7 +8,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 public interface SatelliteConnection
 {
-    public enum EncryptionType
+    enum EncryptionType
     {
         SSL,
         PLAIN;
@@ -20,25 +20,26 @@ public interface SatelliteConnection
         }
     }
 
-    public UUID getUuid();
+    UUID getUuid();
 
-    public Node getNode();
+    Node getNode();
 
-    public NetInterface getNetInterface();
+    NetInterface getNetInterface();
 
-    public TcpPortNumber getPort();
+    TcpPortNumber getPort();
 
-    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber newPort) throws AccessDeniedException, SQLException;
-
-    public EncryptionType getEncryptionType();
-
-    public EncryptionType setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
+    TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber newPort)
         throws AccessDeniedException, SQLException;
 
-    public interface SatelliteConnectionApi
+    EncryptionType getEncryptionType();
+
+    EncryptionType setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
+        throws AccessDeniedException, SQLException;
+
+    interface SatelliteConnectionApi
     {
-        public String getNetInterfaceName();
-        public int getPort();
-        public String getEncryptionType();
+        String getNetInterfaceName();
+        int getPort();
+        String getEncryptionType();
     }
 }

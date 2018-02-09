@@ -201,7 +201,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return resList;
     }
 
-    public List<ResourceData> loadResourceData(AccessContext dbCtx, NodeData node, TransactionMgr transMgr)
+    public List<ResourceData> loadResourceData(AccessContext accCtx, NodeData node, TransactionMgr transMgr)
         throws SQLException
     {
         errorReporter.logTrace("Loading all Resources by Node %s", getTraceNodeId(node));
@@ -211,7 +211,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             stmt.setString(1, node.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(resultSet, dbCtx, node, transMgr);
+                ret = load(resultSet, accCtx, node, transMgr);
             }
         }
         errorReporter.logTrace(
@@ -224,7 +224,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private List<ResourceData> load(
         ResultSet resultSet,
-        AccessContext dbCtx,
+        AccessContext accCtx,
         Node globalNode,
         TransactionMgr transMgr
     )
@@ -287,10 +287,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 if (resData == null)
                 {
 
-                    ResourceDefinitionDataDatabaseDriver resDfnDriver = LinStor.getResourceDefinitionDataDatabaseDriver();
+                    ResourceDefinitionDataDatabaseDriver resDfnDriver =
+                        LinStor.getResourceDefinitionDataDatabaseDriver();
                     ResourceDefinition resDfn = resDfnDriver.load(resName, true, transMgr);
 
-                    Resource loadedRes = resDfn.getResource(dbCtx, node.getName());
+                    Resource loadedRes = resDfn.getResource(accCtx, node.getName());
                     // although we just asked the cache, we also just loaded the resDfn.
                     // which loads all its resources.
                     if (loadedRes == null && !cacheCleared)
@@ -326,7 +327,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
                         resData = new ResourceData(
                             UuidUtils.asUuid(resultSet.getBytes(RES_UUID)),
-                            dbCtx,
+                            accCtx,
                             objProt,
                             resDfn,
                             node,
@@ -349,7 +350,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         );
                         for (ResourceConnection conDfn : cons)
                         {
-                            resData.setResourceConnection(dbCtx, conDfn);
+                            resData.setResourceConnection(accCtx, conDfn);
                         }
                         errorReporter.logTrace(
                             "Restored Resource's ConnectionDefinitions %s",
@@ -360,7 +361,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         List<VolumeData> volList = volumeDriver.loadAllVolumesByResource(resData, transMgr);
                         for (VolumeData volData : volList)
                         {
-                            resData.putVolume(dbCtx, volData);
+                            resData.putVolume(accCtx, volData);
                         }
                         errorReporter.logTrace("Resource's Volumes restored %s", getId(resData));
                         errorReporter.logTrace("Resource loaded from DB %s", getId(resData));
@@ -529,10 +530,10 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         private Node node;
         private ResourceDefinition resDfn;
 
-        ResPrimaryKey(Node node, ResourceDefinition resDfn)
+        ResPrimaryKey(Node nodeRef, ResourceDefinition resDfnRef)
         {
-            this.node = node;
-            this.resDfn = resDfn;
+            node = nodeRef;
+            resDfn = resDfnRef;
         }
 
         @Override
@@ -546,6 +547,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         }
 
         @Override
+        // Single exit point exception: Automatically generated code
+        @SuppressWarnings("DescendantToken")
         public boolean equals(Object obj)
         {
             if (this == obj)

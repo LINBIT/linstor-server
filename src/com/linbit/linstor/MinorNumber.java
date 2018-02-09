@@ -11,6 +11,8 @@ import com.linbit.ValueOutOfRangeException;
 public class MinorNumber implements Comparable<MinorNumber>
 {
     public static final int MINOR_NR_MIN = 0;
+    // MagicNumber exception: shift value
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int MINOR_NR_MAX = (1 << 20) - 1;
 
     private static final String MINOR_NR_EXC_FORMAT =

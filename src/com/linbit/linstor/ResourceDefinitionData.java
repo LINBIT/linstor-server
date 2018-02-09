@@ -76,9 +76,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
-        TcpPortNumber port,
+        TcpPortNumber portNr,
         long initialFlags,
-        String secret,
+        String sharedSecret,
         TransportType transType,
         TransactionMgr transMgr
     )
@@ -93,9 +93,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 transMgr
             ),
             resName,
-            port,
+            portNr,
             initialFlags,
-            secret,
+            sharedSecret,
             transType,
             transMgr
         );
@@ -352,10 +352,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr) throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
-        return this.port.set(port);
+        return this.port.set(portNr);
     }
 
     @Override

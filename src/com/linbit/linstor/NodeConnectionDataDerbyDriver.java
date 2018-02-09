@@ -26,7 +26,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     private static final String SELECT =
         " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
         " FROM " + TBL_NODE_CON_DFN +
-        " WHERE "+ NODE_SRC + " = ? AND " +
+        " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ?";
     private static final String SELECT_BY_NODE_SRC_OR_DST =
         " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
@@ -40,7 +40,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
         " VALUES (?, ?, ?)";
     private static final String DELETE =
         " DELETE FROM " + TBL_NODE_CON_DFN +
-        " WHERE "+ NODE_SRC + " = ? AND " +
+        " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ?";
 
 

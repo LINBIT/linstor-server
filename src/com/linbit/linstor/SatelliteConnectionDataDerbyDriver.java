@@ -121,8 +121,8 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                             {
                                 throw new LinStorSqlRuntimeException(
                                     String.format(
-                                        "A TcpPortNumber of a stored SatelliteConnection in table %s could not be restore. " +
-                                            "(NodeName=%s, NetInterfaceName=%s, invalid port=%d)",
+                                        "A TcpPortNumber of a stored SatelliteConnection in table %s is invalid. " +
+                                        "(NodeName=%s, NetInterfaceName=%s, invalid port=%d)",
                                         TBL_SC,
                                         resultSet.getString(SC_NODE_NAME),
                                         resultSet.getString(SC_NODE_NET_NAME),

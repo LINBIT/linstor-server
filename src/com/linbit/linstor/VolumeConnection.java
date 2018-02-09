@@ -9,13 +9,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 public interface VolumeConnection extends DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public Volume getSourceVolume(AccessContext accCtx) throws AccessDeniedException;
+    Volume getSourceVolume(AccessContext accCtx) throws AccessDeniedException;
 
-    public Volume getTargetVolume(AccessContext accCtx) throws AccessDeniedException;
+    Volume getTargetVolume(AccessContext accCtx) throws AccessDeniedException;
 
-    public Props getProps(AccessContext accCtx) throws AccessDeniedException;
+    Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 }

@@ -58,9 +58,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private StorPoolData(
         AccessContext accCtx,
         Node nodeRef,
-        StorPoolDefinition storPoolDef,
+        StorPoolDefinition storPoolDfnRef,
         String storageDriverName,
-        boolean allowStorageDriverCreation,
+        boolean allowStorageDriverCreationFlag,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -69,9 +69,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             UUID.randomUUID(),
             accCtx,
             nodeRef,
-            storPoolDef,
+            storPoolDfnRef,
             storageDriverName,
-            allowStorageDriverCreation,
+            allowStorageDriverCreationFlag,
             transMgr
         );
     }
@@ -113,7 +113,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         );
 
         ((NodeData) nodeRef).addStorPool(accCtx, this);
-        ((StorPoolDefinitionData)storPoolDefRef).addStorPool(accCtx, this);
+        ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, this);
     }
 
     /*

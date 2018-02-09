@@ -86,13 +86,14 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             stmt.setString(1, node.getName().value);
             stmt.setString(2, niName.value);
+            NetInterfaceName loadedNiName;
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 if (resultSet.next())
                 {
                     try
                     {
-                        niName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
+                        loadedNiName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
                     }
                     catch (InvalidNameException invalidNameExc)
                     {
@@ -106,7 +107,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                             invalidNameExc
                         );
                     }
-                    netIfData = restoreInstance(node, niName, resultSet);
+                    netIfData = restoreInstance(node, loadedNiName, resultSet);
                     // ("loaded from [DB|cache]...") msg gets logged in restoreInstance method
                 }
                 else
@@ -329,7 +330,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>
     {
         @Override
-        public void update(NetInterfaceData parent, LsIpAddress inetAddress, TransactionMgr transMgr) throws SQLException
+        public void update(NetInterfaceData parent, LsIpAddress inetAddress, TransactionMgr transMgr)
+            throws SQLException
         {
             errorReporter.logTrace(
                 "Updating NetInterface's address from [%s] to [%s] %s",

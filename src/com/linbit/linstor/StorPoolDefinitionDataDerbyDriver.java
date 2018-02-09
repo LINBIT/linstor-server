@@ -172,8 +172,8 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         if (objProt == null)
         {
             throw new ImplementationError(
-                "StorPoolDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getId(storPoolName),
-                null
+                "StorPoolDefinition's DB entry exists, but is missing an entry in ObjProt table! " +
+                getId(storPoolName), null
             );
         }
         return objProt;

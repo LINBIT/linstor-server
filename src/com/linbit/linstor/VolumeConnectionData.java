@@ -44,8 +44,8 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
      */
     private VolumeConnectionData(
         AccessContext accCtx,
-        Volume sourceVolume,
-        Volume targetVolume,
+        Volume sourceVolumeRef,
+        Volume targetVolumeRef,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -53,8 +53,8 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         this(
             UUID.randomUUID(),
             accCtx,
-            sourceVolume,
-            targetVolume,
+            sourceVolumeRef,
+            targetVolumeRef,
             transMgr
         );
     }

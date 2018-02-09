@@ -33,18 +33,18 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
     private final TransactionSimpleObject<SatelliteConnectionData, Boolean> deleted;
 
     private SatelliteConnectionData(
-        Node node,
-        NetInterface netIf,
-        TcpPortNumber port,
-        EncryptionType encryptionType
+        Node nodeRef,
+        NetInterface netIfRef,
+        TcpPortNumber portRef,
+        EncryptionType encryptionTypeValue
     )
     {
         this (
             UUID.randomUUID(),
-            node,
-            netIf,
-            port,
-            encryptionType
+            nodeRef,
+            netIfRef,
+            portRef,
+            encryptionTypeValue
         );
     }
 
@@ -66,7 +66,9 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         dbDriver = LinStor.getSatelliteConnectionDataDatabaseDriver();
 
         port = new TransactionSimpleObject<>(this, portRef, dbDriver.getSatelliteConnectionPortDriver());
-        encryptionType = new TransactionSimpleObject<>(this, encryptionTypeRef, dbDriver.getSatelliteConnectionTypeDriver());
+        encryptionType = new TransactionSimpleObject<>(
+            this, encryptionTypeRef, dbDriver.getSatelliteConnectionTypeDriver()
+        );
         deleted = new TransactionSimpleObject<>(this, false, null);
 
         transObjs = Arrays.asList(

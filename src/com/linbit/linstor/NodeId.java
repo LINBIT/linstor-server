@@ -13,10 +13,10 @@ public class NodeId implements Comparable<NodeId>
 
     public final int value;
 
-    public NodeId(final int value) throws ValueOutOfRangeException
+    public NodeId(final int idValue) throws ValueOutOfRangeException
     {
-        nodeIdCheck(value);
-        this.value = value;
+        nodeIdCheck(idValue);
+        value = idValue;
     }
 
     @Override

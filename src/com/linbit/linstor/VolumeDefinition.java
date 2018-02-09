@@ -20,46 +20,46 @@ import java.util.UUID;
  */
 public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public ResourceDefinition getResourceDefinition();
+    ResourceDefinition getResourceDefinition();
 
-    public VolumeNumber getVolumeNumber();
+    VolumeNumber getVolumeNumber();
 
-    public MinorNumber getMinorNr(AccessContext accCtx)
+    MinorNumber getMinorNr(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
+    MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
         throws AccessDeniedException, SQLException;
 
-    public long getVolumeSize(AccessContext accCtx)
+    long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
+    Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
         throws AccessDeniedException, SQLException;
 
-    public Props getProps(AccessContext accCtx)
+    Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public StateFlags<VlmDfnFlags> getFlags();
+    StateFlags<VlmDfnFlags> getFlags();
 
-    public Iterator<Volume> iterateVolumes(AccessContext accCtx)
+    Iterator<Volume> iterateVolumes(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
-    public void delete(AccessContext accCtx)
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
-    public enum VlmDfnFlags implements Flags
+    enum VlmDfnFlags implements Flags
     {
         DELETE(1L);
 
         public final long flagValue;
 
-        private VlmDfnFlags(long value)
+        VlmDfnFlags(long value)
         {
             flagValue = value;
         }
@@ -82,9 +82,9 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
                 String[] split = string.split(",");
                 flags = new VlmDfnFlags[split.length];
 
-                for (int i = 0; i < split.length; i++)
+                for (int idx = 0; idx < split.length; idx++)
                 {
-                    flags[i] = VlmDfnFlags.valueOf(split[i].toUpperCase().trim());
+                    flags[idx] = VlmDfnFlags.valueOf(split[idx].toUpperCase().trim());
                 }
             }
             return flags;
@@ -117,7 +117,7 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
     /**
      * Sortable key for sets of volumes. Sorts by resource name, then volume number.
      */
-    public static class Key implements Comparable<Key>
+    class Key implements Comparable<Key>
     {
         public final ResourceName rscName;
         public final VolumeNumber vlmNr;

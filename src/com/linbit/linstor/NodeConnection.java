@@ -9,13 +9,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 public interface NodeConnection extends DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public Node getSourceNode(AccessContext accCtx) throws AccessDeniedException;
+    Node getSourceNode(AccessContext accCtx) throws AccessDeniedException;
 
-    public Node getTargetNode(AccessContext accCtx) throws AccessDeniedException;
+    Node getTargetNode(AccessContext accCtx) throws AccessDeniedException;
 
-    public Props getProps(AccessContext accCtx) throws AccessDeniedException;
+    Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 }

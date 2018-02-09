@@ -22,70 +22,70 @@ import java.util.UUID;
  */
 public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public ObjectProtection getObjProt();
+    ObjectProtection getObjProt();
 
-    public ResourceName getName();
+    ResourceName getName();
 
-    public TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
+    TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
 
-    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException;
+    TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException;
 
-    public int getVolumeDfnCount(AccessContext accCtx)
+    int getVolumeDfnCount(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
+    VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException;
 
-    public Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
+    Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public int getResourceCount();
+    int getResourceCount();
 
-    public Iterator<Resource> iterateResource(AccessContext accCtx)
+    Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void copyResourceMap(
+    void copyResourceMap(
         AccessContext accCtx, Map<? super NodeName, ? super Resource> dstMap
     )
         throws AccessDeniedException;
 
-    public Resource getResource(AccessContext accCtx, NodeName clNodeName)
+    Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException;
 
-    public void addResource(AccessContext accCtx, Resource resRef)
+    void addResource(AccessContext accCtx, Resource resRef)
         throws AccessDeniedException;
 
-    public String getSecret(AccessContext accCtx)
+    String getSecret(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public TransportType getTransportType(AccessContext accCtx)
+    TransportType getTransportType(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public TransportType setTransportType(AccessContext accCtx, TransportType type)
+    TransportType setTransportType(AccessContext accCtx, TransportType type)
         throws AccessDeniedException, SQLException;
 
-    public Props getProps(AccessContext accCtx)
+    Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public StateFlags<RscDfnFlags> getFlags();
+    StateFlags<RscDfnFlags> getFlags();
 
-    public void markDeleted(AccessContext accCtx)
+    void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public void delete(AccessContext accCtx)
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
-    public enum RscDfnFlags implements Flags
+    enum RscDfnFlags implements Flags
     {
         DELETE(1L);
 
         public final long flagValue;
 
-        private RscDfnFlags(long value)
+        RscDfnFlags(long value)
         {
             flagValue = value;
         }
@@ -120,7 +120,7 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
         }
     }
 
-    public static enum TransportType
+    enum TransportType
     {
         IP, RDMA, RoCE;
 

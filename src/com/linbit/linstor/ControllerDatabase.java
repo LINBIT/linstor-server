@@ -12,8 +12,8 @@ import java.sql.Connection;
  */
 public interface ControllerDatabase extends SystemService
 {
-    public static final int DEFAULT_TIMEOUT = 60000;
-    public static final int DEFAULT_MAX_OPEN_STMT = 100;
+    static final int DEFAULT_TIMEOUT = 60000;
+    static final int DEFAULT_MAX_OPEN_STMT = 100;
 
     void setTimeout(int timeout);
     void setMaxOpenPreparedStatements(int maxOpen);

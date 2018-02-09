@@ -319,8 +319,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         if (objProt == null)
         {
             throw new ImplementationError(
-                "ResourceDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getId(resourceName),
-                null
+                "ResourceDefinition's DB entry exists, but is missing an entry in ObjProt table! " +
+                getId(resourceName), null
             );
         }
         return objProt;
@@ -380,7 +380,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private class ResDfnFlagsPersistence implements StateFlagsPersistence<ResourceDefinitionData>
     {
         @Override
-        public void persist(ResourceDefinitionData resourceDefinition, long flags, TransactionMgr transMgr) throws SQLException
+        public void persist(ResourceDefinitionData resourceDefinition, long flags, TransactionMgr transMgr)
+            throws SQLException
         {
             try
             {

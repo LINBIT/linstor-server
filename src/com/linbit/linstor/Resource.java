@@ -24,53 +24,53 @@ import java.util.UUID;
  */
 public interface Resource extends TransactionObject, DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public ObjectProtection getObjProt();
+    ObjectProtection getObjProt();
 
-    public ResourceDefinition getDefinition();
+    ResourceDefinition getDefinition();
 
-    public Volume getVolume(VolumeNumber volNr);
+    Volume getVolume(VolumeNumber volNr);
 
-    public Iterator<Volume> iterateVolumes();
+    Iterator<Volume> iterateVolumes();
 
-    public Node getAssignedNode();
+    Node getAssignedNode();
 
-    public NodeId getNodeId();
+    NodeId getNodeId();
 
-    public ResourceConnection getResourceConnection(AccessContext accCtx, Resource otherResource)
+    ResourceConnection getResourceConnection(AccessContext accCtx, Resource otherResource)
         throws AccessDeniedException;
 
-    public void setResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+    void setResourceConnection(AccessContext accCtx, ResourceConnection resCon)
         throws AccessDeniedException;
 
-    public void removeResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+    void removeResourceConnection(AccessContext accCtx, ResourceConnection resCon)
         throws AccessDeniedException;
 
-    public Props getProps(AccessContext accCtx)
+    Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public StateFlags<RscFlags> getStateFlags();
+    StateFlags<RscFlags> getStateFlags();
 
-    public void adjustVolumes(
+    void adjustVolumes(
         AccessContext apiCtx,
         TransactionMgr transMgr,
         String defaultStorPoolName
     )
         throws InvalidNameException, LinStorException;
 
-    public void markDeleted(AccessContext accCtx)
+    void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public void delete(AccessContext accCtx)
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
-    public boolean isCreatePrimary();
+    boolean isCreatePrimary();
 
-    public enum RscFlags implements Flags
+    enum RscFlags implements Flags
     {
         CLEAN(1L),
         DELETE(2L),
@@ -78,7 +78,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
 
         public final long flagValue;
 
-        private RscFlags(long value)
+        RscFlags(long value)
         {
             flagValue = value;
         }
@@ -113,7 +113,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
         }
     }
 
-    public interface RscApi {
+    public interface RscApi
+    {
         UUID getUuid();
         String getName();
         UUID getNodeUuid();

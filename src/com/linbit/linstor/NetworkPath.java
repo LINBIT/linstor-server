@@ -9,5 +9,5 @@ import java.util.UUID;
  */
 public interface NetworkPath extends DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 }

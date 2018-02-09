@@ -29,24 +29,24 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     private static final String SELECT =
         " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  +
         " FROM " + TBL_RES_CON_DFN +
-        " WHERE "+ NODE_SRC + " = ? AND " +
+        " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ? AND " +
                    RES_NAME + " = ?";
     private static final String SELECT_BY_RES_SRC_OR_DST =
         " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  +
         " FROM " + TBL_RES_CON_DFN +
         " WHERE ( " + NODE_SRC + " = ? OR " +
-                      NODE_DST + " = ?"+
+                      NODE_DST + " = ?" +
                    " ) AND " +
                    RES_NAME + " = ?";
 
     private static final String INSERT =
         " INSERT INTO " + TBL_RES_CON_DFN +
-        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ")"+
+        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ")" +
         " VALUES (?, ?, ?, ?)";
     private static final String DELETE =
         " DELETE FROM " + TBL_RES_CON_DFN +
-        " WHERE "+ NODE_SRC + " = ? AND " +
+        " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ? AND " +
                    RES_NAME + " = ?";
 
@@ -65,7 +65,10 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         errorReporter = errorReporterRef;
     }
 
-    public void initialize(NodeDataDerbyDriver nodeDataDerbyDriverRef,ResourceDataDerbyDriver resourceDataDerbyDriverRef)
+    public void initialize(
+        NodeDataDerbyDriver nodeDataDerbyDriverRef,
+        ResourceDataDerbyDriver resourceDataDerbyDriverRef
+    )
     {
         nodeDataDerbyDriver = nodeDataDerbyDriverRef;
         resourceDataDerbyDriver = resourceDataDerbyDriverRef;
@@ -341,7 +344,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
     private String getId(String sourceName, String targetName, String resName)
     {
-        return "(SourceNode=" + sourceName + " TargetNode=" + targetName + " ResName=" + resName +")";
+        return "(SourceNode=" + sourceName + " TargetNode=" + targetName + " ResName=" + resName + ")";
     }
 
     private String getResourceTraceId(Resource resource)

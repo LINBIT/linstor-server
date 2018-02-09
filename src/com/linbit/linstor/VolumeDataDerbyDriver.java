@@ -58,7 +58,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     VOL_STOR_POOL + " = ?";
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
-        " ("+
+        " (" +
             VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
             VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
             VOL_META_DISK + ", " + VOL_FLAGS +
@@ -589,13 +589,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     public static class VolPrimaryKey
     {
-        private Resource resRef;
+        private Resource resource;
         private VolumeDefinition volDfn;
 
-        public VolPrimaryKey(Resource resRef, VolumeDefinition volDfn)
+        public VolPrimaryKey(Resource rscRef, VolumeDefinition volDfnRef)
         {
-            this.resRef = resRef;
-            this.volDfn = volDfn;
+            resource = rscRef;
+            volDfn = volDfnRef;
         }
 
         @Override
@@ -603,12 +603,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((resRef == null) ? 0 : resRef.hashCode());
+            result = prime * result + ((resource == null) ? 0 : resource.hashCode());
             result = prime * result + ((volDfn == null) ? 0 : volDfn.hashCode());
             return result;
         }
 
         @Override
+        // Single exit point exception: Automatically generated code
+        @SuppressWarnings("DescendantToken")
         public boolean equals(Object obj)
         {
             if (this == obj)
@@ -624,16 +626,16 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 return false;
             }
             VolPrimaryKey other = (VolPrimaryKey) obj;
-            if (resRef == null)
+            if (resource == null)
             {
-                if (other.resRef != null)
+                if (other.resource != null)
                 {
                     return false;
                 }
             }
             else
             {
-                if (!resRef.equals(other.resRef))
+                if (!resource.equals(other.resource))
                 {
                     return false;
                 }

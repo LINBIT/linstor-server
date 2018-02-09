@@ -23,80 +23,80 @@ import java.util.UUID;
  */
 public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Node>
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public ObjectProtection getObjProt();
+    ObjectProtection getObjProt();
 
-    public NodeName getName();
+    NodeName getName();
 
-    public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName)
+    NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName)
         throws AccessDeniedException;
 
-    public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
+    Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public Resource getResource(AccessContext accCtx, ResourceName resName)
+    Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException;
 
-    public void addResource(AccessContext accCtx, Resource resRef)
+    void addResource(AccessContext accCtx, Resource resRef)
         throws AccessDeniedException;
 
-    public NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
+    NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
         throws AccessDeniedException;
 
-    public void setNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+    void setNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
         throws AccessDeniedException;
 
-    public void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+    void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
         throws AccessDeniedException;
 
-    public int getResourceCount();
+    int getResourceCount();
 
-    public Iterator<Resource> iterateResources(AccessContext accCtx)
+    Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public int getStorPoolCount();
+    int getStorPoolCount();
 
-    public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
+    StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException;
 
-    public StorPool getDisklessStorPool(AccessContext accCtx)
+    StorPool getDisklessStorPool(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
+    Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public Props getProps(AccessContext accCtx)
+    Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public NodeType getNodeType(AccessContext accCtx)
+    NodeType getNodeType(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
+    boolean hasNodeType(AccessContext accCtx, NodeType reqType)
         throws AccessDeniedException;
 
-    public StateFlags<NodeFlag> getFlags();
+    StateFlags<NodeFlag> getFlags();
 
-    public void setPeer(AccessContext accCtx, Peer peer) throws AccessDeniedException;
+    void setPeer(AccessContext accCtx, Peer peer) throws AccessDeniedException;
 
-    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
+    Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
 
-    public SatelliteConnection getSatelliteConnection(AccessContext accCtx)
+    SatelliteConnection getSatelliteConnection(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setSatelliteConnection(AccessContext accCtx, SatelliteConnection stltConn)
+    void setSatelliteConnection(AccessContext accCtx, SatelliteConnection stltConn)
         throws AccessDeniedException;
 
-    public void markDeleted(AccessContext accCtx)
+    void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public void delete(AccessContext accCtx)
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
-    public enum NodeType implements Flags
+    enum NodeType implements Flags
     {
         CONTROLLER(1),
         SATELLITE(2),
@@ -106,9 +106,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
 
         private final int flag;
 
-        private NodeType(int flag)
+        NodeType(int flagValue)
         {
-            this.flag = flag;
+            flag = flagValue;
         }
 
         @Override
@@ -147,14 +147,14 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         }
     }
 
-    public enum NodeFlag implements Flags
+    enum NodeFlag implements Flags
     {
         DELETE(1L),
         QIGNORE(0x10000L);
 
         public final long flagValue;
 
-        private NodeFlag(long value)
+        NodeFlag(long value)
         {
             flagValue = value;
         }
@@ -177,9 +177,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
                 String[] split = string.split(",");
                 flags = new NodeFlag[split.length];
 
-                for (int i = 0; i < split.length; i++)
+                for (int idx = 0; idx < split.length; idx++)
                 {
-                    flags[i] = NodeFlag.valueOf(split[i].toUpperCase().trim());
+                    flags[idx] = NodeFlag.valueOf(split[idx].toUpperCase().trim());
                 }
             }
             return flags;
