@@ -65,7 +65,7 @@ public class DrbdVolume
 
         private String diskLabel;
 
-        private DiskState(String label)
+        DiskState(String label)
         {
             diskLabel = label;
         }
@@ -139,7 +139,7 @@ public class DrbdVolume
 
         private String replLabel;
 
-        private ReplState(String label)
+        ReplState(String label)
         {
             replLabel = label;
         }
@@ -247,11 +247,13 @@ public class DrbdVolume
         return volMinorNr;
     }
 
-    public boolean isClient() {
+    public boolean isClient()
+    {
         return client != null && client;
     }
 
-    public Boolean getClient() {
+    public Boolean getClient()
+    {
         return client;
     }
 
@@ -340,7 +342,8 @@ public class DrbdVolume
             {
                 client = true;
             }
-            else if(clientLabel.equals("no"))
+            else
+            if (clientLabel.equals("no"))
             {
                 client = false;
             }

@@ -17,7 +17,6 @@ import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.core.DrbdStateChange;
-import org.slf4j.event.Level;
 
 public class DrbdEventService implements SystemService, Runnable, DrbdStateTracker
 {
@@ -146,9 +145,9 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     }
 
     @Override
-    public void setServiceInstanceName(ServiceName instanceName)
+    public void setServiceInstanceName(ServiceName instanceNameRef)
     {
-        this.instanceName = instanceName;
+        instanceName = instanceNameRef;
     }
 
     @Override

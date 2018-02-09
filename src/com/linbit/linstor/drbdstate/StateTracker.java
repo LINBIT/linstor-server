@@ -58,6 +58,7 @@ public class StateTracker
     // Observe everything
     public static final long OBS_ALL        = 0xFFFFFFFFFFFFFFFFL;
 
+    // FIXME: These should probably be constants, and obsSlotCount should be initialized statically, not per instance
     // Observer list table indexes
     private final int OBS_RES_CRT_SLOT;
     private final int OBS_RES_DSTR_SLOT;

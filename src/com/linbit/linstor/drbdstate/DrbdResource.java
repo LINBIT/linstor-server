@@ -30,7 +30,7 @@ public class DrbdResource
 
         private String roleLabel;
 
-        private Role(String label)
+        Role(String label)
         {
             roleLabel = label;
         }

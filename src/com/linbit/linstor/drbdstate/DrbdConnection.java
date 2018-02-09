@@ -44,7 +44,7 @@ public class DrbdConnection
 
         private String stateLabel;
 
-        private State(String label)
+        State(String label)
         {
             stateLabel = label;
         }
