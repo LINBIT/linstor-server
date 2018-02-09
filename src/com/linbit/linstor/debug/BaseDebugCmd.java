@@ -1,6 +1,5 @@
 package com.linbit.linstor.debug;
 
-import com.linbit.AutoIndent;
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.CommonDebugControl;
 import com.linbit.linstor.CoreServices;
@@ -8,8 +7,6 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;

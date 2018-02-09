@@ -158,7 +158,11 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     }
 
                     treeBuilder
-                        .branch("\u001b[1;37m%-24s\u001b[0m %s", netIf.getName().displayValue, netIf.getUuid().toString().toUpperCase())
+                        .branch(
+                            "\u001b[1;37m%-24s\u001b[0m %s",
+                            netIf.getName().displayValue,
+                            netIf.getUuid().toString().toUpperCase()
+                        )
                         .leaf("Address: %s", address)
                         .endBranch();
                 }

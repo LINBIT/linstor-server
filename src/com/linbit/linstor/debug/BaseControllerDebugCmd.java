@@ -1,11 +1,10 @@
 package com.linbit.linstor.debug;
 
-import java.util.*;
-
 import com.linbit.linstor.ControllerDebugCmd;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.CtrlDebugControl;
+import java.util.Map;
 
 /**
  * Base class for debug console commands

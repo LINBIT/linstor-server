@@ -23,18 +23,18 @@ public class FilteredObjectLister<SearchType>
     private final String searchTypeName;
     private final String objectTypeName;
     private final ObjectHandler<SearchType> objectHandler;
-    
+
     private final DebugPrintHelper debugPrintHelper;
 
     public FilteredObjectLister(
-        final String searchTypeName,
-        final String objectTypeName,
-        final ObjectHandler<SearchType> objectHandler
+        final String searchTypeNameRef,
+        final String objectTypeNameRef,
+        final ObjectHandler<SearchType> objectHandlerRef
     )
     {
-        this.searchTypeName = searchTypeName;
-        this.objectTypeName = objectTypeName;
-        this.objectHandler = objectHandler;
+        searchTypeName = searchTypeNameRef;
+        objectTypeName = objectTypeNameRef;
+        objectHandler = objectHandlerRef;
 
         debugPrintHelper = new DebugPrintHelper();
     }
@@ -222,8 +222,8 @@ public class FilteredObjectLister<SearchType>
                 null,
                 "Specify a valid " + searchTypeName + " name to display information about a " +
                 "single " + searchTypeName + ", or set a filter pattern " +
-                "using the " + PRM_FILTER_NAME + " parameter to display information about all " + objectTypeName + " entries " +
-                "that have a name that matches the pattern.",
+                "using the " + PRM_FILTER_NAME + " parameter to display information about all " + objectTypeName +
+                " entries that have a name that matches the pattern.",
                 String.format(
                     "The specified value was '%s'.",
                     prmName

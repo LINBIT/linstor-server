@@ -98,7 +98,8 @@ public class CmdSetSecLevel extends BaseDebugCmd
                         default:
                             printError(debugErr,
                                 "The specified security level is not valid.",
-                                String.format("The value '%s' specified for the parameter %s is not a valid security level name",
+                                String.format(
+                                    "The value '%s' specified for the parameter %s is not a valid security level name",
                                     secLevelText, PRM_SECLVL_NAME
                                 ),
                                 String.format("Specify a valid security level.\n" +

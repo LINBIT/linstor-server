@@ -141,7 +141,7 @@ public class CmdDisplayReport extends BaseDebugCmd
                             instanceId, formattedErrorId
                         ),
                         null,
-                        "Make sure that the specified report ID is correct and that the corresponding\n" +"" +
+                        "Make sure that the specified report ID is correct and that the corresponding\n" + "" +
                         "log file exists and is accessible by the software",
                         detailMsg
                     );

@@ -103,10 +103,10 @@ public class CmdDisplayConnections extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        boolean detail_id = false;
-        boolean detail_conn = false;
-        boolean detail_ctxt = false;
-        boolean detail_privs = false;
+        boolean detailId        = false;
+        boolean detailConn      = false;
+        boolean detailContext   = false;
+        boolean detailPrivs     = false;
 
         try
         {
@@ -122,22 +122,22 @@ public class CmdDisplayConnections extends BaseDebugCmd
                     switch (curToken)
                     {
                         case PRM_DETAIL_ID:
-                            detail_id = true;
+                            detailId = true;
                             break;
                         case PRM_DETAIL_CONN:
-                            detail_conn = true;
+                            detailConn = true;
                             break;
                         case PRM_DETAIL_CTXT:
-                            detail_ctxt = true;
+                            detailContext = true;
                             break;
                         case PRM_DETAIL_PRIVS:
-                            detail_privs = true;
+                            detailPrivs = true;
                             break;
                         case PRM_DETAIL_FULL:
-                            detail_id = true;
-                            detail_conn = true;
-                            detail_ctxt = true;
-                            detail_privs = true;
+                            detailId = true;
+                            detailConn = true;
+                            detailContext = true;
+                            detailPrivs = true;
                             break;
                         case PRM_DETAIL_DFLT:
                             // fall-through
@@ -213,21 +213,21 @@ public class CmdDisplayConnections extends BaseDebugCmd
                             curPeer.msgRecvCount(),
                             curPeer.msgSentCount()
                         );
-                        if (detail_id)
+                        if (detailId)
                         {
                             debugOut.printf(
                                 "    Id:        %-64s\n",
                                 curPeer.getId()
                             );
                         }
-                        if (detail_conn)
+                        if (detailConn)
                         {
                             debugOut.printf(
                                 "    Connector: %-24s QCap: %4d\n",
                                 connector, curPeer.outQueueCapacity()
                             );
                         }
-                        if (detail_ctxt)
+                        if (detailContext)
                         {
                             Identity peerIdentity = peerAccCtx.getIdentity();
                             Role peerRole = peerAccCtx.getRole();
@@ -238,7 +238,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                                 peerIdentity, peerRole, peerDomain
                             );
                         }
-                        if (detail_privs)
+                        if (detailPrivs)
                         {
                             debugOut.println("    Limit privileges:");
                             printPrivString(debugOut, peerAccCtx.getLimitPrivs());

@@ -4,8 +4,12 @@ import com.linbit.AutoIndent;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.security.AccessContext;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 
-import java.io.*;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +44,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         READ_KEY,
         READ_VALUE,
         ESCAPE
-    };
+    }
 
     protected BaseDebugConsole(AccessContext debugCtxRef, CoreServices coreSvcsRef)
     {
@@ -166,7 +170,6 @@ public abstract class BaseDebugConsole implements DebugConsole
             if (inputLine.startsWith("?"))
             {
                 findCommands(
-                    commandMap,
                     debugOut,
                     debugErr,
                     inputLine.substring(1, inputLine.length()).trim()
@@ -176,7 +179,6 @@ public abstract class BaseDebugConsole implements DebugConsole
             if (isHelpCommand(inputLine))
             {
                 helpCommand(
-                    commandMap,
                     debugOut,
                     debugErr,
                     inputLine.substring(HELP_COMMAND.length(), inputLine.length()).trim()
@@ -322,7 +324,6 @@ public abstract class BaseDebugConsole implements DebugConsole
     }
 
     public void helpCommand(
-        Map<String, CommonDebugCmd> commandMap,
         PrintStream debugOut,
         PrintStream debugErr,
         String cmdName
@@ -492,7 +493,6 @@ public abstract class BaseDebugConsole implements DebugConsole
     }
 
     public void findCommands(
-        Map<String, CommonDebugCmd> commandMap,
         PrintStream debugOut,
         PrintStream debugErr,
         String cmdPattern
