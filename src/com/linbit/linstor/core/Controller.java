@@ -319,8 +319,9 @@ public final class Controller extends LinStor implements CoreServices
             disklessStorPoolDfn = injector.getInstance(
                 Key.get(StorPoolDefinitionData.class, Names.named(LinStorModule.DISKLESS_STOR_POOL_DFN)));
 
-            minorNrPool = injector.getInstance(MinorNrPool.class);
-            tcpPortNrPool = injector.getInstance(TcpPortPool.class);
+            errorLogRef.logInfo("Core objects load from database is in progress");
+            loadCoreObjects(initCtx);
+            errorLogRef.logInfo("Core objects load from database completed");
 
             netComContainer = injector.getInstance(NetComContainer.class);
 
@@ -334,9 +335,8 @@ public final class Controller extends LinStor implements CoreServices
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
 
-            errorLogRef.logInfo("Core objects load from database is in progress");
-            loadCoreObjects(initCtx);
-            errorLogRef.logInfo("Core objects load from database completed");
+            minorNrPool = injector.getInstance(MinorNrPool.class);
+            tcpPortNrPool = injector.getInstance(TcpPortPool.class);
 
             taskScheduleService.addTask(new GarbageCollectorTask());
 
