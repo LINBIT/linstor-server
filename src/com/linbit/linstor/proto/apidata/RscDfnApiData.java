@@ -15,7 +15,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
+public class RscDfnApiData implements ResourceDefinition.RscDfnApi
+{
     private RscDfnOuterClass.RscDfn rscDfn;
 
     public RscDfnApiData(RscDfnOuterClass.RscDfn refRscDfn)
@@ -24,9 +25,10 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         UUID uuid = null;
-        if(rscDfn.hasRscDfnUuid())
+        if (rscDfn.hasRscDfnUuid())
         {
             uuid = UUID.fromString(rscDfn.getRscDfnUuid());
         }
@@ -34,17 +36,20 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     }
 
     @Override
-    public String getResourceName() {
+    public String getResourceName()
+    {
         return rscDfn.getRscName();
     }
 
     @Override
-    public int getPort() {
+    public int getPort()
+    {
         return rscDfn.getRscDfnPort();
     }
 
     @Override
-    public String getSecret() {
+    public String getSecret()
+    {
         return rscDfn.getRscDfnSecret();
     }
 
@@ -55,12 +60,14 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     }
 
     @Override
-    public long getFlags() {
+    public long getFlags()
+    {
         return ResourceDefinition.RscDfnFlags.fromStringList(rscDfn.getRscDfnFlagsList());
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         Map<String, String> ret = new HashMap<>();
         for (LinStorMapEntryOuterClass.LinStorMapEntry entry : rscDfn.getRscDfnPropsList())
         {
@@ -70,7 +77,8 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     }
 
     @Override
-    public List<VolumeDefinition.VlmDfnApi> getVlmDfnList() {
+    public List<VolumeDefinition.VlmDfnApi> getVlmDfnList()
+    {
         return VlmDfnApiData.toApiList(rscDfn.getVlmDfnsList());
     }
 

@@ -16,9 +16,9 @@ public class VlmApiData implements VlmApi
 {
     private Vlm vlm;
 
-    public VlmApiData(Vlm vlm)
+    public VlmApiData(Vlm vlmRef)
     {
-        this.vlm = vlm;
+        vlm = vlmRef;
     }
 
     @Override
@@ -79,7 +79,8 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
-    public int getVlmMinorNr() {
+    public int getVlmMinorNr()
+    {
         return vlm.getVlmMinorNr();
     }
 

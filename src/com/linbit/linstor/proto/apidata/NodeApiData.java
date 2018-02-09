@@ -16,7 +16,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class NodeApiData implements Node.NodeApi {
+public class NodeApiData implements Node.NodeApi
+{
     private NodeOuterClass.Node node;
 
     public NodeApiData(NodeOuterClass.Node nodeRef)
@@ -31,7 +32,8 @@ public class NodeApiData implements Node.NodeApi {
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         UUID uuid = null;
         if (node.hasUuid())
         {
@@ -47,7 +49,8 @@ public class NodeApiData implements Node.NodeApi {
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         Map<String, String> ret = new HashMap<>();
         for (LinStorMapEntryOuterClass.LinStorMapEntry entry : node.getPropsList())
         {
@@ -68,12 +71,14 @@ public class NodeApiData implements Node.NodeApi {
     }
 
     @Override
-    public long getFlags() {
+    public long getFlags()
+    {
         return Node.NodeFlag.fromStringList(node.getFlagsList());
     }
 
     @Override
-    public List<NetInterface.NetInterfaceApi> getNetInterfaces() {
+    public List<NetInterface.NetInterfaceApi> getNetInterfaces()
+    {
         ArrayList<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
         for (NetInterfaceOuterClass.NetInterface netinter : node.getNetInterfacesList())
         {
@@ -103,5 +108,4 @@ public class NodeApiData implements Node.NodeApi {
     {
         return UUID.fromString(node.getDisklessStorPoolUuid());
     }
-
 }

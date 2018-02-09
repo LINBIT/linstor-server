@@ -12,7 +12,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi {
+public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi
+{
     private StorPoolDfnOuterClass.StorPoolDfn storPoolDfn;
 
     public StorPoolDfnApiData(StorPoolDfnOuterClass.StorPoolDfn refStorPoolDfn)
@@ -21,7 +22,8 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi {
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         UUID uuid = null;
         if (storPoolDfn.hasUuid())
         {
@@ -31,21 +33,25 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi {
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return storPoolDfn.getStorPoolName();
     }
 
     @Override
-    public Map<String, String> getProps() {
-        Map<String, String> ret = new HashMap<>();
+    public Map<String, String> getProps()
+    {
+        Map<String, String> propsMap = new HashMap<>();
         for (LinStorMapEntryOuterClass.LinStorMapEntry entry : storPoolDfn.getPropsList())
         {
-            ret.put(entry.getKey(), entry.getValue());
+            propsMap.put(entry.getKey(), entry.getValue());
         }
-        return ret;
+        return propsMap;
     }
 
-    public static StorPoolDfnOuterClass.StorPoolDfn fromStorPoolDfnApi(final StorPoolDefinition.StorPoolDfnApi apiStorPoolDfn)
+    public static StorPoolDfnOuterClass.StorPoolDfn fromStorPoolDfnApi(
+        final StorPoolDefinition.StorPoolDfnApi apiStorPoolDfn
+    )
     {
         StorPoolDfnOuterClass.StorPoolDfn.Builder storPoolDfnBld = StorPoolDfnOuterClass.StorPoolDfn.newBuilder();
         storPoolDfnBld.setStorPoolName(apiStorPoolDfn.getName());
