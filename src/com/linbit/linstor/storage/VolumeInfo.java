@@ -6,12 +6,12 @@ public class VolumeInfo
     private String identifier;
     private String path;
 
-    public VolumeInfo(final long size, final String identifier, final String path)
+    public VolumeInfo(final long vlmSize, final String vlmIdentifier, final String vlmPath)
     {
         super();
-        this.size = size;
-        this.identifier = identifier;
-        this.path = path;
+        size = vlmSize;
+        identifier = vlmIdentifier;
+        path = vlmPath;
     }
 
     public long getSize()

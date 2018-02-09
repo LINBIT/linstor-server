@@ -31,8 +31,8 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final int EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT = 2;
     public static final long FILE_EVENT_TIMEOUT_DEFAULT = 15_000;
 
-    public static final byte[] VALID_CHARS = { '_' };
-    public static final byte[] VALID_INNER_CHARS = { '-' };
+    public static final byte[] VALID_CHARS = {'_'};
+    public static final byte[] VALID_INNER_CHARS = {'-'};
 
     protected StorageDriverKind storageDriverKind;
     protected FileSystemWatch fileSystemWatch;
@@ -42,9 +42,9 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
 
-    public AbsStorageDriver(StorageDriverKind storageDriverKind)
+    public AbsStorageDriver(StorageDriverKind storageDriverKindRef)
     {
-        this.storageDriverKind = storageDriverKind;
+        storageDriverKind = storageDriverKindRef;
     }
 
     @Override
@@ -80,26 +80,28 @@ public abstract class AbsStorageDriver implements StorageDriver
         throws StorageException, MaxSizeException, MinSizeException
     {
         final long extent = getExtentSize();
-        if (size % extent != 0)
+        // Calculate effective size from requested size
+        long effSize = size;
+        if (effSize % extent != 0)
         {
-            long origSize = size;
-            size = ((size / extent) + 1) * extent; // rounding up needed for zfs
+            long origSize = effSize;
+            effSize = ((effSize / extent) + 1) * extent; // rounding up needed for zfs
             errorReporter.logInfo(
                 String.format(
                     "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
                     origSize,
-                    size,
+                    effSize,
                     extent
                 )
             );
         }
 
-        MetaData.checkMinDrbdSizeNet(size);
-        MetaData.checkMaxDrbdSize(size);
+        MetaData.checkMinDrbdSizeNet(effSize);
+        MetaData.checkMaxDrbdSize(effSize);
 
         String volumePath = null;
 
-        String[] command = getCreateCommand(identifier, size);
+        String[] command = getCreateCommand(identifier, effSize);
         try
         {
             final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
@@ -112,7 +114,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             {
                 throw new StorageException(
                     "Failed to create volume",
-                    String.format("Failed to create volume [%s] with size %d", identifier, size),
+                    String.format("Failed to create volume [%s] with size %d", identifier, effSize),
                     (exc instanceof ChildProcessTimeoutException) ?
                         "External command timed out" :
                         "External command threw an IOException",
@@ -151,12 +153,12 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             throw new StorageException(
                 "Failed to verify volume creation",
-                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, size),
+                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, effSize),
                 "Verification of volume creation interrupted",
                 null,
                 String.format(
-                    "External command for creating volume executed, file watch listener registered for device [%s] to show up, " +
-                        "waiting for device to show up was interrupted",
+                    "External command for creating volume executed, file watch listener registered " +
+                    "for device [%s] to show up, waiting for device to show up was interrupted",
                     getExpectedVolumePath(identifier)
                 ),
                 interExc
@@ -166,12 +168,12 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             throw new StorageException(
                 "Failed to verify volume creation",
-                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, size),
+                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, effSize),
                 "The volume didn't show up in the expected path",
                 null,
                 String.format(
-                    "External command for creating volume executed, file watch listener for device [%s] to show up timed out " +
-                        "after %d ms",
+                    "External command for creating volume executed, file watch listener for device [%s] " +
+                    "to show up timed out after %d ms",
                     getExpectedVolumePath(identifier),
                     fileEventTimeout
                 ),
@@ -182,7 +184,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             throw new StorageException(
                 "Failed to verify volume creation",
-                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, size),
+                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, effSize),
                 "IOException occured during registering a file watch listener",
                 null,
                 String.format("Could not watch path: %s", getExpectedVolumePath(identifier)),
@@ -408,7 +410,10 @@ public abstract class AbsStorageDriver implements StorageDriver
         try
         {
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to create snapshot [%s] for volume [%s]", snapshotName, identifier);
+            checkExitCode(
+                outputData, command,
+                "Failed to create snapshot [%s] for volume [%s]", snapshotName, identifier
+            );
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -431,7 +436,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     {
         if (!storageDriverKind.isSnapshotSupported())
         {
-            throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
+            throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
         final String[] command = getRestoreSnapshotCommand(sourceIdentifier, snapshotName, targetIdentifier);
 
@@ -481,7 +486,10 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier);
+            checkExitCode(
+                outputData, command,
+                "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier
+            );
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -492,7 +500,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                     "External command timed out" :
                     "External command threw an IOException",
                 null,
-                String.format("External command [%s] timed out ", glue (command, " ")),
+                String.format("External command [%s] timed out ", glue(command, " ")),
                 exc
             );
         }
@@ -545,7 +553,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             }
             sb.append(
                 String.format(
-                    "Command '%s' returned with exitcode %d. %n%n"+
+                    "Command '%s' returned with exitcode %d. %n%n" +
                         "Standard out: %n" +
                         "%s" +
                         "%n%n" +
@@ -609,11 +617,13 @@ public abstract class AbsStorageDriver implements StorageDriver
      * @return
      * @throws StorageException
      */
-    protected int checkedGetAsInt(final Map<String, String> map, final String key, int defaultValue) throws StorageException
+    protected int checkedGetAsInt(final Map<String, String> map, final String key, int defaultValue)
+        throws StorageException
     {
+        int result;
         try
         {
-            return uncheckedGetAsInt(map, key, defaultValue);
+            result = uncheckedGetAsInt(map, key, defaultValue);
         }
         catch (NumberFormatException numberFormatExc)
         {
@@ -626,6 +636,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 numberFormatExc
             );
         }
+        return result;
     }
 
     /**
@@ -664,9 +675,10 @@ public abstract class AbsStorageDriver implements StorageDriver
      */
     protected long checkedGetAsLong(Map<String, String> map, String key, long defaultValue) throws StorageException
     {
+        long result;
         try
         {
-            return uncheckedGetAsLong(map, key, defaultValue);
+            result = uncheckedGetAsLong(map, key, defaultValue);
         }
         catch (NumberFormatException numberFormatExc)
         {
@@ -679,6 +691,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 numberFormatExc
             );
         }
+        return result;
     }
 
     /**
@@ -784,9 +797,9 @@ public abstract class AbsStorageDriver implements StorageDriver
         String[] split = path.split(File.pathSeparator);
 
         Path[] folders = new Path[split.length];
-        for (int i = 0; i < split.length; i++)
+        for (int idx = 0; idx < split.length; idx++)
         {
-            folders[i] = Paths.get(split[i]);
+            folders[idx] = Paths.get(split[idx]);
         }
         return folders;
     }
@@ -794,7 +807,9 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected void checkToleranceFactor(Map<String, String> config) throws StorageException
     {
-        int toleranceFactor = checkedGetAsInt(config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY,sizeAlignmentToleranceFactor);
+        int toleranceFactor = checkedGetAsInt(
+            config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
+        );
         try
         {
             Checks.rangeCheck(toleranceFactor, 1, Integer.MAX_VALUE);
@@ -837,7 +852,11 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
 
-    protected abstract String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String identifier)
+    protected abstract String[] getRestoreSnapshotCommand(
+        String sourceIdentifier,
+        String snapshotName,
+        String identifier
+    )
         throws StorageException;
 
     protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);

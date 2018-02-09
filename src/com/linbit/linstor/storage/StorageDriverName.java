@@ -14,8 +14,8 @@ public class StorageDriverName extends GenericName
     public static final int MIN_LENGTH = 3;
     public static final int MAX_LENGTH = 32;
 
-    public static final byte[] VALID_CHARS = { '_' };
-    public static final byte[] VALID_INNER_CHARS = { '-' };
+    public static final byte[] VALID_CHARS = {'_'};
+    public static final byte[] VALID_INNER_CHARS = {'-'};
 
     public StorageDriverName(String driverName) throws InvalidNameException
     {

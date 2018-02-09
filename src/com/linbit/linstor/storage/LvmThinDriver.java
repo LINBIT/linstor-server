@@ -183,7 +183,12 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException
+    public void restoreSnapshot(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier
+    )
+        throws StorageException
     {
         super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier);
         startVolume(targetIdentifier);

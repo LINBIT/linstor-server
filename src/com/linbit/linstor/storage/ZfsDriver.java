@@ -48,9 +48,10 @@ public class ZfsDriver extends AbsStorageDriver
     protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
         final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        VolumeInfo vlmInfo;
         try
         {
-            return ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
+            vlmInfo = ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -75,6 +76,7 @@ public class ZfsDriver extends AbsStorageDriver
                 exc
             );
         }
+        return vlmInfo;
     }
 
     @Override
@@ -89,6 +91,7 @@ public class ZfsDriver extends AbsStorageDriver
             pool
         };
 
+        long extentSize;
         try
         {
             final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
@@ -97,7 +100,7 @@ public class ZfsDriver extends AbsStorageDriver
             checkExitCode(outputData, command);
 
             String strBlockSize = new String(outputData.stdoutData);
-            return Long.parseLong(strBlockSize.trim()) >> 10; // we have to return extent size in KiB
+            extentSize = Long.parseLong(strBlockSize.trim()) >> 10; // we have to return extent size in KiB
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -112,6 +115,7 @@ public class ZfsDriver extends AbsStorageDriver
                 exc
             );
         }
+        return extentSize;
     }
 
     @Override
@@ -128,7 +132,9 @@ public class ZfsDriver extends AbsStorageDriver
     {
         zfsCommand = getAsString(config, StorageConstants.CONFIG_ZFS_COMMAND_KEY, zfsCommand);
         pool = getAsString(config, StorageConstants.CONFIG_ZFS_POOL_KEY, pool);
-        sizeAlignmentToleranceFactor = uncheckedGetAsInt(config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor);
+        sizeAlignmentToleranceFactor = uncheckedGetAsInt(
+            config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
+        );
     }
 
     @Override
@@ -160,7 +166,6 @@ public class ZfsDriver extends AbsStorageDriver
     public void createSnapshot(String identifier, String snapshotName) throws StorageException
     {
         super.createSnapshot(identifier, snapshotName);
-//        super.restoreSnapshot(getQualifiedSnapshotPath(identifier, snapshotName),, snapshotName);
     }
 
     @Override
@@ -177,7 +182,12 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    protected String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException
+    protected String[] getRestoreSnapshotCommand(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier
+    )
+        throws StorageException
     {
         return new String[]
         {
@@ -272,12 +282,14 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    public long getFreeSize() throws StorageException {
+    public long getFreeSize() throws StorageException
+    {
         final String[] command = new String[]
-            {
-                zfsCommand, "get", "available", "-o", "value", "-Hp", pool
-            };
+        {
+            zfsCommand, "get", "available", "-o", "value", "-Hp", pool
+        };
 
+        long freeSize;
         try
         {
             final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
@@ -286,7 +298,7 @@ public class ZfsDriver extends AbsStorageDriver
             checkExitCode(outputData, command);
 
             String strFreeSize = new String(outputData.stdoutData);
-            return Long.parseLong(strFreeSize.trim()) >> 10; // we have to return free size in KiB
+            freeSize = Long.parseLong(strFreeSize.trim()) >> 10; // we have to return free size in KiB
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -301,5 +313,6 @@ public class ZfsDriver extends AbsStorageDriver
                 exc
             );
         }
+        return freeSize;
     }
 }

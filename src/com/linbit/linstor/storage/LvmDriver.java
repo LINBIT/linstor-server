@@ -134,7 +134,7 @@ public class LvmDriver extends AbsStorageDriver
                 null,
                 String.format(
                     "External command: %s",
-                    glue (
+                    glue(
                         LvsInfo.getCommand(lvmLvsCommand, volumeGroup),
                         " "
                     )
@@ -206,7 +206,7 @@ public class LvmDriver extends AbsStorageDriver
     {
         return File.separator + "dev" +
             File.separator + volumeGroup +
-            File.separator +identifier;
+            File.separator + identifier;
     }
 
     @Override
@@ -237,7 +237,9 @@ public class LvmDriver extends AbsStorageDriver
         lvmVgsCommand = getAsString(config, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY, lvmVgsCommand);
 
         volumeGroup = getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
-        sizeAlignmentToleranceFactor = uncheckedGetAsInt(config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor);
+        sizeAlignmentToleranceFactor = uncheckedGetAsInt(
+            config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
+        );
     }
 
     @Override
@@ -350,7 +352,8 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public long getFreeSize() throws StorageException {
+    public long getFreeSize() throws StorageException
+    {
         long freeSize;
         final String[] command = new String[]
             {

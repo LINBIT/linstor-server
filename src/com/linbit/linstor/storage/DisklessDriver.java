@@ -9,9 +9,9 @@ public class DisklessDriver implements StorageDriver
 {
     private final StorageDriverKind storageDriverKind;
 
-    public DisklessDriver(StorageDriverKind storageDriverKind)
+    public DisklessDriver(StorageDriverKind storageDriverKindRef)
     {
-        this.storageDriverKind = storageDriverKind;
+        storageDriverKind = storageDriverKindRef;
     }
 
     @Override
@@ -99,7 +99,8 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public long getFreeSize() {
+    public long getFreeSize()
+    {
         return 0;
     }
 }
