@@ -23,8 +23,6 @@ import com.google.inject.name.Names;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.netcom.NetComContainer;
-import com.linbit.linstor.numberpool.MinorNrPool;
-import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.SecurityModule;
 import org.slf4j.event.Level;
@@ -37,7 +35,6 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
 import com.linbit.WorkerPool;
-import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.InitializationException;
@@ -66,7 +63,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Authentication;
-import com.linbit.linstor.security.Authorization;
 import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.ObjectProtection;
@@ -79,8 +75,6 @@ import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.MathUtils;
-
-import com.linbit.ExhaustedPoolException;
 
 /**
  * linstor controller prototype
@@ -122,12 +116,6 @@ public final class Controller extends LinStor implements CoreServices
     // Public security context
     private AccessContext publicCtx;
 
-    // Command line arguments
-    private LinStorArguments args;
-
-    // TODO
-    private MetaDataApi metaData;
-
     private CtrlApiCallHandler apiCallHandler;
 
     // ============================================================
@@ -138,7 +126,6 @@ public final class Controller extends LinStor implements CoreServices
 
     // Authentication & Authorization subsystems
     private Authentication idAuthentication = null;
-    private Authorization roleAuthorization = null;
 
     // ============================================================
     // Core system services
@@ -183,11 +170,7 @@ public final class Controller extends LinStor implements CoreServices
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
     ObjectProtection storPoolDfnMapProt;
 
-    TcpPortPool tcpPortNrPool;
-    MinorNrPool minorNrPool;
-
     private ReconnectorTask reconnectorTask;
-    private PingTask pingTask;
 
     // Control objects used and set by tests
     private static DbConnectionPool testDbPool = null;
@@ -199,9 +182,6 @@ public final class Controller extends LinStor implements CoreServices
         // Initialize security contexts
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
-
-        // Initialize command line arguments
-        args = cArgsRef;
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
@@ -249,7 +229,7 @@ public final class Controller extends LinStor implements CoreServices
     }
 
     public void initialize()
-        throws InitializationException, SQLException, InvalidKeyException
+        throws InitializationException, InvalidKeyException
     {
         try
         {
@@ -282,8 +262,6 @@ public final class Controller extends LinStor implements CoreServices
                 systemServicesMap.put(timer.getInstanceName(), timer);
             }
 
-            metaData = injector.getInstance(MetaDataApi.class);
-
             securityDbDriver = injector.getInstance(DbAccessor.class);
             persistenceDbDriver = injector.getInstance(DatabaseDriver.class);
 
@@ -297,7 +275,6 @@ public final class Controller extends LinStor implements CoreServices
             storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
             idAuthentication = injector.getInstance(Authentication.class);
-            roleAuthorization = injector.getInstance(Authorization.class);
 
             ctrlConf = injector.getInstance(Key.get(Props.class, Names.named(CoreModule.CONTROLLER_PROPS)));
 
@@ -331,12 +308,9 @@ public final class Controller extends LinStor implements CoreServices
 
             // Initialize tasks
             reconnectorTask = injector.getInstance(ReconnectorTask.class);
-            pingTask = injector.getInstance(PingTask.class);
+            PingTask pingTask = injector.getInstance(PingTask.class);
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
-
-            minorNrPool = injector.getInstance(MinorNrPool.class);
-            tcpPortNrPool = injector.getInstance(TcpPortPool.class);
 
             taskScheduleService.addTask(new GarbageCollectorTask());
 
@@ -656,39 +630,9 @@ public final class Controller extends LinStor implements CoreServices
         return netComSvc != null || sysSvc != null;
     }
 
-    public MetaDataApi getMetaDataApi()
-    {
-        return metaData;
-    }
-
-    public short getDefaultPeerCount()
-    {
-        return injector.getInstance(Key.get(Short.class, Names.named(ConfigModule.CONFIG_PEER_COUNT)));
-    }
-
-    public int getDefaultAlStripes()
-    {
-        return injector.getInstance(Key.get(Integer.class, Names.named(ConfigModule.CONFIG_AL_STRIPES)));
-    }
-
-    public String getDefaultStorPoolName()
-    {
-        return injector.getInstance(Key.get(String.class, Names.named(ConfigModule.CONFIG_STOR_POOL_NAME)));
-    }
-
     public CtrlApiCallHandler getApiCallHandler()
     {
         return apiCallHandler;
-    }
-
-    public int getFreeTcpPort() throws ExhaustedPoolException
-    {
-        return tcpPortNrPool.getFreeTcpPort();
-    }
-
-    public int getFreeMinorNr() throws ExhaustedPoolException
-    {
-        return minorNrPool.getFreeMinorNr();
     }
 
     private void initializeSecurityObjects(final ErrorReporter errorLogRef, final AccessContext initCtx)
@@ -775,16 +719,6 @@ public final class Controller extends LinStor implements CoreServices
                 dbConnPool.returnConnection(transMgr);
             }
         }
-    }
-
-    public void reloadTcpPortRange()
-    {
-        tcpPortNrPool.reloadRange();
-    }
-
-    public void reloadMinorNrRange()
-    {
-        minorNrPool.reloadRange();
     }
 
     private void initNetComServices(
