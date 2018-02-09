@@ -47,10 +47,10 @@ public class CtrlConfApiCallHandler
             }
             switch (fullKey)
             {
-                case Controller.PROPSCON_KEY_TCP_PORT_RANGE:
+                case ApiConsts.KEY_TCP_PORT_RANGE:
                     setTcpPort(accCtx, key, namespace, value, apiCallRc);
                     break;
-                case Controller.PROPSCON_KEY_MINOR_NR_RANGE:
+                case ApiConsts.KEY_MINOR_NR_RANGE:
                     setMinorNr(accCtx, key, namespace, value, apiCallRc);
                     break;
                 // TODO: check for other properties
@@ -161,10 +161,10 @@ public class CtrlConfApiCallHandler
             {
                 switch (fullKey)
                 {
-                    case Controller.PROPSCON_KEY_TCP_PORT_RANGE:
+                    case ApiConsts.KEY_TCP_PORT_RANGE:
                         apiCtrlAccessors.reloadTcpPortRange();
                         break;
-                    case Controller.PROPSCON_KEY_MINOR_NR_RANGE:
+                    case ApiConsts.KEY_MINOR_NR_RANGE:
                         apiCtrlAccessors.reloadMinorNrRange();
                         break;
                     // TODO: check for other properties

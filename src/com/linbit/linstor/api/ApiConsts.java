@@ -265,10 +265,10 @@ public class ApiConsts
     public static final String API_DSTR_DBG_CNSL = "DstrDbgCnsl";
 
     /*
-     * Commands APIs
+     * Command APIs
      */
     public static final String API_CONTROL_CTRL = "ControlCtrl";
-    public static final String API_CMD_SHUTDOWN = "shutdown";
+    public static final String API_CMD_SHUTDOWN = "Shutdown";
 
     /*
      * List object APIs
@@ -367,6 +367,8 @@ public class ApiConsts
     public static final String KEY_KEYSTORE_PWD = "KeystorePwd";
     public static final String KEY_TRUSTSTORE_PWD = "TruststorePwd";
     public static final String KEY_SSL_PROTO = "SslProto";
+    public static final String KEY_TCP_PORT_RANGE = "tcpPortRange";
+    public static final String KEY_MINOR_NR_RANGE = "minorNrRange";
 
     /*
      * Property values

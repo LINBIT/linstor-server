@@ -1,31 +1,6 @@
 package com.linbit.linstor.core;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.slf4j.event.Level;
-
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -52,6 +27,7 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
@@ -62,6 +38,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
+import com.linbit.linstor.numberpool.BitmapPool;
+import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -86,12 +64,33 @@ import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
+import org.slf4j.event.Level;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
-
-import com.linbit.ExhaustedPoolException;
-import com.linbit.linstor.numberpool.BitmapPool;
-import com.linbit.linstor.numberpool.NumberPool;
 
 /**
  * linstor controller prototype
@@ -133,8 +132,6 @@ public final class Controller extends LinStor implements CoreServices
     private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
     static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
-    static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
-    static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
 
     public static final int API_VERSION = 0;
 
@@ -1207,7 +1204,7 @@ public final class Controller extends LinStor implements CoreServices
         boolean useDefaults;
         try
         {
-            strRange = ctrlConf.getProp(PROPSCON_KEY_TCP_PORT_RANGE);
+            strRange = ctrlConf.getProp(ApiConsts.KEY_TCP_PORT_RANGE);
             useDefaults = true;
             if (strRange != null)
             {
@@ -1248,7 +1245,7 @@ public final class Controller extends LinStor implements CoreServices
         String strRange;
         try
         {
-            strRange = ctrlConf.getProp(PROPSCON_KEY_MINOR_NR_RANGE);
+            strRange = ctrlConf.getProp(ApiConsts.KEY_MINOR_NR_RANGE);
             Matcher matcher;
             boolean useDefaults = true;
 
