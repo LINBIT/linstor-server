@@ -10,9 +10,9 @@ public class MultiLock
 {
     private final List<Lock> locks;
 
-    public MultiLock(final List<Lock> locks)
+    public MultiLock(final List<Lock> locksList)
     {
-        this.locks = locks;
+        locks = locksList;
     }
 
     public void lock()
@@ -25,7 +25,7 @@ public class MultiLock
 
     public void unlock()
     {
-        for (int index = locks.size() - 1; index >= 0; index--)
+        for (int index = locks.size() - 1; index >= 0; --index)
         {
             locks.get(index).unlock();
         }
