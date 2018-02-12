@@ -71,6 +71,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
             NetInterfaceData netIf = createNetIf(node, netIfName, address);
 
+            commit();
             reportSuccess(netIf.getUuid());
         }
         catch (ApiCallHandlerFailedException ignored)

@@ -96,6 +96,7 @@ public class CreateNode extends BaseProtoApiCall
                     )
                 );
             }
+            // TODO: if only one is set, maybe print a warning or something
         }
         return stltConnList;
     }
