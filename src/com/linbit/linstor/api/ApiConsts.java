@@ -367,8 +367,8 @@ public class ApiConsts
     public static final String KEY_KEYSTORE_PWD = "KeystorePwd";
     public static final String KEY_TRUSTSTORE_PWD = "TruststorePwd";
     public static final String KEY_SSL_PROTO = "SslProto";
-    public static final String KEY_TCP_PORT_RANGE = "tcpPortRange";
-    public static final String KEY_MINOR_NR_RANGE = "minorNrRange";
+    public static final String KEY_TCP_PORT_RANGE = "TcpPortRange";
+    public static final String KEY_MINOR_NR_RANGE = "MinorNrRange";
 
     /*
      * Property values

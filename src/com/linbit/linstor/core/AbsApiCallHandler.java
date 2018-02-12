@@ -7,12 +7,15 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -172,6 +175,65 @@ abstract class AbsApiCallHandler implements AutoCloseable
             );
         }
         return nodeName;
+    }
+
+    /**
+     * Returns the given String as a {@link NetInterfaceName} if possible. If the String is not a valid
+     * {@link NetInterfaceName} the thrown exception is reported to controller's {@link ErrorReporter} and
+     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     *
+     * @param netIfNameStr
+     * @return
+     * @throws ApiCallHandlerFailedException
+     */
+    protected NetInterfaceName asNetInterfaceName(String netIfNameStr) throws ApiCallHandlerFailedException
+    {
+        NetInterfaceName netInterfaceName;
+        try
+        {
+            netInterfaceName = new NetInterfaceName(netIfNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw asExc(
+                invalidNameExc,
+                "The specified net interface name '" + netIfNameStr + "' is invalid.",
+                ApiConsts.FAIL_INVLD_NET_NAME
+            );
+        }
+        return netInterfaceName;
+    }
+
+    /**
+     * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
+     * {@link LsIpAddress} the thrown exception is reported to controller's {@link ErrorReporter} and
+     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     *
+     * @param ipAddrStr
+     * @return
+     * @throws ApiCallHandlerFailedException
+     */
+    protected LsIpAddress asLsIpAddress(String ipAddrStr) throws ApiCallHandlerFailedException
+    {
+        LsIpAddress lsIpAddress;
+        try
+        {
+            lsIpAddress = new LsIpAddress(ipAddrStr);
+        }
+        catch (InvalidIpAddressException | NullPointerException invalidIpExc)
+        {
+            throw asExc(
+                invalidIpExc,
+                getObjectDescriptionInlineFirstLetterCaps() +
+                    getAction(" creation", " modification", " deletion") +
+                    "failed.",
+                "The specified IP address is not valid",
+                "The specified input '" + ipAddrStr + "' is not a valid IP address.",
+                "Specify a valid IPv4 or IPv6 address.",
+                ApiConsts.FAIL_INVLD_NET_ADDR
+            );
+        }
+        return lsIpAddress;
     }
 
     /**
@@ -1545,7 +1607,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected abstract String getObjectDescription();
 
     protected abstract String getObjectDescriptionInline();
-
 
     protected static class ApiCallHandlerFailedException extends RuntimeException
     {

@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.Lock;
 
 @Singleton
 public class CtrlApiCallHandler
@@ -35,6 +36,7 @@ public class CtrlApiCallHandler
     private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
     private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
+    private final CtrlNetIfApiCallHandler netIfApiCallHandler;
     private final CtrlClientSerializer ctrlClientcomSrzl;
 
     private final ReadWriteLock nodesMapLock;
@@ -57,6 +59,7 @@ public class CtrlApiCallHandler
         CtrlNodeConnectionApiCallHandler nodeConnApiCallHandlerRef,
         CtrlRscConnectionApiCallHandler rscConnApiCallHandlerRef,
         CtrlVlmConnectionApiCallHandler vlmConnApiCallHandlerRef,
+        CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
         CtrlClientSerializer ctrlClientcomSrzlRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
@@ -78,6 +81,7 @@ public class CtrlApiCallHandler
         rscConnApiCallHandler = rscConnApiCallHandlerRef;
         vlmConnApiCallHandler = vlmConnApiCallHandlerRef;
         ctrlClientcomSrzl = ctrlClientcomSrzlRef;
+        netIfApiCallHandler = netIfApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -1670,6 +1674,32 @@ public class CtrlApiCallHandler
         finally
         {
             ctrlConfigLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc createNetInterface(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String netIfName,
+        String address
+    )
+    {
+        ApiCallRc apiCallRc;
+        Lock ctrlReadLock = ctrlConfigLock.readLock();
+        Lock nodeWriteLock = nodesMapLock.writeLock();
+        try
+        {
+            ctrlReadLock.lock();
+            nodeWriteLock.lock();
+
+            apiCallRc = netIfApiCallHandler.createNetIf(accCtx, client, nodeName, netIfName, address);
+        }
+        finally
+        {
+            nodeWriteLock.unlock();
+            ctrlReadLock.unlock();
         }
         return apiCallRc;
     }

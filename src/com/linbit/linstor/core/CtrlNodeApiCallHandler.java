@@ -13,7 +13,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
@@ -88,6 +87,10 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     )
     {
         super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer);
+        super.setNullOnAutoClose(
+            currentNodeName,
+            currentNodeType
+        );
         clientComSerializer = clientComSerializerRef;
         ctrlConf = ctrlConfRef;
         nodesMap = nodesMapRef;
@@ -596,25 +599,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            nodesMapProt.requireAccess(
-                currentAccCtx.get(),
-                AccessType.CHANGE
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                getAction("create", "modify", "delete") + " node entries",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-    }
-
     private NodeType asNodeType(String nodeTypeStr) throws ApiCallHandlerFailedException
     {
         NodeType nodeType;
@@ -691,58 +675,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw handleSqlExc(sqlExc);
         }
         return node;
-    }
-
-    private NetInterfaceName asNetInterfaceName(String netIfNameStr)
-        throws ApiCallHandlerFailedException
-    {
-        NetInterfaceName netInterfaceName;
-        try
-        {
-            netInterfaceName = new NetInterfaceName(netIfNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw asExc(
-                invalidNameExc,
-                "The specified net interface name '" + netIfNameStr + "' is invalid.",
-                ApiConsts.FAIL_INVLD_NET_NAME
-            );
-        }
-        return netInterfaceName;
-    }
-
-    private LsIpAddress asLsIpAddress(String ipAddrStr)
-        throws ApiCallHandlerFailedException
-    {
-        if (ipAddrStr == null)
-        {
-            throw asExc(
-                null,
-                "Node creation failed.",
-                "No IP address for the new node was specified",
-                null,
-                "At least one network interface with a valid IP address must be defined for the new node.",
-                ApiConsts.FAIL_INVLD_NET_ADDR
-            );
-        }
-        LsIpAddress lsIpAddress;
-        try
-        {
-            lsIpAddress = new LsIpAddress(ipAddrStr);
-        }
-        catch (InvalidIpAddressException invalidIpExc)
-        {
-            throw asExc(
-                invalidIpExc,
-                "Node creation failed.",
-                "The specified IP address is not valid",
-                "The specified input '" + ipAddrStr + "' is not a valid IP address.",
-                "Specify a valid IPv4 or IPv6 address.",
-                ApiConsts.FAIL_INVLD_NET_ADDR
-            );
-        }
-        return lsIpAddress;
     }
 
     private TcpPortNumber asTcpPortNumber(int port)
@@ -1119,6 +1051,25 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     protected String getObjectDescriptionInline()
     {
         return getObjectDescriptionInline(currentNodeName.get());
+    }
+
+    protected void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            nodesMapProt.requireAccess(
+                currentAccCtx.get(),
+                AccessType.CHANGE
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                getAction("create", "modify", "delete") + " node entries",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
     }
 
     static String getObjectDescriptionInline(String nodeNameStr)
