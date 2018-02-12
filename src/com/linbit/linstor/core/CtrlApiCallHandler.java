@@ -689,8 +689,8 @@ public class CtrlApiCallHandler
         byte[] listResources;
         try
         {
-            rscDfnMapLock.readLock().lock();
             nodesMapLock.readLock().lock();
+            rscDfnMapLock.readLock().lock();
             listResources = rscApiCallHandler.listResources(msgId, accCtx);
         }
         finally
