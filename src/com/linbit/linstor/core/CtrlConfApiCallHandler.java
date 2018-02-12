@@ -61,6 +61,7 @@ public class CtrlConfApiCallHandler
                         ApiConsts.FAIL_INVLD_PROP
                     );
                 }
+                break;
             }
         }
         catch (Exception exc)
