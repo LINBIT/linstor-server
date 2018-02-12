@@ -452,11 +452,10 @@ public final class ObjectProtection extends BaseTransactionObject
     /**
      * ObjProt-Path for Controller
      *
-     * @param controller
      * @param subPath
      * @return
      */
-    public static String buildPath(Controller controller, String subPath)
+    public static String buildPathController(String subPath)
     {
         return PATH_CONTROLLER + subPath;
     }

@@ -10,23 +10,29 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class CtrlFullSyncApiCallHandler
 {
-    private ApiCtrlAccessors apiCtrlAccessors;
-    private AccessContext apiCtx;
-    private CtrlStltSerializer interComSerializer;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlStltSerializer interComSerializer;
 
+    @Inject
     CtrlFullSyncApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializerRef
     )
     {
-        apiCtrlAccessors = apiCtrlAccessorsRef;
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         interComSerializer = interComSerializerRef;
     }
@@ -68,7 +74,7 @@ class CtrlFullSyncApiCallHandler
 
             satellite.setFullSyncId(expectedFullSyncId);
 
-            apiCtrlAccessors.getErrorReporter().logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
+            errorReporter.logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
             satellite.sendMessage(
                 interComSerializer
                     .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
@@ -78,7 +84,7 @@ class CtrlFullSyncApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     "ApiCtx does not have enough privileges to create a full sync for satellite " + satellite.getId(),
                     accDeniedExc

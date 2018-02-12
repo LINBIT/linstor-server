@@ -57,7 +57,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.slf4j.event.Level;
@@ -79,13 +78,6 @@ public abstract class LinStor
     public static final String PROGRAM = "LINSTOR";
     public static final VersionInfoProvider VERSION_INFO_PROVIDER = new VersionInfoProviderImpl();
 
-    // ============================================================
-    // Worker thread pool defaults
-    //
-    public static final int MIN_WORKER_QUEUE_SIZE = 32;
-    public static final int MIN_WORKER_COUNT      = 4;
-    public static final int MAX_CPU_COUNT = 1024;
-
     // At shutdown, wait at most SHUTDOWN_THR_JOIN_WAIT milliseconds for
     // a service thread to end
     public static final long SHUTDOWN_THR_JOIN_WAIT = 3000L;
@@ -94,16 +86,14 @@ public abstract class LinStor
 
     // Queue slots per worker thread
     private int workerQueueFactor = 4;
-    private int workerQueueSize = MIN_WORKER_QUEUE_SIZE;
 
     // Default configuration
     private int cpuCount = 8;
-    private int workerThreadCount = 8;
 
     // ============================================================
     // Core system services
     //
-    private CoreTimer timerEventSvc;
+    protected CoreTimer timerEventSvc;
 
     // Database drivers
     protected static DbAccessor securityDbDriver;
@@ -116,25 +106,16 @@ public abstract class LinStor
     private ErrorReporter errorLog;
 
     // Synchronization lock for major global changes
-    public final ReadWriteLock reconfigurationLock;
+    public ReadWriteLock reconfigurationLock;
 
     // Synchronization locks for linstor object maps
-    public final ReadWriteLock nodesMapLock;
-    public final ReadWriteLock rscDfnMapLock;
-    public final ReadWriteLock storPoolDfnMapLock;
+    public ReadWriteLock nodesMapLock;
+    public ReadWriteLock rscDfnMapLock;
+    public ReadWriteLock storPoolDfnMapLock;
 
 
     LinStor()
     {
-        // Initialize synchronization
-        reconfigurationLock = new ReentrantReadWriteLock(true);
-        nodesMapLock        = new ReentrantReadWriteLock(true);
-        rscDfnMapLock       = new ReentrantReadWriteLock(true);
-        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
-
-        // Initialize system services
-        timerEventSvc = new CoreTimerImpl();
-
         // Initialize system variables
         cpuCount = Runtime.getRuntime().availableProcessors();
 
@@ -234,40 +215,9 @@ public abstract class LinStor
         errorLog = errorLogRef;
     }
 
-    public int getWorkerQueueSize()
-    {
-        return workerQueueSize;
-    }
-
-    public void setWorkerQueueSize(AccessContext accCtx, int size) throws AccessDeniedException
-    {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-
-        workerQueueSize = size;
-    }
-
-    public int getWorkerThreadCount()
-    {
-        return workerThreadCount;
-    }
-
-    public void setWorkerThreadCount(AccessContext accCtx, int count) throws AccessDeniedException
-    {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-
-        workerThreadCount = count;
-    }
-
     public int getWorkerQueueFactor()
     {
         return workerQueueFactor;
-    }
-
-    public void setWorkerQueueFactor(AccessContext accCtx, int factor) throws AccessDeniedException
-    {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-
-        workerQueueFactor = factor;
     }
 
     public int getCpuCount()

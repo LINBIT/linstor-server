@@ -4,23 +4,29 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-class CtrlAuthenticationApiCallHandler
-{
-    private ApiCtrlAccessors apiCtrlAccessors;
-    private CtrlStltSerializer serializer;
-    private AccessContext apiCtx;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
+public class CtrlAuthenticationApiCallHandler
+{
+    private final ErrorReporter errorReporter;
+    private final CtrlStltSerializer serializer;
+    private final AccessContext apiCtx;
+
+    @Inject
     CtrlAuthenticationApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
         CtrlStltSerializer serializerRef,
         AccessContext apiCtxRef
     )
     {
-        apiCtrlAccessors = apiCtrlAccessorsRef;
+        errorReporter = errorReporterRef;
         serializer = serializerRef;
         apiCtx = apiCtxRef;
     }
@@ -30,7 +36,7 @@ class CtrlAuthenticationApiCallHandler
         try
         {
             Node peerNode = peer.getNode();
-            apiCtrlAccessors.getErrorReporter().logDebug("Sending authentication to satellite '" +
+            errorReporter.logDebug("Sending authentication to satellite '" +
                 peerNode.getName() + "'");
             // TODO make the shared secret customizable
             peer.sendMessage(
@@ -48,7 +54,7 @@ class CtrlAuthenticationApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     "Could not serialize node's content for authentication.",
                     accDeniedExc

@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.linbit.InvalidNameException;
@@ -40,7 +39,7 @@ public class CoreUtils
         );
     }
 
-    public static void loadDisklessStorPoolDfn(HashMap<StorPoolName, StorPoolDefinition> storPoolDfnMap)
+    public static void loadDisklessStorPoolDfn(Map<StorPoolName, StorPoolDefinition> storPoolDfnMap)
     {
         try
         {

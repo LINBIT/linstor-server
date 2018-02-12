@@ -37,8 +37,13 @@ import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
 import com.linbit.linstor.security.AccessContext;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
 {
+    @Inject
     public ProtoCtrlClientSerializer(
         final ErrorReporter errReporterRef,
         final AccessContext serializerCtxRef

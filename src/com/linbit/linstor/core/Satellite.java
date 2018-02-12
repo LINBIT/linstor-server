@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.LinbitModule;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
@@ -48,6 +49,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.timer.CoreTimerImpl;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -183,6 +185,15 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
         throws IOException
     {
+        // Initialize system services
+        timerEventSvc = new CoreTimerImpl();
+
+        // Initialize synchronization
+        reconfigurationLock = new ReentrantReadWriteLock(true);
+        nodesMapLock        = new ReentrantReadWriteLock(true);
+        rscDfnMapLock       = new ReentrantReadWriteLock(true);
+        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
+
         // Initialize synchronization
         stltConfLock        = new ReentrantReadWriteLock(true);
 
@@ -301,29 +312,17 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
                 // Initialize the worker thread pool
                 // errorLogRef.logInfo("Starting worker thread pool");
-                try
-                {
-                    int cpuCount = getCpuCount();
-                    int thrCount = com.linbit.utils.MathUtils.bounds(MIN_WORKER_COUNT, cpuCount, MAX_CPU_COUNT);
-                    int qSize = thrCount * getWorkerQueueFactor();
-                    qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-                    setWorkerThreadCount(initCtx, thrCount);
-                    setWorkerQueueSize(initCtx, qSize);
-                    workerThrPool = WorkerPool.initialize(
-                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
-                    );
+                int cpuCount = getCpuCount();
+                int thrCount = com.linbit.utils.MathUtils.bounds(LinbitModule.MIN_WORKER_COUNT, cpuCount, LinbitModule.MAX_CPU_COUNT);
+                int qSize = thrCount * getWorkerQueueFactor();
+                qSize = qSize > LinbitModule.MIN_WORKER_QUEUE_SIZE ? qSize : LinbitModule.MIN_WORKER_QUEUE_SIZE;
+                workerThrPool = WorkerPool.initialize(
+                    thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
+                );
 
-                    // Initialize the message processor
-                    // errorLogRef.logInfo("Initializing API call dispatcher");
-                    msgProc = new CommonMessageProcessor(this, workerThrPool);
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    throw new ImplementationError(
-                        "Satellite's constructor cannot get system privileges",
-                        accDeniedExc
-                    );
-                }
+                // Initialize the message processor
+                // errorLogRef.logInfo("Initializing API call dispatcher");
+                msgProc = new CommonMessageProcessor(errorLogRef, workerThrPool);
 
 
                 // Set CONTROL access for the SYSTEM role on shutdown

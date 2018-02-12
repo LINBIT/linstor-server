@@ -21,32 +21,50 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.SecurityModule;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+@Singleton
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
     private final CtrlClientSerializer clientComSerializer;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final ObjectProtection storPoolDfnMapProt;
 
+    @Inject
     CtrlStorPoolDfnApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        AccessContext apiCtxRef
+        AccessContext apiCtxRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        @Named(SecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef
     )
     {
         super(
-            apiCtrlAccessorsRef,
+            errorReporterRef,
+            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL_DFN,
             interComSerializer
         );
         super.setNullOnAutoClose(currentStorPoolNameStr);
         clientComSerializer = clientComSerializerRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        storPoolDfnMapProt = storPoolDfnMapProtRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -75,7 +93,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             getProps(storPoolDfn).map().putAll(storPoolDfnProps);
             commit();
 
-            apiCtrlAccessors.getStorPoolDfnMap().put(storPoolDfn.getName(), storPoolDfn);
+            storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
             reportSuccess(storPoolDfn.getUuid());
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -216,7 +234,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 delete(storPoolDfn);
                 commit();
 
-                apiCtrlAccessors.getStorPoolDfnMap().remove(storPoolName);
+                storPoolDfnMap.remove(storPoolName);
 
                 reportSuccess(storPoolDfnUuid);
             }
@@ -284,8 +302,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            for (StorPoolDefinition storPoolDfn : apiCtrlAccessors.getStorPoolDfnMap().values())
+            storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
             {
                 try
                 {
@@ -389,7 +407,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(
+            storPoolDfnMapProt.requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );

@@ -52,29 +52,51 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.stateflags.FlagsHelper;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.util.Arrays;
 
-class CtrlRscApiCallHandler extends AbsApiCallHandler
+@Singleton
+public class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
     private final CtrlClientSerializer clientComSerializer;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ObjectProtection nodesMapProt;
+    private final CoreModule.NodesMap nodesMap;
+    private final String defaultStorPoolName;
 
-    CtrlRscApiCallHandler(
-        ApiCtrlAccessors apiCtrlAccessorsRef,
+    @Inject
+    public CtrlRscApiCallHandler(
+        ErrorReporter errorReporterRef,
+        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        AccessContext apiCtxRef
+        AccessContext apiCtxRef,
+        @Named(SecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(SecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
+        CoreModule.NodesMap nodesMapRef,
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
     )
     {
         super(
-            apiCtrlAccessorsRef,
+            errorReporterRef,
+            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC,
             interComSerializer
@@ -84,6 +106,11 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             currentRscName
         );
         clientComSerializer = clientComSerializerRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        rscDfnMap = rscDfnMapRef;
+        nodesMapProt = nodesMapProtRef;
+        nodesMap = nodesMapRef;
+        defaultStorPoolName = defaultStorPoolNameRef;
     }
 
     public ApiCallRc createResource(
@@ -156,7 +183,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     }
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
-                        storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
+                        storPoolNameStr = defaultStorPoolName;
                     }
                     StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
                     storPool = loadStorPool(storPoolDfn, node, true);
@@ -201,7 +228,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                         storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
                         if (storPoolNameStr == null || "".equals(storPoolNameStr))
                         {
-                            storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
+                            storPoolNameStr = defaultStorPoolName;
                         }
                         storPool = rsc.getAssignedNode().getStorPool(
                             apiCtx,
@@ -567,11 +594,11 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             if (deletedRscDfnName != null)
             {
                 addRscDfnDeletedAnswer(deletedRscDfnName, rscDfnUuid);
-                apiCtrlAccessors.getRscDfnMap().remove(deletedRscDfnName);
+                rscDfnMap.remove(deletedRscDfnName);
             }
             if (deletedNodeName != null)
             {
-                apiCtrlAccessors.getNodesMap().remove(deletedNodeName);
+                nodesMap.remove(deletedNodeName);
                 addNodeDeletedAnswer(deletedNodeName, nodeUuid);
             }
         }
@@ -602,9 +629,9 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         List<ResourceState> rscStates = new ArrayList<>();
         try
         {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);
-            for (ResourceDefinition rscDfn : apiCtrlAccessors.getRscDfnMap().values())
+            rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+            for (ResourceDefinition rscDfn : rscDfnMap.values())
             {
                 try
                 {
@@ -624,7 +651,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             }
 
             // get resource states of all nodes
-            for (final Node node : apiCtrlAccessors.getNodesMap().values())
+            for (final Node node : nodesMap.values())
             {
                 final Peer peer = node.getPeer(accCtx);
                 if (peer != null)
@@ -646,7 +673,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             // for now return an empty list.
-            apiCtrlAccessors.getErrorReporter().reportError(accDeniedExc);
+            errorReporter.reportError(accDeniedExc);
         }
 
         return clientComSerializer
@@ -667,7 +694,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = apiCtrlAccessors.getNodesMap().get(nodeName);
+            Node node = nodesMap.get(nodeName);
 
             if (node != null)
             {
@@ -698,7 +725,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                apiCtrlAccessors.getErrorReporter().reportError(
+                errorReporter.reportError(
                     new ImplementationError(
                         "Satellite requested resource '" + rscNameStr + "' on node '" + nodeNameStr + "' " +
                             "but that node does not exist.",
@@ -710,7 +737,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidNameException invalidNameExc)
         {
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     "Satellite requested data for invalid name (node or rsc name).",
                     invalidNameExc
@@ -719,7 +746,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            apiCtrlAccessors.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested resource data.",
                     accDeniedExc
@@ -1146,7 +1173,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         entry.putVariable(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
 
         currentApiCallRc.get().addEntry(entry);
-        apiCtrlAccessors.getErrorReporter().logInfo(rscDeletedMsg);
+        errorReporter.logInfo(rscDeletedMsg);
     }
 
     private void addNodeDeletedAnswer(NodeName nodeName, UUID nodeUuid)
@@ -1162,6 +1189,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeName.displayValue);
 
         currentApiCallRc.get().addEntry(entry);
-        apiCtrlAccessors.getErrorReporter().logInfo(rscDeletedMsg);
+        errorReporter.logInfo(rscDeletedMsg);
     }
 }

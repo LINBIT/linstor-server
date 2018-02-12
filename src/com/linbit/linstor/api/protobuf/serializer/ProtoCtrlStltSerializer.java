@@ -52,11 +52,16 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 {
     private final ResourceSerializerHelper rscSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
 
+    @Inject
     public ProtoCtrlStltSerializer(ErrorReporter errReporter, AccessContext serializerCtx)
     {
         super(errReporter, serializerCtx);

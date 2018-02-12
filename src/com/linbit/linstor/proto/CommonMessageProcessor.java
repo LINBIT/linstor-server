@@ -18,7 +18,6 @@ import org.slf4j.event.Level;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
@@ -33,25 +32,30 @@ import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 /**
  * Dispatcher for received messages
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class CommonMessageProcessor implements MessageProcessor
 {
     private final TreeMap<String, ApiCall> apiCallMap;
     private final ReadWriteLock apiLock;
 
-    private final CoreServices    coreSvcs;
-    private final WorkQueue       workQ;
+    private final ErrorReporter errorLog;
+    private final WorkQueue workQ;
 
-    public CommonMessageProcessor(CoreServices coreSvcsRef, WorkQueue workQRef)
+    @Inject
+    public CommonMessageProcessor(ErrorReporter errorLogRef, WorkQueue workQRef)
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
         apiCallMap  = new TreeMap<>();
         apiLock     = new ReentrantReadWriteLock();
-        coreSvcs    = coreSvcsRef;
+        errorLog    = errorLogRef;
         workQ       = workQRef;
     }
 
@@ -163,7 +167,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     // Reached when a message with an unknown message type is received
                     if (peerAddress != null)
                     {
-                        coreSvcs.getErrorReporter().logDebug(
+                        errorLog.logDebug(
                             "Message of unknown type %d received on connector %s " +
                             "from peer at endpoint %s:%d",
                             msgType, client.getConnectorInstanceName(), peerAddress, port
@@ -171,7 +175,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     }
                     else
                     {
-                        coreSvcs.getErrorReporter().logDebug(
+                        errorLog.logDebug(
                             "Message of unknown type %d received on connector %s " +
                             "from peer at unknown endpoint address",
                             msgType, client.getConnectorInstanceName()
@@ -182,7 +186,7 @@ public class CommonMessageProcessor implements MessageProcessor
         }
         catch (IllegalMessageStateException msgExc)
         {
-            coreSvcs.getErrorReporter().reportError(
+            errorLog.reportError(
                 Level.DEBUG,
                 msgExc,
                 client.getAccessContext(),
@@ -222,7 +226,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     ApiCallInvocation apiCallInv = new ApiCallInvocation(
                         apiCallObj,
                         client.getAccessContext(),
-                        coreSvcs.getErrorReporter(),
+                        errorLog,
                         msg, msgId, msgDataIn,
                         client
                     );
@@ -232,7 +236,7 @@ public class CommonMessageProcessor implements MessageProcessor
                 {
                     if (client.getNode() == null) // client, no satellite or controller
                     {
-                        coreSvcs.getErrorReporter().reportError(
+                        errorLog.reportError(
                             Level.TRACE,
                             new LinStorException(
                                 "Non-existent API '" + apiCallName + "' called by the client",
@@ -274,7 +278,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     }
                     else
                     {
-                        coreSvcs.getErrorReporter().logDebug(
+                        errorLog.logDebug(
                             "Non-existent API '" + apiCallName + "' called by controller or satellite " + client.getId()
                         );
                     }
@@ -288,7 +292,7 @@ public class CommonMessageProcessor implements MessageProcessor
             //         and from the satellite to a client; otherwise, this can create
             //         a loop if error reports are created due to receiving a
             //         malformed error report
-            coreSvcs.getErrorReporter().reportError(
+            errorLog.reportError(
                 Level.DEBUG,
                 ioExc,
                 client.getAccessContext(),
