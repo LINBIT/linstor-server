@@ -68,7 +68,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(SecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         MinorNrPool minorNrPoolRef,
-        String defaultStorPoolNameRef
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
     )
     {
         super(
@@ -77,7 +77,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             apiCtx,
             ApiConsts.MASK_VLM_DFN,
             interComSerializer
-
         );
         super.setNullOnAutoClose(
             currentRscNameStr,

@@ -9,6 +9,7 @@ import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
@@ -17,9 +18,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
-import com.linbit.linstor.proto.SatelliteConnectionOuterClass;
 import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
-import com.linbit.linstor.proto.apidata.SatelliteConnectionApiData;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -64,7 +63,7 @@ public class CreateNode extends BaseProtoApiCall
             protoNode.getName(),
             protoNode.getType(),
             extractNetIfs(protoNode.getNetInterfacesList()),
-            extractSatelliteConnections(msgCreateNode.getSatelliteConnectionsList()),
+            extractSatelliteConnections(protoNode.getNetInterfacesList()),
             asMap(protoNode.getPropsList())
         );
         answerApiCallRc(accCtx, client, msgId, apiCallRc);
@@ -81,13 +80,22 @@ public class CreateNode extends BaseProtoApiCall
     }
 
     private List<SatelliteConnectionApi> extractSatelliteConnections(
-        List<SatelliteConnectionOuterClass.SatelliteConnection> satelliteConnectionsList
+        List<NetInterfaceOuterClass.NetInterface> protoNetIfs
     )
     {
         List<SatelliteConnectionApi> stltConnList = new ArrayList<>();
-        for (SatelliteConnectionOuterClass.SatelliteConnection stltConn : satelliteConnectionsList)
+        for (NetInterfaceOuterClass.NetInterface netIf : protoNetIfs)
         {
-            stltConnList.add(new SatelliteConnectionApiData(stltConn));
+            if (netIf.hasStltEncryptionType() && netIf.hasStltPort())
+            {
+                stltConnList.add(
+                    new SatelliteConnectionPojo(
+                        netIf.getName(),
+                        netIf.getStltPort(),
+                        netIf.getStltEncryptionType()
+                    )
+                );
+            }
         }
         return stltConnList;
     }

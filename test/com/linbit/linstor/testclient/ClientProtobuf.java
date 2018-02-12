@@ -61,10 +61,10 @@ import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
 import com.linbit.linstor.proto.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.RscOuterClass.Rsc;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.NodeConnOuterClass.NodeConn;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.RscConnOuterClass.RscConn;
-import com.linbit.linstor.proto.SatelliteConnectionOuterClass;
 import com.linbit.linstor.proto.StorPoolDfnOuterClass.StorPoolDfn;
 import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.proto.VlmConnOuterClass.VlmConn;
@@ -620,29 +620,31 @@ public class ClientProtobuf implements Runnable
             nodeBuilder.addAllProps(asLinStorMapEntryList(props));
         }
 
+        HashMap<String, SatelliteConnectionApi> stltConnMap = new HashMap<>();
+        for (SatelliteConnectionApi stltConnApi : stltConns)
+        {
+            stltConnMap.put(stltConnApi.getNetInterfaceName(), stltConnApi);
+        }
+
         for (NetInterfaceApi netIf : netIfs)
         {
+            SatelliteConnectionApi stltConn = stltConnMap.get(netIf.getName());
+            Builder netIfBuilder = NetInterfaceOuterClass.NetInterface.newBuilder()
+                .setName(netIf.getName())
+                .setAddress(netIf.getAddress());
+            if (stltConn != null)
+            {
+                netIfBuilder
+                    .setStltEncryptionType(stltConn.getEncryptionType())
+                    .setStltPort(stltConn.getPort());
+            }
             nodeBuilder.addNetInterfaces(
-                NetInterfaceOuterClass.NetInterface.newBuilder()
-                    .setName(netIf.getName())
-                    .setAddress(netIf.getAddress())
-                    .build()
+                netIfBuilder.build()
             );
         }
 
         MsgCrtNode.Builder msgCrtNodeBuilder = MsgCrtNode.newBuilder();
         msgCrtNodeBuilder.setNode(nodeBuilder.build());
-
-        for (SatelliteConnectionApi stltConnApi : stltConns)
-        {
-            msgCrtNodeBuilder.addSatelliteConnections(
-                SatelliteConnectionOuterClass.SatelliteConnection.newBuilder()
-                    .setNetInterfaceName(stltConnApi.getNetInterfaceName())
-                    .setPort(stltConnApi.getPort())
-                    .setEncryptionType(stltConnApi.getEncryptionType())
-                    .build()
-            );
-        }
 
         send(
             msgId,

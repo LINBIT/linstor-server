@@ -528,11 +528,12 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    public void startConnecting(
+    public boolean startConnecting(
         Node node,
         AccessContext accCtx
     )
     {
+        boolean estabilshingConnection = false;
         try
         {
             SatelliteConnection satelliteConnection = node.getSatelliteConnection(accCtx);
@@ -580,6 +581,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         tcpConnector,
                         node
                     );
+                    estabilshingConnection = true;
                 }
                 else
                 {
@@ -597,6 +599,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 exc
             );
         }
+        return estabilshingConnection;
     }
 
     private NodeType asNodeType(String nodeTypeStr) throws ApiCallHandlerFailedException

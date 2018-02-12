@@ -95,6 +95,49 @@ public final class NetInterfaceOuterClass {
      */
     com.google.protobuf.ByteString
         getAddressBytes();
+
+    /**
+     * <pre>
+     * The port of the satellite
+     * </pre>
+     *
+     * <code>optional sint32 stlt_port = 4;</code>
+     */
+    boolean hasStltPort();
+    /**
+     * <pre>
+     * The port of the satellite
+     * </pre>
+     *
+     * <code>optional sint32 stlt_port = 4;</code>
+     */
+    int getStltPort();
+
+    /**
+     * <pre>
+     * Encryption type
+     * </pre>
+     *
+     * <code>optional string stlt_encryption_type = 5;</code>
+     */
+    boolean hasStltEncryptionType();
+    /**
+     * <pre>
+     * Encryption type
+     * </pre>
+     *
+     * <code>optional string stlt_encryption_type = 5;</code>
+     */
+    java.lang.String getStltEncryptionType();
+    /**
+     * <pre>
+     * Encryption type
+     * </pre>
+     *
+     * <code>optional string stlt_encryption_type = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getStltEncryptionTypeBytes();
   }
   /**
    * <pre>
@@ -115,6 +158,8 @@ public final class NetInterfaceOuterClass {
       uuid_ = "";
       name_ = "";
       address_ = "";
+      stltPort_ = 0;
+      stltEncryptionType_ = "";
     }
 
     @java.lang.Override
@@ -161,6 +206,17 @@ public final class NetInterfaceOuterClass {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
               address_ = bs;
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              stltPort_ = input.readSInt32();
+              break;
+            }
+            case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000010;
+              stltEncryptionType_ = bs;
               break;
             }
           }
@@ -350,6 +406,83 @@ public final class NetInterfaceOuterClass {
       }
     }
 
+    public static final int STLT_PORT_FIELD_NUMBER = 4;
+    private int stltPort_;
+    /**
+     * <pre>
+     * The port of the satellite
+     * </pre>
+     *
+     * <code>optional sint32 stlt_port = 4;</code>
+     */
+    public boolean hasStltPort() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <pre>
+     * The port of the satellite
+     * </pre>
+     *
+     * <code>optional sint32 stlt_port = 4;</code>
+     */
+    public int getStltPort() {
+      return stltPort_;
+    }
+
+    public static final int STLT_ENCRYPTION_TYPE_FIELD_NUMBER = 5;
+    private volatile java.lang.Object stltEncryptionType_;
+    /**
+     * <pre>
+     * Encryption type
+     * </pre>
+     *
+     * <code>optional string stlt_encryption_type = 5;</code>
+     */
+    public boolean hasStltEncryptionType() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     * Encryption type
+     * </pre>
+     *
+     * <code>optional string stlt_encryption_type = 5;</code>
+     */
+    public java.lang.String getStltEncryptionType() {
+      java.lang.Object ref = stltEncryptionType_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          stltEncryptionType_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Encryption type
+     * </pre>
+     *
+     * <code>optional string stlt_encryption_type = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStltEncryptionTypeBytes() {
+      java.lang.Object ref = stltEncryptionType_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        stltEncryptionType_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -379,6 +512,12 @@ public final class NetInterfaceOuterClass {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, address_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeSInt32(4, stltPort_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, stltEncryptionType_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -395,6 +534,13 @@ public final class NetInterfaceOuterClass {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, address_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt32Size(4, stltPort_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, stltEncryptionType_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -428,6 +574,16 @@ public final class NetInterfaceOuterClass {
         result = result && getAddress()
             .equals(other.getAddress());
       }
+      result = result && (hasStltPort() == other.hasStltPort());
+      if (hasStltPort()) {
+        result = result && (getStltPort()
+            == other.getStltPort());
+      }
+      result = result && (hasStltEncryptionType() == other.hasStltEncryptionType());
+      if (hasStltEncryptionType()) {
+        result = result && getStltEncryptionType()
+            .equals(other.getStltEncryptionType());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -450,6 +606,14 @@ public final class NetInterfaceOuterClass {
       if (hasAddress()) {
         hash = (37 * hash) + ADDRESS_FIELD_NUMBER;
         hash = (53 * hash) + getAddress().hashCode();
+      }
+      if (hasStltPort()) {
+        hash = (37 * hash) + STLT_PORT_FIELD_NUMBER;
+        hash = (53 * hash) + getStltPort();
+      }
+      if (hasStltEncryptionType()) {
+        hash = (37 * hash) + STLT_ENCRYPTION_TYPE_FIELD_NUMBER;
+        hash = (53 * hash) + getStltEncryptionType().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -579,6 +743,10 @@ public final class NetInterfaceOuterClass {
         bitField0_ = (bitField0_ & ~0x00000002);
         address_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
+        stltPort_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        stltEncryptionType_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -615,6 +783,14 @@ public final class NetInterfaceOuterClass {
           to_bitField0_ |= 0x00000004;
         }
         result.address_ = address_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.stltPort_ = stltPort_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.stltEncryptionType_ = stltEncryptionType_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -670,6 +846,14 @@ public final class NetInterfaceOuterClass {
         if (other.hasAddress()) {
           bitField0_ |= 0x00000004;
           address_ = other.address_;
+          onChanged();
+        }
+        if (other.hasStltPort()) {
+          setStltPort(other.getStltPort());
+        }
+        if (other.hasStltEncryptionType()) {
+          bitField0_ |= 0x00000010;
+          stltEncryptionType_ = other.stltEncryptionType_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -1005,6 +1189,154 @@ public final class NetInterfaceOuterClass {
         onChanged();
         return this;
       }
+
+      private int stltPort_ ;
+      /**
+       * <pre>
+       * The port of the satellite
+       * </pre>
+       *
+       * <code>optional sint32 stlt_port = 4;</code>
+       */
+      public boolean hasStltPort() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <pre>
+       * The port of the satellite
+       * </pre>
+       *
+       * <code>optional sint32 stlt_port = 4;</code>
+       */
+      public int getStltPort() {
+        return stltPort_;
+      }
+      /**
+       * <pre>
+       * The port of the satellite
+       * </pre>
+       *
+       * <code>optional sint32 stlt_port = 4;</code>
+       */
+      public Builder setStltPort(int value) {
+        bitField0_ |= 0x00000008;
+        stltPort_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * The port of the satellite
+       * </pre>
+       *
+       * <code>optional sint32 stlt_port = 4;</code>
+       */
+      public Builder clearStltPort() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        stltPort_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object stltEncryptionType_ = "";
+      /**
+       * <pre>
+       * Encryption type
+       * </pre>
+       *
+       * <code>optional string stlt_encryption_type = 5;</code>
+       */
+      public boolean hasStltEncryptionType() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <pre>
+       * Encryption type
+       * </pre>
+       *
+       * <code>optional string stlt_encryption_type = 5;</code>
+       */
+      public java.lang.String getStltEncryptionType() {
+        java.lang.Object ref = stltEncryptionType_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            stltEncryptionType_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Encryption type
+       * </pre>
+       *
+       * <code>optional string stlt_encryption_type = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getStltEncryptionTypeBytes() {
+        java.lang.Object ref = stltEncryptionType_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          stltEncryptionType_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Encryption type
+       * </pre>
+       *
+       * <code>optional string stlt_encryption_type = 5;</code>
+       */
+      public Builder setStltEncryptionType(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        stltEncryptionType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Encryption type
+       * </pre>
+       *
+       * <code>optional string stlt_encryption_type = 5;</code>
+       */
+      public Builder clearStltEncryptionType() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        stltEncryptionType_ = getDefaultInstance().getStltEncryptionType();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Encryption type
+       * </pre>
+       *
+       * <code>optional string stlt_encryption_type = 5;</code>
+       */
+      public Builder setStltEncryptionTypeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        stltEncryptionType_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -1069,8 +1401,10 @@ public final class NetInterfaceOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\030proto/NetInterface.proto\022\030com.linbit.l" +
-      "instor.proto\";\n\014NetInterface\022\014\n\004uuid\030\001 \001" +
-      "(\t\022\014\n\004name\030\002 \002(\t\022\017\n\007address\030\003 \002(\t"
+      "instor.proto\"l\n\014NetInterface\022\014\n\004uuid\030\001 \001" +
+      "(\t\022\014\n\004name\030\002 \002(\t\022\017\n\007address\030\003 \002(\t\022\021\n\tstl" +
+      "t_port\030\004 \001(\021\022\034\n\024stlt_encryption_type\030\005 \001" +
+      "(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1089,7 +1423,7 @@ public final class NetInterfaceOuterClass {
     internal_static_com_linbit_linstor_proto_NetInterface_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_NetInterface_descriptor,
-        new java.lang.String[] { "Uuid", "Name", "Address", });
+        new java.lang.String[] { "Uuid", "Name", "Address", "StltPort", "StltEncryptionType", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

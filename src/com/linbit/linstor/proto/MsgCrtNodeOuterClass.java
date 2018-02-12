@@ -42,50 +42,6 @@ public final class MsgCrtNodeOuterClass {
      * <code>required .com.linbit.linstor.proto.Node node = 1;</code>
      */
     com.linbit.linstor.proto.NodeOuterClass.NodeOrBuilder getNodeOrBuilder();
-
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    java.util.List<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection> 
-        getSatelliteConnectionsList();
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection getSatelliteConnections(int index);
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    int getSatelliteConnectionsCount();
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    java.util.List<? extends com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder> 
-        getSatelliteConnectionsOrBuilderList();
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder getSatelliteConnectionsOrBuilder(
-        int index);
   }
   /**
    * <pre>
@@ -103,7 +59,6 @@ public final class MsgCrtNodeOuterClass {
       super(builder);
     }
     private MsgCrtNode() {
-      satelliteConnections_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -147,15 +102,6 @@ public final class MsgCrtNodeOuterClass {
               bitField0_ |= 0x00000001;
               break;
             }
-            case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                satelliteConnections_ = new java.util.ArrayList<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection>();
-                mutable_bitField0_ |= 0x00000002;
-              }
-              satelliteConnections_.add(
-                  input.readMessage(com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.PARSER, extensionRegistry));
-              break;
-            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -164,9 +110,6 @@ public final class MsgCrtNodeOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          satelliteConnections_ = java.util.Collections.unmodifiableList(satelliteConnections_);
-        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -217,61 +160,6 @@ public final class MsgCrtNodeOuterClass {
       return node_ == null ? com.linbit.linstor.proto.NodeOuterClass.Node.getDefaultInstance() : node_;
     }
 
-    public static final int SATELLITE_CONNECTIONS_FIELD_NUMBER = 2;
-    private java.util.List<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection> satelliteConnections_;
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    public java.util.List<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection> getSatelliteConnectionsList() {
-      return satelliteConnections_;
-    }
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    public java.util.List<? extends com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder> 
-        getSatelliteConnectionsOrBuilderList() {
-      return satelliteConnections_;
-    }
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    public int getSatelliteConnectionsCount() {
-      return satelliteConnections_.size();
-    }
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection getSatelliteConnections(int index) {
-      return satelliteConnections_.get(index);
-    }
-    /**
-     * <pre>
-     * Satellite connections (currently only the first is used)
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-     */
-    public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder getSatelliteConnectionsOrBuilder(
-        int index) {
-      return satelliteConnections_.get(index);
-    }
-
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -286,12 +174,6 @@ public final class MsgCrtNodeOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      for (int i = 0; i < getSatelliteConnectionsCount(); i++) {
-        if (!getSatelliteConnections(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -300,9 +182,6 @@ public final class MsgCrtNodeOuterClass {
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeMessage(1, getNode());
-      }
-      for (int i = 0; i < satelliteConnections_.size(); i++) {
-        output.writeMessage(2, satelliteConnections_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -315,10 +194,6 @@ public final class MsgCrtNodeOuterClass {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(1, getNode());
-      }
-      for (int i = 0; i < satelliteConnections_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, satelliteConnections_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -342,8 +217,6 @@ public final class MsgCrtNodeOuterClass {
         result = result && getNode()
             .equals(other.getNode());
       }
-      result = result && getSatelliteConnectionsList()
-          .equals(other.getSatelliteConnectionsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -358,10 +231,6 @@ public final class MsgCrtNodeOuterClass {
       if (hasNode()) {
         hash = (37 * hash) + NODE_FIELD_NUMBER;
         hash = (53 * hash) + getNode().hashCode();
-      }
-      if (getSatelliteConnectionsCount() > 0) {
-        hash = (37 * hash) + SATELLITE_CONNECTIONS_FIELD_NUMBER;
-        hash = (53 * hash) + getSatelliteConnectionsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -482,7 +351,6 @@ public final class MsgCrtNodeOuterClass {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
           getNodeFieldBuilder();
-          getSatelliteConnectionsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -493,12 +361,6 @@ public final class MsgCrtNodeOuterClass {
           nodeBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000001);
-        if (satelliteConnectionsBuilder_ == null) {
-          satelliteConnections_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-        } else {
-          satelliteConnectionsBuilder_.clear();
-        }
         return this;
       }
 
@@ -530,15 +392,6 @@ public final class MsgCrtNodeOuterClass {
           result.node_ = node_;
         } else {
           result.node_ = nodeBuilder_.build();
-        }
-        if (satelliteConnectionsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
-            satelliteConnections_ = java.util.Collections.unmodifiableList(satelliteConnections_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.satelliteConnections_ = satelliteConnections_;
-        } else {
-          result.satelliteConnections_ = satelliteConnectionsBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -585,32 +438,6 @@ public final class MsgCrtNodeOuterClass {
         if (other.hasNode()) {
           mergeNode(other.getNode());
         }
-        if (satelliteConnectionsBuilder_ == null) {
-          if (!other.satelliteConnections_.isEmpty()) {
-            if (satelliteConnections_.isEmpty()) {
-              satelliteConnections_ = other.satelliteConnections_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureSatelliteConnectionsIsMutable();
-              satelliteConnections_.addAll(other.satelliteConnections_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.satelliteConnections_.isEmpty()) {
-            if (satelliteConnectionsBuilder_.isEmpty()) {
-              satelliteConnectionsBuilder_.dispose();
-              satelliteConnectionsBuilder_ = null;
-              satelliteConnections_ = other.satelliteConnections_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              satelliteConnectionsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getSatelliteConnectionsFieldBuilder() : null;
-            } else {
-              satelliteConnectionsBuilder_.addAllMessages(other.satelliteConnections_);
-            }
-          }
-        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -622,11 +449,6 @@ public final class MsgCrtNodeOuterClass {
         }
         if (!getNode().isInitialized()) {
           return false;
-        }
-        for (int i = 0; i < getSatelliteConnectionsCount(); i++) {
-          if (!getSatelliteConnections(i).isInitialized()) {
-            return false;
-          }
         }
         return true;
       }
@@ -803,318 +625,6 @@ public final class MsgCrtNodeOuterClass {
         }
         return nodeBuilder_;
       }
-
-      private java.util.List<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection> satelliteConnections_ =
-        java.util.Collections.emptyList();
-      private void ensureSatelliteConnectionsIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          satelliteConnections_ = new java.util.ArrayList<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection>(satelliteConnections_);
-          bitField0_ |= 0x00000002;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder> satelliteConnectionsBuilder_;
-
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection> getSatelliteConnectionsList() {
-        if (satelliteConnectionsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(satelliteConnections_);
-        } else {
-          return satelliteConnectionsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public int getSatelliteConnectionsCount() {
-        if (satelliteConnectionsBuilder_ == null) {
-          return satelliteConnections_.size();
-        } else {
-          return satelliteConnectionsBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection getSatelliteConnections(int index) {
-        if (satelliteConnectionsBuilder_ == null) {
-          return satelliteConnections_.get(index);
-        } else {
-          return satelliteConnectionsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder setSatelliteConnections(
-          int index, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection value) {
-        if (satelliteConnectionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.set(index, value);
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder setSatelliteConnections(
-          int index, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder builderForValue) {
-        if (satelliteConnectionsBuilder_ == null) {
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder addSatelliteConnections(com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection value) {
-        if (satelliteConnectionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.add(value);
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder addSatelliteConnections(
-          int index, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection value) {
-        if (satelliteConnectionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.add(index, value);
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder addSatelliteConnections(
-          com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder builderForValue) {
-        if (satelliteConnectionsBuilder_ == null) {
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.add(builderForValue.build());
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder addSatelliteConnections(
-          int index, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder builderForValue) {
-        if (satelliteConnectionsBuilder_ == null) {
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder addAllSatelliteConnections(
-          java.lang.Iterable<? extends com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection> values) {
-        if (satelliteConnectionsBuilder_ == null) {
-          ensureSatelliteConnectionsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, satelliteConnections_);
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder clearSatelliteConnections() {
-        if (satelliteConnectionsBuilder_ == null) {
-          satelliteConnections_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public Builder removeSatelliteConnections(int index) {
-        if (satelliteConnectionsBuilder_ == null) {
-          ensureSatelliteConnectionsIsMutable();
-          satelliteConnections_.remove(index);
-          onChanged();
-        } else {
-          satelliteConnectionsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder getSatelliteConnectionsBuilder(
-          int index) {
-        return getSatelliteConnectionsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder getSatelliteConnectionsOrBuilder(
-          int index) {
-        if (satelliteConnectionsBuilder_ == null) {
-          return satelliteConnections_.get(index);  } else {
-          return satelliteConnectionsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public java.util.List<? extends com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder> 
-           getSatelliteConnectionsOrBuilderList() {
-        if (satelliteConnectionsBuilder_ != null) {
-          return satelliteConnectionsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(satelliteConnections_);
-        }
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder addSatelliteConnectionsBuilder() {
-        return getSatelliteConnectionsFieldBuilder().addBuilder(
-            com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder addSatelliteConnectionsBuilder(
-          int index) {
-        return getSatelliteConnectionsFieldBuilder().addBuilder(
-            index, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Satellite connections (currently only the first is used)
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.SatelliteConnection satellite_connections = 2;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder> 
-           getSatelliteConnectionsBuilderList() {
-        return getSatelliteConnectionsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder> 
-          getSatelliteConnectionsFieldBuilder() {
-        if (satelliteConnectionsBuilder_ == null) {
-          satelliteConnectionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnection.Builder, com.linbit.linstor.proto.SatelliteConnectionOuterClass.SatelliteConnectionOrBuilder>(
-                  satelliteConnections_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
-                  getParentForChildren(),
-                  isClean());
-          satelliteConnections_ = null;
-        }
-        return satelliteConnectionsBuilder_;
-      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -1179,11 +689,9 @@ public final class MsgCrtNodeOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\026proto/MsgCrtNode.proto\022\030com.linbit.lin" +
-      "stor.proto\032\020proto/Node.proto\032\037proto/Sate" +
-      "lliteConnection.proto\"\210\001\n\nMsgCrtNode\022,\n\004" +
-      "node\030\001 \002(\0132\036.com.linbit.linstor.proto.No" +
-      "de\022L\n\025satellite_connections\030\002 \003(\0132-.com." +
-      "linbit.linstor.proto.SatelliteConnection"
+      "stor.proto\032\020proto/Node.proto\":\n\nMsgCrtNo" +
+      "de\022,\n\004node\030\001 \002(\0132\036.com.linbit.linstor.pr" +
+      "oto.Node"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1197,16 +705,14 @@ public final class MsgCrtNodeOuterClass {
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
           com.linbit.linstor.proto.NodeOuterClass.getDescriptor(),
-          com.linbit.linstor.proto.SatelliteConnectionOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_MsgCrtNode_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_MsgCrtNode_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgCrtNode_descriptor,
-        new java.lang.String[] { "Node", "SatelliteConnections", });
+        new java.lang.String[] { "Node", });
     com.linbit.linstor.proto.NodeOuterClass.getDescriptor();
-    com.linbit.linstor.proto.SatelliteConnectionOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)
