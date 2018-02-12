@@ -104,9 +104,9 @@ public class CtrlApiCallHandler
         {
             client.getSerializerLock().writeLock().unlock();
 
-            nodesMapLock.readLock().unlock();
-            rscDfnMapLock.readLock().unlock();
             storPoolDfnMapLock.readLock().unlock();
+            rscDfnMapLock.readLock().unlock();
+            nodesMapLock.readLock().unlock();
         }
     }
 
@@ -637,8 +637,8 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            nodesMapLock.writeLock().unlock();
             rscDfnMapLock.writeLock().unlock();
+            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1039,8 +1039,8 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            nodesMapLock.writeLock().unlock();
             storPoolDfnMapLock.writeLock().unlock();
+            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1314,8 +1314,8 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            nodesMapLock.writeLock().unlock();
             rscDfnMapLock.writeLock().unlock();
+            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1464,8 +1464,8 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            nodesMapLock.writeLock().unlock();
             rscDfnMapLock.writeLock().unlock();
+            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1542,9 +1542,9 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            nodesMapLock.readLock().unlock();
-            rscDfnMapLock.readLock().unlock();
             storPoolDfnMapLock.readLock().unlock();
+            rscDfnMapLock.readLock().unlock();
+            nodesMapLock.readLock().unlock();
         }
     }
 
@@ -1580,8 +1580,8 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            nodesMapLock.readLock().unlock();
             storPoolDfnMapLock.readLock().unlock();
+            nodesMapLock.readLock().unlock();
         }
     }
 
