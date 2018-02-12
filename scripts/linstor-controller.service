@@ -10,4 +10,4 @@ ExecStart=/opt/linstor-server/bin/Controller
 User=root
 
 [Install]
-Wanted=multi-user.target
+WantedBy=multi-user.target
