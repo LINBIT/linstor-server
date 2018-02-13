@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.ObjectProtection;
@@ -137,15 +139,26 @@ public class ConfFileBuilderTest
         Volume volume = Mockito.mock(Volume.class);
         StateFlags<Volume.VlmFlags> volumeFlags = Mockito.mock(VolumeStateFlags.class);
         VolumeDefinition volumeDefinition = Mockito.mock(VolumeDefinition.class);
+        StorPoolDefinition storPoolDfn = Mockito.mock(StorPoolDefinition.class);
+        StorPool storPool = Mockito.mock(StorPool.class);
+
+        Props storPoolProps = Mockito.mock(Props.class);
+        Props vlmProps = Mockito.mock(Props.class);
+        Props rscProps = Mockito.mock(Props.class);
+        Props nodeProps = Mockito.mock(Props.class);
+
+        when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
 
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
         when(volumeDefinition.getMinorNr(any(AccessContext.class))).thenReturn(new MinorNumber(99));
 
-        when(volumeFlags.isUnset(any(AccessContext.class), varArgEq(new Volume.VlmFlags[]{Volume.VlmFlags.DELETE})))
+        when(volumeFlags.isUnset(any(AccessContext.class), varArgEq(new Volume.VlmFlags[]{Volume.VlmFlags.DELETE, VlmFlags.CLEAN})))
             .thenReturn(!volumeDeleted);
 
         when(volume.getFlags()).thenReturn(volumeFlags);
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
+        when(volume.getStorPool(accessContext)).thenReturn(storPool);
+        when(volume.getProps(accessContext)).thenReturn(vlmProps);
 
         when(netInterface.getAddress(any(AccessContext.class)))
             .thenReturn(new LsIpAddress(ipAddr));
@@ -167,6 +180,9 @@ public class ConfFileBuilderTest
         when(resource.getAssignedNode()).thenReturn(assignedNode);
         when(resource.iterateVolumes()).thenAnswer(makeIteratorAnswer(volume));
         when(resource.getNodeId()).thenReturn(new NodeId(12));
+        when(resource.getProps(accessContext)).thenReturn(rscProps);
+
+        when(assignedNode.getProps(accessContext)).thenReturn(nodeProps);
 
         return resource;
     }
