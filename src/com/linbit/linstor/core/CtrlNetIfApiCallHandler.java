@@ -38,7 +38,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         AccessContext apiCtxRef
     )
     {
-        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NODE, serializerRef);
+        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NET_IF, serializerRef);
         super.setNullOnAutoClose(
             currentNodeName,
             currentNetIfName
