@@ -6,9 +6,9 @@ public class LoggingModule extends AbstractModule
 {
     private final ErrorReporter errorReporter;
 
-    public LoggingModule(ErrorReporter errorReporter)
+    public LoggingModule(ErrorReporter errorReporterRef)
     {
-        this.errorReporter = errorReporter;
+        errorReporter = errorReporterRef;
     }
 
     @Override

@@ -1,8 +1,8 @@
 package com.linbit.linstor.security;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.LinbitModule;
@@ -14,6 +14,7 @@ import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.LinStorArguments;
+import com.linbit.linstor.core.LinStorArgumentsModule;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DbDriversModule;
@@ -91,12 +92,13 @@ public final class Initializer
             new GuiceConfigModule(),
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
+            new LinStorArgumentsModule(cArgs),
             new ConfigModule(),
             new CoreTimerModule(),
             new MetaDataModule(),
             new LinbitModule(),
             new LinStorModule(),
-            new CoreModule(cArgs),
+            new CoreModule(),
             new DbDriversModule(),
             new DbConnectionPoolModule(),
             new NetComModule(),
@@ -124,14 +126,4 @@ public final class Initializer
         Role.load(ctrlDb, driver);
     }
 
-    private static class GuiceConfigModule extends AbstractModule
-    {
-        @Override
-        protected void configure()
-        {
-            binder().requireAtInjectOnConstructors();
-            binder().requireExactBindingAnnotations();
-            binder().disableCircularProxies();
-        }
-    }
 }

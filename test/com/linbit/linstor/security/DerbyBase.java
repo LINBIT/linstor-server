@@ -1,7 +1,8 @@
 package com.linbit.linstor.security;
 
-import static org.junit.Assert.fail;
-
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.NetInterfaceName;
@@ -9,19 +10,27 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreUtils;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.TestDbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,18 +40,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TestName;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class DerbyBase implements DerbyTestConstants
 {
@@ -54,11 +56,6 @@ public abstract class DerbyBase implements DerbyTestConstants
         " FROM " + TBL_PROPS_CONTAINERS +
         " WHERE " + PROPS_INSTANCE + " = ? " +
         " ORDER BY " + PROP_KEY;
-
-    private static final String DB_URL = "jdbc:derby:memory:testDB";
-    private static final String DB_USER = "linstor";
-    private static final String DB_PASSWORD = "linbit";
-    private static final Properties DB_PROPS = new Properties();
 
     private List<Statement> statements = new ArrayList<>();
     private static Connection con;
@@ -105,28 +102,24 @@ public abstract class DerbyBase implements DerbyTestConstants
     {
         if (dbConnPool == null)
         {
-            // load the clientDriver...
-            DB_PROPS.setProperty("create", "true");
-            DB_PROPS.setProperty("user", DB_USER);
-            DB_PROPS.setProperty("password", DB_PASSWORD);
+            Injector injector = Guice.createInjector(
+                new GuiceConfigModule(),
+                new LoggingModule(errorReporter),
+                new CoreModule(),
+                new TestSecurityModule(SYS_CTX),
+                new TestDbConnectionPoolModule()
+            );
 
-            dbConnPool = new DbConnectionPool();
-            dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
+            dbConnPool = injector.getInstance(DbConnectionPool.class);
 
             con = dbConnPool.getConnection();
             secureDbDriver = new DbDerbyPersistence(SYS_CTX, errorReporter);
 
-            nodesMap = new CoreModule.NodesMapImpl();
-            rscDfnMap = new CoreModule.ResourceDefinitionMapImpl();
-            storPoolDfnMap = new CoreModule.StorPoolDefinitionMapImpl();
+            nodesMap = injector.getInstance(CoreModule.NodesMap.class);
+            rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
+            storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
-            persistenceDbDriver = new DerbyDriver(
-                SYS_CTX,
-                errorReporter,
-                nodesMap,
-                rscDfnMap,
-                storPoolDfnMap
-            );
+            persistenceDbDriver = injector.getInstance(DerbyDriver.class);
         }
     }
 
