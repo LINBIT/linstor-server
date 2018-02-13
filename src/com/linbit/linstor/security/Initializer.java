@@ -95,7 +95,7 @@ public final class Initializer
             new LinbitModule(),
             new LinStorModule(initCtx),
             new CoreModule(),
-            new DbDriversModule(initCtx),
+            new DbDriversModule(),
             new DbConnectionPoolModule(),
             new NetComModule(),
             new NumberPoolModule(initCtx),

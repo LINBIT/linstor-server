@@ -7,6 +7,7 @@ import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -32,7 +33,7 @@ public class SecurityModule extends AbstractModule
     @Override
     protected void configure()
     {
-
+        bind(AccessContext.class).annotatedWith(SystemContext.class).toInstance(initCtx);
     }
 
     @Provides

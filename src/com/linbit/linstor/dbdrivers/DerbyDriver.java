@@ -4,10 +4,13 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.NetInterfaceDataDerbyDriver;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionDataDerbyDriver;
@@ -49,6 +52,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class DerbyDriver implements DatabaseDriver
 {
     public static final ServiceName DFLT_SERVICE_INSTANCE_NAME;
@@ -88,8 +92,9 @@ public class DerbyDriver implements DatabaseDriver
     private Map<ResourceName, ResourceDefinition> rscDfnMap;
     private Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
+    @Inject
     public DerbyDriver(
-        AccessContext privCtx,
+        @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
         Map<NodeName, Node> nodesMapRef,
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
