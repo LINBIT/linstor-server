@@ -1,20 +1,12 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -29,6 +21,19 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Singleton
 public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 {
     private static final String TBL_NODE = DerbyConstants.TBL_NODES;
@@ -75,42 +80,38 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private final StateFlagsPersistence<NodeData> flagDriver;
     private final SingleColumnDatabaseDriver<NodeData, NodeType> typeDriver;
 
-    private NetInterfaceDataDerbyDriver netInterfaceDriver;
-    private SatelliteConnectionDataDerbyDriver satelliteConnectionDriver;
-    private ResourceDataDerbyDriver resourceDataDriver;
-    private StorPoolDataDerbyDriver storPoolDriver;
-    private NodeConnectionDataDerbyDriver nodeConnectionDriver;
+    private final Provider<NetInterfaceDataDerbyDriver> netInterfaceDriverProvider;
+    private final Provider<SatelliteConnectionDataDerbyDriver> satelliteConnectionDriverProvider;
+    private final Provider<ResourceDataDerbyDriver> resourceDataDriverProvider;
+    private final Provider<StorPoolDataDerbyDriver> storPoolDriverProvider;
+    private final Provider<NodeConnectionDataDerbyDriver> nodeConnectionDriverProvider;
 
+    @Inject
     public NodeDataDerbyDriver(
-        AccessContext privCtx,
+        @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Map<NodeName, Node> nodesMapRef
+        Map<NodeName, Node> nodesMapRef,
+        Provider<NetInterfaceDataDerbyDriver> netInterfaceDriverProviderRef,
+        Provider<SatelliteConnectionDataDerbyDriver> satelliteConnectionDriverProviderRef,
+        Provider<ResourceDataDerbyDriver> resourceDataDriverProviderRef,
+        Provider<StorPoolDataDerbyDriver> storPoolDriverProviderRef,
+        Provider<NodeConnectionDataDerbyDriver> nodeConnectionDriverProviderRef
     )
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-        nodeCache = new HashMap<>();
-
         nodesMap = nodesMapRef;
+        netInterfaceDriverProvider = netInterfaceDriverProviderRef;
+        satelliteConnectionDriverProvider = satelliteConnectionDriverProviderRef;
+        resourceDataDriverProvider = resourceDataDriverProviderRef;
+        storPoolDriverProvider = storPoolDriverProviderRef;
+        nodeConnectionDriverProvider = nodeConnectionDriverProviderRef;
+
+        nodeCache = new HashMap<>();
 
         flagDriver = new NodeFlagPersistence();
         typeDriver = new NodeTypeDriver();
 
-    }
-
-    public void initialize(
-        NetInterfaceDataDerbyDriver netInterfaceDriverRef,
-        SatelliteConnectionDataDerbyDriver satelliteConnectionDriverRef,
-        ResourceDataDerbyDriver resourceDriverRef,
-        StorPoolDataDerbyDriver storPoolDriverRef,
-        NodeConnectionDataDerbyDriver nodeConnectionDriverRef
-    )
-    {
-        netInterfaceDriver = netInterfaceDriverRef;
-        satelliteConnectionDriver = satelliteConnectionDriverRef;
-        resourceDataDriver = resourceDriverRef;
-        storPoolDriver = storPoolDriverRef;
-        nodeConnectionDriver = nodeConnectionDriverRef;
     }
 
     @Override
@@ -237,7 +238,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     nodeCache.put(nodeName, node);
                 }
                 List<NetInterfaceData> netIfaces =
-                    netInterfaceDriver.loadNetInterfaceData(node, transMgr);
+                    netInterfaceDriverProvider.get().loadNetInterfaceData(node, transMgr);
                 for (NetInterfaceData netIf : netIfaces)
                 {
                     node.addNetInterface(dbCtx, netIf);
@@ -248,14 +249,16 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     netIfaces.size()
                 );
 
-                SatelliteConnectionData satelliteConnection = satelliteConnectionDriver.load(node, true, transMgr);
+                SatelliteConnectionData satelliteConnection =
+                    satelliteConnectionDriverProvider.get().load(node, true, transMgr);
                 node.setSatelliteConnection(dbCtx, satelliteConnection);
                 errorReporter.logTrace(
                     "Node's SatelliteConnection restored %s",
                     getId(node)
                 );
 
-                List<ResourceData> resList = resourceDataDriver.loadResourceData(dbCtx, node, transMgr);
+                List<ResourceData> resList =
+                    resourceDataDriverProvider.get().loadResourceData(dbCtx, node, transMgr);
                 for (ResourceData res : resList)
                 {
                     node.addResource(dbCtx, res);
@@ -266,7 +269,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     resList.size()
                 );
 
-                List<StorPoolData> storPoolList = storPoolDriver.loadStorPools(node, transMgr);
+                List<StorPoolData> storPoolList = storPoolDriverProvider.get().loadStorPools(node, transMgr);
                 for (StorPoolData storPool : storPoolList)
                 {
                     node.addStorPool(dbCtx, storPool);
@@ -278,7 +281,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 );
 
                 List<NodeConnectionData> nodeConDfnList =
-                    nodeConnectionDriver.loadAllByNode(node, transMgr);
+                    nodeConnectionDriverProvider.get().loadAllByNode(node, transMgr);
                 for (NodeConnectionData nodeConDfn : nodeConDfnList)
                 {
                     node.setNodeConnection(dbCtx, nodeConDfn);
@@ -290,7 +293,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 );
 
                 node.setDisklessStorPool(
-                    storPoolDriver.load(
+                    storPoolDriverProvider.get().load(
                         node,
                         LinStor.getDisklessStorPoolDfn(),
                         true,

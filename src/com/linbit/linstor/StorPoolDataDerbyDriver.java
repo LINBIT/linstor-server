@@ -1,16 +1,9 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -22,6 +15,18 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Singleton
 public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 {
     private static final String TBL_NSP = DerbyConstants.TBL_NODE_STOR_POOL;
@@ -53,17 +58,18 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
     private boolean cacheCleared = false;
 
-    private VolumeDataDerbyDriver volumeDriver;
+    private final Provider<VolumeDataDerbyDriver> volumeDriverProvider;
 
-    public StorPoolDataDerbyDriver(AccessContext dbCtxRef, ErrorReporter errorReporterRef)
+    @Inject
+    public StorPoolDataDerbyDriver(
+        @SystemContext AccessContext dbCtxRef,
+        ErrorReporter errorReporterRef,
+        Provider<VolumeDataDerbyDriver> volumeDriverProviderRef
+    )
     {
         dbCtx = dbCtxRef;
         errorReporter = errorReporterRef;
-    }
-
-    public void initialize(VolumeDataDerbyDriver volumeDriverRef)
-    {
-        volumeDriver = volumeDriverRef;
+        volumeDriverProvider = volumeDriverProviderRef;
     }
 
     @Override
@@ -254,7 +260,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 }
 
                 // restore volumes
-                List<VolumeData> volumes = volumeDriver.getVolumesByStorPool(
+                List<VolumeData> volumes = volumeDriverProvider.get().getVolumesByStorPool(
                     storPoolData,
                     transMgr
                 );

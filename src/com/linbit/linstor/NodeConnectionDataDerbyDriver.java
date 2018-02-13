@@ -1,12 +1,8 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -15,6 +11,16 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Singleton
 public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabaseDriver
 {
     private static final String TBL_NODE_CON_DFN = DerbyConstants.TBL_NODE_CONNECTIONS;
@@ -46,21 +52,18 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
+    private final Provider<NodeDataDerbyDriver> nodeDriverProvider;
 
-    private NodeDataDerbyDriver nodeDriver;
-
+    @Inject
     public NodeConnectionDataDerbyDriver(
-        AccessContext privCtx,
-        ErrorReporter errorReporterRef
+        @SystemContext AccessContext privCtx,
+        ErrorReporter errorReporterRef,
+        Provider<NodeDataDerbyDriver> nodeDriverProviderRef
     )
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-    }
-
-    public void initialize(NodeDataDerbyDriver nodeDataDerbyDriverRef)
-    {
-        nodeDriver = nodeDataDerbyDriverRef;
+        nodeDriverProvider = nodeDriverProviderRef;
     }
 
     @Override
@@ -180,7 +183,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
             );
         }
 
-
+        NodeDataDerbyDriver nodeDriver = nodeDriverProvider.get();
         Node sourceNode = nodeDriver.load(sourceNodeName, true, transMgr);
         Node targetNode = nodeDriver.load(targetNodeName, true, transMgr);
 

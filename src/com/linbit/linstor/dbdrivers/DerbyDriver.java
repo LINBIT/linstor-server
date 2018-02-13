@@ -25,7 +25,6 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeConnectionDataDerbyDriver;
 import com.linbit.linstor.VolumeDataDerbyDriver;
 import com.linbit.linstor.VolumeDefinitionDataDerbyDriver;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -38,9 +37,7 @@ import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDri
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsConDerbyDriver;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
@@ -88,74 +85,46 @@ public class DerbyDriver implements DatabaseDriver
     private final ResourceConnectionDataDerbyDriver resourceConnectionDriver;
     private final VolumeConnectionDataDerbyDriver volumeConnectionDriver;
 
-    private Map<NodeName, Node> nodesMap;
-    private Map<ResourceName, ResourceDefinition> rscDfnMap;
-    private Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+    private final Map<NodeName, Node> nodesMap;
+    private final Map<ResourceName, ResourceDefinition> rscDfnMap;
+    private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
     @Inject
     public DerbyDriver(
-        @SystemContext AccessContext privCtx,
-        ErrorReporter errorReporterRef,
+        PropsConDerbyDriver propsDriverRef,
+        NodeDataDerbyDriver nodeDriverRef,
+        ResourceDefinitionDataDerbyDriver resesourceDefinitionDriverRef,
+        ResourceDataDerbyDriver resourceDriverRef,
+        VolumeDefinitionDataDerbyDriver volumeDefinitionDriverRef,
+        VolumeDataDerbyDriver volumeDriverRef,
+        StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriverRef,
+        StorPoolDataDerbyDriver storPoolDriverRef,
+        NetInterfaceDataDerbyDriver netInterfaceDriverRef,
+        SatelliteConnectionDataDerbyDriver satelliteConnectionDriverRef,
+        NodeConnectionDataDerbyDriver nodeConnectionDriverRef,
+        ResourceConnectionDataDerbyDriver resourceConnectionDriverRef,
+        VolumeConnectionDataDerbyDriver volumeConnectionDriverRef,
         Map<NodeName, Node> nodesMapRef,
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
     )
     {
+        propsDriver = propsDriverRef;
+        nodeDriver = nodeDriverRef;
+        resesourceDefinitionDriver = resesourceDefinitionDriverRef;
+        resourceDriver = resourceDriverRef;
+        volumeDefinitionDriver = volumeDefinitionDriverRef;
+        volumeDriver = volumeDriverRef;
+        storPoolDefinitionDriver = storPoolDefinitionDriverRef;
+        storPoolDriver = storPoolDriverRef;
+        netInterfaceDriver = netInterfaceDriverRef;
+        satelliteConnectionDriver = satelliteConnectionDriverRef;
+        nodeConnectionDriver = nodeConnectionDriverRef;
+        resourceConnectionDriver = resourceConnectionDriverRef;
+        volumeConnectionDriver = volumeConnectionDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
-        propsDriver = new PropsConDerbyDriver(errorReporterRef);
-        nodeDriver = new NodeDataDerbyDriver(privCtx, errorReporterRef, nodesMap);
-        resesourceDefinitionDriver = new ResourceDefinitionDataDerbyDriver(
-            privCtx,
-            errorReporterRef,
-            rscDfnMap
-        );
-        resourceDriver = new ResourceDataDerbyDriver(privCtx, errorReporterRef);
-        volumeDefinitionDriver = new VolumeDefinitionDataDerbyDriver(privCtx, errorReporterRef);
-        volumeDriver = new VolumeDataDerbyDriver(privCtx, errorReporterRef);
-        storPoolDefinitionDriver = new StorPoolDefinitionDataDerbyDriver(errorReporterRef, storPoolDfnMap);
-        storPoolDriver = new StorPoolDataDerbyDriver(privCtx, errorReporterRef);
-        netInterfaceDriver = new NetInterfaceDataDerbyDriver(privCtx, errorReporterRef);
-        satelliteConnectionDriver = new SatelliteConnectionDataDerbyDriver(privCtx, errorReporterRef);
-        nodeConnectionDriver = new NodeConnectionDataDerbyDriver(
-            privCtx,
-            errorReporterRef
-        );
-        resourceConnectionDriver = new ResourceConnectionDataDerbyDriver(
-            privCtx,
-            errorReporterRef
-        );
-        volumeConnectionDriver = new VolumeConnectionDataDerbyDriver(
-            privCtx,
-            errorReporterRef
-        );
-
-        // propsDriver.initialize();
-        nodeDriver.initialize(
-            netInterfaceDriver,
-            satelliteConnectionDriver,
-            resourceDriver,
-            storPoolDriver,
-            nodeConnectionDriver
-        );
-        satelliteConnectionDriver.initialize(netInterfaceDriver);
-        resesourceDefinitionDriver.initialize(resourceDriver, volumeDefinitionDriver);
-        resourceDriver.initialize(resourceConnectionDriver, volumeDriver);
-        // volumeDefinitionDriver.initialize();
-        volumeDriver.initialize(nodeDriver, resourceDriver, volumeConnectionDriver);
-        // storPoolDefinitionDriver.initialize();
-        storPoolDriver.initialize(volumeDriver);
-        // netInterfaceDriver.initialize();
-        nodeConnectionDriver.initialize(nodeDriver);
-        resourceConnectionDriver.initialize(nodeDriver, resourceDriver);
-        volumeConnectionDriver.initialize(
-            nodeDriver,
-            resesourceDefinitionDriver,
-            resourceDriver,
-            volumeDefinitionDriver,
-            volumeDriver
-        );
     }
 
     @Override

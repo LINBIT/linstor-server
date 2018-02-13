@@ -12,6 +12,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -27,6 +28,11 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
+@Singleton
 public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 {
     private static final String TBL_RES = DerbyConstants.TBL_RESOURCES;
@@ -74,28 +80,27 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private final ErrorReporter errorReporter;
     private final FlagDriver flagDriver;
 
-    private VolumeDataDerbyDriver volumeDriver;
-    private ResourceConnectionDataDerbyDriver resourceConnectionDriver;
+    private final Provider<VolumeDataDerbyDriver> volumeDriverProvider;
+    private final Provider<ResourceConnectionDataDerbyDriver> resourceConnectionDriverProvider;
 
     private HashMap<ResPrimaryKey, ResourceData> resCache;
     private boolean cacheCleared = false;
 
-    public ResourceDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
+    @Inject
+    public ResourceDataDerbyDriver(
+        @SystemContext AccessContext accCtx,
+        ErrorReporter errorReporterRef,
+        Provider<VolumeDataDerbyDriver> volumeDriverProviderRef,
+        Provider<ResourceConnectionDataDerbyDriver> resourceConnectionDriverProviderRef
+    )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        volumeDriverProvider = volumeDriverProviderRef;
+        resourceConnectionDriverProvider = resourceConnectionDriverProviderRef;
 
         flagDriver = new FlagDriver();
         resCache = new HashMap<>();
-    }
-
-    public void initialize(
-        ResourceConnectionDataDerbyDriver resourceConnectionDriverRef,
-        VolumeDataDerbyDriver volumeDriverRef
-    )
-    {
-        resourceConnectionDriver = resourceConnectionDriverRef;
-        volumeDriver = volumeDriverRef;
     }
 
     @Override
@@ -344,7 +349,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         errorReporter.logTrace("Resource instance created %s", getId(resData));
 
                         // restore ResourceConnection
-                        List<ResourceConnectionData> cons = resourceConnectionDriver.loadAllByResource(
+                        List<ResourceConnectionData> cons = resourceConnectionDriverProvider.get().loadAllByResource(
                             resData,
                             transMgr
                         );
@@ -358,7 +363,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         );
 
                         // restore volumes
-                        List<VolumeData> volList = volumeDriver.loadAllVolumesByResource(resData, transMgr);
+                        List<VolumeData> volList =
+                            volumeDriverProvider.get().loadAllVolumesByResource(resData, transMgr);
                         for (VolumeData volData : volList)
                         {
                             resData.putVolume(accCtx, volData);

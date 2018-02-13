@@ -1,19 +1,21 @@
 package com.linbit.linstor.propscon;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+@Singleton
 public class PropsConDerbyDriver implements PropsConDatabaseDriver
 {
     private static final String TBL_PROP = DerbyConstants.TBL_PROPS_CONTAINERS;
@@ -44,6 +46,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
 
     private final ErrorReporter errorReporter;
 
+    @Inject
     public PropsConDerbyDriver(ErrorReporter errorReporterRef)
     {
         errorReporter = errorReporterRef;

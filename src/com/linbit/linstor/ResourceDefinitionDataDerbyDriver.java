@@ -1,13 +1,5 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -15,6 +7,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -29,6 +22,18 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Singleton
 public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionDataDatabaseDriver
 {
     private static final String TBL_RES_DEF = DerbyConstants.TBL_RESOURCE_DEFINITIONS;
@@ -83,33 +88,28 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private final SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> portDriver;
     private final SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> transTypeDriver;
 
-    private ResourceDataDerbyDriver resourceDriver;
-    private VolumeDefinitionDataDerbyDriver volumeDefinitionDriver;
+    private final Provider<ResourceDataDerbyDriver> resourceDriverProvider;
+    private final Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProvider;
 
+    @Inject
     public ResourceDefinitionDataDerbyDriver(
-        AccessContext accCtx,
+        @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        Map<ResourceName, ResourceDefinition> resDfnMapRef
+        Map<ResourceName, ResourceDefinition> resDfnMapRef,
+        Provider<ResourceDataDerbyDriver> resourceDriverProviderRef,
+        Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        resourceDriverProvider = resourceDriverProviderRef;
+        volumeDefinitionDriverProvider = volumeDefinitionDriverProviderRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
         portDriver = new PortDriver();
         transTypeDriver = new TransportTypeDriver();
         resDfnMap = resDfnMapRef;
         rscDfnCache = new HashMap<>();
     }
-
-    public void initialize(
-        ResourceDataDerbyDriver resourceDriverRef,
-        VolumeDefinitionDataDerbyDriver volumeDefinitionDriverRef
-    )
-    {
-        resourceDriver = resourceDriverRef;
-        volumeDefinitionDriver = volumeDefinitionDriverRef;
-    }
-
 
     @Override
     public void create(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
@@ -267,7 +267,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
                 // restore volumeDefinitions
                 List<VolumeDefinition> volDfns =
-                    volumeDefinitionDriver.loadAllVolumeDefinitionsByResourceDefinition(
+                    volumeDefinitionDriverProvider.get().loadAllVolumeDefinitionsByResourceDefinition(
                     resDfn,
                     transMgr,
                     dbCtx
@@ -282,7 +282,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 );
 
                 // restore resources
-                List<ResourceData> resList = resourceDriver.loadResourceDataByResourceDefinition(
+                List<ResourceData> resList = resourceDriverProvider.get().loadResourceDataByResourceDefinition(
                     resDfn,
                     transMgr,
                     dbCtx

@@ -1,16 +1,10 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
@@ -19,6 +13,17 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Singleton
 public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataDatabaseDriver
 {
     private static final String TBL_VOL_CON_DFN = DerbyConstants.TBL_VOLUME_CONNECTIONS;
@@ -65,34 +70,30 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private NodeDataDerbyDriver nodeDataDerbyDriver;
-    private ResourceDefinitionDataDerbyDriver resourceDefinitionDataDerbyDriver;
-    private ResourceDataDerbyDriver resourceDataDerbyDriver;
-    private VolumeDefinitionDataDerbyDriver volumeDefinitionDataDerbyDriver;
-    private VolumeDataDerbyDriver volumeDataDerbyDriver;
+    private final Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProvider;
+    private final Provider<ResourceDefinitionDataDerbyDriver> resourceDefinitionDataDerbyDriverProvider;
+    private final Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProvider;
+    private final Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDataDerbyDriverProvider;
+    private final Provider<VolumeDataDerbyDriver> volumeDataDerbyDriverProvider;
 
+    @Inject
     public VolumeConnectionDataDerbyDriver(
-        AccessContext accCtx,
-        ErrorReporter errorReporterRef
+        @SystemContext AccessContext accCtx,
+        ErrorReporter errorReporterRef,
+        Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProviderRef,
+        Provider<ResourceDefinitionDataDerbyDriver> resourceDefinitionDataDerbyDriverProviderRef,
+        Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProviderRef,
+        Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDataDerbyDriverProviderRef,
+        Provider<VolumeDataDerbyDriver> volumeDataDerbyDriverProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
-    }
-
-    public void initialize(
-        NodeDataDerbyDriver nodeDataDerbyDriverRef,
-        ResourceDefinitionDataDerbyDriver resourceDefinitionDataDerbyDriverRef,
-        ResourceDataDerbyDriver resourceDataDerbyDriverRef,
-        VolumeDefinitionDataDerbyDriver volumeDefinitionDataDerbyDriverRef,
-        VolumeDataDerbyDriver volumeDataDerbyDriverRef
-    )
-    {
-        nodeDataDerbyDriver = nodeDataDerbyDriverRef;
-        resourceDefinitionDataDerbyDriver = resourceDefinitionDataDerbyDriverRef;
-        resourceDataDerbyDriver = resourceDataDerbyDriverRef;
-        volumeDefinitionDataDerbyDriver = volumeDefinitionDataDerbyDriverRef;
-        volumeDataDerbyDriver = volumeDataDerbyDriverRef;
+        nodeDataDerbyDriverProvider = nodeDataDerbyDriverProviderRef;
+        resourceDefinitionDataDerbyDriverProvider = resourceDefinitionDataDerbyDriverProviderRef;
+        resourceDataDerbyDriverProvider = resourceDataDerbyDriverProviderRef;
+        volumeDefinitionDataDerbyDriverProvider = volumeDefinitionDataDerbyDriverProviderRef;
+        volumeDataDerbyDriverProvider = volumeDataDerbyDriverProviderRef;
     }
 
     @Override
@@ -278,19 +279,23 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             );
         }
 
+        NodeDataDerbyDriver nodeDataDerbyDriver = nodeDataDerbyDriverProvider.get();
         Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, true, transMgr);
         Node targetNode = nodeDataDerbyDriver.load(targetNodeName, true, transMgr);
 
-        ResourceDefinition resourceDefinition = resourceDefinitionDataDerbyDriver.load(
+        ResourceDefinition resourceDefinition = resourceDefinitionDataDerbyDriverProvider.get().load(
             resourceName,
             true,
             transMgr
         );
-        VolumeDefinition volumeDfn = volumeDefinitionDataDerbyDriver.load(resourceDefinition, volNr, true, transMgr);
+        VolumeDefinition volumeDfn = volumeDefinitionDataDerbyDriverProvider.get()
+            .load(resourceDefinition, volNr, true, transMgr);
 
+        ResourceDataDerbyDriver resourceDataDerbyDriver = resourceDataDerbyDriverProvider.get();
         Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, true, transMgr);
         Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, true, transMgr);
 
+        VolumeDataDerbyDriver volumeDataDerbyDriver = volumeDataDerbyDriverProvider.get();
         Volume sourceVolume = volumeDataDerbyDriver.load(sourceResource, volumeDfn, true, transMgr);
         Volume targetVolume = volumeDataDerbyDriver.load(targetResource, volumeDfn, true, transMgr);
 

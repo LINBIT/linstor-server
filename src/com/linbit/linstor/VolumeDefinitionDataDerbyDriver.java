@@ -1,16 +1,11 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
@@ -22,6 +17,15 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Singleton
 public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataDatabaseDriver
 {
     private static final String TBL_VOL_DFN = DerbyConstants.TBL_VOLUME_DEFINITIONS;
@@ -76,7 +80,11 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private final MinorNumberDriver minorNumberDriver;
     private final SizeDriver sizeDriver;
 
-    public VolumeDefinitionDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
+    @Inject
+    public VolumeDefinitionDataDerbyDriver(
+        @SystemContext AccessContext accCtx,
+        ErrorReporter errorReporterRef
+    )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;

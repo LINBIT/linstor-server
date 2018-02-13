@@ -1,15 +1,11 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.UUID;
-
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
@@ -18,6 +14,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.UUID;
+
+@Singleton
 public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDataDatabaseDriver
 {
     private static final String TBL_SC = DerbyConstants.TBL_SATELLITE_CONNECTIONS;
@@ -58,17 +62,14 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     private final AccessContext privCtx;
     private final ErrorReporter errorReporter;
 
-    private NetInterfaceDataDerbyDriver netInterfaceDriver;
-
-    public SatelliteConnectionDataDerbyDriver(AccessContext privCtxRef, ErrorReporter errorReporterRef)
+    @Inject
+    public SatelliteConnectionDataDerbyDriver(
+        @SystemContext AccessContext privCtxRef,
+        ErrorReporter errorReporterRef
+    )
     {
         privCtx = privCtxRef;
         errorReporter = errorReporterRef;
-    }
-
-    public void initialize(NetInterfaceDataDerbyDriver netInterfaceDataDerbyDriverRef)
-    {
-        netInterfaceDriver = netInterfaceDataDerbyDriverRef;
     }
 
     @Override

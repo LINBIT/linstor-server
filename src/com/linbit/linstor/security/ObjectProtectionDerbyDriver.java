@@ -7,11 +7,15 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
 public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriver
 {
     private static final String TBL_OP      = DerbyConstants.TBL_SEC_OBJECT_PROTECTION;
@@ -90,7 +94,11 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     private AccessContext dbCtx;
     private ErrorReporter errorReporter;
 
-    public ObjectProtectionDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
+    @Inject
+    public ObjectProtectionDerbyDriver(
+        @SystemContext AccessContext accCtx,
+        ErrorReporter errorReporterRef
+    )
     {
         dbCtx = accCtx;
         identityDriver = new IdentityDerbyDriver();

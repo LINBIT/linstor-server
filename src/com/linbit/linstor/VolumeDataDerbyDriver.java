@@ -1,16 +1,10 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -27,6 +21,17 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+@Singleton
 public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 {
     private static final String TBL_VOL = DerbyConstants.TBL_VOLUMES;
@@ -80,31 +85,31 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
 
-    private NodeDataDerbyDriver             nodeDriver;
-    private ResourceDataDerbyDriver         resourceDriver;
-    private VolumeConnectionDataDerbyDriver volumeConnectionDriver;
+    private final Provider<NodeDataDerbyDriver> nodeDriverProvider;
+    private final Provider<ResourceDataDerbyDriver> resourceDriverProvider;
+    private final Provider<VolumeConnectionDataDerbyDriver> volumeConnectionDriverProvider;
 
     private HashMap<VolPrimaryKey, VolumeData> volCache;
     private boolean cacheCleared = false;
 
-    public VolumeDataDerbyDriver(AccessContext privCtx, ErrorReporter errorReporterRef)
+    @Inject
+    public VolumeDataDerbyDriver(
+        @SystemContext AccessContext privCtx,
+        ErrorReporter errorReporterRef,
+        Provider<NodeDataDerbyDriver> nodeDriverProviderRef,
+        Provider<ResourceDataDerbyDriver> resourceDriverProviderRef,
+        Provider<VolumeConnectionDataDerbyDriver> volumeConnectionDriverProviderRef
+    )
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
+        nodeDriverProvider = nodeDriverProviderRef;
+        resourceDriverProvider = resourceDriverProviderRef;
+        volumeConnectionDriverProvider = volumeConnectionDriverProviderRef;
+
         flagPersistenceDriver = new VolFlagsPersistence();
 
         volCache = new HashMap<>();
-    }
-
-    public void initialize(
-        NodeDataDerbyDriver nodeDriverRef,
-        ResourceDataDerbyDriver resourceDriverRef,
-        VolumeConnectionDataDerbyDriver volumeConnectionDataDerbyDriverRef
-    )
-    {
-        nodeDriver = nodeDriverRef;
-        resourceDriver = resourceDriverRef;
-        volumeConnectionDriver = volumeConnectionDataDerbyDriverRef;
     }
 
     @Override
@@ -266,8 +271,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         );
                     }
                 }
-                Node node = nodeDriver.load(nodeName, true, transMgr);
-                res = resourceDriver.load(node, resName, true, transMgr);
+                Node node = nodeDriverProvider.get().load(nodeName, true, transMgr);
+                res = resourceDriverProvider.get().load(node, resName, true, transMgr);
             }
 
             try
@@ -373,7 +378,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
                     // restore volCon
                     List<VolumeConnectionData> volConDfnList =
-                        volumeConnectionDriver.loadAllByVolume(volData, transMgr);
+                        volumeConnectionDriverProvider.get().loadAllByVolume(volData, transMgr);
                     for (VolumeConnectionData volConDfn : volConDfnList)
                     {
                         volData.setVolumeConnection(dbCtx, volConDfn);

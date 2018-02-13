@@ -1,16 +1,10 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
@@ -19,6 +13,16 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Singleton
 public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriver
 {
     private static final String TBL_NODE_NET = DerbyConstants.TBL_NODE_NET_INTERFACES;
@@ -63,7 +67,11 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    public NetInterfaceDataDerbyDriver(AccessContext ctx, ErrorReporter errorReporterRef)
+    @Inject
+    public NetInterfaceDataDerbyDriver(
+        @SystemContext AccessContext ctx,
+        ErrorReporter errorReporterRef
+    )
     {
         dbCtx = ctx;
         errorReporter = errorReporterRef;

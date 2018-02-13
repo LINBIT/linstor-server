@@ -1,14 +1,9 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -17,6 +12,16 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Singleton
 public class ResourceConnectionDataDerbyDriver implements ResourceConnectionDataDatabaseDriver
 {
     private static final String TBL_RES_CON_DFN = DerbyConstants.TBL_RESOURCE_CONNECTIONS;
@@ -53,25 +58,21 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private NodeDataDerbyDriver nodeDataDerbyDriver;
-    private ResourceDataDerbyDriver resourceDataDerbyDriver;
+    private final Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProvider;
+    private final Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProvider;
 
+    @Inject
     public ResourceConnectionDataDerbyDriver(
-        AccessContext accCtx,
-        ErrorReporter errorReporterRef
+        @SystemContext AccessContext accCtx,
+        ErrorReporter errorReporterRef,
+        Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProviderRef,
+        Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
-    }
-
-    public void initialize(
-        NodeDataDerbyDriver nodeDataDerbyDriverRef,
-        ResourceDataDerbyDriver resourceDataDerbyDriverRef
-    )
-    {
-        nodeDataDerbyDriver = nodeDataDerbyDriverRef;
-        resourceDataDerbyDriver = resourceDataDerbyDriverRef;
+        nodeDataDerbyDriverProvider = nodeDataDerbyDriverProviderRef;
+        resourceDataDerbyDriverProvider = resourceDataDerbyDriverProviderRef;
     }
 
     @Override
@@ -175,8 +176,11 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             );
         }
 
+        NodeDataDerbyDriver nodeDataDerbyDriver = nodeDataDerbyDriverProvider.get();
         Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, true, transMgr);
         Node targetNode = nodeDataDerbyDriver.load(targetNodeName, true, transMgr);
+
+        ResourceDataDerbyDriver resourceDataDerbyDriver = resourceDataDerbyDriverProvider.get();
         Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, true, transMgr);
         Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, true, transMgr);
 

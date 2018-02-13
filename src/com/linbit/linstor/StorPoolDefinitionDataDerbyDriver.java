@@ -1,13 +1,5 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -19,6 +11,17 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Singleton
 public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionDataDatabaseDriver
 {
     private static final String TBL_SPD = DerbyConstants.TBL_STOR_POOL_DEFINITIONS;
@@ -45,6 +48,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     private final ErrorReporter errorReporter;
     private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
+    @Inject
     public StorPoolDefinitionDataDerbyDriver(
         ErrorReporter errorReporterRef,
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
