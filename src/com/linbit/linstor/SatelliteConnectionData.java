@@ -119,7 +119,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         return stltConn;
     }
 
-    public static SatelliteConnection getInstanceSatellite(
+    public static SatelliteConnectionData getInstanceSatellite(
         UUID uuid,
         Node node,
         NetInterface netIf,

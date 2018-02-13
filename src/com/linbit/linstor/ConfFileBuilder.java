@@ -1,6 +1,10 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -53,7 +57,6 @@ public class ConfFileBuilder
         appendLine("resource %s", localRsc.getDefinition().getName().displayValue);
         try (Section resourceSection = new Section())
         {
-
             appendLine("net");
             try (Section netSection = new Section())
             {
@@ -78,22 +81,19 @@ public class ConfFileBuilder
             int port = localRsc.getDefinition().getPort(accCtx).value;
             // Create local network configuration
             {
-                Iterator<NetInterface> netIfIter = localRsc.getAssignedNode().iterateNetInterfaces(accCtx);
-                while (netIfIter.hasNext())
+                NetInterface localNetIf = getPreferredNetIf(localRsc);
+
+                String localAddr = localNetIf.getAddress(accCtx).getAddress();
+                appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
+                try (Section onSection = new Section())
                 {
-                    NetInterface localNetIf = netIfIter.next();
-                    String localAddr = localNetIf.getAddress(accCtx).getAddress();
-                    appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
-                    try (Section onSection = new Section())
+                    Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
+                    while (vlmIterator.hasNext())
                     {
-                        Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
-                        while (vlmIterator.hasNext())
-                        {
-                            appendVlmIfPresent(vlmIterator.next(), accCtx);
-                        }
-                        appendLine("address    %s:%d;", localAddr, port);
-                        appendLine("node-id    %d;", localRsc.getNodeId().value);
+                        appendVlmIfPresent(vlmIterator.next(), accCtx);
                     }
+                    appendLine("address    %s:%d;", localAddr, port);
+                    appendLine("node-id    %d;", localRsc.getNodeId().value);
                 }
             }
 
@@ -101,27 +101,23 @@ public class ConfFileBuilder
             {
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
                 {
-                    Iterator<NetInterface> netIfIter = peerRsc.getAssignedNode().iterateNetInterfaces(accCtx);
-                    if (netIfIter.hasNext())
+                    NetInterface peerNetIf = getPreferredNetIf(peerRsc);
+                    String peerAddr = peerNetIf.getAddress(accCtx).getAddress();
+                    appendLine("");
+                    appendLine("on %s", peerRsc.getAssignedNode().getName().displayValue);
+                    try (Section onSection = new Section())
                     {
-                        NetInterface peerNetIf = netIfIter.next();
-                        String peerAddr = peerNetIf.getAddress(accCtx).getAddress();
-                        appendLine("");
-                        appendLine("on %s", peerRsc.getAssignedNode().getName().displayValue);
-                        try (Section onSection = new Section())
+                        Iterator<Volume> peerVlms = peerRsc.iterateVolumes();
+                        while (peerVlms.hasNext())
                         {
-                            Iterator<Volume> peerVlms = peerRsc.iterateVolumes();
-                            while (peerVlms.hasNext())
-                            {
-                                appendVlmIfPresent(peerVlms.next(), accCtx);
-                            }
-
-                            appendLine("address     %s:%d;", peerAddr, port);
-                            appendLine("node-id     %s;", peerRsc.getNodeId().value);
-
-                            // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
-                            // sb.append(peerResource.co)
+                            appendVlmIfPresent(peerVlms.next(), accCtx);
                         }
+
+                        appendLine("address     %s:%d;", peerAddr, port);
+                        appendLine("node-id     %s;", peerRsc.getNodeId().value);
+
+                        // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
+                        // sb.append(peerResource.co)
                     }
                 }
             }
@@ -214,6 +210,47 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
+    private NetInterface getPreferredNetIf(Resource rsc)
+    {
+        NetInterface preferredNetIf = null;
+        try
+        {
+            Volume firstVlm = rsc.iterateVolumes().next();
+
+            PriorityProps prioProps;
+            prioProps = new PriorityProps(
+                firstVlm.getStorPool(accCtx).getProps(accCtx),
+                firstVlm.getProps(accCtx),
+                rsc.getProps(accCtx),
+                rsc.getAssignedNode().getProps(accCtx)
+            );
+
+            String prefNic = prioProps.getProp(ApiConsts.KEY_STOR_POOL_PREF_NIC);
+
+            if (prefNic != null)
+            {
+                preferredNetIf = rsc.getAssignedNode().getNetInterface(
+                    accCtx,
+                    new NetInterfaceName(prefNic) // TODO: validate on controller
+                );
+            }
+            else
+            {
+                Iterator<NetInterface> netIfIter = rsc.getAssignedNode().iterateNetInterfaces(accCtx);
+                if (netIfIter.hasNext())
+                {
+                    preferredNetIf = netIfIter.next();
+                }
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException | InvalidNameException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+
+        return preferredNetIf;
+    }
+
     private void appendVlmIfPresent(Volume vlm, AccessContext localAccCtx)
         throws AccessDeniedException
     {
@@ -262,7 +299,7 @@ public class ConfFileBuilder
                 appendLine("meta-disk   %s;", metaDisk);
                 appendLine("device      minor %d;",
                     vlm.getVolumeDefinition().getMinorNr(localAccCtx).value
-                    // TODO: impl and ask storPool for device
+                // TODO: impl and ask storPool for device
                 );
                 // TODO: add "disk { ... }" section
             }
