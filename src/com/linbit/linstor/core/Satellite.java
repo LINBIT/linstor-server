@@ -25,7 +25,6 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -106,16 +105,13 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     public static final SatelliteDummyStorPoolData DUMMY_REMOTE_STOR_POOL = new SatelliteDummyStorPoolData();
 
-    private static final String SATELLTE_PROPSCON_INSTANCE_NAME = "STLTCFG";
+    private static final String SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
     // System security context
     private AccessContext sysCtx;
 
     // Public security context
     private AccessContext publicCtx;
-
-    // Command line arguments
-    private LinStorArguments args;
 
     private final StltApiCallHandler apiCallHandler;
 
@@ -142,7 +138,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     // Satellite configuration properties
     Props stltConf;
-    ObjectProtection stltConfProt;
 
     // Map of all managed nodes
     Map<NodeName, Node> nodesMap;
@@ -175,14 +170,12 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     // Lock for major global changes
     public final ReadWriteLock stltConfLock;
 
-    private CtrlStltSerializer interComSerializer;
-
     private final AtomicLong fullSyncId;
     private boolean currentFullSyncApplied = false;
 
     private final AtomicLong awaitedUpdateId;
 
-    public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
+    public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef)
         throws IOException
     {
         // Initialize system services
@@ -200,9 +193,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         // Initialize security contexts
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
-
-        // Initialize command line arguments
-        args = cArgsRef;
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
@@ -240,7 +230,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         try
         {
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            stltConf = PropsContainer.getInstance(SATELLTE_PROPSCON_INSTANCE_NAME, transMgr);
+            stltConf = PropsContainer.getInstance(SATELLITE_PROPSCON_INSTANCE_NAME, transMgr);
             transMgr.commit();
         }
         catch (SQLException exc)
@@ -793,14 +783,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             {
                 instance.enterDebugConsole();
             }
-        }
-        catch (ImplementationError implError)
-        {
-            errorLog.reportError(implError);
-        }
-        catch (IOException ioExc)
-        {
-            errorLog.reportError(ioExc);
         }
         catch (Throwable error)
         {

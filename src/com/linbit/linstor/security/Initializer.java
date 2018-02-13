@@ -112,7 +112,7 @@ public final class Initializer
     public Satellite initSatellite(LinStorArguments cArgs)
         throws IOException
     {
-        return new Satellite(SYSTEM_CTX, PUBLIC_CTX, cArgs);
+        return new Satellite(SYSTEM_CTX, PUBLIC_CTX);
     }
 
     public static void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
