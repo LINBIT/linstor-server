@@ -39,7 +39,6 @@ import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -51,7 +50,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.linstor.timer.CoreTimerImpl;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -74,7 +72,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * linstor satellite prototype
@@ -187,19 +184,13 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     {
         injector = injectorRef;
 
-        // Initialize system services
-        timerEventSvc = new CoreTimerImpl();
-
         // Initialize security contexts
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
-        {
-            CoreTimer timer = super.getTimer();
-            systemServicesMap.put(timer.getInstanceName(), timer);
-        }
+
         fsWatchSvc = new FileSystemWatch();
         systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
@@ -243,6 +234,12 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
+
+            timerEventSvc = injector.getInstance(CoreTimer.class);
+            {
+                CoreTimer timer = super.getTimer();
+                systemServicesMap.put(timer.getInstanceName(), timer);
+            }
 
             // Initialize LinStor objects maps
             peerMap = injector.getInstance(CoreModule.PeerMap.class);

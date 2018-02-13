@@ -119,6 +119,7 @@ public final class Initializer
             new GuiceConfigModule(),
             new LoggingModule(errorLog),
             new LinStorArgumentsModule(cArgs),
+            new CoreTimerModule(),
             new CoreModule(),
             new SatelliteCoreModule()
         );
