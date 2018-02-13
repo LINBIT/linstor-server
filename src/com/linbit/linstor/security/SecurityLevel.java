@@ -101,11 +101,11 @@ public enum SecurityLevel
                 String secLvlKey = rslt.getString(1);
                 String secLvlValue = rslt.getString(2);
 
-                if (!secLvlKey.equals(DbDerbyPersistence.KEY_SEC_LEVEL))
+                if (!secLvlKey.equals(SecurityDbConsts.KEY_SEC_LEVEL))
                 {
                     throw new ImplementationError(
                         "Security level database query returned incorrect key '" + secLvlKey + "'\n" +
-                        "instead of expected key '" + DbDerbyPersistence.KEY_SEC_LEVEL + "'",
+                        "instead of expected key '" + SecurityDbConsts.KEY_SEC_LEVEL + "'",
                         null
                     );
                 }

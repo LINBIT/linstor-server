@@ -29,7 +29,11 @@ public interface DbAccessor
 
     ResultSet loadSecurityLevel(Connection dbConn)
         throws SQLException;
+    ResultSet loadAuthRequired(Connection dbConn)
+        throws SQLException;
     void setSecurityLevel(Connection dbConn, SecurityLevel newLevel)
+        throws SQLException;
+    void setAuthRequired(Connection dbConn, boolean requiredFlag)
         throws SQLException;
 
     ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver();

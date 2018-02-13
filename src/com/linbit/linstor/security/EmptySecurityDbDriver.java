@@ -75,6 +75,12 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
+    public ResultSet loadAuthRequired(Connection dbConn) throws SQLException
+    {
+        return null;
+    }
+
+    @Override
     public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
     {
         return new EmptyObjectProtectionDatabaseDriver();
@@ -82,6 +88,12 @@ public class EmptySecurityDbDriver implements DbAccessor
 
     @Override
     public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
+    {
+        // no-op
+    }
+
+    @Override
+    public void setAuthRequired(Connection dbConn, boolean requiredFlag) throws SQLException
     {
         // no-op
     }

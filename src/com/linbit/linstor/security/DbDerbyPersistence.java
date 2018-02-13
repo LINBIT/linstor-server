@@ -39,9 +39,6 @@ import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_TYPE_RU
 @Singleton
 public class DbDerbyPersistence implements DbAccessor
 {
-    public static final String KEY_SEC_LEVEL     = "SECURITYLEVEL";
-    public static final String KEY_DSP_SEC_LEVEL = "SecurityLevel";
-
     private static final String SLCT_SIGNIN_ENTRY =
         "SELECT " +
         TBL_SEC_IDENTITIES + "." + IDENTITY_NAME + ", " +
@@ -81,14 +78,26 @@ public class DbDerbyPersistence implements DbAccessor
     private static final String SLCT_SEC_LEVEL =
         "SELECT " + ENTRY_KEY + ", " + ENTRY_VALUE +
         " FROM " + TBL_SEC_CONFIGURATION +
-        " WHERE " + ENTRY_KEY + " = '" + KEY_SEC_LEVEL + "'";
+        " WHERE " + ENTRY_KEY + " = '" + SecurityDbConsts.KEY_SEC_LEVEL + "'";
+
+    private static final String SLCT_AUTH_REQ =
+        "SELECT " + ENTRY_KEY + ", " + ENTRY_VALUE +
+        " FROM " + TBL_SEC_CONFIGURATION +
+        " WHERE " + ENTRY_KEY + " = '" + SecurityDbConsts.KEY_AUTH_REQ + "'";
 
     private static final String DEL_SEC_LEVEL =
-        "DELETE FROM " + TBL_SEC_CONFIGURATION + " WHERE " + ENTRY_KEY + " = '" + KEY_SEC_LEVEL + "'";
+        "DELETE FROM " + TBL_SEC_CONFIGURATION + " WHERE " + ENTRY_KEY + " = '" + SecurityDbConsts.KEY_SEC_LEVEL + "'";
 
     private static final String INS_SEC_LEVEL =
         "INSERT INTO " + TBL_SEC_CONFIGURATION + " (" + ENTRY_KEY + ", " + ENTRY_DSP_KEY + ", " + ENTRY_VALUE +
-        ") VALUES('" + KEY_SEC_LEVEL + "', '" + KEY_DSP_SEC_LEVEL + "', ?)";
+        ") VALUES('" + SecurityDbConsts.KEY_SEC_LEVEL + "', '" + SecurityDbConsts.KEY_DSP_SEC_LEVEL + "', ?)";
+
+    private static final String DEL_AUTH_REQUIRED =
+        "DELETE FROM " + TBL_SEC_CONFIGURATION + " WHERE " + ENTRY_KEY + " = '" + SecurityDbConsts.KEY_AUTH_REQ + "'";
+
+    private static final String INS_AUTH_REQUIRED =
+        "INSERT INTO " + TBL_SEC_CONFIGURATION + " (" + ENTRY_KEY + ", " + ENTRY_DSP_KEY + ", " + ENTRY_VALUE +
+        ") VALUES('" + SecurityDbConsts.KEY_AUTH_REQ + "', '" + SecurityDbConsts.KEY_DSP_AUTH_REQ + "', ?)";
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
@@ -159,23 +168,65 @@ public class DbDerbyPersistence implements DbAccessor
     }
 
     @Override
+    public ResultSet loadAuthRequired(Connection dbConn) throws SQLException
+    {
+        return dbQuery(dbConn, SLCT_AUTH_REQ);
+    }
+
+    @Override
     public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
     {
-        // Delete any existing security level entry
+        try
         {
-            Statement delStmt = dbConn.createStatement();
-            delStmt.execute(DEL_SEC_LEVEL);
-        }
+            // Delete any existing security level entry
+            {
+                Statement delStmt = dbConn.createStatement();
+                delStmt.execute(DEL_SEC_LEVEL);
+            }
 
-        // Insert the new security level entry
+            // Insert the new security level entry
+            {
+                PreparedStatement insStmt = dbConn.prepareStatement(INS_SEC_LEVEL);
+                insStmt.setString(1, newLevel.name().toUpperCase());
+                insStmt.execute();
+            }
+
+            dbConn.commit();
+        }
+        catch (SQLException sqlExc)
         {
-            PreparedStatement insStmt = dbConn.prepareStatement(INS_SEC_LEVEL);
-            insStmt.setString(1, newLevel.name().toUpperCase());
-            insStmt.execute();
+            dbConn.rollback();
         }
-
-        dbConn.commit();
     }
+
+    @Override
+    public void setAuthRequired(Connection dbConn, boolean requiredFlag) throws SQLException
+    {
+        try
+        {
+            // Delete any existing authentication requirement entry
+            {
+                Statement delStmt = dbConn.createStatement();
+                delStmt.execute(DEL_AUTH_REQUIRED);
+            }
+
+            // Insert the new authentication requirement
+            {
+                PreparedStatement insStmt = dbConn.prepareStatement(INS_AUTH_REQUIRED);
+
+                String dbValue = requiredFlag ? Boolean.toString(true) : Boolean.toString(false);
+                insStmt.setString(1, dbValue);
+            }
+
+            dbConn.commit();
+        }
+        catch (SQLException sqlExc)
+        {
+            dbConn.rollback();
+            throw sqlExc;
+        }
+    }
+
 
     @Override
     public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
