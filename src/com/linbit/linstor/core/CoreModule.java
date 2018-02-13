@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.TransactionMgr;
@@ -18,6 +17,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 
 import javax.inject.Named;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;

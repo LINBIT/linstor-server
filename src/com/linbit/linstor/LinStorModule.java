@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -15,6 +14,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Named;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.concurrent.locks.ReadWriteLock;
 

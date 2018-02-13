@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.SatelliteConnectorContext;
@@ -17,7 +16,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
-import javax.inject.Named;
+import javax.inject.Singleton;
 
 public class CtrlApiCallHandlerModule extends PrivateModule
 {

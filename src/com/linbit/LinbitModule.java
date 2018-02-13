@@ -2,10 +2,11 @@ package com.linbit;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.MathUtils;
+
+import javax.inject.Singleton;
 
 public class LinbitModule extends AbstractModule
 {

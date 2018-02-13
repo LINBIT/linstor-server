@@ -1,9 +1,10 @@
 package com.linbit.linstor.timer;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * linstor core timer service

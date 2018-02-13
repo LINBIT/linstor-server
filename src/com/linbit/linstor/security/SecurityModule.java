@@ -2,7 +2,6 @@ package com.linbit.linstor.security;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ControllerDatabase;
@@ -12,6 +11,7 @@ import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Named;
+import javax.inject.Singleton;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 

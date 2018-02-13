@@ -1,7 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -14,6 +12,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 

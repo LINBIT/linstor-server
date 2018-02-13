@@ -1,5 +1,16 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.logging.ErrorReporter;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.DOMAIN_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ENTRY_DSP_KEY;
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.ENTRY_KEY;
@@ -20,17 +31,6 @@ import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_IDENTIT
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_ROLES_LOAD;
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_TYPES_LOAD;
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.VIEW_SEC_TYPE_RULES_LOAD;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.logging.ErrorReporter;
 
 /**
  *
