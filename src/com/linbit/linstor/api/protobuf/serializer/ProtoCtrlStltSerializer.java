@@ -22,6 +22,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.AbsCtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -62,7 +63,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     private final NodeSerializerHelper nodeSerializerHelper;
 
     @Inject
-    public ProtoCtrlStltSerializer(ErrorReporter errReporter, AccessContext serializerCtx)
+    public ProtoCtrlStltSerializer(ErrorReporter errReporter, @ApiContext AccessContext serializerCtx)
     {
         super(errReporter, serializerCtx);
 

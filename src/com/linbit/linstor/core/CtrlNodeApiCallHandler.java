@@ -37,6 +37,7 @@ import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.SatelliteConnectionData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -76,7 +77,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     public CtrlNodeApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
-        AccessContext apiCtxRef,
+        @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
         @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,

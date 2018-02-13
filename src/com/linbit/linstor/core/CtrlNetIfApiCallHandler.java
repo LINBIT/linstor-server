@@ -7,6 +7,7 @@ import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,7 +36,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer serializerRef,
-        AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef
     )
     {
         super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NET_IF, serializerRef);

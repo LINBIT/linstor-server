@@ -93,13 +93,13 @@ public final class Initializer
             new CoreTimerModule(),
             new MetaDataModule(),
             new LinbitModule(),
-            new LinStorModule(initCtx),
+            new LinStorModule(),
             new CoreModule(),
             new DbDriversModule(),
             new DbConnectionPoolModule(),
             new NetComModule(),
-            new NumberPoolModule(initCtx),
-            new CtrlApiCallHandlerModule(initCtx)
+            new NumberPoolModule(),
+            new CtrlApiCallHandlerModule()
         );
 
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX, cArgs);

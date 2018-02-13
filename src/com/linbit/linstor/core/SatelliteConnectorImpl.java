@@ -5,6 +5,7 @@ import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -13,7 +14,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
-import javax.inject.Named;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -29,7 +29,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     @Inject
     public SatelliteConnectorImpl(
         ErrorReporter errorReporterRef,
-        @Named(CtrlApiCallHandlerModule.SATELLITE_CONNECTOR_CTX) AccessContext connectorCtxRef,
+        @SatelliteConnectorContext AccessContext connectorCtxRef,
         CtrlAuthenticationApiCallHandler authApiCallHandlerRef,
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef

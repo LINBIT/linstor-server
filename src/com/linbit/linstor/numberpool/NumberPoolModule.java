@@ -8,6 +8,7 @@ import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -18,13 +19,6 @@ import java.util.Iterator;
 
 public class NumberPoolModule extends AbstractModule
 {
-    private final AccessContext initCtx;
-
-    public NumberPoolModule(AccessContext initCtx)
-    {
-        this.initCtx = initCtx;
-    }
-
     @Override
     protected void configure()
     {
@@ -33,6 +27,7 @@ public class NumberPoolModule extends AbstractModule
     @Provides
     @Singleton
     public MinorNrPool minorNrPool(
+        @SystemContext AccessContext initCtx,
         @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.ResourceDefinitionMap rscDfnMap
     )
@@ -69,6 +64,7 @@ public class NumberPoolModule extends AbstractModule
     @Provides
     @Singleton
     public TcpPortPool tcpPortPool(
+        @SystemContext AccessContext initCtx,
         @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.ResourceDefinitionMap rscDfnMap
     )

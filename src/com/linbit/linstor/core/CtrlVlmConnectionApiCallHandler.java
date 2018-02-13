@@ -13,6 +13,7 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -40,7 +41,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
-        AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef
     )
     {
         super(

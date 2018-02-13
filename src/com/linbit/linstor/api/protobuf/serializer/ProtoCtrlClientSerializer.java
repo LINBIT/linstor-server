@@ -17,6 +17,7 @@ import com.linbit.linstor.Resource.RscApi;
 import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.AbsCtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.core.Controller;
@@ -46,7 +47,7 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
     @Inject
     public ProtoCtrlClientSerializer(
         final ErrorReporter errReporterRef,
-        final AccessContext serializerCtxRef
+        final @ApiContext AccessContext serializerCtxRef
     )
     {
         super(errReporterRef, serializerCtxRef);

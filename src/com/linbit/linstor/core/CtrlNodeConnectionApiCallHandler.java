@@ -11,6 +11,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -36,7 +37,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
-        AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef
     )
     {
         super(

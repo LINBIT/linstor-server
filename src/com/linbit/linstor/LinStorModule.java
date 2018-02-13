@@ -6,6 +6,7 @@ import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -21,17 +22,9 @@ public class LinStorModule extends AbstractModule
 {
     public static final String DISKLESS_STOR_POOL_DFN = "disklessStorPoolDfn";
 
-    private final AccessContext initCtx;
-
-    public LinStorModule(AccessContext initCtx)
-    {
-        this.initCtx = initCtx;
-    }
-
     @Override
     protected void configure()
     {
-
     }
 
     @Provides
@@ -39,6 +32,7 @@ public class LinStorModule extends AbstractModule
     @Named(DISKLESS_STOR_POOL_DFN)
     public StorPoolDefinitionData initializeDisklessStorPoolDfn(
         ErrorReporter errorLogRef,
+        @SystemContext AccessContext initCtx,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
         DbConnectionPool dbConnPool,
         CoreModule.StorPoolDefinitionMap storPoolDfnMap
@@ -80,7 +74,8 @@ public class LinStorModule extends AbstractModule
                 invalidNameExc
             );
         }
-        finally {
+        finally
+        {
             storPoolDfnMapLock.writeLock().unlock();
         }
 

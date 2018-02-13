@@ -21,6 +21,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeNumberAlloc;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -74,7 +75,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        AccessContext apiCtxRef,
+        @ApiContext AccessContext apiCtxRef,
         @Named(ConfigModule.CONFIG_PEER_COUNT) short defaultPeerCountRef,
         @Named(ConfigModule.CONFIG_AL_STRIPES) int defaultAlStripesRef,
         @Named(ConfigModule.CONFIG_AL_SIZE) long defaultAlSizeRef,

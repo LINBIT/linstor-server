@@ -14,6 +14,7 @@ import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -38,7 +39,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
-        AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef
     )
     {
         super(

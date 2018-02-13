@@ -27,12 +27,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.logging.ErrorReporter;
 
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class DbDerbyPersistence implements DbAccessor
 {
     public static final String KEY_SEC_LEVEL     = "SECURITYLEVEL";
@@ -88,7 +92,11 @@ public class DbDerbyPersistence implements DbAccessor
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
-    public DbDerbyPersistence(AccessContext privCtx, ErrorReporter errorReporter)
+    @Inject
+    public DbDerbyPersistence(
+        @SystemContext AccessContext privCtx,
+        ErrorReporter errorReporter
+    )
     {
         objProtDriver = new ObjectProtectionDerbyDriver(privCtx, errorReporter);
     }

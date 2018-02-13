@@ -16,6 +16,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -49,7 +50,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        AccessContext apiCtxRef,
+        @ApiContext AccessContext apiCtxRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(SecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef
     )

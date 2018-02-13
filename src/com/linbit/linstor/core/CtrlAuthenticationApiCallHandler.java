@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -23,7 +24,7 @@ public class CtrlAuthenticationApiCallHandler
     CtrlAuthenticationApiCallHandler(
         ErrorReporter errorReporterRef,
         CtrlStltSerializer serializerRef,
-        AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef
     )
     {
         errorReporter = errorReporterRef;

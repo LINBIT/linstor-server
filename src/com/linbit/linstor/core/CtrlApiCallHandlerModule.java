@@ -4,6 +4,9 @@ import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.SatelliteConnectorContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -18,15 +21,6 @@ import javax.inject.Named;
 
 public class CtrlApiCallHandlerModule extends PrivateModule
 {
-    public static final String SATELLITE_CONNECTOR_CTX = "satelliteConnectorCtx";
-
-    private final AccessContext initCtx;
-
-    public CtrlApiCallHandlerModule(AccessContext initCtxRef)
-    {
-        initCtx = initCtxRef;
-    }
-
     @Override
     protected void configure()
     {
@@ -49,7 +43,8 @@ public class CtrlApiCallHandlerModule extends PrivateModule
 
     @Provides
     @Singleton
-    public AccessContext apiCtx()
+    @ApiContext
+    public AccessContext apiCtx(@SystemContext AccessContext initCtx)
     {
         AccessContext apiCtx = initCtx.clone();
         try
@@ -61,7 +56,6 @@ public class CtrlApiCallHandlerModule extends PrivateModule
                 Privilege.PRIV_OBJ_CONTROL,
                 Privilege.PRIV_MAC_OVRD
             );
-            return apiCtx;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -70,12 +64,13 @@ public class CtrlApiCallHandlerModule extends PrivateModule
                 accDeniedExc
             );
         }
+        return apiCtx;
     }
 
     @Provides
     @Singleton
-    @Named(SATELLITE_CONNECTOR_CTX)
-    public AccessContext satelliteConnector()
+    @SatelliteConnectorContext
+    public AccessContext satelliteConnector(@SystemContext AccessContext initCtx)
         throws AccessDeniedException
     {
         AccessContext connectorCtx = initCtx.clone();

@@ -25,22 +25,17 @@ public class SecurityModule extends AbstractModule
 
     private final AccessContext initCtx;
 
-    public SecurityModule(AccessContext initCtx)
+    public SecurityModule(AccessContext initCtxRef)
     {
-        this.initCtx = initCtx;
+        initCtx = initCtxRef;
     }
 
     @Override
     protected void configure()
     {
         bind(AccessContext.class).annotatedWith(SystemContext.class).toInstance(initCtx);
-    }
 
-    @Provides
-    @Singleton
-    public DbAccessor securityDbDriver(ErrorReporter errorLogRef)
-    {
-        return new DbDerbyPersistence(initCtx, errorLogRef);
+        bind(DbAccessor.class).to(DbDerbyPersistence.class);
     }
 
     @Provides
