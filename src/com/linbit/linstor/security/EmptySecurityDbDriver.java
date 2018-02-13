@@ -7,7 +7,12 @@ import java.sql.SQLException;
 import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.SystemContext;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class EmptySecurityDbDriver implements DbAccessor
 {
     public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER =
@@ -15,7 +20,8 @@ public class EmptySecurityDbDriver implements DbAccessor
 
     private final ObjectProtection objProt;
 
-    public EmptySecurityDbDriver(AccessContext accCtx)
+    @Inject
+    public EmptySecurityDbDriver(@SystemContext AccessContext accCtx)
     {
         objProt = new ObjectProtection(accCtx, null, null);
     }

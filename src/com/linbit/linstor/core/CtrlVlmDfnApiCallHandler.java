@@ -42,8 +42,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.SecurityModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -67,7 +67,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtx,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(SecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         MinorNrPool minorNrPoolRef,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
     )

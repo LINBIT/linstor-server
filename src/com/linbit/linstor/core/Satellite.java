@@ -248,8 +248,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
             // initialize noop databases drivers (needed for shutdownProt)
-            securityDbDriver = new EmptySecurityDbDriver(sysCtx);
-            persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
+            securityDbDriver = injector.getInstance(EmptySecurityDbDriver.class);
+            persistenceDbDriver = injector.getInstance(SatelliteDbDriver.class);
 
             try
             {

@@ -42,13 +42,13 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Authentication;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityLevel;
-import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.security.SignInException;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
 import com.linbit.linstor.tasks.PingTask;
@@ -283,15 +283,15 @@ public final class Controller extends LinStor implements CoreServices
             initializeSecurityObjects(errorLogRef, initCtx);
 
             nodesMapProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(SecurityModule.NODES_MAP_PROT)));
+                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.NODES_MAP_PROT)));
             rscDfnMapProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(SecurityModule.RSC_DFN_MAP_PROT)));
+                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.RSC_DFN_MAP_PROT)));
             storPoolDfnMapProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(SecurityModule.STOR_POOL_DFN_MAP_PROT)));
+                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)));
             ctrlConfProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(SecurityModule.CTRL_CONF_PROT)));
+                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.CTRL_CONF_PROT)));
             shutdownProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(SecurityModule.SHUTDOWN_PROT)));
+                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.SHUTDOWN_PROT)));
 
             disklessStorPoolDfn = injector.getInstance(
                 Key.get(StorPoolDefinitionData.class, Names.named(LinStorModule.DISKLESS_STOR_POOL_DFN)));

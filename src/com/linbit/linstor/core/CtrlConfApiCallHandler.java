@@ -17,8 +17,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.SecurityModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -40,7 +40,7 @@ public class CtrlConfApiCallHandler
     public CtrlConfApiCallHandler(
         ErrorReporter errorReporterRef,
         CtrlClientSerializer ctrlClientcomSrzlRef,
-        @Named(SecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
+        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         TcpPortPool tcpPortPoolRef,
         MinorNrPool minorNrPoolRef
