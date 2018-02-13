@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import com.google.inject.Injector;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.LinbitModule;
@@ -107,6 +108,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     private static final String SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
+    private final Injector injector;
+
     // System security context
     private AccessContext sysCtx;
 
@@ -175,9 +178,15 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     private final AtomicLong awaitedUpdateId;
 
-    public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef)
+    public Satellite(
+        Injector injectorRef,
+        AccessContext sysCtxRef,
+        AccessContext publicCtxRef
+    )
         throws IOException
     {
+        injector = injectorRef;
+
         // Initialize system services
         timerEventSvc = new CoreTimerImpl();
 
@@ -285,99 +294,97 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         }
     }
 
-    public void initialize(ErrorReporter errorLogRef)
+    public void initialize()
     {
         try
         {
             reconfigurationLock.writeLock().lock();
 
             shutdownFinished = false;
+
+            AccessContext initCtx = sysCtx.clone();
+            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            ErrorReporter errorLogRef = injector.getInstance(ErrorReporter.class);
+
+            // Initialize the error & exception reporting facility
+            setErrorLog(initCtx, errorLogRef);
+
+            // Initialize the worker thread pool
+            // errorLogRef.logInfo("Starting worker thread pool");
+            int cpuCount = getCpuCount();
+            int thrCount = com.linbit.utils.MathUtils.bounds(LinbitModule.MIN_WORKER_COUNT, cpuCount, LinbitModule.MAX_CPU_COUNT);
+            int qSize = thrCount * getWorkerQueueFactor();
+            qSize = qSize > LinbitModule.MIN_WORKER_QUEUE_SIZE ? qSize : LinbitModule.MIN_WORKER_QUEUE_SIZE;
+            workerThrPool = WorkerPool.initialize(
+                thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
+            );
+
+            // Initialize the message processor
+            // errorLogRef.logInfo("Initializing API call dispatcher");
+            msgProc = new CommonMessageProcessor(errorLogRef, workerThrPool);
+
+
+            // Set CONTROL access for the SYSTEM role on shutdown
             try
             {
-                AccessContext initCtx = sysCtx.clone();
-                initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-                // Initialize the error & exception reporting facility
-                setErrorLog(initCtx, errorLogRef);
-
-                // Initialize the worker thread pool
-                // errorLogRef.logInfo("Starting worker thread pool");
-                int cpuCount = getCpuCount();
-                int thrCount = com.linbit.utils.MathUtils.bounds(LinbitModule.MIN_WORKER_COUNT, cpuCount, LinbitModule.MAX_CPU_COUNT);
-                int qSize = thrCount * getWorkerQueueFactor();
-                qSize = qSize > LinbitModule.MIN_WORKER_QUEUE_SIZE ? qSize : LinbitModule.MIN_WORKER_QUEUE_SIZE;
-                workerThrPool = WorkerPool.initialize(
-                    thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
-                );
-
-                // Initialize the message processor
-                // errorLogRef.logInfo("Initializing API call dispatcher");
-                msgProc = new CommonMessageProcessor(errorLogRef, workerThrPool);
-
-
-                // Set CONTROL access for the SYSTEM role on shutdown
-                try
-                {
-                    SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-                    shutdownProt.setConnection(transMgr);
-                    shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
-                    transMgr.commit();
-                }
-                catch (SQLException sqlExc)
-                {
-                    // cannot happen
-                    throw new ImplementationError(
-                        "ObjectProtection without TransactionManager threw an SQLException",
-                        sqlExc
-                    );
-                }
-
-
-                errorLogRef.logInfo("Initializing test APIs");
-                LinStor.loadApiCalls(msgProc, this, this, apiType);
-
-
-                errorLogRef.logInfo("Initializing StateTracker");
-                {
-                    AccessContext drbdEventCtx = sysCtx.clone();
-                    PrivilegeSet drbdEventPriv = drbdEventCtx.getEffectivePrivs();
-                    drbdEventPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
-                    drbdEventPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
-
-                    StateTracker stateTracker = new StateTracker();
-                    drbdEventSvc = new DrbdEventService(this, stateTracker);
-
-                    systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
-                }
-
-                errorLogRef.logInfo("Initializing device manager");
-                {
-                    AccessContext devMgrCtx = sysCtx.clone();
-                    PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
-                    devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
-                    devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
-                    devMgr = new DeviceManagerImpl(this, devMgrCtx, this, drbdEventSvc, workerThrPool);
-
-                    systemServicesMap.put(devMgr.getInstanceName(), devMgr);
-                }
-
-                // Initialize system services
-                startSystemServices(systemServicesMap.values());
-
-                // Initialize the network communications service
-                errorLogRef.logInfo("Initializing main network communications service");
-                initMainNetComService(initCtx);
+                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+                shutdownProt.setConnection(transMgr);
+                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                transMgr.commit();
             }
-            catch (AccessDeniedException accessExc)
+            catch (SQLException sqlExc)
             {
-                errorLogRef.reportError(
-                    new ImplementationError(
-                        "The initialization security context does not have all required privileges. " +
-                        "Initialization failed.",
-                        accessExc
-                    )
+                // cannot happen
+                throw new ImplementationError(
+                    "ObjectProtection without TransactionManager threw an SQLException",
+                    sqlExc
                 );
             }
+
+
+            errorLogRef.logInfo("Initializing test APIs");
+            LinStor.loadApiCalls(msgProc, this, this, apiType);
+
+
+            errorLogRef.logInfo("Initializing StateTracker");
+            {
+                AccessContext drbdEventCtx = sysCtx.clone();
+                PrivilegeSet drbdEventPriv = drbdEventCtx.getEffectivePrivs();
+                drbdEventPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
+                drbdEventPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+
+                StateTracker stateTracker = new StateTracker();
+                drbdEventSvc = new DrbdEventService(this, stateTracker);
+
+                systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
+            }
+
+            errorLogRef.logInfo("Initializing device manager");
+            {
+                AccessContext devMgrCtx = sysCtx.clone();
+                PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
+                devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
+                devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+                devMgr = new DeviceManagerImpl(this, devMgrCtx, this, drbdEventSvc, workerThrPool);
+
+                systemServicesMap.put(devMgr.getInstanceName(), devMgr);
+            }
+
+            // Initialize system services
+            startSystemServices(systemServicesMap.values());
+
+            // Initialize the network communications service
+            errorLogRef.logInfo("Initializing main network communications service");
+            initMainNetComService(initCtx);
+        }
+        catch (AccessDeniedException accessExc)
+        {
+            throw new ImplementationError(
+                "The initialization security context does not have all privileges. " +
+                    "Initialization failed.",
+                accessExc
+            );
         }
         finally
         {
@@ -776,9 +783,9 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
             // Initialize the Satellite module with the SYSTEM security context
             Initializer sysInit = new Initializer();
-            Satellite instance = sysInit.initSatellite(cArgs);
+            Satellite instance = sysInit.initSatellite(cArgs, errorLog);
 
-            instance.initialize(errorLog);
+            instance.initialize();
             if (cArgs.startDebugConsole())
             {
                 instance.enterDebugConsole();

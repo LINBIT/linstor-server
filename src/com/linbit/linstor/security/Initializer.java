@@ -109,10 +109,16 @@ public final class Initializer
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX);
     }
 
-    public Satellite initSatellite(LinStorArguments cArgs)
+    public Satellite initSatellite(LinStorArguments cArgs, ErrorReporter errorLog)
         throws IOException
     {
-        return new Satellite(SYSTEM_CTX, PUBLIC_CTX);
+        Injector injector = Guice.createInjector(
+            new GuiceConfigModule(),
+            new LoggingModule(errorLog),
+            new LinStorArgumentsModule(cArgs)
+        );
+
+        return new Satellite(injector, SYSTEM_CTX, PUBLIC_CTX);
     }
 
     public static void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
