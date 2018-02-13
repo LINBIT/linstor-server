@@ -41,7 +41,7 @@ public class CtrlConfApiCallHandler
         ErrorReporter errorReporterRef,
         CtrlClientSerializer ctrlClientcomSrzlRef,
         @Named(SecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
-        @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         TcpPortPool tcpPortPoolRef,
         MinorNrPool minorNrPoolRef
     )

@@ -64,7 +64,7 @@ public class CtrlApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef
+        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;

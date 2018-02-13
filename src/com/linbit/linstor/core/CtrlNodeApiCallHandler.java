@@ -80,7 +80,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
         @Named(SecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         SatelliteConnector satelliteConnectorRef,

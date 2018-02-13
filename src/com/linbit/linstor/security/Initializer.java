@@ -11,11 +11,13 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.LinStorArgumentsModule;
 import com.linbit.linstor.core.Satellite;
+import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DbDriversModule;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -99,6 +101,7 @@ public final class Initializer
             new LinbitModule(),
             new LinStorModule(),
             new CoreModule(),
+            new ControllerCoreModule(),
             new DbDriversModule(),
             new DbConnectionPoolModule(),
             new NetComModule(),
@@ -115,7 +118,9 @@ public final class Initializer
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
             new LoggingModule(errorLog),
-            new LinStorArgumentsModule(cArgs)
+            new LinStorArgumentsModule(cArgs),
+            new CoreModule(),
+            new SatelliteCoreModule()
         );
 
         return new Satellite(injector, SYSTEM_CTX, PUBLIC_CTX);

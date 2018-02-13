@@ -231,21 +231,21 @@ public final class Controller extends LinStor implements CoreServices
     public void initialize()
         throws InitializationException, InvalidKeyException
     {
+        reconfigurationLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
+        nodesMapLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.NODES_MAP_LOCK)));
+        rscDfnMapLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.RSC_DFN_MAP_LOCK)));
+        storPoolDfnMapLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.STOR_POOL_DFN_MAP_LOCK)));
+        ctrlConfLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(ControllerCoreModule.CTRL_CONF_LOCK)));
+
+        reconfigurationLock.writeLock().lock();
+
         try
         {
-            reconfigurationLock = injector.getInstance(
-                Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
-            nodesMapLock = injector.getInstance(
-                Key.get(ReadWriteLock.class, Names.named(CoreModule.NODES_MAP_LOCK)));
-            rscDfnMapLock = injector.getInstance(
-                Key.get(ReadWriteLock.class, Names.named(CoreModule.RSC_DFN_MAP_LOCK)));
-            storPoolDfnMapLock = injector.getInstance(
-                Key.get(ReadWriteLock.class, Names.named(CoreModule.STOR_POOL_DFN_MAP_LOCK)));
-            ctrlConfLock = injector.getInstance(
-                Key.get(ReadWriteLock.class, Names.named(CoreModule.CTRL_CONF_LOCK)));
-
-            reconfigurationLock.writeLock().lock();
-
             shutdownFinished = false;
 
             AccessContext initCtx = sysCtx.clone();
@@ -276,7 +276,7 @@ public final class Controller extends LinStor implements CoreServices
 
             idAuthentication = injector.getInstance(Authentication.class);
 
-            ctrlConf = injector.getInstance(Key.get(Props.class, Names.named(CoreModule.CONTROLLER_PROPS)));
+            ctrlConf = injector.getInstance(Key.get(Props.class, Names.named(ControllerCoreModule.CONTROLLER_PROPS)));
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP)

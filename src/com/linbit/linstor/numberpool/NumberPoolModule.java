@@ -8,6 +8,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -28,7 +29,7 @@ public class NumberPoolModule extends AbstractModule
     @Singleton
     public MinorNrPool minorNrPool(
         @SystemContext AccessContext initCtx,
-        @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.ResourceDefinitionMap rscDfnMap
     )
     {
@@ -65,7 +66,7 @@ public class NumberPoolModule extends AbstractModule
     @Singleton
     public TcpPortPool tcpPortPool(
         @SystemContext AccessContext initCtx,
-        @Named(CoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.ResourceDefinitionMap rscDfnMap
     )
     {

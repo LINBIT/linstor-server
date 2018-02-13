@@ -1,6 +1,8 @@
 package com.linbit.linstor.core;
 
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.LinbitModule;
@@ -106,8 +108,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     public static final SatelliteDummyStorPoolData DUMMY_REMOTE_STOR_POOL = new SatelliteDummyStorPoolData();
 
-    private static final String SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
-
     private final Injector injector;
 
     // System security context
@@ -116,7 +116,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     // Public security context
     private AccessContext publicCtx;
 
-    private final StltApiCallHandler apiCallHandler;
+    private StltApiCallHandler apiCallHandler;
 
     // ============================================================
     // Worker thread pool & message processing dispatcher
@@ -131,7 +131,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     private final Map<ServiceName, SystemService> systemServicesMap;
 
     // Map of connected peers
-    private final Map<String, Peer> peerMap;
+    private Map<String, Peer> peerMap;
 
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
@@ -171,7 +171,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     private ObjectProtection shutdownProt;
 
     // Lock for major global changes
-    public final ReadWriteLock stltConfLock;
+    public ReadWriteLock stltConfLock;
 
     private final AtomicLong fullSyncId;
     private boolean currentFullSyncApplied = false;
@@ -190,15 +190,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         // Initialize system services
         timerEventSvc = new CoreTimerImpl();
 
-        // Initialize synchronization
-        reconfigurationLock = new ReentrantReadWriteLock(true);
-        nodesMapLock        = new ReentrantReadWriteLock(true);
-        rscDfnMapLock       = new ReentrantReadWriteLock(true);
-        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
-
-        // Initialize synchronization
-        stltConfLock        = new ReentrantReadWriteLock(true);
-
         // Initialize security contexts
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
@@ -212,94 +203,37 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         fsWatchSvc = new FileSystemWatch();
         systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
-
-        // Initialize LinStor objects maps
-        nodesMap = new TreeMap<>();
-        rscDfnMap = new TreeMap<>();
-        storPoolDfnMap = new TreeMap<>();
-
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
 
-        // Initialize connected peers map
-        peerMap = new TreeMap<>();
-
         apiType = ApiType.PROTOBUF;
-
-        // initialize noop databases drivers (needed for shutdownProt)
-        securityDbDriver = new EmptySecurityDbDriver(sysCtx);
-        persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
 
         fullSyncId = new AtomicLong(2); // just don't start with 0 making sure the controller
         // mirrors our fullSyncId
 
         awaitedUpdateId = new AtomicLong(0);
 
-        // Initialize conf props
-        try
-        {
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            stltConf = PropsContainer.getInstance(SATELLITE_PROPSCON_INSTANCE_NAME, transMgr);
-            transMgr.commit();
-        }
-        catch (SQLException exc)
-        {
-            // not possible
-            throw new ImplementationError(exc);
-        }
-
-        try
-        {
-            AccessContext apiCtx = sysCtxRef.clone();
-            apiCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            apiCallHandler = new StltApiCallHandler(this, apiType, apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(
-                "Satellite's constructor cannot get system privileges",
-                accDeniedExc
-            );
-        }
-
         // Initialize shutdown controls
         shutdownFinished = false;
-        try
-        {
-            AccessContext initCtx = sysCtx.clone();
-            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-            shutdownProt = ObjectProtection.getInstance(
-                initCtx,
-                ObjectProtection.buildPath(this, "shutdown"),
-                true,
-                null
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            // cannot happen
-            throw new ImplementationError(
-                "Creating an ObjectProtection without TransactionManager threw an SQLException",
-                sqlExc
-            );
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            // cannot happen as the objProt cannot be loaded
-            throw new ImplementationError(
-                "ObjectProtection instance which should not even exist rejected system's access context. Panic.",
-                accessDeniedExc
-            );
-        }
     }
 
     public void initialize()
     {
+        reconfigurationLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
+        nodesMapLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.NODES_MAP_LOCK)));
+        rscDfnMapLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.RSC_DFN_MAP_LOCK)));
+        storPoolDfnMapLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(CoreModule.STOR_POOL_DFN_MAP_LOCK)));
+        stltConfLock = injector.getInstance(
+            Key.get(ReadWriteLock.class, Names.named(SatelliteCoreModule.STLT_CONF_LOCK)));
+
+        reconfigurationLock.writeLock().lock();
+
         try
         {
-            reconfigurationLock.writeLock().lock();
-
             shutdownFinished = false;
 
             AccessContext initCtx = sysCtx.clone();
@@ -310,6 +244,34 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
 
+            // Initialize LinStor objects maps
+            peerMap = injector.getInstance(CoreModule.PeerMap.class);
+            nodesMap = injector.getInstance(CoreModule.NodesMap.class);
+            rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
+            storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
+
+            // initialize noop databases drivers (needed for shutdownProt)
+            securityDbDriver = new EmptySecurityDbDriver(sysCtx);
+            persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
+
+            try
+            {
+                shutdownProt = ObjectProtection.getInstance(
+                    initCtx,
+                    ObjectProtection.buildPath(this, "shutdown"),
+                    true,
+                    null
+                );
+            }
+            catch (SQLException sqlExc)
+            {
+                // cannot happen
+                throw new ImplementationError(
+                    "Creating an ObjectProtection without TransactionManager threw an SQLException",
+                    sqlExc
+                );
+            }
+
             // Initialize the worker thread pool
             // errorLogRef.logInfo("Starting worker thread pool");
             int cpuCount = getCpuCount();
@@ -319,6 +281,20 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             workerThrPool = WorkerPool.initialize(
                 thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
             );
+
+            try
+            {
+                AccessContext apiCtx = sysCtx.clone();
+                apiCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                apiCallHandler = new StltApiCallHandler(this, apiType, apiCtx);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(
+                    "Satellite's constructor cannot get system privileges",
+                    accDeniedExc
+                );
+            }
 
             // Initialize the message processor
             // errorLogRef.logInfo("Initializing API call dispatcher");
