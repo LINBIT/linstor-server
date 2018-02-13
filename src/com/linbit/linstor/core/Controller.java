@@ -171,10 +171,11 @@ public final class Controller extends LinStor implements CoreServices
 
     private ReconnectorTask reconnectorTask;
 
-    // Control objects used and set by tests
-    private static DbConnectionPool testDbPool = null;
-
-    public Controller(Injector injectorRef, AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
+    public Controller(
+        Injector injectorRef,
+        AccessContext sysCtxRef,
+        AccessContext publicCtxRef
+    )
     {
         injector = injectorRef;
 

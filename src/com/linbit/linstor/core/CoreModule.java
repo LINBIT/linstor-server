@@ -36,9 +36,18 @@ public class CoreModule extends AbstractModule
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
 
+    private final LinStorArguments args;
+
+    public CoreModule(LinStorArguments argsRef)
+    {
+        args = argsRef;
+    }
+
     @Override
     protected void configure()
     {
+        bind(LinStorArguments.class).toInstance(args);
+
         bind(NodesMap.class).toInstance(new NodesMapImpl());
         bind(new TypeLiteral<Map<NodeName, Node>>() {}).to(NodesMap.class);
 

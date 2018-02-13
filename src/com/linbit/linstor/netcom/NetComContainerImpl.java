@@ -2,6 +2,7 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.ServiceName;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,6 +13,7 @@ public class NetComContainerImpl implements NetComContainer
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
 
+    @Inject
     public NetComContainerImpl()
     {
         netComConnectors = new TreeMap<>();

@@ -1,5 +1,7 @@
 package com.linbit.drbd.md;
 
+import com.google.inject.Inject;
+
 /**
  * Calculates DRBD data / meta data size
  *
@@ -83,6 +85,11 @@ public class MetaData extends MdCommon implements MetaDataApi
     // Naming convention exception: SI unit capitalization rules
     @SuppressWarnings("checkstyle:constantname")
     public static final long DIVISOR_kiB = 1024;
+
+    @Inject
+    public MetaData()
+    {
+    }
 
     @Override
     public long getNetSize(final long grossSize, final short peers, final int alStripes, final long alStripeSize)

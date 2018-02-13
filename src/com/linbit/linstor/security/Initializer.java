@@ -1,5 +1,6 @@
 package com.linbit.linstor.security;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.linbit.ImplementationError;
@@ -87,6 +88,7 @@ public final class Initializer
         initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
         Injector injector = Guice.createInjector(
+            new GuiceConfigModule(),
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
             new ConfigModule(),
@@ -94,7 +96,7 @@ public final class Initializer
             new MetaDataModule(),
             new LinbitModule(),
             new LinStorModule(),
-            new CoreModule(),
+            new CoreModule(cArgs),
             new DbDriversModule(),
             new DbConnectionPoolModule(),
             new NetComModule(),
@@ -102,7 +104,7 @@ public final class Initializer
             new CtrlApiCallHandlerModule()
         );
 
-        return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX, cArgs);
+        return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX);
     }
 
     public Satellite initSatellite(LinStorArguments cArgs)
@@ -120,5 +122,16 @@ public final class Initializer
         Identity.load(ctrlDb, driver);
         SecurityType.load(ctrlDb, driver);
         Role.load(ctrlDb, driver);
+    }
+
+    private static class GuiceConfigModule extends AbstractModule
+    {
+        @Override
+        protected void configure()
+        {
+            binder().requireAtInjectOnConstructors();
+            binder().requireExactBindingAnnotations();
+            binder().disableCircularProxies();
+        }
     }
 }
