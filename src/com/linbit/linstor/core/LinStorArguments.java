@@ -6,9 +6,12 @@ public class LinStorArguments
 
     private boolean startDebugConsole;
 
+    private String memoryDatabaseInit;
+
     public LinStorArguments()
     {
         workingDirectory = "";
+        memoryDatabaseInit = null;
     }
 
     public void setWorkingDirectory(final String workingDirectoryRef)
@@ -30,4 +33,11 @@ public class LinStorArguments
     {
         return startDebugConsole;
     }
+
+    public void setMemoryDatabaseInitScript(final String memoryDatabaseInitScript )
+    {
+        this.memoryDatabaseInit = memoryDatabaseInitScript;
+    }
+
+    public String getMemoryDatabaseInitScript() { return memoryDatabaseInit; }
 }

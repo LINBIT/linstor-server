@@ -5,11 +5,14 @@ import com.google.inject.Provides;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.LinStorArguments;
+import com.linbit.linstor.core.RecreateDb;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -75,6 +78,19 @@ public class DbConnectionPoolModule extends AbstractModule
             connectionUrl,
             dbProps
         );
+
+        if (connectionUrl.startsWith("jdbc:derby:memory:") && args.getMemoryDatabaseInitScript() != null)
+        {
+            try {
+                String initSqlPath = args.getMemoryDatabaseInitScript();
+                BufferedReader br = new BufferedReader(new FileReader(initSqlPath));
+                RecreateDb.runSql(dbConnPool.getConnection(), initSqlPath, br);
+                br.close();
+                errorLogRef.logInfo("Using in memory database with init script: " + initSqlPath);
+            } catch (IOException ioerr) {
+                errorLogRef.reportError(ioerr);
+            }
+        }
 
         // Test the database connection
         Connection conn = null;

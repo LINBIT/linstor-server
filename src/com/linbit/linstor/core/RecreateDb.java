@@ -111,7 +111,7 @@ public class RecreateDb
         return new PoolingDataSource<>(connPool);
     }
 
-    private static void runSql(Connection con, String sqlFilePath, BufferedReader br) throws IOException, SQLException
+    public static void runSql(Connection con, String sqlFilePath, BufferedReader br) throws IOException, SQLException
     {
         System.out.println("running sql file: " + sqlFilePath);
         StringBuilder cmdBuilder = new StringBuilder();

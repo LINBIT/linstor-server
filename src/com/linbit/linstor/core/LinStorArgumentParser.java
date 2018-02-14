@@ -14,6 +14,7 @@ public class LinStorArgumentParser
 {
     private static final String CONTROLLER_DIRECTORY = "controller_directory";
     private static final String DEBUG_CONSOLE = "debug_console";
+    private static final String MEMORY_DB = "memory_database";
 
     static LinStorArguments parseCommandLine(String[] args)
     {
@@ -21,6 +22,7 @@ public class LinStorArgumentParser
         opts.addOption(Option.builder("h").longOpt("help").required(false).build());
         opts.addOption(Option.builder("c").longOpt(CONTROLLER_DIRECTORY).hasArg().required(false).build());
         opts.addOption(Option.builder("d").longOpt(DEBUG_CONSOLE).required(false).build());
+        opts.addOption(Option.builder().longOpt(MEMORY_DB).hasArg().required(false).build());
 
         CommandLineParser parser = new DefaultParser();
         LinStorArguments cArgs = new LinStorArguments();
@@ -44,6 +46,11 @@ public class LinStorArgumentParser
                     System.err.println("Error: Given controller runtime directory does not exist or is no directory");
                     System.exit(2);
                 }
+            }
+
+            if (cmd.hasOption(MEMORY_DB))
+            {
+                cArgs.setMemoryDatabaseInitScript(cmd.getOptionValue(MEMORY_DB));
             }
 
             if (cmd.hasOption(DEBUG_CONSOLE))
