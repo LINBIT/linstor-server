@@ -41,7 +41,7 @@ public final class Initializer
 {
     private static final AccessContext SYSTEM_CTX;
     private static final AccessContext PUBLIC_CTX;
-    
+
     static
     {
         PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
@@ -151,5 +151,4 @@ public final class Initializer
         SecurityType.load(ctrlDb, driver);
         Role.load(ctrlDb, driver);
     }
-
 }

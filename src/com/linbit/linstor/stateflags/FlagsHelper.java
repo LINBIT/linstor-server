@@ -11,31 +11,35 @@ import java.util.List;
 public class FlagsHelper
 {
 
-    public static <E extends Enum<E> & Flags> List<String> 
-        toStringList(Class<E> enumClass, long rscFlags)
-     {
-         EnumSet<E> values = EnumSet.allOf(enumClass);
-         List<String> strList = new ArrayList<>(values.size());
-         for (E en : values)
-         {
-             if ((rscFlags & en.getFlagValue()) == en.getFlagValue())
-             {
-                 strList.add(en.toString());
-             }
-         }
-         return strList;
-     }
+    public static <E extends Enum<E> & Flags> List<String> toStringList(
+        Class<E> enumClass,
+        long rscFlags
+    )
+    {
+        EnumSet<E> values = EnumSet.allOf(enumClass);
+        List<String> strList = new ArrayList<>(values.size());
+        for (E en : values)
+        {
+            if ((rscFlags & en.getFlagValue()) == en.getFlagValue())
+            {
+                strList.add(en.toString());
+            }
+        }
+        return strList;
+    }
 
-     public static <E extends Enum<E> & Flags> long 
-        fromStringList(Class<E> enumClass, List<String> listFlags)
-     {
-         long value = 0;
+    public static <E extends Enum<E> & Flags> long fromStringList(
+        Class<E> enumClass,
+        List<String> listFlags
+    )
+    {
+        long value = 0;
 
-         for (String sFlag : listFlags)
-         {
-             value |= E.valueOf(enumClass, sFlag).getFlagValue();
-         }
+        for (String sFlag : listFlags)
+        {
+            value |= E.valueOf(enumClass, sFlag).getFlagValue();
+        }
 
-         return value;
-     }
+        return value;
+    }
 }
