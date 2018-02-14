@@ -4,6 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.core.DrbdStateChange;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,6 +19,7 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class StateTracker
 {
     // Observe resource creation
@@ -83,6 +86,7 @@ public class StateTracker
 
     private final long validEventsMask;
 
+    @Inject
     public StateTracker()
     {
         // Initialize number of observer slots to minimum

@@ -15,9 +15,13 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.core.DrbdStateChange;
+import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class DrbdEventService implements SystemService, Runnable, DrbdStateTracker
 {
     public static final ServiceName SERVICE_NAME;
@@ -37,7 +41,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     private boolean needsReinitialize = false;
 
     private DaemonHandler demonHandler;
-    private final CoreServices coreSvcs;
+    private final ErrorReporter errorReporter;
     private final StateTracker tracker;
 
     static
@@ -52,8 +56,9 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
         }
     }
 
+    @Inject
     public DrbdEventService(
-        final CoreServices coreSvcsRef,
+        final ErrorReporter errorReporterRef,
         final StateTracker trackerRef
     )
     {
@@ -63,7 +68,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
             eventDeque = new LinkedBlockingDeque<>(10_000);
             demonHandler = new DaemonHandler(eventDeque, DRBDSETUP_COMMAND, "events2", "all");
             running = false;
-            coreSvcs = coreSvcsRef;
+            errorReporter = errorReporterRef;
             tracker = trackerRef;
             eventsTracker = new EventsTracker(trackerRef);
         }
@@ -107,12 +112,12 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
             {
                 if (running)
                 {
-                    coreSvcs.getErrorReporter().reportError(new ImplementationError(exc));
+                    errorReporter.reportError(new ImplementationError(exc));
                 }
             }
             catch (EventsSourceException exc)
             {
-                coreSvcs.getErrorReporter().reportError(new ImplementationError(
+                errorReporter.reportError(new ImplementationError(
                     "Unable to process event line from DRBD",
                     exc
                 ));
@@ -167,7 +172,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
         }
         catch (IOException exc)
         {
-            coreSvcs.getErrorReporter().reportError(new SystemServiceStartException(
+            errorReporter.reportError(new SystemServiceStartException(
                 "Unable to listen for DRBD events",
                 "I/O error attempting to start '" + DRBDSETUP_COMMAND + "'",
                 exc.getMessage(),

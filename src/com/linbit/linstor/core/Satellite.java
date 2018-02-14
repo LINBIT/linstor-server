@@ -322,13 +322,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
             errorLogRef.logInfo("Initializing StateTracker");
             {
-                AccessContext drbdEventCtx = sysCtx.clone();
-                PrivilegeSet drbdEventPriv = drbdEventCtx.getEffectivePrivs();
-                drbdEventPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
-                drbdEventPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
-
-                StateTracker stateTracker = new StateTracker();
-                drbdEventSvc = new DrbdEventService(this, stateTracker);
+                drbdEventSvc = injector.getInstance(DrbdEventService.class);
 
                 systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
             }

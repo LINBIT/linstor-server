@@ -20,6 +20,7 @@ import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DbDriversModule;
+import com.linbit.linstor.drbdstate.DrbdStateModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.netcom.NetComModule;
@@ -126,7 +127,8 @@ public final class Initializer
             new LinStorArgumentsModule(cArgs),
             new CoreTimerModule(),
             new CoreModule(),
-            new SatelliteCoreModule()
+            new SatelliteCoreModule(),
+            new DrbdStateModule()
         );
 
         return new Satellite(injector, SYSTEM_CTX, PUBLIC_CTX);
