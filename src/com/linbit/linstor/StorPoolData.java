@@ -191,8 +191,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         String storDriverSimpleClassNameRef,
-        SatelliteTransactionMgr transMgr,
-        SatelliteCoreServices stltCoreSvcs
+        SatelliteTransactionMgr transMgr
     )
         throws ImplementationError
     {

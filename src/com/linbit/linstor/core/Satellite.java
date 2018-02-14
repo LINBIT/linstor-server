@@ -31,7 +31,6 @@ import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
-import com.linbit.linstor.drbdstate.StateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -148,11 +147,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     // Map of all storage pools
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
-    // Local NodeName received from the currently active controller
-    private NodeName localNodeName;
-
-    // The currently connected controller peer (can be null)
-    private Peer controllerPeer;
+    private ControllerPeerConnector controllerPeerConnector;
 
     // File system watch service
     private FileSystemWatch fsWatchSvc;
@@ -250,6 +245,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             // initialize noop databases drivers (needed for shutdownProt)
             securityDbDriver = injector.getInstance(EmptySecurityDbDriver.class);
             persistenceDbDriver = injector.getInstance(SatelliteDbDriver.class);
+
+            controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
 
             try
             {
@@ -773,12 +770,12 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     public NodeData getLocalNode()
     {
-        return (NodeData) nodesMap.get(localNodeName);
+        return controllerPeerConnector.getLocalNode();
     }
 
     public Peer getControllerPeer()
     {
-        return controllerPeer;
+        return controllerPeerConnector.getControllerPeer();
     }
 
     public void setControllerPeer(
@@ -789,90 +786,18 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         UUID disklessStorPoolUuid
     )
     {
-        try
-        {
-            reconfigurationLock.writeLock().lock();
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
-
-            controllerPeer = controllerPeerRef;
-
-            AccessContext tmpCtx = sysCtx.clone();
-            tmpCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            NodeData localNode;
-            try
-            {
-                disklessStorPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
-                    tmpCtx,
-                    disklessStorPoolDfnUuid,
-                    new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
-                    transMgr
-                );
-
-                localNodeName = new NodeName(nodeName);
-
-                localNode = NodeData.getInstanceSatellite(
-                    sysCtx,
-                    nodeUuid,
-                    localNodeName,
-                    NodeType.SATELLITE,
-                    new NodeFlag[] {},
-                    disklessStorPoolUuid,
-                    transMgr,
-                    this
-                );
-                transMgr.commit();
-
-                nodesMap.clear();
-                rscDfnMap.clear();
-                storPoolDfnMap.clear();
-                // TODO: make sure everything is cleared
-
-                nodesMap.put(localNode.getName(), localNode);
-                storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
-                setControllerPeerToCurrentLocalNode();
-            }
-            catch (ImplementationError | SQLException | InvalidNameException exc)
-            {
-                getErrorReporter().reportError(exc);
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(
-                "sysCtx does not have enough privileges to call node.setPeer",
-                accDeniedExc
-            );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
-            reconfigurationLock.writeLock().unlock();
-        }
+        controllerPeerConnector.setControllerPeer(
+            controllerPeerRef,
+            nodeUuid,
+            nodeName,
+            disklessStorPoolDfnUuid,
+            disklessStorPoolUuid
+        );
     }
 
     public void setControllerPeerToCurrentLocalNode()
     {
-        reconfigurationLock.readLock().lock();
-        nodesMapLock.readLock().lock();
-        try
-        {
-            nodesMap.get(localNodeName).setPeer(sysCtx, controllerPeer);
-        }
-        catch (AccessDeniedException exc)
-        {
-            getErrorReporter().reportError(exc);
-        }
-        finally
-        {
-            nodesMapLock.readLock().unlock();
-            reconfigurationLock.readLock().unlock();
-        }
+        controllerPeerConnector.setControllerPeerToCurrentLocalNode();
     }
 
     public long getCurrentFullSyncId()

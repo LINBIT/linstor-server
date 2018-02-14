@@ -27,6 +27,8 @@ public class SatelliteCoreModule extends AbstractModule
     {
         bind(ReadWriteLock.class).annotatedWith(Names.named(STLT_CONF_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
+
+        bind(ControllerPeerConnector.class).to(ControllerPeerConnectorImpl.class);
     }
 
     @Provides

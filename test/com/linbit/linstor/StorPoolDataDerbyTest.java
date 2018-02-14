@@ -276,40 +276,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd2,
             LvmDriver.class.getSimpleName(),
-            null,
-            new SatelliteCoreServices()
-            {
-
-                @Override
-                public Timer<String, Action<String>> getTimer()
-                {
-                    return new GenericTimer<>();
-                }
-
-                @Override
-                public ErrorReporter getErrorReporter()
-                {
-                    return null;
-                }
-
-                @Override
-                public FileSystemWatch getFsWatch()
-                {
-                    return null;
-                }
-
-                @Override
-                public DrbdStateTracker getDrbdStateTracker()
-                {
-                    return null;
-                }
-
-                @Override
-                public DeviceManager getDeviceManager()
-                {
-                    return null;
-                }
-            }
+            null
         );
 
         assertNotNull(storPoolData);

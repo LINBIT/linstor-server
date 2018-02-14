@@ -225,8 +225,7 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeType typeRef,
         NodeFlag[] flags,
         UUID disklessStorPoolUuid,
-        SatelliteTransactionMgr transMgr,
-        SatelliteCoreServices stltCoreSvcs
+        SatelliteTransactionMgr transMgr
     )
         throws ImplementationError
     {
@@ -259,8 +258,7 @@ public class NodeData extends BaseTransactionObject implements Node
                     nodeData,
                     LinStor.getDisklessStorPoolDfn(),
                     DisklessDriver.class.getSimpleName(),
-                    transMgr,
-                    stltCoreSvcs
+                    transMgr
                 );
             }
             nodeData.initialized();

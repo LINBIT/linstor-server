@@ -146,8 +146,7 @@ class StltStorPoolApiCallHandler
                 satellite.getLocalNode(),
                 storPoolDfn,
                 storPoolRaw.getDriver(),
-                transMgr,
-                satellite
+                transMgr
             );
             storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
         }
