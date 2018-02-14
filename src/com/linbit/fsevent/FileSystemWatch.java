@@ -9,6 +9,8 @@ import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.utils.MathUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -36,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class FileSystemWatch implements Runnable, SystemService
 {
     private static final ServiceName SERVICE_NAME;
@@ -98,6 +101,7 @@ public class FileSystemWatch implements Runnable, SystemService
     // This map enables fast lookup of FileEntry objects by path
     private final Map<Path, Set<FileEntry>> fileMap;
 
+    @Inject
     public FileSystemWatch() throws IOException
     {
         serviceInstanceName = SERVICE_NAME;

@@ -180,7 +180,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         AccessContext sysCtxRef,
         AccessContext publicCtxRef
     )
-        throws IOException
     {
         injector = injectorRef;
 
@@ -190,9 +189,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
-
-        fsWatchSvc = new FileSystemWatch();
-        systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -209,6 +205,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     }
 
     public void initialize()
+        throws IOException
     {
         reconfigurationLock = injector.getInstance(
             Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
@@ -234,6 +231,9 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
+
+            fsWatchSvc = injector.getInstance(FileSystemWatch.class);
+            systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
             {

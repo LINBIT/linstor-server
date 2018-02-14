@@ -115,7 +115,7 @@ public final class Initializer
     }
 
     public Satellite initSatellite(LinStorArguments cArgs, ErrorReporter errorLog)
-        throws IOException, AccessDeniedException
+        throws AccessDeniedException
     {
         AccessContext initCtx = SYSTEM_CTX.clone();
         initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
