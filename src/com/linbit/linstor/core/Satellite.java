@@ -4,7 +4,6 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
-import com.linbit.LinbitModule;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
@@ -255,14 +254,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             }
 
             // Initialize the worker thread pool
-            // errorLogRef.logInfo("Starting worker thread pool");
-            int cpuCount = getCpuCount();
-            int thrCount = com.linbit.utils.MathUtils.bounds(LinbitModule.MIN_WORKER_COUNT, cpuCount, LinbitModule.MAX_CPU_COUNT);
-            int qSize = thrCount * getWorkerQueueFactor();
-            qSize = qSize > LinbitModule.MIN_WORKER_QUEUE_SIZE ? qSize : LinbitModule.MIN_WORKER_QUEUE_SIZE;
-            workerThrPool = WorkerPool.initialize(
-                thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
-            );
+            workerThrPool = injector.getInstance(WorkerPool.class);
 
             try
             {

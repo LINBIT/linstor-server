@@ -5,7 +5,9 @@ import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ControllerLinbitModule;
 import com.linbit.LinbitModule;
+import com.linbit.SatelliteLinbitModule;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
@@ -27,7 +29,6 @@ import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.timer.CoreTimerModule;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -101,6 +102,7 @@ public final class Initializer
             new CoreTimerModule(),
             new MetaDataModule(),
             new LinbitModule(),
+            new ControllerLinbitModule(),
             new LinStorModule(),
             new CoreModule(),
             new ControllerCoreModule(),
@@ -126,6 +128,8 @@ public final class Initializer
             new SecurityModule(initCtx),
             new LinStorArgumentsModule(cArgs),
             new CoreTimerModule(),
+            new LinbitModule(),
+            new SatelliteLinbitModule(),
             new CoreModule(),
             new SatelliteCoreModule(),
             new DrbdStateModule()
