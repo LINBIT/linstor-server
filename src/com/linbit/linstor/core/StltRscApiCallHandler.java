@@ -46,21 +46,43 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class StltRscApiCallHandler
 {
-    private final Satellite satellite;
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
+    private final DeviceManager deviceManager;
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
 
-    StltRscApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
+    @Inject
+    StltRscApiCallHandler(
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        DeviceManager deviceManagerRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
-        satellite = satelliteRef;
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
+        deviceManager = deviceManagerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     /**
@@ -77,7 +99,7 @@ class StltRscApiCallHandler
         {
             ResourceName rscName = new ResourceName(rscNameStr);
 
-            ResourceDefinition removedRscDfn = satellite.rscDfnMap.remove(rscName); // just to be sure
+            ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName); // just to be sure
             if (removedRscDfn != null)
             {
                 SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
@@ -86,21 +108,21 @@ class StltRscApiCallHandler
                 transMgr.commit();
             }
 
-            satellite.getErrorReporter().logInfo("Resource definition '" + rscNameStr +
+            errorReporter.logInfo("Resource definition '" + rscNameStr +
                 "' and the corresponding resource" + " removed by Controller.");
 
             Map<ResourceName, Set<NodeName>> updatedRscs = new TreeMap<>();
             updatedRscs.put(rscName, new TreeSet<NodeName>());
-            satellite.getDeviceManager().rscUpdateApplied(updatedRscs);
+            deviceManager.rscUpdateApplied(updatedRscs);
 
             Set<ResourceName> rscDfnSet = new TreeSet<>();
             rscDfnSet.add(rscName);
-            satellite.getDeviceManager().rscDefUpdateApplied(rscDfnSet);
+            deviceManager.rscDefUpdateApplied(rscDfnSet);
         }
         catch (Exception | ImplementationError exc)
         {
             // TODO: kill connection?
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -121,11 +143,11 @@ class StltRscApiCallHandler
             devMgrNotifications.putAll(updatedObjects.createdRscMap);
             devMgrNotifications.putAll(updatedObjects.updatedRscMap);
 
-            satellite.getDeviceManager().rscUpdateApplied(devMgrNotifications);
+            deviceManager.rscUpdateApplied(devMgrNotifications);
         }
         catch (Exception | ImplementationError exc)
         {
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -155,7 +177,7 @@ class StltRscApiCallHandler
             msgBuilder.setLength(msgBuilder.length() - ", '".length());
             msgBuilder.append(".");
 
-            satellite.getErrorReporter().logInfo(msgBuilder.toString());
+            errorReporter.logInfo(msgBuilder.toString());
         }
     }
 
@@ -178,7 +200,7 @@ class StltRscApiCallHandler
         TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
         RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
 
-        ResourceDefinitionData rscDfn = (ResourceDefinitionData) satellite.rscDfnMap.get(rscName);
+        ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
 
         Resource localRsc = null;
         Set<Resource> otherRscs = new HashSet<>();
@@ -261,7 +283,7 @@ class StltRscApiCallHandler
             // our rscDfn is empty
             // that means, just create everything we need
 
-            NodeData localNode = satellite.getLocalNode();
+            NodeData localNode = controllerPeerConnector.getLocalNode();
 
             localRsc = createRsc(
                 rscRawData.getLocalRscUuid(),
@@ -424,7 +446,7 @@ class StltRscApiCallHandler
                     // controller sent us a resource that we don't know
                     // create its node
                     NodeName nodeName = new NodeName(otherRsc.getNodeName());
-                    NodeData remoteNode = (NodeData) satellite.nodesMap.get(nodeName);
+                    NodeData remoteNode = (NodeData) nodesMap.get(nodeName);
                     if (remoteNode == null)
                     {
                         remoteNode = NodeData.getInstanceSatellite(
@@ -535,11 +557,11 @@ class StltRscApiCallHandler
 
         if (rscDfnToRegister != null)
         {
-            satellite.rscDfnMap.put(rscName, rscDfnToRegister);
+            rscDfnMap.put(rscName, rscDfnToRegister);
         }
         for (Node node : nodesToRegister)
         {
-            satellite.nodesMap.put(node.getName(), node);
+            nodesMap.put(node.getName(), node);
         }
 
         return new UpdatedObjects(createdRscMap, updatedRscMap);

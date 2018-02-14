@@ -15,19 +15,38 @@ import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class StltStorPoolApiCallHandler
 {
-    private final Satellite satellite;
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
+    private final DeviceManager deviceManager;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final ControllerPeerConnector controllerPeerConnector;
 
-    StltStorPoolApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
+    @Inject
+    StltStorPoolApiCallHandler(
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        DeviceManager deviceManagerRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        ControllerPeerConnector controllerPeerConnectorRef
+    )
     {
-        satellite = satelliteRef;
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
+        deviceManager = deviceManagerRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -43,7 +62,7 @@ class StltStorPoolApiCallHandler
         {
             StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
 
-            StorPoolDefinition removedStorPoolDfn = satellite.storPoolDfnMap.remove(storPoolName); // just to be sure
+            StorPoolDefinition removedStorPoolDfn = storPoolDfnMap.remove(storPoolName); // just to be sure
             if (removedStorPoolDfn != null)
             {
                 SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
@@ -52,17 +71,17 @@ class StltStorPoolApiCallHandler
                 transMgr.commit();
             }
 
-            satellite.getErrorReporter().logInfo("Storage pool definition '" + storPoolNameStr +
+            errorReporter.logInfo("Storage pool definition '" + storPoolNameStr +
                 "' and the corresponding storage pool was removed by Controller.");
 
             Set<StorPoolName> storPoolSet = new TreeSet<>();
             storPoolSet.add(storPoolName);
-            satellite.getDeviceManager().storPoolUpdateApplied(storPoolSet);
+            deviceManager.storPoolUpdateApplied(storPoolSet);
         }
         catch (Exception | ImplementationError exc)
         {
             // TODO: kill connection?
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -78,14 +97,14 @@ class StltStorPoolApiCallHandler
             transMgr.commit();
 
 
-            satellite.getErrorReporter().logInfo(
+            errorReporter.logInfo(
                 "Storage pool '%s' created.",
                 storPoolName.displayValue
             );
 
             if (storPoolDfnToRegister != null)
             {
-                satellite.storPoolDfnMap.put(
+                storPoolDfnMap.put(
                     storPoolName,
                     storPoolDfnToRegister
                 );
@@ -93,11 +112,11 @@ class StltStorPoolApiCallHandler
 
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
-            satellite.getDeviceManager().storPoolUpdateApplied(storPoolSet);
+            deviceManager.storPoolUpdateApplied(storPoolSet);
         }
         catch (Exception | ImplementationError exc)
         {
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -112,7 +131,7 @@ class StltStorPoolApiCallHandler
         // checkUuid(satellite.localNode, storPoolRaw);
 
         storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
-        NodeData localNode = satellite.getLocalNode();
+        NodeData localNode = controllerPeerConnector.getLocalNode();
         StorPool storPool;
         if (localNode == null)
         {
@@ -126,7 +145,7 @@ class StltStorPoolApiCallHandler
         }
         else
         {
-            StorPoolDefinition storPoolDfn = satellite.storPoolDfnMap.get(storPoolName);
+            StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
             if (storPoolDfn == null)
             {
                 storPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
@@ -143,7 +162,7 @@ class StltStorPoolApiCallHandler
             storPool = StorPoolData.getInstanceSatellite(
                 apiCtx,
                 storPoolRaw.getStorPoolUuid(),
-                satellite.getLocalNode(),
+                controllerPeerConnector.getLocalNode(),
                 storPoolDfn,
                 storPoolRaw.getDriver(),
                 transMgr

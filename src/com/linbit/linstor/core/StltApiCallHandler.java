@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
@@ -12,58 +13,95 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.timer.CoreTimer;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+@Singleton
 public class StltApiCallHandler
 {
-    private final Satellite satellite;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+
+    private final CoreTimer timer;
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final UpdateMonitor updateMonitor;
+    private final DeviceManager deviceManager;
+    private final ApplicationLifecycleManager applicationLifecycleManager;
 
     private final StltNodeApiCallHandler nodeHandler;
     private final StltRscDfnApiCallHandler rscDfnHandler;
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
 
-    private final AccessContext apiCtx;
-
     private final CtrlStltSerializer interComSerializer;
+
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final ReadWriteLock storPoolDfnMapLock;
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     private final TreeMap<Long, ApplyData> dataToApply;
 
-    public StltApiCallHandler(Satellite satelliteRef, ApiType apiType, AccessContext apiCtxRef)
+    @Inject
+    public StltApiCallHandler(
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        CoreTimer timerRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        UpdateMonitor updateMonitorRef,
+        DeviceManager deviceManagerRef,
+        ApplicationLifecycleManager applicationLifecycleManagerRef,
+        StltNodeApiCallHandler nodeHandlerRef,
+        StltRscDfnApiCallHandler rscDfnHandlerRef,
+        StltRscApiCallHandler rscHandlerRef,
+        StltStorPoolApiCallHandler storPoolHandlerRef,
+        CtrlStltSerializer interComSerializerRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+    )
     {
-        satellite = satelliteRef;
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        ErrorReporter errorReporter = satelliteRef.getErrorReporter();
-        switch (apiType)
-        {
-            case PROTOBUF:
-                interComSerializer = new ProtoCtrlStltSerializer(errorReporter, apiCtxRef);
-                break;
-            default:
-                throw new ImplementationError("Unknown ApiType: " + apiType, null);
-        }
-
-        nodeHandler = new StltNodeApiCallHandler(satelliteRef, apiCtx);
-        rscDfnHandler = new StltRscDfnApiCallHandler(satelliteRef, apiCtx);
-        rscHandler = new StltRscApiCallHandler(satelliteRef, apiCtx);
-        storPoolHandler = new StltStorPoolApiCallHandler(satelliteRef, apiCtx);
+        timer = timerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        updateMonitor = updateMonitorRef;
+        deviceManager = deviceManagerRef;
+        applicationLifecycleManager = applicationLifecycleManagerRef;
+        nodeHandler = nodeHandlerRef;
+        rscDfnHandler = rscDfnHandlerRef;
+        rscHandler = rscHandlerRef;
+        storPoolHandler = storPoolHandlerRef;
+        interComSerializer = interComSerializerRef;
+        reconfigurationLock = reconfigurationLockRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
+        storPoolDfnMap = storPoolDfnMapRef;
 
         dataToApply = new TreeMap<>();
-    }
-
-    public CtrlStltSerializer getInterComSerializer()
-    {
-        return interComSerializer;
     }
 
     public ApiCallRcImpl authenticate(
@@ -78,7 +116,7 @@ public class StltApiCallHandler
         ApiCallRcImpl apiCallRc = null;
 
         // get satellites current hostname
-        final ExtCmd extCommand = new ExtCmd(satellite.getTimer(), satellite.getErrorReporter());
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
         String hostName = "";
         try
         {
@@ -88,7 +126,7 @@ public class StltApiCallHandler
         }
         catch (ChildProcessTimeoutException ex)
         {
-            satellite.getErrorReporter().reportError(ex);
+            errorReporter.reportError(ex);
         }
 
         // Check if satellite hostname is equal to the given nodename
@@ -106,7 +144,7 @@ public class StltApiCallHandler
             apiCallRc = new ApiCallRcImpl();
             apiCallRc.addEntry(entry);
 
-            satellite.getErrorReporter().logError(cause);
+            errorReporter.logError(cause);
         }
         else
         {
@@ -116,14 +154,14 @@ public class StltApiCallHandler
                 // that means, everything in this map is out-dated data + we should receive a full sync next.
             }
 
-            satellite.setControllerPeer(
+            controllerPeerConnector.setControllerPeer(
                 controllerPeer,
                 nodeUuid,
                 nodeName,
                 disklessStorPoolDfnUuid,
                 disklessStorPoolUuid
             );
-            satellite.getErrorReporter().logInfo("Controller connected and authenticated");
+            errorReporter.logInfo("Controller connected and authenticated");
         }
 
         return apiCallRc;
@@ -138,19 +176,19 @@ public class StltApiCallHandler
     {
         try
         {
-            satellite.reconfigurationLock.writeLock().lock();
-            satellite.nodesMapLock.writeLock().lock();
-            satellite.rscDfnMapLock.writeLock().lock();
-            satellite.storPoolDfnMapLock.writeLock().lock();
+            reconfigurationLock.writeLock().lock();
+            nodesMapLock.writeLock().lock();
+            rscDfnMapLock.writeLock().lock();
+            storPoolDfnMapLock.writeLock().lock();
 
-            if (satellite.getCurrentFullSyncId() == fullSyncId)
+            if (updateMonitor.getCurrentFullSyncId() == fullSyncId)
             {
                 // only apply this fullSync if it is newer than the last one
 
                 // clear all data
-                satellite.nodesMap.clear();
-                satellite.rscDfnMap.clear();
-                satellite.storPoolDfnMap.clear();
+                nodesMap.clear();
+                rscDfnMap.clear();
+                storPoolDfnMap.clear();
 
                 SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
                 for (NodePojo node : nodes)
@@ -158,10 +196,10 @@ public class StltApiCallHandler
                     Node curNode = nodeHandler.applyChanges(node, transMgr);
                     if (curNode != null)
                     {
-                        satellite.nodesMap.put(curNode.getName(), curNode);
+                        nodesMap.put(curNode.getName(), curNode);
                     }
                 }
-                satellite.setControllerPeerToCurrentLocalNode();
+                controllerPeerConnector.setControllerPeerToCurrentLocalNode();
 
                 for (StorPoolPojo storPool : storPools)
                 {
@@ -177,51 +215,50 @@ public class StltApiCallHandler
 
                 for (NodePojo node : nodes)
                 {
-                    satellite.getErrorReporter().logTrace("Node '" + node.getName() + "' received from Controller.");
+                    errorReporter.logTrace("Node '" + node.getName() + "' received from Controller.");
                 }
                 for (StorPoolPojo storPool : storPools)
                 {
-                    satellite.getErrorReporter().logTrace(
+                    errorReporter.logTrace(
                         "StorPool '" + storPool.getStorPoolName() + "' received from Controller."
                     );
                 }
                 for (RscPojo rsc : resources)
                 {
-                    satellite.getErrorReporter().logTrace("Resource '" + rsc.getName() + "' created.");
+                    errorReporter.logTrace("Resource '" + rsc.getName() + "' created.");
                 }
-                satellite.getErrorReporter().logTrace("Full sync with controller finished");
+                errorReporter.logTrace("Full sync with controller finished");
 
                 // Atomically notify the DeviceManager to check all resources
-                Node localNode = satellite.getLocalNode();
+                Node localNode = controllerPeerConnector.getLocalNode();
                 if (localNode != null)
                 {
-                    DeviceManager devMgr = satellite.getDeviceManager();
-                    if (devMgr != null)
+                    if (deviceManager != null)
                     {
-                        devMgr.fullSyncApplied();
+                        deviceManager.fullSyncApplied();
                     }
                 }
                 else
                 {
-                    satellite.getErrorReporter().logWarning(
+                    errorReporter.logWarning(
                         "No node object that represents this satellite was received from the controller"
                     );
                 }
 
-                satellite.setFullSyncApplied();
+                updateMonitor.setFullSyncApplied();
             }
             else
             {
-                satellite.getErrorReporter().logWarning(
+                errorReporter.logWarning(
                     "Ignored an incoming but outdated fullsync"
                 );
             }
         }
         catch (Exception | ImplementationError exc)
         {
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
 
-            Peer controllerPeer = satellite.getControllerPeer();
+            Peer controllerPeer = controllerPeerConnector.getControllerPeer();
             controllerPeer.sendMessage(
                 interComSerializer.builder(InternalApiConsts.API_FULL_SYNC_FAILED, 0)
                     .build()
@@ -240,15 +277,15 @@ public class StltApiCallHandler
 
             // in other words: if this exception happens, either the controller or this satellite has
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
-            satellite.getNextFullSyncId();
+            updateMonitor.getNextFullSyncId();
 
         }
         finally
         {
-            satellite.storPoolDfnMapLock.writeLock().unlock();
-            satellite.rscDfnMapLock.writeLock().unlock();
-            satellite.nodesMapLock.writeLock().unlock();
-            satellite.reconfigurationLock.writeLock().unlock();
+            storPoolDfnMapLock.writeLock().unlock();
+            rscDfnMapLock.writeLock().unlock();
+            nodesMapLock.writeLock().unlock();
+            reconfigurationLock.writeLock().unlock();
         }
     }
 
@@ -288,43 +325,43 @@ public class StltApiCallHandler
         {
             try
             {
-                satellite.reconfigurationLock.readLock().lock();
-                if (data.getFullSyncId() == satellite.getCurrentFullSyncId())
+                reconfigurationLock.readLock().lock();
+                if (data.getFullSyncId() == updateMonitor.getCurrentFullSyncId())
                 {
                     try
                     {
                         ApplyData overriddenData = dataToApply.put(data.getUpdateId(), data);
                         if (overriddenData != null)
                         {
-                            satellite.getErrorReporter().reportError(
+                            errorReporter.reportError(
                                 new ImplementationError(
                                     "We have overridden data which we did not update yet.",
                                     null
                                     )
                                 );
-                            satellite.shutdown(apiCtx); // critical error. shutdown and fix this implementation error
+                            applicationLifecycleManager.shutdown(apiCtx); // critical error. shutdown and fix this implementation error
                         }
 
                         Entry<Long, ApplyData> nextEntry;
                         nextEntry = dataToApply.firstEntry();
                         while (
                             nextEntry != null &&
-                            nextEntry.getKey() == satellite.getCurrentAwaitedUpdateId()
+                            nextEntry.getKey() == updateMonitor.getCurrentAwaitedUpdateId()
                         )
                         {
                             nextEntry.getValue().applyChange();
                             dataToApply.remove(nextEntry.getKey());
-                            satellite.awaitedUpdateApplied();
+                            updateMonitor.awaitedUpdateApplied();
 
                             nextEntry = dataToApply.firstEntry();
                         }
                     }
                     catch (ImplementationError | Exception exc)
                     {
-                        satellite.getErrorReporter().reportError(exc);
+                        errorReporter.reportError(exc);
                         try
                         {
-                            satellite.getLocalNode().getPeer(apiCtx).closeConnection();
+                            controllerPeerConnector.getLocalNode().getPeer(apiCtx).closeConnection();
                             // there is nothing else we can safely do.
                             // skipping the update might cause data-corruption
                             // not skipping will queue the new data packets but will not apply those as the
@@ -332,18 +369,18 @@ public class StltApiCallHandler
                         }
                         catch (AccessDeniedException exc1)
                         {
-                            satellite.getErrorReporter().reportError(new ImplementationError(exc));
+                            errorReporter.reportError(new ImplementationError(exc));
                         }
                     }
                 }
                 else
                 {
-                    satellite.getErrorReporter().logWarning("Ignoring received outdated update. ");
+                    errorReporter.logWarning("Ignoring received outdated update. ");
                 }
             }
             finally
             {
-                satellite.reconfigurationLock.readLock().unlock();
+                reconfigurationLock.readLock().unlock();
             }
         }
     }
@@ -357,12 +394,12 @@ public class StltApiCallHandler
     {
         try
         {
-            satellite.rscDfnMapLock.writeLock().lock();
+            rscDfnMapLock.writeLock().lock();
             rscDfnHandler.primaryResource(rscNameStr, rscUuid);
         }
         finally
         {
-            satellite.rscDfnMapLock.writeLock().unlock();
+            rscDfnMapLock.writeLock().unlock();
         }
 
     }
@@ -409,7 +446,7 @@ public class StltApiCallHandler
         {
             try
             {
-                satellite.nodesMapLock.writeLock().lock();
+                nodesMapLock.writeLock().lock();
 
                 if (nodePojo != null)
                 {
@@ -422,7 +459,7 @@ public class StltApiCallHandler
             }
             finally
             {
-                satellite.nodesMapLock.writeLock().unlock();
+                nodesMapLock.writeLock().unlock();
             }
         }
     }
@@ -459,8 +496,8 @@ public class StltApiCallHandler
         {
             try
             {
-                satellite.nodesMapLock.writeLock().lock();
-                satellite.rscDfnMapLock.writeLock().lock();
+                nodesMapLock.writeLock().lock();
+                rscDfnMapLock.writeLock().lock();
 
                 if (rscPojo != null)
                 {
@@ -473,8 +510,8 @@ public class StltApiCallHandler
             }
             finally
             {
-                satellite.rscDfnMapLock.writeLock().unlock();
-                satellite.nodesMapLock.writeLock().unlock();
+                rscDfnMapLock.writeLock().unlock();
+                nodesMapLock.writeLock().unlock();
             }
         }
     }
@@ -511,8 +548,8 @@ public class StltApiCallHandler
         {
             try
             {
-                satellite.nodesMapLock.writeLock().lock();
-                satellite.storPoolDfnMapLock.writeLock().lock();
+                nodesMapLock.writeLock().lock();
+                storPoolDfnMapLock.writeLock().lock();
 
                 if (storPoolPojo != null)
                 {
@@ -525,8 +562,8 @@ public class StltApiCallHandler
             }
             finally
             {
-                satellite.nodesMapLock.writeLock().unlock();
-                satellite.storPoolDfnMapLock.writeLock().unlock();
+                nodesMapLock.writeLock().unlock();
+                storPoolDfnMapLock.writeLock().unlock();
             }
         }
     }

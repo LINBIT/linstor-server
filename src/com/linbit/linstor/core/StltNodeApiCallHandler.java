@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
@@ -21,20 +22,43 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+@Singleton
 class StltNodeApiCallHandler
 {
-    private Satellite satellite;
-    private AccessContext apiCtx;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final DeviceManager deviceManager;
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock nodesMapLock;
+    private final CoreModule.NodesMap nodesMap;
 
-    StltNodeApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
+    @Inject
+    StltNodeApiCallHandler(
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        DeviceManager deviceManagerRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        CoreModule.NodesMap nodesMapRef
+    )
     {
-        satellite = satelliteRef;
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
+        deviceManager = deviceManagerRef;
+        reconfigurationLock = reconfigurationLockRef;
+        nodesMapLock = nodesMapLockRef;
+        nodesMap = nodesMapRef;
     }
 
     /**
@@ -51,7 +75,7 @@ class StltNodeApiCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node removedNode = satellite.nodesMap.remove(nodeName); // just to be sure
+            Node removedNode = nodesMap.remove(nodeName); // just to be sure
             if (removedNode != null)
             {
                 SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
@@ -60,16 +84,16 @@ class StltNodeApiCallHandler
                 transMgr.commit();
             }
 
-            satellite.getErrorReporter().logInfo("Node '" + nodeNameStr + "' removed by Controller.");
+            errorReporter.logInfo("Node '" + nodeNameStr + "' removed by Controller.");
 
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(nodeName);
-            satellite.getDeviceManager().nodeUpdateApplied(updatedNodes);
+            deviceManager.nodeUpdateApplied(updatedNodes);
         }
         catch (Exception | ImplementationError exc)
         {
             // TODO: kill connection?
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -83,16 +107,16 @@ class StltNodeApiCallHandler
             NodeName nodeName = new NodeName(nodePojo.getName());
             transMgr.commit();
 
-            satellite.nodesMap.put(nodeName, node);
-            satellite.getErrorReporter().logInfo("Node '" + nodePojo.getName() + "' created.");
+            nodesMap.put(nodeName, node);
+            errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(new NodeName(nodePojo.getName()));
-            satellite.getDeviceManager().nodeUpdateApplied(updatedNodes);
+            deviceManager.nodeUpdateApplied(updatedNodes);
         }
         catch (Exception | ImplementationError exc)
         {
             // TODO: kill connection?
-            satellite.getErrorReporter().reportError(exc);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -100,8 +124,8 @@ class StltNodeApiCallHandler
         throws DivergentUuidsException, ImplementationError, InvalidNameException, AccessDeniedException,
         SQLException, InvalidIpAddressException
     {
-        Lock reConfReadLock = satellite.reconfigurationLock.readLock();
-        Lock nodesWriteLock = satellite.nodesMapLock.writeLock();
+        Lock reConfReadLock = reconfigurationLock.readLock();
+        Lock nodesWriteLock = nodesMapLock.writeLock();
 
         NodeData node;
         try

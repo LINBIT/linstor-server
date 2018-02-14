@@ -222,19 +222,7 @@ public final class Satellite extends LinStor implements CoreServices
             // Initialize the worker thread pool
             workerThrPool = injector.getInstance(WorkerPool.class);
 
-            try
-            {
-                AccessContext apiCtx = sysCtx.clone();
-                apiCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                apiCallHandler = new StltApiCallHandler(this, apiType, apiCtx);
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ImplementationError(
-                    "Satellite's constructor cannot get system privileges",
-                    accDeniedExc
-                );
-            }
+            apiCallHandler = injector.getInstance(StltApiCallHandler.class);
 
             // Initialize the message processor
             // errorLogRef.logInfo("Initializing API call dispatcher");

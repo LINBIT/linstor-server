@@ -5,20 +5,39 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import java.util.UUID;
 import org.slf4j.event.Level;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class StltRscDfnApiCallHandler
 {
-    private Satellite satellite;
-    private AccessContext apiCtx;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final DeviceManager deviceManager;
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
 
-    StltRscDfnApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
+    @Inject
+    StltRscDfnApiCallHandler(
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        DeviceManager deviceManagerRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
-        satellite = satelliteRef;
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
+        deviceManager = deviceManagerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     public void primaryResource(
@@ -26,23 +45,23 @@ class StltRscDfnApiCallHandler
         UUID rscUuid
     )
     {
-        satellite.getErrorReporter().logInfo("Primary Resource %s", rscNameStr);
+        errorReporter.logInfo("Primary Resource %s", rscNameStr);
         try
         {
             ResourceName rscName = new ResourceName(rscNameStr);
 
-            ResourceDefinition rscDfn = satellite.rscDfnMap.get(rscName);
+            ResourceDefinition rscDfn = rscDfnMap.get(rscName);
             if (rscDfn != null)
             {
                 // set primary boolean
                 ResourceData rscData = (ResourceData) rscDfn.getResource(
                     this.apiCtx,
-                    satellite.getLocalNode().getName()
+                    controllerPeerConnector.getLocalNode().getName()
                 );
                 rscData.setCreatePrimary();
-                satellite.getErrorReporter().logInfo("Primary bool set on Resource %s", rscNameStr);
+                errorReporter.logInfo("Primary bool set on Resource %s", rscNameStr);
 
-                satellite.getDeviceManager().getUpdateTracker().checkResource(rscUuid, rscName);
+                deviceManager.getUpdateTracker().checkResource(rscUuid, rscName);
             }
         }
         catch (InvalidNameException ignored)
@@ -50,7 +69,7 @@ class StltRscDfnApiCallHandler
         }
         catch (AccessDeniedException accExc)
         {
-            satellite.getErrorReporter().reportError(
+            errorReporter.reportError(
                 Level.ERROR,
                 new ImplementationError(
                     "Worker access context not authorized to perform a required operation",
