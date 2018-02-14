@@ -5,6 +5,8 @@ import com.linbit.linstor.annotation.SystemContext;
 
 public class SecurityModule extends AbstractModule
 {
+    public static final String SHUTDOWN_PROT = "shutdownProt";
+
     private final AccessContext systemCtx;
 
     public SecurityModule(AccessContext systemCtxRef)

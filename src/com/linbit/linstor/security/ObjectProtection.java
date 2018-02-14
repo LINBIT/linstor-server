@@ -16,9 +16,7 @@ import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.Satellite;
 
 /**
  * Security protection for linstor object
@@ -463,11 +461,10 @@ public final class ObjectProtection extends BaseTransactionObject
     /**
      * ObjProt-Path for satellite
      *
-     * @param satellite
      * @param subPath
      * @return
      */
-    public static String buildPath(Satellite satellite, String subPath)
+    public static String buildPathSatellite(String subPath)
     {
         return PATH_SATELLITE + subPath;
     }

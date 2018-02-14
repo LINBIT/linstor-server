@@ -3,6 +3,8 @@ package com.linbit.linstor.core;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
+import com.linbit.ServiceName;
+import com.linbit.SystemService;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -26,6 +28,9 @@ public class CoreModule extends AbstractModule
     @Override
     protected void configure()
     {
+        bind(new TypeLiteral<Map<ServiceName, SystemService>>() {})
+            .toInstance(new TreeMap<ServiceName, SystemService>());
+
         bind(NodesMap.class).toInstance(new NodesMapImpl());
         bind(new TypeLiteral<Map<NodeName, Node>>() {}).to(NodesMap.class);
 

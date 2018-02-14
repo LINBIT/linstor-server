@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -55,7 +56,6 @@ import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.utils.MathUtils;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
@@ -70,7 +70,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Pattern;
@@ -84,9 +83,6 @@ public final class Controller extends LinStor implements CoreServices
 {
     // System module information
     public static final String MODULE = "Controller";
-
-    // Maximum time to wait for services to shut down
-    private static final long SVC_SHUTDOWN_WAIT_TIME = 10000L;
 
     private static final String PROPSCON_KEY_NETCOM = "netcom";
     private static final String PROPSCON_KEY_NETCOM_BINDADDR = "bindaddress";
@@ -130,22 +126,20 @@ public final class Controller extends LinStor implements CoreServices
     // Core system services
     //
     // Map of controllable system services
-    private final Map<ServiceName, SystemService> systemServicesMap;
+    private Map<ServiceName, SystemService> systemServicesMap;
 
     // Database connection pool service
     DbConnectionPool dbConnPool;
 
     // Satellite reconnector service
-    private final TaskScheduleService taskScheduleService;
+    private TaskScheduleService taskScheduleService;
 
     // Map of connected peers
     private Map<String, Peer> peerMap;
 
     private NetComContainer netComContainer;
 
-    // Shutdown controls
-    private boolean shutdownFinished;
-    private ObjectProtection shutdownProt;
+    private ApplicationLifecycleManager applicationLifecycleManager;
 
     // Synchronization lock for the configuration
     public ReadWriteLock ctrlConfLock;
@@ -182,17 +176,7 @@ public final class Controller extends LinStor implements CoreServices
         // Initialize security contexts
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
-
-        // Initialize and collect system services
-        systemServicesMap = new TreeMap<>();
-
-        taskScheduleService = new TaskScheduleService(this);
-        systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
-
-        // Initialize shutdown controls
-        shutdownFinished = false;
     }
-
 
     public static void main(String[] args)
     {
@@ -246,8 +230,6 @@ public final class Controller extends LinStor implements CoreServices
 
         try
         {
-            shutdownFinished = false;
-
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
@@ -255,6 +237,11 @@ public final class Controller extends LinStor implements CoreServices
 
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
+
+            systemServicesMap = injector.getInstance(Key.get(new TypeLiteral<Map<ServiceName, SystemService>>() {}));
+
+            taskScheduleService = new TaskScheduleService(this);
+            systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
             {
@@ -282,6 +269,8 @@ public final class Controller extends LinStor implements CoreServices
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP)
             initializeSecurityObjects(errorLogRef, initCtx);
 
+            applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
+
             nodesMapProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.NODES_MAP_PROT)));
             rscDfnMapProt = injector.getInstance(
@@ -290,8 +279,6 @@ public final class Controller extends LinStor implements CoreServices
                 Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)));
             ctrlConfProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.CTRL_CONF_PROT)));
-            shutdownProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.SHUTDOWN_PROT)));
 
             disklessStorPoolDfn = injector.getInstance(
                 Key.get(StorPoolDefinitionData.class, Names.named(LinStorModule.DISKLESS_STOR_POOL_DFN)));
@@ -326,7 +313,7 @@ public final class Controller extends LinStor implements CoreServices
                 initCtx
             );
 
-            startSystemServices(systemServicesMap.values());
+            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             connectToKnownNodes(errorLogRef, initCtx);
 
@@ -385,7 +372,7 @@ public final class Controller extends LinStor implements CoreServices
             // for the system's role or changed the security type for shutdown,
             // override access controls with the system context's privileges
             shutdownCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_USE, Privilege.PRIV_MAC_OVRD);
-            shutdown(shutdownCtx);
+            applicationLifecycleManager.shutdown(shutdownCtx);
         }
         catch (AccessDeniedException accExc)
         {
@@ -397,99 +384,14 @@ public final class Controller extends LinStor implements CoreServices
         }
     }
 
-    /**
-     * Checks if the AccessContext has shutdown permissions.
-     * Throws AccessDeniedException if the accCtx doesn't have access. otherwise runs as noop.
-     *
-     * @param accCtx AccessContext to check.
-     * @throws AccessDeniedException if accCtx doesn't have shutdown access.
-     */
     public void requireShutdownAccess(AccessContext accCtx) throws AccessDeniedException
     {
-        shutdownProt.requireAccess(accCtx, AccessType.USE);
+        applicationLifecycleManager.requireShutdownAccess(accCtx);
     }
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
-        shutdown(accCtx, true);
-    }
-
-    public void shutdown(AccessContext accCtx, boolean sysExit) throws AccessDeniedException
-    {
-        requireShutdownAccess(accCtx);
-
-        ErrorReporter errLog = getErrorReporter();
-
-        try
-        {
-            reconfigurationLock.writeLock().lock();
-            if (!shutdownFinished)
-            {
-                errLog.logInfo(
-                    String.format(
-                        "Shutdown initiated by subject '%s' using role '%s'\n",
-                        accCtx.getIdentity(), accCtx.getRole()
-                    )
-                );
-
-                errLog.logInfo("Shutdown in progress");
-
-                // Shutdown service threads
-                stopSystemServices(systemServicesMap.values());
-
-                if (workerThrPool != null)
-                {
-                    errLog.logInfo("Shutting down worker thread pool");
-                    workerThrPool.shutdown();
-                    workerThrPool = null;
-                }
-
-                long exitTime = MathUtils.addExact(System.currentTimeMillis(), SVC_SHUTDOWN_WAIT_TIME);
-                for (SystemService svc  : systemServicesMap.values())
-                {
-                    long now = System.currentTimeMillis();
-                    if (now < exitTime)
-                    {
-                        long maxWaitTime = exitTime - now;
-                        if (maxWaitTime > SVC_SHUTDOWN_WAIT_TIME)
-                        {
-                            maxWaitTime = SVC_SHUTDOWN_WAIT_TIME;
-                        }
-
-                        try
-                        {
-                            svc.awaitShutdown(maxWaitTime);
-                        }
-                        catch (InterruptedException ignored)
-                        {
-                        }
-                        catch (Throwable error)
-                        {
-                            errLog.reportError(Level.ERROR, error);
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                errLog.logInfo("Shutdown complete");
-            }
-            shutdownFinished = true;
-        }
-        catch (Throwable error)
-        {
-            errLog.reportError(Level.ERROR, error);
-        }
-        finally
-        {
-            reconfigurationLock.writeLock().unlock();
-        }
-        if (sysExit)
-        {
-            System.exit(0);
-        }
+        applicationLifecycleManager.shutdown(accCtx);
     }
 
     public void peerSignIn(

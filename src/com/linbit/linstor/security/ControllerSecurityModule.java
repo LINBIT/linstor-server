@@ -21,7 +21,6 @@ public class ControllerSecurityModule extends AbstractModule
     public static final String RSC_DFN_MAP_PROT = "rscDfnMapProt";
     public static final String STOR_POOL_DFN_MAP_PROT = "storPoolDfnMapProt";
     public static final String CTRL_CONF_PROT = "ctrlConfProt";
-    public static final String SHUTDOWN_PROT = "shutdownProt";
 
     @Override
     protected void configure()
@@ -122,7 +121,7 @@ public class ControllerSecurityModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(SHUTDOWN_PROT)
+    @Named(SecurityModule.SHUTDOWN_PROT)
     public ObjectProtection shutdownProt(ProtectionBundle protectionBundle)
     {
         return protectionBundle.shutdownProt;

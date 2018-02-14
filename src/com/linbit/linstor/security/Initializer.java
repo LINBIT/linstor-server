@@ -128,6 +128,7 @@ public final class Initializer
             new GuiceConfigModule(),
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
+            new SatelliteSecurityModule(),
             new LinStorArgumentsModule(cArgs),
             new CoreTimerModule(),
             new LinbitModule(),

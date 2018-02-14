@@ -78,10 +78,6 @@ public abstract class LinStor
     public static final String PROGRAM = "LINSTOR";
     public static final VersionInfoProvider VERSION_INFO_PROVIDER = new VersionInfoProviderImpl();
 
-    // At shutdown, wait at most SHUTDOWN_THR_JOIN_WAIT milliseconds for
-    // a service thread to end
-    public static final long SHUTDOWN_THR_JOIN_WAIT = 3000L;
-
     public static final String DISKLESS_STOR_POOL_NAME = "DfltDisklessStorPool";
 
     // Queue slots per worker thread
@@ -137,64 +133,6 @@ public abstract class LinStor
 
         CommonPeerCtx peerContext = (CommonPeerCtx) client.getAttachment();
         peerContext.setDebugConsole(null);
-    }
-
-    public void startSystemServices(Iterable<SystemService> services)
-    {
-        ErrorReporter errLog = getErrorReporter();
-        // Start services
-        for (SystemService sysSvc : services)
-        {
-            errLog.logInfo(
-                String.format(
-                    "Starting service instance '%s' of type %s",
-                    sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                )
-            );
-            try
-            {
-                sysSvc.start();
-            }
-            catch (SystemServiceStartException startExc)
-            {
-                errLog.reportProblem(Level.ERROR, startExc, null, null, null);
-            }
-            catch (Exception unhandledExc)
-            {
-                errLog.reportError(unhandledExc);
-            }
-        }
-    }
-
-    public void stopSystemServices(Iterable<SystemService> services)
-    {
-        ErrorReporter errLog = getErrorReporter();
-        // Shutdown services
-        for (SystemService sysSvc : services)
-        {
-            errLog.logInfo(
-                String.format(
-                    "Shutting down service instance '%s' of type %s",
-                    sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                )
-            );
-            try
-            {
-                sysSvc.shutdown();
-
-                errLog.logInfo(
-                    String.format(
-                        "Waiting for service instance '%s' to complete shutdown",
-                        sysSvc.getInstanceName().displayValue
-                    )
-                );
-                sysSvc.awaitShutdown(SHUTDOWN_THR_JOIN_WAIT);
-            }
-            catch (Exception unhandledExc)
-            {
-                errorLog.reportError(unhandledExc);
-            }
-        }
     }
 
     public CoreTimer getTimer()

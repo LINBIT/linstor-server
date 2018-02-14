@@ -2,9 +2,9 @@ package com.linbit.linstor.core;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
@@ -35,10 +35,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.EmptySecurityDbDriver;
 import com.linbit.linstor.security.Initializer;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
@@ -116,7 +114,7 @@ public final class Satellite extends LinStor implements CoreServices
     // Core system services
     //
     // Map of controllable system services
-    private final Map<ServiceName, SystemService> systemServicesMap;
+    private Map<ServiceName, SystemService> systemServicesMap;
 
     // Map of connected peers
     private Map<String, Peer> peerMap;
@@ -144,9 +142,7 @@ public final class Satellite extends LinStor implements CoreServices
     // Device manager
     private DeviceManagerImpl devMgr = null;
 
-    // Shutdown controls
-    private boolean shutdownFinished;
-    private ObjectProtection shutdownProt;
+    private ApplicationLifecycleManager applicationLifecycleManager;
 
     // Lock for major global changes
     public ReadWriteLock stltConfLock;
@@ -165,16 +161,10 @@ public final class Satellite extends LinStor implements CoreServices
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
 
-        // Initialize and collect system services
-        systemServicesMap = new TreeMap<>();
-
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
 
         apiType = ApiType.PROTOBUF;
-
-        // Initialize shutdown controls
-        shutdownFinished = false;
     }
 
     public void initialize()
@@ -194,8 +184,6 @@ public final class Satellite extends LinStor implements CoreServices
 
         try
         {
-            shutdownFinished = false;
-
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
@@ -203,6 +191,8 @@ public final class Satellite extends LinStor implements CoreServices
 
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
+
+            systemServicesMap = injector.getInstance(Key.get(new TypeLiteral<Map<ServiceName, SystemService>>() {}));
 
             FileSystemWatch fsWatchSvc = injector.getInstance(FileSystemWatch.class);
             systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
@@ -223,27 +213,11 @@ public final class Satellite extends LinStor implements CoreServices
             securityDbDriver = injector.getInstance(EmptySecurityDbDriver.class);
             persistenceDbDriver = injector.getInstance(SatelliteDbDriver.class);
 
+            applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
+
             updateMonitor = injector.getInstance(UpdateMonitor.class);
 
             controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
-
-            try
-            {
-                shutdownProt = ObjectProtection.getInstance(
-                    initCtx,
-                    ObjectProtection.buildPath(this, "shutdown"),
-                    true,
-                    null
-                );
-            }
-            catch (SQLException sqlExc)
-            {
-                // cannot happen
-                throw new ImplementationError(
-                    "Creating an ObjectProtection without TransactionManager threw an SQLException",
-                    sqlExc
-                );
-            }
 
             // Initialize the worker thread pool
             workerThrPool = injector.getInstance(WorkerPool.class);
@@ -266,25 +240,6 @@ public final class Satellite extends LinStor implements CoreServices
             // errorLogRef.logInfo("Initializing API call dispatcher");
             msgProc = new CommonMessageProcessor(errorLogRef, workerThrPool);
 
-
-            // Set CONTROL access for the SYSTEM role on shutdown
-            try
-            {
-                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-                shutdownProt.setConnection(transMgr);
-                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
-                transMgr.commit();
-            }
-            catch (SQLException sqlExc)
-            {
-                // cannot happen
-                throw new ImplementationError(
-                    "ObjectProtection without TransactionManager threw an SQLException",
-                    sqlExc
-                );
-            }
-
-
             errorLogRef.logInfo("Initializing test APIs");
             LinStor.loadApiCalls(msgProc, this, this, apiType);
 
@@ -301,7 +256,7 @@ public final class Satellite extends LinStor implements CoreServices
             systemServicesMap.put(devMgr.getInstanceName(), devMgr);
 
             // Initialize system services
-            startSystemServices(systemServicesMap.values());
+            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             // Initialize the network communications service
             errorLogRef.logInfo("Initializing main network communications service");
@@ -358,7 +313,7 @@ public final class Satellite extends LinStor implements CoreServices
             // for the system's role or changed the security type for shutdown,
             // override access controls with the system context's privileges
             shutdownCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_USE, Privilege.PRIV_MAC_OVRD);
-            shutdown(shutdownCtx);
+            applicationLifecycleManager.shutdown(shutdownCtx);
         }
         catch (AccessDeniedException accExc)
         {
@@ -372,51 +327,7 @@ public final class Satellite extends LinStor implements CoreServices
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
-        shutdown(accCtx, true);
-    }
-
-    public void shutdown(AccessContext accCtx, boolean sysExit) throws AccessDeniedException
-    {
-        shutdownProt.requireAccess(accCtx, AccessType.USE);
-
-        ErrorReporter errLog = getErrorReporter();
-
-        try
-        {
-            reconfigurationLock.writeLock().lock();
-            if (!shutdownFinished)
-            {
-                errLog.logInfo(
-                    String.format(
-                        "Shutdown initiated by subject '%s' using role '%s'\n",
-                        accCtx.getIdentity(), accCtx.getRole()
-                    )
-                );
-
-                errLog.logInfo("Shutdown in progress");
-
-                // Shutdown service threads
-                stopSystemServices(systemServicesMap.values());
-
-                if (workerThrPool != null)
-                {
-                    errLog.logInfo("Shutting down worker thread pool");
-                    workerThrPool.shutdown();
-                    workerThrPool = null;
-                }
-
-                errLog.logInfo("Shutdown complete");
-            }
-            shutdownFinished = true;
-        }
-        finally
-        {
-            reconfigurationLock.writeLock().unlock();
-        }
-        if (sysExit)
-        {
-            System.exit(0);
-        }
+        applicationLifecycleManager.shutdown(accCtx);
     }
 
     /**
