@@ -4,7 +4,6 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.LinbitModule;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
@@ -14,8 +13,6 @@ import com.linbit.WorkerPool;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -25,7 +22,6 @@ import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.SatelliteDummyStorPoolData;
 import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
@@ -69,7 +65,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -165,10 +160,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
     // Lock for major global changes
     public ReadWriteLock stltConfLock;
 
-    private final AtomicLong fullSyncId;
-    private boolean currentFullSyncApplied = false;
-
-    private final AtomicLong awaitedUpdateId;
+    private UpdateMonitor updateMonitor;
 
     public Satellite(
         Injector injectorRef,
@@ -190,17 +182,11 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
         apiType = ApiType.PROTOBUF;
 
-        fullSyncId = new AtomicLong(2); // just don't start with 0 making sure the controller
-        // mirrors our fullSyncId
-
-        awaitedUpdateId = new AtomicLong(0);
-
         // Initialize shutdown controls
         shutdownFinished = false;
     }
 
     public void initialize()
-        throws IOException
     {
         reconfigurationLock = injector.getInstance(
             Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
@@ -245,6 +231,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             // initialize noop databases drivers (needed for shutdownProt)
             securityDbDriver = injector.getInstance(EmptySecurityDbDriver.class);
             persistenceDbDriver = injector.getInstance(SatelliteDbDriver.class);
+
+            updateMonitor = injector.getInstance(UpdateMonitor.class);
 
             controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
 
@@ -802,51 +790,31 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     public long getCurrentFullSyncId()
     {
-        return fullSyncId.get();
+        return updateMonitor.getCurrentFullSyncId();
     }
 
     public long getCurrentAwaitedUpdateId()
     {
-        return awaitedUpdateId.get();
+        return updateMonitor.getCurrentAwaitedUpdateId();
     }
 
     public void awaitedUpdateApplied()
     {
-        awaitedUpdateId.incrementAndGet();
+        updateMonitor.awaitedUpdateApplied();
     }
 
     public long getNextFullSyncId()
     {
-        long nextFullSyncId;
-        try
-        {
-            reconfigurationLock.writeLock().lock();
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
-
-            nextFullSyncId = fullSyncId.incrementAndGet();
-
-            awaitedUpdateId.set(0);
-            currentFullSyncApplied = false;
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
-            reconfigurationLock.writeLock().unlock();
-        }
-        return nextFullSyncId;
+        return updateMonitor.getNextFullSyncId();
     }
 
     public void setFullSyncApplied()
     {
-        currentFullSyncApplied = true;
+        updateMonitor.setFullSyncApplied();
     }
 
     public boolean isCurrentFullSyncApplied()
     {
-        return currentFullSyncApplied;
+        return updateMonitor.isCurrentFullSyncApplied();
     }
 }

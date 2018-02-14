@@ -29,6 +29,7 @@ public class SatelliteCoreModule extends AbstractModule
             .toInstance(new ReentrantReadWriteLock(true));
 
         bind(ControllerPeerConnector.class).to(ControllerPeerConnectorImpl.class);
+        bind(UpdateMonitor.class).to(UpdateMonitorImpl.class);
     }
 
     @Provides
