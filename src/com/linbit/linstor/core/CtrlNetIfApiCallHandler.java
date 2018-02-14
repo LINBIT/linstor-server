@@ -6,6 +6,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -21,6 +22,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -94,6 +96,103 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
+    public ApiCallRc modifyNetIf(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String netIfNameStr,
+        String addressStr
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null,
+                nodeNameStr,
+                netIfNameStr
+            );
+        )
+        {
+            NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
+            setAddress(netIf, addressStr);
+
+            commit();
+
+            reportSuccess(netIf.getUuid());
+        }
+        catch (ApiCallHandlerFailedException ignored)
+        {
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.MODIFY,
+                getObjectDescriptionInline(nodeNameStr, netIfNameStr),
+                getObjRefs(nodeNameStr),
+                getVariables(nodeNameStr, netIfNameStr),
+                apiCallRc,
+                accCtx,
+                client
+            );
+        }
+
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteNetIf(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String netIfNameStr
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
+                accCtx,
+                client,
+                ApiCallType.DELETE,
+                apiCallRc,
+                null,
+                nodeNameStr,
+                netIfNameStr
+            );
+        )
+        {
+            NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
+
+            UUID uuid = netIf.getUuid();
+            deleteNetIf(netIf);
+
+            commit();
+
+            reportSuccess(uuid);
+        }
+        catch (ApiCallHandlerFailedException ignored)
+        {
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.DELETE,
+                getObjectDescriptionInline(nodeNameStr, netIfNameStr),
+                getObjRefs(nodeNameStr),
+                getVariables(nodeNameStr, netIfNameStr),
+                apiCallRc,
+                accCtx,
+                client
+            );
+        }
+
+        return apiCallRc;
+    }
 
     private NetInterfaceData createNetIf(NodeData node, NetInterfaceName netIfName, String address)
     {
@@ -136,22 +235,73 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         return netIf;
     }
 
-    private NetInterface getNetIf(NodeData node, NetInterfaceName netIfName)
+
+    private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr)
     {
-        NetInterface netInterface;
+        Node node = loadNode(nodeNameStr, true);
+        NetInterface netIf;
         try
         {
-            netInterface = node.getNetInterface(currentAccCtx.get(), netIfName);
+            netIf = node.getNetInterface(
+                currentAccCtx.get(),
+                asNetInterfaceName(netIfNameStr)
+            );
         }
         catch (AccessDeniedException exc)
         {
             throw asAccDeniedExc(
                 exc,
-                "view existing network interfaces of node '" + node.getName().displayValue + "'",
+                "loading " + getObjectDescriptionInline(),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        return netInterface;
+        return netIf;
+    }
+
+    private void setAddress(NetInterface netIf, String addressStr)
+    {
+        try
+        {
+            netIf.setAddress(currentAccCtx.get(), asLsIpAddress(addressStr));
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "setting address of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        catch (SQLException exc)
+        {
+            throw asSqlExc(
+                exc,
+                "updating address of " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    private void deleteNetIf(NetInterface netIf)
+    {
+        try
+        {
+            netIf.delete(currentAccCtx.get());
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "deleting " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        catch (SQLException exc)
+        {
+            throw asSqlExc(
+                exc,
+                "deleting " + getObjectDescriptionInline()
+            );
+        }
     }
 
     private AbsApiCallHandler setContext(

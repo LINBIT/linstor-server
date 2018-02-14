@@ -1688,17 +1688,68 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         Lock ctrlReadLock = ctrlConfigLock.readLock();
-        Lock nodeWriteLock = nodesMapLock.writeLock();
+        Lock nodeReadLock = nodesMapLock.readLock();
         try
         {
             ctrlReadLock.lock();
-            nodeWriteLock.lock();
+            nodeReadLock.lock();
 
             apiCallRc = netIfApiCallHandler.createNetIf(accCtx, client, nodeName, netIfName, address);
         }
         finally
         {
-            nodeWriteLock.unlock();
+            nodeReadLock.unlock();
+            ctrlReadLock.unlock();
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyNetInterface(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String netIfName,
+        String address
+    )
+    {
+        ApiCallRc apiCallRc;
+        Lock ctrlReadLock = ctrlConfigLock.readLock();
+        Lock nodeReadLock = nodesMapLock.readLock();
+        try
+        {
+            ctrlReadLock.lock();
+            nodeReadLock.lock();
+
+            apiCallRc = netIfApiCallHandler.modifyNetIf(accCtx, client, nodeName, netIfName, address);
+        }
+        finally
+        {
+            nodeReadLock.unlock();
+            ctrlReadLock.unlock();
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteNetInterface(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String netIfName
+    )
+    {
+        ApiCallRc apiCallRc;
+        Lock ctrlReadLock = ctrlConfigLock.readLock();
+        Lock nodeReadLock = nodesMapLock.readLock();
+        try
+        {
+            ctrlReadLock.lock();
+            nodeReadLock.lock();
+
+            apiCallRc = netIfApiCallHandler.deleteNetIf(accCtx, client, nodeName, netIfName);
+        }
+        finally
+        {
+            nodeReadLock.unlock();
             ctrlReadLock.unlock();
         }
         return apiCallRc;
