@@ -21,14 +21,14 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class NoSimZfsDriverTest extends NoSimDriverTest
 {
-    public NoSimZfsDriverTest() throws IOException, StorageException
+    public NoSimZfsDriverTest() throws IOException
     {
-        this(new ZfsDriverKind().makeStorageDriver());
+        this(new ZfsDriverKind());
     }
 
-    public NoSimZfsDriverTest(ZfsDriver driver) throws IOException, StorageException
+    public NoSimZfsDriverTest(ZfsDriverKind driverKind) throws IOException
     {
-        super(driver);
+        super(driverKind);
 //      poolName = "linStorZfsDriverTestPool-REMOVE-ME";
         poolName = "testPool";
     }

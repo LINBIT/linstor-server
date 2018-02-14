@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.timer.CoreTimerImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -29,22 +31,11 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.linstor.SatelliteCoreServices;
-import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
-import com.linbit.timer.Action;
-import com.linbit.timer.GenericTimer;
-import com.linbit.timer.Timer;
 
 public class StorageTestUtils
 {
-    protected static interface DriverFactory
-    {
-        StorageDriver createDriver() throws StorageException;
-    }
-
     protected final FileObserver emptyFileObserver;
 
     @Rule
@@ -53,11 +44,11 @@ public class StorageTestUtils
     protected StorageDriver driver;
     protected TestExtCmd ec;
 
-    private DriverFactory driverFactory;
+    private StorageDriverKind driverKind;
 
-    public StorageTestUtils(DriverFactory factory) throws Exception
+    public StorageTestUtils(StorageDriverKind driverKindRef) throws Exception
     {
-        this.driverFactory = factory;
+        driverKind = driverKindRef;
         emptyFileObserver = new FileObserver()
         {
             @Override
@@ -76,8 +67,11 @@ public class StorageTestUtils
     public void setUp() throws Exception
     {
         ec.clearBehaviors();
-        driver = driverFactory.createDriver();
-        driver.initialize(new DummySatelliteCoreServices());
+
+        ErrorReporter errRep = new EmptyErrorReporter();
+        CoreTimer timer = new CoreTimerImpl();
+
+        driver = driverKind.makeStorageDriver(errRep, null, timer);
     }
 
     @After
@@ -198,41 +192,5 @@ public class StorageTestUtils
                 return testFileEntryGroup;
             }
         };
-    }
-
-    private class DummySatelliteCoreServices implements SatelliteCoreServices
-    {
-        private ErrorReporter errRep = new EmptyErrorReporter();
-        private Timer<String, Action<String>> timer = new GenericTimer<>();
-
-        @Override
-        public ErrorReporter getErrorReporter()
-        {
-            return errRep;
-        }
-
-        @Override
-        public Timer<String, Action<String>> getTimer()
-        {
-            return timer;
-        }
-
-        @Override
-        public FileSystemWatch getFsWatch()
-        {
-            return null;
-        }
-
-        @Override
-        public DeviceManager getDeviceManager()
-        {
-            return null;
-        }
-
-        @Override
-        public DrbdStateTracker getDrbdStateTracker()
-        {
-            return null;
-        }
     }
 }

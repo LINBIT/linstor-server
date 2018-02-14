@@ -11,6 +11,8 @@ import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -19,6 +21,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.timer.CoreTimer;
 
 public class SatelliteDummyStorPoolData extends StorPoolData
 {
@@ -58,8 +61,12 @@ public class SatelliteDummyStorPoolData extends StorPoolData
     }
 
     @Override
-    public StorageDriver createDriver(AccessContext accCtx, SatelliteCoreServices coreSvc)
-        throws AccessDeniedException
+    public StorageDriver createDriver(
+        AccessContext accCtx,
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
+    )
     {
         throw new UnsupportedOperationException(EXC_MSG);
     }

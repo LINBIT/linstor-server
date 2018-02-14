@@ -14,10 +14,11 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -28,6 +29,9 @@ import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import org.slf4j.event.Level;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,7 +41,9 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
+@Singleton
 class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 {
     // CAUTION! Avoid locking the sched lock and satellite locks like the reconfigurationLock, rscDfnMapLock, etc.
@@ -49,10 +55,19 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     //          therefore no other locks should be taken while the sched lock is held, so as to avoid deadlock.
     private final Object sched = new Object();
 
-    private final Satellite stltInstance;
     private final AccessContext wrkCtx;
-    private final SatelliteCoreServices coreSvcs;
     private final ErrorReporter errLog;
+
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+
+    private final StltUpdateRequester stltUpdateRequester;
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final CtrlStltSerializer interComSerializer;
 
     private StltUpdateTrackerImpl updTracker;
 
@@ -102,24 +117,40 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private long cycleNr = 0;
 
+    @Inject
     DeviceManagerImpl(
-        Satellite stltRef,
-        AccessContext wrkCtxRef,
-        SatelliteCoreServices coreSvcsRef,
+        @DeviceManagerContext AccessContext wrkCtxRef,
+        ErrorReporter errorReporterRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        StltUpdateRequester stltUpdateRequesterRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        CtrlStltSerializer interComSerializerRef,
         DrbdEventService drbdEventRef,
-        WorkQueue workQRef
+        WorkQueue workQRef,
+        DrbdDeviceHandler drbdDeviceHandlerRef
     )
     {
-        stltInstance = stltRef;
         wrkCtx = wrkCtxRef;
-        coreSvcs = coreSvcsRef;
-        errLog = coreSvcsRef.getErrorReporter();
+        errLog = errorReporterRef;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
+        reconfigurationLock = reconfigurationLockRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        stltUpdateRequester = stltUpdateRequesterRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        interComSerializer = interComSerializerRef;
         drbdEvent = drbdEventRef;
+        drbdHnd = drbdDeviceHandlerRef;
+        workQ = workQRef;
+
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
         devMgrInstName = DEV_MGR_NAME;
-        drbdHnd = new DrbdDeviceHandler(stltInstance, wrkCtx, coreSvcs);
-        workQ = workQRef;
 
         drbdEvent.addDrbdStateChangeObserver(this);
         stateAvailable = drbdEvent.isDrbdStateAvailable();
@@ -399,15 +430,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     // Clear the previous state
                     dispatchRscSet.clear();
 
-                    Lock rcfgRdLock = stltInstance.reconfigurationLock.readLock();
-                    Lock rscDfnMapRdLock = stltInstance.rscDfnMapLock.readLock();
+                    Lock rcfgRdLock = reconfigurationLock.readLock();
+                    Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
 
                     // Schedule all known resources for dispatching to the device handlers
                     try
                     {
                         rcfgRdLock.lock();
                         rscDfnMapRdLock.lock();
-                        dispatchRscSet.addAll(stltInstance.rscDfnMap.keySet());
+                        dispatchRscSet.addAll(rscDfnMap.keySet());
                     }
                     finally
                     {
@@ -596,15 +627,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
         if (!dispatchRscSet.isEmpty())
         {
-            stltInstance.reconfigurationLock.readLock().lock();
+            reconfigurationLock.readLock().lock();
             try
             {
-                NodeData localNode = stltInstance.getLocalNode();
+                NodeData localNode = controllerPeerConnector.getLocalNode();
                 for (ResourceName rscName : dispatchRscSet)
                 {
                     // Dispatch resources that were affected by changes to worker threads
                     // and to the resource's respective handler
-                    ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
+                    ResourceDefinition rscDfn = rscDfnMap.get(rscName);
                     if (rscDfn != null)
                     {
                         Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
@@ -641,7 +672,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             }
             finally
             {
-                stltInstance.reconfigurationLock.readLock().unlock();
+                reconfigurationLock.readLock().unlock();
             }
         }
     }
@@ -665,9 +696,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             deletedVlmSet.clear();
         }
 
-        Lock rcfgRdLock = stltInstance.reconfigurationLock.readLock();
-        Lock nodeMapWrLock = stltInstance.nodesMapLock.writeLock();
-        Lock rscDfnMapWrLock = stltInstance.rscDfnMapLock.writeLock();
+        Lock rcfgRdLock = reconfigurationLock.readLock();
+        Lock nodeMapWrLock = nodesMapLock.writeLock();
+        Lock rscDfnMapWrLock = rscDfnMapLock.writeLock();
 
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         rcfgRdLock.lock();
@@ -678,7 +709,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 for (ResourceName curRscName : localDelRscSet)
                 {
-                    ResourceDefinition curRscDfn = stltInstance.rscDfnMap.get(curRscName);
+                    ResourceDefinition curRscDfn = rscDfnMap.get(curRscName);
                     if (curRscDfn != null)
                     {
                         // Delete the resource from all nodes
@@ -689,7 +720,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                             Node peerNode = delRsc.getAssignedNode();
                             delRsc.setConnection(transMgr);
                             delRsc.delete(wrkCtx);
-                            if (peerNode != stltInstance.getLocalNode())
+                            if (peerNode != controllerPeerConnector.getLocalNode())
                             {
                                 if (!(peerNode.getResourceCount() >= 1))
                                 {
@@ -705,7 +736,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         // Since the local node no longer has the resource, it also does not need
                         // to know about the resource definition any longer, therefore
                         // delete the resource definition as well
-                        stltInstance.rscDfnMap.remove(curRscName);
+                        rscDfnMap.remove(curRscName);
                     }
                 }
             }
@@ -719,7 +750,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 for (NodeName curNodeName : localDelNodeSet)
                 {
-                    stltInstance.nodesMap.remove(curNodeName);
+                    nodesMap.remove(curNodeName);
                 }
             }
             finally
@@ -740,11 +771,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private void requestNodeUpdates(Map<NodeName, UUID> nodesMap)
     {
-        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<NodeName, UUID> entry : nodesMap.entrySet())
         {
             errLog.logTrace("Requesting update for node '" + entry.getKey().displayValue + "'");
-            apiCallHandler.requestNodeUpdate(
+            stltUpdateRequester.requestNodeUpdate(
                 entry.getValue(),
                 entry.getKey()
             );
@@ -753,11 +783,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private void requestRscDfnUpdates(Map<ResourceName, UUID> rscDfnMap)
     {
-        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<ResourceName, UUID> entry : rscDfnMap.entrySet())
         {
             errLog.logTrace("Requesting update for resource definition '" + entry.getKey().displayValue + "'");
-            apiCallHandler.requestRscDfnUpate(
+            stltUpdateRequester.requestRscDfnUpate(
                 entry.getValue(),
                 entry.getKey()
             );
@@ -766,7 +795,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private void requestRscUpdates(Map<ResourceName, Map<NodeName, UUID>> updRscMap)
     {
-        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<ResourceName, Map<NodeName, UUID>> entry : updRscMap.entrySet())
         {
             ResourceName rscName = entry.getKey();
@@ -774,7 +802,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             for (Entry<NodeName, UUID> nodeEntry : nodes.entrySet())
             {
                 errLog.logTrace("Requesting update for resource '" + entry.getKey().displayValue + "'");
-                apiCallHandler.requestRscUpdate(
+                stltUpdateRequester.requestRscUpdate(
                     nodeEntry.getValue(),
                     nodeEntry.getKey(),
                     rscName
@@ -785,11 +813,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private void requestStorPoolUpdates(Map<StorPoolName, UUID> updStorPoolMap)
     {
-        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<StorPoolName, UUID> entry : updStorPoolMap.entrySet())
         {
             errLog.logTrace("Requesting update for storage pool '" + entry.getKey().displayValue + "'");
-            apiCallHandler.requestStorPoolUpdate(
+            stltUpdateRequester.requestStorPoolUpdate(
                 entry.getValue(),
                 entry.getKey()
             );
@@ -824,14 +851,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     public void notifyResourceDeleted(Resource rsc)
     {
         // Send delete notification to the controller
-        Peer ctrlPeer = stltInstance.getControllerPeer();
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
         if (ctrlPeer != null)
         {
             String msgNodeName = rsc.getAssignedNode().getName().displayValue;
             String msgRscName = rsc.getDefinition().getName().displayValue;
             UUID rscUuid = rsc.getUuid();
 
-            byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
+            byte[] data = interComSerializer
                 .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
                 .notifyResourceDeleted(msgNodeName, msgRscName, rscUuid)
                 .build();
@@ -853,13 +880,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     public void notifyVolumeDeleted(Volume vlm)
     {
         // Send delete notification to the controller
-        Peer ctrlPeer = stltInstance.getControllerPeer();
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
         if (ctrlPeer != null)
         {
             String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
-            byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
+            byte[] data = interComSerializer
                 .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
                 .notifyVolumeDeleted(
                     msgNodeName,

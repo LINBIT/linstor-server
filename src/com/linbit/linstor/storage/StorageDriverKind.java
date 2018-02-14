@@ -1,5 +1,9 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -20,7 +24,11 @@ public interface StorageDriverKind
      *
      * @return The new storage driver instance
      */
-    StorageDriver makeStorageDriver();
+    StorageDriver makeStorageDriver(
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
+    );
 
     /**
      * Returns a map of the general characteristics of this type of driver.

@@ -26,14 +26,14 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
     protected boolean thinPoolExisted = false;
     protected String thinPool = LvmThinDriver.LVM_THIN_POOL_DEFAULT;
 
-    public NoSimLvmThinDriverTest() throws IOException, StorageException
+    public NoSimLvmThinDriverTest() throws IOException
     {
-        super(new LvmThinDriverKind().makeStorageDriver());
+        super(new LvmThinDriverKind());
     }
 
-    public NoSimLvmThinDriverTest(StorageDriver driver) throws IOException, StorageException
+    public NoSimLvmThinDriverTest(StorageDriverKind driverKind) throws IOException
     {
-        super(driver);
+        super(driverKind);
     }
 
     public static void main(String[] args) throws IOException, StorageException, ChildProcessTimeoutException

@@ -21,14 +21,14 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class NoSimLvmDriverTest extends NoSimDriverTest
 {
-    public NoSimLvmDriverTest() throws IOException, StorageException
+    public NoSimLvmDriverTest() throws IOException
     {
-        this(new LvmDriverKind().makeStorageDriver());
+        this(new LvmDriverKind());
     }
 
-    public NoSimLvmDriverTest(StorageDriver driver) throws IOException, StorageException
+    public NoSimLvmDriverTest(StorageDriverKind driverKind) throws IOException
     {
-        super(driver);
+        super(driverKind);
         poolExisted = false;
         poolName = "linStorLvmDriverTestPool-REMOVE-ME";
     }

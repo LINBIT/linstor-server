@@ -1,15 +1,18 @@
 package com.linbit.linstor.storage;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LvmDriver extends AbsStorageDriver
 {
@@ -29,9 +32,14 @@ public class LvmDriver extends AbsStorageDriver
 
     protected String volumeGroup = LVM_VOLUME_GROUP_DEFAULT;
 
-    public LvmDriver(StorageDriverKind storageDriverKind)
+    public LvmDriver(
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer,
+        StorageDriverKind storageDriverKind
+    )
     {
-        super(storageDriverKind);
+        super(errorReporter, fileSystemWatch, timer, storageDriverKind);
     }
 
     @Override
@@ -103,7 +111,7 @@ public class LvmDriver extends AbsStorageDriver
         HashMap<String, LvsInfo> infoMap;
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             infoMap = LvsInfo.getAllInfo(extCommand, lvmLvsCommand, volumeGroup);
             info = infoMap.get(identifier);
 
@@ -167,7 +175,7 @@ public class LvmDriver extends AbsStorageDriver
             };
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData output = extCommand.exec(command);
 
             checkExitCode(output, command);
@@ -305,7 +313,7 @@ public class LvmDriver extends AbsStorageDriver
                 };
             try
             {
-                final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
                 final OutputData output = extCommand.exec(volumeGroupCheckCommand);
                 final String stdOut = new String(output.stdoutData);
                 final String[] lines = stdOut.split("\n");
@@ -366,7 +374,7 @@ public class LvmDriver extends AbsStorageDriver
             };
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData output = extCommand.exec(command);
 
             checkExitCode(output, command);

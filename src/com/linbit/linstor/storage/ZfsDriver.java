@@ -10,6 +10,9 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
 
 public class ZfsDriver extends AbsStorageDriver
 {
@@ -20,9 +23,14 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected String pool = ZFS_POOL_DEFAULT;
 
-    public ZfsDriver(StorageDriverKind storageDriverKind)
+    public ZfsDriver(
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer,
+        StorageDriverKind storageDriverKind
+    )
     {
-        super(storageDriverKind);
+        super(errorReporter, fileSystemWatch, timer, storageDriverKind);
     }
 
     @Override
@@ -47,7 +55,7 @@ public class ZfsDriver extends AbsStorageDriver
     @Override
     protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
-        final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
         VolumeInfo vlmInfo;
         try
         {
@@ -94,7 +102,7 @@ public class ZfsDriver extends AbsStorageDriver
         long extentSize;
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             OutputData outputData = extCommand.exec(command);
 
             checkExitCode(outputData, command);
@@ -247,7 +255,7 @@ public class ZfsDriver extends AbsStorageDriver
                 };
             try
             {
-                final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
                 final OutputData output = extCommand.exec(poolCheckCommand);
                 if (output.exitCode != 0)
                 {
@@ -292,7 +300,7 @@ public class ZfsDriver extends AbsStorageDriver
         long freeSize;
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             OutputData outputData = extCommand.exec(command);
 
             checkExitCode(outputData, command);

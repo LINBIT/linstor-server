@@ -10,6 +10,9 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
 
 /**
  * Logical Volume Manager - Storage driver for linstor
@@ -30,9 +33,14 @@ public class LvmThinDriver extends LvmDriver
     protected String baseVolumeGroup = LVM_VOLUME_GROUP_DEFAULT;
     protected String thinPoolName = LVM_THIN_POOL_DEFAULT;
 
-    public LvmThinDriver(StorageDriverKind storageDriverKind)
+    public LvmThinDriver(
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer,
+        StorageDriverKind storageDriverKind
+    )
     {
-        super(storageDriverKind);
+        super(errorReporter, fileSystemWatch, timer, storageDriverKind);
     }
 
     @Override
@@ -49,7 +57,7 @@ public class LvmThinDriver extends LvmDriver
         };
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(outputData, command, "Failed to start volume [%s]. ", qualifiedIdentifier);
         }
@@ -80,7 +88,7 @@ public class LvmThinDriver extends LvmDriver
         };
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(outputData, command, "Failed to stop volume [%s]. ", qualifiedIdentifier);
         }
@@ -228,7 +236,7 @@ public class LvmThinDriver extends LvmDriver
                 };
             try
             {
-                final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
                 final OutputData output = extCommand.exec(thinPoolCheckCommand);
                 final String stdOut = new String(output.stdoutData);
                 final String[] lines = stdOut.split("\n");

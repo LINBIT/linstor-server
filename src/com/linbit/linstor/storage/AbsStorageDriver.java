@@ -22,9 +22,9 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.fsevent.FsWatchTimeoutException;
+import com.linbit.linstor.timer.CoreTimer;
 
 public abstract class AbsStorageDriver implements StorageDriver
 {
@@ -34,16 +34,24 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'-'};
 
-    protected StorageDriverKind storageDriverKind;
-    protected FileSystemWatch fileSystemWatch;
-    protected ErrorReporter errorReporter;
-    protected SatelliteCoreServices coreSvcs;
+    protected final ErrorReporter errorReporter;
+    protected final FileSystemWatch fileSystemWatch;
+    protected final CoreTimer timer;
+    protected final StorageDriverKind storageDriverKind;
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
 
-    public AbsStorageDriver(StorageDriverKind storageDriverKindRef)
+    public AbsStorageDriver(
+        ErrorReporter errorReporterRef,
+        FileSystemWatch fileSystemWatchRef,
+        CoreTimer timerRef,
+        StorageDriverKind storageDriverKindRef
+    )
     {
+        errorReporter = errorReporterRef;
+        fileSystemWatch = fileSystemWatchRef;
+        timer = timerRef;
         storageDriverKind = storageDriverKindRef;
     }
 
@@ -51,14 +59,6 @@ public abstract class AbsStorageDriver implements StorageDriver
     public StorageDriverKind getKind()
     {
         return storageDriverKind;
-    }
-
-    @Override
-    public void initialize(final SatelliteCoreServices coreSvcsRef)
-    {
-        coreSvcs = coreSvcsRef;
-        fileSystemWatch = coreSvcs.getFsWatch();
-        errorReporter = coreSvcs.getErrorReporter();
     }
 
     @Override
@@ -104,7 +104,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         String[] command = getCreateCommand(identifier, effSize);
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData output;
             try
             {
@@ -198,7 +198,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void deleteVolume(final String identifier) throws StorageException
     {
-        final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
         final String[] command = getDeleteCommand(identifier);
         try
         {
@@ -405,7 +405,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
-        final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
         final String[] command = getCreateSnapshotCommand(identifier, snapshotName);
         try
         {
@@ -442,7 +442,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(
                 outputData,
@@ -484,7 +484,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
         try
         {
-            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(
                 outputData, command,

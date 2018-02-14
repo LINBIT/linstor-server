@@ -680,7 +680,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
-                StorageDriver storageDriver = storPool.createDriver(SYS_CTX, null);
+                StorageDriver storageDriver = storPool.createDriver(SYS_CTX, null, null, null);
                 assertNull(storageDriver);
                 // in controller storDriver HAS to be null (as we are testing database, we have to be testing the controller)
             }

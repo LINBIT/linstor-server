@@ -16,9 +16,11 @@ import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -30,6 +32,7 @@ import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.timer.CoreTimer;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
@@ -261,7 +264,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorageDriver createDriver(AccessContext accCtx, SatelliteCoreServices coreSvc)
+    public StorageDriver createDriver(
+        AccessContext accCtx,
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
+    )
         throws AccessDeniedException
     {
         StorageDriver storageDriver = null;
@@ -269,8 +277,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         {
             checkDeleted();
             node.getObjProt().requireAccess(accCtx, AccessType.USE);
-            storageDriver = storageDriverKind.makeStorageDriver();
-            storageDriver.initialize(coreSvc);
+            storageDriver = storageDriverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
         }
         return storageDriver;
     }

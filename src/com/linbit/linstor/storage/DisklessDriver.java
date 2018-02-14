@@ -3,8 +3,6 @@ package com.linbit.linstor.storage;
 import java.util.Collections;
 import java.util.Map;
 
-import com.linbit.linstor.SatelliteCoreServices;
-
 public class DisklessDriver implements StorageDriver
 {
     private final StorageDriverKind storageDriverKind;
@@ -18,12 +16,6 @@ public class DisklessDriver implements StorageDriver
     public StorageDriverKind getKind()
     {
         return storageDriverKind;
-    }
-
-    @Override
-    public void initialize(SatelliteCoreServices coreSvc)
-    {
-        // no-op
     }
 
     @Override

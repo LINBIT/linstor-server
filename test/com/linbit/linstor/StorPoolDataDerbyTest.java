@@ -15,16 +15,9 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.drbdstate.DrbdStateTracker;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.timer.Action;
-import com.linbit.timer.GenericTimer;
-import com.linbit.timer.Timer;
 import com.linbit.utils.UuidUtils;
 
 public class StorPoolDataDerbyTest extends DerbyBase
@@ -128,7 +121,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(SYS_CTX));
-        assertNull(loadedStorPool.createDriver(SYS_CTX, null));
+        assertNull(loadedStorPool.createDriver(SYS_CTX, null, null, null));
         assertEquals(LvmDriver.class.getSimpleName(), loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }
@@ -149,7 +142,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         StorPoolDefinition spDfn = storPoolData.getDefinition(SYS_CTX);
         assertNotNull(spDfn);
         assertEquals(spName, spDfn.getName());
-        assertNull(storPoolData.createDriver(SYS_CTX, null));
+        assertNull(storPoolData.createDriver(SYS_CTX, null, null, null));
         assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
         assertEquals(spName, storPoolData.getName());
     }
@@ -202,7 +195,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(SYS_CTX));
-        assertNull(loadedStorPool.createDriver(SYS_CTX, null));
+        assertNull(loadedStorPool.createDriver(SYS_CTX, null, null, null));
         assertEquals(LvmDriver.class.getSimpleName(), loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }

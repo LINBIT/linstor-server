@@ -12,9 +12,6 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -255,46 +252,6 @@ public class StltApiCallHandler
         }
     }
 
-    public void requestNodeUpdate(UUID nodeUuid, NodeName nodeName)
-    {
-        sendRequest(
-            satellite.getApiCallHandler().getInterComSerializer()
-                .builder(InternalApiConsts.API_REQUEST_NODE, 0)
-                .requestNodeUpdate(nodeUuid, nodeName.getDisplayName())
-                .build()
-        );
-    }
-
-    public void requestRscDfnUpate(UUID rscDfnUuid, ResourceName rscName)
-    {
-        sendRequest(
-            satellite.getApiCallHandler().getInterComSerializer()
-                .builder(InternalApiConsts.API_REQUEST_RSC_DFN, 0)
-                .requestResourceDfnUpdate(rscDfnUuid, rscName.getDisplayName())
-                .build()
-        );
-    }
-
-    public void requestRscUpdate(UUID rscUuid, NodeName nodeName, ResourceName rscName)
-    {
-        sendRequest(
-            satellite.getApiCallHandler().getInterComSerializer()
-                .builder(InternalApiConsts.API_REQUEST_RSC, 0)
-                .requestResourceUpdate(rscUuid, nodeName.getDisplayName(), rscName.getDisplayName())
-                .build()
-        );
-    }
-
-    public void requestStorPoolUpdate(UUID storPoolUuid, StorPoolName storPoolName)
-    {
-        sendRequest(
-            satellite.getApiCallHandler().getInterComSerializer()
-                .builder(InternalApiConsts.API_REQUEST_STOR_POOL, 0)
-                .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
-                .build()
-        );
-    }
-
     public void applyNodeChanges(NodePojo nodePojo)
     {
         applyChangedData(new ApplyNodeData(nodePojo));
@@ -408,36 +365,6 @@ public class StltApiCallHandler
             satellite.rscDfnMapLock.writeLock().unlock();
         }
 
-    }
-
-    private void sendRequest(byte[] requestData)
-    {
-        try
-        {
-            if (requestData != null && requestData.length > 0)
-            {
-                Peer controllerPeer = satellite.getLocalNode().getPeer(apiCtx);
-                controllerPeer.sendMessage(requestData);
-            }
-            else
-            {
-                satellite.getErrorReporter().reportError(
-                    new ImplementationError(
-                        "Failed to serialize a request ",
-                        null
-                    )
-                );
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            satellite.getErrorReporter().reportError(
-                new ImplementationError(
-                    "StltApiCtx does not have enough privileges to send a message to controller",
-                    accDeniedExc
-                )
-            );
-        }
     }
 
     private interface ApplyData

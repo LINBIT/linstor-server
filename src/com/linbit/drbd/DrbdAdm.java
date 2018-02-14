@@ -9,14 +9,21 @@ import java.util.List;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.linstor.core.SatelliteCoreModule;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.io.File;
 
+@Singleton
 public class DrbdAdm
 {
     public static final String DRBDADM_UTIL   = "drbdadm";
@@ -30,13 +37,20 @@ public class DrbdAdm
 
     public static final int WAIT_CONNECT_RES_TIME = 10;
 
-    private Path configPath;
-    private CoreServices coreSvcs;
+    private final ErrorReporter errorReporter;
+    private final Path configPath;
+    private final CoreTimer timer;
 
-    public DrbdAdm(Path configPathRef, CoreServices coreSvcsRef)
+    @Inject
+    public DrbdAdm(
+        ErrorReporter errorReporterRef,
+        @Named(SatelliteCoreModule.DRBD_CONFIG_PATH) Path configPathRef,
+        CoreTimer timerRef
+    )
     {
+        errorReporter = errorReporterRef;
         configPath = configPathRef;
-        coreSvcs = coreSvcsRef;
+        timer = timerRef;
     }
 
     /**
@@ -220,7 +234,7 @@ public class DrbdAdm
 
         boolean mdFlag = true;
         String[] params = command.toArray(new String[command.size()]);
-        ExtCmd utilsCmd = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        ExtCmd utilsCmd = new ExtCmd(timer, errorReporter);
         File nullDevice = new File("/dev/null");
         try
         {
@@ -403,7 +417,7 @@ public class DrbdAdm
         {
             // FIXME: Works only on Unix
             File nullDevice = new File("/dev/null");
-            ExtCmd extCmd = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            ExtCmd extCmd = new ExtCmd(timer, errorReporter);
             OutputData outputData = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
             if (outputData.exitCode != 0)
             {

@@ -1,5 +1,9 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,9 +18,11 @@ public class ZfsDriverKind implements StorageDriverKind
     }
 
     @Override
-    public ZfsDriver makeStorageDriver()
+    public StorageDriver makeStorageDriver(
+        ErrorReporter errorReporter, FileSystemWatch fileSystemWatch, CoreTimer timer
+    )
     {
-        return new ZfsDriver(this);
+        return new ZfsDriver(errorReporter, fileSystemWatch, timer, this);
     }
 
     @Override

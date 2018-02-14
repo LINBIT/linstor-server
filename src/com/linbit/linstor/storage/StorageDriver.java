@@ -2,7 +2,6 @@ package com.linbit.linstor.storage;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.linstor.SatelliteCoreServices;
 
 import java.util.Map;
 
@@ -19,14 +18,6 @@ public interface StorageDriver
      * @return The kind of this driver
      */
     StorageDriverKind getKind();
-
-    /**
-     * Initializes the driver
-     *
-     * @param coreSvc
-     * @throws StorageException
-     */
-    void initialize(SatelliteCoreServices coreSvc);
 
     /**
      * Makes a volume ready for access

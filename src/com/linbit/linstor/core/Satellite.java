@@ -10,13 +10,13 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.SatelliteDummyStorPoolData;
 import com.linbit.linstor.SatellitePeerCtx;
@@ -25,7 +25,6 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.drbdstate.DrbdEventService;
-import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -41,7 +40,6 @@ import com.linbit.linstor.security.EmptySecurityDbDriver;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -71,7 +69,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class Satellite extends LinStor implements SatelliteCoreServices
+public final class Satellite extends LinStor implements CoreServices
 {
     // System module information
     public static final String MODULE = "Satellite";
@@ -143,14 +141,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
     private ControllerPeerConnector controllerPeerConnector;
 
-    // File system watch service
-    private FileSystemWatch fsWatchSvc;
-
     // Device manager
     private DeviceManagerImpl devMgr = null;
-
-    // Drbd Event Tracker
-    private DrbdEventService drbdEventSvc;
 
     // Shutdown controls
     private boolean shutdownFinished;
@@ -212,7 +204,7 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
 
-            fsWatchSvc = injector.getInstance(FileSystemWatch.class);
+            FileSystemWatch fsWatchSvc = injector.getInstance(FileSystemWatch.class);
             systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
@@ -299,21 +291,14 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
 
             errorLogRef.logInfo("Initializing StateTracker");
             {
-                drbdEventSvc = injector.getInstance(DrbdEventService.class);
+                DrbdEventService drbdEventSvc = injector.getInstance(DrbdEventService.class);
 
                 systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
             }
 
             errorLogRef.logInfo("Initializing device manager");
-            {
-                AccessContext devMgrCtx = sysCtx.clone();
-                PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
-                devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
-                devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
-                devMgr = new DeviceManagerImpl(this, devMgrCtx, this, drbdEventSvc, workerThrPool);
-
-                systemServicesMap.put(devMgr.getInstanceName(), devMgr);
-            }
+            devMgr = injector.getInstance(DeviceManagerImpl.class);
+            systemServicesMap.put(devMgr.getInstanceName(), devMgr);
 
             // Initialize system services
             startSystemServices(systemServicesMap.values());
@@ -473,12 +458,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         }
 
         return peerDbgConsole;
-    }
-
-    @Override
-    public FileSystemWatch getFsWatch()
-    {
-        return fsWatchSvc;
     }
 
     private void initMainNetComService(AccessContext initCtx)
@@ -697,13 +676,6 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         }
     }
 
-    @Override
-    public DrbdStateTracker getDrbdStateTracker()
-    {
-        return drbdEventSvc;
-    }
-
-    @Override
     public DeviceManager getDeviceManager()
     {
         return devMgr;

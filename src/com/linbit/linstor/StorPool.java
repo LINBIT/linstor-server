@@ -5,14 +5,18 @@ import java.util.Collection;
 import java.util.UUID;
 
 import com.linbit.TransactionObject;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.Satellite;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.timer.CoreTimer;
+
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +51,12 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
      * Returns the {@link StorageDriver}.
      * Will return null on {@link Controller}, and non-null on {@link Satellite}.
      */
-    StorageDriver createDriver(AccessContext accCtx, SatelliteCoreServices coreSvc)
+    StorageDriver createDriver(
+        AccessContext accCtx,
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
+    )
         throws AccessDeniedException;
 
     StorageDriverKind getDriverKind(AccessContext accCtx)

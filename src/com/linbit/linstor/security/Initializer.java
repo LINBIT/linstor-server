@@ -11,6 +11,7 @@ import com.linbit.SatelliteLinbitModule;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.core.ApiCallHandlerModule;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.ControllerCoreModule;
@@ -110,6 +111,7 @@ public final class Initializer
             new DbConnectionPoolModule(),
             new NetComModule(),
             new NumberPoolModule(),
+            new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule()
         );
 
@@ -132,7 +134,8 @@ public final class Initializer
             new SatelliteLinbitModule(),
             new CoreModule(),
             new SatelliteCoreModule(),
-            new DrbdStateModule()
+            new DrbdStateModule(),
+            new ApiCallHandlerModule()
         );
 
         return new Satellite(injector, SYSTEM_CTX, PUBLIC_CTX);

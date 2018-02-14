@@ -42,19 +42,12 @@ public class LvmDriverTest extends StorageTestUtils
 
     public LvmDriverTest() throws Exception
     {
-        super(new StorageTestUtils.DriverFactory()
-        {
-            @Override
-            public StorageDriver createDriver() throws StorageException
-            {
-                return new LvmDriverKind().makeStorageDriver();
-            }
-        });
+        super(new LvmDriverKind());
     }
 
-    public LvmDriverTest(DriverFactory driverFactory) throws Exception
+    public LvmDriverTest(StorageDriverKind driverKind) throws Exception
     {
-        super(driverFactory);
+        super(driverKind);
     }
 
     @Test

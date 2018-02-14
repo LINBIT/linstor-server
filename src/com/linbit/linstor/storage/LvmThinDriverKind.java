@@ -1,5 +1,9 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,9 +18,11 @@ public class LvmThinDriverKind implements StorageDriverKind
     }
 
     @Override
-    public LvmThinDriver makeStorageDriver()
+    public StorageDriver makeStorageDriver(
+        ErrorReporter errorReporter, FileSystemWatch fileSystemWatch, CoreTimer timer
+    )
     {
-        return new LvmThinDriver(this);
+        return new LvmThinDriver(errorReporter, fileSystemWatch, timer, this);
     }
 
     @Override

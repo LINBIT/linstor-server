@@ -28,19 +28,7 @@ public class LvmThinDriverTest extends LvmDriverTest
 {
     public LvmThinDriverTest() throws Exception
     {
-        super(new StorageTestUtils.DriverFactory()
-        {
-            @Override
-            public StorageDriver createDriver() throws StorageException
-            {
-                return new LvmThinDriverKind().makeStorageDriver();
-            }
-        });
-    }
-
-    public LvmThinDriverTest(DriverFactory driverFactory) throws Exception
-    {
-        super(driverFactory);
+        super(new LvmThinDriverKind());
     }
 
     @Override

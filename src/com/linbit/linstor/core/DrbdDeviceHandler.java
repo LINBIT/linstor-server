@@ -7,6 +7,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
@@ -17,13 +18,14 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.pojo.VolumeStateDevManager;
@@ -53,7 +55,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import com.linbit.linstor.timer.CoreTimer;
 import org.slf4j.event.Level;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 /* TODO
  *
@@ -63,16 +71,21 @@ import org.slf4j.event.Level;
  * rscState should possibly contain all vlmStates
  * vlmState should probably know whether the volume is a LINSTOR volume or a volume only seen by DRBD
  */
-
+@Singleton
 class DrbdDeviceHandler implements DeviceHandler
 {
-    private Satellite stlt;
-    private AccessContext wrkCtx;
-    private SatelliteCoreServices coreSvcs;
-    private DrbdStateTracker drbdState;
-    private DrbdAdm drbdUtils;
-    private ErrorReporter errLog;
-    private MetaDataApi drbdMd;
+    private final ErrorReporter errLog;
+    private final AccessContext wrkCtx;
+    private final Provider<DeviceManager> deviceManagerProvider;
+    private final FileSystemWatch fileSystemWatch;
+    private final CoreTimer timer;
+    private final DrbdStateTracker drbdState;
+    private final DrbdAdm drbdUtils;
+    private final CtrlStltSerializer interComSerializer;
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final MetaDataApi drbdMd;
 
     // Number of peer slots for DRBD meta data; this should be replaced with a property of the
     // resource definition or otherwise a system-wide default
@@ -86,21 +99,35 @@ class DrbdDeviceHandler implements DeviceHandler
     // a property of the volume definition, or or otherwise a system-wide default
     private static final long FIXME_STRIPE_SIZE = 32;
 
-    // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
-    // a value configurable in the cluster configuration
-    private static final String FIXME_CONFIG_PATH = "/etc/drbd.d";
-
     // DRBD configuration file suffix; this should be replaced by a meaningful constant
     private static final String DRBD_CONFIG_SUFFIX = ".res";
 
-    DrbdDeviceHandler(Satellite stltRef, AccessContext wrkCtxRef, SatelliteCoreServices coreSvcsRef)
+    @Inject
+    DrbdDeviceHandler(
+        ErrorReporter errLogRef,
+        @DeviceManagerContext AccessContext wrkCtxRef,
+        Provider<DeviceManager> deviceManagerProviderRef,
+        FileSystemWatch fileSystemWatchRef,
+        CoreTimer timerRef,
+        DrbdStateTracker drbdStateRef,
+        DrbdAdm drbdUtilsRef,
+        CtrlStltSerializer interComSerializerRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
-        stlt = stltRef;
+        errLog = errLogRef;
         wrkCtx = wrkCtxRef;
-        coreSvcs = coreSvcsRef;
-        drbdUtils = new DrbdAdm(FileSystems.getDefault().getPath(FIXME_CONFIG_PATH), coreSvcs);
-        errLog = coreSvcsRef.getErrorReporter();
-        drbdState = coreSvcsRef.getDrbdStateTracker();
+        deviceManagerProvider = deviceManagerProviderRef;
+        fileSystemWatch = fileSystemWatchRef;
+        timer = timerRef;
+        drbdState = drbdStateRef;
+        drbdUtils = drbdUtilsRef;
+        interComSerializer = interComSerializerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
         drbdMd = new MetaData();
     }
 
@@ -247,7 +274,7 @@ class DrbdDeviceHandler implements DeviceHandler
         final String rscUuid
     )
     {
-        byte[] data = stlt.getApiCallHandler().getInterComSerializer()
+        byte[] data = interComSerializer
             .builder(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1)
             .primaryRequest(rscName, rscUuid)
             .build();
@@ -263,9 +290,9 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceState rscState
     )
     {
-        byte[] data = stlt.getApiCallHandler().getInterComSerializer()
+        byte[] data = interComSerializer
             .builder(InternalApiConsts.API_UPDATE_STATES, 1)
-            .resourceState(stlt.getLocalNode().getName().getDisplayName(), rscState)
+            .resourceState(controllerPeerConnector.getLocalNode().getName().getDisplayName(), rscState)
             .build();
 
         if (data != null)
@@ -506,7 +533,7 @@ class DrbdDeviceHandler implements DeviceHandler
             StorPool storagePool = localNode.getStorPool(wrkCtx, spName);
             if (storagePool != null)
             {
-                driver = storagePool.createDriver(wrkCtx, coreSvcs);
+                driver = storagePool.createDriver(wrkCtx, errLog, fileSystemWatch, timer);
                 storagePool.reconfigureStorageDriver(driver);
                 if (driver != null)
                 {
@@ -679,8 +706,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 vlmState.getDriver().deleteVolume(vlmState.getStorVlmName());
 
                 // Notify the controller of successful deletion of the resource
-                stlt.getDeviceManager().notifyVolumeDeleted(
-                    rscDfn.getResource(wrkCtx, stlt.getLocalNode().getName())
+                deviceManagerProvider.get().notifyVolumeDeleted(
+                    rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
                         .getVolume(vlmState.getVlmNr())
                 );
             }
@@ -1021,7 +1048,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         try (
             FileOutputStream resFileOut = new FileOutputStream(
-                FIXME_CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
+                SatelliteCoreModule.FIXME_CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
             )
         )
         {
@@ -1179,7 +1206,7 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         // Notify the controller of successful deletion of the resource
-        stlt.getDeviceManager().notifyResourceDeleted(rsc);
+        deviceManagerProvider.get().notifyResourceDeleted(rsc);
     }
 
     /**
@@ -1194,7 +1221,7 @@ class DrbdDeviceHandler implements DeviceHandler
         try
         {
             FileSystem dfltFs = FileSystems.getDefault();
-            Path cfgFilePath = dfltFs.getPath(FIXME_CONFIG_PATH, rscName.displayValue + DRBD_CONFIG_SUFFIX);
+            Path cfgFilePath = dfltFs.getPath(SatelliteCoreModule.FIXME_CONFIG_PATH, rscName.displayValue + DRBD_CONFIG_SUFFIX);
             Files.delete(cfgFilePath);
 
             // Double-check whether the file exists
@@ -1245,25 +1272,25 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         System.out.println();
         System.out.println("\u001b[1;31m== BEGIN DrbdDeviceHandler.debugListSatelliteObjects() ==\u001b[0m");
-        if (stlt.getLocalNode() != null)
+        if (controllerPeerConnector.getLocalNode() != null)
         {
             System.out.printf(
                 "localNode = %s\n",
-                stlt.getLocalNode().getName().displayValue
+                controllerPeerConnector.getLocalNode().getName().displayValue
             );
         }
         else
         {
             System.out.printf("localNode = not initialized\n");
         }
-        for (Node curNode : stlt.nodesMap.values())
+        for (Node curNode : nodesMap.values())
         {
             System.out.printf(
                 "Node %s\n",
                 curNode.getName().displayValue
             );
         }
-        for (ResourceDefinition curRscDfn : stlt.rscDfnMap.values())
+        for (ResourceDefinition curRscDfn : rscDfnMap.values())
         {
             try
             {
@@ -1276,7 +1303,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
             }
         }
-        Node localNode = stlt.getLocalNode();
+        Node localNode = controllerPeerConnector.getLocalNode();
         if (localNode != null)
         {
             try

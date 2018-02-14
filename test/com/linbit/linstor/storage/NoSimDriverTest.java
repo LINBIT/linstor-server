@@ -16,13 +16,11 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.SatelliteCoreServices;
-import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
+import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.timer.CoreTimerImpl;
 import com.linbit.timer.Action;
-import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Timer;
 
 /**
@@ -40,6 +38,10 @@ import com.linbit.timer.Timer;
  */
 public abstract class NoSimDriverTest
 {
+    protected ErrorReporter errorReporter;
+    protected FileSystemWatch fileSystemWatch;
+    protected CoreTimer timer;
+
 //    protected final String baseIdentifier = "linStorDriverTest-REMOVE-ME-Vol-";
     protected final String baseIdentifier = "testVol";
 
@@ -59,12 +61,14 @@ public abstract class NoSimDriverTest
 
     private boolean baseMountPathExisted;
 
-    public NoSimDriverTest(StorageDriver driver) throws IOException, StorageException
+    public NoSimDriverTest(StorageDriverKind driverKind) throws IOException
     {
-        this.driver = driver;
-        SatelliteCoreServices coreSvcs = new TestCoreServices();
-        extCommand = new DebugExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
-        driver.initialize(coreSvcs);
+        errorReporter = new DefaultErrorStreamErrorReporter();
+        fileSystemWatch = new FileSystemWatch();
+        timer = new CoreTimerImpl();
+
+        extCommand = new DebugExtCmd(timer, errorReporter);
+        driver = driverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
     }
 
     protected void runTest() throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException, IOException, InterruptedException
@@ -874,50 +878,6 @@ public abstract class NoSimDriverTest
     protected abstract void removePool() throws ChildProcessTimeoutException, IOException;
 
     protected abstract String[] getListPoolNamesCommand();
-
-    private class TestCoreServices implements SatelliteCoreServices
-    {
-        private final GenericTimer<String, Action<String>> timerEventSvc ;
-        private final FileSystemWatch fsEventSvc;
-        private final ErrorReporter errorReporter;
-
-        TestCoreServices() throws IOException
-        {
-            timerEventSvc = new GenericTimer<>();
-            fsEventSvc = new FileSystemWatch();
-            errorReporter = new DefaultErrorStreamErrorReporter();
-        }
-
-        @Override
-        public ErrorReporter getErrorReporter()
-        {
-            return errorReporter;
-        }
-
-        @Override
-        public Timer<String, Action<String>> getTimer()
-        {
-            return timerEventSvc;
-        }
-
-        @Override
-        public FileSystemWatch getFsWatch()
-        {
-            return fsEventSvc;
-        }
-
-        @Override
-        public DeviceManager getDeviceManager()
-        {
-            return null;
-        }
-
-        @Override
-        public DrbdStateTracker getDrbdStateTracker()
-        {
-            return null;
-        }
-    }
 
     protected class TestFailedException extends RuntimeException
     {

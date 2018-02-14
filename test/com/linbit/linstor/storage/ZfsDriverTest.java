@@ -41,21 +41,8 @@ public class ZfsDriverTest extends StorageTestUtils
 {
     public ZfsDriverTest() throws Exception
     {
-        super(new StorageTestUtils.DriverFactory()
-        {
-            @Override
-            public StorageDriver createDriver() throws StorageException
-            {
-                return new ZfsDriverKind().makeStorageDriver();
-            }
-        });
+        super(new ZfsDriverKind());
     }
-
-    public ZfsDriverTest(DriverFactory factory) throws Exception
-    {
-        super(factory);
-    }
-
 
     @Test
     public void testConfigPool() throws StorageException
