@@ -1,7 +1,10 @@
 package com.linbit.linstor.core;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
@@ -10,11 +13,14 @@ import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -90,7 +96,8 @@ class StltStorPoolApiCallHandler
         try
         {
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            StorPoolDefinition storPoolDfnToRegister = applyChanges(storPoolRaw, transMgr);
+            ChangedData changedData = applyChanges(storPoolRaw, transMgr);
+//            StorPoolDefinition storPoolDfnToRegister = applyChanges(storPoolRaw, transMgr);
 
             StorPoolName storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
 
@@ -102,17 +109,18 @@ class StltStorPoolApiCallHandler
                 storPoolName.displayValue
             );
 
-            if (storPoolDfnToRegister != null)
+            if (changedData.storPoolDfnToRegister != null)
             {
                 storPoolDfnMap.put(
                     storPoolName,
-                    storPoolDfnToRegister
+                    changedData.storPoolDfnToRegister
                 );
             }
 
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
             deviceManager.storPoolUpdateApplied(storPoolSet);
+            deviceManager.getUpdateTracker().checkMultipleResources(changedData.changedResourcesMap);
         }
         catch (Exception | ImplementationError exc)
         {
@@ -120,7 +128,7 @@ class StltStorPoolApiCallHandler
         }
     }
 
-    public StorPoolDefinition applyChanges(StorPoolPojo storPoolRaw, SatelliteTransactionMgr transMgr)
+    public ChangedData applyChanges(StorPoolPojo storPoolRaw, SatelliteTransactionMgr transMgr)
         throws DivergentDataException, InvalidNameException, AccessDeniedException
     {
         StorPoolName storPoolName;
@@ -138,10 +146,20 @@ class StltStorPoolApiCallHandler
             throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
         }
         storPool = localNode.getStorPool(apiCtx, storPoolName);
+        Map<ResourceName, UUID> changedResourcesMap = new TreeMap<>();
         if (storPool != null)
         {
             checkUuid(storPool, storPoolRaw);
             checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
+
+            storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
+
+            Collection<Volume> volumes = storPool.getVolumes(apiCtx);
+            for (Volume vlm : volumes)
+            {
+                ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                changedResourcesMap.put(rscDfn.getName(), rscDfn.getUuid());
+            }
         }
         else
         {
@@ -169,7 +187,9 @@ class StltStorPoolApiCallHandler
             );
             storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
         }
-        return storPoolDfnToRegister;
+
+        ChangedData changedData = new ChangedData(storPoolDfnToRegister, changedResourcesMap);
+        return changedData;
     }
 
     private void checkUuid(Node node, StorPoolPojo storPoolRaw)
@@ -220,6 +240,18 @@ class StltStorPoolApiCallHandler
                 localUuid,
                 remoteUuid
             );
+        }
+    }
+
+    private class ChangedData
+    {
+        Map<ResourceName, UUID> changedResourcesMap;
+        StorPoolDefinition storPoolDfnToRegister;
+
+        ChangedData(StorPoolDefinition storPoolDfnToRegisterRef, Map<ResourceName, UUID> changedResourcesMapRef)
+        {
+            storPoolDfnToRegister = storPoolDfnToRegisterRef;
+            changedResourcesMap = changedResourcesMapRef;
         }
     }
 }

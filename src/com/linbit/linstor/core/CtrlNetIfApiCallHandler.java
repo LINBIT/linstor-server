@@ -108,6 +108,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
             commit();
             reportSuccess(netIf.getUuid());
+            updateSatellites(node);
         }
         catch (ApiCallHandlerFailedException ignored)
         {
@@ -184,6 +185,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 node.getPeer(apiCtx).closeConnection();
                 startConnecting(node);
             }
+            updateSatellites(node);
         }
         catch (ApiCallHandlerFailedException ignored)
         {
@@ -240,6 +242,11 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             reportSuccess(uuid);
             if (closeConnection)
             {
+                // updateSatellites(node);
+                // FIXME: updating a satellite is risky here.
+                // when the sending takes too long, the connection will be already closed (next statement)
+                // for now, just close the connection. once a new connection is established, the
+                // satellite gets a full sync anyways
                 node.getPeer(apiCtx).closeConnection();
             }
         }
