@@ -39,9 +39,9 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             "Class of the protected object.\n" +
             "Supported classes are:\n" +
             "    " + CLS_NODE + "\n" +
-            "    " + CLS_RSCDFN + "RSCDFN\n" +
-            "    " + CLS_RSC + "RSC\n" +
-            "    " + CLS_STORPOOL + "STORPOOL"
+            "    " + CLS_RSCDFN + "\n" +
+            "    " + CLS_RSC + "\n" +
+            "    " + CLS_STORPOOL
         );
         PARAMETER_DESCRIPTIONS.put(
             PRM_OBJ_NAME,
