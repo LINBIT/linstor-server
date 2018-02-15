@@ -233,6 +233,17 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         {
             StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
 
+            if (storPool == null)
+            {
+                addAnswer(
+                    "Deletion of " + getObjectDescriptionInline() + " had no effect.",
+                    getObjectDescriptionInlineFirstLetterCaps() + " does not exist.",
+                    null,
+                    null,
+                    ApiConsts.WARN_NOT_FOUND
+                );
+                throw new ApiCallHandlerFailedException();
+            }
             Collection<Volume> volumes = getVolumes(storPool);
             if (!volumes.isEmpty())
             {
@@ -281,7 +292,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         {
             reportStatic(
                 exc,
-                ApiCallType.MODIFY,
+                ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
                 getVariables(nodeNameStr, storPoolNameStr),
