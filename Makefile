@@ -60,4 +60,4 @@ versioninfo:
 	mkdir $(GENRES) || true
 	echo "version=$(VERSION)" > $(VERSINFO)
 	echo "git.commit.id=$(GITHASH)" >> $(VERSINFO)
-	echo "build.time=$$(date -u)" >> $(VERSINFO)
+	echo "build.time=$$(date -u --iso-8601=second)" >> $(VERSINFO)
