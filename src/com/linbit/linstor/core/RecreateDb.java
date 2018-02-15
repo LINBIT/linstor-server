@@ -60,7 +60,7 @@ public class RecreateDb
                     for (int idx = 1; idx < args.length; idx++)
                     {
                         BufferedReader br = new BufferedReader(new FileReader(args[idx]));
-                        runSql(con, args[idx], br);
+                        runSql(con, args[idx], br, true);
                         br.close();
                     }
                 }
@@ -74,7 +74,7 @@ public class RecreateDb
                         )
                     )
                     {
-                        runSql(con, "jar:///resource/drbd-init-derby.sql", br);
+                        runSql(con, "jar:///resource/drbd-init-derby.sql", br, true);
                     }
                 }
             }
@@ -111,9 +111,12 @@ public class RecreateDb
         return new PoolingDataSource<>(connPool);
     }
 
-    public static void runSql(Connection con, String sqlFilePath, BufferedReader br) throws IOException, SQLException
+    public static void runSql(Connection con, String sqlFilePath, BufferedReader br, boolean verbose) throws IOException, SQLException
     {
-        System.out.println("running sql file: " + sqlFilePath);
+        if (verbose)
+        {
+            System.out.println("running sql file: " + sqlFilePath);
+        }
         StringBuilder cmdBuilder = new StringBuilder();
         for (String line = br.readLine(); line != null; line = br.readLine())
         {

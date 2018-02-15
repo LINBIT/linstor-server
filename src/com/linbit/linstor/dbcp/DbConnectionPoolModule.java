@@ -64,31 +64,51 @@ public class DbConnectionPoolModule extends AbstractModule
     {
         errorLogRef.logInfo("Initializing the database connection pool");
 
-        final Properties dbProps = loadDatabaseConfiguration(args);
-
-        String connectionUrl = dbProps.getProperty(
-            DB_CONN_URL,
-            persistenceDbDriver.getDefaultConnectionUrl()
-        );
-
         DbConnectionPool dbConnPool = new DbConnectionPool();
 
-        // Connect the database connection pool to the database
-        dbConnPool.initializeDataSource(
-            connectionUrl,
-            dbProps
-        );
+        if (args.getMemoryDatabaseInitScript() == null) {
+            final Properties dbProps = loadDatabaseConfiguration(args);
 
-        if (connectionUrl.startsWith("jdbc:derby:memory:") && args.getMemoryDatabaseInitScript() != null)
+            String connectionUrl = dbProps.getProperty(
+                DB_CONN_URL,
+                persistenceDbDriver.getDefaultConnectionUrl()
+            );
+
+            // Connect the database connection pool to the database
+            dbConnPool.initializeDataSource(
+                connectionUrl,
+                dbProps
+            );
+        }
+        else
         {
-            try {
+            // In memory database
+            // Connect the database connection pool to the database
+            dbConnPool.initializeDataSource(
+                "jdbc:derby:memory:testDb;create=True",
+                new Properties()
+            );
+
+            Connection conn = null;
+            try
+            {
                 String initSqlPath = args.getMemoryDatabaseInitScript();
                 BufferedReader br = new BufferedReader(new FileReader(initSqlPath));
-                RecreateDb.runSql(dbConnPool.getConnection(), initSqlPath, br);
+                conn = dbConnPool.getConnection();
+                RecreateDb.runSql(conn, initSqlPath, br, false);
                 br.close();
                 errorLogRef.logInfo("Using in memory database with init script: " + initSqlPath);
-            } catch (IOException ioerr) {
+            }
+            catch (IOException ioerr)
+            {
                 errorLogRef.reportError(ioerr);
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    dbConnPool.returnConnection(conn);
+                }
             }
         }
 
