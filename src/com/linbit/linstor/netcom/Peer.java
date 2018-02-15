@@ -97,12 +97,19 @@ public interface Peer
     boolean sendMessage(byte[] data);
 
     /**
+     * calls {@link #closeConnection(boolean)} with false for <code>allowReconnect</code>
+     */
+    void closeConnection();
+
+    /**
      * Closes the connection to the peer
      *
      * FIXME: This said "throws SSLException", but JavaDoc complains. Check whether it actually throw SSLException
      *        and whether it is even a good idea to do that.
+     *
+     * @param allowReconnect If false, no attempts will be made to reestablish the connection.
      */
-    void closeConnection();
+    void closeConnection(boolean allowReconnect);
 
     /**
      * This is the same as calling {@code isConnected(true)}
@@ -267,5 +274,4 @@ public interface Peer
      * @return
      */
     boolean hasFullSyncFailed();
-
 }

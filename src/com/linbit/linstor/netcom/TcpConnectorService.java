@@ -483,7 +483,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         connPeer.nextInMessage();
                                         break;
                                     case END_OF_STREAM:
-                                        closeConnection(currentKey, false);
+                                        closeConnection(currentKey, true);
                                         break;
                                     default:
                                         throw new ImplementationError(
@@ -505,7 +505,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // kind, therefore, log this error and then treat the connection's
                                 // state as a protocol error and close the connection.
                                 coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
-                                closeConnection(currentKey, false);
+                                closeConnection(currentKey, true);
                             }
                             catch (IllegalMessageStateException msgStateExc)
                             {
@@ -516,7 +516,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         msgStateExc
                                     )
                                 );
-                                closeConnection(currentKey, false);
+                                closeConnection(currentKey, true);
                             }
                             catch (IOException ioExc)
                             {
@@ -531,7 +531,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to receive data from the peer"
                                 );
-                                closeConnection(currentKey, false);
+                                closeConnection(currentKey, true);
                             }
                         }
                         else
@@ -616,7 +616,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // kind, therefore, log this error and then treat the connection's
                                 // state as a protocol error and close the connection.
                                 coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
-                                closeConnection(currentKey, false);
+                                closeConnection(currentKey, true);
                             }
                             catch (IllegalMessageStateException msgStateExc)
                             {
@@ -627,7 +627,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         msgStateExc
                                     )
                                 );
-                                closeConnection(currentKey, false);
+                                closeConnection(currentKey, true);
                             }
                             catch (IOException ioExc)
                             {
@@ -643,7 +643,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to send data to the peer"
                                 );
-                                closeConnection(currentKey, false);
+                                closeConnection(currentKey, true);
                             }
                         }
                         else
@@ -673,7 +673,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     {
                         if (currentKey != null)
                         {
-                            closeConnection(currentKey, false);
+                            closeConnection(currentKey, true);
                         }
                     }
                     catch (IllegalStateException illState)
@@ -689,7 +689,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 (Peer) currentKey.attachment(),
                                 null
                             );
-                            closeConnection(currentKey, false);
+                            closeConnection(currentKey, true);
                         }
                     }
                 }
@@ -943,7 +943,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             connObserver.connectionClosed(client, allowReconnect);
             if (client.isConnected(false))
             {
-                client.closeConnection();
+                client.closeConnection(allowReconnect);
             }
         }
         try
