@@ -141,6 +141,7 @@ public class ApiConsts
     public static final long FAIL_EXISTS_VLM_CONN = 508 | MASK_ERROR;
     public static final long FAIL_EXISTS_STOR_POOL_DFN = 509 | MASK_ERROR;
     public static final long FAIL_EXISTS_STOR_POOL = 510 | MASK_ERROR;
+    public static final long FAIL_EXISTS_STLT_CONN = 511 | MASK_ERROR;
 
     /*
      * Codes 600-699: data missing failures
@@ -344,7 +345,6 @@ public class ApiConsts
     public static final String KEY_STOR_POOL_VOLUME_GROUP = "LvmVg";
     public static final String KEY_STOR_POOL_THIN_POOL = "ThinPool";
     public static final String KEY_STOR_POOL_ZPOOL = "ZPool";
-    public static final String KEY_STOR_POOL_DISKLESS = "Diskless";
     public static final String KEY_STOR_POOL_PREF_NIC = "PrefNic";
 
     /*

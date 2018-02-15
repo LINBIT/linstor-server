@@ -49,7 +49,9 @@ public class CreateNetInterface extends BaseProtoApiCall
             client,
             protoMsg.getNodeName(),
             netIf.getName(),
-            netIf.getAddress()
+            netIf.getAddress(),
+            netIf.hasStltPort() ? netIf.getStltPort() : null,
+            netIf.hasStltEncryptionType() ? netIf.getStltEncryptionType() : null
         );
         answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

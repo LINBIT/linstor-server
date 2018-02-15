@@ -52,7 +52,7 @@ class StltConnTracker implements ConnectionObserver
     }
 
     @Override
-    public void connectionClosed(Peer connPeer)
+    public void connectionClosed(Peer connPeer, boolean allowReconnect)
     {
         if (connPeer != null)
         {

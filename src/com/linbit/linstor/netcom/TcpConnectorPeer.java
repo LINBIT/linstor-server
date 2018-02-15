@@ -255,7 +255,7 @@ public class TcpConnectorPeer implements Peer
     {
         connected = false;
         authenticated = false;
-        connector.closeConnection(this);
+        connector.closeConnection(this, false);
     }
 
     @Override

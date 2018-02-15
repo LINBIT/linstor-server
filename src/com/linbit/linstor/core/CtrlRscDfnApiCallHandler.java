@@ -693,24 +693,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return rscDfn;
     }
 
-    private TcpPortNumber asTcpPortNumber(int portInt)
-    {
-        TcpPortNumber tcpPortNumber;
-        try
-        {
-            tcpPortNumber = new TcpPortNumber(portInt);
-        }
-        catch (ValueOutOfRangeException valOutOfRangeExc)
-        {
-            throw asExc(
-                valOutOfRangeExc,
-                "The given tcp port number '" + portInt + "' is invalid.",
-                ApiConsts.FAIL_INVLD_RSC_PORT
-            );
-        }
-        return tcpPortNumber;
-    }
-
     private void checkGrossSize(
         long size,
         short peerCount,

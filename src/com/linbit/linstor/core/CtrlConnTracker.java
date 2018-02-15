@@ -79,13 +79,17 @@ class CtrlConnTracker implements ConnectionObserver
     }
 
     @Override
-    public void connectionClosed(Peer connPeer)
+    public void connectionClosed(Peer connPeer, boolean allowReconnect)
     {
         if (connPeer != null)
         {
             synchronized (peerMap)
             {
                 peerMap.remove(connPeer.getId());
+                if (!allowReconnect)
+                {
+                    reconnectorTask.removePeer(connPeer);
+                }
             }
         }
     }

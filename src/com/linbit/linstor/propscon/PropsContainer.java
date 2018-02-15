@@ -49,7 +49,6 @@ import com.linbit.utils.StringUtils;
  */
 public class PropsContainer implements Props
 {
-    private static final String PATH_SEPARATOR                = "/";
     private static final String PATH_STOR_POOL                = "/storPoolConf/";
     private static final String PATH_STOR_POOL_DFN            = "/storPoolDfnConf/";
     private static final String PATH_NODES                    = "/nodes/";
@@ -60,7 +59,6 @@ public class PropsContainer implements Props
     private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
     private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
-
 
     public static final int PATH_MAX_LENGTH = 256;
 

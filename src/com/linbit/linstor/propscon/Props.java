@@ -16,6 +16,8 @@ import java.util.Set;
  */
 public interface Props extends TransactionObject, Iterable<Map.Entry<String, String>>
 {
+    String PATH_SEPARATOR = "/";
+
     String getProp(String key)
         throws InvalidKeyException;
     String getProp(String key, String namespace)

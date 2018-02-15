@@ -18,6 +18,7 @@ public class PingTask implements Task
     private static final int PING_TIMEOUT = 5_000;
     private static final long PING_SLEEP = 1_000;
 
+    private final Object syncObj = new Object();
     private final LinkedList<Peer> peerList = new LinkedList<>();
     private final ErrorReporter errorReporter;
     private final ReconnectorTask reconnector;
@@ -33,7 +34,18 @@ public class PingTask implements Task
 
     public void add(Peer peer)
     {
-        peerList.add(peer);
+        synchronized (syncObj)
+        {
+            peerList.add(peer);
+        }
+    }
+
+    public void remove(Peer peer)
+    {
+        synchronized (syncObj)
+        {
+            peerList.remove(peer);
+        }
     }
 
     @Override
@@ -41,7 +53,13 @@ public class PingTask implements Task
     {
         final List<Peer> peersToRemove = new ArrayList<>();
 
-        for (final Peer peer : peerList)
+        final List<Peer> currentPeers;
+        synchronized (syncObj)
+        {
+            currentPeers = new ArrayList<>(peerList);
+        }
+
+        for (final Peer peer : currentPeers)
         {
             final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
@@ -78,7 +96,10 @@ public class PingTask implements Task
                 }
             }
         }
-        peerList.removeAll(peersToRemove);
+        synchronized (syncObj)
+        {
+            peerList.removeAll(peersToRemove);
+        }
         return PING_SLEEP;
     }
 }

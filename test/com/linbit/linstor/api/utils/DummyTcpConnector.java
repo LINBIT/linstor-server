@@ -75,7 +75,7 @@ public class DummyTcpConnector implements TcpConnector
     }
 
     @Override
-    public void closeConnection(TcpConnectorPeer peerObj)
+    public void closeConnection(TcpConnectorPeer peerObj, boolean allowReconnect)
     {
         // no-op
     }

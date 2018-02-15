@@ -529,9 +529,17 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    public boolean startConnecting(
+    public void startConnecting(Node node, AccessContext initCtx)
+    {
+        startConnecting(node, initCtx, satelliteConnector, ctrlConf, netComContainer);
+    }
+
+    public static boolean startConnecting(
         Node node,
-        AccessContext accCtx
+        AccessContext accCtx,
+        SatelliteConnector stltConnector,
+        Props ctrlProps,
+        NetComContainer netComs
     )
     {
         boolean estabilshingConnection = false;
@@ -560,7 +568,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 try
                 {
                     dfltConSvcName = new ServiceName(
-                        ctrlConf.getProp(serviceType)
+                        ctrlProps.getProp(serviceType)
                     );
                 }
                 catch (InvalidNameException invalidNameExc)
@@ -570,11 +578,11 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         invalidNameExc
                     );
                 }
-                TcpConnector tcpConnector = netComContainer.getNetComConnector(dfltConSvcName);
+                TcpConnector tcpConnector = netComs.getNetComConnector(dfltConSvcName);
 
                 if (tcpConnector != null)
                 {
-                    satelliteConnector.connectSatellite(
+                    stltConnector.connectSatellite(
                         new InetSocketAddress(
                             satelliteConnection.getNetInterface().getAddress(accCtx).getAddress(),
                             satelliteConnection.getPort().value
@@ -679,24 +687,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw handleSqlExc(sqlExc);
         }
         return node;
-    }
-
-    private TcpPortNumber asTcpPortNumber(int port)
-    {
-        TcpPortNumber tcpPortNumber;
-        try
-        {
-            tcpPortNumber = new TcpPortNumber(port);
-        }
-        catch (Exception exc)
-        {
-            throw asExc(
-                exc,
-                "The given portNumber '" + port + "' is invalid.",
-                ApiConsts.FAIL_INVLD_NET_PORT
-            );
-        }
-        return tcpPortNumber;
     }
 
     private EncryptionType asEncryptionType(String encryptionTypeStr)
@@ -1080,6 +1070,4 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         return "node '" + nodeNameStr + "'";
     }
-
-
 }

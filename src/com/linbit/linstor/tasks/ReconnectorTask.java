@@ -59,10 +59,23 @@ public class ReconnectorTask implements Task
         }
     }
 
+    public void removePeer(Peer peer)
+    {
+        synchronized (syncObj)
+        {
+            peerList.remove(peer);
+            pingTask.remove(peer);
+        }
+    }
+
     @Override
     public long run()
     {
-        ArrayList<Peer> localList = new ArrayList<>(peerList);
+        ArrayList<Peer> localList;
+        synchronized (syncObj)
+        {
+            localList = new ArrayList<>(peerList);
+        }
         for (int idx = 0; idx < localList.size(); ++idx)
         {
             final Peer peer = localList.get(idx);

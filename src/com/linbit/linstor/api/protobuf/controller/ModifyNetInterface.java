@@ -57,18 +57,15 @@ public class ModifyNetInterface extends BaseProtoApiCall
         }
         String nodeName = msgModNetIf.getNodeName();
         String netIfName = protoNetIf.getName();
-        String addr = null;
-        if (protoNetIf.hasAddress())
-        {
-            addr = protoNetIf.getAddress();
-        }
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyNetInterface(
             accCtx,
             client,
             nodeName,
             netIfName,
-            addr
+            protoNetIf.hasAddress() ? protoNetIf.getAddress() : null,
+            protoNetIf.hasStltPort() ? protoNetIf.getStltPort() : null,
+            protoNetIf.hasStltEncryptionType() ? protoNetIf.getStltEncryptionType() : null
         );
         answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

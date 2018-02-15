@@ -28,6 +28,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
@@ -234,6 +235,33 @@ abstract class AbsApiCallHandler implements AutoCloseable
             );
         }
         return lsIpAddress;
+    }
+
+    /**
+     * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
+     * {@link LsIpAddress} the thrown exception is reported to controller's {@link ErrorReporter} and
+     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     *
+     * @param ipAddrStr
+     * @return
+     * @throws ApiCallHandlerFailedException
+     */
+    protected TcpPortNumber asTcpPortNumber(int port)
+    {
+        TcpPortNumber tcpPortNumber;
+        try
+        {
+            tcpPortNumber = new TcpPortNumber(port);
+        }
+        catch (Exception exc)
+        {
+            throw asExc(
+                exc,
+                "The given portNumber '" + port + "' is invalid.",
+                ApiConsts.FAIL_INVLD_NET_PORT
+            );
+        }
+        return tcpPortNumber;
     }
 
     /**

@@ -1,8 +1,10 @@
 package com.linbit.linstor.netcom;
 
 import com.linbit.*;
+import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.netcom.TcpConnectorMessage.ReadState;
 import com.linbit.linstor.netcom.TcpConnectorMessage.WriteState;
@@ -294,19 +296,37 @@ public class TcpConnectorService implements Runnable, TcpConnector
     public Peer reconnect(Peer peer) throws IOException
     {
         peer.closeConnection();
-        final String id = peer.getId();
-        final int delimiter = id.lastIndexOf(':');
-        if (delimiter == -1)
-        {
-            throw new ImplementationError(
-                "peer has invalid id: " + id,
-                null
-            );
-        }
-        final String host = id.substring(0, delimiter);
-        final int port = Integer.parseInt(id.substring(delimiter + 1));
 
-        final InetSocketAddress address = new InetSocketAddress(host, port);
+        InetSocketAddress address;
+
+        if (peer.getNode() == null)
+        {
+            address = getInetSockAddress(peer);
+        }
+        else
+        {
+            SatelliteConnection stltConn;
+            try
+            {
+                stltConn = peer.getNode().getSatelliteConnection(privilegedAccCtx);
+                final String host = stltConn.getNetInterface().getAddress(privilegedAccCtx).getAddress();
+                final int port = stltConn.getPort().value;
+                address = new InetSocketAddress(host, port);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(
+                    "Privileged access context not authorized to access node's network interface",
+                    exc
+                );
+            }
+            catch (AccessToDeletedDataException ignored)
+            {
+                // if the netInterface was concurrently deleted, we just ignore this "access to deleted NetIf" exception
+                address = getInetSockAddress(peer); // use the old peer's address
+            }
+        }
+
         Peer newPeer = this.connect(address, peer.getNode());
         try
         {
@@ -322,6 +342,25 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
 
         return newPeer;
+    }
+
+    private InetSocketAddress getInetSockAddress(Peer peer) throws ImplementationError
+    {
+        final String host;
+        final int port;
+
+        final String id = peer.getId();
+        final int delimiter = id.lastIndexOf(':');
+        if (delimiter == -1)
+        {
+            throw new ImplementationError(
+                "peer has invalid id: " + id,
+                null
+            );
+        }
+        host = id.substring(0, delimiter);
+        port = Integer.parseInt(id.substring(delimiter + 1));
+        return new InetSocketAddress(host, port);
     }
 
     @Override
@@ -444,7 +483,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         connPeer.nextInMessage();
                                         break;
                                     case END_OF_STREAM:
-                                        closeConnection(currentKey);
+                                        closeConnection(currentKey, false);
                                         break;
                                     default:
                                         throw new ImplementationError(
@@ -466,7 +505,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // kind, therefore, log this error and then treat the connection's
                                 // state as a protocol error and close the connection.
                                 coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
-                                closeConnection(currentKey);
+                                closeConnection(currentKey, false);
                             }
                             catch (IllegalMessageStateException msgStateExc)
                             {
@@ -477,7 +516,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         msgStateExc
                                     )
                                 );
-                                closeConnection(currentKey);
+                                closeConnection(currentKey, false);
                             }
                             catch (IOException ioExc)
                             {
@@ -492,7 +531,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to receive data from the peer"
                                 );
-                                closeConnection(currentKey);
+                                closeConnection(currentKey, false);
                             }
                         }
                         else
@@ -577,7 +616,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // kind, therefore, log this error and then treat the connection's
                                 // state as a protocol error and close the connection.
                                 coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
-                                closeConnection(currentKey);
+                                closeConnection(currentKey, false);
                             }
                             catch (IllegalMessageStateException msgStateExc)
                             {
@@ -588,7 +627,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         msgStateExc
                                     )
                                 );
-                                closeConnection(currentKey);
+                                closeConnection(currentKey, false);
                             }
                             catch (IOException ioExc)
                             {
@@ -604,7 +643,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to send data to the peer"
                                 );
-                                closeConnection(currentKey);
+                                closeConnection(currentKey, false);
                             }
                         }
                         else
@@ -634,7 +673,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     {
                         if (currentKey != null)
                         {
-                            closeConnection(currentKey);
+                            closeConnection(currentKey, false);
                         }
                     }
                     catch (IllegalStateException illState)
@@ -650,7 +689,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 (Peer) currentKey.attachment(),
                                 null
                             );
-                            closeConnection(currentKey);
+                            closeConnection(currentKey, false);
                         }
                     }
                 }
@@ -891,17 +930,17 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     @Override
-    public void closeConnection(TcpConnectorPeer peerObj)
+    public void closeConnection(TcpConnectorPeer peerObj, boolean allowReconnect)
     {
-        closeConnection(peerObj.getSelectionKey());
+        closeConnection(peerObj.getSelectionKey(), allowReconnect);
     }
 
-    private void closeConnection(SelectionKey currentKey)
+    private void closeConnection(SelectionKey currentKey, boolean allowReconnect)
     {
         Peer client = (TcpConnectorPeer) currentKey.attachment();
         if (connObserver != null && client != null)
         {
-            connObserver.connectionClosed(client);
+            connObserver.connectionClosed(client, allowReconnect);
             if (client.isConnected(false))
             {
                 client.closeConnection();
@@ -932,7 +971,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 for (SelectionKey currentKey : serverSelector.keys())
                 {
-                    closeConnection(currentKey);
+                    closeConnection(currentKey, false);
                 }
                 serverSelector.close();
             }

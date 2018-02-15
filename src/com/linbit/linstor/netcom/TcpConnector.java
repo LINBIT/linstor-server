@@ -19,7 +19,7 @@ public interface TcpConnector extends SystemService
 
     Peer reconnect(Peer peer) throws IOException;
 
-    void closeConnection(TcpConnectorPeer peerObj);
+    void closeConnection(TcpConnectorPeer peerObj, boolean allowReconnect);
 
     /**
      * Wakes up the connector's selector

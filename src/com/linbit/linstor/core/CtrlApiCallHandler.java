@@ -1683,7 +1683,9 @@ public class CtrlApiCallHandler
         Peer client,
         String nodeName,
         String netIfName,
-        String address
+        String address,
+        Integer stltPort,
+        String stltEncrType
     )
     {
         ApiCallRc apiCallRc;
@@ -1694,7 +1696,15 @@ public class CtrlApiCallHandler
             ctrlReadLock.lock();
             nodeReadLock.lock();
 
-            apiCallRc = netIfApiCallHandler.createNetIf(accCtx, client, nodeName, netIfName, address);
+            apiCallRc = netIfApiCallHandler.createNetIf(
+                accCtx,
+                client,
+                nodeName,
+                netIfName,
+                address,
+                stltPort,
+                stltEncrType
+            );
         }
         finally
         {
@@ -1709,7 +1719,9 @@ public class CtrlApiCallHandler
         Peer client,
         String nodeName,
         String netIfName,
-        String address
+        String address,
+        Integer stltPort,
+        String stltEncrType
     )
     {
         ApiCallRc apiCallRc;
@@ -1720,7 +1732,15 @@ public class CtrlApiCallHandler
             ctrlReadLock.lock();
             nodeReadLock.lock();
 
-            apiCallRc = netIfApiCallHandler.modifyNetIf(accCtx, client, nodeName, netIfName, address);
+            apiCallRc = netIfApiCallHandler.modifyNetIf(
+                accCtx,
+                client,
+                nodeName,
+                netIfName,
+                address,
+                stltPort,
+                stltEncrType
+            );
         }
         finally
         {

@@ -27,6 +27,7 @@ public interface ConnectionObserver
      * Called when a connection to a peer is closed
      *
      * @param connPeer The peer that was disconnected
+     * @param allowReconnect If true, the reconnector task will try to reconnect.
      */
-    void connectionClosed(Peer connPeer);
+    void connectionClosed(Peer connPeer, boolean allowReconnect);
 }
