@@ -227,7 +227,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted NetInterface", null);
+            throw new AccessToDeletedDataException("Access to deleted NetInterface");
         }
     }
 

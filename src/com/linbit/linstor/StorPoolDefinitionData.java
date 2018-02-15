@@ -270,7 +270,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted storage pool definition", null);
+            throw new AccessToDeletedDataException("Access to deleted storage pool definition");
         }
     }
 

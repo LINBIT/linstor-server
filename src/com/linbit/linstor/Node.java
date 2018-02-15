@@ -85,7 +85,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         throws AccessDeniedException;
 
     void setSatelliteConnection(AccessContext accCtx, SatelliteConnection stltConn)
-        throws AccessDeniedException;
+        throws AccessDeniedException, SQLException;
 
     void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

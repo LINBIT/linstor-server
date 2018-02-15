@@ -386,7 +386,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted storage pool", null);
+            throw new AccessToDeletedDataException("Access to deleted storage pool");
         }
     }
 

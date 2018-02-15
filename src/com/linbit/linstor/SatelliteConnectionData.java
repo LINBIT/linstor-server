@@ -20,6 +20,9 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
     // Object identifier
     private final UUID objId;
 
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final Node node;
 
     private final NetInterface netIf;
@@ -60,6 +63,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         ErrorCheck.ctorNotNull(SatelliteConnectionData.class, NetInterface.class, netIfRef);
 
         objId = uuid;
+        dbgInstanceId = UUID.randomUUID();
         node = nodeRef;
         netIf = netIfRef;
 
@@ -151,6 +155,12 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
     }
 
     @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
+    }
+
+    @Override
     public UUID getUuid()
     {
         checkDeleted();
@@ -203,11 +213,25 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         return encryptionType.set(newEncryptionType);
     }
 
+    @Override
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        if (!deleted.get())
+        {
+            node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+            ((NodeData) node).removeSatelliteconnection(accCtx, this);
+            dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
+        }
+    }
+
     private void checkDeleted()
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted satellite connection", null);
+            throw new AccessToDeletedDataException("Access to deleted satellite connection");
         }
     }
 }

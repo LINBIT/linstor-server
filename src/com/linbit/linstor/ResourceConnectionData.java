@@ -318,7 +318,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted resource connection", null);
+            throw new AccessToDeletedDataException("Access to deleted resource connection");
         }
     }
 }

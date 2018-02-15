@@ -3,10 +3,11 @@ package com.linbit.linstor;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import com.linbit.TransactionObject;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-public interface SatelliteConnection
+public interface SatelliteConnection extends TransactionObject, DbgInstanceUuid
 {
     enum EncryptionType
     {
@@ -36,10 +37,14 @@ public interface SatelliteConnection
     EncryptionType setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
         throws AccessDeniedException, SQLException;
 
+    void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     interface SatelliteConnectionApi
     {
         String getNetInterfaceName();
         int getPort();
         String getEncryptionType();
     }
+
 }

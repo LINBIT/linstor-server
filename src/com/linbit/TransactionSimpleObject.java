@@ -77,7 +77,15 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
         }
         if (transMgrRef != null)
         {
-            transMgrRef.register(this);
+            if (transMgrRef != transMgr)
+            {
+                transMgrRef.register(this);
+                // forward transaction manager to simple object
+                if (object instanceof TransactionObject)
+                {
+                    ((TransactionObject) object).setConnection(transMgrRef);
+                }
+            }
         }
         transMgr = transMgrRef;
     }

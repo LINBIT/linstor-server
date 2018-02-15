@@ -530,7 +530,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted resource", null);
+            throw new AccessToDeletedDataException("Access to deleted resource");
         }
     }
 

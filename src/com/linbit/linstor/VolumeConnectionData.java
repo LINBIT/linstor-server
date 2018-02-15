@@ -314,7 +314,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted volume connection", null);
+            throw new AccessToDeletedDataException("Access to deleted volume connection");
         }
     }
 

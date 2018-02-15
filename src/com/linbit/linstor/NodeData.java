@@ -77,7 +77,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient Peer peer;
 
-    private transient SatelliteConnection satelliteConnection;
+    private transient TransactionSimpleObject<NodeData, SatelliteConnection> satelliteConnection;
 
     private TransactionSimpleObject<NodeData, Boolean> deleted;
 
@@ -154,6 +154,8 @@ public class NodeData extends BaseTransactionObject implements Node
             this, checkedType, dbDriver.getNodeTypeDriver()
         );
 
+        satelliteConnection = new TransactionSimpleObject<NodeData, SatelliteConnection>(this, null, null);
+
         transObjs = Arrays.<TransactionObject>asList(
             flags,
             nodeType,
@@ -163,7 +165,8 @@ public class NodeData extends BaseTransactionObject implements Node
             storPoolMap,
             nodeConnections,
             nodeProps,
-            deleted
+            deleted,
+            satelliteConnection
         );
     }
 
@@ -421,12 +424,17 @@ public class NodeData extends BaseTransactionObject implements Node
         netInterfaceMap.put(niRef.getName(), niRef);
     }
 
-    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.remove(niRef.getName());
+        SatelliteConnection stltConn = satelliteConnection.get();
+        if (stltConn != null && stltConn.getNetInterface().equals(niRef))
+        {
+            stltConn.delete(accCtx);
+        }
     }
 
     @Override
@@ -552,15 +560,22 @@ public class NodeData extends BaseTransactionObject implements Node
     public SatelliteConnection getSatelliteConnection(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return satelliteConnection;
+        return satelliteConnection.get();
     }
 
     @Override
     public void setSatelliteConnection(AccessContext accCtx, SatelliteConnection satelliteConnectionRef)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        satelliteConnection = satelliteConnectionRef;
+        satelliteConnection.set(satelliteConnectionRef);
+    }
+
+    void removeSatelliteconnection(AccessContext accCtx, SatelliteConnection satelliteConnectionRef)
+        throws AccessDeniedException, SQLException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        satelliteConnection.set(null);
     }
 
     @Override
@@ -602,7 +617,7 @@ public class NodeData extends BaseTransactionObject implements Node
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new AccessToDeletedDataException("Access to deleted node");
         }
     }
 

@@ -128,4 +128,9 @@ public class TransactionMgr
 
         return ret;
     }
+
+    public boolean isRegistered(TransactionObject to)
+    {
+        return transObjects.contains(to);
+    }
 }

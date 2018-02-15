@@ -427,7 +427,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted volume", null);
+            throw new AccessToDeletedDataException("Access to deleted volume");
         }
     }
 

@@ -439,7 +439,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         if (deleted.get())
         {
-            throw new ImplementationError("Access to deleted resource definition", null);
+            throw new AccessToDeletedDataException("Access to deleted resource definition");
         }
     }
 

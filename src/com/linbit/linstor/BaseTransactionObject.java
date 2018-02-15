@@ -51,9 +51,22 @@ public abstract class BaseTransactionObject implements TransactionObject
         }
         transMgr = transMgrRef;
 
-        for (TransactionObject to : transObjs)
+        if (transMgr == null)
         {
-            to.setConnection(transMgr);
+            for (TransactionObject to : transObjs)
+            {
+                to.setConnection(transMgr);
+            }
+        }
+        else
+        {
+            for (TransactionObject to : transObjs)
+            {
+                if (!transMgr.isRegistered(to)) // avoid infinite recursion
+                {
+                    to.setConnection(transMgr);
+                }
+            }
         }
     }
 
