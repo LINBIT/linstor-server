@@ -347,6 +347,94 @@ public final class VlmOuterClass {
      */
     com.google.protobuf.ByteString
         getStorPoolDfnUuidBytes();
+
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getStorPoolDfnPropsList();
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolDfnProps(int index);
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    int getStorPoolDfnPropsCount();
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getStorPoolDfnPropsOrBuilderList();
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
+        int index);
+
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getStorPoolPropsList();
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolProps(int index);
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    int getStorPoolPropsCount();
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getStorPoolPropsOrBuilderList();
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolPropsOrBuilder(
+        int index);
   }
   /**
    * <pre>
@@ -376,6 +464,8 @@ public final class VlmOuterClass {
       vlmProps_ = java.util.Collections.emptyList();
       storPoolDriverName_ = "";
       storPoolDfnUuid_ = "";
+      storPoolDfnProps_ = java.util.Collections.emptyList();
+      storPoolProps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -482,6 +572,24 @@ public final class VlmOuterClass {
               storPoolDfnUuid_ = bs;
               break;
             }
+            case 106: {
+              if (!((mutable_bitField0_ & 0x00001000) == 0x00001000)) {
+                storPoolDfnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                mutable_bitField0_ |= 0x00001000;
+              }
+              storPoolDfnProps_.add(
+                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+            case 114: {
+              if (!((mutable_bitField0_ & 0x00002000) == 0x00002000)) {
+                storPoolProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                mutable_bitField0_ |= 0x00002000;
+              }
+              storPoolProps_.add(
+                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -495,6 +603,12 @@ public final class VlmOuterClass {
         }
         if (((mutable_bitField0_ & 0x00000200) == 0x00000200)) {
           vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
+        }
+        if (((mutable_bitField0_ & 0x00001000) == 0x00001000)) {
+          storPoolDfnProps_ = java.util.Collections.unmodifiableList(storPoolDfnProps_);
+        }
+        if (((mutable_bitField0_ & 0x00002000) == 0x00002000)) {
+          storPoolProps_ = java.util.Collections.unmodifiableList(storPoolProps_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -1100,6 +1214,116 @@ public final class VlmOuterClass {
       }
     }
 
+    public static final int STOR_POOL_DFN_PROPS_FIELD_NUMBER = 13;
+    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> storPoolDfnProps_;
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStorPoolDfnPropsList() {
+      return storPoolDfnProps_;
+    }
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getStorPoolDfnPropsOrBuilderList() {
+      return storPoolDfnProps_;
+    }
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    public int getStorPoolDfnPropsCount() {
+      return storPoolDfnProps_.size();
+    }
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolDfnProps(int index) {
+      return storPoolDfnProps_.get(index);
+    }
+    /**
+     * <pre>
+     * Storage pool definition's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
+        int index) {
+      return storPoolDfnProps_.get(index);
+    }
+
+    public static final int STOR_POOL_PROPS_FIELD_NUMBER = 14;
+    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> storPoolProps_;
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStorPoolPropsList() {
+      return storPoolProps_;
+    }
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getStorPoolPropsOrBuilderList() {
+      return storPoolProps_;
+    }
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    public int getStorPoolPropsCount() {
+      return storPoolProps_.size();
+    }
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolProps(int index) {
+      return storPoolProps_.get(index);
+    }
+    /**
+     * <pre>
+     * Storage pool's properties
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolPropsOrBuilder(
+        int index) {
+      return storPoolProps_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -1112,6 +1336,18 @@ public final class VlmOuterClass {
       }
       for (int i = 0; i < getVlmPropsCount(); i++) {
         if (!getVlmProps(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getStorPoolDfnPropsCount(); i++) {
+        if (!getStorPoolDfnProps(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getStorPoolPropsCount(); i++) {
+        if (!getStorPoolProps(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -1157,6 +1393,12 @@ public final class VlmOuterClass {
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 12, storPoolDfnUuid_);
+      }
+      for (int i = 0; i < storPoolDfnProps_.size(); i++) {
+        output.writeMessage(13, storPoolDfnProps_.get(i));
+      }
+      for (int i = 0; i < storPoolProps_.size(); i++) {
+        output.writeMessage(14, storPoolProps_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -1209,6 +1451,14 @@ public final class VlmOuterClass {
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, storPoolDfnUuid_);
+      }
+      for (int i = 0; i < storPoolDfnProps_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(13, storPoolDfnProps_.get(i));
+      }
+      for (int i = 0; i < storPoolProps_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(14, storPoolProps_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1281,6 +1531,10 @@ public final class VlmOuterClass {
         result = result && getStorPoolDfnUuid()
             .equals(other.getStorPoolDfnUuid());
       }
+      result = result && getStorPoolDfnPropsList()
+          .equals(other.getStorPoolDfnPropsList());
+      result = result && getStorPoolPropsList()
+          .equals(other.getStorPoolPropsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1339,6 +1593,14 @@ public final class VlmOuterClass {
       if (hasStorPoolDfnUuid()) {
         hash = (37 * hash) + STOR_POOL_DFN_UUID_FIELD_NUMBER;
         hash = (53 * hash) + getStorPoolDfnUuid().hashCode();
+      }
+      if (getStorPoolDfnPropsCount() > 0) {
+        hash = (37 * hash) + STOR_POOL_DFN_PROPS_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolDfnPropsList().hashCode();
+      }
+      if (getStorPoolPropsCount() > 0) {
+        hash = (37 * hash) + STOR_POOL_PROPS_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolPropsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1459,6 +1721,8 @@ public final class VlmOuterClass {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
           getVlmPropsFieldBuilder();
+          getStorPoolDfnPropsFieldBuilder();
+          getStorPoolPropsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -1491,6 +1755,18 @@ public final class VlmOuterClass {
         bitField0_ = (bitField0_ & ~0x00000400);
         storPoolDfnUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000800);
+        if (storPoolDfnPropsBuilder_ == null) {
+          storPoolDfnProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00001000);
+        } else {
+          storPoolDfnPropsBuilder_.clear();
+        }
+        if (storPoolPropsBuilder_ == null) {
+          storPoolProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00002000);
+        } else {
+          storPoolPropsBuilder_.clear();
+        }
         return this;
       }
 
@@ -1569,6 +1845,24 @@ public final class VlmOuterClass {
           to_bitField0_ |= 0x00000200;
         }
         result.storPoolDfnUuid_ = storPoolDfnUuid_;
+        if (storPoolDfnPropsBuilder_ == null) {
+          if (((bitField0_ & 0x00001000) == 0x00001000)) {
+            storPoolDfnProps_ = java.util.Collections.unmodifiableList(storPoolDfnProps_);
+            bitField0_ = (bitField0_ & ~0x00001000);
+          }
+          result.storPoolDfnProps_ = storPoolDfnProps_;
+        } else {
+          result.storPoolDfnProps_ = storPoolDfnPropsBuilder_.build();
+        }
+        if (storPoolPropsBuilder_ == null) {
+          if (((bitField0_ & 0x00002000) == 0x00002000)) {
+            storPoolProps_ = java.util.Collections.unmodifiableList(storPoolProps_);
+            bitField0_ = (bitField0_ & ~0x00002000);
+          }
+          result.storPoolProps_ = storPoolProps_;
+        } else {
+          result.storPoolProps_ = storPoolPropsBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1693,6 +1987,58 @@ public final class VlmOuterClass {
           storPoolDfnUuid_ = other.storPoolDfnUuid_;
           onChanged();
         }
+        if (storPoolDfnPropsBuilder_ == null) {
+          if (!other.storPoolDfnProps_.isEmpty()) {
+            if (storPoolDfnProps_.isEmpty()) {
+              storPoolDfnProps_ = other.storPoolDfnProps_;
+              bitField0_ = (bitField0_ & ~0x00001000);
+            } else {
+              ensureStorPoolDfnPropsIsMutable();
+              storPoolDfnProps_.addAll(other.storPoolDfnProps_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.storPoolDfnProps_.isEmpty()) {
+            if (storPoolDfnPropsBuilder_.isEmpty()) {
+              storPoolDfnPropsBuilder_.dispose();
+              storPoolDfnPropsBuilder_ = null;
+              storPoolDfnProps_ = other.storPoolDfnProps_;
+              bitField0_ = (bitField0_ & ~0x00001000);
+              storPoolDfnPropsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getStorPoolDfnPropsFieldBuilder() : null;
+            } else {
+              storPoolDfnPropsBuilder_.addAllMessages(other.storPoolDfnProps_);
+            }
+          }
+        }
+        if (storPoolPropsBuilder_ == null) {
+          if (!other.storPoolProps_.isEmpty()) {
+            if (storPoolProps_.isEmpty()) {
+              storPoolProps_ = other.storPoolProps_;
+              bitField0_ = (bitField0_ & ~0x00002000);
+            } else {
+              ensureStorPoolPropsIsMutable();
+              storPoolProps_.addAll(other.storPoolProps_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.storPoolProps_.isEmpty()) {
+            if (storPoolPropsBuilder_.isEmpty()) {
+              storPoolPropsBuilder_.dispose();
+              storPoolPropsBuilder_ = null;
+              storPoolProps_ = other.storPoolProps_;
+              bitField0_ = (bitField0_ & ~0x00002000);
+              storPoolPropsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getStorPoolPropsFieldBuilder() : null;
+            } else {
+              storPoolPropsBuilder_.addAllMessages(other.storPoolProps_);
+            }
+          }
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -1704,6 +2050,16 @@ public final class VlmOuterClass {
         }
         for (int i = 0; i < getVlmPropsCount(); i++) {
           if (!getVlmProps(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getStorPoolDfnPropsCount(); i++) {
+          if (!getStorPoolDfnProps(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getStorPoolPropsCount(); i++) {
+          if (!getStorPoolProps(i).isInitialized()) {
             return false;
           }
         }
@@ -3083,6 +3439,630 @@ public final class VlmOuterClass {
         onChanged();
         return this;
       }
+
+      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> storPoolDfnProps_ =
+        java.util.Collections.emptyList();
+      private void ensureStorPoolDfnPropsIsMutable() {
+        if (!((bitField0_ & 0x00001000) == 0x00001000)) {
+          storPoolDfnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(storPoolDfnProps_);
+          bitField0_ |= 0x00001000;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> storPoolDfnPropsBuilder_;
+
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStorPoolDfnPropsList() {
+        if (storPoolDfnPropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(storPoolDfnProps_);
+        } else {
+          return storPoolDfnPropsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public int getStorPoolDfnPropsCount() {
+        if (storPoolDfnPropsBuilder_ == null) {
+          return storPoolDfnProps_.size();
+        } else {
+          return storPoolDfnPropsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolDfnProps(int index) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          return storPoolDfnProps_.get(index);
+        } else {
+          return storPoolDfnPropsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder setStorPoolDfnProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.set(index, value);
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder setStorPoolDfnProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder addStorPoolDfnProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.add(value);
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder addStorPoolDfnProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.add(index, value);
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder addStorPoolDfnProps(
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.add(builderForValue.build());
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder addStorPoolDfnProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder addAllStorPoolDfnProps(
+          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          ensureStorPoolDfnPropsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, storPoolDfnProps_);
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder clearStorPoolDfnProps() {
+        if (storPoolDfnPropsBuilder_ == null) {
+          storPoolDfnProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00001000);
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public Builder removeStorPoolDfnProps(int index) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          ensureStorPoolDfnPropsIsMutable();
+          storPoolDfnProps_.remove(index);
+          onChanged();
+        } else {
+          storPoolDfnPropsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getStorPoolDfnPropsBuilder(
+          int index) {
+        return getStorPoolDfnPropsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
+          int index) {
+        if (storPoolDfnPropsBuilder_ == null) {
+          return storPoolDfnProps_.get(index);  } else {
+          return storPoolDfnPropsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getStorPoolDfnPropsOrBuilderList() {
+        if (storPoolDfnPropsBuilder_ != null) {
+          return storPoolDfnPropsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(storPoolDfnProps_);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStorPoolDfnPropsBuilder() {
+        return getStorPoolDfnPropsFieldBuilder().addBuilder(
+            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStorPoolDfnPropsBuilder(
+          int index) {
+        return getStorPoolDfnPropsFieldBuilder().addBuilder(
+            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Storage pool definition's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_dfn_props = 13;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getStorPoolDfnPropsBuilderList() {
+        return getStorPoolDfnPropsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getStorPoolDfnPropsFieldBuilder() {
+        if (storPoolDfnPropsBuilder_ == null) {
+          storPoolDfnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  storPoolDfnProps_,
+                  ((bitField0_ & 0x00001000) == 0x00001000),
+                  getParentForChildren(),
+                  isClean());
+          storPoolDfnProps_ = null;
+        }
+        return storPoolDfnPropsBuilder_;
+      }
+
+      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> storPoolProps_ =
+        java.util.Collections.emptyList();
+      private void ensureStorPoolPropsIsMutable() {
+        if (!((bitField0_ & 0x00002000) == 0x00002000)) {
+          storPoolProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(storPoolProps_);
+          bitField0_ |= 0x00002000;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> storPoolPropsBuilder_;
+
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStorPoolPropsList() {
+        if (storPoolPropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(storPoolProps_);
+        } else {
+          return storPoolPropsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public int getStorPoolPropsCount() {
+        if (storPoolPropsBuilder_ == null) {
+          return storPoolProps_.size();
+        } else {
+          return storPoolPropsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolProps(int index) {
+        if (storPoolPropsBuilder_ == null) {
+          return storPoolProps_.get(index);
+        } else {
+          return storPoolPropsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder setStorPoolProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (storPoolPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.set(index, value);
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder setStorPoolProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (storPoolPropsBuilder_ == null) {
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder addStorPoolProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (storPoolPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.add(value);
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder addStorPoolProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (storPoolPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.add(index, value);
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder addStorPoolProps(
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (storPoolPropsBuilder_ == null) {
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.add(builderForValue.build());
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder addStorPoolProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (storPoolPropsBuilder_ == null) {
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder addAllStorPoolProps(
+          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (storPoolPropsBuilder_ == null) {
+          ensureStorPoolPropsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, storPoolProps_);
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder clearStorPoolProps() {
+        if (storPoolPropsBuilder_ == null) {
+          storPoolProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00002000);
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public Builder removeStorPoolProps(int index) {
+        if (storPoolPropsBuilder_ == null) {
+          ensureStorPoolPropsIsMutable();
+          storPoolProps_.remove(index);
+          onChanged();
+        } else {
+          storPoolPropsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getStorPoolPropsBuilder(
+          int index) {
+        return getStorPoolPropsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolPropsOrBuilder(
+          int index) {
+        if (storPoolPropsBuilder_ == null) {
+          return storPoolProps_.get(index);  } else {
+          return storPoolPropsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getStorPoolPropsOrBuilderList() {
+        if (storPoolPropsBuilder_ != null) {
+          return storPoolPropsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(storPoolProps_);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStorPoolPropsBuilder() {
+        return getStorPoolPropsFieldBuilder().addBuilder(
+            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStorPoolPropsBuilder(
+          int index) {
+        return getStorPoolPropsFieldBuilder().addBuilder(
+            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Storage pool's properties
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry stor_pool_props = 14;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getStorPoolPropsBuilderList() {
+        return getStorPoolPropsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getStorPoolPropsFieldBuilder() {
+        if (storPoolPropsBuilder_ == null) {
+          storPoolPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  storPoolProps_,
+                  ((bitField0_ & 0x00002000) == 0x00002000),
+                  getParentForChildren(),
+                  isClean());
+          storPoolProps_ = null;
+        }
+        return storPoolPropsBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -3147,7 +4127,7 @@ public final class VlmOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\017proto/Vlm.proto\022\030com.linbit.linstor.pr" +
-      "oto\032\033proto/LinStorMapEntry.proto\"\270\002\n\003Vlm" +
+      "oto\032\033proto/LinStorMapEntry.proto\"\304\003\n\003Vlm" +
       "\022\020\n\010vlm_uuid\030\001 \001(\t\022\024\n\014vlm_dfn_uuid\030\002 \001(\t" +
       "\022\016\n\006vlm_nr\030\003 \002(\021\022\024\n\014vlm_minor_nr\030\004 \001(\r\022\024" +
       "\n\014block_device\030\005 \001(\t\022\021\n\tmeta_disk\030\006 \001(\t\022" +
@@ -3155,7 +4135,11 @@ public final class VlmOuterClass {
       "e\030\010 \001(\t\022\021\n\tvlm_flags\030\t \003(\t\022<\n\tvlm_props\030" +
       "\n \003(\0132).com.linbit.linstor.proto.LinStor" +
       "MapEntry\022\035\n\025stor_pool_driver_name\030\013 \001(\t\022" +
-      "\032\n\022stor_pool_dfn_uuid\030\014 \001(\tP\000"
+      "\032\n\022stor_pool_dfn_uuid\030\014 \001(\t\022F\n\023stor_pool",
+      "_dfn_props\030\r \003(\0132).com.linbit.linstor.pr" +
+      "oto.LinStorMapEntry\022B\n\017stor_pool_props\030\016" +
+      " \003(\0132).com.linbit.linstor.proto.LinStorM" +
+      "apEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -3175,7 +4159,7 @@ public final class VlmOuterClass {
     internal_static_com_linbit_linstor_proto_Vlm_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Vlm_descriptor,
-        new java.lang.String[] { "VlmUuid", "VlmDfnUuid", "VlmNr", "VlmMinorNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", "StorPoolDriverName", "StorPoolDfnUuid", });
+        new java.lang.String[] { "VlmUuid", "VlmDfnUuid", "VlmNr", "VlmMinorNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", "StorPoolDriverName", "StorPoolDfnUuid", "StorPoolDfnProps", "StorPoolProps", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

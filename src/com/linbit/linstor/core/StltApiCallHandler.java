@@ -13,12 +13,14 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.core.StltStorPoolApiCallHandler.ChangedData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -203,7 +205,15 @@ public class StltApiCallHandler
 
                 for (StorPoolPojo storPool : storPools)
                 {
-                    storPoolHandler.applyChanges(storPool, transMgr);
+                    ChangedData appliedChanges = storPoolHandler.applyChanges(storPool, transMgr);
+                    StorPoolDefinition storPoolDfnToRegister = appliedChanges.storPoolDfnToRegister;
+                    if (storPoolDfnToRegister != null)
+                    {
+                        storPoolDfnMap.put(
+                            storPoolDfnToRegister.getName(),
+                            storPoolDfnToRegister
+                        );
+                    }
                 }
 
                 for (RscPojo rsc : resources)

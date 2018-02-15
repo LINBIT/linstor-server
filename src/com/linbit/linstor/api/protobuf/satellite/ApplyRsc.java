@@ -133,7 +133,9 @@ public class ApplyRsc extends BaseProtoApiCall
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     asMap(vol.getVlmPropsList()),
                     vol.getStorPoolDriverName(),
-                    UUID.fromString(vol.getStorPoolDfnUuid())
+                    UUID.fromString(vol.getStorPoolDfnUuid()),
+                    asMap(vol.getStorPoolDfnPropsList()),
+                    asMap(vol.getStorPoolPropsList())
                 )
             );
         }

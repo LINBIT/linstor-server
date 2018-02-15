@@ -454,7 +454,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getFlags().getFlagsBits(accCtx),
                 getProps(accCtx).map(),
                 getStorPool(accCtx).getDriverName(),
-                getStorPool(accCtx).getDefinition(accCtx).getUuid()
+                getStorPool(accCtx).getDefinition(accCtx).getUuid(),
+                getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
+                getStorPool(accCtx).getProps(accCtx).map()
         );
     }
 

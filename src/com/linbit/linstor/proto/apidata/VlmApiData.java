@@ -123,6 +123,28 @@ public class VlmApiData implements VlmApi
         return ret;
     }
 
+    @Override
+    public Map<String, String> getStorPoolDfnProps()
+    {
+        Map<String, String> ret = new HashMap<>();
+        for (LinStorMapEntry entry : vlm.getStorPoolDfnPropsList())
+        {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
+    }
+
+    @Override
+    public Map<String, String> getStorPoolProps()
+    {
+        Map<String, String> ret = new HashMap<>();
+        for (LinStorMapEntry entry : vlm.getStorPoolPropsList())
+        {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
+    }
+
     public static Vlm toVlmProto(final VlmApi vlmApi)
     {
         Vlm.Builder builder = Vlm.newBuilder();

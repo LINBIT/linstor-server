@@ -113,5 +113,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
         long getFlags();
         Map<String, String> getVlmProps();
         UUID getStorPoolDfnUuid();
+        Map<String, String> getStorPoolDfnProps();
+        Map<String, String> getStorPoolProps();
     }
 }

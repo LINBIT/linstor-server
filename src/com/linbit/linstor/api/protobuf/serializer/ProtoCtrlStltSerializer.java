@@ -570,6 +570,14 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                     .setStorPoolName(vlmStorPool.getName().displayValue)
                     .setStorPoolDriverName(vlmStorPool.getDriverName())
                     .setStorPoolDfnUuid(vlmStorPool.getDefinition(serializerCtx).getUuid().toString())
+                    .addAllStorPoolDfnProps(
+                        BaseProtoApiCall.fromMap(
+                            vlmStorPool.getDefinition(serializerCtx).getProps(serializerCtx).map())
+                        )
+                    .addAllStorPoolProps(
+                        BaseProtoApiCall.fromMap(
+                            vlmStorPool.getProps(serializerCtx).map())
+                        )
                     .addAllVlmProps(BaseProtoApiCall.fromMap(volProps));
                 String blockDev = vol.getBlockDevicePath(serializerCtx);
                 if (blockDev != null)

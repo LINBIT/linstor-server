@@ -242,7 +242,7 @@ class StltStorPoolApiCallHandler
         }
     }
 
-    private class ChangedData
+    public static class ChangedData
     {
         Map<ResourceName, UUID> changedResourcesMap;
         StorPoolDefinition storPoolDfnToRegister;

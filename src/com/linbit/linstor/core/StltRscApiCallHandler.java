@@ -657,6 +657,8 @@ class StltRscApiCallHandler
                         transMgr
                     );
 
+                    storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
+
                     storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
                 storPool = StorPoolData.getInstanceSatellite(
@@ -667,6 +669,7 @@ class StltRscApiCallHandler
                     vlmApi.getStorDriverSimpleClassName(),
                     transMgr
                 );
+                storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
             }
             else
             {
