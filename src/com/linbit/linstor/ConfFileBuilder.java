@@ -135,37 +135,16 @@ public class ConfFileBuilder
                     Node fromNode = localRsc.getAssignedNode();
                     Node toNode = peerRsc.getAssignedNode();
 
-                    Iterator<NetInterface> fromIfIter = fromNode.iterateNetInterfaces(accCtx);
-                    Iterator<NetInterface> toIfIter = toNode.iterateNetInterfaces(accCtx);
+                    String fromHost = fromNode.getName().displayValue;
+                    String toHost = toNode.getName().displayValue;
 
-                    if (fromIfIter.hasNext() && toIfIter.hasNext())
+                    int hostNameLen = Math.max(fromHost.length(), toHost.length());
+                    appendLine("connection");
+                    try (Section connectionSection = new Section())
                     {
-                        NetInterface fromNetIf = fromNode.iterateNetInterfaces(accCtx).next();
-                        String fromHost = fromNode.getName().displayValue;
-                        String fromAddr = fromNetIf.getAddress(accCtx).getAddress();
-
-                        NetInterface toNetIf = toNode.iterateNetInterfaces(accCtx).next();
-                        String toHost = toNode.getName().displayValue;
-                        String toAddr = toNetIf.getAddress(accCtx).getAddress();
-
-                        int hostNameLen = Math.max(fromHost.length(), toHost.length());
-                        appendLine("connection");
-                        try (Section connectionSection = new Section())
-                        {
-                            String format = "host %-" + hostNameLen + "s address %s:%d;";
-                            appendLine(
-                                format,
-                                fromHost,
-                                fromAddr,
-                                port
-                            );
-                            appendLine(
-                                format,
-                                toHost,
-                                toAddr,
-                                port
-                            );
-                        }
+                        String format = "host %-" + hostNameLen + "s;";
+                        appendLine(format, fromHost);
+                        appendLine(format, toHost);
                     }
                 }
             }
