@@ -28,24 +28,33 @@ public final class MsgApiVersionOuterClass {
     int getVersion();
 
     /**
-     * <code>required uint64 features = 2;</code>
+     * <code>required uint32 min_version = 2;</code>
+     */
+    boolean hasMinVersion();
+    /**
+     * <code>required uint32 min_version = 2;</code>
+     */
+    int getMinVersion();
+
+    /**
+     * <code>optional uint64 features = 3;</code>
      */
     boolean hasFeatures();
     /**
-     * <code>required uint64 features = 2;</code>
+     * <code>optional uint64 features = 3;</code>
      */
     long getFeatures();
 
     /**
-     * <code>optional string controller_info = 3;</code>
+     * <code>optional string controller_info = 4;</code>
      */
     boolean hasControllerInfo();
     /**
-     * <code>optional string controller_info = 3;</code>
+     * <code>optional string controller_info = 4;</code>
      */
     java.lang.String getControllerInfo();
     /**
-     * <code>optional string controller_info = 3;</code>
+     * <code>optional string controller_info = 4;</code>
      */
     com.google.protobuf.ByteString
         getControllerInfoBytes();
@@ -67,6 +76,7 @@ public final class MsgApiVersionOuterClass {
     }
     private MsgApiVersion() {
       version_ = 0;
+      minVersion_ = 0;
       features_ = 0L;
       controllerInfo_ = "";
     }
@@ -106,12 +116,17 @@ public final class MsgApiVersionOuterClass {
             }
             case 16: {
               bitField0_ |= 0x00000002;
+              minVersion_ = input.readUInt32();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
               features_ = input.readUInt64();
               break;
             }
-            case 26: {
+            case 34: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000004;
+              bitField0_ |= 0x00000008;
               controllerInfo_ = bs;
               break;
             }
@@ -155,31 +170,46 @@ public final class MsgApiVersionOuterClass {
       return version_;
     }
 
-    public static final int FEATURES_FIELD_NUMBER = 2;
-    private long features_;
+    public static final int MIN_VERSION_FIELD_NUMBER = 2;
+    private int minVersion_;
     /**
-     * <code>required uint64 features = 2;</code>
+     * <code>required uint32 min_version = 2;</code>
      */
-    public boolean hasFeatures() {
+    public boolean hasMinVersion() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required uint64 features = 2;</code>
+     * <code>required uint32 min_version = 2;</code>
+     */
+    public int getMinVersion() {
+      return minVersion_;
+    }
+
+    public static final int FEATURES_FIELD_NUMBER = 3;
+    private long features_;
+    /**
+     * <code>optional uint64 features = 3;</code>
+     */
+    public boolean hasFeatures() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional uint64 features = 3;</code>
      */
     public long getFeatures() {
       return features_;
     }
 
-    public static final int CONTROLLER_INFO_FIELD_NUMBER = 3;
+    public static final int CONTROLLER_INFO_FIELD_NUMBER = 4;
     private volatile java.lang.Object controllerInfo_;
     /**
-     * <code>optional string controller_info = 3;</code>
+     * <code>optional string controller_info = 4;</code>
      */
     public boolean hasControllerInfo() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>optional string controller_info = 3;</code>
+     * <code>optional string controller_info = 4;</code>
      */
     public java.lang.String getControllerInfo() {
       java.lang.Object ref = controllerInfo_;
@@ -196,7 +226,7 @@ public final class MsgApiVersionOuterClass {
       }
     }
     /**
-     * <code>optional string controller_info = 3;</code>
+     * <code>optional string controller_info = 4;</code>
      */
     public com.google.protobuf.ByteString
         getControllerInfoBytes() {
@@ -222,7 +252,7 @@ public final class MsgApiVersionOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasFeatures()) {
+      if (!hasMinVersion()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -236,10 +266,13 @@ public final class MsgApiVersionOuterClass {
         output.writeUInt32(1, version_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt64(2, features_);
+        output.writeUInt32(2, minVersion_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, controllerInfo_);
+        output.writeUInt64(3, features_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, controllerInfo_);
       }
       unknownFields.writeTo(output);
     }
@@ -255,10 +288,14 @@ public final class MsgApiVersionOuterClass {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(2, features_);
+          .computeUInt32Size(2, minVersion_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, controllerInfo_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(3, features_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, controllerInfo_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -281,6 +318,11 @@ public final class MsgApiVersionOuterClass {
       if (hasVersion()) {
         result = result && (getVersion()
             == other.getVersion());
+      }
+      result = result && (hasMinVersion() == other.hasMinVersion());
+      if (hasMinVersion()) {
+        result = result && (getMinVersion()
+            == other.getMinVersion());
       }
       result = result && (hasFeatures() == other.hasFeatures());
       if (hasFeatures()) {
@@ -306,6 +348,10 @@ public final class MsgApiVersionOuterClass {
       if (hasVersion()) {
         hash = (37 * hash) + VERSION_FIELD_NUMBER;
         hash = (53 * hash) + getVersion();
+      }
+      if (hasMinVersion()) {
+        hash = (37 * hash) + MIN_VERSION_FIELD_NUMBER;
+        hash = (53 * hash) + getMinVersion();
       }
       if (hasFeatures()) {
         hash = (37 * hash) + FEATURES_FIELD_NUMBER;
@@ -440,10 +486,12 @@ public final class MsgApiVersionOuterClass {
         super.clear();
         version_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        features_ = 0L;
+        minVersion_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
-        controllerInfo_ = "";
+        features_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000004);
+        controllerInfo_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -475,9 +523,13 @@ public final class MsgApiVersionOuterClass {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.features_ = features_;
+        result.minVersion_ = minVersion_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
+        }
+        result.features_ = features_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
         }
         result.controllerInfo_ = controllerInfo_;
         result.bitField0_ = to_bitField0_;
@@ -525,11 +577,14 @@ public final class MsgApiVersionOuterClass {
         if (other.hasVersion()) {
           setVersion(other.getVersion());
         }
+        if (other.hasMinVersion()) {
+          setMinVersion(other.getMinVersion());
+        }
         if (other.hasFeatures()) {
           setFeatures(other.getFeatures());
         }
         if (other.hasControllerInfo()) {
-          bitField0_ |= 0x00000004;
+          bitField0_ |= 0x00000008;
           controllerInfo_ = other.controllerInfo_;
           onChanged();
         }
@@ -542,7 +597,7 @@ public final class MsgApiVersionOuterClass {
         if (!hasVersion()) {
           return false;
         }
-        if (!hasFeatures()) {
+        if (!hasMinVersion()) {
           return false;
         }
         return true;
@@ -599,33 +654,65 @@ public final class MsgApiVersionOuterClass {
         return this;
       }
 
-      private long features_ ;
+      private int minVersion_ ;
       /**
-       * <code>required uint64 features = 2;</code>
+       * <code>required uint32 min_version = 2;</code>
        */
-      public boolean hasFeatures() {
+      public boolean hasMinVersion() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required uint64 features = 2;</code>
+       * <code>required uint32 min_version = 2;</code>
+       */
+      public int getMinVersion() {
+        return minVersion_;
+      }
+      /**
+       * <code>required uint32 min_version = 2;</code>
+       */
+      public Builder setMinVersion(int value) {
+        bitField0_ |= 0x00000002;
+        minVersion_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required uint32 min_version = 2;</code>
+       */
+      public Builder clearMinVersion() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        minVersion_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private long features_ ;
+      /**
+       * <code>optional uint64 features = 3;</code>
+       */
+      public boolean hasFeatures() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional uint64 features = 3;</code>
        */
       public long getFeatures() {
         return features_;
       }
       /**
-       * <code>required uint64 features = 2;</code>
+       * <code>optional uint64 features = 3;</code>
        */
       public Builder setFeatures(long value) {
-        bitField0_ |= 0x00000002;
+        bitField0_ |= 0x00000004;
         features_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required uint64 features = 2;</code>
+       * <code>optional uint64 features = 3;</code>
        */
       public Builder clearFeatures() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         features_ = 0L;
         onChanged();
         return this;
@@ -633,13 +720,13 @@ public final class MsgApiVersionOuterClass {
 
       private java.lang.Object controllerInfo_ = "";
       /**
-       * <code>optional string controller_info = 3;</code>
+       * <code>optional string controller_info = 4;</code>
        */
       public boolean hasControllerInfo() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional string controller_info = 3;</code>
+       * <code>optional string controller_info = 4;</code>
        */
       public java.lang.String getControllerInfo() {
         java.lang.Object ref = controllerInfo_;
@@ -656,7 +743,7 @@ public final class MsgApiVersionOuterClass {
         }
       }
       /**
-       * <code>optional string controller_info = 3;</code>
+       * <code>optional string controller_info = 4;</code>
        */
       public com.google.protobuf.ByteString
           getControllerInfoBytes() {
@@ -672,36 +759,36 @@ public final class MsgApiVersionOuterClass {
         }
       }
       /**
-       * <code>optional string controller_info = 3;</code>
+       * <code>optional string controller_info = 4;</code>
        */
       public Builder setControllerInfo(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000008;
         controllerInfo_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string controller_info = 3;</code>
+       * <code>optional string controller_info = 4;</code>
        */
       public Builder clearControllerInfo() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         controllerInfo_ = getDefaultInstance().getControllerInfo();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string controller_info = 3;</code>
+       * <code>optional string controller_info = 4;</code>
        */
       public Builder setControllerInfoBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000008;
         controllerInfo_ = value;
         onChanged();
         return this;
@@ -770,9 +857,9 @@ public final class MsgApiVersionOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\031proto/MsgApiVersion.proto\022\030com.linbit." +
-      "linstor.proto\"K\n\rMsgApiVersion\022\017\n\007versio" +
-      "n\030\001 \002(\r\022\020\n\010features\030\002 \002(\004\022\027\n\017controller_" +
-      "info\030\003 \001(\t"
+      "linstor.proto\"`\n\rMsgApiVersion\022\017\n\007versio" +
+      "n\030\001 \002(\r\022\023\n\013min_version\030\002 \002(\r\022\020\n\010features" +
+      "\030\003 \001(\004\022\027\n\017controller_info\030\004 \001(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -791,7 +878,7 @@ public final class MsgApiVersionOuterClass {
     internal_static_com_linbit_linstor_proto_MsgApiVersion_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgApiVersion_descriptor,
-        new java.lang.String[] { "Version", "Features", "ControllerInfo", });
+        new java.lang.String[] { "Version", "MinVersion", "Features", "ControllerInfo", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

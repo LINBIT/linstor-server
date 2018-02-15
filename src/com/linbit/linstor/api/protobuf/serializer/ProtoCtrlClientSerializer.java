@@ -152,6 +152,7 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
 
         // set features
         msgApiVersion.setVersion(Controller.API_VERSION);
+        msgApiVersion.setMinVersion(Controller.API_MIN_VERSION);
         msgApiVersion.setFeatures(features);
         msgApiVersion.setControllerInfo(controllerInfo);
         msgApiVersion.build().writeDelimitedTo(baos);

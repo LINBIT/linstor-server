@@ -100,6 +100,7 @@ public final class Controller extends LinStor implements CoreServices
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
 
     public static final int API_VERSION = 1;
+    public static final int API_MIN_VERSION = API_VERSION;
 
     public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
 
