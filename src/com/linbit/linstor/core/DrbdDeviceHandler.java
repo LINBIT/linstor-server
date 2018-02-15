@@ -151,6 +151,10 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             // Volatile state information of the resource and its volumes
             ResourceState rscState = new ResourceState();
+            // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
+            //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
+            //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
+            rscState.setRequiresAdjust(true);
             rscState.setRscName(rscName.getDisplayName());
             {
                 Map<VolumeNumber, VolumeStateDevManager> vlmStateMap = new TreeMap<>();
