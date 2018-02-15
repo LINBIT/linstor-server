@@ -7,6 +7,5 @@ public class LinbitModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(WorkQueue.class).to(WorkerPool.class);
     }
 }

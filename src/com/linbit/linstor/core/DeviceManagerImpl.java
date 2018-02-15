@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import static com.linbit.SatelliteLinbitModule.STLT_WORKER_POOL_NAME;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
@@ -130,7 +131,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
         DrbdEventService drbdEventRef,
-        WorkQueue workQRef,
+        @Named(STLT_WORKER_POOL_NAME) WorkQueue workQRef,
         DrbdDeviceHandler drbdDeviceHandlerRef
     )
     {
