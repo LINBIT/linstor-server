@@ -1,11 +1,13 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.testutils.EmptyErrorReporter;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 public class ConfFileBuilderTest
 {
+    private ErrorReporter errorReporter;
     private AccessContext accessContext;
 
     private ObjectProtection dummyObjectProtection;
@@ -36,6 +39,7 @@ public class ConfFileBuilderTest
     {
         MockitoAnnotations.initMocks(this);
 
+        errorReporter = new EmptyErrorReporter();
         accessContext = DummySecurityInitializer.getSystemAccessContext();
 
         dummyObjectProtection = DummySecurityInitializer.getDummyObjectProtection(accessContext);
@@ -46,6 +50,7 @@ public class ConfFileBuilderTest
         throws Exception
     {
         String confFile = new ConfFileBuilder(
+            errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
             Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
@@ -62,6 +67,7 @@ public class ConfFileBuilderTest
         throws Exception
     {
         String confFile = new ConfFileBuilder(
+            errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
             Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
@@ -86,12 +92,14 @@ public class ConfFileBuilderTest
         throws Exception
     {
         String confFileNormal = new ConfFileBuilder(
+            errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
             Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
         ).build();
 
         String confFileDeleted = new ConfFileBuilder(
+            errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", true, false),
             Collections.singletonList(makeMockResource(202, "5.6.7.8", true, false))
@@ -106,12 +114,14 @@ public class ConfFileBuilderTest
         throws Exception
     {
         String confFileNormal = new ConfFileBuilder(
+            errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
             Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
         ).build();
 
         String confFileDeleted = new ConfFileBuilder(
+            errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
             Collections.singletonList(makeMockResource(202, "5.6.7.8", false, true))

@@ -1052,7 +1052,7 @@ class DrbdDeviceHandler implements DeviceHandler
             )
         )
         {
-            String content = new ConfFileBuilder(wrkCtx, rsc, peerResources).build();
+            String content = new ConfFileBuilder(this.errLog, wrkCtx, rsc, peerResources).build();
             resFileOut.write(content.getBytes());
         }
         catch (IOException ioExc)

@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -22,6 +23,7 @@ public class ConfFileBuilder
 {
     private static final ResourceNameComparator RESOURCE_NAME_COMPARATOR = new ResourceNameComparator();
 
+    private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
     private final Resource localRsc;
     private final Collection<Resource> remoteResources;
@@ -30,11 +32,13 @@ public class ConfFileBuilder
     private int indentDepth;
 
     public ConfFileBuilder(
+        final ErrorReporter errorReporterRef,
         final AccessContext accCtxRef,
         final Resource localRscRef,
         final Collection<Resource> remoteResourcesRef
     )
     {
+        errorReporter = errorReporterRef;
         accCtx = accCtxRef;
         localRsc = localRscRef;
         remoteResources = remoteResourcesRef;
@@ -233,12 +237,20 @@ public class ConfFileBuilder
                     accCtx,
                     new NetInterfaceName(prefNic) // TODO: validate on controller
                 );
+
+                if (preferredNetIf == null)
+                {
+                    errorReporter.logWarning(
+                        String.format("Preferred network interface '%s' not found, fallback to default", prefNic)
+                    );
+                }
             }
-            else
+
+            // fallback if preferred couldn't be found
+            if (preferredNetIf == null)
             {
                 Iterator<NetInterface> netIfIter = rsc.getAssignedNode().iterateNetInterfaces(accCtx);
-                if (netIfIter.hasNext())
-                {
+                if (netIfIter.hasNext()) {
                     preferredNetIf = netIfIter.next();
                 }
             }
