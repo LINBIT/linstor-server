@@ -91,6 +91,12 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
+    public String getStorDriverSimpleClassName()
+    {
+        return vlm.getStorPoolDriverName();
+    }
+
+    @Override
     public Map<String, String> getVlmProps()
     {
         Map<String, String> ret = new HashMap<>();

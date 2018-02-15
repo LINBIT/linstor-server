@@ -97,7 +97,6 @@ class StltStorPoolApiCallHandler
         {
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             ChangedData changedData = applyChanges(storPoolRaw, transMgr);
-//            StorPoolDefinition storPoolDfnToRegister = applyChanges(storPoolRaw, transMgr);
 
             StorPoolName storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
 

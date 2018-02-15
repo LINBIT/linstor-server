@@ -19,7 +19,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteDbDriver;
-import com.linbit.linstor.SatelliteDummyStorPoolData;
 import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
@@ -92,8 +91,6 @@ public final class Satellite extends LinStor implements CoreServices
     public static final String NET_COM_CONF_SSL_KEYSTORE_PASS_KEY = "keystore-passwd";
     public static final String NET_COM_CONF_SSL_TRUST_PASS_KEY = "truststore-passwd";
     public static final String NET_COM_CONF_SSL_PROTOCOL_KEY = "ssl-protocol";
-
-    public static final SatelliteDummyStorPoolData DUMMY_REMOTE_STOR_POOL = new SatelliteDummyStorPoolData();
 
     private final Injector injector;
 

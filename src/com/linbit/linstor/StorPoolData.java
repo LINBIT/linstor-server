@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -117,25 +116,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         ((NodeData) nodeRef).addStorPool(accCtx, this);
         ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, this);
-    }
-
-    /*
-     * used by SatellitedummyStorPoolData ONLY
-     */
-    protected StorPoolData()
-    {
-        uuid = null;
-        dbgInstanceId = UUID.randomUUID();
-        storPoolDef = null;
-        storageDriverKind = null;
-        allowStorageDriverCreation = false;
-        props = null;
-        node = null;
-        dbDriver = null;
-        volumeMap = null;
-        deleted = null;
-
-        transObjs = Collections.emptyList();
     }
 
     @Override

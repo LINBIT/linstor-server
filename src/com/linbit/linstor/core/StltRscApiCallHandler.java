@@ -37,6 +37,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
@@ -50,6 +51,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -66,6 +68,7 @@ class StltRscApiCallHandler
     private final ControllerPeerConnector controllerPeerConnector;
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final StorPoolDefinitionMap storPoolDfnMap;
 
     @Inject
     StltRscApiCallHandler(
@@ -74,7 +77,8 @@ class StltRscApiCallHandler
         DeviceManager deviceManagerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.NodesMap nodesMapRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
     )
     {
         errorReporter = errorReporterRef;
@@ -83,6 +87,7 @@ class StltRscApiCallHandler
         controllerPeerConnector = controllerPeerConnectorRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
+        storPoolDfnMap = storPoolDfnMapRef;
     }
 
     /**
@@ -634,11 +639,19 @@ class StltRscApiCallHandler
             apiCtx,
             new StorPoolName(vlmApi.getStorPoolName())
         );
+
         if (storPool == null)
         {
             if (remoteRsc)
             {
-                storPool = Satellite.DUMMY_REMOTE_STOR_POOL;
+                storPool = StorPoolData.getInstanceSatellite(
+                    apiCtx,
+                    vlmApi.getStorPoolUuid(),
+                    rsc.getAssignedNode(),
+                    storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName())),
+                    vlmApi.getStorDriverSimpleClassName(),
+                    transMgr
+                );
             }
             else
             {

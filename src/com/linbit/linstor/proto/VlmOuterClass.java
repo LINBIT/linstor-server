@@ -289,6 +289,35 @@ public final class VlmOuterClass {
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Storage pool's driver simple name
+     * in case we have to create a new storage pool
+     * </pre>
+     *
+     * <code>optional string stor_pool_driver_name = 11;</code>
+     */
+    boolean hasStorPoolDriverName();
+    /**
+     * <pre>
+     * Storage pool's driver simple name
+     * in case we have to create a new storage pool
+     * </pre>
+     *
+     * <code>optional string stor_pool_driver_name = 11;</code>
+     */
+    java.lang.String getStorPoolDriverName();
+    /**
+     * <pre>
+     * Storage pool's driver simple name
+     * in case we have to create a new storage pool
+     * </pre>
+     *
+     * <code>optional string stor_pool_driver_name = 11;</code>
+     */
+    com.google.protobuf.ByteString
+        getStorPoolDriverNameBytes();
   }
   /**
    * <pre>
@@ -316,6 +345,7 @@ public final class VlmOuterClass {
       storPoolName_ = "";
       vlmFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       vlmProps_ = java.util.Collections.emptyList();
+      storPoolDriverName_ = "";
     }
 
     @java.lang.Override
@@ -408,6 +438,12 @@ public final class VlmOuterClass {
               }
               vlmProps_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+            case 90: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000100;
+              storPoolDriverName_ = bs;
               break;
             }
           }
@@ -914,6 +950,63 @@ public final class VlmOuterClass {
       return vlmProps_.get(index);
     }
 
+    public static final int STOR_POOL_DRIVER_NAME_FIELD_NUMBER = 11;
+    private volatile java.lang.Object storPoolDriverName_;
+    /**
+     * <pre>
+     * Storage pool's driver simple name
+     * in case we have to create a new storage pool
+     * </pre>
+     *
+     * <code>optional string stor_pool_driver_name = 11;</code>
+     */
+    public boolean hasStorPoolDriverName() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <pre>
+     * Storage pool's driver simple name
+     * in case we have to create a new storage pool
+     * </pre>
+     *
+     * <code>optional string stor_pool_driver_name = 11;</code>
+     */
+    public java.lang.String getStorPoolDriverName() {
+      java.lang.Object ref = storPoolDriverName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          storPoolDriverName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Storage pool's driver simple name
+     * in case we have to create a new storage pool
+     * </pre>
+     *
+     * <code>optional string stor_pool_driver_name = 11;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStorPoolDriverNameBytes() {
+      java.lang.Object ref = storPoolDriverName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        storPoolDriverName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -966,6 +1059,9 @@ public final class VlmOuterClass {
       for (int i = 0; i < vlmProps_.size(); i++) {
         output.writeMessage(10, vlmProps_.get(i));
       }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 11, storPoolDriverName_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -1011,6 +1107,9 @@ public final class VlmOuterClass {
       for (int i = 0; i < vlmProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(10, vlmProps_.get(i));
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, storPoolDriverName_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1073,6 +1172,11 @@ public final class VlmOuterClass {
           .equals(other.getVlmFlagsList());
       result = result && getVlmPropsList()
           .equals(other.getVlmPropsList());
+      result = result && (hasStorPoolDriverName() == other.hasStorPoolDriverName());
+      if (hasStorPoolDriverName()) {
+        result = result && getStorPoolDriverName()
+            .equals(other.getStorPoolDriverName());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1123,6 +1227,10 @@ public final class VlmOuterClass {
       if (getVlmPropsCount() > 0) {
         hash = (37 * hash) + VLM_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getVlmPropsList().hashCode();
+      }
+      if (hasStorPoolDriverName()) {
+        hash = (37 * hash) + STOR_POOL_DRIVER_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolDriverName().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1271,6 +1379,8 @@ public final class VlmOuterClass {
         } else {
           vlmPropsBuilder_.clear();
         }
+        storPoolDriverName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -1341,6 +1451,10 @@ public final class VlmOuterClass {
         } else {
           result.vlmProps_ = vlmPropsBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        result.storPoolDriverName_ = storPoolDriverName_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1454,6 +1568,11 @@ public final class VlmOuterClass {
               vlmPropsBuilder_.addAllMessages(other.vlmProps_);
             }
           }
+        }
+        if (other.hasStorPoolDriverName()) {
+          bitField0_ |= 0x00000400;
+          storPoolDriverName_ = other.storPoolDriverName_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -2633,6 +2752,112 @@ public final class VlmOuterClass {
         }
         return vlmPropsBuilder_;
       }
+
+      private java.lang.Object storPoolDriverName_ = "";
+      /**
+       * <pre>
+       * Storage pool's driver simple name
+       * in case we have to create a new storage pool
+       * </pre>
+       *
+       * <code>optional string stor_pool_driver_name = 11;</code>
+       */
+      public boolean hasStorPoolDriverName() {
+        return ((bitField0_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <pre>
+       * Storage pool's driver simple name
+       * in case we have to create a new storage pool
+       * </pre>
+       *
+       * <code>optional string stor_pool_driver_name = 11;</code>
+       */
+      public java.lang.String getStorPoolDriverName() {
+        java.lang.Object ref = storPoolDriverName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            storPoolDriverName_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's driver simple name
+       * in case we have to create a new storage pool
+       * </pre>
+       *
+       * <code>optional string stor_pool_driver_name = 11;</code>
+       */
+      public com.google.protobuf.ByteString
+          getStorPoolDriverNameBytes() {
+        java.lang.Object ref = storPoolDriverName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          storPoolDriverName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool's driver simple name
+       * in case we have to create a new storage pool
+       * </pre>
+       *
+       * <code>optional string stor_pool_driver_name = 11;</code>
+       */
+      public Builder setStorPoolDriverName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        storPoolDriverName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's driver simple name
+       * in case we have to create a new storage pool
+       * </pre>
+       *
+       * <code>optional string stor_pool_driver_name = 11;</code>
+       */
+      public Builder clearStorPoolDriverName() {
+        bitField0_ = (bitField0_ & ~0x00000400);
+        storPoolDriverName_ = getDefaultInstance().getStorPoolDriverName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool's driver simple name
+       * in case we have to create a new storage pool
+       * </pre>
+       *
+       * <code>optional string stor_pool_driver_name = 11;</code>
+       */
+      public Builder setStorPoolDriverNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        storPoolDriverName_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -2697,14 +2922,15 @@ public final class VlmOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\017proto/Vlm.proto\022\030com.linbit.linstor.pr" +
-      "oto\032\033proto/LinStorMapEntry.proto\"\375\001\n\003Vlm" +
+      "oto\032\033proto/LinStorMapEntry.proto\"\234\002\n\003Vlm" +
       "\022\020\n\010vlm_uuid\030\001 \001(\t\022\024\n\014vlm_dfn_uuid\030\002 \001(\t" +
       "\022\016\n\006vlm_nr\030\003 \002(\021\022\024\n\014vlm_minor_nr\030\004 \001(\r\022\024" +
       "\n\014block_device\030\005 \001(\t\022\021\n\tmeta_disk\030\006 \001(\t\022" +
       "\026\n\016stor_pool_uuid\030\007 \001(\t\022\026\n\016stor_pool_nam" +
       "e\030\010 \001(\t\022\021\n\tvlm_flags\030\t \003(\t\022<\n\tvlm_props\030" +
       "\n \003(\0132).com.linbit.linstor.proto.LinStor" +
-      "MapEntryP\000"
+      "MapEntry\022\035\n\025stor_pool_driver_name\030\013 \001(\tP" +
+      "\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2724,7 +2950,7 @@ public final class VlmOuterClass {
     internal_static_com_linbit_linstor_proto_Vlm_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Vlm_descriptor,
-        new java.lang.String[] { "VlmUuid", "VlmDfnUuid", "VlmNr", "VlmMinorNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", });
+        new java.lang.String[] { "VlmUuid", "VlmDfnUuid", "VlmNr", "VlmMinorNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", "StorPoolDriverName", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

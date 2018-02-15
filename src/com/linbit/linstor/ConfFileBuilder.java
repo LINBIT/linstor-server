@@ -142,7 +142,7 @@ public class ConfFileBuilder
                     appendLine("connection");
                     try (Section connectionSection = new Section())
                     {
-                        String format = "host %-" + hostNameLen + "s;";
+                        String format = "host %s;";
                         appendLine(format, fromHost);
                         appendLine(format, toHost);
                     }

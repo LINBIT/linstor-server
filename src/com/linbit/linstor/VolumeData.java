@@ -452,7 +452,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getVolumeDefinition().getVolumeNumber().value,
                 getVolumeDefinition().getMinorNr(accCtx).value,
                 getFlags().getFlagsBits(accCtx),
-                getProps(accCtx).map());
+                getProps(accCtx).map(),
+                getStorPool(accCtx).getDriverName()
+        );
     }
 
     private final class VlmFlagsImpl extends StateFlagsBits<VolumeData, VlmFlags>

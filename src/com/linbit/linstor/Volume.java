@@ -105,6 +105,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
         UUID getVlmDfnUuid();
         String getStorPoolName();
         UUID getStorPoolUuid();
+        String getStorDriverSimpleClassName();
         String getBlockDevice();
         String getMetaDisk();
         int getVlmNr();
