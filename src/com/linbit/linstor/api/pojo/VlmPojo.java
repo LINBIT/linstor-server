@@ -21,6 +21,7 @@ public class VlmPojo implements Volume.VlmApi
     private final long vlmFlags;
     private final Map<String, String> vlmProps;
     private final String storDriverName;
+    private final UUID storPoolDfnUuid;
 
     public VlmPojo(
         final String storagePoolNameRef,
@@ -33,7 +34,8 @@ public class VlmPojo implements Volume.VlmApi
         final int vlmMinorNrRef,
         final long vlmFlagsRef,
         final Map<String, String> vlmPropsRef,
-        final String storDriverNameRef
+        final String storDriverNameRef,
+        final UUID storPoolDfnUuidRef
     )
     {
         storagePoolName = storagePoolNameRef;
@@ -47,6 +49,7 @@ public class VlmPojo implements Volume.VlmApi
         vlmFlags = vlmFlagsRef;
         vlmProps = vlmPropsRef;
         storDriverName = storDriverNameRef;
+        storPoolDfnUuid = storPoolDfnUuidRef;
     }
 
     @Override
@@ -113,6 +116,12 @@ public class VlmPojo implements Volume.VlmApi
     public String getStorDriverSimpleClassName()
     {
         return storDriverName;
+    }
+
+    @Override
+    public UUID getStorPoolDfnUuid()
+    {
+        return storPoolDfnUuid;
     }
 
 }

@@ -38,6 +38,8 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
@@ -644,11 +646,24 @@ class StltRscApiCallHandler
         {
             if (remoteRsc)
             {
+                StorPoolDefinition storPoolDfn =
+                    storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
+                if (storPoolDfn == null)
+                {
+                    storPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                        apiCtx,
+                        vlmApi.getStorPoolDfnUuid(),
+                        new StorPoolName(vlmApi.getStorPoolName()),
+                        transMgr
+                    );
+
+                    storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+                }
                 storPool = StorPoolData.getInstanceSatellite(
                     apiCtx,
                     vlmApi.getStorPoolUuid(),
                     rsc.getAssignedNode(),
-                    storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName())),
+                    storPoolDfn,
                     vlmApi.getStorDriverSimpleClassName(),
                     transMgr
                 );

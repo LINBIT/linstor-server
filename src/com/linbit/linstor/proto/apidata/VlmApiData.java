@@ -93,7 +93,23 @@ public class VlmApiData implements VlmApi
     @Override
     public String getStorDriverSimpleClassName()
     {
-        return vlm.getStorPoolDriverName();
+        String storPoolDriverName = null;
+        if (vlm.hasStorPoolDriverName())
+        {
+            storPoolDriverName = vlm.getStorPoolDriverName();
+        }
+        return storPoolDriverName;
+    }
+
+    @Override
+    public UUID getStorPoolDfnUuid()
+    {
+        UUID storPoolDfnUuid = null;
+        if (vlm.hasStorPoolDfnUuid())
+        {
+            storPoolDfnUuid = UUID.fromString(vlm.getVlmDfnUuid());
+        }
+        return storPoolDfnUuid;
     }
 
     @Override

@@ -453,7 +453,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getVolumeDefinition().getMinorNr(accCtx).value,
                 getFlags().getFlagsBits(accCtx),
                 getProps(accCtx).map(),
-                getStorPool(accCtx).getDriverName()
+                getStorPool(accCtx).getDriverName(),
+                getStorPool(accCtx).getDefinition(accCtx).getUuid()
         );
     }
 

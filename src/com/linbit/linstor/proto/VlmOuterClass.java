@@ -318,6 +318,35 @@ public final class VlmOuterClass {
      */
     com.google.protobuf.ByteString
         getStorPoolDriverNameBytes();
+
+    /**
+     * <pre>
+     * Storage pool definition's uuid
+     * in case we have to create a new storage pool definition
+     * </pre>
+     *
+     * <code>optional string stor_pool_dfn_uuid = 12;</code>
+     */
+    boolean hasStorPoolDfnUuid();
+    /**
+     * <pre>
+     * Storage pool definition's uuid
+     * in case we have to create a new storage pool definition
+     * </pre>
+     *
+     * <code>optional string stor_pool_dfn_uuid = 12;</code>
+     */
+    java.lang.String getStorPoolDfnUuid();
+    /**
+     * <pre>
+     * Storage pool definition's uuid
+     * in case we have to create a new storage pool definition
+     * </pre>
+     *
+     * <code>optional string stor_pool_dfn_uuid = 12;</code>
+     */
+    com.google.protobuf.ByteString
+        getStorPoolDfnUuidBytes();
   }
   /**
    * <pre>
@@ -346,6 +375,7 @@ public final class VlmOuterClass {
       vlmFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       vlmProps_ = java.util.Collections.emptyList();
       storPoolDriverName_ = "";
+      storPoolDfnUuid_ = "";
     }
 
     @java.lang.Override
@@ -444,6 +474,12 @@ public final class VlmOuterClass {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000100;
               storPoolDriverName_ = bs;
+              break;
+            }
+            case 98: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000200;
+              storPoolDfnUuid_ = bs;
               break;
             }
           }
@@ -1007,6 +1043,63 @@ public final class VlmOuterClass {
       }
     }
 
+    public static final int STOR_POOL_DFN_UUID_FIELD_NUMBER = 12;
+    private volatile java.lang.Object storPoolDfnUuid_;
+    /**
+     * <pre>
+     * Storage pool definition's uuid
+     * in case we have to create a new storage pool definition
+     * </pre>
+     *
+     * <code>optional string stor_pool_dfn_uuid = 12;</code>
+     */
+    public boolean hasStorPoolDfnUuid() {
+      return ((bitField0_ & 0x00000200) == 0x00000200);
+    }
+    /**
+     * <pre>
+     * Storage pool definition's uuid
+     * in case we have to create a new storage pool definition
+     * </pre>
+     *
+     * <code>optional string stor_pool_dfn_uuid = 12;</code>
+     */
+    public java.lang.String getStorPoolDfnUuid() {
+      java.lang.Object ref = storPoolDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          storPoolDfnUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Storage pool definition's uuid
+     * in case we have to create a new storage pool definition
+     * </pre>
+     *
+     * <code>optional string stor_pool_dfn_uuid = 12;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStorPoolDfnUuidBytes() {
+      java.lang.Object ref = storPoolDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        storPoolDfnUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -1062,6 +1155,9 @@ public final class VlmOuterClass {
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 11, storPoolDriverName_);
       }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 12, storPoolDfnUuid_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -1110,6 +1206,9 @@ public final class VlmOuterClass {
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, storPoolDriverName_);
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, storPoolDfnUuid_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1177,6 +1276,11 @@ public final class VlmOuterClass {
         result = result && getStorPoolDriverName()
             .equals(other.getStorPoolDriverName());
       }
+      result = result && (hasStorPoolDfnUuid() == other.hasStorPoolDfnUuid());
+      if (hasStorPoolDfnUuid()) {
+        result = result && getStorPoolDfnUuid()
+            .equals(other.getStorPoolDfnUuid());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1231,6 +1335,10 @@ public final class VlmOuterClass {
       if (hasStorPoolDriverName()) {
         hash = (37 * hash) + STOR_POOL_DRIVER_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getStorPoolDriverName().hashCode();
+      }
+      if (hasStorPoolDfnUuid()) {
+        hash = (37 * hash) + STOR_POOL_DFN_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolDfnUuid().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1381,6 +1489,8 @@ public final class VlmOuterClass {
         }
         storPoolDriverName_ = "";
         bitField0_ = (bitField0_ & ~0x00000400);
+        storPoolDfnUuid_ = "";
+        bitField0_ = (bitField0_ & ~0x00000800);
         return this;
       }
 
@@ -1455,6 +1565,10 @@ public final class VlmOuterClass {
           to_bitField0_ |= 0x00000100;
         }
         result.storPoolDriverName_ = storPoolDriverName_;
+        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          to_bitField0_ |= 0x00000200;
+        }
+        result.storPoolDfnUuid_ = storPoolDfnUuid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1572,6 +1686,11 @@ public final class VlmOuterClass {
         if (other.hasStorPoolDriverName()) {
           bitField0_ |= 0x00000400;
           storPoolDriverName_ = other.storPoolDriverName_;
+          onChanged();
+        }
+        if (other.hasStorPoolDfnUuid()) {
+          bitField0_ |= 0x00000800;
+          storPoolDfnUuid_ = other.storPoolDfnUuid_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -2858,6 +2977,112 @@ public final class VlmOuterClass {
         onChanged();
         return this;
       }
+
+      private java.lang.Object storPoolDfnUuid_ = "";
+      /**
+       * <pre>
+       * Storage pool definition's uuid
+       * in case we have to create a new storage pool definition
+       * </pre>
+       *
+       * <code>optional string stor_pool_dfn_uuid = 12;</code>
+       */
+      public boolean hasStorPoolDfnUuid() {
+        return ((bitField0_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <pre>
+       * Storage pool definition's uuid
+       * in case we have to create a new storage pool definition
+       * </pre>
+       *
+       * <code>optional string stor_pool_dfn_uuid = 12;</code>
+       */
+      public java.lang.String getStorPoolDfnUuid() {
+        java.lang.Object ref = storPoolDfnUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            storPoolDfnUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's uuid
+       * in case we have to create a new storage pool definition
+       * </pre>
+       *
+       * <code>optional string stor_pool_dfn_uuid = 12;</code>
+       */
+      public com.google.protobuf.ByteString
+          getStorPoolDfnUuidBytes() {
+        java.lang.Object ref = storPoolDfnUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          storPoolDfnUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool definition's uuid
+       * in case we have to create a new storage pool definition
+       * </pre>
+       *
+       * <code>optional string stor_pool_dfn_uuid = 12;</code>
+       */
+      public Builder setStorPoolDfnUuid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        storPoolDfnUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's uuid
+       * in case we have to create a new storage pool definition
+       * </pre>
+       *
+       * <code>optional string stor_pool_dfn_uuid = 12;</code>
+       */
+      public Builder clearStorPoolDfnUuid() {
+        bitField0_ = (bitField0_ & ~0x00000800);
+        storPoolDfnUuid_ = getDefaultInstance().getStorPoolDfnUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool definition's uuid
+       * in case we have to create a new storage pool definition
+       * </pre>
+       *
+       * <code>optional string stor_pool_dfn_uuid = 12;</code>
+       */
+      public Builder setStorPoolDfnUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        storPoolDfnUuid_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -2922,15 +3147,15 @@ public final class VlmOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\017proto/Vlm.proto\022\030com.linbit.linstor.pr" +
-      "oto\032\033proto/LinStorMapEntry.proto\"\234\002\n\003Vlm" +
+      "oto\032\033proto/LinStorMapEntry.proto\"\270\002\n\003Vlm" +
       "\022\020\n\010vlm_uuid\030\001 \001(\t\022\024\n\014vlm_dfn_uuid\030\002 \001(\t" +
       "\022\016\n\006vlm_nr\030\003 \002(\021\022\024\n\014vlm_minor_nr\030\004 \001(\r\022\024" +
       "\n\014block_device\030\005 \001(\t\022\021\n\tmeta_disk\030\006 \001(\t\022" +
       "\026\n\016stor_pool_uuid\030\007 \001(\t\022\026\n\016stor_pool_nam" +
       "e\030\010 \001(\t\022\021\n\tvlm_flags\030\t \003(\t\022<\n\tvlm_props\030" +
       "\n \003(\0132).com.linbit.linstor.proto.LinStor" +
-      "MapEntry\022\035\n\025stor_pool_driver_name\030\013 \001(\tP" +
-      "\000"
+      "MapEntry\022\035\n\025stor_pool_driver_name\030\013 \001(\t\022" +
+      "\032\n\022stor_pool_dfn_uuid\030\014 \001(\tP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2950,7 +3175,7 @@ public final class VlmOuterClass {
     internal_static_com_linbit_linstor_proto_Vlm_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Vlm_descriptor,
-        new java.lang.String[] { "VlmUuid", "VlmDfnUuid", "VlmNr", "VlmMinorNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", "StorPoolDriverName", });
+        new java.lang.String[] { "VlmUuid", "VlmDfnUuid", "VlmNr", "VlmMinorNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", "StorPoolDriverName", "StorPoolDfnUuid", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 
