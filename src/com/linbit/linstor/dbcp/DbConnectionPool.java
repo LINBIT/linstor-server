@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -47,7 +49,7 @@ public class DbConnectionPool implements ControllerDatabase
     private ServiceName serviceNameInstance;
     private String dbConnectionUrl;
     private Properties props;
-    private boolean started = false;
+    private AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
     private ThreadLocal<List<Connection>> threadLocalConnections;
 
@@ -194,13 +196,14 @@ public class DbConnectionPool implements ControllerDatabase
         return ret;
     }
 
+
     @Override
     public void shutdown()
     {
         try
         {
             dataSource.close();
-            started = false;
+            atomicStarted.set(false);
         }
         catch (Exception exc)
         {
@@ -224,23 +227,25 @@ public class DbConnectionPool implements ControllerDatabase
     @Override
     public void start() throws SystemServiceStartException
     {
-        ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
-        PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
+        if (!atomicStarted.getAndSet(true))
+        {
+            ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
+            PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
-        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMinIdle(minIdleConnections);
-        poolConfig.setMaxIdle(maxIdleConnections);
-        poolConfig.setBlockWhenExhausted(true);
-        poolConfig.setFairness(true);
+            GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+            poolConfig.setMinIdle(minIdleConnections);
+            poolConfig.setMaxIdle(maxIdleConnections);
+            poolConfig.setBlockWhenExhausted(true);
+            poolConfig.setFairness(true);
 
-        GenericObjectPool<PoolableConnection> connPool = new GenericObjectPool<>(poolConnFactory, poolConfig);
+            GenericObjectPool<PoolableConnection> connPool = new GenericObjectPool<>(poolConnFactory, poolConfig);
 
-        poolConnFactory.setPool(connPool);
-        poolConnFactory.setValidationQueryTimeout(dbTimeout);
-        poolConnFactory.setMaxOpenPrepatedStatements(dbMaxOpen);
+            poolConnFactory.setPool(connPool);
+            poolConnFactory.setValidationQueryTimeout(dbTimeout);
+            poolConnFactory.setMaxOpenPrepatedStatements(dbMaxOpen);
 
-        dataSource = new PoolingDataSource<PoolableConnection>(connPool);
-        started = true;
+            dataSource = new PoolingDataSource<PoolableConnection>(connPool);
+        }
     }
 
     @Override
@@ -270,6 +275,6 @@ public class DbConnectionPool implements ControllerDatabase
     @Override
     public boolean isStarted()
     {
-        return started;
+        return atomicStarted.get();
     }
 }
