@@ -151,6 +151,7 @@ class StltStorPoolApiCallHandler
             checkUuid(storPool, storPoolRaw);
             checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
 
+            storPool.setConnection(transMgr);
             storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
 
             Collection<Volume> volumes = storPool.getVolumes(apiCtx);
@@ -172,6 +173,8 @@ class StltStorPoolApiCallHandler
                     transMgr
                 );
                 checkUuid(storPoolDfn, storPoolRaw);
+
+                storPoolDfn.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolDfnProps());
 
                 storPoolDfnToRegister = storPoolDfn;
             }
