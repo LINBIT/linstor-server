@@ -1,55 +1,48 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
+import com.google.inject.Inject;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class ChangedStorPool extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_CHANGED_STOR_POOL,
+    description = "Called by the controller to indicate that a storage pool was modified"
+)
+public class ChangedStorPool implements ApiCall
 {
-    private final Satellite satellite;
+    private final ErrorReporter errorReporter;
+    private final DeviceManager deviceManager;
+    private final ControllerPeerConnector controllerPeerConnector;
 
-    public ChangedStorPool(Satellite satelliteRef)
-    {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
-    }
-
-    @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_CHANGED_STOR_POOL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the controller to indicate that a storage pool was modified";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer controllerPeer
+    @Inject
+    public ChangedStorPool(
+        ErrorReporter errorReporterRef,
+        DeviceManager deviceManagerRef,
+        ControllerPeerConnector controllerPeerConnectorRef
     )
+    {
+        errorReporter = errorReporterRef;
+        deviceManager = deviceManagerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         try
@@ -59,8 +52,8 @@ public class ChangedStorPool extends BaseProtoApiCall
             UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
 
             Map<NodeName, UUID> nodesUpd = new TreeMap<>();
-            nodesUpd.put(satellite.getLocalNode().getName(), storPoolUuid);
-            satellite.getDeviceManager().getUpdateTracker().updateStorPool(
+            nodesUpd.put(controllerPeerConnector.getLocalNode().getName(), storPoolUuid);
+            deviceManager.getUpdateTracker().updateStorPool(
                 storPoolUuid,
                 new StorPoolName(storPoolName)
             );

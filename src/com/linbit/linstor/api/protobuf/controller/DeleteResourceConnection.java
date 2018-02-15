@@ -1,59 +1,43 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgDelRscConnOuterClass.MsgDelRscConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgDelRscConnOuterClass.MsgDelRscConn;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class DeleteResourceConnection extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_DEL_RSC_CONN,
+    description = "Deletes resource connection options"
+)
+public class DeleteResourceConnection implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public DeleteResourceConnection(Controller controllerRef)
+    @Inject
+    public DeleteResourceConnection(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_DEL_RSC_CONN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Deletes resource connection options";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgDelRscConn msgDeleteRscConn = MsgDelRscConn.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = controller.getApiCallHandler().deleteResourceConnection(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.deleteResourceConnection(
             msgDeleteRscConn.getNodeName1(),
             msgDeleteRscConn.getNodeName2(),
             msgDeleteRscConn.getResourceName()
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

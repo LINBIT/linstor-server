@@ -22,7 +22,9 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
@@ -56,6 +58,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -125,9 +129,6 @@ public final class Satellite extends LinStor implements CoreServices
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
 
-    // The current API type (e.g ProtoBuf)
-    private final ApiType apiType;
-
     // Satellite configuration properties
     Props stltConf;
 
@@ -168,8 +169,6 @@ public final class Satellite extends LinStor implements CoreServices
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
-
-        apiType = ApiType.PROTOBUF;
     }
 
     public void initialize()
@@ -239,10 +238,6 @@ public final class Satellite extends LinStor implements CoreServices
             // Initialize the message processor
             // errorLogRef.logInfo("Initializing API call dispatcher");
             msgProc = injector.getInstance(CommonMessageProcessor.class);
-
-            errorLogRef.logInfo("Initializing test APIs");
-            LinStor.loadApiCalls(msgProc, this, this, apiType);
-
 
             errorLogRef.logInfo("Initializing StateTracker");
             {
@@ -570,9 +565,13 @@ public final class Satellite extends LinStor implements CoreServices
         {
             Thread.currentThread().setName("Main");
 
+            ApiType apiType = new ProtobufApiType();
+            List<Class<? extends ApiCall>> apiCalls =
+                new ApiCallLoader(errorLog).loadApiCalls(apiType, Arrays.asList("common", "satellite"));
+
             // Initialize the Satellite module with the SYSTEM security context
             Initializer sysInit = new Initializer();
-            Satellite instance = sysInit.initSatellite(cArgs, errorLog);
+            Satellite instance = sysInit.initSatellite(cArgs, errorLog, apiType, apiCalls);
 
             instance.initialize();
             if (cArgs.startDebugConsole())

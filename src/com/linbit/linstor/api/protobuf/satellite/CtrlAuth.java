@@ -1,51 +1,49 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.UpdateMonitor;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
+import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
-import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
-import com.linbit.linstor.security.AccessContext;
 
-@ProtobufApiCall
-public class CtrlAuth extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_AUTH,
+    description = "Called by the controller to authenticate the controller to the satellite"
+)
+public class CtrlAuth implements ApiCall
 {
-    private final Satellite satellite;
+    private final StltApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
+    private final UpdateMonitor updateMonitor;
+    private final Peer controllerPeer;
 
-    public CtrlAuth(Satellite satelliteRef)
-    {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
-    }
-
-    @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_AUTH;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the controller to authenticate the controller to the satellite";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer controllerPeer
+    @Inject
+    public CtrlAuth(
+        StltApiCallHandler apiCallHandlerRef,
+        ApiCallAnswerer apiCallAnswererRef,
+        UpdateMonitor updateMonitorRef,
+        Peer controllerPeerRef
     )
+    {
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
+        updateMonitor = updateMonitorRef;
+        controllerPeer = controllerPeerRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         // TODO: implement authentication
@@ -56,7 +54,7 @@ public class CtrlAuth extends BaseProtoApiCall
         UUID disklessStorPoolUuid = UUID.fromString(auth.getNodeDisklessStorPoolUuid());
 
 
-        ApiCallRcImpl apiCallRc = satellite.getApiCallHandler().authenticate(
+        ApiCallRcImpl apiCallRc = apiCallHandler.authenticate(
             nodeUuid,
             nodeName,
             disklessStorPoolDfnUuid,
@@ -68,11 +66,8 @@ public class CtrlAuth extends BaseProtoApiCall
         {
             // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
             controllerPeer.sendMessage(
-                prepareMessage(
-                    accCtx,
-                    buildExpectedFullSyncIdMessage(satellite.getNextFullSyncId()),
-                    controllerPeer,
-                    msgId,
+                apiCallAnswerer.prepareMessage(
+                    buildExpectedFullSyncIdMessage(updateMonitor.getNextFullSyncId()),
                     InternalApiConsts.API_AUTH_ACCEPT
                 )
             );
@@ -81,11 +76,8 @@ public class CtrlAuth extends BaseProtoApiCall
         {
             // whatever happened should be in the apiCallRc
             controllerPeer.sendMessage(
-                prepareMessage(
-                    accCtx,
-                    createApiCallResponse(accCtx, apiCallRc, controllerPeer),
-                    controllerPeer,
-                    msgId,
+                apiCallAnswerer.prepareMessage(
+                    apiCallAnswerer.createApiCallResponse(apiCallRc),
                     InternalApiConsts.API_AUTH_ERROR
                 )
             );

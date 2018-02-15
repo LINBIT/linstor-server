@@ -1,5 +1,15 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgModNodeConnOuterClass.MsgModNodeConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -7,48 +17,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgModNodeConnOuterClass.MsgModNodeConn;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class ModifyNodeConn extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_MOD_NODE_CONN,
+    description = "Modifies a node connection"
+)
+public class ModifyNodeConn implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public ModifyNodeConn(Controller controllerRef)
+    @Inject
+    public ModifyNodeConn(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_MOD_NODE_CONN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Modifies a node connection";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgModNodeConn msgModNodeConn = MsgModNodeConn.parseDelimitedFrom(msgDataIn);
@@ -62,16 +48,14 @@ public class ModifyNodeConn extends BaseProtoApiCall
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModNodeConn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModNodeConn.getDeletePropKeysList());
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().modifyNodeConn(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.modifyNodeConn(
             nodeConnUuid,
             nodeName1,
             nodeName2,
             overrideProps,
             deletePropKeys
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

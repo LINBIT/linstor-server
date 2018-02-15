@@ -1,30 +1,28 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
-@Singleton
 public class CtrlApiCallHandler
 {
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
-    private final CtrlAuthenticationApiCallHandler authApiCallHandler;
     private final CtrlFullSyncApiCallHandler fullSyncApiCallHandler;
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
@@ -37,17 +35,19 @@ public class CtrlApiCallHandler
     private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
     private final CtrlNetIfApiCallHandler netIfApiCallHandler;
-    private final CtrlClientSerializer ctrlClientcomSrzl;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
 
+    private final AccessContext accCtx;
+    private final Peer peer;
+    private final int msgId;
+
     @Inject
     CtrlApiCallHandler(
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
-        CtrlAuthenticationApiCallHandler authApiCallHandlerRef,
         CtrlFullSyncApiCallHandler fullSyncApiCallHandlerRef,
         CtrlNodeApiCallHandler nodeApiCallHandlerRef,
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
@@ -60,15 +60,16 @@ public class CtrlApiCallHandler
         CtrlRscConnectionApiCallHandler rscConnApiCallHandlerRef,
         CtrlVlmConnectionApiCallHandler vlmConnApiCallHandlerRef,
         CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
-        CtrlClientSerializer ctrlClientcomSrzlRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef
+        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
+        @PeerContext AccessContext accCtxRef,
+        Peer clientRef,
+        @Named(ApiModule.MSG_ID) int msgIdRef
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
-        authApiCallHandler = authApiCallHandlerRef;
         fullSyncApiCallHandler = fullSyncApiCallHandlerRef;
         nodeApiCallHandler = nodeApiCallHandlerRef;
         rscDfnApiCallHandler = rscDfnApiCallHandlerRef;
@@ -80,15 +81,17 @@ public class CtrlApiCallHandler
         nodeConnApiCallHandler = nodeConnApiCallHandlerRef;
         rscConnApiCallHandler = rscConnApiCallHandlerRef;
         vlmConnApiCallHandler = vlmConnApiCallHandlerRef;
-        ctrlClientcomSrzl = ctrlClientcomSrzlRef;
         netIfApiCallHandler = netIfApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
+        accCtx = accCtxRef;
+        peer = clientRef;
+        msgId = msgIdRef;
     }
 
-    public void sendFullSync(Peer client, long expectedFullSyncId)
+    public void sendFullSync(long expectedFullSyncId)
     {
         try
         {
@@ -96,13 +99,13 @@ public class CtrlApiCallHandler
             rscDfnMapLock.readLock().lock();
             storPoolDfnMapLock.readLock().lock();
 
-            client.getSerializerLock().writeLock().lock();
+            peer.getSerializerLock().writeLock().lock();
 
-            fullSyncApiCallHandler.sendFullSync(client, expectedFullSyncId);
+            fullSyncApiCallHandler.sendFullSync(peer, expectedFullSyncId);
         }
         finally
         {
-            client.getSerializerLock().writeLock().unlock();
+            peer.getSerializerLock().writeLock().unlock();
 
             storPoolDfnMapLock.readLock().unlock();
             rscDfnMapLock.readLock().unlock();
@@ -113,8 +116,6 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link Node}
      *
-     * @param accCtx
-     * @param client
      * @param nodeNameStr required
      * @param nodeTypeStr required
      * @param netIfs required, at least one needed
@@ -123,8 +124,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc createNode(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
@@ -143,7 +142,7 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.createNode(
                 accCtx,
-                client,
+                peer,
                 nodeNameStr,
                 nodeTypeStr,
                 netIfs,
@@ -161,8 +160,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies a given node.
      *
-     * @param accCtx
-     * @param client
      * @param nodeUuid optional - if given, modification is only performed if it matches the found
      *   node's UUID.
      * @param nodeName required
@@ -172,8 +169,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyNode(
-        AccessContext accCtx,
-        Peer client,
         UUID nodeUuid,
         String nodeName,
         String nodeType,
@@ -187,7 +182,7 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.modifyNode(
                 accCtx,
-                client,
+                peer,
                 nodeUuid,
                 nodeName,
                 nodeType,
@@ -208,18 +203,16 @@ public class CtrlApiCallHandler
      * The node is only deleted once the satellite confirms that it has no more
      * {@link Resource}s and {@link StorPool}s deployed.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @return
      */
-    public ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeName)
+    public ApiCallRc deleteNode(String nodeName)
     {
         ApiCallRc apiCallRc;
         try
         {
             nodesMapLock.writeLock().lock();
-            apiCallRc = nodeApiCallHandler.deleteNode(accCtx, client, nodeName);
+            apiCallRc = nodeApiCallHandler.deleteNode(accCtx, peer, nodeName);
         }
         finally
         {
@@ -229,7 +222,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listNode(int msgId, AccessContext accCtx)
+    public byte[] listNode()
     {
         byte[] listNodes;
         try
@@ -247,8 +240,6 @@ public class CtrlApiCallHandler
     /**
      * Creates new {@link ResourceDefinition}
      *
-     * @param accCtx
-     * @param client
      * @param resourceName required
      * @param port optional
      * @param secret optional
@@ -257,8 +248,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc createResourceDefinition(
-        AccessContext accCtx,
-        Peer client,
         String resourceName,
         Integer port,
         String secretRef,
@@ -288,7 +277,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
                 accCtx,
-                client,
+                peer,
                 resourceName,
                 port,
                 secret,
@@ -307,8 +296,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies a given resource definition.
      *
-     * @param accCtx
-     * @param client
      * @param rscDfnUuid optional - if given, modification is only performed if it matches the found
      *   rscDfn's UUID.
      * @param rscName required
@@ -319,8 +306,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyRscDfn(
-        AccessContext accCtx,
-        Peer client,
         UUID rscDfnUuid,
         String rscName,
         Integer port,
@@ -334,7 +319,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
                 accCtx,
-                client,
+                peer,
                 rscDfnUuid,
                 rscName,
                 port,
@@ -355,14 +340,10 @@ public class CtrlApiCallHandler
      * It will only be removed when all satellites confirm the deletion of the corresponding
      * {@link Resource}s.
      *
-     * @param accCtx
-     * @param client
      * @param resourceName required
      * @return
      */
     public ApiCallRc deleteResourceDefinition(
-        AccessContext accCtx,
-        Peer client,
         String resourceName
     )
     {
@@ -372,7 +353,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(
                 accCtx,
-                client,
+                peer,
                 resourceName
             );
         }
@@ -383,7 +364,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResourceDefinition(int msgId, AccessContext accCtx)
+    public byte[] listResourceDefinition()
     {
         byte[] listResourceDefinitions;
         try
@@ -401,15 +382,11 @@ public class CtrlApiCallHandler
     /**
      * Creates new {@link VolumeDefinition}s for a given {@link ResourceDefinition}.
      *
-     * @param accCtx
-     * @param client
      * @param rscName required
      * @param vlmDfnApiList optional
      * @return
      */
     public ApiCallRc createVlmDfns(
-        AccessContext accCtx,
-        Peer client,
         String rscName,
         List<VlmDfnApi> vlmDfnApiListRef
     )
@@ -425,7 +402,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
                 accCtx,
-                client,
+                peer,
                 rscName,
                 vlmDfnApiList
             );
@@ -440,8 +417,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies an existing {@link VolumeDefinition}
      *
-     * @param accCtx
-     * @param client
      * @param vlmDfnUuid optional, if given checked against persisted UUID
      * @param rscName required
      * @param vlmNr required
@@ -452,8 +427,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyVlmDfn(
-        AccessContext accCtx,
-        Peer client,
         UUID vlmDfnUuid,
         String rscName,
         int vlmNr,
@@ -481,7 +454,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.modifyVlmDfn(
                 accCtx,
-                client,
+                peer,
                 vlmDfnUuid,
                 rscName,
                 vlmNr,
@@ -501,15 +474,11 @@ public class CtrlApiCallHandler
     /**
      * Deletes a {@link VolumeDefinition} for a given {@link ResourceDefinition} and volume nr.
      *
-     * @param accCtx
-     * @param client
      * @param rscName required
      * @param volumeNr required
      * @return ApiCallResponse with status of the operation
      */
     public ApiCallRc deleteVolumeDefinition(
-        AccessContext accCtx,
-        Peer client,
         String rscName,
         int volumeNr
     )
@@ -520,7 +489,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.deleteVolumeDefinition(
                 accCtx,
-                client,
+                peer,
                 rscName,
                 volumeNr
             );
@@ -535,8 +504,6 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link Resource}
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @param rscName required
      * @param rscPropsMap optional
@@ -544,8 +511,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc createResource(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String rscName,
         List<String> flagList,
@@ -571,7 +536,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = rscApiCallHandler.createResource(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 rscName,
                 flagList,
@@ -591,8 +556,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies an existing {@link Resource}
      *
-     * @param accCtx
-     * @param client
      * @param rscUuid optional, if given checked against persisted UUID
      * @param nodeName required
      * @param rscName required
@@ -601,8 +564,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyRsc(
-        AccessContext accCtx,
-        Peer client,
         UUID rscUuid,
         String nodeName,
         String rscName,
@@ -627,7 +588,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscApiCallHandler.modifyResource(
                 accCtx,
-                client,
+                peer,
                 rscUuid,
                 nodeName,
                 rscName,
@@ -649,15 +610,11 @@ public class CtrlApiCallHandler
      * The {@link Resource} is only deleted once the corresponding satellite confirmed
      * that it has undeployed (deleted) the {@link Resource}
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @param rscName required
      * @return
      */
     public ApiCallRc deleteResource(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String rscName
     )
@@ -670,7 +627,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = rscApiCallHandler.deleteResource(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 rscName
             );
@@ -684,7 +641,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResource(int msgId, AccessContext accCtx)
+    public byte[] listResource()
     {
         byte[] listResources;
         try
@@ -707,15 +664,11 @@ public class CtrlApiCallHandler
      * Resource will be deleted (NOT marked) and if all resources
      * of the resource definition are deleted, cleanup will be called.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @param rscName required
      * @return
      */
     public ApiCallRc resourceDeleted(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String rscName
     )
@@ -728,7 +681,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = rscApiCallHandler.resourceDeleted(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 rscName
             );
@@ -747,15 +700,11 @@ public class CtrlApiCallHandler
      *
      * Volume will be deleted (NOT marked).
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @param rscName required
      * @return
      */
     public ApiCallRc volumeDeleted(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String rscName,
         int volumeNr
@@ -770,7 +719,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = vlmApiCallHandler.volumeDeleted(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 rscName,
                 volumeNr
@@ -789,15 +738,11 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link StorPoolDefinition}.
      *
-     * @param accCtx
-     * @param client
      * @param storPoolName required
      * @param storPoolDfnPropsMap optional
      * @return
      */
     public ApiCallRc createStoragePoolDefinition(
-        AccessContext accCtx,
-        Peer client,
         String storPoolName,
         Map<String, String> storPoolDfnPropsMap
     )
@@ -813,7 +758,7 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
                 accCtx,
-                client,
+                peer,
                 storPoolName,
                 storPoolDfnProps
             );
@@ -828,8 +773,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies an existing {@link StorPoolDefinition}
      *
-     * @param accCtx
-     * @param client
      * @param storPoolDfnUuid optional, if given checked against persisted UUID
      * @param storPoolName required
      * @param overridePropsRef optional
@@ -837,8 +780,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyStorPoolDfn(
-        AccessContext accCtx,
-        Peer client,
         UUID storPoolDfnUuid,
         String storPoolName,
         Map<String, String> overridePropsRef,
@@ -862,7 +803,7 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
                 accCtx,
-                client,
+                peer,
                 storPoolDfnUuid,
                 storPoolName,
                 overrideProps,
@@ -882,14 +823,10 @@ public class CtrlApiCallHandler
      * The {@link StorPoolDefinition} is only deleted once all corresponding satellites
      * confirmed that they have undeployed (deleted) the {@link StorPool}.
      *
-     * @param accCtx
-     * @param client
      * @param storPoolName required
      * @return
      */
     public ApiCallRc deleteStoragePoolDefinition(
-        AccessContext accCtx,
-        Peer client,
         String storPoolName
     )
     {
@@ -899,7 +836,7 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
                 accCtx,
-                client,
+                peer,
                 storPoolName
             );
         }
@@ -910,7 +847,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listStorPoolDefinition(int msgId, AccessContext accCtx)
+    public byte[] listStorPoolDefinition()
     {
         byte[] listStorPoolDefinitions;
         try
@@ -925,7 +862,7 @@ public class CtrlApiCallHandler
         return listStorPoolDefinitions;
     }
 
-    public byte[] listStorPool(int msgId, AccessContext accCtx)
+    public byte[] listStorPool()
     {
         byte[] listStorPools;
         try
@@ -943,8 +880,6 @@ public class CtrlApiCallHandler
     /**
      * Creates a {@link StorPool}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @param storPoolName required
      * @param driver required
@@ -952,8 +887,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc createStoragePool(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String storPoolName,
         String driver,
@@ -973,7 +906,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = storPoolApiCallHandler.createStorPool(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 storPoolName,
                 driver,
@@ -992,8 +925,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies an existing {@link StorPool}
      *
-     * @param accCtx
-     * @param client
      * @param storPoolUuid optional, if given checked against persisted UUID
      * @param nodeName required
      * @param storPoolName required
@@ -1002,8 +933,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyStorPool(
-        AccessContext accCtx,
-        Peer client,
         UUID storPoolUuid,
         String nodeName,
         String storPoolName,
@@ -1029,7 +958,7 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolApiCallHandler.modifyStorPool(
                 accCtx,
-                client,
+                peer,
                 storPoolUuid,
                 nodeName,
                 storPoolName,
@@ -1051,15 +980,11 @@ public class CtrlApiCallHandler
      * The {@link StorPool} is only deleted once the corresponding satellite
      * confirms that it has undeployed (deleted) the {@link StorPool}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName
      * @param storPoolName
      * @return
      */
     public ApiCallRc deleteStoragePool(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String storPoolName
     )
@@ -1072,7 +997,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = storPoolApiCallHandler.deleteStorPool(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 storPoolName
             );
@@ -1089,16 +1014,12 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link NodeConnection}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName1 required
      * @param nodeName2 required
      * @param nodeConnPropsMap optional, recommended
      * @return
      */
     public ApiCallRc createNodeConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1,
         String nodeName2,
         Map<String, String> nodeConnPropsMap
@@ -1115,7 +1036,7 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.createNodeConnection(
                 accCtx,
-                client,
+                peer,
                 nodeName1,
                 nodeName2,
                 nodeConnProps
@@ -1131,8 +1052,6 @@ public class CtrlApiCallHandler
     /**
      * Modifies an existing {@link NodeConnection}
      *
-     * @param accCtx
-     * @param client
      * @param nodeConnUuid optional, if given checks against persisted uuid
      * @param nodeName1 required
      * @param nodeName2 required
@@ -1141,8 +1060,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyNodeConn(
-        AccessContext accCtx,
-        Peer client,
         UUID nodeConnUuid,
         String nodeName1,
         String nodeName2,
@@ -1166,7 +1083,7 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.modifyNodeConnection(
                 accCtx,
-                client,
+                peer,
                 nodeConnUuid,
                 nodeName1,
                 nodeName2,
@@ -1184,15 +1101,11 @@ public class CtrlApiCallHandler
     /**
      * Deletes the {@link NodeConnection}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName required
      * @param storPoolName required
      * @return
      */
     public ApiCallRc deleteNodeConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1,
         String nodeName2
     )
@@ -1203,7 +1116,7 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
                 accCtx,
-                client,
+                peer,
                 nodeName1,
                 nodeName2
             );
@@ -1218,8 +1131,6 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link ResourceConnection}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName1 required
      * @param nodeName2 required
      * @param rscName required
@@ -1227,8 +1138,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc createResourceConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1,
         String nodeName2,
         String rscName,
@@ -1247,7 +1156,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.createResourceConnection(
                 accCtx,
-                client,
+                peer,
                 nodeName1,
                 nodeName2,
                 rscName,
@@ -1264,8 +1173,6 @@ public class CtrlApiCallHandler
 
     /**
      * Modifies an existing {@link ResourceConnection}
-     * @param accCtx
-     * @param client
      * @param rscConnUuid optional, if given checked against persisted UUID
      * @param nodeName1 required
      * @param nodeName2 required
@@ -1275,8 +1182,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyRscConn(
-        AccessContext accCtx,
-        Peer client,
         UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
@@ -1303,7 +1208,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.modifyRscConnection(
                 accCtx,
-                client,
+                peer,
                 rscConnUuid,
                 nodeName1,
                 nodeName2,
@@ -1323,16 +1228,12 @@ public class CtrlApiCallHandler
     /**
      * Deletes a {@link ResourceConnection}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName1 required
      * @param nodeName2 required
      * @param rscName required
      * @return
      */
     public ApiCallRc deleteResourceConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1,
         String nodeName2,
         String rscName
@@ -1345,7 +1246,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
                 accCtx,
-                client,
+                peer,
                 nodeName1,
                 nodeName2,
                 rscName
@@ -1362,8 +1263,6 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link VolumeConnection}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName1 required
      * @param nodeName2 required
      * @param rscName required
@@ -1372,8 +1271,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc createVolumeConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1,
         String nodeName2,
         String rscName,
@@ -1393,7 +1290,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.createVolumeConnection(
                 accCtx,
-                client,
+                peer,
                 nodeName1,
                 nodeName2,
                 rscName,
@@ -1411,8 +1308,6 @@ public class CtrlApiCallHandler
 
     /**
      * Modifies an existing {@link VolumeConnection}
-     * @param accCtx
-     * @param client
      * @param vlmConnUuid optional, if given checked against persisted UUID
      * @param nodeName1 required
      * @param nodeName2 required
@@ -1423,8 +1318,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc modifyVlmConn(
-        AccessContext accCtx,
-        Peer client,
         UUID vlmConnUuid,
         String nodeName1,
         String nodeName2,
@@ -1452,7 +1345,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.modifyVolumeConnection(
                 accCtx,
-                client,
+                peer,
                 vlmConnUuid,
                 nodeName1,
                 nodeName2,
@@ -1473,8 +1366,6 @@ public class CtrlApiCallHandler
     /**
      * Deletes a {@link VolumeConnection}.
      *
-     * @param accCtx
-     * @param client
      * @param nodeName1 required
      * @param nodeName2 required
      * @param rscName required
@@ -1482,8 +1373,6 @@ public class CtrlApiCallHandler
      * @return
      */
     public ApiCallRc deleteVolumeConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1,
         String nodeName2,
         String rscName,
@@ -1497,7 +1386,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.deleteVolumeConnection(
                 accCtx,
-                client,
+                peer,
                 nodeName1,
                 nodeName2,
                 rscName,
@@ -1518,15 +1407,10 @@ public class CtrlApiCallHandler
      * changes.
      * Calling this method will collect the needed data and send it to the given
      * satellite.
-     *
-     * @param satellite required
-     * @param msgId required
      * @param rscUuid required (for double checking)
      * @param rscName required
      */
     public void handleResourceRequest(
-        Peer satellite,
-        int msgId,
         String nodeName,
         UUID rscUuid,
         String rscName
@@ -1538,7 +1422,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.readLock().lock();
             storPoolDfnMapLock.readLock().lock();
 
-            rscApiCallHandler.respondResource(msgId, satellite, nodeName, rscUuid, rscName);
+            rscApiCallHandler.respondResource(msgId, peer, nodeName, rscUuid, rscName);
         }
         finally
         {
@@ -1554,14 +1438,10 @@ public class CtrlApiCallHandler
      * queries those changes.
      * Calling this method will collect the needed data and send it to the given
      * satellite.
-     * @param satellite required
-     * @param msgId required
      * @param storPoolUuid required (for double checking)
      * @param storPoolNameStr required
      */
     public void handleStorPoolRequest(
-        Peer satellite,
-        int msgId,
         UUID storPoolUuid,
         String storPoolNameStr
     )
@@ -1573,7 +1453,7 @@ public class CtrlApiCallHandler
 
             storPoolApiCallHandler.respondStorPool(
                 msgId,
-                satellite,
+                peer,
                 storPoolUuid,
                 storPoolNameStr
             );
@@ -1586,8 +1466,6 @@ public class CtrlApiCallHandler
     }
 
     public void handleNodeRequest(
-        Peer satellite,
-        int msgId,
         UUID nodeUuid,
         String nodeNameStr
     )
@@ -1598,7 +1476,7 @@ public class CtrlApiCallHandler
 
             nodeApiCallHandler.respondNode(
                 msgId,
-                satellite,
+                peer,
                 nodeUuid,
                 nodeNameStr
             );
@@ -1610,9 +1488,6 @@ public class CtrlApiCallHandler
     }
 
     public void handlePrimaryResourceRequest(
-        AccessContext accCtx,
-        Peer satellite,
-        int msgId,
         String rscName,
         UUID rscUuid
     )
@@ -1620,7 +1495,7 @@ public class CtrlApiCallHandler
         try
         {
             rscDfnMapLock.writeLock().lock();
-            rscDfnApiCallHandler.handlePrimaryResourceRequest(accCtx, satellite, msgId, rscName, rscUuid);
+            rscDfnApiCallHandler.handlePrimaryResourceRequest(accCtx, peer, msgId, rscName, rscUuid);
         }
         finally
         {
@@ -1628,12 +1503,7 @@ public class CtrlApiCallHandler
         }
     }
 
-    public CtrlClientSerializer getCtrlClientcomSrzl()
-    {
-        return ctrlClientcomSrzl;
-    }
-
-    public ApiCallRc setCtrlCfgProp(AccessContext accCtx, String key, String namespace, String value)
+    public ApiCallRc setCtrlCfgProp(String key, String namespace, String value)
     {
         ApiCallRc apiCallRc;
         try
@@ -1648,7 +1518,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listCtrlCfg(AccessContext accCtx, int msgId)
+    public byte[] listCtrlCfg()
     {
         byte[] data;
         try
@@ -1663,7 +1533,7 @@ public class CtrlApiCallHandler
         return data;
     }
 
-    public ApiCallRc deleteCtrlCfgProp(AccessContext accCtx, String key, String namespace)
+    public ApiCallRc deleteCtrlCfgProp(String key, String namespace)
     {
         ApiCallRc apiCallRc;
         try
@@ -1679,8 +1549,6 @@ public class CtrlApiCallHandler
     }
 
     public ApiCallRc createNetInterface(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String netIfName,
         String address,
@@ -1698,7 +1566,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = netIfApiCallHandler.createNetIf(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 netIfName,
                 address,
@@ -1715,8 +1583,6 @@ public class CtrlApiCallHandler
     }
 
     public ApiCallRc modifyNetInterface(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String netIfName,
         String address,
@@ -1734,7 +1600,7 @@ public class CtrlApiCallHandler
 
             apiCallRc = netIfApiCallHandler.modifyNetIf(
                 accCtx,
-                client,
+                peer,
                 nodeName,
                 netIfName,
                 address,
@@ -1751,8 +1617,6 @@ public class CtrlApiCallHandler
     }
 
     public ApiCallRc deleteNetInterface(
-        AccessContext accCtx,
-        Peer client,
         String nodeName,
         String netIfName
     )
@@ -1765,7 +1629,7 @@ public class CtrlApiCallHandler
             ctrlReadLock.lock();
             nodeReadLock.lock();
 
-            apiCallRc = netIfApiCallHandler.deleteNetIf(accCtx, client, nodeName, netIfName);
+            apiCallRc = netIfApiCallHandler.deleteNetIf(accCtx, peer, nodeName, netIfName);
         }
         finally
         {

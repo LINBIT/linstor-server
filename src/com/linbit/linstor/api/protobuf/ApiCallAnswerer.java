@@ -1,13 +1,11 @@
 package com.linbit.linstor.api.protobuf;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-
 import com.linbit.ImplementationError;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
-import com.linbit.linstor.api.BaseApiCall;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
@@ -15,14 +13,35 @@ import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse.
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
 
-public abstract class BaseProtoApiCall extends BaseApiCall
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+public class ApiCallAnswerer
 {
-    public BaseProtoApiCall(ErrorReporter errorReporterRef)
+    private final ErrorReporter errorReporter;
+
+    private final AccessContext accCtx;
+    private final Peer peer;
+    private final int msgId;
+
+    @Inject
+    public ApiCallAnswerer(
+        ErrorReporter errorReporterRef,
+        @PeerContext AccessContext accCtxRef,
+        Peer peerRef,
+        @Named(ApiModule.MSG_ID) int msgIdRef
+    )
     {
-        super(errorReporterRef);
+        errorReporter = errorReporterRef;
+        accCtx = accCtxRef;
+        peer = peerRef;
+        msgId = msgIdRef;
     }
 
-    protected void writeProtoMsgHeader(OutputStream out, int msgId, String apiCallName)
+    public void writeProtoMsgHeader(OutputStream out, String apiCallName)
         throws IOException
     {
         MsgHeader.Builder headerBld = MsgHeader.newBuilder();
@@ -32,12 +51,15 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         header.writeDelimitedTo(out);
     }
 
-    @Override
-    protected byte[] createApiCallResponse(
-        AccessContext accCtx,
-        ApiCallRc apiCallRc,
-        Peer peer
-    )
+    public void answerApiCallRc(ApiCallRc apiCallRc)
+    {
+        byte[] apiCallMsgData = createApiCallResponse(apiCallRc);
+        byte[] apiCallData = prepareMessage(apiCallMsgData, ApiConsts.API_REPLY);
+
+        peer.sendMessage(apiCallData);
+    }
+
+    public byte[] createApiCallResponse(ApiCallRc apiCallRc)
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (RcEntry apiCallEntry : apiCallRc.getEntries())
@@ -98,14 +120,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         return protoMsgsBytes;
     }
 
-    @Override
-    protected byte[] prepareMessage(
-        AccessContext accCtx,
-        byte[] protoMsgsBytes,
-        Peer peer,
-        int msgId,
-        String apicalltype
-    )
+    public byte[] prepareMessage(byte[] protoMsgsBytes, String apicalltype)
     {
         MsgHeader protoHeader = MsgHeader.newBuilder()
             .setApiCall(apicalltype)

@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn;
-import com.linbit.linstor.security.AccessContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,48 +16,33 @@ import java.io.InputStream;
  *
  * @author rpeinthor
  */
-@ProtobufApiCall
-public class DeleteVolumeDefinition  extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_DEL_VLM_DFN,
+    description = "Deletes a volume definition"
+)
+public class DeleteVolumeDefinition implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public DeleteVolumeDefinition(Controller controllerRef)
+    @Inject
+    public DeleteVolumeDefinition(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_DEL_VLM_DFN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Deletes a volume definition";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgDelVlmDfn msgDelVlmDfn = MsgDelVlmDfn.parseDelimitedFrom(msgDataIn);
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().deleteVolumeDefinition(
-                accCtx,
-                client,
+        ApiCallRc apiCallRc = apiCallHandler.deleteVolumeDefinition(
                 msgDelVlmDfn.getRscName(),
                 msgDelVlmDfn.getVlmNr()
         );
 
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

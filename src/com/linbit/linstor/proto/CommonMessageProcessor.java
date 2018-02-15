@@ -1,27 +1,18 @@
 package com.linbit.linstor.proto;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.linbit.linstor.LinStorModule;
-import org.slf4j.event.Level;
-
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallScope;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -32,10 +23,22 @@ import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
+import org.slf4j.event.Level;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Dispatcher for received messages
@@ -45,102 +48,47 @@ import javax.inject.Singleton;
 @Singleton
 public class CommonMessageProcessor implements MessageProcessor
 {
-    private final TreeMap<String, ApiCall> apiCallMap;
     private final ReadWriteLock apiLock;
 
     private final ErrorReporter errorLog;
     private final WorkQueue workQ;
+    private final ApiCallScope apiCallScope;
+    private final Map<String, Provider<ApiCall>> apiCallProviders;
+    private final Map<String, ApiCallDescriptor> apiCallDescriptors;
 
     @Inject
     public CommonMessageProcessor(
         ErrorReporter errorLogRef,
-        @Named(LinStorModule.MAIN_WORKER_POOL_NAME) WorkQueue workQRef
+        @Named(LinStorModule.MAIN_WORKER_POOL_NAME) WorkQueue workQRef,
+        ApiCallScope apiCallScopeRef,
+        Map<String, Provider<ApiCall>> apiCallProvidersRef,
+        Map<String, ApiCallDescriptor> apiCallDescriptorsRef
     )
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
-        apiCallMap  = new TreeMap<>();
         apiLock     = new ReentrantReadWriteLock();
         errorLog    = errorLogRef;
         workQ       = workQRef;
+        apiCallScope = apiCallScopeRef;
+        apiCallProviders = apiCallProvidersRef;
+        apiCallDescriptors = apiCallDescriptorsRef;
     }
 
-    public void addApiCall(ApiCall apiCallObj)
+    public Map<String, ApiCallDescriptor> getApiCallDescriptors()
     {
-        Lock writeLock = apiLock.writeLock();
-        try
-        {
-            writeLock.lock();
-            apiCallMap.put(apiCallObj.getName(), apiCallObj);
-        }
-        finally
-        {
-            writeLock.unlock();
-        }
-    }
+        Map<String, ApiCallDescriptor> objMap;
 
-    public void removeApiCall(String apiCallName)
-    {
-        Lock writeLock = apiLock.writeLock();
-        try
-        {
-            writeLock.lock();
-            apiCallMap.remove(apiCallName);
-        }
-        finally
-        {
-            writeLock.unlock();
-        }
-    }
-
-    public void clearApiCalls()
-    {
-        Lock writeLock = apiLock.writeLock();
-        try
-        {
-            writeLock.lock();
-            apiCallMap.clear();
-        }
-        finally
-        {
-            writeLock.unlock();
-        }
-    }
-
-    public Set<String> getApiCallNames()
-    {
         Lock readLock = apiLock.readLock();
-        Set<String> apiNames;
         try
         {
             readLock.lock();
-            apiNames = new TreeSet<>();
-            apiNames.addAll(apiCallMap.keySet());
+            objMap = new TreeMap<>(apiCallDescriptors);
         }
         finally
         {
             readLock.unlock();
         }
-        return apiNames;
-    }
-
-    public Map<String, ApiCall> getApiCallObjects()
-    {
-        Lock readLock = apiLock.readLock();
-        Map<String, ApiCall> objList;
-        try
-        {
-            readLock.lock();
-            objList = new TreeMap<>();
-            for (ApiCall apiObj : apiCallMap.values())
-            {
-                objList.put(apiObj.getName(), apiObj);
-            }
-        }
-        finally
-        {
-            readLock.unlock();
-        }
-        return objList;
+        return objMap;
     }
 
     @Override
@@ -216,22 +164,26 @@ public class CommonMessageProcessor implements MessageProcessor
                 String apiCallName = header.getApiCall();
 
                 Lock readLock = apiLock.readLock();
-                ApiCall apiCallObj;
+                Provider<ApiCall> apiCallProvider;
+                ApiCallDescriptor apiCallDescriptor;
                 try
                 {
                     readLock.lock();
-                    apiCallObj = apiCallMap.get(apiCallName);
+                    apiCallProvider = apiCallProviders.get(apiCallName);
+                    apiCallDescriptor = apiCallDescriptors.get(apiCallName);
                 }
                 finally
                 {
                     readLock.unlock();
                 }
-                if (apiCallObj != null)
+                if (apiCallProvider != null && apiCallDescriptor != null)
                 {
                     ApiCallInvocation apiCallInv = new ApiCallInvocation(
-                        apiCallObj,
+                        apiCallProvider,
+                        apiCallDescriptor,
                         client.getAccessContext(),
                         errorLog,
+                        apiCallScope,
                         msg, msgId, msgDataIn,
                         client
                     );
@@ -310,27 +262,32 @@ public class CommonMessageProcessor implements MessageProcessor
 
     static class ApiCallInvocation implements Runnable
     {
-        private ApiCall         apiCallObj;
-        private AccessContext   accCtx;
-        private ErrorReporter   errLog;
-        private Message         msg;
-        private int             msgId;
-        private InputStream     msgDataIn;
-        private Peer            client;
+        private final Provider<ApiCall>         apiCallProvider;
+        private final ApiCallDescriptor                   apiCallDescriptor;
+        private final AccessContext   accCtx;
+        private final ErrorReporter   errLog;
+        private final ApiCallScope    apiCallScope;
+        private final Message         msg;
+        private final int             msgId;
+        private final InputStream     msgDataIn;
+        private final Peer            client;
 
         ApiCallInvocation(
-            ApiCall         apiCallRef,
-            AccessContext   accCtxRef,
-            ErrorReporter   errLogRef,
-            Message         msgRef,
-            int             msgIdRef,
-            InputStream     msgDataInRef,
-            Peer            clientRef
+            Provider<ApiCall> apiCallProviderRef,
+            ApiCallDescriptor apiCallDescriptorRef, AccessContext accCtxRef,
+            ErrorReporter errLogRef,
+            ApiCallScope apiCallScopeRef,
+            Message msgRef,
+            int msgIdRef,
+            InputStream msgDataInRef,
+            Peer clientRef
         )
         {
-            apiCallObj  = apiCallRef;
+            apiCallProvider  = apiCallProviderRef;
+            apiCallDescriptor = apiCallDescriptorRef;
             accCtx      = accCtxRef;
             errLog      = errLogRef;
+            apiCallScope = apiCallScopeRef;
             msg         = msgRef;
             msgId       = msgIdRef;
             msgDataIn   = msgDataInRef;
@@ -340,13 +297,29 @@ public class CommonMessageProcessor implements MessageProcessor
         @Override
         public void run()
         {
+            apiCallScope.enter();
             try
             {
-                apiCallObj.execute(accCtx, msg, msgId, msgDataIn, client);
+                apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
+                apiCallScope.seed(Peer.class, client);
+                apiCallScope.seed(Message.class, msg);
+                apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
+                ApiCall apiCall = apiCallProvider.get();
+                apiCall.execute(msgDataIn);
             }
             catch (Exception | ImplementationError exc)
             {
-                errLog.reportError(Level.ERROR, exc, accCtx, client, null);
+                errLog.reportError(
+                    Level.ERROR,
+                    exc,
+                    accCtx,
+                    client,
+                    "Error occurred while executing the '" + apiCallDescriptor.getName() + "' API."
+                );
+            }
+            finally
+            {
+                apiCallScope.exit();
             }
         }
     }

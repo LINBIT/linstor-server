@@ -1,5 +1,15 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgModVlmConnOuterClass.MsgModVlmConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -7,48 +17,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgModVlmConnOuterClass.MsgModVlmConn;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class ModifyVolumeConn extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_MOD_VLM_CONN,
+    description = "Modifies a volume connection"
+)
+public class ModifyVolumeConn implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public ModifyVolumeConn(Controller controllerRef)
+    @Inject
+    public ModifyVolumeConn(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_MOD_VLM_CONN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Modifies a volume connection";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgModVlmConn msgModVlmConn = MsgModVlmConn.parseDelimitedFrom(msgDataIn);
@@ -64,9 +50,7 @@ public class ModifyVolumeConn extends BaseProtoApiCall
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModVlmConn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModVlmConn.getDeletePropKeysList());
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().modifyVlmConn(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.modifyVlmConn(
             vlmConnUuid,
             nodeName1,
             nodeName2,
@@ -75,7 +59,7 @@ public class ModifyVolumeConn extends BaseProtoApiCall
             overrideProps,
             deletePropKeys
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

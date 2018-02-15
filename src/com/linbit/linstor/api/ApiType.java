@@ -2,35 +2,13 @@ package com.linbit.linstor.api;
 
 import java.lang.annotation.Annotation;
 
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-
-public enum ApiType
+public interface ApiType
 {
-    PROTOBUF(
-        BaseProtoApiCall.class.getPackage().getName(),
-        ProtobufApiCall.class
-    );
+    String getBasePackageName();
 
-    private final String basePackageName;
-    private final Class<? extends Annotation> requiredAnnotation;
+    Class<? extends Annotation> getRequiredAnnotation();
 
-    ApiType(
-        final String basePackageNameRef,
-        final Class<? extends Annotation> annotRef
-    )
-    {
-        basePackageName = basePackageNameRef;
-        requiredAnnotation = annotRef;
-    }
+    String getName(Class<?> apiCall);
 
-    public String getBasePackageName()
-    {
-        return basePackageName;
-    }
-
-    public Class<? extends Annotation> getRequiredAnnotation()
-    {
-        return requiredAnnotation;
-    }
+    String getDescription(Class<?> apiCall);
 }

@@ -1,59 +1,49 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgCrtNetInterfaceOuterClass.MsgCrtNetInterface;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-@ProtobufApiCall
-public class CreateNetInterface extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_NET_IF,
+    description = "Creates a new network interface for a given node"
+)
+public class CreateNetInterface implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateNetInterface(Controller ctrlRef)
+    @Inject
+    public CreateNetInterface(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(ctrlRef.getErrorReporter());
-        controller = ctrlRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_NET_IF;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a new network interface for a given node";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtNetInterface protoMsg = MsgCrtNetInterface.parseDelimitedFrom(msgDataIn);
 
         NetInterfaceOuterClass.NetInterface netIf = protoMsg.getNetIf();
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createNetInterface(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createNetInterface(
             protoMsg.getNodeName(),
             netIf.getName(),
             netIf.getAddress(),
             netIf.hasStltPort() ? netIf.getStltPort() : null,
             netIf.hasStltEncryptionType() ? netIf.getStltEncryptionType() : null
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

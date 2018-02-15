@@ -1,57 +1,46 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.pojo.NetInterfacePojo;
+import com.linbit.linstor.api.pojo.NodePojo;
+import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
+import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
+import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.api.pojo.NetInterfacePojo;
-import com.linbit.linstor.api.pojo.NodePojo;
-import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
-import com.linbit.linstor.security.AccessContext;
 import java.util.UUID;
 
-@ProtobufApiCall
-public class ApplyNode extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_APPLY_NODE,
+    description = "Applies node update data"
+)
+public class ApplyNode implements ApiCall
 {
-    private final Satellite satellite;
+    private final StltApiCallHandler apiCallHandler;
 
-    public ApplyNode(Satellite satelliteRef)
+    @Inject
+    public ApplyNode(StltApiCallHandler apiCallHandlerRef)
     {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
+        apiCallHandler = apiCallHandlerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_APPLY_NODE;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Applies node update data";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntNodeData nodeData = MsgIntNodeData.parseDelimitedFrom(msgDataIn);
         NodePojo nodePojo = asNodePojo(nodeData);
-        satellite.getApiCallHandler().applyNodeChanges(nodePojo);
+        apiCallHandler.applyNodeChanges(nodePojo);
     }
 
     static NodePojo asNodePojo(MsgIntNodeData nodeData)

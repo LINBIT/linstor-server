@@ -1,16 +1,16 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
+import com.google.inject.Inject;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.CoreServices;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.debug.DebugConsoleCreator;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -19,54 +19,52 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 /**
  * Creates a debug console for the peer
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-@ProtobufApiCall
-public class CreateDebugConsole extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_DBG_CNSL,
+    description = "Creates a debug console and attaches it to the peer connection"
+)
+public class CreateDebugConsole implements ApiCall
 {
-    private Controller      ctrl;
-    private CoreServices    coreSvcs;
+    private final ErrorReporter errorReporter;
+    private final ApiCallAnswerer apiCallAnswerer;
+    private final DebugConsoleCreator debugConsoleCreator;
+    private final Peer client;
+    private final AccessContext accCtx;
 
+    @Inject
     public CreateDebugConsole(
-        Controller ctrlRef,
-        CoreServices coreSvcsRef
+        ErrorReporter errorReporterRef,
+        ApiCallAnswerer apiCallAnswererRef,
+        DebugConsoleCreator debugConsoleCreatorRef,
+        Peer clientRef,
+        @PeerContext AccessContext accCtxRef
     )
     {
-        super(coreSvcsRef.getErrorReporter());
-        ctrl = ctrlRef;
-        coreSvcs = coreSvcsRef;
+        errorReporter = errorReporterRef;
+        apiCallAnswerer = apiCallAnswererRef;
+        debugConsoleCreator = debugConsoleCreatorRef;
+        client = clientRef;
+        accCtx = accCtxRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_DBG_CNSL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a debug console and attaches it to the peer connection";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext   accCtx,
-        Message         msg,
-        int             msgId,
-        InputStream     msgDataIn,
-        Peer            client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         try
         {
             Message reply = client.createMessage();
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
-            writeProtoMsgHeader(replyOut, msgId, "DebugReply");
+            apiCallAnswerer.writeProtoMsgHeader(replyOut, "DebugReply");
 
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
             try
@@ -75,7 +73,7 @@ public class CreateDebugConsole extends BaseProtoApiCall
                 {
                     AccessContext privCtx = accCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                    ctrl.createDebugConsole(privCtx, privCtx, client);
+                    debugConsoleCreator.createDebugConsole(privCtx, privCtx, client);
                 }
 
                 msgDbgReplyBld.addDebugOut(
@@ -90,7 +88,7 @@ public class CreateDebugConsole extends BaseProtoApiCall
             }
             catch (AccessDeniedException accessExc)
             {
-                coreSvcs.getErrorReporter().reportError(accessExc);
+                errorReporter.reportError(accessExc);
                 msgDbgReplyBld.addDebugErr(
                     "Error:\n" +
                     "    The request to create a debug console was denied.\n" +
@@ -109,7 +107,7 @@ public class CreateDebugConsole extends BaseProtoApiCall
         }
         catch (IllegalMessageStateException msgExc)
         {
-            coreSvcs.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     Message.class.getName() + " object returned by the " + Peer.class.getName() +
                     " class has an illegal state",

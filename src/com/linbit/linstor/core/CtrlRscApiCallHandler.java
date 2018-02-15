@@ -1,19 +1,5 @@
 package com.linbit.linstor.core;
 
-import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
-import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -66,10 +52,21 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
 
-@Singleton
+import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
+import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
+
 public class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();

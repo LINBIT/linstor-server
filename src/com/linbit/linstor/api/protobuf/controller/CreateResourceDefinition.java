@@ -1,56 +1,42 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
+import com.linbit.linstor.proto.RscDfnOuterClass.RscDfn;
+import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.linstor.proto.apidata.VlmDfnApiData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
-import com.linbit.linstor.proto.RscDfnOuterClass.RscDfn;
-import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
-import com.linbit.linstor.proto.apidata.VlmDfnApiData;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateResourceDefinition extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_RSC_DFN,
+    description = "Creates a resource definition"
+)
+public class CreateResourceDefinition implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateResourceDefinition(Controller controllerRef)
+    @Inject
+    public CreateResourceDefinition(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_RSC_DFN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a resource definition";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
@@ -62,9 +48,7 @@ public class CreateResourceDefinition extends BaseProtoApiCall
             vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
         }
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceDefinition(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createResourceDefinition(
             rscDfn.getRscName(),
             rscDfn.hasRscDfnPort() ? rscDfn.getRscDfnPort() : null,
             rscDfn.getRscDfnSecret(),
@@ -72,7 +56,7 @@ public class CreateResourceDefinition extends BaseProtoApiCall
             ProtoMapUtils.asMap(rscDfn.getRscDfnPropsList()),
             vlmDfnApiList
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

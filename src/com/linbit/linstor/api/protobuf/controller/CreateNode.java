@@ -1,65 +1,52 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtNodeOuterClass.MsgCrtNode;
+import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtNodeOuterClass.MsgCrtNode;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.NodeOuterClass;
-import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateNode extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_NODE,
+    description = "Creates a node"
+)
+public class CreateNode implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateNode(Controller controllerRef)
-    {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
-    }
-
-    @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_NODE;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a node";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
+    @Inject
+    public CreateNode(
+        CtrlApiCallHandler apiCallHandlerRef,
+        ApiCallAnswerer apiCallAnswererRef
     )
+    {
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtNode msgCreateNode = MsgCrtNode.parseDelimitedFrom(msgDataIn);
         NodeOuterClass.Node protoNode = msgCreateNode.getNode();
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createNode(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createNode(
             // nodeUuid is ignored here
             protoNode.getName(),
             protoNode.getType(),
@@ -67,7 +54,7 @@ public class CreateNode extends BaseProtoApiCall
             extractSatelliteConnections(protoNode.getNetInterfacesList()),
             ProtoMapUtils.asMap(protoNode.getPropsList())
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
     private List<NetInterfaceApi> extractNetIfs(List<NetInterfaceOuterClass.NetInterface> protoNetIfs)

@@ -1,65 +1,49 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
+import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
-import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateStorPool extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_STOR_POOL,
+    description = "Creates a storage pool name registration"
+)
+public class CreateStorPool implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateStorPool(Controller controllerRef)
+    @Inject
+    public CreateStorPool(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_STOR_POOL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a storage pool name registration";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtStorPool msgCreateStorPool = MsgCrtStorPool.parseDelimitedFrom(msgDataIn);
         StorPool storPool = msgCreateStorPool.getStorPool();
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createStoragePool(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createStoragePool(
             storPool.getNodeName(),
             storPool.getStorPoolName(),
             storPool.getDriver(),
             ProtoMapUtils.asMap(storPool.getPropsList())
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

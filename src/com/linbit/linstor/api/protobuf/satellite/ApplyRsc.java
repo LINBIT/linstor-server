@@ -1,69 +1,57 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import java.io.IOException;
-
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.StltApiCallHandler;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
-@ProtobufApiCall
-public class ApplyRsc extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_APPLY_RSC,
+    description = "Applies resource update data"
+)
+public class ApplyRsc implements ApiCall
 {
-    private final Satellite satellite;
+    private final StltApiCallHandler apiCallHandler;
 
-    public ApplyRsc(Satellite satelliteRef)
+    @Inject
+    public ApplyRsc(StltApiCallHandler apiCallHandlerRef)
     {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
+        apiCallHandler = apiCallHandlerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_APPLY_RSC;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Applies resource update data";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntRscData rscData = MsgIntRscData.parseDelimitedFrom(msgDataIn);
 
         RscPojo rscRawData = asRscPojo(rscData);
-        satellite.getApiCallHandler().applyResourceChanges(rscRawData);
+        apiCallHandler.applyResourceChanges(rscRawData);
     }
 
     static RscPojo asRscPojo(MsgIntRscData rscData)

@@ -23,7 +23,9 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.debug.DebugConsole;
@@ -31,6 +33,7 @@ import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -46,12 +49,10 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityLevel;
-import com.linbit.linstor.security.SignInException;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -68,8 +69,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -112,8 +115,6 @@ public final class Controller extends LinStor implements CoreServices
 
     // Public security context
     private AccessContext publicCtx;
-
-    private CtrlApiCallHandler apiCallHandler;
 
     // ============================================================
     // Worker thread pool & message processing dispatcher
@@ -166,6 +167,7 @@ public final class Controller extends LinStor implements CoreServices
     ObjectProtection storPoolDfnMapProt;
 
     private ReconnectorTask reconnectorTask;
+    private ConnectionObserver ctrlConnTracker;
 
     private DebugConsoleCreator debugConsoleCreator;
 
@@ -198,9 +200,13 @@ public final class Controller extends LinStor implements CoreServices
         {
             Thread.currentThread().setName("Main");
 
+            ApiType apiType = new ProtobufApiType();
+            List<Class<? extends ApiCall>> apiCalls =
+                new ApiCallLoader(errorLog).loadApiCalls(apiType, Arrays.asList("common", "controller"));
+
             // Initialize the Controller module with the SYSTEM security context
             Initializer sysInit = new Initializer();
-            Controller instance = sysInit.initController(cArgs, errorLog);
+            Controller instance = sysInit.initController(cArgs, errorLog, apiType, apiCalls);
 
             instance.initialize();
             if (cArgs.startDebugConsole())
@@ -296,8 +302,6 @@ public final class Controller extends LinStor implements CoreServices
             workerThrPool = injector.getInstance(
                 Key.get(WorkerPool.class, Names.named(LinStorModule.MAIN_WORKER_POOL_NAME)));
 
-            apiCallHandler = injector.getInstance(CtrlApiCallHandler.class);
-
             // Initialize tasks
             reconnectorTask = injector.getInstance(ReconnectorTask.class);
             PingTask pingTask = injector.getInstance(PingTask.class);
@@ -311,8 +315,7 @@ public final class Controller extends LinStor implements CoreServices
             // Initialize the message processor
             msgProc = injector.getInstance(CommonMessageProcessor.class);
 
-            errorLogRef.logInfo("Initializing test APIs");
-            LinStor.loadApiCalls(msgProc, this, this, ApiType.PROTOBUF);
+            ctrlConnTracker = injector.getInstance(CtrlConnTracker.class);
 
             initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM),
@@ -390,29 +393,6 @@ public final class Controller extends LinStor implements CoreServices
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
         applicationLifecycleManager.shutdown(accCtx);
-    }
-
-    public void peerSignIn(
-        Peer client,
-        IdentityName idName,
-        byte[] password
-    )
-        throws SignInException, InvalidNameException
-    {
-        AccessContext peerSignInCtx = idAuthentication.signIn(idName, password);
-        try
-        {
-            AccessContext privCtx = sysCtx.clone();
-            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            client.setAccessContext(privCtx, peerSignInCtx);
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "Enabling privileges on the system context failed",
-                accExc
-            );
-        }
     }
 
     public DebugConsole createDebugConsole(
@@ -504,11 +484,6 @@ public final class Controller extends LinStor implements CoreServices
         }
 
         return netComSvc != null || sysSvc != null;
-    }
-
-    public CtrlApiCallHandler getApiCallHandler()
-    {
-        return apiCallHandler;
     }
 
     private void initializeSecurityObjects(final ErrorReporter errorLogRef, final AccessContext initCtx)
@@ -705,11 +680,7 @@ public final class Controller extends LinStor implements CoreServices
                 bindAddress,
                 publicCtx,
                 initCtx,
-                new CtrlConnTracker(
-                    this,
-                    peerMap,
-                    reconnectorTask
-                )
+                ctrlConnTracker
             );
             try
             {
@@ -775,11 +746,7 @@ public final class Controller extends LinStor implements CoreServices
                     bindAddress,
                     publicCtx,
                     initCtx,
-                    new CtrlConnTracker(
-                        this,
-                        peerMap,
-                        reconnectorTask
-                    ),
+                    ctrlConnTracker,
                     loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
                     loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
                     loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),

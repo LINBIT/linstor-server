@@ -5,23 +5,29 @@ import java.util.Map;
 
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class CtrlConnTracker implements ConnectionObserver
 {
-    private final Controller controller;
+    private final CtrlClientSerializer ctrlClientSerializer;
     private final Map<String, Peer> peerMap;
     private final ReconnectorTask reconnectorTask;
 
+    @Inject
     CtrlConnTracker(
-        Controller controllerRef,
+        CtrlClientSerializer ctrlClientSerializerRef,
         Map<String, Peer> peerMapRef,
         ReconnectorTask reconnectorTaskRef
     )
     {
-        controller = controllerRef;
+        ctrlClientSerializer = ctrlClientSerializerRef;
         peerMap = peerMapRef;
         reconnectorTask = reconnectorTaskRef;
     }
@@ -56,7 +62,7 @@ class CtrlConnTracker implements ConnectionObserver
             .append(LinStor.VERSION_INFO_PROVIDER.getBuildTime());
 
         connPeer.sendMessage(
-            controller.getApiCallHandler().getCtrlClientcomSrzl()
+            ctrlClientSerializer
                 .builder(ApiConsts.API_VERSION, 0)
                 .apiVersion(0, controllerInfo.toString())
                 .build()

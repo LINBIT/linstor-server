@@ -1,51 +1,45 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import java.io.IOException;
-import java.io.InputStream;
-
+import com.google.inject.Inject;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.ApplicationLifecycleManager;
 import com.linbit.linstor.proto.MsgControlCtrlOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 
-@ProtobufApiCall
-public class Control extends BaseProtoApiCall
+import java.io.IOException;
+import java.io.InputStream;
+
+@ProtobufApiCall(
+    name = ApiConsts.API_CONTROL_CTRL,
+    description = "Send commands to the controller"
+)
+public class Control implements ApiCall
 {
-    private final Controller controller;
+    private final AccessContext accCtx;
+    private final ApplicationLifecycleManager applicationLifecycleManager;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public Control(Controller controllerRef)
-    {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
-    }
-
-    @Override
-    public String getName()
-    {
-        return ApiConsts.API_CONTROL_CTRL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Send commands to the controller";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
+    @Inject
+    public Control(
+        @PeerContext AccessContext accCtxRef,
+        ApplicationLifecycleManager applicationLifecycleManagerRef,
+        ApiCallAnswerer apiCallAnswererRef
     )
+    {
+        accCtx = accCtxRef;
+        applicationLifecycleManager = applicationLifecycleManagerRef;
+        apiCallAnswerer = apiCallAnswererRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgControlCtrlOuterClass.MsgControlCtrl msgControlCtrl =
@@ -67,15 +61,15 @@ public class Control extends BaseProtoApiCall
                     catch (AccessDeniedException ignored)
                     {
                     }
-                    controller.requireShutdownAccess(privCtx);
+                    applicationLifecycleManager.requireShutdownAccess(privCtx);
                     ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
                     rcEntry.setMessageFormat("Controller will shutdown now.");
                     apiCallRc.addEntry(rcEntry);
 
                     // FIXME: The success message may not arrive at the client,
                     //        because sending it races with controller shutdown
-                    this.answerApiCallRc(accCtx, client, msgId, apiCallRc);
-                    controller.shutdown(accCtx);
+                    apiCallAnswerer.answerApiCallRc(apiCallRc);
+                    applicationLifecycleManager.shutdown(accCtx);
                     break;
                 }
                 default:
@@ -107,6 +101,6 @@ public class Control extends BaseProtoApiCall
             apiCallRc.addEntry(rcEntry);
         }
 
-        this.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

@@ -1,9 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
@@ -17,9 +13,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-@Singleton
 class CtrlFullSyncApiCallHandler
 {
     private final ErrorReporter errorReporter;

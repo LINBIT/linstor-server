@@ -1,50 +1,39 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class IntRequestNode extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_REQUEST_NODE,
+    description = "Called by the satellite to request node update data"
+)
+public class IntRequestNode implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
 
-    public IntRequestNode(Controller controllerRef)
+    @Inject
+    public IntRequestNode(CtrlApiCallHandler apiCallHandlerRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_REQUEST_NODE;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the satellite to request node update data";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntObjectId objId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
         UUID nodeUuid = UUID.fromString(objId.getUuid());
         String nodeName = objId.getName();
 
-        controller.getApiCallHandler().handleNodeRequest(client, msgId, nodeUuid, nodeName);
+        apiCallHandler.handleNodeRequest(nodeUuid, nodeName);
     }
 
 }

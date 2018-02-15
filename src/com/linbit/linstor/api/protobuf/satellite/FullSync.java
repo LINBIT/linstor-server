@@ -1,5 +1,19 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.pojo.NodePojo;
+import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
+import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
+import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
+import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -7,46 +21,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.pojo.NodePojo;
-import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class FullSync extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_FULL_SYNC_DATA,
+    description = "Transfers initial data for all objects to a satellite"
+)
+public class FullSync implements ApiCall
 {
-    private final Satellite satellite;
+    private final StltApiCallHandler apiCallHandler;
+    private final ControllerPeerConnector controllerPeerConnector;
 
-    public FullSync(Satellite satelliteRef)
+    @Inject
+    public FullSync(
+        StltApiCallHandler apiCallHandlerRef,
+        ControllerPeerConnector controllerPeerConnectorRef
+    )
     {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
+        apiCallHandler = apiCallHandlerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_FULL_SYNC_DATA;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Transfers initial data for all objects to a satellite";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntFullSync fullSync = MsgIntFullSync.parseDelimitedFrom(msgDataIn);
@@ -55,7 +50,7 @@ public class FullSync extends BaseProtoApiCall
         Set<StorPoolPojo> storPools = new TreeSet<>(asStorPool(fullSync.getStorPoolsList()));
         Set<RscPojo> resources = new TreeSet<>(asResources(fullSync.getRscsList()));
 
-        satellite.getApiCallHandler().applyFullSync(
+        apiCallHandler.applyFullSync(
             nodes,
             storPools,
             resources,
@@ -77,7 +72,7 @@ public class FullSync extends BaseProtoApiCall
     private ArrayList<StorPoolPojo> asStorPool(List<MsgIntStorPoolData> storPoolsList)
     {
         ArrayList<StorPoolPojo> storPools = new ArrayList<>(storPoolsList.size());
-        String nodeName = satellite.getLocalNode().getName().displayValue;
+        String nodeName = controllerPeerConnector.getLocalNode().getName().displayValue;
         for (MsgIntStorPoolData storPoolData : storPoolsList)
         {
             storPools.add(ApplyStorPool.asStorPoolPojo(storPoolData, nodeName));

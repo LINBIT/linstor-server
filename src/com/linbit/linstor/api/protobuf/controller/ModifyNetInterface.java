@@ -1,51 +1,37 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgModNetInterfaceOuterClass.MsgModNetInterface;
+import com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgModNetInterfaceOuterClass.MsgModNetInterface;
-import com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class ModifyNetInterface extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_MOD_NET_IF,
+    description = "Modifies a network interface of a given node"
+)
+public class ModifyNetInterface implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public ModifyNetInterface(Controller controllerRef)
+    @Inject
+    public ModifyNetInterface(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_MOD_NET_IF;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Modifies a network interface of a given node";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgModNetInterface msgModNetIf = MsgModNetInterface.parseDelimitedFrom(msgDataIn);
@@ -58,16 +44,14 @@ public class ModifyNetInterface extends BaseProtoApiCall
         String nodeName = msgModNetIf.getNodeName();
         String netIfName = protoNetIf.getName();
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().modifyNetInterface(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.modifyNetInterface(
             nodeName,
             netIfName,
             protoNetIf.hasAddress() ? protoNetIf.getAddress() : null,
             protoNetIf.hasStltPort() ? protoNetIf.getStltPort() : null,
             protoNetIf.hasStltEncryptionType() ? protoNetIf.getStltEncryptionType() : null
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

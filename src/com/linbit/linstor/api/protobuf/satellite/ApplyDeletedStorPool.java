@@ -1,45 +1,35 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
+
 import java.io.IOException;
 import java.io.InputStream;
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
-import com.linbit.linstor.security.AccessContext;
 
-@ProtobufApiCall
-public class ApplyDeletedStorPool extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_APPLY_STOR_POOL_DELETED,
+    description = "Applies an update of a deleted storage pool (ensuring the storage pool is deleted)"
+)
+public class ApplyDeletedStorPool implements ApiCall
 {
-    private final Satellite satellite;
+    private final StltApiCallHandler apiCallHandler;
 
-    public ApplyDeletedStorPool(Satellite satelliteRef)
+    @Inject
+    public ApplyDeletedStorPool(StltApiCallHandler apiCallHandlerRef)
     {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
+        apiCallHandler = apiCallHandlerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_APPLY_STOR_POOL_DELETED;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Applies an update of a deleted storage pool (ensuring the storage pool is deleted)";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntStorPoolDeletedData storPoolDeletedData = MsgIntStorPoolDeletedData.parseDelimitedFrom(msgDataIn);
-        satellite.getApiCallHandler().applyDeletedStorPoolChange(
+        apiCallHandler.applyDeletedStorPoolChange(
             storPoolDeletedData.getStorPoolName()
         );
     }

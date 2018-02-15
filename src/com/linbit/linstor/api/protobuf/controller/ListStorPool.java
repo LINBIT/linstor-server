@@ -1,12 +1,12 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -14,42 +14,29 @@ import java.io.InputStream;
  *
  * @author rpeinthor
  */
-@ProtobufApiCall
-public class ListStorPool extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_LST_STOR_POOL,
+    description = "Queries the list of storage pools"
+)
+public class ListStorPool implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final Peer client;
 
-    public ListStorPool(Controller controllerRef)
+    @Inject
+    public ListStorPool(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        client = clientRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_LST_STOR_POOL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Queries the list of storage pools";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         client.sendMessage(
-            controller.getApiCallHandler()
-                .listStorPool(msgId, accCtx)
+            apiCallHandler
+                .listStorPool()
         );
     }
 }

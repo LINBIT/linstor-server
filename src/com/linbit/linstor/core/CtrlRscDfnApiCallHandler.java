@@ -44,7 +44,6 @@ import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +54,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
-@Singleton
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;

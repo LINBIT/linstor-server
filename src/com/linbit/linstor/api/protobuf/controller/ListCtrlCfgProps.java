@@ -1,47 +1,37 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-@ProtobufApiCall
-public class ListCtrlCfgProps extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_LST_CFG_VAL,
+    description = "Lists controller config properties"
+)
+public class ListCtrlCfgProps implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final Peer client;
 
-    public ListCtrlCfgProps(Controller controllerRef)
+    @Inject
+    public ListCtrlCfgProps(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        client = clientRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_LST_CFG_VAL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Lists controller config properties";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         client.sendMessage(
-            controller.getApiCallHandler().listCtrlCfg(
-                accCtx,
-                msgId
+            apiCallHandler.listCtrlCfg(
             )
         );
     }

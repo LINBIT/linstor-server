@@ -1,46 +1,32 @@
 package com.linbit.linstor.api.protobuf.common;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.netcom.Peer;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.CoreServices;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class Pong extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = "Pong",
+    description = "Updates the Pong-received timestamp"
+)
+public class Pong implements ApiCall
 {
-    public Pong(CoreServices coreServices)
+    private final Peer peer;
+
+    @Inject
+    public Pong(Peer peerRef)
     {
-        super(coreServices.getErrorReporter());
+        peer = peerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return Pong.class.getSimpleName();
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Updates the Pong-received timestamp";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
-        client.pongReceived();
+        peer.pongReceived();
     }
 
 }

@@ -25,16 +25,13 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-
-@Singleton
 class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();

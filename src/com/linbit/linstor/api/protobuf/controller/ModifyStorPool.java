@@ -1,5 +1,15 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgModStorPoolOuterClass.MsgModStorPool;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -7,48 +17,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgModStorPoolOuterClass.MsgModStorPool;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class ModifyStorPool extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_MOD_STOR_POOL,
+    description = "Modifies a storage pool"
+)
+public class ModifyStorPool implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public ModifyStorPool(Controller controllerRef)
+    @Inject
+    public ModifyStorPool(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_MOD_STOR_POOL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Modifies a storage pool";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgModStorPool msgModStorPool = MsgModStorPool.parseDelimitedFrom(msgDataIn);
@@ -62,16 +48,14 @@ public class ModifyStorPool extends BaseProtoApiCall
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModStorPool.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModStorPool.getDeletePropKeysList());
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().modifyStorPool(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.modifyStorPool(
             storPoolUuid,
             nodeName,
             storPoolName,
             overrideProps,
             deletePropKeys
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

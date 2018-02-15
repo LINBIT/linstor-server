@@ -11,9 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 
-@Singleton
 public class CtrlAuthenticationApiCallHandler
 {
     private final ErrorReporter errorReporter;

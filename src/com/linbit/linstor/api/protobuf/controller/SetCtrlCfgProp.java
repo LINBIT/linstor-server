@@ -1,53 +1,44 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgSetCtrlCfgPropOuterClass.MsgSetCtrlCfgProp;
-import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-@ProtobufApiCall
-public class SetCtrlCfgProp extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_SET_CFG_VAL,
+    description = "Sets a controller config property (possibly overriding old value)."
+)
+public class SetCtrlCfgProp implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public SetCtrlCfgProp(Controller controllerRef)
+    @Inject
+    public SetCtrlCfgProp(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_SET_CFG_VAL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Sets a controller config property (possibly overriding old value).";
-    }
-
-    @Override
-    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgSetCtrlCfgProp protoMsg = MsgSetCtrlCfgProp.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = controller.getApiCallHandler().setCtrlCfgProp(
-            accCtx,
+        ApiCallRc apiCallRc = apiCallHandler.setCtrlCfgProp(
             protoMsg.getKey(),
             protoMsg.getNamespace(),
             protoMsg.getValue()
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

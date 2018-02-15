@@ -1,63 +1,47 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
+import com.linbit.linstor.proto.NodeConnOuterClass.NodeConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
-import com.linbit.linstor.proto.NodeConnOuterClass.NodeConn;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateNodeConnection extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_NODE_CONN,
+    description = "Defines node connection options"
+)
+public class CreateNodeConnection implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateNodeConnection(Controller controllerRef)
+    @Inject
+    public CreateNodeConnection(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_NODE_CONN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Defines node connection options";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtNodeConn msgCreateNodeConn = MsgCrtNodeConn.parseDelimitedFrom(msgDataIn);
         NodeConn nodeConn = msgCreateNodeConn.getNodeConn();
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createNodeConnection(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createNodeConnection(
             // ignore nodeConnUuid
             nodeConn.getNodeName1(),
             nodeConn.getNodeName2(),
             ProtoMapUtils.asMap(nodeConn.getNodeConnPropsList())
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

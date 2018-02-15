@@ -1,66 +1,74 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.MsgSignInOuterClass;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.Authentication;
+import com.linbit.linstor.security.IdentityName;
+import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.security.SignInException;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgSignInOuterClass.MsgSignIn;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.IdentityName;
-import com.linbit.linstor.security.SignInException;
-
-@ProtobufApiCall
-public class SignIn extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = "SignIn",
+    description = "Performs a sign-in with the specified credentials"
+)
+public class SignIn implements ApiCall
 {
-    private final Controller ctrl;
-    public SignIn(Controller ctrlRef)
-    {
-        super(ctrlRef.getErrorReporter());
-        ctrl = ctrlRef;
-    }
+    private final ErrorReporter errorReporter;
+    private final Authentication idAuthentication;
+    private final ApiCallAnswerer apiCallAnswerer;
+    private final AccessContext sysCtx;
+    private final AccessContext clientCtx;
+    private final Peer client;
 
-    @Override
-    public String getName()
-    {
-        return SignIn.class.getSimpleName();
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Performs a sign-in with the specified credentials";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
+    @Inject
+    public SignIn(
+        ErrorReporter errorReporterRef,
+        Authentication idAuthenticationRef,
+        ApiCallAnswerer apiCallAnswererRef,
+        @SystemContext AccessContext sysCtxRef,
+        @PeerContext AccessContext clientCtxRef,
+        Peer clientRef
     )
+    {
+        errorReporter = errorReporterRef;
+        idAuthentication = idAuthenticationRef;
+        apiCallAnswerer = apiCallAnswererRef;
+        sysCtx = sysCtxRef;
+        clientCtx = clientCtxRef;
+        client = clientRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
     {
         ApiCallRcImpl reply = new ApiCallRcImpl();
         String idNameText = null;
         try
         {
-            MsgSignIn signInData = MsgSignIn.parseDelimitedFrom(msgDataIn);
+            MsgSignInOuterClass.MsgSignIn signInData = MsgSignInOuterClass.MsgSignIn.parseDelimitedFrom(msgDataIn);
             idNameText = signInData.getIdName();
             byte[] password = signInData.getPasswordBytes().toByteArray();
 
             IdentityName idName = new IdentityName(idNameText);
 
-            ctrl.peerSignIn(client, idName, password);
-
-            AccessContext clientCtx = client.getAccessContext();
+            peerSignIn(idName, password);
 
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setMessageFormat("Sign-in successful");
@@ -71,7 +79,7 @@ public class SignIn extends BaseProtoApiCall
         }
         catch (IOException ioExc)
         {
-            String reportId = errorReporter.reportError(ioExc, accCtx, client, "Sign-in");
+            String reportId = errorReporter.reportError(ioExc, clientCtx, client, "Sign-in");
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
             rcEntry.setMessageFormat("Sgn-in failed");
@@ -112,6 +120,28 @@ public class SignIn extends BaseProtoApiCall
             reply.addEntry(rcEntry);
         }
 
-        answerApiCallRc(accCtx, client, msgId, reply);
+        apiCallAnswerer.answerApiCallRc(reply);
+    }
+
+    private void peerSignIn(
+        IdentityName idName,
+        byte[] password
+    )
+        throws SignInException, InvalidNameException
+    {
+        AccessContext peerSignInCtx = idAuthentication.signIn(idName, password);
+        try
+        {
+            AccessContext privCtx = sysCtx.clone();
+            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            client.setAccessContext(privCtx, peerSignInCtx);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "Enabling privileges on the system context failed",
+                accExc
+            );
+        }
     }
 }

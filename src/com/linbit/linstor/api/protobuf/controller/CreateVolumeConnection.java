@@ -1,65 +1,49 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn;
+import com.linbit.linstor.proto.VlmConnOuterClass.VlmConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn;
-import com.linbit.linstor.proto.VlmConnOuterClass.VlmConn;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateVolumeConnection extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_VLM_CONN,
+    description = "Defines volume connection options"
+)
+public class CreateVolumeConnection implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateVolumeConnection(Controller controllerRef)
+    @Inject
+    public CreateVolumeConnection(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_VLM_CONN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Defines volume connection options";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtVlmConn msgCreateVlmConn = MsgCrtVlmConn.parseDelimitedFrom(msgDataIn);
         VlmConn vlmConn = msgCreateVlmConn.getVlmConn();
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createVolumeConnection(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createVolumeConnection(
             vlmConn.getNodeName1(),
             vlmConn.getNodeName2(),
             vlmConn.getResourceName(),
             vlmConn.getVolumeNr(),
             ProtoMapUtils.asMap(vlmConn.getVolumeConnPropsList())
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

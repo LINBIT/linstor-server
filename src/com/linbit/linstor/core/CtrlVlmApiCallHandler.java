@@ -1,11 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceData;
@@ -25,9 +19,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
-@Singleton
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();

@@ -1,13 +1,11 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm;
-import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,43 +14,26 @@ import java.io.InputStream;
  *
  * @author rpeinthor
  */
-@ProtobufApiCall
-public class NotifyVolumeDeleted extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_NOTIFY_VLM_DEL,
+    description = "Called by the satellite to notify the controller of successful volume deletion"
+)
+public class NotifyVolumeDeleted implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
 
-    public NotifyVolumeDeleted(Controller controllerRef)
+    @Inject
+    public NotifyVolumeDeleted(CtrlApiCallHandler apiCallHandlerRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_NOTIFY_VLM_DEL;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the satellite to notify the controller of successful volume deletion";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntDelVlm msgDelVlm = MsgIntDelVlm.parseDelimitedFrom(msgDataIn);
-        controller.getApiCallHandler().volumeDeleted(
-            accCtx,
-            client,
+        apiCallHandler.volumeDeleted(
             msgDelVlm.getNodeName(),
             msgDelVlm.getRscName(),
             msgDelVlm.getVlmNr()

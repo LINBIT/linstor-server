@@ -1,12 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.io.IOException;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
@@ -30,6 +23,12 @@ import com.linbit.linstor.timer.CoreTimer;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.io.IOException;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
 
 @Singleton
 public class StltApiCallHandler
@@ -396,8 +395,6 @@ public class StltApiCallHandler
     }
 
     public void handlePrimaryResource(
-        Peer controllerPeer,
-        int msgId,
         String rscNameStr,
         UUID rscUuid
     )

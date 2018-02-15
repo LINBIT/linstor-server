@@ -1,15 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
+import com.google.inject.Inject;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.CoreServices;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.debug.DebugConsoleCreator;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -17,65 +16,63 @@ import com.linbit.linstor.proto.javainternal.MsgDebugReplyOuterClass.MsgDebugRep
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 /**
  * Destroys (frees) the peer's debug console
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-@ProtobufApiCall
-public class DestroyDebugConsole extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_DSTR_DBG_CNSL,
+    description = "Detaches a debug console from a peer connection and destroys the debug console object"
+)
+public class DestroyDebugConsole implements ApiCall
 {
-    private Controller      ctrl;
-    private CoreServices    coreSvcs;
+    private final ErrorReporter errorReporter;
+    private final ApiCallAnswerer apiCallAnswerer;
+    private final DebugConsoleCreator debugConsoleCreator;
+    private final Peer client;
+    private final AccessContext accCtx;
 
+    @Inject
     public DestroyDebugConsole(
-        Controller ctrlRef,
-        CoreServices coreSvcsRef
+        ErrorReporter errorReporterRef,
+        ApiCallAnswerer apiCallAnswererRef,
+        DebugConsoleCreator debugConsoleCreatorRef,
+        Peer clientRef,
+        @PeerContext AccessContext accCtxRef
     )
     {
-        super(ctrlRef.getErrorReporter());
-        ctrl = ctrlRef;
-        coreSvcs = coreSvcsRef;
+        errorReporter = errorReporterRef;
+        apiCallAnswerer = apiCallAnswererRef;
+        debugConsoleCreator = debugConsoleCreatorRef;
+        client = clientRef;
+        accCtx = accCtxRef;
     }
 
     @Override
-    public String getDescription()
-    {
-        return "Detaches a debug console from a peer connection and destroys the debug console object";
-    }
-
-    @Override
-    public String getName()
-    {
-        return ApiConsts.API_DSTR_DBG_CNSL;
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext   accCtx,
-        Message         msg,
-        int             msgId,
-        InputStream     msgDataIn,
-        Peer            client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         try
         {
             Message reply = client.createMessage();
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
-            writeProtoMsgHeader(replyOut, msgId, "DebugReply");
+            apiCallAnswerer.writeProtoMsgHeader(replyOut, "DebugReply");
 
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
             try
             {
-                ctrl.destroyDebugConsole(accCtx, client);
+                debugConsoleCreator.destroyDebugConsole(accCtx, client);
 
                 msgDbgReplyBld.addDebugOut("Debug console destroyed");
             }
             catch (AccessDeniedException accessExc)
             {
-                coreSvcs.getErrorReporter().reportError(accessExc);
+                errorReporter.reportError(accessExc);
                 msgDbgReplyBld.addDebugErr(
                     "Error:\n" +
                     "    The request to destroy the debug console was denied.\n" +
@@ -94,7 +91,7 @@ public class DestroyDebugConsole extends BaseProtoApiCall
         }
         catch (IllegalMessageStateException msgExc)
         {
-            coreSvcs.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     Message.class.getName() + " object returned by the " + Peer.class.getName() +
                         " class has an illegal state",

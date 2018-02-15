@@ -22,11 +22,9 @@ import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 
-@Singleton
 public class CtrlConfApiCallHandler
 {
     private ErrorReporter errorReporter;

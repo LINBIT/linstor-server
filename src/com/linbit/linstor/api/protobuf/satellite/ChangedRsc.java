@@ -1,56 +1,49 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-
+import com.google.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
-import com.linbit.linstor.security.AccessContext;
 
-@ProtobufApiCall
-public class ChangedRsc extends BaseProtoApiCall
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
+@ProtobufApiCall(
+    name = InternalApiConsts.API_CHANGED_RSC,
+    description = "Called by the controller to indicate that a resource was modified"
+)
+public class ChangedRsc implements ApiCall
 {
-    private final Satellite satellite;
+    private final ErrorReporter errorReporter;
+    private final DeviceManager deviceManager;
+    private final ControllerPeerConnector controllerPeerConnector;
 
-    public ChangedRsc(Satellite satelliteRef)
-    {
-        super(satelliteRef.getErrorReporter());
-        satellite = satelliteRef;
-    }
-
-    @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_CHANGED_RSC;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the controller to indicate that a resource was modified";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer controllerPeer
+    @Inject
+    public ChangedRsc(
+        ErrorReporter errorReporterRef,
+        DeviceManager deviceManagerRef,
+        ControllerPeerConnector controllerPeerConnectorRef
     )
+    {
+        errorReporter = errorReporterRef;
+        deviceManager = deviceManagerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         String rscName = null;
@@ -62,12 +55,12 @@ public class ChangedRsc extends BaseProtoApiCall
 
             Map<NodeName, UUID> changedNodes = new TreeMap<>();
             // controller could notify us (in future) about changes in other nodes
-            NodeData localNode = satellite.getLocalNode();
+            NodeData localNode = controllerPeerConnector.getLocalNode();
             changedNodes.put(
                 localNode.getName(),
                 rscUuid
             );
-            satellite.getDeviceManager().getUpdateTracker().updateResource(
+            deviceManager.getUpdateTracker().updateResource(
                 new ResourceName(rscName),
                 changedNodes
             );

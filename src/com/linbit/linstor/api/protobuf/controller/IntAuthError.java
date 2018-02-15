@@ -1,13 +1,13 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
-import com.linbit.linstor.security.AccessContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,34 +15,24 @@ import java.io.InputStream;
  *
  * @author rpeinthor
  */
-@ProtobufApiCall
-public class IntAuthError extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_AUTH_ERROR,
+    description = "Called by the satellite to indicate that controller authentication failed"
+)
+public class IntAuthError implements ApiCall
 {
-    public IntAuthError(Controller controllerRef)
+    private final Peer client;
+    private final ErrorReporter errorReporter;
+
+    @Inject
+    public IntAuthError(Peer clientRef, ErrorReporter errorReporterRef)
     {
-        super(controllerRef.getErrorReporter());
+        client = clientRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_AUTH_ERROR;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the satellite to indicate that controller authentication failed";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         client.setAuthenticated(false);

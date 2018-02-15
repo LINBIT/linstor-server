@@ -19,6 +19,8 @@ public class CtrlApiCallHandlerModule extends PrivateModule
     protected void configure()
     {
         bind(CtrlClientSerializer.class).to(ProtoCtrlClientSerializer.class);
+        expose(CtrlClientSerializer.class);
+
         bind(SatelliteConnector.class).to(SatelliteConnectorImpl.class);
 
         bind(CtrlApiCallHandler.class);

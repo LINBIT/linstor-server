@@ -1,56 +1,42 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.Volume.VlmApi;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc;
+import com.linbit.linstor.proto.RscOuterClass.Rsc;
+import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.apidata.VlmApiData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc;
-import com.linbit.linstor.proto.RscOuterClass.Rsc;
-import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.apidata.VlmApiData;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateResource extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_RSC,
+    description = "Creates a resource from a resource definition and assigns it to a node"
+)
+public class CreateResource implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateResource(Controller controllerRef)
+    @Inject
+    public CreateResource(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_RSC;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a resource from a resource definition and assigns it to a node";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtRsc msgCrtRsc = MsgCrtRsc.parseDelimitedFrom(msgDataIn);
@@ -62,15 +48,13 @@ public class CreateResource extends BaseProtoApiCall
             vlmApiDataList.add(new VlmApiData(vlm));
         }
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createResource(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createResource(
             rsc.getNodeName(),
             rsc.getName(),
             rsc.getRscFlagsList(),
             ProtoMapUtils.asMap(rsc.getPropsList()),
             vlmApiDataList
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

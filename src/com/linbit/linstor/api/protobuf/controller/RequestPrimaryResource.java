@@ -1,13 +1,12 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass.MsgIntPrimary;
-import com.linbit.linstor.security.AccessContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -16,44 +15,26 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-@ProtobufApiCall
-public class RequestPrimaryResource extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_REQUEST_PRIMARY_RSC,
+    description = "Satellite request primary for a resource"
+)
+public class RequestPrimaryResource implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
 
-    public RequestPrimaryResource(Controller controllerRef)
+    @Inject
+    public RequestPrimaryResource(CtrlApiCallHandler apiCallHandlerRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
     }
 
     @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_REQUEST_PRIMARY_RSC;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Satellite request primary for a resource";
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntPrimary msgReqPrimary = MsgIntPrimary.parseDelimitedFrom(msgDataIn);
-        controller.getApiCallHandler().handlePrimaryResourceRequest(
-            accCtx,
-            client,
-            msgId,
+        apiCallHandler.handlePrimaryResourceRequest(
             msgReqPrimary.getRscName(),
             UUID.fromString(msgReqPrimary.getRscUuid())
         );

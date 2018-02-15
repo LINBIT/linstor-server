@@ -1,5 +1,15 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgModRscOuterClass.MsgModRsc;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -7,48 +17,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgModRscOuterClass.MsgModRsc;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class ModifyResource extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_MOD_RSC,
+    description = "Modifies a resource"
+)
+public class ModifyResource implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public ModifyResource(Controller controllerRef)
+    @Inject
+    public ModifyResource(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_MOD_RSC;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Modifies a resource";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgModRsc msgModRsc = MsgModRsc.parseDelimitedFrom(msgDataIn);
@@ -62,16 +48,14 @@ public class ModifyResource extends BaseProtoApiCall
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModRsc.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModRsc.getDeletePropKeysList());
 
-        ApiCallRc apiCallRc = controller.getApiCallHandler().modifyRsc(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.modifyRsc(
             rscUuid,
             nodeName,
             rscName,
             overrideProps,
             deletePropKeys
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

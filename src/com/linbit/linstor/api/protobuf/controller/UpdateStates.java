@@ -1,50 +1,42 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-
+import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
-import com.linbit.linstor.security.AccessContext;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
  * @author rpeinthor
  */
-@ProtobufApiCall
-public class UpdateStates extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_UPDATE_STATES,
+    description = "Updates state of satellite resources and volumes"
+)
+public class UpdateStates implements ApiCall
 {
-    public UpdateStates(Controller controllerRef)
-    {
-        super(controllerRef.getErrorReporter());
-    }
+    private final Peer client;
 
-    @Override
-    public String getName()
+    @Inject
+    public UpdateStates(Peer clientRef)
     {
-        return InternalApiConsts.API_UPDATE_STATES;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Updates state of satellite resources and volumes";
+        client = clientRef;
     }
 
     private ResourceState fromProtoRscState(RscStateOuterClass.RscState protoRscState)
@@ -57,15 +49,15 @@ public class UpdateStates extends BaseProtoApiCall
             {
                 VolumeNumber volNr = new VolumeNumber(protoVlmState.getVlmNr());
                 volumes.put(volNr, new VolumeState(
-                    volNr,
-                    new MinorNumber(protoVlmState.getVlmMinorNr()),
-                    protoVlmState.getIsPresent(),
-                    protoVlmState.getHasDisk(),
-                    protoVlmState.getHasMetaData(),
-                    protoVlmState.getCheckMetaData(),
-                    protoVlmState.getDiskFailed(),
-                    protoVlmState.getNetSize(),
-                    protoVlmState.getGrossSize()
+                        volNr,
+                        new MinorNumber(protoVlmState.getVlmMinorNr()),
+                        protoVlmState.getIsPresent(),
+                        protoVlmState.getHasDisk(),
+                        protoVlmState.getHasMetaData(),
+                        protoVlmState.getCheckMetaData(),
+                        protoVlmState.getDiskFailed(),
+                        protoVlmState.getNetSize(),
+                        protoVlmState.getGrossSize()
                     )
                 );
             }
@@ -89,13 +81,7 @@ public class UpdateStates extends BaseProtoApiCall
     }
 
     @Override
-    public void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
 

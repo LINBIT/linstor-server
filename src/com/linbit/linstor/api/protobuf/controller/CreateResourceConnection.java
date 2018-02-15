@@ -1,63 +1,47 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn;
+import com.linbit.linstor.proto.RscConnOuterClass.RscConn;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn;
-import com.linbit.linstor.proto.RscConnOuterClass.RscConn;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateResourceConnection extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_RSC_CONN,
+    description = "Defines resource connection options"
+)
+public class CreateResourceConnection implements ApiCall
 {
-    private final Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateResourceConnection(Controller controllerRef)
+    @Inject
+    public CreateResourceConnection(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_RSC_CONN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Defines resource connection options";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtRscConn msgCreateRscConn = MsgCrtRscConn.parseDelimitedFrom(msgDataIn);
         RscConn rscConn = msgCreateRscConn.getRscConn();
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceConnection(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createResourceConnection(
             rscConn.getNodeName1(),
             rscConn.getNodeName2(),
             rscConn.getRscName(),
             ProtoMapUtils.asMap(rscConn.getRscConnPropsList())
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

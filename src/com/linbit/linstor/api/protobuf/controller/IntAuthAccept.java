@@ -1,48 +1,41 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class IntAuthAccept extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = InternalApiConsts.API_AUTH_ACCEPT,
+    description = "Called by the satellite to indicate that controller authentication succeeded"
+)
+public class IntAuthAccept implements ApiCall
 {
-    private Controller controller;
+    private final ErrorReporter errorReporter;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final Peer client;
 
-    public IntAuthAccept(Controller controllerRef)
-    {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
-    }
-
-    @Override
-    public String getName()
-    {
-        return InternalApiConsts.API_AUTH_ACCEPT;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Called by the satellite to indicate that controller authentication succeeded";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
+    @Inject
+    public IntAuthAccept(
+        ErrorReporter errorReporterRef,
+        CtrlApiCallHandler apiCallHandlerRef,
+        Peer clientRef
     )
+    {
+        errorReporter = errorReporterRef;
+        apiCallHandler = apiCallHandlerRef;
+        client = clientRef;
+    }
+
+    @Override
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgIntExpectedFullSyncId msgIntExpectedFullSyncId = MsgIntExpectedFullSyncId.parseDelimitedFrom(msgDataIn);
@@ -50,6 +43,6 @@ public class IntAuthAccept extends BaseProtoApiCall
         client.setAuthenticated(true);
         errorReporter.logDebug("Satellite '" + client.getNode().getName() + "' authenticated");
 
-        controller.getApiCallHandler().sendFullSync(client, expectedFullSyncId);
+        apiCallHandler.sendFullSync(expectedFullSyncId);
     }
 }

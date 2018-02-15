@@ -2,14 +2,17 @@ package com.linbit.linstor.security;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.linbit.ControllerLinstorModule;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ControllerLinstorModule;
 import com.linbit.SatelliteLinstorModule;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.core.ApiCallHandlerModule;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.Controller;
@@ -33,6 +36,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.timer.CoreTimerModule;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Initializes Controller and Satellite instances with the system's security context
@@ -89,7 +93,12 @@ public final class Initializer
         }
     }
 
-    public Controller initController(LinStorArguments cArgs, ErrorReporter errorLog)
+    public Controller initController(
+        LinStorArguments cArgs,
+        ErrorReporter errorLog,
+        ApiType apiType,
+        List<Class<? extends ApiCall>> apiCalls
+    )
         throws AccessDeniedException
     {
         AccessContext initCtx = SYSTEM_CTX.clone();
@@ -111,6 +120,7 @@ public final class Initializer
             new DbConnectionPoolModule(),
             new NetComModule(),
             new NumberPoolModule(),
+            new ApiModule(apiType, apiCalls),
             new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule(),
             new DebugModule(),
@@ -120,7 +130,12 @@ public final class Initializer
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX);
     }
 
-    public Satellite initSatellite(LinStorArguments cArgs, ErrorReporter errorLog)
+    public Satellite initSatellite(
+        LinStorArguments cArgs,
+        ErrorReporter errorLog,
+        ApiType apiType,
+        List<Class<? extends ApiCall>> apiCalls
+    )
         throws AccessDeniedException
     {
         AccessContext initCtx = SYSTEM_CTX.clone();
@@ -136,6 +151,7 @@ public final class Initializer
             new CoreModule(),
             new SatelliteCoreModule(),
             new DrbdStateModule(),
+            new ApiModule(apiType, apiCalls),
             new ApiCallHandlerModule(),
             new DebugModule(),
             new SatelliteDebugModule()

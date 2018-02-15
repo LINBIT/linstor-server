@@ -5,7 +5,6 @@ import com.google.inject.Provides;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.security.AccessContext;
@@ -19,8 +18,6 @@ public class ApiCallHandlerModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(ApiType.class).toInstance(ApiType.PROTOBUF);
-
         bind(CtrlStltSerializer.class).to(ProtoCtrlStltSerializer.class);
     }
 

@@ -1,5 +1,19 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.ControllerPeerCtx;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.debug.DebugConsole;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.javainternal.MsgDebugCommandOuterClass.MsgDebugCommand;
+import com.linbit.linstor.proto.javainternal.MsgDebugReplyOuterClass.MsgDebugReply;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,70 +22,43 @@ import java.io.PrintStream;
 import java.util.Deque;
 import java.util.LinkedList;
 
-import com.linbit.ImplementationError;
-import com.linbit.linstor.ControllerPeerCtx;
-import com.linbit.linstor.CoreServices;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.debug.DebugConsole;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgDebugCommandOuterClass.MsgDebugCommand;
-import com.linbit.linstor.proto.javainternal.MsgDebugReplyOuterClass.MsgDebugReply;
-import com.linbit.linstor.security.AccessContext;
-
 /**
  * Pipes a debug command from the peer to the server and the
  * command's information and error reply back to the peer
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-@ProtobufApiCall
-public class DebugCommand extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = "DebugCommand",
+    description = "Submits a debug command to an active debug console attached to the peer.\n" +
+        "The debug console typically answers with a DebugReply message.\n"
+)
+public class DebugCommand implements ApiCall
 {
-    @SuppressWarnings("unused")
-    private Controller ctrl;
-    private CoreServices coreSvcs;
+    private final ErrorReporter errorReporter;
+    private final ApiCallAnswerer apiCallAnswerer;
+    private final Peer client;
 
+    @Inject
     public DebugCommand(
-        Controller ctrlRef,
-        CoreServices coreSvcsRef
+        ErrorReporter errorReporterRef,
+        ApiCallAnswerer apiCallAnswererRef,
+        Peer clientRef
     )
     {
-        super(ctrlRef.getErrorReporter());
-        ctrl = ctrlRef;
-        coreSvcs = coreSvcsRef;
+        errorReporter = errorReporterRef;
+        apiCallAnswerer = apiCallAnswererRef;
+        client = clientRef;
     }
 
     @Override
-    public String getDescription()
-    {
-        return "Submits a debug command to an active debug console attached to the peer.\n" +
-            "The debug console typically answers with a DebugReply message.\n";
-    }
-
-    @Override
-    public String getName()
-    {
-        return DebugCommand.class.getSimpleName();
-    }
-
-    @Override
-    public void executeImpl(
-        AccessContext   accCtx,
-        Message         msg,
-        int             msgId,
-        InputStream     msgDataIn,
-        Peer            client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         try
         {
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
-            writeProtoMsgHeader(replyOut, msgId, "DebugReply");
+            apiCallAnswerer.writeProtoMsgHeader(replyOut, "DebugReply");
             ByteArrayOutputStream debugErr = new ByteArrayOutputStream();
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
 
@@ -120,7 +107,7 @@ public class DebugCommand extends BaseProtoApiCall
         }
         catch (IllegalMessageStateException msgExc)
         {
-            coreSvcs.getErrorReporter().reportError(
+            errorReporter.reportError(
                 new ImplementationError(
                     Message.class.getName() + " object returned by the " + Peer.class.getName() +
                     " class has an illegal state",

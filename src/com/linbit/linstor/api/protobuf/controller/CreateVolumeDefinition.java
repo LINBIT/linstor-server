@@ -1,54 +1,40 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.proto.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
+import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.linstor.proto.apidata.VlmDfnApiData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
-import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
-import com.linbit.linstor.proto.apidata.VlmDfnApiData;
-import com.linbit.linstor.security.AccessContext;
-
-@ProtobufApiCall
-public class CreateVolumeDefinition extends BaseProtoApiCall
+@ProtobufApiCall(
+    name = ApiConsts.API_CRT_VLM_DFN,
+    description = "Creates a volume definition"
+)
+public class CreateVolumeDefinition implements ApiCall
 {
-    private Controller controller;
+    private final CtrlApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
 
-    public CreateVolumeDefinition(Controller controllerRef)
+    @Inject
+    public CreateVolumeDefinition(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
     {
-        super(controllerRef.getErrorReporter());
-        controller = controllerRef;
+        apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
     }
 
     @Override
-    public String getName()
-    {
-        return ApiConsts.API_CRT_VLM_DFN;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return "Creates a volume definition";
-    }
-
-    @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer client
-    )
+    public void execute(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtVlmDfn msgCrtVlmDfn = MsgCrtVlmDfn.parseDelimitedFrom(msgDataIn);
@@ -58,13 +44,11 @@ public class CreateVolumeDefinition extends BaseProtoApiCall
         {
             vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
         }
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createVlmDfns(
-            accCtx,
-            client,
+        ApiCallRc apiCallRc = apiCallHandler.createVlmDfns(
             msgCrtVlmDfn.getRscName(),
             vlmDfnApiList
         );
-        answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 
 }

@@ -10,5 +10,17 @@ import java.lang.annotation.Target;
 @Target(TYPE)
 public @interface ProtobufApiCall
 {
+    /**
+     * Returns the name of the API call
+     *
+     * @return Name of the API call
+     */
+    String name();
 
+    /**
+     * Returns the description of the API call's function
+     *
+     * @return Description of the API call's function
+     */
+    String description();
 }
