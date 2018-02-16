@@ -5,9 +5,8 @@ import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ControllerLinbitModule;
-import com.linbit.LinbitModule;
-import com.linbit.SatelliteLinbitModule;
+import com.linbit.ControllerLinstorModule;
+import com.linbit.SatelliteLinstorModule;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
@@ -93,8 +92,7 @@ public final class Initializer
         AccessContext initCtx = SYSTEM_CTX.clone();
         initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-        Injector injector = Guice.createInjector(
-            new GuiceConfigModule(),
+        Injector injector = Guice.createInjector(new GuiceConfigModule(),
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
             new ControllerSecurityModule(),
@@ -102,8 +100,7 @@ public final class Initializer
             new ConfigModule(),
             new CoreTimerModule(),
             new MetaDataModule(),
-            new LinbitModule(),
-            new ControllerLinbitModule(),
+            new ControllerLinstorModule(),
             new LinStorModule(),
             new CoreModule(),
             new ControllerCoreModule(),
@@ -124,15 +121,13 @@ public final class Initializer
         AccessContext initCtx = SYSTEM_CTX.clone();
         initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-        Injector injector = Guice.createInjector(
-            new GuiceConfigModule(),
+        Injector injector = Guice.createInjector(new GuiceConfigModule(),
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
             new SatelliteSecurityModule(),
             new LinStorArgumentsModule(cArgs),
             new CoreTimerModule(),
-            new LinbitModule(),
-            new SatelliteLinbitModule(),
+            new SatelliteLinstorModule(),
             new CoreModule(),
             new SatelliteCoreModule(),
             new DrbdStateModule(),

@@ -5,7 +5,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteLinbitModule;
+import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
@@ -223,13 +223,11 @@ public final class Satellite extends LinStor implements CoreServices
             controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
 
             // Initialize the worker thread pool
-            workerThrPool = injector.getInstance(
-                Key.get(WorkerPool.class, Names.named(SatelliteLinbitModule.MAIN_WORKER_POOL_NAME))
+            workerThrPool = injector.getInstance(Key.get(WorkerPool.class, Names.named(SatelliteLinstorModule.MAIN_WORKER_POOL_NAME))
             );
 
             // Initialize the thread pool for satellite services operations
-            stltThrPool = injector.getInstance(
-                Key.get(WorkerPool.class, Names.named(SatelliteLinbitModule.STLT_WORKER_POOL_NAME))
+            stltThrPool = injector.getInstance(Key.get(WorkerPool.class, Names.named(SatelliteLinstorModule.STLT_WORKER_POOL_NAME))
             );
 
             apiCallHandler = injector.getInstance(StltApiCallHandler.class);

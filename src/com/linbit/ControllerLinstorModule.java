@@ -7,7 +7,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
 
-public class ControllerLinbitModule extends AbstractModule
+public class ControllerLinstorModule extends AbstractModule
 {
     @Override
     protected void configure()

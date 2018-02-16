@@ -9,7 +9,7 @@ import javax.inject.Named;
 
 import javax.inject.Singleton;
 
-public class SatelliteLinbitModule extends AbstractModule
+public class SatelliteLinstorModule extends AbstractModule
 {
     public static final String MAIN_WORKER_POOL_NAME = "MainWorkerPool";
     public static final String STLT_WORKER_POOL_NAME = "StltWorkerPool";
