@@ -24,8 +24,7 @@ public class CmdDisplayThreads extends BaseDebugCmd
             "Display threads",
             "Displays a table with information about the module's threads",
             null,
-            null,
-            false
+            null
         );
     }
 

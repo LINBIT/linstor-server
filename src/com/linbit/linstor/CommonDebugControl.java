@@ -28,7 +28,6 @@ public interface CommonDebugControl
     Map<ServiceName, SystemService> getSystemServiceMap();
     Peer getPeer(String peerId);
     Map<String, Peer> getAllPeers();
-    Set<String> getApiCallNames();
     Map<String, ApiCall> getApiCallObjects();
     Map<NodeName, Node> getNodesMap();
     ObjectProtection getNodesMapProt();

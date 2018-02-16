@@ -37,8 +37,7 @@ public class CmdDisplayReport extends BaseDebugCmd
             "Display report",
             "Displays an error report file",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

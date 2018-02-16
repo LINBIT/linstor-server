@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -99,12 +98,6 @@ class CtrlDebugControlImpl implements CtrlDebugControl
             peerMapCpy.putAll(peerMap);
         }
         return peerMapCpy;
-    }
-
-    @Override
-    public Set<String> getApiCallNames()
-    {
-        return msgProc.getApiCallNames();
     }
 
     @Override

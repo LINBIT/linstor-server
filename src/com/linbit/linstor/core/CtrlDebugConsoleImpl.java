@@ -20,13 +20,7 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
     public static final String CONSOLE_PROMPT = "Command ==> ";
 
     private boolean loadedCmds  = false;
-    @SuppressWarnings("unused")
-    private boolean exitFlag    = false;
 
-    public static final String[] GNRC_COMMAND_CLASS_LIST =
-    {
-    };
-    public static final String GNRC_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
     public static final String[] CTRL_COMMAND_CLASS_LIST =
     {
         "CmdDisplayThreads",
@@ -81,11 +75,6 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         debugCtl = new CtrlDebugControlImpl(controller, systemSerivesMap, peerMap, msgProc);
     }
 
-    public void stdStreamsConsole()
-    {
-        stdStreamsConsole(CONSOLE_PROMPT);
-    }
-
     public void loadDefaultCommands(
         PrintStream debugOut,
         PrintStream debugErr
@@ -116,7 +105,7 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
             try
             {
                 CommonDebugCmd cmnDebugCmd = (CommonDebugCmd) cmdClass.newInstance();
-                cmnDebugCmd.commonInitialize(controller, controller, debugCtl, this);
+                cmnDebugCmd.commonInitialize(controller, debugCtl, this);
                 if (cmnDebugCmd instanceof ControllerDebugCmd)
                 {
                     ControllerDebugCmd debugCmd = (ControllerDebugCmd) cmnDebugCmd;
@@ -140,13 +129,4 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         }
     }
 
-    @Override
-    public void unloadCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdClassName
-    )
-    {
-        // TODO: Implement
-    }
 }

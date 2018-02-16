@@ -29,10 +29,9 @@ public interface CommonDebugCmd
     boolean acceptsUndeclaredParameters();
 
     void commonInitialize(
-        LinStor          dmRef,
-        CoreServices        coreSvcsRef,
-        CommonDebugControl  debugCtlRef,
-        DebugConsole        debugConRef
+        CoreServices coreSvcsRef,
+        CommonDebugControl debugCtlRef,
+        DebugConsole debugConRef
     );
 
     void execute(

@@ -90,8 +90,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
             "Display connections",
             "Displays a table with information about connected clients",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

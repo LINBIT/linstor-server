@@ -16,8 +16,7 @@ public class CmdDisplayTraceMode extends BaseDebugCmd
             "Display TRACE level logging mode",
             "Displays the current TRACE level logging mode",
             null,
-            null,
-            false
+            null
         );
     }
 

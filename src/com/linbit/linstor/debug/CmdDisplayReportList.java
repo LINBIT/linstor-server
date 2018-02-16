@@ -56,8 +56,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
             "Display report list",
             "Displays the list of saved error and problem reports",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

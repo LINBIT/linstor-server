@@ -49,8 +49,7 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
             "Display resource definition(s)",
             "Displays information about one or multiple resource definition(s)",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
 
         lister = new FilteredObjectLister<>(

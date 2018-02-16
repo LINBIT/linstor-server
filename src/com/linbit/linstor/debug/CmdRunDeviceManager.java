@@ -31,8 +31,7 @@ public class CmdRunDeviceManager extends BaseSatelliteDebugCmd
             "If the device manager service is stopped, operations will commonly run when the\n" +
             "device manager service is restarted.",
             null,
-            null,
-            false
+            null
         );
     }
 

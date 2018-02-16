@@ -24,8 +24,7 @@ public class CmdDisplayServices extends BaseDebugCmd
             "Display services",
             "Displays information about the state of currently configured service instances",
             null,
-            null,
-            false
+            null
         );
     }
 

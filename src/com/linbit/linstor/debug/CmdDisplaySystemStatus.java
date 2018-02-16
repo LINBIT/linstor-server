@@ -22,8 +22,7 @@ public class CmdDisplaySystemStatus extends BaseDebugCmd
             "Display system status",
             "Displays information about system resource utilization by this application",
             null,
-            null,
-            false
+            null
         );
     }
 

@@ -17,15 +17,14 @@ public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements Con
     CtrlDebugControl    debugCtl;
 
     public BaseControllerDebugCmd(
-        String[]            cmdNamesRef,
-        String              cmdInfoRef,
-        String              cmdDescrRef,
+        String[] cmdNamesRef,
+        String cmdInfoRef,
+        String cmdDescrRef,
         Map<String, String> paramDescrRef,
-        String              undeclDescrRef,
-        boolean             acceptsUndeclaredFlag
+        String undeclDescrRef
     )
     {
-        super(cmdNamesRef, cmdInfoRef, cmdDescrRef, paramDescrRef, undeclDescrRef, acceptsUndeclaredFlag);
+        super(cmdNamesRef, cmdInfoRef, cmdDescrRef, paramDescrRef, undeclDescrRef);
         controller  = null;
         debugCtl    = null;
     }
@@ -38,7 +37,7 @@ public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements Con
         DebugConsole    debugConRef
     )
     {
-        commonInitialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
+        commonInitialize(coreSvcsRef, debugCtlRef, debugConRef);
         controller  = controllerRef;
         debugCtl    = debugCtlRef;
     }

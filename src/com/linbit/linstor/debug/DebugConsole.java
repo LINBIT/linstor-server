@@ -11,8 +11,6 @@ import java.util.Map;
  */
 public interface DebugConsole
 {
-    Map<String, CommonDebugCmd> getCommandMap();
-
     void stdStreamsConsole(
         String consolePrompt
     );
@@ -38,12 +36,6 @@ public interface DebugConsole
     );
 
     void loadCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdClassName
-    );
-
-    void unloadCommand(
         PrintStream debugOut,
         PrintStream debugErr,
         String cmdClassName

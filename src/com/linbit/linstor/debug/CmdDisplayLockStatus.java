@@ -20,8 +20,7 @@ public class CmdDisplayLockStatus extends BaseDebugCmd
             "Display lock status",
             "Displays information about synchronization locks",
             null,
-            null,
-            false
+            null
         );
     }
 

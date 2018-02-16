@@ -23,8 +23,7 @@ public class CmdDisplaySecLevel extends BaseDebugCmd
             "Display security level",
             "Displays the currently active global security level",
             null,
-            null,
-            false
+            null
         );
     }
 

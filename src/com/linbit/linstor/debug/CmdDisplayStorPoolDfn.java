@@ -49,8 +49,7 @@ public class CmdDisplayStorPoolDfn extends BaseDebugCmd
             "Display storage pool definition(s)",
             "Displays information about one or multiple storage pool definition(s)",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
 
         lister = new FilteredObjectLister<>(

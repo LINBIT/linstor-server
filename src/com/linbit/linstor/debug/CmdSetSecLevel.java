@@ -55,8 +55,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
             "Set security level",
             "Sets the global security level",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

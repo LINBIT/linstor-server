@@ -63,8 +63,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             "Display object protection",
             "Displays information about the security protection of an object",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

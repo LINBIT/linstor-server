@@ -17,15 +17,14 @@ public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements Sate
     StltDebugControl debugCtl;
 
     public BaseSatelliteDebugCmd(
-        String[]            cmdNamesRef,
-        String              cmdInfoRef,
-        String              cmdDescrRef,
+        String[] cmdNamesRef,
+        String cmdInfoRef,
+        String cmdDescrRef,
         Map<String, String> paramDescrRef,
-        String              undeclDescrRef,
-        boolean             acceptsUndeclaredFlag
+        String undeclDescrRef
     )
     {
-        super(cmdNamesRef, cmdInfoRef, cmdDescrRef, paramDescrRef, undeclDescrRef, acceptsUndeclaredFlag);
+        super(cmdNamesRef, cmdInfoRef, cmdDescrRef, paramDescrRef, undeclDescrRef);
         satellite   = null;
         debugCtl    = null;
     }
@@ -38,7 +37,7 @@ public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements Sate
         DebugConsole    debugConRef
     )
     {
-        commonInitialize(satelliteRef, coreSvcsRef, debugCtlRef, debugConRef);
+        commonInitialize(coreSvcsRef, debugCtlRef, debugConRef);
         satellite   = satelliteRef;
         debugCtl    = debugCtlRef;
     }

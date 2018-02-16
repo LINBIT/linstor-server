@@ -4,7 +4,6 @@ import com.linbit.ErrorCheck;
 import com.linbit.linstor.CommonDebugControl;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.core.LinStor;
 
 import java.io.PrintStream;
 import java.util.Map;
@@ -28,24 +27,20 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
 
     final boolean acceptsUndeclared = false;
 
-    private boolean initialized;
-
     private final DebugPrintHelper debugPrintHelper;
 
     final Map<String, String> dspNameMap;
 
-    LinStor             linStor;
     CoreServices        coreSvcs;
     CommonDebugControl  cmnDebugCtl;
     DebugConsole        debugCon;
 
     public BaseDebugCmd(
-        String[]            cmdNamesRef,
-        String              cmdInfoRef,
-        String              cmdDescrRef,
+        String[] cmdNamesRef,
+        String cmdInfoRef,
+        String cmdDescrRef,
         Map<String, String> paramDescrRef,
-        String              undeclDescrRef,
-        boolean             acceptsUndeclaredFlag
+        String undeclDescrRef
     )
     {
         ErrorCheck.ctorNotNull(this.getClass(), String[].class, cmdNamesRef);
@@ -64,7 +59,6 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         cmdDescr    = cmdDescrRef;
         paramDescr  = paramDescrRef;
         undeclDescr = undeclDescrRef;
-        initialized = false;
         coreSvcs    = null;
 
         debugPrintHelper = new DebugPrintHelper();
@@ -72,17 +66,14 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
 
     @Override
     public void commonInitialize(
-        LinStor             linStorRef,
-        CoreServices        coreSvcsRef,
-        CommonDebugControl  cmnDebugCtlRef,
-        DebugConsole        debugConRef
+        CoreServices coreSvcsRef,
+        CommonDebugControl cmnDebugCtlRef,
+        DebugConsole debugConRef
     )
     {
-        linStor     = linStorRef;
         coreSvcs    = coreSvcsRef;
         cmnDebugCtl = cmnDebugCtlRef;
         debugCon    = debugConRef;
-        initialized = true;
     }
 
     @Override

@@ -51,8 +51,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
             "Display object statistics",
             "Displays statistics about registered objects",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

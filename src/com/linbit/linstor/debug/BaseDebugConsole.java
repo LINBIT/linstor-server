@@ -57,12 +57,6 @@ public abstract class BaseDebugConsole implements DebugConsole
 
 
     @Override
-    public Map<String, CommonDebugCmd> getCommandMap()
-    {
-        return commandMap;
-    }
-
-    @Override
     public void stdStreamsConsole(
         String consolePrompt
     )

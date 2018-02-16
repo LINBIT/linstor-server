@@ -25,8 +25,7 @@ public class CmdDisplayApis extends BaseDebugCmd
             "Displays a list of the API calls that are currently available for calls through\n" +
             "network communications services",
             null,
-            null,
-            false
+            null
         );
     }
 

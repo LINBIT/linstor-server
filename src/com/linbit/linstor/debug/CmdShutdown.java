@@ -23,8 +23,7 @@ public class CmdShutdown extends BaseDebugCmd
             "Shutdown",
             "Shuts down the module instance",
             null,
-            null,
-            false
+            null
         );
     }
 

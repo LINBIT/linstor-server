@@ -46,8 +46,7 @@ public class CmdDisplayContextInfo extends BaseDebugCmd
             "Display context information",
             "Displays information about the current security context",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

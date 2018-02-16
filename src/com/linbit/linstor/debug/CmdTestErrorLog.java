@@ -22,8 +22,7 @@ public class CmdTestErrorLog extends BaseControllerDebugCmd
             "Test error log",
             "Throws an exception for test purposes",
             null,
-            null,
-            false
+            null
         );
     }
 

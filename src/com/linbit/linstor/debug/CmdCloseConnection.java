@@ -36,8 +36,7 @@ public class CmdCloseConnection extends BaseDebugCmd
             "Close connection",
             "Closes a peer connection",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

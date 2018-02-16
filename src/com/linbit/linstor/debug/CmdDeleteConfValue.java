@@ -46,8 +46,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
             "Deletes a configuration value",
             "Deletes an entry from the configuration.",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

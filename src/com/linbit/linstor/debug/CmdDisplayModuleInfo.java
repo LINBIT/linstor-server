@@ -30,8 +30,7 @@ public class CmdDisplayModuleInfo extends BaseDebugCmd
             "Display module information",
             "Displays information about the program module that is being debugged",
             null,
-            null,
-            false
+            null
         );
     }
 

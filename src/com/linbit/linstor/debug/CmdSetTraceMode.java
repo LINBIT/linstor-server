@@ -36,8 +36,7 @@ public class CmdSetTraceMode extends BaseDebugCmd
             "Set TRACE level logging mode",
             "Sets the TRACE level logging mode",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

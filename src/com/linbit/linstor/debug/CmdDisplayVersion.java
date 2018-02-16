@@ -24,8 +24,7 @@ public class CmdDisplayVersion extends BaseDebugCmd
             "Display version",
             "Displays the version of the program module that is being debugged",
             null,
-            null,
-            false
+            null
         );
     }
 

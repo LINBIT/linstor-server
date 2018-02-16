@@ -50,8 +50,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
             "Display node(s)",
             "Displays information about one or multiple nodes",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
 
         lister = new FilteredObjectLister<>(

@@ -63,8 +63,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             "Display configuration value(s)",
             "Displays values associated with the selected configuration keys",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

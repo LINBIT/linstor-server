@@ -18,14 +18,9 @@ class StltDebugConsoleImpl extends BaseDebugConsole
     private final Satellite satellite;
 
     private boolean loadedCmds  = false;
-    private boolean exitFlag    = false;
 
     public static final String CONSOLE_PROMPT = "Command ==> ";
 
-    public static final String[] GNRC_COMMAND_CLASS_LIST =
-    {
-    };
-    public static final String GNRC_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
     public static final String[] STLT_COMMAND_CLASS_LIST =
     {
         "CmdDisplayThreads",
@@ -83,11 +78,6 @@ class StltDebugConsoleImpl extends BaseDebugConsole
         );
     }
 
-    public void stdStreamsConsole()
-    {
-        stdStreamsConsole(CONSOLE_PROMPT);
-    }
-
     public void loadDefaultCommands(
         PrintStream debugOut,
         PrintStream debugErr
@@ -118,7 +108,7 @@ class StltDebugConsoleImpl extends BaseDebugConsole
             try
             {
                 CommonDebugCmd cmnDebugCmd = (CommonDebugCmd) cmdClass.newInstance();
-                cmnDebugCmd.commonInitialize(satellite, satellite, debugCtl, this);
+                cmnDebugCmd.commonInitialize(satellite, debugCtl, this);
                 if (cmnDebugCmd instanceof SatelliteDebugCmd)
                 {
                     SatelliteDebugCmd debugCmd = (SatelliteDebugCmd) cmnDebugCmd;
@@ -142,13 +132,4 @@ class StltDebugConsoleImpl extends BaseDebugConsole
         }
     }
 
-    @Override
-    public void unloadCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdClassName
-    )
-    {
-        // TODO: Implement
-    }
 }

@@ -38,8 +38,7 @@ public class CmdStartService extends BaseDebugCmd
             "Start service",
             "Starts execution of a service instance",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

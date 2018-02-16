@@ -52,8 +52,7 @@ public class CmdSetConfValue extends BaseDebugCmd
             "Set configuration value",
             "Sets the value of a configuration entry.\nIf the entry does not exist, it is created.",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 

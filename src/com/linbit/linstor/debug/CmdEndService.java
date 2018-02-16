@@ -38,8 +38,7 @@ public class CmdEndService extends BaseDebugCmd
             "End service",
             "Ends execution of a service instance",
             PARAMETER_DESCRIPTIONS,
-            null,
-            false
+            null
         );
     }
 
