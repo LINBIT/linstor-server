@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.Checks;
 import com.linbit.GenericName;
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 
 /**
@@ -16,6 +17,22 @@ public class NetInterfaceName extends GenericName
 
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
+
+    public static final NetInterfaceName DEFAULT_NET_INTERFACE_NAME;
+    static
+    {
+        try
+        {
+            DEFAULT_NET_INTERFACE_NAME = new NetInterfaceName("default");
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                "Invalid generation of DEFAULT_NET_INTERFACE_NAME in " + NetInterfaceName.class.getSimpleName(),
+                nameExc
+            );
+        }
+    }
 
     public NetInterfaceName(String niName) throws InvalidNameException
     {

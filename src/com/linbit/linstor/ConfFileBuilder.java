@@ -86,8 +86,9 @@ public class ConfFileBuilder
             // Create local network configuration
             {
                 NetInterface localNetIf = getPreferredNetIf(localRsc);
+                LsIpAddress localAddr = localNetIf.getAddress(accCtx);
 
-                String localAddr = localNetIf.getAddress(accCtx).getAddress();
+                String localAddrText = localAddr.getAddress();
                 appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
                 try (Section onSection = new Section())
                 {
@@ -96,7 +97,14 @@ public class ConfFileBuilder
                     {
                         appendVlmIfPresent(vlmIterator.next(), accCtx);
                     }
-                    appendLine("address    %s:%d;", localAddr, port);
+                    if (localAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
+                    {
+                        appendLine("address    ipv6 [%s]:%d;", localAddrText, port);
+                    }
+                    else
+                    {
+                        appendLine("address    ipv4 %s:%d;", localAddrText, port);
+                    }
                     appendLine("node-id    %d;", localRsc.getNodeId().value);
                 }
             }
@@ -106,7 +114,9 @@ public class ConfFileBuilder
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
                 {
                     NetInterface peerNetIf = getPreferredNetIf(peerRsc);
-                    String peerAddr = peerNetIf.getAddress(accCtx).getAddress();
+                    LsIpAddress peerAddr = peerNetIf.getAddress(accCtx);
+
+                    String peerAddrText = peerAddr.getAddress();
                     appendLine("");
                     appendLine("on %s", peerRsc.getAssignedNode().getName().displayValue);
                     try (Section onSection = new Section())
@@ -117,7 +127,14 @@ public class ConfFileBuilder
                             appendVlmIfPresent(peerVlms.next(), accCtx);
                         }
 
-                        appendLine("address     %s:%d;", peerAddr, port);
+                        if (peerAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
+                        {
+                            appendLine("address     ipv6 [%s]:%d;", peerAddrText, port);
+                        }
+                        else
+                        {
+                            appendLine("address     ipv4 %s:%d;", peerAddrText, port);
+                        }
                         appendLine("node-id     %s;", peerRsc.getNodeId().value);
 
                         // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
@@ -228,9 +245,18 @@ public class ConfFileBuilder
             // fallback if preferred couldn't be found
             if (preferredNetIf == null)
             {
-                Iterator<NetInterface> netIfIter = rsc.getAssignedNode().iterateNetInterfaces(accCtx);
-                if (netIfIter.hasNext()) {
-                    preferredNetIf = netIfIter.next();
+                Node assgNode = rsc.getAssignedNode();
+                // Try to find the 'default' network interface
+                preferredNetIf = assgNode.getNetInterface(accCtx, NetInterfaceName.DEFAULT_NET_INTERFACE_NAME);
+                // If there is not even a 'default', use the first one that is found in the node's
+                // list of network interfaces
+                if (preferredNetIf == null)
+                {
+                    Iterator<NetInterface> netIfIter = assgNode.iterateNetInterfaces(accCtx);
+                    if (netIfIter.hasNext())
+                    {
+                        preferredNetIf = netIfIter.next();
+                    }
                 }
             }
         }
