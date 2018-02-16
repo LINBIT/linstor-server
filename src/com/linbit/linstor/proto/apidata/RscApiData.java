@@ -2,7 +2,7 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.RscOuterClass;
 import java.util.HashMap;
@@ -101,7 +101,7 @@ public class RscApiData implements Resource.RscApi
         rscBld.setNodeUuid(apiResource.getNodeUuid().toString());
         rscBld.setRscDfnUuid(apiResource.getRscDfnUuid().toString());
         rscBld.addAllRscFlags(Resource.RscFlags.toStringList(apiResource.getFlags()));
-        rscBld.addAllProps(BaseProtoApiCall.fromMap(apiResource.getProps()));
+        rscBld.addAllProps(ProtoMapUtils.fromMap(apiResource.getProps()));
         rscBld.addAllVlms(VlmApiData.toVlmProtoList(apiResource.getVlmList()));
 
         return rscBld.build();

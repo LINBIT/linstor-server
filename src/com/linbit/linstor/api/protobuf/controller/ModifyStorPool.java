@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -58,7 +59,7 @@ public class ModifyStorPool extends BaseProtoApiCall
         }
         String nodeName = msgModStorPool.getNodeName();
         String storPoolName = msgModStorPool.getStorPoolName();
-        Map<String, String> overrideProps = asMap(msgModStorPool.getOverridePropsList());
+        Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModStorPool.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModStorPool.getDeletePropKeysList());
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyStorPool(

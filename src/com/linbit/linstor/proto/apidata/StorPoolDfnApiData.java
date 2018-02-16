@@ -1,7 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.StorPoolDfnOuterClass;
 import java.util.HashMap;
@@ -56,7 +56,7 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi
         StorPoolDfnOuterClass.StorPoolDfn.Builder storPoolDfnBld = StorPoolDfnOuterClass.StorPoolDfn.newBuilder();
         storPoolDfnBld.setStorPoolName(apiStorPoolDfn.getName());
         storPoolDfnBld.setUuid(apiStorPoolDfn.getUuid().toString());
-        storPoolDfnBld.addAllProps(BaseProtoApiCall.fromMap(apiStorPoolDfn.getProps()));
+        storPoolDfnBld.addAllProps(ProtoMapUtils.fromMap(apiStorPoolDfn.getProps()));
 
         return storPoolDfnBld.build();
     }

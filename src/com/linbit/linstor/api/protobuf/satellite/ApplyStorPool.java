@@ -6,6 +6,7 @@ import java.io.InputStream;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
@@ -61,8 +62,8 @@ public class ApplyStorPool extends BaseProtoApiCall
             storPoolData.getStorPoolName(),
             UUID.fromString(storPoolData.getStorPoolDfnUuid()),
             storPoolData.getDriver(),
-            asMap(storPoolData.getStorPoolPropsList()),
-            asMap(storPoolData.getStorPoolDfnPropsList()),
+            ProtoMapUtils.asMap(storPoolData.getStorPoolPropsList()),
+            ProtoMapUtils.asMap(storPoolData.getStorPoolDfnPropsList()),
             null,
             Collections.<String, String>emptyMap(),
             storPoolData.getFullSyncId(),

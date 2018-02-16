@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -64,7 +65,7 @@ public class CreateNode extends BaseProtoApiCall
             protoNode.getType(),
             extractNetIfs(protoNode.getNetInterfacesList()),
             extractSatelliteConnections(protoNode.getNetInterfacesList()),
-            asMap(protoNode.getPropsList())
+            ProtoMapUtils.asMap(protoNode.getPropsList())
         );
         answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

@@ -25,7 +25,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.AbsCtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.MsgDelRscOuterClass;
@@ -376,7 +376,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 
     private List<LinStorMapEntry> asLinStorList(Props props)
     {
-        return BaseProtoApiCall.fromMap(props.map());
+        return ProtoMapUtils.fromMap(props.map());
     }
 
     private class NodeSerializerHelper
@@ -401,7 +401,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                     getNodeConns(node, relatedNodes)
                 )
                 .addAllNodeProps(
-                    BaseProtoApiCall.fromMap(node.getProps(serializerCtx).map())
+                    ProtoMapUtils.fromMap(node.getProps(serializerCtx).map())
                 )
                 .setNodeDisklessStorPoolUuid(
                     node.getDisklessStorPool(serializerCtx).getUuid().toString()
@@ -457,7 +457,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                            .setOtherNodeFlags(otherNode.getFlags().getFlagsBits(serializerCtx))
                            .setNodeConnUuid(nodeConnection.getUuid().toString())
                            .addAllNodeConnProps(
-                               BaseProtoApiCall.fromMap(
+                               ProtoMapUtils.fromMap(
                                    nodeConnection.getProps(serializerCtx).map()
                                )
                            )
@@ -496,11 +496,11 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                 .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
                 .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
                 .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
-                .addAllRscDfnProps(BaseProtoApiCall.fromMap(rscDfnProps))
+                .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfnProps))
                 .setLocalRscUuid(localResource.getUuid().toString())
                 .setLocalRscFlags(localResource.getStateFlags().getFlagsBits(serializerCtx))
                 .setLocalRscNodeId(localResource.getNodeId().value)
-                .addAllLocalRscProps(BaseProtoApiCall.fromMap(rscProps))
+                .addAllLocalRscProps(ProtoMapUtils.fromMap(rscProps))
                 .addAllVlmDfns(
                     buildVlmDfnMessages(localResource)
                 )
@@ -541,7 +541,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                                 vlmDfn.getFlags().getFlagsBits(serializerCtx)
                             )
                         )
-                        .addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnProps))
+                        .addAllVlmProps(ProtoMapUtils.fromMap(vlmDfnProps))
                         .build()
                 );
             }
@@ -571,14 +571,14 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                     .setStorPoolDriverName(vlmStorPool.getDriverName())
                     .setStorPoolDfnUuid(vlmStorPool.getDefinition(serializerCtx).getUuid().toString())
                     .addAllStorPoolDfnProps(
-                        BaseProtoApiCall.fromMap(
+                        ProtoMapUtils.fromMap(
                             vlmStorPool.getDefinition(serializerCtx).getProps(serializerCtx).map())
                         )
                     .addAllStorPoolProps(
-                        BaseProtoApiCall.fromMap(
+                        ProtoMapUtils.fromMap(
                             vlmStorPool.getProps(serializerCtx).map())
                         )
-                    .addAllVlmProps(BaseProtoApiCall.fromMap(volProps));
+                    .addAllVlmProps(ProtoMapUtils.fromMap(volProps));
                 String blockDev = vol.getBlockDevicePath(serializerCtx);
                 if (blockDev != null)
                 {
@@ -610,7 +610,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                         .setRscUuid(rsc.getUuid().toString())
                         .setRscNodeId(rsc.getNodeId().value)
                         .setRscFlags(rsc.getStateFlags().getFlagsBits(serializerCtx))
-                        .addAllRscProps(BaseProtoApiCall.fromMap(rscProps))
+                        .addAllRscProps(ProtoMapUtils.fromMap(rscProps))
                         .addAllLocalVlms(
                             buildVlmMessages(rsc)
                         )
@@ -629,7 +629,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                 .setName(node.getName().displayValue)
                 .setType(node.getNodeType(serializerCtx).name())
                 .setDisklessStorPoolUuid(node.getDisklessStorPool(serializerCtx).getUuid().toString())
-                .addAllProps(BaseProtoApiCall.fromMap(nodeProps))
+                .addAllProps(ProtoMapUtils.fromMap(nodeProps))
                 .addAllNetInterfaces(buildNodeNetInterfaces(node))
                 .build();
         }

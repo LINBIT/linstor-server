@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -60,7 +61,7 @@ public class ModifyVolumeConn extends BaseProtoApiCall
         String nodeName2 = msgModVlmConn.getNode2Name();
         String rscName = msgModVlmConn.getRscName();
         int vlmNr = msgModVlmConn.getVlmNr();
-        Map<String, String> overrideProps = asMap(msgModVlmConn.getOverridePropsList());
+        Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModVlmConn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModVlmConn.getDeletePropKeysList());
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyVlmConn(

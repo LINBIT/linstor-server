@@ -6,6 +6,7 @@ import java.io.InputStream;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -57,7 +58,7 @@ public class CreateVolumeConnection extends BaseProtoApiCall
             vlmConn.getNodeName2(),
             vlmConn.getResourceName(),
             vlmConn.getVolumeNr(),
-            asMap(vlmConn.getVolumeConnPropsList())
+            ProtoMapUtils.asMap(vlmConn.getVolumeConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

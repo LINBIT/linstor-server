@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import java.util.ArrayList;
@@ -163,7 +163,7 @@ public class VlmApiData implements VlmApi
             builder.setMetaDisk(vlmApi.getMetaDisk());
         }
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
-        builder.addAllVlmProps(BaseProtoApiCall.fromMap(vlmApi.getVlmProps()));
+        builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
 
         return builder.build();
     }

@@ -17,6 +17,7 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
@@ -77,7 +78,7 @@ public class ApplyRsc extends BaseProtoApiCall
             rscData.getRscDfnSecret(),
             rscData.getRscDfnFlags(),
             rscData.getRscDfnTransportType(),
-            asMap(rscData.getRscDfnPropsList()),
+            ProtoMapUtils.asMap(rscData.getRscDfnPropsList()),
             vlmDfns);
         RscPojo rscRawData = new RscPojo(
             rscData.getRscName(),
@@ -87,7 +88,7 @@ public class ApplyRsc extends BaseProtoApiCall
             UUID.fromString(rscData.getLocalRscUuid()),
             rscData.getLocalRscFlags(),
             rscData.getLocalRscNodeId(),
-            asMap(rscData.getLocalRscPropsList()),
+            ProtoMapUtils.asMap(rscData.getLocalRscPropsList()),
             localVlms,
             otherRscList,
             rscData.getFullSyncId(),
@@ -108,7 +109,7 @@ public class ApplyRsc extends BaseProtoApiCall
                     vlmDfn.getVlmMinor(),
                     vlmDfn.getVlmSize(),
                     FlagsHelper.fromStringList(VlmDfnFlags.class, vlmDfn.getVlmFlagsList()),
-                    asMap(vlmDfn.getVlmPropsList())
+                    ProtoMapUtils.asMap(vlmDfn.getVlmPropsList())
                 )
             );
         }
@@ -131,11 +132,11 @@ public class ApplyRsc extends BaseProtoApiCall
                     vol.getVlmNr(),
                     vol.getVlmMinorNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
-                    asMap(vol.getVlmPropsList()),
+                    ProtoMapUtils.asMap(vol.getVlmPropsList()),
                     vol.getStorPoolDriverName(),
                     UUID.fromString(vol.getStorPoolDfnUuid()),
-                    asMap(vol.getStorPoolDfnPropsList()),
-                    asMap(vol.getStorPoolPropsList())
+                    ProtoMapUtils.asMap(vol.getStorPoolDfnPropsList()),
+                    ProtoMapUtils.asMap(vol.getStorPoolPropsList())
                 )
             );
         }
@@ -155,12 +156,12 @@ public class ApplyRsc extends BaseProtoApiCall
                     protoNode.getType(),
                     otherRsc.getNodeFlags(),
                     UUID.fromString(protoNode.getDisklessStorPoolUuid()),
-                    asMap(protoNode.getPropsList()),
+                    ProtoMapUtils.asMap(protoNode.getPropsList()),
                     extractNetIfs(protoNode),
                     UUID.fromString(otherRsc.getRscUuid()),
                     otherRsc.getRscNodeId(),
                     otherRsc.getRscFlags(),
-                    asMap(otherRsc.getRscPropsList()),
+                    ProtoMapUtils.asMap(otherRsc.getRscPropsList()),
                     extractRawVolumes(
                         otherRsc.getLocalVlmsList()
                     )

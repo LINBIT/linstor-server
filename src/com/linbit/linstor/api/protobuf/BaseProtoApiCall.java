@@ -3,26 +3,17 @@ package com.linbit.linstor.api.protobuf;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse.Builder;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 public abstract class BaseProtoApiCall extends BaseApiCall
 {
@@ -39,46 +30,6 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         headerBld.setApiCall(apiCallName);
         MsgHeader header = headerBld.build();
         header.writeDelimitedTo(out);
-    }
-
-    protected void writeProtoMsgContent(OutputStream out, GeneratedMessageV3 protobufsMsg)
-        throws IOException
-    {
-        protobufsMsg.writeDelimitedTo(out);
-    }
-
-    public static Map<String, String> asMap(List<LinStorMapEntry> list)
-    {
-        Map<String, String> map = new TreeMap<>();
-        for (LinStorMapEntry entry : list)
-        {
-            map.put(entry.getKey(), entry.getValue());
-        }
-        return map;
-    }
-
-    public static List<LinStorMapEntry> fromMap(Map<String, String> map)
-    {
-        List<LinStorMapEntry> entries = new ArrayList<>(map.size());
-        for (Map.Entry<String, String> entry : map.entrySet())
-        {
-            entries.add(LinStorMapEntry.newBuilder()
-                .setKey(entry.getKey())
-                .setValue(entry.getValue())
-                .build()
-            );
-        }
-        return entries;
-    }
-
-    public static UUID asUuid(ByteString uuid)
-    {
-        return UuidUtils.asUuid(uuid.toByteArray());
-    }
-
-    public static ByteString fromUuid(UUID uuid)
-    {
-        return ByteString.copyFrom(UuidUtils.asByteArray(uuid));
     }
 
     @Override
@@ -110,8 +61,8 @@ public abstract class BaseProtoApiCall extends BaseApiCall
             {
                 msgApiCallResponseBuilder.setMessageFormat(apiCallEntry.getMessageFormat());
             }
-            msgApiCallResponseBuilder.addAllObjRefs(fromMap(apiCallEntry.getObjRefs()));
-            msgApiCallResponseBuilder.addAllVariables(fromMap(apiCallEntry.getVariables()));
+            msgApiCallResponseBuilder.addAllObjRefs(ProtoMapUtils.fromMap(apiCallEntry.getObjRefs()));
+            msgApiCallResponseBuilder.addAllVariables(ProtoMapUtils.fromMap(apiCallEntry.getVariables()));
 
             MsgApiCallResponse protoMsg = msgApiCallResponseBuilder.build();
 

@@ -20,8 +20,8 @@ import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.AbsCtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
@@ -172,7 +172,7 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
     {
         MsgLstCtrlCfgProps.newBuilder()
             .addAllProps(
-                BaseProtoApiCall.fromMap(map)
+                ProtoMapUtils.fromMap(map)
             )
             .build()
             .writeDelimitedTo(baos);

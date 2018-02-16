@@ -2,7 +2,7 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.RscDfnOuterClass;
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
         rscDfnBuilder.setRscDfnSecret(apiRscDfn.getSecret());
         rscDfnBuilder.setRscDfnUuid(apiRscDfn.getUuid().toString());
         rscDfnBuilder.addAllVlmDfns(VlmDfnApiData.fromApiList(apiRscDfn.getVlmDfnList()));
-        rscDfnBuilder.addAllRscDfnProps(BaseProtoApiCall.fromMap(apiRscDfn.getProps()));
+        rscDfnBuilder.addAllRscDfnProps(ProtoMapUtils.fromMap(apiRscDfn.getProps()));
 
         return rscDfnBuilder.build();
     }

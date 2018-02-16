@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -58,7 +59,7 @@ public class ModifyVolumeDefinition extends BaseProtoApiCall
         }
         String rscName = msgModVlmDfn.getRscName();
         int vlmNr = msgModVlmDfn.getVlmNr();
-        Map<String, String> overrideProps = asMap(msgModVlmDfn.getOverridePropsList());
+        Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModVlmDfn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModVlmDfn.getDeletePropKeysList());
 
         Long size = msgModVlmDfn.hasVlmSize() ? msgModVlmDfn.getVlmSize() : null;

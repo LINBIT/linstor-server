@@ -6,6 +6,7 @@ import java.io.InputStream;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -56,7 +57,7 @@ public class CreateStorPool extends BaseProtoApiCall
             storPool.getNodeName(),
             storPool.getStorPoolName(),
             storPool.getDriver(),
-            asMap(storPool.getPropsList())
+            ProtoMapUtils.asMap(storPool.getPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

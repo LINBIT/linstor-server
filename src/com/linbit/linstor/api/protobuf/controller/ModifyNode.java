@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -62,7 +63,7 @@ public class ModifyNode extends BaseProtoApiCall
         {
             nodeType = msgModNode.getNodeType();
         }
-        Map<String, String> overrideProps = asMap(msgModNode.getOverridePropsList());
+        Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModNode.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModNode.getDeletePropKeysList());
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyNode(

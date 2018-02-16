@@ -9,6 +9,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -68,7 +69,7 @@ public class CreateResourceDefinition extends BaseProtoApiCall
             rscDfn.hasRscDfnPort() ? rscDfn.getRscDfnPort() : null,
             rscDfn.getRscDfnSecret(),
             rscDfn.getRscDfnTransportType(),
-            asMap(rscDfn.getRscDfnPropsList()),
+            ProtoMapUtils.asMap(rscDfn.getRscDfnPropsList()),
             vlmDfnApiList
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);

@@ -9,6 +9,7 @@ import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -67,7 +68,7 @@ public class CreateResource extends BaseProtoApiCall
             rsc.getNodeName(),
             rsc.getName(),
             rsc.getRscFlagsList(),
-            asMap(rsc.getPropsList()),
+            ProtoMapUtils.asMap(rsc.getPropsList()),
             vlmApiDataList
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);

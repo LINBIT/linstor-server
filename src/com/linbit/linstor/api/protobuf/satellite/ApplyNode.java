@@ -11,6 +11,7 @@ import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
@@ -62,7 +63,7 @@ public class ApplyNode extends BaseProtoApiCall
             nodeData.getNodeFlags(),
             extractNetIfs(nodeData.getNodeNetIfsList()),
             extractNodeConns(nodeData.getNodeConnsList()),
-            BaseProtoApiCall.asMap(nodeData.getNodePropsList()),
+            ProtoMapUtils.asMap(nodeData.getNodePropsList()),
             true, // we just assume that we are connected to the other satellite / controller
             UUID.fromString(nodeData.getNodeDisklessStorPoolUuid()),
             nodeData.getFullSyncId(),
@@ -98,7 +99,7 @@ public class ApplyNode extends BaseProtoApiCall
                     nodeConn.getOtherNodeName(),
                     nodeConn.getOtherNodeType(),
                     nodeConn.getOtherNodeFlags(),
-                    BaseProtoApiCall.asMap(nodeConn.getNodeConnPropsList()),
+                    ProtoMapUtils.asMap(nodeConn.getNodeConnPropsList()),
                     UUID.fromString(nodeConn.getOtherNodeDisklessStorPoolUuid())
                 )
             );

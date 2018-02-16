@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.List;
 
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import java.util.ArrayList;
@@ -86,7 +86,7 @@ public class VlmDfnApiData implements VlmDfnApi
         }
         bld.setVlmSize(vlmDfnApi.getSize());
         bld.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmDfnApi.getFlags()));
-        bld.addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnApi.getProps()));
+        bld.addAllVlmProps(ProtoMapUtils.fromMap(vlmDfnApi.getProps()));
         return bld.build();
     }
 

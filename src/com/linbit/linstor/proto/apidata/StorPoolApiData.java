@@ -2,7 +2,7 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.StorPoolOuterClass;
 import java.util.HashMap;
@@ -94,7 +94,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     @Override
     public Map<String, String> getStorPoolStaticTraits()
     {
-        return BaseProtoApiCall.asMap(storPool.getStaticTraitsList());
+        return ProtoMapUtils.asMap(storPool.getStaticTraitsList());
     }
 
     public static StorPoolOuterClass.StorPool toStorPoolProto(final StorPool.StorPoolApi apiStorPool)
@@ -106,9 +106,9 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         storPoolBld.setNodeUuid(apiStorPool.getNodeUuid().toString());
         storPoolBld.setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString());
         storPoolBld.setDriver(apiStorPool.getDriver());
-        storPoolBld.addAllProps(BaseProtoApiCall.fromMap(apiStorPool.getStorPoolProps()));
+        storPoolBld.addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()));
         storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));
-        storPoolBld.addAllStaticTraits(BaseProtoApiCall.fromMap(apiStorPool.getStorPoolStaticTraits()));
+        storPoolBld.addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()));
 
         return storPoolBld.build();
     }

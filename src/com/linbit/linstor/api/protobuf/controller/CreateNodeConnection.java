@@ -6,6 +6,7 @@ import java.io.InputStream;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -55,7 +56,7 @@ public class CreateNodeConnection extends BaseProtoApiCall
             // ignore nodeConnUuid
             nodeConn.getNodeName1(),
             nodeConn.getNodeName2(),
-            asMap(nodeConn.getNodeConnPropsList())
+            ProtoMapUtils.asMap(nodeConn.getNodeConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

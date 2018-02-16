@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
@@ -56,7 +57,7 @@ public class ModifyResourceDefinition extends BaseProtoApiCall
         {
             port = modRscDfn.getRscDfnPort();
         }
-        Map<String, String> overrideProps = asMap(modRscDfn.getOverridePropsList());
+        Map<String, String> overrideProps = ProtoMapUtils.asMap(modRscDfn.getOverridePropsList());
         Set<String> delProps = new HashSet<>(modRscDfn.getDeletePropKeysList());
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyRscDfn(
             accCtx,
