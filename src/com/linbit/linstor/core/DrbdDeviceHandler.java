@@ -51,6 +51,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -131,6 +133,59 @@ class DrbdDeviceHandler implements DeviceHandler
         drbdMd = new MetaData();
     }
 
+    private ResourceState fillResourceState(final Resource rsc) throws AccessDeniedException
+    {
+        ResourceState rscState = new ResourceState();
+        // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
+        //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
+        //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
+        rscState.setRequiresAdjust(true);
+        rscState.setRscName(rsc.getDefinition().getName().getDisplayName());
+        {
+            Map<VolumeNumber, VolumeStateDevManager> vlmStateMap = new TreeMap<>();
+            Iterator<Volume> vlmIter = rsc.iterateVolumes();
+            while (vlmIter.hasNext())
+            {
+                Volume vlm = vlmIter.next();
+                VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+
+
+                VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr, vlmDfn.getVolumeSize(wrkCtx));
+                vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
+                    vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE));
+                vlmState.setStorVlmName(rsc.getDefinition().getName().displayValue + "_" +
+                    String.format("%05d", vlmNr.value));
+                vlmState.setMinorNr(vlmDfn.getMinorNr(wrkCtx));
+                vlmStateMap.put(vlmNr, vlmState);
+
+                rscState.setRequiresAdjust(rscState.requiresAdjust() | vlmState.isMarkedForDelete());
+            }
+            rscState.setVolumes(vlmStateMap);
+        }
+
+        return rscState;
+    }
+
+    private void updateAllResourceStatesOnController(final Peer peer, Map<String, ResourceState> mapResourceStates)
+        throws AccessDeniedException, NoInitialStateException
+    {
+        for (ResourceDefinition updRscDfn : rscDfnMap.values())
+        {
+            Iterator<Resource> itUpdRsc = updRscDfn.iterateResource(wrkCtx);
+            while (itUpdRsc.hasNext())
+            {
+                Resource updRsc = itUpdRsc.next();
+                if (!mapResourceStates.containsKey(updRsc.getDefinition().getName().getDisplayName())) {
+                    ResourceState updRscState = fillResourceState(updRsc);
+                    evaluateDrbdResource(updRsc, updRscDfn, updRscState);
+                    mapResourceStates.put(updRsc.getDefinition().getName().getDisplayName(), updRscState);
+                }
+            }
+        }
+        updateStatesOnController(peer, mapResourceStates.values());
+    }
+
     /**
      * Entry point for the DeviceManager
      *
@@ -150,39 +205,18 @@ class DrbdDeviceHandler implements DeviceHandler
         try
         {
             // Volatile state information of the resource and its volumes
-            ResourceState rscState = new ResourceState();
-            // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
-            //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
-            //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
-            rscState.setRequiresAdjust(true);
-            rscState.setRscName(rscName.getDisplayName());
-            {
-                Map<VolumeNumber, VolumeStateDevManager> vlmStateMap = new TreeMap<>();
-                Iterator<Volume> vlmIter = rsc.iterateVolumes();
-                while (vlmIter.hasNext())
-                {
-                    Volume vlm = vlmIter.next();
-                    VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-                    VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-
-
-                    VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr, vlmDfn.getVolumeSize(wrkCtx));
-                    vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
-                        vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE));
-                    vlmState.setStorVlmName(rscDfn.getName().displayValue + "_" +
-                        String.format("%05d", vlmNr.value));
-                    vlmState.setMinorNr(vlmDfn.getMinorNr(wrkCtx));
-                    vlmStateMap.put(vlmNr, vlmState);
-
-                    rscState.setRequiresAdjust(rscState.requiresAdjust() | vlmState.isMarkedForDelete());
-                }
-                rscState.setVolumes(vlmStateMap);
-            }
+            ResourceState rscState = fillResourceState(rsc);
 
             // Evaluate resource & volumes state by checking the DRBD state
             evaluateDrbdResource(rsc, rscDfn, rscState);
 
-            updateStatesOnController(localNode.getPeer(wrkCtx), rscState);
+            // TODO rework with drbdsetup events2 incremental update service
+            // Send ALL resource states to the controller
+            // This is very inefficient and still not perfect
+            // but until a prober drbdsetup events2 update tracker is in place must be good enough
+            Map<String, ResourceState> rscStates = new HashMap<>();
+            rscStates.put(rscName.getDisplayName(), rscState);
+            updateAllResourceStatesOnController(localNode.getPeer(wrkCtx), rscStates);
 
             // debug print state
             System.out.println(rscState.toString());
@@ -291,14 +325,17 @@ class DrbdDeviceHandler implements DeviceHandler
 
     private void updateStatesOnController(
         final Peer ctrlPeer,
-        ResourceState rscState
+        Collection<ResourceState> rscStates
     )
     {
-        byte[] data = interComSerializer
-            .builder(InternalApiConsts.API_UPDATE_STATES, 1)
-            .resourceState(controllerPeerConnector.getLocalNode().getName().getDisplayName(), rscState)
-            .build();
+        CtrlStltSerializer.Builder bld = interComSerializer.builder(InternalApiConsts.API_UPDATE_STATES, 1);
 
+        for (ResourceState rscState : rscStates)
+        {
+            bld.resourceState(controllerPeerConnector.getLocalNode().getName().getDisplayName(), rscState);
+        }
+
+        byte[] data = bld.build();
         if (data != null)
         {
             ctrlPeer.sendMessage(data);
