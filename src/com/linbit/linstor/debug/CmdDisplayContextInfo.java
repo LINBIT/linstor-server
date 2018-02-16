@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,6 +37,7 @@ public class CmdDisplayContextInfo extends BaseDebugCmd
         );
     }
 
+    @Inject
     public CmdDisplayContextInfo()
     {
         super(

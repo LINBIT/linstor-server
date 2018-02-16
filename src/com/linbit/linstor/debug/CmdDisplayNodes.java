@@ -5,6 +5,7 @@ import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -20,12 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class CmdDisplayNodes extends BaseDebugCmd
 {
     private static final Map<String, String> PARAMETER_DESCRIPTIONS = new TreeMap<>();
-
-    private final FilteredObjectLister<Node> lister;
 
     static
     {
@@ -40,7 +40,19 @@ public class CmdDisplayNodes extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayNodes()
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ObjectProtection nodesMapProt;
+    private final CoreModule.NodesMap nodesMap;
+
+    private final FilteredObjectLister<Node> lister;
+
+    public CmdDisplayNodes(
+        ReadWriteLock reconfigurationLockRef,
+        ReadWriteLock nodesMapLockRef,
+        ObjectProtection nodesMapProtRef,
+        CoreModule.NodesMap nodesMapRef
+    )
     {
         super(
             new String[]
@@ -52,6 +64,11 @@ public class CmdDisplayNodes extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        reconfigurationLock = reconfigurationLockRef;
+        nodesMapLock = nodesMapLockRef;
+        nodesMapProt = nodesMapProtRef;
+        nodesMap = nodesMapRef;
 
         lister = new FilteredObjectLister<>(
             "node",
@@ -78,8 +95,8 @@ public class CmdDisplayNodes extends BaseDebugCmd
         public List<Lock> getRequiredLocks()
         {
             return Arrays.asList(
-                cmnDebugCtl.getReconfigurationLock().readLock(),
-                cmnDebugCtl.getNodesMapLock().readLock()
+                reconfigurationLock.readLock(),
+                nodesMapLock.readLock()
             );
         }
 
@@ -87,7 +104,6 @@ public class CmdDisplayNodes extends BaseDebugCmd
         public void ensureSearchAccess(final AccessContext accCtx)
             throws AccessDeniedException
         {
-            ObjectProtection nodesMapProt = cmnDebugCtl.getNodesMapProt();
             if (nodesMapProt != null)
             {
                 nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
@@ -97,14 +113,14 @@ public class CmdDisplayNodes extends BaseDebugCmd
         @Override
         public Collection<Node> getAll()
         {
-            return cmnDebugCtl.getNodesMap().values();
+            return nodesMap.values();
         }
 
         @Override
         public Node getByName(final String name)
             throws InvalidNameException
         {
-            return cmnDebugCtl.getNodesMap().get(new NodeName(name));
+            return nodesMap.get(new NodeName(name));
         }
 
         @Override

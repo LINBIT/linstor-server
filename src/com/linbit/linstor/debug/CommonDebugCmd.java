@@ -4,9 +4,6 @@ import java.io.PrintStream;
 import java.util.Map;
 import java.util.Set;
 
-import com.linbit.linstor.CommonDebugControl;
-import com.linbit.linstor.CoreServices;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.AccessContext;
 
 /**
@@ -27,12 +24,6 @@ public interface CommonDebugCmd
     String getUndeclaredParametersDescription();
 
     boolean acceptsUndeclaredParameters();
-
-    void commonInitialize(
-        CoreServices coreSvcsRef,
-        CommonDebugControl debugCtlRef,
-        DebugConsole debugConRef
-    );
 
     void execute(
         PrintStream debugOut,

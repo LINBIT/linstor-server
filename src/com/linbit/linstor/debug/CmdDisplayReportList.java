@@ -1,5 +1,7 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import java.io.File;
@@ -46,7 +48,10 @@ public class CmdDisplayReportList extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayReportList()
+    private final ErrorReporter errorReporter;
+
+    @Inject
+    public CmdDisplayReportList(ErrorReporter errorReporterRef)
     {
         super(
             new String[]
@@ -58,6 +63,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -109,7 +115,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
                 if (slctInst == InstanceSelector.CURRENT)
                 {
                     reportFileList = reportDir.listFiles(
-                        new ReportFileFilter(coreSvcs.getErrorReporter().getInstanceId(), matchPattern)
+                        new ReportFileFilter(errorReporter.getInstanceId(), matchPattern)
                     );
                 }
                 else

@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import com.linbit.linstor.security.SecurityLevel;
  */
 public class CmdDisplaySecLevel extends BaseDebugCmd
 {
+    @Inject
     public CmdDisplaySecLevel()
     {
         super(

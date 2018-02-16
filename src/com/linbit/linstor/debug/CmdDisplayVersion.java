@@ -1,8 +1,10 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.VersionInfoProvider;
 import com.linbit.linstor.security.AccessContext;
 
@@ -13,6 +15,7 @@ import com.linbit.linstor.security.AccessContext;
  */
 public class CmdDisplayVersion extends BaseDebugCmd
 {
+    @Inject
     public CmdDisplayVersion()
     {
         super(
@@ -36,7 +39,7 @@ public class CmdDisplayVersion extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        VersionInfoProvider versionInfoProvider = cmnDebugCtl.getVersionInfoProvider();
+        VersionInfoProvider versionInfoProvider = LinStor.VERSION_INFO_PROVIDER;
 
         debugOut.printf(
             "VERSION:        %s (%s)\n" +

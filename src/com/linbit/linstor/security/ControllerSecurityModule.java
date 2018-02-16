@@ -29,6 +29,25 @@ public class ControllerSecurityModule extends AbstractModule
     }
 
     @Provides
+    public SecurityLevelSetter securityLevelSetter(
+        final DbConnectionPool dbConnectionPool,
+        final DbAccessor securityDbDriver
+    )
+    {
+        return new SecurityLevelSetter()
+        {
+            @Override
+            public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
+                throws AccessDeniedException, SQLException
+            {
+                SecurityLevel.set(
+                    accCtx, newLevel, dbConnectionPool, securityDbDriver
+                );
+            }
+        };
+    }
+
+    @Provides
     @Singleton
     public Authentication initializeAuthentication(
         @SystemContext AccessContext initCtx,

@@ -3,18 +3,21 @@ package com.linbit.linstor.debug;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
-import com.linbit.linstor.core.CtrlDebugControl;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class CmdDeleteConfValue extends BaseDebugCmd
 {
@@ -22,7 +25,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
 
     private static final String PRM_KEY = "KEY";
     private static final String PRM_NAMESPACE = "NAMESPACE";
-
+    
     static
     {
         PARAMETER_DESCRIPTIONS.put(
@@ -36,7 +39,18 @@ public class CmdDeleteConfValue extends BaseDebugCmd
         );
     }
 
-    public CmdDeleteConfValue()
+    private final DbConnectionPool dbConnectionPool;
+    private final ReadWriteLock confLock;
+    private final Props conf;
+    private final ObjectProtection confProt;
+
+    @Inject
+    public CmdDeleteConfValue(
+        DbConnectionPool dbConnectionPoolRef,
+        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
+        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef
+    )
     {
         super(
             new String[]
@@ -48,6 +62,11 @@ public class CmdDeleteConfValue extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        dbConnectionPool = dbConnectionPoolRef;
+        confLock = confLockRef;
+        conf = confRef;
+        confProt = confProtRef;
     }
 
     @Override
@@ -59,11 +78,8 @@ public class CmdDeleteConfValue extends BaseDebugCmd
     )
         throws Exception
     {
-        Props conf = null;
-        DbConnectionPool dbConnPool = null;
         TransactionMgr transMgr = null;
-        Lock confLock = cmnDebugCtl.getConfLock().writeLock();
-        confLock.lock();
+        confLock.writeLock().unlock();
         try
         {
             String key = parameters.get(PRM_KEY);
@@ -71,23 +87,12 @@ public class CmdDeleteConfValue extends BaseDebugCmd
 
             if (key != null)
             {
-                conf = cmnDebugCtl.getConf();
-                {
-                    ObjectProtection confProt = cmnDebugCtl.getConfProt();
-                    if (confProt != null)
-                    {
-                        confProt.requireAccess(accCtx, AccessType.CHANGE);
-                    }
-                }
+                confProt.requireAccess(accCtx, AccessType.CHANGE);
 
-                // On the controller, commit changes to the database
-                if (cmnDebugCtl instanceof CtrlDebugControl)
-                {
-                    CtrlDebugControl ctrlDebugCtl = (CtrlDebugControl) cmnDebugCtl;
-                    dbConnPool = ctrlDebugCtl.getDbConnectionPool();
-                    transMgr = new TransactionMgr(dbConnPool);
-                    conf.setConnection(transMgr);
-                }
+                // Commit changes to the database
+                transMgr = new TransactionMgr(dbConnectionPool);
+                conf.setConnection(transMgr);
+
                 String removed = conf.removeProp(key, namespace);
                 if (removed == null)
                 {
@@ -115,10 +120,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
                     }
                 }
 
-                if (transMgr != null)
-                {
-                    transMgr.commit();
-                }
+                transMgr.commit();
             }
             else
             {
@@ -151,11 +153,11 @@ public class CmdDeleteConfValue extends BaseDebugCmd
         }
         finally
         {
-            confLock.unlock();
+            confLock.writeLock().unlock();
 
-            if (dbConnPool != null && transMgr != null)
+            if (transMgr != null)
             {
-                dbConnPool.returnConnection(transMgr);
+                dbConnectionPool.returnConnection(transMgr);
             }
             if (conf != null)
             {
@@ -163,4 +165,5 @@ public class CmdDeleteConfValue extends BaseDebugCmd
             }
         }
     }
+
 }

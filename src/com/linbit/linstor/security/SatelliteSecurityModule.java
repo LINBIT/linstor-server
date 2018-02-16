@@ -18,6 +18,22 @@ public class SatelliteSecurityModule extends AbstractModule
     }
 
     @Provides
+    public SecurityLevelSetter securityLevelSetter()
+    {
+        return new SecurityLevelSetter()
+        {
+            @Override
+            public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
+                throws AccessDeniedException, SQLException
+            {
+                SecurityLevel.set(
+                    accCtx, newLevel, null, null
+                );
+            }
+        };
+    }
+
+    @Provides
     @Singleton
     @Named(SecurityModule.SHUTDOWN_PROT)
     public ObjectProtection shutdownProt(@SystemContext AccessContext sysCtx)

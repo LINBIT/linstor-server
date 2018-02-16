@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
@@ -14,6 +15,7 @@ public class CmdDisplayThreads extends BaseDebugCmd
 {
     private static final int OVERFLOW_SPACE = 20;
 
+    @Inject
     public CmdDisplayThreads()
     {
         super(

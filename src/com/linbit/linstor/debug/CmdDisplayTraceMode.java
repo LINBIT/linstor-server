@@ -1,12 +1,17 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import java.io.PrintStream;
 import java.util.Map;
 
 public class CmdDisplayTraceMode extends BaseDebugCmd
 {
-    public CmdDisplayTraceMode()
+    private final ErrorReporter errorReporter;
+
+    @Inject
+    public CmdDisplayTraceMode(ErrorReporter errorReporterRef)
     {
         super(
             new String[]
@@ -18,6 +23,8 @@ public class CmdDisplayTraceMode extends BaseDebugCmd
             null,
             null
         );
+
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -29,7 +36,7 @@ public class CmdDisplayTraceMode extends BaseDebugCmd
     )
         throws Exception
     {
-        String modeText = coreSvcs.getErrorReporter().isTraceEnabled() ? "ENABLED" : "DISABLED";
+        String modeText = errorReporter.isTraceEnabled() ? "ENABLED" : "DISABLED";
         debugOut.println("Current TRACE mode: " + modeText);
     }
 }

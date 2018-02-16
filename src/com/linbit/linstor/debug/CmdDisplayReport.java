@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,6 +10,7 @@ import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 
@@ -27,7 +29,10 @@ public class CmdDisplayReport extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayReport()
+    private final ErrorReporter errorReporter;
+
+    @Inject
+    public CmdDisplayReport(ErrorReporter errorReporterRef)
     {
         super(
             new String[]
@@ -39,6 +44,7 @@ public class CmdDisplayReport extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -69,7 +75,7 @@ public class CmdDisplayReport extends BaseDebugCmd
                     }
                     else
                     {
-                        instanceId = coreSvcs.getErrorReporter().getInstanceId();
+                        instanceId = errorReporter.getInstanceId();
                         prmErrorId = prmReportId;
                     }
                 }

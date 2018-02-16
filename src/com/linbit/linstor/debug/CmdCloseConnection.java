@@ -4,8 +4,11 @@ import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Inject;
 
 /**
  * Closes a peer connection
@@ -26,7 +29,10 @@ public class CmdCloseConnection extends BaseDebugCmd
         );
     }
 
-    public CmdCloseConnection()
+    private final CoreModule.PeerMap peerMap;
+
+    @Inject
+    public CmdCloseConnection(CoreModule.PeerMap peerMapRef)
     {
         super(
             new String[]
@@ -38,6 +44,8 @@ public class CmdCloseConnection extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        peerMap = peerMapRef;
     }
 
     @Override
@@ -51,7 +59,7 @@ public class CmdCloseConnection extends BaseDebugCmd
         String connId = parameters.get(PRM_CONN_ID);
         if (connId != null)
         {
-            Peer peerObj = cmnDebugCtl.getPeer(connId);
+            Peer peerObj = getPeer(connId);
             if (peerObj != null)
             {
                 peerObj.closeConnection();
@@ -72,5 +80,15 @@ public class CmdCloseConnection extends BaseDebugCmd
         {
             printMissingParamError(debugErr, PRM_CONN_ID);
         }
+    }
+
+    private Peer getPeer(String peerId)
+    {
+        Peer peerObj = null;
+        synchronized (peerMap)
+        {
+            peerObj = peerMap.get(peerId);
+        }
+        return peerObj;
     }
 }

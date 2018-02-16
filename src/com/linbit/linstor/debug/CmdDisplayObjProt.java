@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -9,16 +10,22 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessControlEntry;
 import com.linbit.linstor.security.AccessControlList;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.RoleName;
+
+import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class CmdDisplayObjProt extends BaseDebugCmd
 {
@@ -53,7 +60,24 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayObjProt()
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock storPoolDfnMapLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+
+    @Inject
+    public CmdDisplayObjProt(
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
         super(
             new String[]
@@ -65,6 +89,14 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        reconfigurationLock = reconfigurationLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     @Override
@@ -81,7 +113,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
 
         if (objClass != null && objPath != null)
         {
-            Lock rcfgRdLock = cmnDebugCtl.getReconfigurationLock().readLock();
+            Lock rcfgRdLock = reconfigurationLock.readLock();
             rcfgRdLock.lock();
             try
             {
@@ -152,11 +184,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         throws InvalidNameException, AccessDeniedException
     {
         NodeName nodeObjName = new NodeName(objPath);
-        Lock nodesMapRdLock = cmnDebugCtl.getNodesMapLock().readLock();
+        Lock nodesMapRdLock = nodesMapLock.readLock();
         nodesMapRdLock.lock();
         try
         {
-            Node nodeObj = cmnDebugCtl.getNodesMap().get(nodeObjName);
+            Node nodeObj = nodesMap.get(nodeObjName);
             if (nodeObj != null)
             {
                 printSectionSeparator(debugOut);
@@ -196,11 +228,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         throws InvalidNameException, AccessDeniedException
     {
         ResourceName rscName = new ResourceName(objPath);
-        Lock rscDfnMapRdLock = cmnDebugCtl.getRscDfnMapLock().readLock();
+        Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
         rscDfnMapRdLock.lock();
         try
         {
-            ResourceDefinition rscDfn = cmnDebugCtl.getRscDfnMap().get(rscName);
+            ResourceDefinition rscDfn = rscDfnMap.get(rscName);
             if (rscDfn != null)
             {
                 printSectionSeparator(debugOut);
@@ -245,13 +277,13 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         {
             NodeName nodeObjName = new NodeName(pathTokens[0]);
             ResourceName rscName = new ResourceName(pathTokens[1]);
-            Lock nodesMapRdLock = cmnDebugCtl.getNodesMapLock().readLock();
-            Lock rscDfnMapRdLock = cmnDebugCtl.getRscDfnMapLock().readLock();
+            Lock nodesMapRdLock = nodesMapLock.readLock();
+            Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
             nodesMapRdLock.lock();
             rscDfnMapRdLock.lock();
             try
             {
-                Node nodeObj = cmnDebugCtl.getNodesMap().get(nodeObjName);
+                Node nodeObj = nodesMap.get(nodeObjName);
                 if (nodeObj != null)
                 {
                     Resource rsc = nodeObj.getResource(accCtx, rscName);
@@ -330,11 +362,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         throws InvalidNameException, AccessDeniedException
     {
         StorPoolName spName = new StorPoolName(objPath);
-        Lock storPoolMapRdLock = cmnDebugCtl.getStorPoolDfnMapLock().readLock();
+        Lock storPoolMapRdLock = storPoolDfnMapLock.readLock();
         storPoolMapRdLock.lock();
         try
         {
-            StorPoolDefinition storPoolObj = cmnDebugCtl.getStorPoolDfnMap().get(spName);
+            StorPoolDefinition storPoolObj = storPoolDfnMap.get(spName);
             if (storPoolObj != null)
             {
                 printSectionSeparator(debugOut);

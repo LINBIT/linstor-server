@@ -1,8 +1,10 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
+import com.linbit.linstor.core.ApplicationLifecycleManager;
 import com.linbit.linstor.security.AccessContext;
 
 /**
@@ -12,7 +14,10 @@ import com.linbit.linstor.security.AccessContext;
  */
 public class CmdShutdown extends BaseDebugCmd
 {
-    public CmdShutdown()
+    private final ApplicationLifecycleManager applicationLifecycleManager;
+
+    @Inject
+    public CmdShutdown(ApplicationLifecycleManager applicationLifecycleManagerRef)
     {
         super(
             new String[]
@@ -25,6 +30,8 @@ public class CmdShutdown extends BaseDebugCmd
             null,
             null
         );
+
+        applicationLifecycleManager = applicationLifecycleManagerRef;
     }
 
     @Override
@@ -35,7 +42,7 @@ public class CmdShutdown extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        cmnDebugCtl.shutdown(accCtx);
+        applicationLifecycleManager.shutdown(accCtx);
         debugCon.exitConsole();
     }
 }

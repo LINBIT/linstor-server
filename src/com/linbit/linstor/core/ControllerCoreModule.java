@@ -25,6 +25,9 @@ public class ControllerCoreModule extends AbstractModule
     @Override
     protected void configure()
     {
+        bind(String.class).annotatedWith(Names.named(CoreModule.MODULE_NAME))
+            .toInstance(Controller.MODULE);
+
         bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_CONF_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }

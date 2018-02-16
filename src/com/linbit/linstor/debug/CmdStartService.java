@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
@@ -28,7 +29,10 @@ public class CmdStartService extends BaseDebugCmd
         );
     }
 
-    public CmdStartService()
+    private final Map<ServiceName, SystemService> systemServicesMap;
+
+    @Inject
+    public CmdStartService(Map<ServiceName, SystemService> systemServicesMapRef)
     {
         super(
             new String[]
@@ -40,6 +44,8 @@ public class CmdStartService extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        systemServicesMap = systemServicesMapRef;
     }
 
     @Override
@@ -50,14 +56,13 @@ public class CmdStartService extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
         String serviceNamePrm = parameters.get(PRM_SVC_NAME);
         if (serviceNamePrm != null)
         {
             try
             {
                 ServiceName svcName = new ServiceName(serviceNamePrm);
-                SystemService sysSvc = services.get(svcName);
+                SystemService sysSvc = systemServicesMap.get(svcName);
                 if (sysSvc != null)
                 {
                     sysSvc.start();

@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import com.linbit.linstor.CoreServices;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.MessageProcessor;
@@ -15,11 +15,11 @@ import com.linbit.linstor.security.AccessContext;
  */
 public class DebugMessageProcessor implements MessageProcessor
 {
-    CoreServices coreSvcs;
+    private final ErrorReporter errorReporter;
 
-    public DebugMessageProcessor(CoreServices coreSvcsRef)
+    public DebugMessageProcessor(ErrorReporter errorReporterRef)
     {
-        coreSvcs = coreSvcsRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class DebugMessageProcessor implements MessageProcessor
         }
         catch (IllegalMessageStateException msgExc)
         {
-            coreSvcs.getErrorReporter().reportError(msgExc);
+            errorReporter.reportError(msgExc);
         }
     }
 }

@@ -1,7 +1,9 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.AutoIndent;
 import com.linbit.ServiceName;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Identity;
@@ -80,7 +82,10 @@ public class CmdDisplayConnections extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayConnections()
+    private final CoreModule.PeerMap peerMap;
+
+    @Inject
+    public CmdDisplayConnections(CoreModule.PeerMap peerMapRef)
     {
         super(
             new String[]
@@ -92,6 +97,8 @@ public class CmdDisplayConnections extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        peerMap = peerMapRef;
     }
 
     @Override
@@ -156,7 +163,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                 }
             }
 
-            Map<String, Peer> peerList = cmnDebugCtl.getAllPeers();
+            Map<String, Peer> peerList = getAllPeers();
 
             Matcher connSvcMatch = createMatcher(parameters, PRM_CONNECTOR_MATCH, debugErr);
             Matcher addrMatch = createMatcher(parameters, PRM_ADDRESS_MATCH, debugErr);
@@ -377,5 +384,15 @@ public class CmdDisplayConnections extends BaseDebugCmd
                 AutoIndent.printWithIndent(output, 8, priv.name);
             }
         }
+    }
+
+    public Map<String, Peer> getAllPeers()
+    {
+        TreeMap<String, Peer> peerMapCpy = new TreeMap<>();
+        synchronized (peerMap)
+        {
+            peerMapCpy.putAll(peerMap);
+        }
+        return peerMapCpy;
     }
 }

@@ -29,17 +29,5 @@ public interface DebugConsole
         String commandLine
     );
 
-    void processCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String commandUpperCase
-    );
-
-    void loadCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdClassName
-    );
-
     void exitConsole();
 }

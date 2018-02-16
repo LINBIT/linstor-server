@@ -38,6 +38,9 @@ public class SatelliteCoreModule extends AbstractModule
     @Override
     protected void configure()
     {
+        bind(String.class).annotatedWith(Names.named(CoreModule.MODULE_NAME))
+            .toInstance(Satellite.MODULE);
+
         bind(ReadWriteLock.class).annotatedWith(Names.named(STLT_CONF_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
 

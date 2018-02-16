@@ -1,16 +1,20 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 
+import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -53,7 +57,16 @@ public class CmdDisplayConfValue extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayConfValue()
+    private final ReadWriteLock confLock;
+    private final Props conf;
+    private final ObjectProtection confProt;
+
+    @Inject
+    public CmdDisplayConfValue(
+        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
+        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef
+    )
     {
         super(
             new String[]
@@ -65,6 +78,10 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        confLock = confLockRef;
+        conf = confRef;
+        confProt = confProtRef;
     }
 
     @Override
@@ -76,7 +93,6 @@ public class CmdDisplayConfValue extends BaseDebugCmd
     )
         throws Exception
     {
-        Props conf = cmnDebugCtl.getConf();
         String prmKey = parameters.get(PRM_KEY);
         String prmFilterKey = parameters.get(PRM_FILTER_KEY);
         String prmFilterValue = parameters.get(PRM_FILTER_VALUE);
@@ -86,17 +102,10 @@ public class CmdDisplayConfValue extends BaseDebugCmd
         // or specifying nothing, but not the combination of specifying the key and any of the filters
         if (prmKey == null || (prmFilterKey == null && prmFilterValue == null))
         {
-            Lock confLock = cmnDebugCtl.getConfLock().readLock();
-            confLock.lock();
+            confLock.readLock().lock();
             try
             {
-                {
-                    ObjectProtection confProt = cmnDebugCtl.getConfProt();
-                    if (confProt != null)
-                    {
-                        confProt.requireAccess(accCtx, AccessType.VIEW);
-                    }
-                }
+                confProt.requireAccess(accCtx, AccessType.VIEW);
 
                 Props searchRoot = conf;
                 if (prmNamespace != null)
@@ -254,7 +263,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             }
             finally
             {
-                confLock.unlock();
+                confLock.readLock().unlock();
             }
         }
         else

@@ -1,16 +1,33 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Named;
 
 public class CmdDisplayLockStatus extends BaseDebugCmd
 {
     public static final String RWLOCK_FORMAT_HEADER = "%-20s %-8s %-8s %-8s %s\n";
     public static final String RWLOCK_FORMAT = "%-20s %-8s %-8s %-8s %3d\n";
-    public CmdDisplayLockStatus()
+
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final ReadWriteLock storPoolDfnMapLock;
+
+    @Inject
+    public CmdDisplayLockStatus(
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
+    )
     {
         super(
             new String[]
@@ -22,6 +39,11 @@ public class CmdDisplayLockStatus extends BaseDebugCmd
             null,
             null
         );
+
+        reconfigurationLock = reconfigurationLockRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
     }
 
     @Override
@@ -33,12 +55,6 @@ public class CmdDisplayLockStatus extends BaseDebugCmd
     )
         throws Exception
     {
-        ReentrantReadWriteLock recfgLock        = (ReentrantReadWriteLock) cmnDebugCtl.getReconfigurationLock();
-        ReentrantReadWriteLock nodesLock        = (ReentrantReadWriteLock) cmnDebugCtl.getNodesMapLock();
-        ReentrantReadWriteLock rscDfnLock       = (ReentrantReadWriteLock) cmnDebugCtl.getRscDfnMapLock();
-        ReentrantReadWriteLock storPoolDfnLock  = (ReentrantReadWriteLock) cmnDebugCtl.getStorPoolDfnMapLock();
-        ReentrantReadWriteLock confLock         = (ReentrantReadWriteLock) cmnDebugCtl.getConfLock();
-
         debugOut.println();
 
         debugOut.println("Type ReentrantReadWriteLock");
@@ -47,20 +63,21 @@ public class CmdDisplayLockStatus extends BaseDebugCmd
             "Lock", "WriteLkd", "Fair", "ThrQ", "Readers"
         );
         printSectionSeparator(debugOut);
-        reportRwLock(debugOut, "reconfigurationLock", recfgLock);
-        reportRwLock(debugOut, "nodesMapLock", nodesLock);
-        reportRwLock(debugOut, "rscDfnMapLock", rscDfnLock);
-        reportRwLock(debugOut, "storPoolDfnMapLock", storPoolDfnLock);
-        reportRwLock(debugOut, "confLock", confLock);
+        reportRwLock(debugOut, "reconfigurationLock", reconfigurationLock);
+        reportRwLock(debugOut, "nodesMapLock", nodesMapLock);
+        reportRwLock(debugOut, "rscDfnMapLock", rscDfnMapLock);
+        reportRwLock(debugOut, "storPoolDfnMapLock", storPoolDfnMapLock);
         printSectionSeparator(debugOut);
     }
 
-    private void reportRwLock(PrintStream output, String label, ReentrantReadWriteLock rwLk)
+    private void reportRwLock(PrintStream output, String label, ReadWriteLock readWriteLock)
     {
-        boolean writeLocked = rwLk.isWriteLocked();
-        boolean fair = rwLk.isFair();
-        boolean queued = rwLk.hasQueuedThreads();
-        int readerCount = rwLk.getReadLockCount();
+        ReentrantReadWriteLock reentrantReadWriteLock = (ReentrantReadWriteLock) readWriteLock;
+
+        boolean writeLocked = reentrantReadWriteLock.isWriteLocked();
+        boolean fair = reentrantReadWriteLock.isFair();
+        boolean queued = reentrantReadWriteLock.hasQueuedThreads();
+        int readerCount = reentrantReadWriteLock.getReadLockCount();
 
         output.printf(
             RWLOCK_FORMAT,

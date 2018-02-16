@@ -1,8 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.SystemService;
-import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.CommonPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
@@ -35,7 +33,6 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.linstor.timer.CoreTimerImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,6 +67,8 @@ public abstract class LinStor
 {
     private static final int MEGA_BYTE = 1048576;
 
+    public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+
     // ============================================================
     // Product and version information
     //
@@ -79,12 +78,6 @@ public abstract class LinStor
     public static final VersionInfoProvider VERSION_INFO_PROVIDER = new VersionInfoProviderImpl();
 
     public static final String DISKLESS_STOR_POOL_NAME = "DfltDisklessStorPool";
-
-    // Queue slots per worker thread
-    private int workerQueueFactor = 4;
-
-    // Default configuration
-    private int cpuCount = 8;
 
     // ============================================================
     // Core system services
@@ -112,9 +105,6 @@ public abstract class LinStor
 
     LinStor()
     {
-        // Initialize system variables
-        cpuCount = Runtime.getRuntime().availableProcessors();
-
         // Null-initialize remaining components
         errorLog = null;
     }
@@ -153,17 +143,7 @@ public abstract class LinStor
         errorLog = errorLogRef;
     }
 
-    public int getWorkerQueueFactor()
-    {
-        return workerQueueFactor;
-    }
-
-    public int getCpuCount()
-    {
-        return cpuCount;
-    }
-
-    public void printRunTimeInfo(PrintStream out)
+    public static void printRunTimeInfo(PrintStream out)
     {
         Properties sysProps = System.getProperties();
         String jvmSpecVersion = sysProps.getProperty("java.vm.specification.version");
@@ -182,7 +162,7 @@ public abstract class LinStor
         out.println();
         printField(out, "SYSTEM ARCHITECTURE:", sysArch);
         printField(out, "OPERATING SYSTEM:", osName + " " + osVersion);
-        printField(out, "AVAILABLE PROCESSORS:", Integer.toString(getCpuCount()));
+        printField(out, "AVAILABLE PROCESSORS:", Integer.toString(CPU_COUNT));
 
         long freeMem = rt.freeMemory() / MEGA_BYTE;
         long availMem = rt.maxMemory() / MEGA_BYTE;
@@ -197,7 +177,7 @@ public abstract class LinStor
         printField(out, "FREE MEMORY:", String.format("%10d MiB", freeMem));
     }
 
-    public void printField(PrintStream out, String title, String text)
+    public static void printField(PrintStream out, String title, String text)
     {
         out.printf("    %-24s %s\n", title, text);
     }
@@ -835,7 +815,4 @@ public abstract class LinStor
     {
         return disklessStorPoolDfn;
     }
-
-    public abstract void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
-        throws AccessDeniedException, SQLException;
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.linstor.security.AccessContext;
@@ -14,7 +15,10 @@ import java.util.Map;
  */
 public class CmdDisplayServices extends BaseDebugCmd
 {
-    public CmdDisplayServices()
+    private final Map<ServiceName, SystemService> systemServicesMap;
+
+    @Inject
+    public CmdDisplayServices(Map<ServiceName, SystemService> systemServicesMapRef)
     {
         super(
             new String[]
@@ -26,6 +30,8 @@ public class CmdDisplayServices extends BaseDebugCmd
             null,
             null
         );
+
+        systemServicesMap = systemServicesMapRef;
     }
 
     @Override
@@ -36,9 +42,7 @@ public class CmdDisplayServices extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
-
-        if (services.size() > 0)
+        if (systemServicesMap.size() > 0)
         {
             debugOut.printf(
                 "%-32s %-7s %s\n",
@@ -48,7 +52,7 @@ public class CmdDisplayServices extends BaseDebugCmd
             );
             printSectionSeparator(debugOut);
             int startedCtr = 0;
-            for (Map.Entry<ServiceName, SystemService> sysSvcEntry : services.entrySet())
+            for (Map.Entry<ServiceName, SystemService> sysSvcEntry : systemServicesMap.entrySet())
             {
                 ServiceName svcName = sysSvcEntry.getKey();
                 SystemService sysSvc = sysSvcEntry.getValue();
@@ -65,7 +69,7 @@ public class CmdDisplayServices extends BaseDebugCmd
                 );
             }
             printSectionSeparator(debugOut);
-            debugOut.printf("%d services, %d started\n", services.size(), startedCtr);
+            debugOut.printf("%d services, %d started\n", systemServicesMap.size(), startedCtr);
         }
         else
         {

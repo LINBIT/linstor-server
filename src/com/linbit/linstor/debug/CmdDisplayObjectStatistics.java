@@ -1,18 +1,23 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
+import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
+
+import javax.inject.Named;
 
 public class CmdDisplayObjectStatistics extends BaseDebugCmd
 {
@@ -41,7 +46,28 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayObjectStatistics()
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock confLock;
+    private final ReadWriteLock storPoolDfnMapLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final Props conf;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+
+    @Inject
+    public CmdDisplayObjectStatistics(
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
         super(
             new String[]
@@ -53,6 +79,16 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        reconfigurationLock = reconfigurationLockRef;
+        confLock = confLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        conf = confRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     @Override
@@ -64,7 +100,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
     )
         throws Exception
     {
-        Lock rcfgRdLock = cmnDebugCtl.getReconfigurationLock().readLock();
+        Lock rcfgRdLock = reconfigurationLock.readLock();
         rcfgRdLock.lock();
         try
         {
@@ -144,12 +180,11 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
 
                 if (catConfig)
                 {
-                    Lock confRdLock = cmnDebugCtl.getConfLock().readLock();
+                    Lock confRdLock = confLock.readLock();
                     int count = 0;
                     try
                     {
                         confRdLock.lock();
-                        Props conf = cmnDebugCtl.getConf();
                         count = conf.size();
                     }
                     finally
@@ -166,11 +201,11 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
                 if (catStorObj)
                 {
                     int storPoolDfnCount = 0;
-                    Lock storPoolRdLock = cmnDebugCtl.getStorPoolDfnMapLock().readLock();
+                    Lock storPoolRdLock = storPoolDfnMapLock.readLock();
                     try
                     {
                         storPoolRdLock.lock();
-                        storPoolDfnCount = cmnDebugCtl.getStorPoolDfnMap().size();
+                        storPoolDfnCount = storPoolDfnMap.size();
                     }
                     finally
                     {
@@ -179,11 +214,10 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
 
                     int nodesCount = 0;
                     long rscCount = 0;
-                    Lock nodesRdLock = cmnDebugCtl.getNodesMapLock().readLock();
+                    Lock nodesRdLock = nodesMapLock.readLock();
                     try
                     {
                         nodesRdLock.lock();
-                        Map<NodeName, Node> nodesMap = cmnDebugCtl.getNodesMap();
                         nodesCount = nodesMap.size();
                         for (Node curNode : nodesMap.values())
                         {
@@ -196,11 +230,11 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
                     }
 
                     int rscDfnCount = 0;
-                    Lock rscDfnRdLock = cmnDebugCtl.getRscDfnMapLock().readLock();
+                    Lock rscDfnRdLock = rscDfnMapLock.readLock();
                     try
                     {
                         rscDfnRdLock.lock();
-                        rscDfnCount = cmnDebugCtl.getRscDfnMap().size();
+                        rscDfnCount = rscDfnMap.size();
                     }
                     finally
                     {

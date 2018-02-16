@@ -1,17 +1,21 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.SecurityLevel;
+import com.linbit.linstor.security.SecurityLevelSetter;
+import org.slf4j.event.Level;
+
+import javax.inject.Named;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
-import org.slf4j.event.Level;
-
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.SecurityLevel;
 
 
 public class CmdSetSecLevel extends BaseDebugCmd
@@ -45,7 +49,16 @@ public class CmdSetSecLevel extends BaseDebugCmd
             );
     }
 
-    public CmdSetSecLevel()
+    private final ErrorReporter errorReporter;
+    private final ReadWriteLock reconfigurationLock;
+    private final SecurityLevelSetter securityLevelSetter;
+
+    @Inject
+    public CmdSetSecLevel(
+        ErrorReporter errorReporterRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        SecurityLevelSetter securityLevelSetterRef
+    )
     {
         super(
             new String[]
@@ -57,6 +70,10 @@ public class CmdSetSecLevel extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        errorReporter = errorReporterRef;
+        reconfigurationLock = reconfigurationLockRef;
+        securityLevelSetter = securityLevelSetterRef;
     }
 
     @Override
@@ -68,11 +85,9 @@ public class CmdSetSecLevel extends BaseDebugCmd
     )
         throws Exception
     {
-        ReadWriteLock rcfgLock = cmnDebugCtl.getReconfigurationLock();
-        LinStor dmModule = cmnDebugCtl.getInstance();
         try
         {
-            rcfgLock.writeLock().lock();
+            reconfigurationLock.writeLock().lock();
 
             String secLevelText = parameters.get(PRM_SECLVL_NAME);
             if (secLevelText != null)
@@ -83,15 +98,15 @@ public class CmdSetSecLevel extends BaseDebugCmd
                     switch (secLevelText)
                     {
                         case PRM_SECLVL_NO_SECURITY:
-                            dmModule.setSecurityLevel(accCtx, SecurityLevel.NO_SECURITY);
+                            securityLevelSetter.setSecurityLevel(accCtx, SecurityLevel.NO_SECURITY);
                             debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLVL_NO_SECURITY);
                             break;
                         case PRM_SECLVL_RBAC:
-                            dmModule.setSecurityLevel(accCtx, SecurityLevel.RBAC);
+                            securityLevelSetter.setSecurityLevel(accCtx, SecurityLevel.RBAC);
                             debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLVL_RBAC);
                             break;
                         case PRM_SECLVL_MAC:
-                            dmModule.setSecurityLevel(accCtx, SecurityLevel.MAC);
+                            securityLevelSetter.setSecurityLevel(accCtx, SecurityLevel.MAC);
                             debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLVL_MAC);
                             break;
                         default:
@@ -126,7 +141,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
                         detailsText += "\nThe error description provided by the database subsystem is:\n" +
                         sqlExc.getMessage();
                     }
-                    String reportId = coreSvcs.getErrorReporter().reportError(Level.ERROR, sqlExc);
+                    String reportId = errorReporter.reportError(Level.ERROR, sqlExc);
                     if (reportId != null)
                     {
                         detailsText += "\nAn error report was filed under report ID " + reportId + ".";
@@ -151,7 +166,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
         }
         finally
         {
-            rcfgLock.writeLock().unlock();
+            reconfigurationLock.writeLock().unlock();
         }
     }
 }

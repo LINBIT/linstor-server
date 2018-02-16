@@ -5,6 +5,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class CmdDisplayStorPool extends BaseDebugCmd
 {
@@ -40,7 +42,17 @@ public class CmdDisplayStorPool extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayStorPool()
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock storPoolDfnMapLock;
+    private final ObjectProtection storPoolDfnMapProt;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+
+    public CmdDisplayStorPool(
+        ReadWriteLock reconfigurationLockRef,
+        ReadWriteLock storPoolDfnMapLockRef,
+        ObjectProtection storPoolDfnMapProtRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+    )
     {
         super(
             new String[]
@@ -52,6 +64,11 @@ public class CmdDisplayStorPool extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        reconfigurationLock = reconfigurationLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        storPoolDfnMapProt = storPoolDfnMapProtRef;
+        storPoolDfnMap = storPoolDfnMapRef;
 
         lister = new FilteredObjectLister<>(
             "storage pool definition",
@@ -78,8 +95,8 @@ public class CmdDisplayStorPool extends BaseDebugCmd
         public List<Lock> getRequiredLocks()
         {
             return Arrays.asList(
-                cmnDebugCtl.getReconfigurationLock().readLock(),
-                cmnDebugCtl.getStorPoolDfnMapLock().readLock()
+                reconfigurationLock.readLock(),
+                storPoolDfnMapLock.readLock()
             );
         }
 
@@ -87,7 +104,6 @@ public class CmdDisplayStorPool extends BaseDebugCmd
         public void ensureSearchAccess(final AccessContext accCtx)
             throws AccessDeniedException
         {
-            ObjectProtection storPoolDfnMapProt = cmnDebugCtl.getStorPoolDfnMapProt();
             if (storPoolDfnMapProt != null)
             {
                 storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
@@ -97,14 +113,14 @@ public class CmdDisplayStorPool extends BaseDebugCmd
         @Override
         public Collection<StorPoolDefinition> getAll()
         {
-            return cmnDebugCtl.getStorPoolDfnMap().values();
+            return storPoolDfnMap.values();
         }
 
         @Override
         public StorPoolDefinition getByName(final String name)
             throws InvalidNameException
         {
-            return cmnDebugCtl.getStorPoolDfnMap().get(new StorPoolName(name));
+            return storPoolDfnMap.get(new StorPoolName(name));
         }
 
         @Override

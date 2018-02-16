@@ -1,9 +1,11 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.security.AccessContext;
+
 import java.io.PrintStream;
 import java.util.Map;
-
-import com.linbit.linstor.security.AccessContext;
 
 /**
  * Displays information about the system status, e.g. resource usage, etc.
@@ -12,6 +14,7 @@ import com.linbit.linstor.security.AccessContext;
  */
 public class CmdDisplaySystemStatus extends BaseDebugCmd
 {
+    @Inject
     public CmdDisplaySystemStatus()
     {
         super(
@@ -35,6 +38,6 @@ public class CmdDisplaySystemStatus extends BaseDebugCmd
     )
         throws Exception
     {
-        cmnDebugCtl.getInstance().printRunTimeInfo(debugOut);
+        LinStor.printRunTimeInfo(debugOut);
     }
 }

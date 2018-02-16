@@ -25,6 +25,8 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
+import com.linbit.linstor.debug.DebugConsoleFactory;
+import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -39,7 +41,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.EmptySecurityDbDriver;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
 
 import java.io.FileInputStream;
@@ -56,7 +57,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -153,6 +153,8 @@ public final class Satellite extends LinStor implements CoreServices
 
     private UpdateMonitor updateMonitor;
 
+    private DebugConsoleFactory debugConsoleFactory;
+
     public Satellite(
         Injector injectorRef,
         AccessContext sysCtxRef,
@@ -233,6 +235,8 @@ public final class Satellite extends LinStor implements CoreServices
 
             apiCallHandler = injector.getInstance(StltApiCallHandler.class);
 
+            debugConsoleFactory = injector.getInstance(DebugConsoleFactory.class);
+
             // Initialize the message processor
             // errorLogRef.logInfo("Initializing API call dispatcher");
             msgProc = injector.getInstance(CommonMessageProcessor.class);
@@ -273,13 +277,6 @@ public final class Satellite extends LinStor implements CoreServices
         }
     }
 
-    @Override
-    public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
-        throws AccessDeniedException, SQLException
-    {
-        SecurityLevel.set(accCtx, newLevel, null, null);
-    }
-
     public void enterDebugConsole()
     {
         ErrorReporter errLog = getErrorReporter();
@@ -293,7 +290,7 @@ public final class Satellite extends LinStor implements CoreServices
             debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
-            dbgConsole.stdStreamsConsole(StltDebugConsoleImpl.CONSOLE_PROMPT);
+            dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
             errLog.logInfo("Debug console exited");
@@ -343,26 +340,12 @@ public final class Satellite extends LinStor implements CoreServices
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        StltDebugConsoleImpl peerDbgConsole = new StltDebugConsoleImpl(
-            this,
-            debugCtx,
-            systemServicesMap,
-            peerMap,
-            msgProc
-        );
+        DebugConsole peerDbgConsole = debugConsoleFactory.create(debugCtx);
         if (client != null)
         {
             SatellitePeerCtx peerContext = (SatellitePeerCtx) client.getAttachment();
             // Initialize remote debug console
-            // FIXME: loadDefaultCommands() should not use System.out and System.err
-            //        if the debug console is created for a peer / client
-            peerDbgConsole.loadDefaultCommands(System.out, System.err);
             peerContext.setDebugConsole(peerDbgConsole);
-        }
-        else
-        {
-            // Initialize local debug console
-            peerDbgConsole.loadDefaultCommands(System.out, System.err);
         }
 
         return peerDbgConsole;

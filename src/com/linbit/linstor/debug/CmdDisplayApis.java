@@ -1,7 +1,9 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.AutoIndent;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 
 import java.io.PrintStream;
@@ -14,7 +16,10 @@ import java.util.Map;
  */
 public class CmdDisplayApis extends BaseDebugCmd
 {
-    public CmdDisplayApis()
+    private final CommonMessageProcessor commonMessageProcessor;
+
+    @Inject
+    public CmdDisplayApis(CommonMessageProcessor commonMessageProcessorRef)
     {
         super(
             new String[]
@@ -27,6 +32,8 @@ public class CmdDisplayApis extends BaseDebugCmd
             null,
             null
         );
+
+        commonMessageProcessor = commonMessageProcessorRef;
     }
 
     @Override
@@ -39,7 +46,7 @@ public class CmdDisplayApis extends BaseDebugCmd
         throws Exception
     {
         int count = 0;
-        for (ApiCall apiObj : cmnDebugCtl.getApiCallObjects().values())
+        for (ApiCall apiObj : commonMessageProcessor.getApiCallObjects().values())
         {
             debugOut.printf("\u001b[1;37m%s\u001b[0m\n", apiObj.getName());
             String description = apiObj.getDescription();

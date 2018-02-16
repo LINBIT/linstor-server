@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
@@ -10,8 +11,9 @@ import com.linbit.linstor.security.AccessContext;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdTestErrorLog extends BaseControllerDebugCmd
+public class CmdTestErrorLog extends BaseDebugCmd
 {
+    @Inject
     public CmdTestErrorLog()
     {
         super(

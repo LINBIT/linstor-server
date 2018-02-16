@@ -1,10 +1,16 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.VersionInfoProvider;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Named;
 
 /**
  * Displays information about the program module (Controller or Satellite)
@@ -13,14 +19,14 @@ import com.linbit.linstor.security.AccessContext;
  */
 public class CmdDisplayModuleInfo extends BaseDebugCmd
 {
-    private enum DetailLevel
-    {
-        DEFAULT,
-        FULL,
-        INVALID
-    }
+    private final ErrorReporter errorReporter;
+    private final String moduleName;
 
-    public CmdDisplayModuleInfo()
+    @Inject
+    public CmdDisplayModuleInfo(
+        ErrorReporter errorReporterRef,
+        @Named(CoreModule.MODULE_NAME) String moduleNameRef
+    )
     {
         super(
             new String[]
@@ -32,6 +38,9 @@ public class CmdDisplayModuleInfo extends BaseDebugCmd
             null,
             null
         );
+
+        errorReporter = errorReporterRef;
+        moduleName = moduleNameRef;
     }
 
     @Override
@@ -42,7 +51,7 @@ public class CmdDisplayModuleInfo extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        VersionInfoProvider versionInfoProvider = cmnDebugCtl.getVersionInfoProvider();
+        VersionInfoProvider versionInfoProvider = LinStor.VERSION_INFO_PROVIDER;
 
         debugOut.printf(
             "PROGRAM:        %s\n" +
@@ -50,10 +59,10 @@ public class CmdDisplayModuleInfo extends BaseDebugCmd
             "VERSION:        %s (%s)\n" +
             "BUILD TIME:     %s\n" +
             "INSTANCE ID:    %s\n",
-            cmnDebugCtl.getProgramName(), cmnDebugCtl.getModuleType(),
+            LinStor.PROGRAM, moduleName,
             versionInfoProvider.getVersion(), versionInfoProvider.getGitCommitId(),
             versionInfoProvider.getBuildTime(),
-            coreSvcs.getErrorReporter().getInstanceId()
+            errorReporter.getInstanceId()
         );
     }
 }

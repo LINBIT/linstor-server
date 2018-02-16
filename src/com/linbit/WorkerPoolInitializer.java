@@ -1,5 +1,6 @@
 package com.linbit;
 
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.MathUtils;
@@ -21,7 +22,7 @@ public class WorkerPoolInitializer
         String namePrefix
     )
     {
-        int cpuCount = Runtime.getRuntime().availableProcessors();
+        int cpuCount = LinStor.CPU_COUNT;
         int thrCount = MathUtils.bounds(MIN_WORKER_COUNT, cpuCount, MAX_CPU_COUNT);
         int qSize = thrCount * WORKER_QUEUE_FACTOR;
         qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;

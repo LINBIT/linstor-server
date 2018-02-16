@@ -1,23 +1,37 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.security.AccessContext;
+
+import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Notifies the device manager to run resource operations (create/delete/...) on all resources
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdRunDeviceManager extends BaseSatelliteDebugCmd
+public class CmdRunDeviceManager extends BaseDebugCmd
 {
-    public CmdRunDeviceManager()
+    private final DeviceManager deviceManager;
+    private final ReadWriteLock rscDfnMapLock;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+
+    @Inject
+    public CmdRunDeviceManager(
+        DeviceManager deviceManagerRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
         super(
             new String[]
@@ -33,6 +47,10 @@ public class CmdRunDeviceManager extends BaseSatelliteDebugCmd
             null,
             null
         );
+
+        deviceManager = deviceManagerRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     @Override
@@ -44,9 +62,8 @@ public class CmdRunDeviceManager extends BaseSatelliteDebugCmd
     )
         throws Exception
     {
-        Map<ResourceName, ResourceDefinition> rscDfnMap = debugCtl.getRscDfnMap();
         Map<ResourceName, UUID> allRsc = new TreeMap<>();
-        Lock rscDfnRdLock = satellite.rscDfnMapLock.readLock();
+        Lock rscDfnRdLock = rscDfnMapLock.readLock();
         try
         {
             rscDfnRdLock.lock();
@@ -60,23 +77,7 @@ public class CmdRunDeviceManager extends BaseSatelliteDebugCmd
             rscDfnRdLock.unlock();
         }
 
-        DeviceManager devMgr = satellite.getDeviceManager();
-        if (devMgr != null)
-        {
-            devMgr.getUpdateTracker().checkMultipleResources(allRsc);
-            debugOut.println("Device manager notified to adjust all resources.");
-        }
-        else
-        {
-            printError(
-                debugErr,
-                "Notification of the device manager failed",
-                "No instance of the device manager exists",
-                "- Check whether the device manager has been created and initialized\n" +
-                "- If the satellite is still running the startup procedure, retry the command\n" +
-                "  after the startup procedure is complete",
-                null
-            );
-        }
+        deviceManager.getUpdateTracker().checkMultipleResources(allRsc);
+        debugOut.println("Device manager notified to adjust all resources.");
     }
 }

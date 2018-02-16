@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.google.inject.Inject;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Privilege;
@@ -26,7 +27,10 @@ public class CmdSetTraceMode extends BaseDebugCmd
         );
     }
 
-    public CmdSetTraceMode()
+    private final ErrorReporter errorReporter;
+
+    @Inject
+    public CmdSetTraceMode(ErrorReporter errorReporterRef)
     {
         super(
             new String[]
@@ -38,6 +42,8 @@ public class CmdSetTraceMode extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -54,16 +60,15 @@ public class CmdSetTraceMode extends BaseDebugCmd
         {
             AccessContext privCtx = accCtx.clone();
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            ErrorReporter errLog = coreSvcs.getErrorReporter();
             if (prmMode.equalsIgnoreCase(PRM_ENABLED))
             {
-                errLog.setTraceEnabled(privCtx, true);
+                errorReporter.setTraceEnabled(privCtx, true);
                 debugOut.println("New TRACE level logging mode: ENABLED");
             }
             else
             if (prmMode.equalsIgnoreCase(PRM_DISABLED))
             {
-                errLog.setTraceEnabled(privCtx, false);
+                errorReporter.setTraceEnabled(privCtx, false);
                 debugOut.println("New TRACE level logging mode: DISABLED");
             }
             else

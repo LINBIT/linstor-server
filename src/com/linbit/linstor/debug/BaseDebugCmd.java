@@ -1,8 +1,6 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.ErrorCheck;
-import com.linbit.linstor.CommonDebugControl;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 
 import java.io.PrintStream;
@@ -31,8 +29,6 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
 
     final Map<String, String> dspNameMap;
 
-    CoreServices        coreSvcs;
-    CommonDebugControl  cmnDebugCtl;
     DebugConsole        debugCon;
 
     public BaseDebugCmd(
@@ -59,21 +55,8 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         cmdDescr    = cmdDescrRef;
         paramDescr  = paramDescrRef;
         undeclDescr = undeclDescrRef;
-        coreSvcs    = null;
 
         debugPrintHelper = new DebugPrintHelper();
-    }
-
-    @Override
-    public void commonInitialize(
-        CoreServices coreSvcsRef,
-        CommonDebugControl cmnDebugCtlRef,
-        DebugConsole debugConRef
-    )
-    {
-        coreSvcs    = coreSvcsRef;
-        cmnDebugCtl = cmnDebugCtlRef;
-        debugCon    = debugConRef;
     }
 
     @Override

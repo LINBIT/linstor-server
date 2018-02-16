@@ -28,6 +28,8 @@ import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.debug.DebugConsole;
+import com.linbit.linstor.debug.DebugConsoleFactory;
+import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.NetComContainer;
@@ -166,6 +168,8 @@ public final class Controller extends LinStor implements CoreServices
 
     private ReconnectorTask reconnectorTask;
 
+    private DebugConsoleFactory debugConsoleFactory;
+
     public Controller(
         Injector injectorRef,
         AccessContext sysCtxRef,
@@ -303,6 +307,8 @@ public final class Controller extends LinStor implements CoreServices
 
             taskScheduleService.addTask(new GarbageCollectorTask());
 
+            debugConsoleFactory = injector.getInstance(DebugConsoleFactory.class);
+
             // Initialize the message processor
             msgProc = injector.getInstance(CommonMessageProcessor.class);
 
@@ -335,15 +341,6 @@ public final class Controller extends LinStor implements CoreServices
         }
     }
 
-    @Override
-    public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
-        throws AccessDeniedException, SQLException
-    {
-        SecurityLevel.set(
-            accCtx, newLevel, dbConnPool, securityDbDriver
-        );
-    }
-
     public void enterDebugConsole()
     {
         ErrorReporter errLog = getErrorReporter();
@@ -357,7 +354,7 @@ public final class Controller extends LinStor implements CoreServices
             debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
-            dbgConsole.stdStreamsConsole(CtrlDebugConsoleImpl.CONSOLE_PROMPT);
+            dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
             errLog.logInfo("Debug console exited");
@@ -435,26 +432,12 @@ public final class Controller extends LinStor implements CoreServices
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        CtrlDebugConsoleImpl peerDbgConsole = new CtrlDebugConsoleImpl(
-            this,
-            debugCtx,
-            systemServicesMap,
-            peerMap,
-            msgProc
-        );
+        DebugConsole peerDbgConsole = debugConsoleFactory.create(debugCtx);
         if (client != null)
         {
             ControllerPeerCtx peerContext = (ControllerPeerCtx) client.getAttachment();
             // Initialize remote debug console
-            // FIXME: loadDefaultCommands() should not use System.out and System.err
-            //        if the debug console is created for a peer / client
-            peerDbgConsole.loadDefaultCommands(System.out, System.err);
             peerContext.setDebugConsole(peerDbgConsole);
-        }
-        else
-        {
-            // Initialize local debug console
-            peerDbgConsole.loadDefaultCommands(System.out, System.err);
         }
 
         return peerDbgConsole;

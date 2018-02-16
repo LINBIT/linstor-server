@@ -2,14 +2,14 @@ package com.linbit.linstor.debug;
 
 import com.linbit.AutoIndent;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.CoreServices;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-
 import java.text.ParseException;
 import java.util.Map;
 import java.util.Set;
@@ -19,22 +19,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-/**
- * Base methods for the Controller's and Satellite's debug consoles
- *
- * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
- */
-public abstract class BaseDebugConsole implements DebugConsole
+public class DebugConsoleImpl implements DebugConsole
 {
-    public static final String HELP_COMMAND = "Help";
+    public static final String CONSOLE_PROMPT = "Command ==> ";
+
+    private static final String HELP_COMMAND = "Help";
 
     private boolean exitFlag = false;
 
-    protected AccessContext debugCtx;
-    protected CoreServices dbgCoreSvcs;
-    protected Map<String, String> parameters;
-    protected Map<String, CommonDebugCmd> commandMap;
-    protected Set<String> unknownParameters;
+    private final AccessContext debugCtx;
+    private final ErrorReporter errorReporter;
+    private final Map<String, CommonDebugCmd> commandMap;
+
+    private Map<String, String> parameters;
+    private Set<String> unknownParameters;
 
     enum ParamParserState
     {
@@ -46,15 +44,27 @@ public abstract class BaseDebugConsole implements DebugConsole
         ESCAPE
     }
 
-    protected BaseDebugConsole(AccessContext debugCtxRef, CoreServices coreSvcsRef)
+    public DebugConsoleImpl(
+        AccessContext debugCtxRef,
+        ErrorReporter errorReporterRef,
+        Set<CommonDebugCmd> debugCommands
+    )
     {
         debugCtx = debugCtxRef;
-        dbgCoreSvcs = coreSvcsRef;
-        parameters = new TreeMap<>();
+        errorReporter = errorReporterRef;
         commandMap = new TreeMap<>();
+
+        for (CommonDebugCmd command : debugCommands)
+        {
+            for (String name : command.getCmdNames())
+            {
+                commandMap.put(name.toUpperCase(), command);
+            }
+        }
+
+        parameters = new TreeMap<>();
         unknownParameters = new TreeSet<>();
     }
-
 
     @Override
     public void stdStreamsConsole(
@@ -106,7 +116,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
         catch (IOException ioExc)
         {
-            String reportId = dbgCoreSvcs.getErrorReporter().reportError(ioExc);
+            String reportId = errorReporter.reportError(ioExc);
             if (reportId != null)
             {
                 debugErr.printf(
@@ -128,7 +138,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
         catch (Throwable error)
         {
-            String reportId = dbgCoreSvcs.getErrorReporter().reportError(error);
+            String reportId = errorReporter.reportError(error);
             if (reportId != null)
             {
                 debugErr.printf(
@@ -203,8 +213,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
     }
 
-    @Override
-    public void processCommand(
+    private void processCommand(
         PrintStream debugOut,
         PrintStream debugErr,
         String command
@@ -257,7 +266,7 @@ public abstract class BaseDebugConsole implements DebugConsole
                 }
                 catch (Exception exc)
                 {
-                    String reportId = dbgCoreSvcs.getErrorReporter().reportError(exc);
+                    String reportId = errorReporter.reportError(exc);
                     if (reportId != null)
                     {
                         debugErr.printf(

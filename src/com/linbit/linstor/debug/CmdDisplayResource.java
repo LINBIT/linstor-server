@@ -6,12 +6,14 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
+
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,12 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class CmdDisplayResource extends BaseDebugCmd
 {
     private static final Map<String, String> PARAMETER_DESCRIPTIONS = new TreeMap<>();
-
-    private final FilteredObjectLister<ResourceDefinition> lister;
 
     static
     {
@@ -40,7 +41,21 @@ public class CmdDisplayResource extends BaseDebugCmd
         );
     }
 
-    public CmdDisplayResource()
+    private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+
+    private final FilteredObjectLister<ResourceDefinition> lister;
+
+    public CmdDisplayResource(
+        ReadWriteLock reconfigurationLockRef,
+        ReadWriteLock nodesMapLockRef,
+        ReadWriteLock rscDfnMapLockRef,
+        ObjectProtection rscDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
+    )
     {
         super(
             new String[]
@@ -52,6 +67,12 @@ public class CmdDisplayResource extends BaseDebugCmd
             PARAMETER_DESCRIPTIONS,
             null
         );
+
+        reconfigurationLock = reconfigurationLockRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        rscDfnMap = rscDfnMapRef;
 
         lister = new FilteredObjectLister<>(
             "resource definition",
@@ -78,9 +99,9 @@ public class CmdDisplayResource extends BaseDebugCmd
         public List<Lock> getRequiredLocks()
         {
             return Arrays.asList(
-                cmnDebugCtl.getReconfigurationLock().readLock(),
-                cmnDebugCtl.getNodesMapLock().readLock(),
-                cmnDebugCtl.getRscDfnMapLock().readLock()
+                reconfigurationLock.readLock(),
+                nodesMapLock.readLock(),
+                rscDfnMapLock.readLock()
             );
         }
 
@@ -88,7 +109,6 @@ public class CmdDisplayResource extends BaseDebugCmd
         public void ensureSearchAccess(final AccessContext accCtx)
             throws AccessDeniedException
         {
-            ObjectProtection rscDfnMapProt = cmnDebugCtl.getRscDfnMapProt();
             if (rscDfnMapProt != null)
             {
                 rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
@@ -98,14 +118,14 @@ public class CmdDisplayResource extends BaseDebugCmd
         @Override
         public Collection<ResourceDefinition> getAll()
         {
-            return cmnDebugCtl.getRscDfnMap().values();
+            return rscDfnMap.values();
         }
 
         @Override
         public ResourceDefinition getByName(final String name)
             throws InvalidNameException
         {
-            return cmnDebugCtl.getRscDfnMap().get(new ResourceName(name));
+            return rscDfnMap.get(new ResourceName(name));
         }
 
         @Override

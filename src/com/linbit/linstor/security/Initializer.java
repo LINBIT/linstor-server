@@ -22,6 +22,9 @@ import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DbDriversModule;
+import com.linbit.linstor.debug.ControllerDebugModule;
+import com.linbit.linstor.debug.DebugModule;
+import com.linbit.linstor.debug.SatelliteDebugModule;
 import com.linbit.linstor.drbdstate.DrbdStateModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
@@ -109,7 +112,9 @@ public final class Initializer
             new NetComModule(),
             new NumberPoolModule(),
             new ApiCallHandlerModule(),
-            new CtrlApiCallHandlerModule()
+            new CtrlApiCallHandlerModule(),
+            new DebugModule(),
+            new ControllerDebugModule()
         );
 
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX);
@@ -131,7 +136,9 @@ public final class Initializer
             new CoreModule(),
             new SatelliteCoreModule(),
             new DrbdStateModule(),
-            new ApiCallHandlerModule()
+            new ApiCallHandlerModule(),
+            new DebugModule(),
+            new SatelliteDebugModule()
         );
 
         return new Satellite(injector, SYSTEM_CTX, PUBLIC_CTX);
