@@ -32,7 +32,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final long FILE_EVENT_TIMEOUT_DEFAULT = 15_000;
 
     public static final byte[] VALID_CHARS = {'_'};
-    public static final byte[] VALID_INNER_CHARS = {'-'};
+    public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
     protected final ErrorReporter errorReporter;
     protected final FileSystemWatch fileSystemWatch;

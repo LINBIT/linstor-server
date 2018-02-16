@@ -11,7 +11,7 @@ public class ServiceName extends GenericName
     public static final int MAX_LENGTH = 32;
 
     public static final byte[] VALID_CHARS = {'_'};
-    public static final byte[] VALID_INNER_CHARS = {'-'};
+    public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
     public ServiceName(String svcName) throws InvalidNameException
     {

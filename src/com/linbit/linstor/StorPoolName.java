@@ -15,7 +15,7 @@ public class StorPoolName extends GenericName
     public static final int MAX_LENGTH = 48;
 
     public static final byte[] VALID_CHARS = {'_'};
-    public static final byte[] VALID_INNER_CHARS = {'-'};
+    public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
     public StorPoolName(String poolName) throws InvalidNameException
     {
