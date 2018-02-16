@@ -20,6 +20,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 public class LinStorModule extends AbstractModule
 {
+    public static final String MAIN_WORKER_POOL_NAME = "MainWorkerPool";
+
     public static final String DISKLESS_STOR_POOL_DFN = "disklessStorPoolDfn";
 
     @Override

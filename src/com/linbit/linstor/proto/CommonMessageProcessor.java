@@ -13,6 +13,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.linbit.linstor.LinStorModule;
 import org.slf4j.event.Level;
 
 import com.linbit.ErrorCheck;
@@ -33,6 +34,7 @@ import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
@@ -50,7 +52,10 @@ public class CommonMessageProcessor implements MessageProcessor
     private final WorkQueue workQ;
 
     @Inject
-    public CommonMessageProcessor(ErrorReporter errorLogRef, WorkQueue workQRef)
+    public CommonMessageProcessor(
+        ErrorReporter errorLogRef,
+        @Named(LinStorModule.MAIN_WORKER_POOL_NAME) WorkQueue workQRef
+    )
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
         apiCallMap  = new TreeMap<>();

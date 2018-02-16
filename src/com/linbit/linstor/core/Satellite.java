@@ -13,6 +13,7 @@ import com.linbit.WorkerPool;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -223,18 +224,18 @@ public final class Satellite extends LinStor implements CoreServices
             controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
 
             // Initialize the worker thread pool
-            workerThrPool = injector.getInstance(Key.get(WorkerPool.class, Names.named(SatelliteLinstorModule.MAIN_WORKER_POOL_NAME))
-            );
+            workerThrPool = injector.getInstance(
+                Key.get(WorkerPool.class, Names.named(LinStorModule.MAIN_WORKER_POOL_NAME)));
 
             // Initialize the thread pool for satellite services operations
-            stltThrPool = injector.getInstance(Key.get(WorkerPool.class, Names.named(SatelliteLinstorModule.STLT_WORKER_POOL_NAME))
-            );
+            stltThrPool = injector.getInstance(
+                Key.get(WorkerPool.class, Names.named(SatelliteLinstorModule.STLT_WORKER_POOL_NAME)));
 
             apiCallHandler = injector.getInstance(StltApiCallHandler.class);
 
             // Initialize the message processor
             // errorLogRef.logInfo("Initializing API call dispatcher");
-            msgProc = new CommonMessageProcessor(errorLogRef, workerThrPool);
+            msgProc = injector.getInstance(CommonMessageProcessor.class);
 
             errorLogRef.logInfo("Initializing test APIs");
             LinStor.loadApiCalls(msgProc, this, this, apiType);

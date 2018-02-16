@@ -290,7 +290,8 @@ public final class Controller extends LinStor implements CoreServices
 
             netComContainer = injector.getInstance(NetComContainer.class);
 
-            workerThrPool = injector.getInstance(WorkerPool.class);
+            workerThrPool = injector.getInstance(
+                Key.get(WorkerPool.class, Names.named(LinStorModule.MAIN_WORKER_POOL_NAME)));
 
             apiCallHandler = injector.getInstance(CtrlApiCallHandler.class);
 
