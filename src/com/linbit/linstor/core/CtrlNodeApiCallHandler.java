@@ -36,6 +36,7 @@ import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.SatelliteConnectionData;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -884,7 +885,12 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Iterator<StorPool> iterateStorPools;
         try
         {
-            iterateStorPools = node.iterateStorPools(apiCtx);
+            // Shallow-copy the storage pool map, because the Iterator is used for
+            // Node.delete(), which removes objects from the original map
+            Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
+            node.copyStorPoolMap(apiCtx, storPoolMap);
+
+            iterateStorPools = storPoolMap.values().iterator();
         }
         catch (AccessDeniedException accDeniedExc)
         {

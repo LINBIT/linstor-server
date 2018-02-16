@@ -33,6 +33,7 @@ import com.linbit.linstor.storage.DisklessDriver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -503,6 +504,15 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.values().iterator();
+    }
+
+    @Override
+    public void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        dstMap.putAll(storPoolMap);
     }
 
     public NodeType setNodeType(AccessContext accCtx, NodeType newType)

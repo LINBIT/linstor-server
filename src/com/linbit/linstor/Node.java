@@ -55,6 +55,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException;
 
+    void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
+        throws AccessDeniedException;
+
     int getStorPoolCount();
 
     StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
