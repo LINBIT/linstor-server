@@ -540,6 +540,11 @@ class StltRscApiCallHandler
                             {
                                 createVlm(remoteVlmApi, remoteRsc, true, transMgr);
                             }
+                            else
+                            {
+                                StorPool remoteVlmStorPool = vlm.getStorPool(apiCtx);
+                                remoteVlmStorPool.getProps(apiCtx).map().putAll(remoteVlmApi.getStorPoolProps());
+                            }
                         }
                     }
 
