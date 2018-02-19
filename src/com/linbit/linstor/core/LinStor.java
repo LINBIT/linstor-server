@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.CommonPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.StorPoolData;
@@ -24,14 +23,12 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
 
 import java.io.File;
@@ -48,7 +45,6 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -107,22 +103,6 @@ public abstract class LinStor
     {
         // Null-initialize remaining components
         errorLog = null;
-    }
-
-    /**
-     * Destroys the debug console instance of a connected peer
-     *
-     * @param accCtx The access context to authorize this API call
-     * @param client Connected peer
-     * @throws AccessDeniedException If the API call is not authorized
-     */
-    public void destroyDebugConsole(AccessContext accCtx, Peer client)
-        throws AccessDeniedException
-    {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-
-        CommonPeerCtx peerContext = (CommonPeerCtx) client.getAttachment();
-        peerContext.setDebugConsole(null);
     }
 
     public CoreTimer getTimer()

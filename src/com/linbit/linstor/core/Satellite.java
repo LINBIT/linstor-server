@@ -20,12 +20,11 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteDbDriver;
-import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
-import com.linbit.linstor.debug.DebugConsoleFactory;
+import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -153,7 +152,7 @@ public final class Satellite extends LinStor implements CoreServices
 
     private UpdateMonitor updateMonitor;
 
-    private DebugConsoleFactory debugConsoleFactory;
+    private DebugConsoleCreator debugConsoleCreator;
 
     public Satellite(
         Injector injectorRef,
@@ -235,7 +234,7 @@ public final class Satellite extends LinStor implements CoreServices
 
             apiCallHandler = injector.getInstance(StltApiCallHandler.class);
 
-            debugConsoleFactory = injector.getInstance(DebugConsoleFactory.class);
+            debugConsoleCreator = injector.getInstance(DebugConsoleCreator.class);
 
             // Initialize the message processor
             // errorLogRef.logInfo("Initializing API call dispatcher");
@@ -324,14 +323,6 @@ public final class Satellite extends LinStor implements CoreServices
         applicationLifecycleManager.shutdown(accCtx);
     }
 
-    /**
-     * Creates a debug console instance for remote use by a connected peer
-     *
-     * @param accCtx The access context to authorize this API call
-     * @param client Connected peer
-     * @return New DebugConsole instance
-     * @throws AccessDeniedException If the API call is not authorized
-     */
     public DebugConsole createDebugConsole(
         AccessContext accCtx,
         AccessContext debugCtx,
@@ -339,16 +330,7 @@ public final class Satellite extends LinStor implements CoreServices
     )
         throws AccessDeniedException
     {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        DebugConsole peerDbgConsole = debugConsoleFactory.create(debugCtx);
-        if (client != null)
-        {
-            SatellitePeerCtx peerContext = (SatellitePeerCtx) client.getAttachment();
-            // Initialize remote debug console
-            peerContext.setDebugConsole(peerDbgConsole);
-        }
-
-        return peerDbgConsole;
+        return debugConsoleCreator.createDebugConsole(accCtx, debugCtx, client);
     }
 
     private void initMainNetComService(AccessContext initCtx)

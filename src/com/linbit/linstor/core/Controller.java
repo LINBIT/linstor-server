@@ -12,7 +12,6 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
 import com.linbit.WorkerPool;
-import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorException;
@@ -28,7 +27,7 @@ import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.debug.DebugConsole;
-import com.linbit.linstor.debug.DebugConsoleFactory;
+import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -168,7 +167,7 @@ public final class Controller extends LinStor implements CoreServices
 
     private ReconnectorTask reconnectorTask;
 
-    private DebugConsoleFactory debugConsoleFactory;
+    private DebugConsoleCreator debugConsoleCreator;
 
     public Controller(
         Injector injectorRef,
@@ -307,7 +306,7 @@ public final class Controller extends LinStor implements CoreServices
 
             taskScheduleService.addTask(new GarbageCollectorTask());
 
-            debugConsoleFactory = injector.getInstance(DebugConsoleFactory.class);
+            debugConsoleCreator = injector.getInstance(DebugConsoleCreator.class);
 
             // Initialize the message processor
             msgProc = injector.getInstance(CommonMessageProcessor.class);
@@ -416,14 +415,6 @@ public final class Controller extends LinStor implements CoreServices
         }
     }
 
-    /**
-     * Creates a debug console instance for remote use by a connected peer
-     *
-     * @param accCtx The access context to authorize this API call
-     * @param client Connected peer
-     * @return New DebugConsole instance
-     * @throws AccessDeniedException If the API call is not authorized
-     */
     public DebugConsole createDebugConsole(
         AccessContext accCtx,
         AccessContext debugCtx,
@@ -431,16 +422,13 @@ public final class Controller extends LinStor implements CoreServices
     )
         throws AccessDeniedException
     {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        DebugConsole peerDbgConsole = debugConsoleFactory.create(debugCtx);
-        if (client != null)
-        {
-            ControllerPeerCtx peerContext = (ControllerPeerCtx) client.getAttachment();
-            // Initialize remote debug console
-            peerContext.setDebugConsole(peerDbgConsole);
-        }
+        return debugConsoleCreator.createDebugConsole(accCtx, debugCtx, client);
+    }
 
-        return peerDbgConsole;
+    public void destroyDebugConsole(AccessContext accCtx, Peer client)
+        throws AccessDeniedException
+    {
+        debugConsoleCreator.destroyDebugConsole(accCtx, client);
     }
 
     boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef) throws SystemServiceStopException
