@@ -56,7 +56,7 @@ public class MinorNrPoolImpl implements MinorNrPool
                         MinorNumber.minorNrCheck(minorNrRangeMax);
                         useDefaults = false;
                     }
-                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    catch (ValueOutOfRangeException | NumberFormatException ignored)
                     {
                     }
                 }

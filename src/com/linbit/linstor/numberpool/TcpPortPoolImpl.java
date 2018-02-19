@@ -56,7 +56,7 @@ public class TcpPortPoolImpl implements TcpPortPool
                         TcpPortNumber.tcpPortNrCheck(tcpPortRangeMax);
                         useDefaults = false;
                     }
-                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    catch (ValueOutOfRangeException | NumberFormatException ignored)
                     {
                     }
                 }
