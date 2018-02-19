@@ -1443,6 +1443,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             Iterator<Resource> iterateRscs = node.iterateResources(apiCtx);
             Map<NodeName, Node> nodesToContact = new TreeMap<>();
+            nodesToContact.put(node.getName(), node);
             while (iterateRscs.hasNext())
             {
                 Resource rsc = iterateRscs.next();
