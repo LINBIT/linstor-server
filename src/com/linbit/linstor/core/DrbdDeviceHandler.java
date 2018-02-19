@@ -229,14 +229,6 @@ class DrbdDeviceHandler implements DeviceHandler
                     deleteResource(rsc, rscDfn, localNode, rscState);
                 }
                 else
-                if (rsc.isCreatePrimary() && !rscState.isPrimary())
-                {
-                    // set primary
-                    errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
-                    ((ResourceData) rsc).unsetCreatePrimary();
-                    setResourcePrimary(rsc);
-                }
-                else
                 {
                     createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
 
@@ -249,6 +241,14 @@ class DrbdDeviceHandler implements DeviceHandler
                             rscDfn.getName().getDisplayName(),
                             rsc.getUuid().toString()
                         );
+                    }
+                    else
+                    if (rsc.isCreatePrimary() && !rscState.isPrimary())
+                    {
+                        // set primary
+                        errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
+                        ((ResourceData) rsc).unsetCreatePrimary();
+                        setResourcePrimary(rsc);
                     }
                 }
             }
