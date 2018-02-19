@@ -129,13 +129,13 @@ public class ConfFileBuilder
 
                         if (peerAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
                         {
-                            appendLine("address     ipv6 [%s]:%d;", peerAddrText, port);
+                            appendLine("address    ipv6 [%s]:%d;", peerAddrText, port);
                         }
                         else
                         {
-                            appendLine("address     ipv4 %s:%d;", peerAddrText, port);
+                            appendLine("address    ipv4 %s:%d;", peerAddrText, port);
                         }
-                        appendLine("node-id     %s;", peerRsc.getNodeId().value);
+                        appendLine("node-id    %d;", peerRsc.getNodeId().value);
 
                         // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
                         // sb.append(peerResource.co)
