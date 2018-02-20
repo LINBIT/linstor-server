@@ -247,6 +247,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+            // preventing ConcurrentModificationException
             Collection<StorPool> values = new ArrayList<>(storPools.values());
             for (StorPool storPool : values)
             {

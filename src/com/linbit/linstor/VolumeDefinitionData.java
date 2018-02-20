@@ -1,8 +1,10 @@
 package com.linbit.linstor;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -393,7 +395,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
             ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
 
-            for (Volume vlm : volumes.values())
+            // preventing ConcurrentModificationException
+            List<Volume> vlms = new ArrayList<>(volumes.values());
+            for (Volume vlm : vlms)
             {
                 vlm.delete(accCtx);
             }
