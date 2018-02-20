@@ -1,5 +1,22 @@
 package com.linbit.linstor.api;
 
+import com.linbit.TransactionMgr;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
+import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.core.ApiTestBase;
+import com.linbit.linstor.core.CtrlNodeApiCallHandler;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessType;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -7,25 +24,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
-import com.linbit.linstor.core.CtrlNodeApiCallHandler;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.core.ApiTestBase;
-import com.linbit.linstor.security.AccessType;
-import junitparams.JUnitParamsRunner;
-
-@RunWith(JUnitParamsRunner.class)
 public class NodeApiTest extends ApiTestBase
 {
     private CtrlNodeApiCallHandler nodeApiCallHandler;
@@ -33,6 +31,9 @@ public class NodeApiTest extends ApiTestBase
     private NodeName testNodeName;
     private NodeType testNodeType;
     private NodeData testNode;
+
+    @Mock
+    protected Peer mockPeer;
 
     public NodeApiTest() throws Exception
     {
@@ -56,6 +57,7 @@ public class NodeApiTest extends ApiTestBase
             true,
             true
         );
+        testNode.setPeer(SYS_CTX, mockPeer);
         nodesMap.put(testNodeName, testNode);
         transMgr.commit();
 
