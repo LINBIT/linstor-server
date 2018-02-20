@@ -60,6 +60,5 @@ public interface CtrlStltSerializer
         Builder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
         Builder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
         Builder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
-
     }
 }

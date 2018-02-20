@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
@@ -18,6 +19,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -30,10 +32,14 @@ import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import org.apache.derby.impl.sql.compile.InListOperatorNode;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -385,6 +391,65 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             .builder(ApiConsts.API_LST_STOR_POOL, msgId)
             .storPoolList(storPools)
             .build();
+    }
+
+    void updateFreeSpace(Peer peer, List<FreeSpacePojo> freeSpacePojoList)
+    {
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
+                apiCtx, 
+                peer, 
+                ApiCallType.MODIFY,
+                null, // apiCallRc
+                null, // transMgr
+                peer.getNode().getName().displayValue,
+                null // storPoolName
+            );
+        )
+        {
+            String nodeName = peer.getNode().getName().displayValue;
+            
+            for (FreeSpacePojo freeSpacePojo : freeSpacePojoList)
+            {
+                currentStorPoolNameStr.set(freeSpacePojo.getStorPoolName());
+                
+                StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
+                if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
+                {
+                    setFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                }
+                else
+                {
+                    throw asExc(
+                        null, 
+                        "UUIDs mismatched when updating free space of " + getObjectDescriptionInline(), 
+                        ApiConsts.FAIL_UUID_STOR_POOL
+                    );
+                }
+            }
+            
+            commit();
+        }
+        catch (ApiCallHandlerFailedException ignored)
+        {
+            // already reported
+        }
+    }
+
+    private void setFreeSpace(StorPoolData storPool, long freeSpace)
+    {
+        try
+        {
+            storPool.setFreeSpace(currentAccCtx.get(), freeSpace);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asImplError(exc);
+        }
+        catch (SQLException exc)
+        {
+            throw asImplError(exc);
+        }
     }
 
     private AbsApiCallHandler setContext(

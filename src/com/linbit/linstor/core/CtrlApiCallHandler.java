@@ -1,12 +1,14 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
@@ -1637,5 +1639,23 @@ public class CtrlApiCallHandler
             ctrlReadLock.unlock();
         }
         return apiCallRc;
+    }
+
+    public void updateFreeSpace(Peer satellitePeer, List<FreeSpacePojo> freeSpacePojoList)
+    {
+        Lock nodeWriteLock = nodesMapLock.writeLock();
+        Lock storPoolWriteLock = storPoolDfnMapLock.writeLock();
+        try
+        {
+            nodeWriteLock.lock();
+            storPoolWriteLock.lock();
+            
+            storPoolApiCallHandler.updateFreeSpace(satellitePeer, freeSpacePojoList);
+        }
+        finally
+        {
+            storPoolWriteLock.unlock();
+            nodeWriteLock.unlock();
+        }
     }
 }

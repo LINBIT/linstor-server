@@ -54,6 +54,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
+    private transient StorageDriver storageDriver;
+    private transient TransactionSimpleObject<StorPoolData, Long> freeSpace;
+
     /*
      * used only by getInstance
      */
@@ -108,10 +111,13 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         dbDriver = LinStor.getStorPoolDataDatabaseDriver();
 
+        freeSpace = new TransactionSimpleObject<StorPoolData, Long>(this, -1L, null);
+        
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
             props,
-            deleted
+            deleted,
+            freeSpace
         );
 
         ((NodeData) nodeRef).addStorPool(accCtx, this);
@@ -186,9 +192,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
             if (storPoolData == null)
             {
-                StorageDriverKind storageDriverKind =
-                    StorageDriverLoader.getKind(storDriverSimpleClassNameRef);
-
                 storPoolData = new StorPoolData(
                     uuid,
                     accCtx,
@@ -244,7 +247,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorageDriver createDriver(
+    public StorageDriver getDriver(
         AccessContext accCtx,
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
@@ -252,12 +255,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     )
         throws AccessDeniedException
     {
-        StorageDriver storageDriver = null;
         if (allowStorageDriverCreation)
         {
             checkDeleted();
             node.getObjProt().requireAccess(accCtx, AccessType.USE);
-            storageDriver = storageDriverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
+            if (storageDriver == null)
+            {
+                storageDriver = storageDriverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
+            }
         }
         return storageDriver;
     }
@@ -344,6 +349,18 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return nodeName.value + "/" + rscName.value + "/" + volNr.value;
     }
 
+    public void setFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException, SQLException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        freeSpace.set(freeSpaceRef);
+    }
+
+    public Long getFreeSpace(AccessContext accCtx) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return freeSpace.get();
+    }
+    
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
@@ -416,6 +433,4 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             updateId
         );
     }
-
-
 }

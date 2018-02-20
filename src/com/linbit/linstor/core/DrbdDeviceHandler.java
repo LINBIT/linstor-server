@@ -575,10 +575,10 @@ class DrbdDeviceHandler implements DeviceHandler
             StorPool storagePool = localNode.getStorPool(wrkCtx, spName);
             if (storagePool != null)
             {
-                driver = storagePool.createDriver(wrkCtx, errLog, fileSystemWatch, timer);
-                storagePool.reconfigureStorageDriver(driver);
+                driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer);
                 if (driver != null)
                 {
+                    storagePool.reconfigureStorageDriver(driver);
                     vlmState.setDriver(driver);
                     vlmState.setStorPoolName(spName);
                 }

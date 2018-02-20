@@ -51,7 +51,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
      * Returns the {@link StorageDriver}.
      * Will return null on {@link Controller}, and non-null on {@link Satellite}.
      */
-    StorageDriver createDriver(
+    StorageDriver getDriver(
         AccessContext accCtx,
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,

@@ -121,7 +121,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(SYS_CTX));
-        assertNull(loadedStorPool.createDriver(SYS_CTX, null, null, null));
+        assertNull(loadedStorPool.getDriver(SYS_CTX, null, null, null));
         assertEquals(LvmDriver.class.getSimpleName(), loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }
@@ -142,7 +142,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         StorPoolDefinition spDfn = storPoolData.getDefinition(SYS_CTX);
         assertNotNull(spDfn);
         assertEquals(spName, spDfn.getName());
-        assertNull(storPoolData.createDriver(SYS_CTX, null, null, null));
+        assertNull(storPoolData.getDriver(SYS_CTX, null, null, null));
         assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
         assertEquals(spName, storPoolData.getName());
     }
@@ -195,7 +195,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(SYS_CTX));
-        assertNull(loadedStorPool.createDriver(SYS_CTX, null, null, null));
+        assertNull(loadedStorPool.getDriver(SYS_CTX, null, null, null));
         assertEquals(LvmDriver.class.getSimpleName(), loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }

@@ -2,20 +2,26 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.StltApiCallHandler;
 import com.linbit.linstor.core.UpdateMonitor;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
-import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
+import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
+import com.linbit.linstor.storage.StorageException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.UUID;
+import java.util.Map.Entry;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_AUTH,
@@ -27,19 +33,22 @@ public class CtrlAuth implements ApiCall
     private final ApiCallAnswerer apiCallAnswerer;
     private final UpdateMonitor updateMonitor;
     private final Peer controllerPeer;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlAuth(
         StltApiCallHandler apiCallHandlerRef,
         ApiCallAnswerer apiCallAnswererRef,
         UpdateMonitor updateMonitorRef,
-        Peer controllerPeerRef
+        Peer controllerPeerRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
         apiCallAnswerer = apiCallAnswererRef;
         updateMonitor = updateMonitorRef;
         controllerPeer = controllerPeerRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -61,36 +70,52 @@ public class CtrlAuth implements ApiCall
             disklessStorPoolUuid,
             controllerPeer
         );
-
-        if (apiCallRc == null)
+        Map<StorPool, Long> freeSpaceMap;
+        try
         {
-            // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
-            controllerPeer.sendMessage(
-                apiCallAnswerer.prepareMessage(
-                    buildExpectedFullSyncIdMessage(updateMonitor.getNextFullSyncId()),
-                    InternalApiConsts.API_AUTH_ACCEPT
-                )
-            );
+            freeSpaceMap = apiCallHandler.getFreeSpace();
+            
+            if (apiCallRc == null)
+            {
+                // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
+                builder.setExpectedFullSyncId(updateMonitor.getNextFullSyncId());
+                
+                for (Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
+                {
+                    StorPool storPool = entry.getKey();
+                    builder.addFreeSpace(
+                        MsgIntAuthSuccessOuterClass.FreeSpace.newBuilder()
+                            .setStorPoolUuid(storPool.getUuid().toString())
+                            .setStorPoolName(storPool.getName().displayValue)
+                            .setFreeSpace(entry.getValue())
+                            .build()
+                    );
+                }
+                builder.build().writeDelimitedTo(baos);
+                
+                controllerPeer.sendMessage(
+                    apiCallAnswerer.prepareMessage(
+                        baos.toByteArray(),
+                        InternalApiConsts.API_AUTH_ACCEPT
+                    )
+                );
+            }
+            else
+            {
+                // whatever happened should be in the apiCallRc
+                controllerPeer.sendMessage(
+                    apiCallAnswerer.prepareMessage(
+                        apiCallAnswerer.createApiCallResponse(apiCallRc),
+                        InternalApiConsts.API_AUTH_ERROR
+                    )
+                );
+            }
         }
-        else
+        catch (StorageException storageExc)
         {
-            // whatever happened should be in the apiCallRc
-            controllerPeer.sendMessage(
-                apiCallAnswerer.prepareMessage(
-                    apiCallAnswerer.createApiCallResponse(apiCallRc),
-                    InternalApiConsts.API_AUTH_ERROR
-                )
-            );
+            errorReporter.reportError(storageExc);
         }
-    }
-
-    private byte[] buildExpectedFullSyncIdMessage(long nextFullSyncId) throws IOException
-    {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        MsgIntExpectedFullSyncId.newBuilder()
-            .setExpectedFullSyncId(nextFullSyncId)
-            .build()
-            .writeDelimitedTo(baos);
-        return baos.toByteArray();
     }
 }
