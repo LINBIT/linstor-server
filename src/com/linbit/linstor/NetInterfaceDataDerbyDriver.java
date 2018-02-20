@@ -278,7 +278,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     dbCtx,
                     netName,
                     node,
-                    addr
+                    addr,
+                    this
                 );
             }
             catch (AccessDeniedException accDeniedExc)

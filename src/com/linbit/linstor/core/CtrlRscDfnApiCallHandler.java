@@ -14,11 +14,13 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceDefinitionDataFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeDefinitionDataFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
@@ -66,6 +68,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection rscDfnMapProt;
     private final TcpPortPool tcpPortPool;
     private final MetaDataApi metaDataApi;
+    private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
 
     @Inject
     CtrlRscDfnApiCallHandler(
@@ -81,7 +85,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         MinorNrPool minorNrPoolRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         TcpPortPool tcpPortPoolRef,
-        MetaDataApi metaDataApiRef
+        MetaDataApi metaDataApiRef,
+        CtrlObjectFactories objectFactories,
+        ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
+        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef
     )
     {
         super(
@@ -89,7 +96,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC_DFN,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
         super.setNullOnAutoClose(currentRscNameStr);
         clientComSerializer = clientComSerializerRef;
@@ -102,6 +110,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         rscDfnMapProt = rscDfnMapProtRef;
         tcpPortPool = tcpPortPoolRef;
         metaDataApi = metaDataApiRef;
+        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -653,7 +663,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = ResourceDefinitionData.getInstance(
+            rscDfn = resourceDefinitionDataFactory.getInstance(
                 currentAccCtx.get(),
                 rscName,
                 asTcpPortNumber(portInt),
@@ -725,7 +735,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = VolumeDefinitionData.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 volNr,

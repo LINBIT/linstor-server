@@ -6,12 +6,13 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceData;
+import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
-import com.linbit.linstor.SatelliteConnectionData;
+import com.linbit.linstor.SatelliteConnectionDataFactory;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -39,6 +40,8 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     private final Props ctrlConf;
     private final SatelliteConnector satelliteConnector;
     private final NetComContainer netComContainer;
+    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
 
     @Inject
     CtrlNetIfApiCallHandler(
@@ -48,10 +51,13 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         SatelliteConnector satelliteConnectorRef,
-        NetComContainer netComContainerRef
+        NetComContainer netComContainerRef,
+        CtrlObjectFactories objectFactories,
+        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef
     )
     {
-        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NET_IF, serializerRef);
+        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NET_IF, serializerRef, objectFactories);
         super.setNullOnAutoClose(
             currentNodeName,
             currentNetIfName
@@ -59,6 +65,8 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         ctrlConf = ctrlConfRef;
         satelliteConnector = satelliteConnectorRef;
         netComContainer = netComContainerRef;
+        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        satelliteConnectionDataFactory = satelliteConnectionDataFactoryRef;
     }
 
     public ApiCallRc createNetIf(
@@ -276,7 +284,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         NetInterfaceData netIf;
         try
         {
-            netIf = NetInterfaceData.getInstance(
+            netIf = netInterfaceDataFactory.getInstance(
                 currentAccCtx.get(),
                 node,
                 netIfName,
@@ -321,7 +329,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            SatelliteConnectionData.getInstance(
+            satelliteConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 node,
                 netIf,

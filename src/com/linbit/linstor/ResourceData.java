@@ -1,20 +1,8 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
-
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
@@ -26,6 +14,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -33,8 +22,19 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.UUID;
+
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 /**
  * Representation of a resource
@@ -74,48 +74,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final Props resourceProps;
 
     private final ResourceDataDatabaseDriver dbDriver;
+    private final VolumeDataFactory volumeDataFactory;
 
     private final TransactionSimpleObject<ResourceData, Boolean> deleted;
 
     private boolean createPrimary = false;
 
-    /*
-     * used by getInstance
-     */
-    private ResourceData(
-        AccessContext accCtx,
-        ResourceDefinition resDfnRef,
-        Node nodeRef,
-        NodeId nodeIdRef,
-        long initFlags,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            ObjectProtection.getInstance(
-                accCtx,
-                ObjectProtection.buildPath(
-                    nodeRef.getName(),
-                    resDfnRef.getName()
-                ),
-                true,
-                transMgr
-            ),
-            resDfnRef,
-            nodeRef,
-            nodeIdRef,
-            initFlags,
-            transMgr
-        );
-    }
-
-    /**
-     * used by database drivers and tests
-     * @throws AccessDeniedException
-     */
     ResourceData(
         UUID objIdRef,
         AccessContext accCtx,
@@ -124,10 +88,16 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node nodeRef,
         NodeId nodeIdRef,
         long initFlags,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        ResourceDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
+        VolumeDataFactory volumeDataFactoryRef
     )
         throws SQLException, AccessDeniedException
     {
+        dbDriver = dbDriverRef;
+        volumeDataFactory = volumeDataFactoryRef;
+
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
         resNodeId = nodeIdRef;
@@ -136,11 +106,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
         objId = objIdRef;
         dbgInstanceId = UUID.randomUUID();
 
-        dbDriver = LinStor.getResourceDataDatabaseDriver();
-
         resourceConnections = new TransactionMap<>(new HashMap<Resource, ResourceConnection>(), null);
         volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, Volume>(), null);
-        resourceProps = PropsContainer.getInstance(
+        resourceProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 nodeRef.getName(),
                 resDfnRef.getName()
@@ -165,93 +133,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         ((NodeData) nodeRef).addResource(accCtx, this);
         ((ResourceDefinitionData) resDfnRef).addResource(accCtx, this);
-    }
-
-    public static ResourceData getInstance(
-        AccessContext accCtx,
-        ResourceDefinition resDfn,
-        Node node,
-        NodeId nodeId,
-        RscFlags[] initFlags,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        ResourceData resData = null;
-
-        ResourceDataDatabaseDriver driver = LinStor.getResourceDataDatabaseDriver();
-
-        resData = driver.load(node, resDfn.getName(), false, transMgr);
-
-        if (failIfExists && resData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The Resource already exists");
-        }
-
-        if (resData == null && createIfNotExists)
-        {
-            resData = new ResourceData(
-                accCtx,
-                resDfn,
-                node,
-                nodeId,
-                StateFlagsBits.getMask(initFlags),
-                transMgr
-            );
-            driver.create(resData, transMgr);
-        }
-
-        if (resData != null)
-        {
-            resData.initialized();
-            resData.setConnection(transMgr);
-        }
-        return resData;
-    }
-
-    public static ResourceData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Node node,
-        ResourceDefinition rscDfn,
-        NodeId nodeId,
-        RscFlags[] initFlags,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        ResourceDataDatabaseDriver dbDriver = LinStor.getResourceDataDatabaseDriver();
-        ResourceData rscData;
-        try
-        {
-            rscData = dbDriver.load(node, rscDfn.getName(), false, transMgr);
-            if (rscData == null)
-            {
-                rscData = new ResourceData(
-                    uuid,
-                    accCtx,
-                    ObjectProtection.getInstance(accCtx, "", false, transMgr),
-                    rscDfn,
-                    node,
-                    nodeId,
-                    StateFlagsBits.getMask(initFlags),
-                    transMgr
-                );
-            }
-            rscData.initialized();
-            rscData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return rscData;
     }
 
     @Override
@@ -424,7 +305,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                         }
                     }
 
-                    VolumeData.getInstance(
+                    volumeDataFactory.getInstance(
                         apiCtx,
                         this,
                         vlmDfn,

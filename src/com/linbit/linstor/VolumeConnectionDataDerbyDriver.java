@@ -9,6 +9,7 @@ import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
@@ -75,6 +76,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     private final Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProvider;
     private final Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDataDerbyDriverProvider;
     private final Provider<VolumeDataDerbyDriver> volumeDataDerbyDriverProvider;
+    private final PropsContainerFactory propsContainerFactory;
 
     @Inject
     public VolumeConnectionDataDerbyDriver(
@@ -84,7 +86,8 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         Provider<ResourceDefinitionDataDerbyDriver> resourceDefinitionDataDerbyDriverProviderRef,
         Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProviderRef,
         Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDataDerbyDriverProviderRef,
-        Provider<VolumeDataDerbyDriver> volumeDataDerbyDriverProviderRef
+        Provider<VolumeDataDerbyDriver> volumeDataDerbyDriverProviderRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = accCtx;
@@ -94,6 +97,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         resourceDataDerbyDriverProvider = resourceDataDerbyDriverProviderRef;
         volumeDefinitionDataDerbyDriverProvider = volumeDefinitionDataDerbyDriverProviderRef;
         volumeDataDerbyDriverProvider = volumeDataDerbyDriverProviderRef;
+        propsContainerFactory = propsContainerFactoryRef;
     }
 
     @Override
@@ -317,7 +321,9 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                     dbCtx,
                     sourceVolume,
                     targetVolume,
-                    transMgr
+                    transMgr,
+                    this,
+                    propsContainerFactory
                 );
             }
         }

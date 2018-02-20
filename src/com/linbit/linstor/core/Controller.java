@@ -21,7 +21,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiType;
@@ -259,9 +258,6 @@ public final class Controller extends LinStor implements CoreServices
                 systemServicesMap.put(timer.getInstanceName(), timer);
             }
 
-            securityDbDriver = injector.getInstance(DbAccessor.class);
-            persistenceDbDriver = injector.getInstance(DatabaseDriver.class);
-
             dbConnPool = injector.getInstance(DbConnectionPool.class);
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
@@ -289,9 +285,6 @@ public final class Controller extends LinStor implements CoreServices
                 Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)));
             ctrlConfProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.CTRL_CONF_PROT)));
-
-            disklessStorPoolDfn = injector.getInstance(
-                Key.get(StorPoolDefinitionData.class, Names.named(LinStorModule.DISKLESS_STOR_POOL_DFN)));
 
             errorLogRef.logInfo("Core objects load from database is in progress");
             loadCoreObjects(initCtx);
@@ -493,7 +486,7 @@ public final class Controller extends LinStor implements CoreServices
         errorLogRef.logInfo("Loading security objects");
         try
         {
-            Initializer.load(initCtx, dbConnPool, securityDbDriver);
+            Initializer.load(initCtx, dbConnPool, injector.getInstance(DbAccessor.class));
         }
         catch (SQLException | InvalidNameException | AccessDeniedException exc)
         {
@@ -542,7 +535,7 @@ public final class Controller extends LinStor implements CoreServices
                 // FIXME: Loading or reloading the configuration must ensure to either load everything
                 //        or nothing to prevent ending up with a half-loaded configuration.
                 //        See also the TODO above.
-                persistenceDbDriver.loadAll(transMgr);
+                injector.getInstance(DatabaseDriver.class).loadAll(transMgr);
             }
             finally
             {

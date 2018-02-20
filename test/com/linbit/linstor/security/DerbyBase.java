@@ -1,32 +1,48 @@
 package com.linbit.linstor.security;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.util.Modules;
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.NodeConnectionDataFactory;
+import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnectionDataFactory;
+import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinitionDataFactory;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPoolDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.VolumeConnectionDataFactory;
+import com.linbit.linstor.VolumeDataFactory;
+import com.linbit.linstor.VolumeDefinitionDataFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CoreUtils;
 import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbcp.TestDbConnectionPoolModule;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
+import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
+import com.linbit.linstor.dbdrivers.ControllerDbModule;
+import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -57,108 +73,104 @@ public abstract class DerbyBase implements DerbyTestConstants
         " WHERE " + PROPS_INSTANCE + " = ? " +
         " ORDER BY " + PROP_KEY;
 
-    private List<Statement> statements = new ArrayList<>();
-    private static Connection con;
-    protected static DbConnectionPool dbConnPool;
-    private static List<Connection> connections = new ArrayList<>();
+    protected static ErrorReporter errorReporter =
+        new StdErrorReporter("TESTS", "");
 
     protected static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
     protected static final AccessContext PUBLIC_CTX = DummySecurityInitializer.getPublicAccessContext();
-    private static boolean initialized = false;
-    private static DbDerbyPersistence secureDbDriver;
-    private static DerbyDriver persistenceDbDriver;
-    protected static CoreModule.NodesMap nodesMap;
-    protected static CoreModule.ResourceDefinitionMap rscDfnMap;
-    protected static CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
-    protected static ErrorReporter errorReporter =
-//        new EmptyErrorReporter(true);
-        new StdErrorReporter("TESTS", "");
+    // This connection pool is shared between the tests
+    protected static DbConnectionPool dbConnPool;
 
-    public DerbyBase()
-    {
-        if (!initialized && dbConnPool != null)
-        {
-            try
-            {
-                createTables();
-                insertDefaults();
+    private List<Statement> statements = new ArrayList<>();
+    private Connection con;
+    private List<Connection> connections = new ArrayList<>();
 
-                Identity.load(dbConnPool, secureDbDriver);
-                SecurityType.load(dbConnPool, secureDbDriver);
-                Role.load(dbConnPool, secureDbDriver);
-            }
-            catch (SQLException | InvalidNameException exc)
-            {
-                throw new RuntimeException(exc);
-            }
+    @Inject private DbAccessor secureDbDriver;
+    @Inject private DatabaseDriver persistenceDbDriver;
+    @Inject protected CoreModule.NodesMap nodesMap;
+    @Inject protected CoreModule.ResourceDefinitionMap rscDfnMap;
+    @Inject protected CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
-            initialized = true;
-        }
-    }
+    @Inject protected ObjectProtectionFactory objectProtectionFactory;
+    @Inject protected PropsContainerFactory propsContainerFactory;
+    @Inject protected NodeDataControllerFactory nodeDataFactory;
+    @Inject protected ResourceConnectionDataFactory resourceConnectionDataFactory;
+    @Inject protected ResourceDataFactory resourceDataFactory;
+    @Inject protected StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
+    @Inject protected NodeConnectionDataFactory nodeConnectionDataFactory;
+    @Inject protected StorPoolDataFactory storPoolDataFactory;
+    @Inject protected VolumeDataFactory volumeDataFactory;
+    @Inject protected VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    @Inject protected ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
 
     @BeforeClass
-    public static void setUpBeforeClass() throws Exception
+    public static void setUpBeforeClass()
+        throws SQLException, InvalidNameException
     {
         if (dbConnPool == null)
         {
-            Injector injector = Guice.createInjector(
-                new GuiceConfigModule(),
-                new LoggingModule(errorReporter),
-                new CoreModule(),
-                new TestSecurityModule(SYS_CTX),
-                new TestDbConnectionPoolModule()
-            );
+            errorReporter.logTrace("Performing DB initialization");
 
-            dbConnPool = injector.getInstance(DbConnectionPool.class);
+            dbConnPool = new TestDbConnectionPoolLoader().loadDbConnectionPool();
 
-            con = dbConnPool.getConnection();
-            secureDbDriver = new DbDerbyPersistence(SYS_CTX, errorReporter);
+            Connection connection = dbConnPool.getConnection();
+            try
+            {
+                createTables(connection);
+                insertDefaults(connection);
+            }
+            finally
+            {
+                dbConnPool.returnConnection(connection);
+            }
 
-            nodesMap = injector.getInstance(CoreModule.NodesMap.class);
-            rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
-            storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
+            DbDerbyPersistence initializationSecureDbDriver = new DbDerbyPersistence(SYS_CTX, errorReporter);
 
-            persistenceDbDriver = injector.getInstance(DerbyDriver.class);
+            Identity.load(dbConnPool, initializationSecureDbDriver);
+            SecurityType.load(dbConnPool, initializationSecureDbDriver);
+            Role.load(dbConnPool, initializationSecureDbDriver);
         }
-    }
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception
-    {
-//        dropTables();
-//        File dbFolder = new File(DB_FOLDER);
-//        deleteFolder(dbFolder);
-
-//        con.close();
-//        dbConnPool.shutdown();
-//        initialized = false;
     }
 
     @Before
     public void setUp() throws Exception
     {
+        setUp(Modules.EMPTY_MODULE);
+    }
+
+    public void setUp(Module additionalModule) throws Exception
+    {
+        con = getConnection();
+
         errorReporter.logTrace("Running cleanups for next method: %s", testMethodName.getMethodName());
         truncateTables();
-        insertDefaults();
+        insertDefaults(con);
+        errorReporter.logTrace("cleanups done, initializing: %s", testMethodName.getMethodName());
+
+        Injector injector = Guice.createInjector(
+            new GuiceConfigModule(),
+            new LoggingModule(errorReporter),
+            new TestSecurityModule(SYS_CTX),
+            new CoreModule(),
+            new SharedDbConnectionPoolModule(),
+            new ControllerDbModule(),
+            additionalModule
+        );
+        injector.injectMembers(this);
 
         Connection tmpCon = dbConnPool.getConnection();
 
         TransactionMgr transMgr = new TransactionMgr(tmpCon);
         // make sure to seal the internal caches
-        CoreUtils.setDatabaseClasses(
-            secureDbDriver,
-            persistenceDbDriver
-        );
         persistenceDbDriver.loadAll(transMgr);
-        CoreUtils.loadDisklessStorPoolDfn(storPoolDfnMap);
 
         transMgr.commit();
         dbConnPool.returnConnection(transMgr);
 
         clearCaches();
-
-        errorReporter.logTrace("cleanups done, running method: %s", testMethodName.getMethodName());
     }
 
     protected void clearCaches()
@@ -168,14 +180,10 @@ public abstract class DerbyBase implements DerbyTestConstants
         storPoolDfnMap.clear();
     }
 
-    protected void setSecurityLevel(SecurityLevel level) throws AccessDeniedException, SQLException
-    {
-        SecurityLevel.set(SYS_CTX, level, dbConnPool, secureDbDriver);
-    }
-
     protected void satelliteMode()
     {
-        CoreUtils.satelliteMode(SYS_CTX, nodesMap, rscDfnMap, storPoolDfnMap);
+        // TODO
+//        CoreUtils.satelliteMode(SYS_CTX, nodesMap, rscDfnMap, storPoolDfnMap);
     }
 
     @After
@@ -191,13 +199,13 @@ public abstract class DerbyBase implements DerbyTestConstants
         }
         connections.clear();
 
-        if (dbConnPool.closeAllThreadLocalConnections(con))
+        if (dbConnPool != null && dbConnPool.closeAllThreadLocalConnections())
         {
             fail("Unclosed database connection");
         }
     }
 
-    protected static Connection getConnection() throws SQLException
+    protected Connection getConnection() throws SQLException
     {
         Connection connection = dbConnPool.getConnection();
         connection.setAutoCommit(false);
@@ -210,25 +218,25 @@ public abstract class DerbyBase implements DerbyTestConstants
         statements.add(stmt);
     }
 
-    private void createTables() throws SQLException
+    private static void createTables(Connection connection) throws SQLException
     {
         for (int idx = 0; idx < CREATE_TABLES.length; ++idx)
         {
-            createTable(con, true, idx);
+            createTable(connection, true, idx);
         }
-        con.commit();
+        connection.commit();
     }
 
-    private static void insertDefaults() throws SQLException
+    private static void insertDefaults(Connection connection) throws SQLException
     {
         for (String insert : INSERT_DEFAULT_VALUES)
         {
-            try (PreparedStatement stmt = con.prepareStatement(insert))
+            try (PreparedStatement stmt = connection.prepareStatement(insert))
             {
                 stmt.executeUpdate();
             }
         }
-        con.commit();
+        connection.commit();
     }
 
 //    private static void dropTables() throws SQLException
@@ -239,7 +247,7 @@ public abstract class DerbyBase implements DerbyTestConstants
 //        }
 //    }
 
-    private static void truncateTables() throws SQLException
+    private void truncateTables() throws SQLException
     {
         for (String sql : TRUNCATE_TABLES)
         {
@@ -249,7 +257,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         }
     }
 
-    private void createTable(Connection connection, boolean dropIfExists, int idx) throws SQLException
+    private static void createTable(Connection connection, boolean dropIfExists, int idx) throws SQLException
     {
         try
         {
@@ -645,5 +653,16 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.setString(3, value);
         stmt.executeUpdate();
         stmt.close();
+    }
+
+    private class SharedDbConnectionPoolModule extends AbstractModule
+    {
+        @Override
+        protected void configure()
+        {
+            bind(DbConnectionPool.class).toInstance(dbConnPool);
+
+            bind(ControllerDatabase.class).to(DbConnectionPool.class);
+        }
     }
 }

@@ -18,6 +18,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeDefinitionDataFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -56,6 +57,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection rscDfnMapProt;
     private final MinorNrPool minorNrPool;
     private final String defaultStorPoolName;
+    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -66,7 +68,9 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         MinorNrPool minorNrPoolRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
+        CtrlObjectFactories objectFactories,
+        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef
     )
     {
         super(
@@ -74,7 +78,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtx,
             ApiConsts.MASK_VLM_DFN,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
         super.setNullOnAutoClose(
             currentRscNameStr,
@@ -86,6 +91,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         rscDfnMapProt = rscDfnMapProtRef;
         minorNrPool = minorNrPoolRef;
         defaultStorPoolName = defaultStorPoolNameRef;
+        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
     }
 
     private void updateCurrentKeyNumber(final String key, Integer number)
@@ -430,7 +436,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = VolumeDefinitionData.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 new VolumeNumber(vlmNr),
@@ -582,7 +588,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = VolumeDefinitionData.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.getInstance(
                 accCtx,
                 rscDfn,
                 volNr,

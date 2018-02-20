@@ -1,5 +1,57 @@
 package com.linbit.linstor.core;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
+import com.linbit.InvalidNameException;
+import com.linbit.SatelliteTransactionMgr;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.MinorNumber;
+import com.linbit.linstor.NetInterfaceDataFactory;
+import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeFlag;
+import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeDataSatelliteFactory;
+import com.linbit.linstor.NodeId;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDataFactory;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceDefinitionDataFactory;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolDataFactory;
+import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmApi;
+import com.linbit.linstor.VolumeData;
+import com.linbit.linstor.VolumeDataFactory;
+import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeDefinitionDataFactory;
+import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
+import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,53 +65,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
-import com.linbit.InvalidNameException;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.NetInterfaceData;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.VolumeData;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
-import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 @Singleton
 class StltRscApiCallHandler
 {
@@ -70,6 +75,14 @@ class StltRscApiCallHandler
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
+    private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    private final NodeDataSatelliteFactory nodeDataFactory;
+    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final ResourceDataFactory resourceDataFactory;
+    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDataFactory storPoolDataFactory;
+    private final VolumeDataFactory volumeDataFactory;
 
     @Inject
     StltRscApiCallHandler(
@@ -79,7 +92,15 @@ class StltRscApiCallHandler
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+        StorPoolDefinitionMap storPoolDfnMapRef,
+        ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
+        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef,
+        NodeDataSatelliteFactory nodeDataFactoryRef,
+        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        ResourceDataFactory resourceDataFactoryRef,
+        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDataFactory storPoolDataFactoryRef,
+        VolumeDataFactory volumeDataFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -89,6 +110,14 @@ class StltRscApiCallHandler
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
+        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        nodeDataFactory = nodeDataFactoryRef;
+        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        resourceDataFactory = resourceDataFactoryRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDataFactory = storPoolDataFactoryRef;
+        volumeDataFactory = volumeDataFactoryRef;
     }
 
     /**
@@ -212,7 +241,7 @@ class StltRscApiCallHandler
         Set<Resource> otherRscs = new HashSet<>();
         if (rscDfn == null)
         {
-            rscDfn = ResourceDefinitionData.getInstanceSatellite(
+            rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
                 apiCtx,
                 rscRawData.getRscDfnUuid(),
                 rscName,
@@ -241,7 +270,7 @@ class StltRscApiCallHandler
             {
                 VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
                 VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
-                VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
+                VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
                     apiCtx,
                     vlmDfnRaw.getUuid(),
                     rscDfn,
@@ -301,21 +330,22 @@ class StltRscApiCallHandler
 
             for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
             {
-                NodeData remoteNode = NodeData.getInstanceSatellite(
+                NodeData remoteNode = nodeDataFactory.getInstanceSatellite(
                     apiCtx,
                     otherRscRaw.getNodeUuid(),
                     new NodeName(otherRscRaw.getNodeName()),
                     NodeType.valueOf(otherRscRaw.getNodeType()),
                     NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
                     otherRscRaw.getNodeDisklessStorPoolUuid(),
-                    transMgr
+                    transMgr,
+                    controllerPeerConnector.getDisklessStorPoolDfn()
                 );
                 checkUuid(remoteNode, otherRscRaw);
 
                 // set node's netinterfaces
                 for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
                 {
-                    NetInterfaceData.getInstanceSatellite(
+                    netInterfaceDataFactory.getInstanceSatellite(
                         apiCtx,
                         otherNodeNetIf.getUuid(),
                         remoteNode,
@@ -449,20 +479,21 @@ class StltRscApiCallHandler
                     NodeData remoteNode = (NodeData) nodesMap.get(nodeName);
                     if (remoteNode == null)
                     {
-                        remoteNode = NodeData.getInstanceSatellite(
+                        remoteNode = nodeDataFactory.getInstanceSatellite(
                             apiCtx,
                             otherRsc.getNodeUuid(),
                             nodeName,
                             NodeType.valueOf(otherRsc.getNodeType()),
                             NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
                             otherRsc.getNodeDisklessStorPoolUuid(),
-                            transMgr
+                            transMgr,
+                            controllerPeerConnector.getDisklessStorPoolDfn()
                         );
 
                         // set node's netinterfaces
                         for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRsc.getNetInterfacefPojos())
                         {
-                            NetInterfaceData.getInstanceSatellite(
+                            netInterfaceDataFactory.getInstanceSatellite(
                                 apiCtx,
                                 otherNodeNetIf.getUuid(),
                                 remoteNode,
@@ -596,7 +627,7 @@ class StltRscApiCallHandler
     )
         throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException
     {
-        ResourceData rsc = ResourceData.getInstanceSatellite(
+        ResourceData rsc = resourceDataFactory.getInstanceSatellite(
             apiCtx,
             rscUuid,
             node,
@@ -648,7 +679,7 @@ class StltRscApiCallHandler
                     storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
                 if (storPoolDfn == null)
                 {
-                    storPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                    storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
                         apiCtx,
                         vlmApi.getStorPoolDfnUuid(),
                         new StorPoolName(vlmApi.getStorPoolName()),
@@ -659,7 +690,7 @@ class StltRscApiCallHandler
 
                     storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
-                storPool = StorPoolData.getInstanceSatellite(
+                storPool = storPoolDataFactory.getInstanceSatellite(
                     apiCtx,
                     vlmApi.getStorPoolUuid(),
                     rsc.getAssignedNode(),
@@ -687,7 +718,7 @@ class StltRscApiCallHandler
 
         VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
-        VolumeData.getInstanceSatellite(
+        volumeDataFactory.getInstanceSatellite(
             apiCtx,
             vlmApi.getVlmUuid(),
             rsc,

@@ -5,8 +5,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeDataSatelliteFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPoolDefinitionData;
+import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -38,23 +40,29 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     private final AccessContext sysCtx;
 
+    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final NodeDataSatelliteFactory nodeDataFactory;
+
     // Local NodeName received from the currently active controller
     private NodeName localNodeName;
 
     // The currently connected controller peer (can be null)
     private Peer controllerPeer;
+    private StorPoolDefinitionData disklessStorPoolDfn;
 
     @Inject
     public ControllerPeerConnectorImpl(
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        @Named(CoreModule.RECONFIGURATION_LOCK)  ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         ErrorReporter errorReporterRef,
-        @SystemContext AccessContext sysCtxRef
+        @SystemContext AccessContext sysCtxRef,
+        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        NodeDataSatelliteFactory nodeDataFactoryRef
     )
     {
         nodesMap = nodesMapRef;
@@ -66,6 +74,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         errorReporter = errorReporterRef;
         sysCtx = sysCtxRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        nodeDataFactory = nodeDataFactoryRef;
     }
 
     @Override
@@ -78,6 +88,12 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     public Peer getControllerPeer()
     {
         return controllerPeer;
+    }
+
+    @Override
+    public StorPoolDefinitionData getDisklessStorPoolDfn()
+    {
+        return disklessStorPoolDfn;
     }
 
     @Override
@@ -105,7 +121,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             NodeData localNode;
             try
             {
-                LinStor.disklessStorPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
                     tmpCtx,
                     disklessStorPoolDfnUuid,
                     new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
@@ -114,14 +130,15 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
                 localNodeName = new NodeName(nodeName);
 
-                localNode = NodeData.getInstanceSatellite(
+                localNode = nodeDataFactory.getInstanceSatellite(
                     sysCtx,
                     nodeUuid,
                     localNodeName,
                     Node.NodeType.SATELLITE,
                     new Node.NodeFlag[] {},
                     disklessStorPoolUuid,
-                    transMgr
+                    transMgr,
+                    disklessStorPoolDfn
                 );
                 transMgr.commit();
 
@@ -131,7 +148,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                 // TODO: make sure everything is cleared
 
                 nodesMap.put(localNode.getName(), localNode);
-                storPoolDfnMap.put(LinStor.disklessStorPoolDfn.getName(), LinStor.disklessStorPoolDfn);
+                storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
                 setControllerPeerToCurrentLocalNode();
             }
             catch (ImplementationError | SQLException | InvalidNameException exc)

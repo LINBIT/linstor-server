@@ -36,14 +36,17 @@ public class SatelliteSecurityModule extends AbstractModule
     @Provides
     @Singleton
     @Named(SecurityModule.SHUTDOWN_PROT)
-    public ObjectProtection shutdownProt(@SystemContext AccessContext sysCtx)
+    public ObjectProtection shutdownProt(
+        @SystemContext AccessContext sysCtx,
+        ObjectProtectionFactory objectProtectionFactory
+    )
         throws AccessDeniedException
     {
         ObjectProtection shutdownProt;
 
         try
         {
-            shutdownProt = ObjectProtection.getInstance(
+            shutdownProt = objectProtectionFactory.getInstance(
                 sysCtx,
                 ObjectProtection.buildPathSatellite("shutdown"),
                 true,

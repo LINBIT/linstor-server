@@ -5,14 +5,11 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -88,6 +85,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private final Provider<NodeDataDerbyDriver> nodeDriverProvider;
     private final Provider<ResourceDataDerbyDriver> resourceDriverProvider;
     private final Provider<VolumeConnectionDataDerbyDriver> volumeConnectionDriverProvider;
+    private final Provider<VolumeDefinitionDataDerbyDriver> volDfnDriverProvider;
+    private final Provider<StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverProvider;
+    private final Provider<StorPoolDataDerbyDriver> storPoolDriverProvider;
+    private final PropsContainerFactory propsContainerFactory;
 
     private HashMap<VolPrimaryKey, VolumeData> volCache;
     private boolean cacheCleared = false;
@@ -98,7 +99,11 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         ErrorReporter errorReporterRef,
         Provider<NodeDataDerbyDriver> nodeDriverProviderRef,
         Provider<ResourceDataDerbyDriver> resourceDriverProviderRef,
-        Provider<VolumeConnectionDataDerbyDriver> volumeConnectionDriverProviderRef
+        Provider<VolumeConnectionDataDerbyDriver> volumeConnectionDriverProviderRef,
+        Provider<VolumeDefinitionDataDerbyDriver> volDfnDriverProviderRef,
+        Provider<StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverProviderRef,
+        Provider<StorPoolDataDerbyDriver> storPoolDriverProviderRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = privCtx;
@@ -106,6 +111,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         nodeDriverProvider = nodeDriverProviderRef;
         resourceDriverProvider = resourceDriverProviderRef;
         volumeConnectionDriverProvider = volumeConnectionDriverProviderRef;
+        volDfnDriverProvider = volDfnDriverProviderRef;
+        storPoolDfnDriverProvider = storPoolDfnDriverProviderRef;
+        storPoolDriverProvider = storPoolDriverProviderRef;
+        propsContainerFactory = propsContainerFactoryRef;
 
         flagPersistenceDriver = new VolFlagsPersistence();
 
@@ -309,23 +318,20 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     invalidNameExc
                 );
             }
-            VolumeDefinitionDataDatabaseDriver volDfnDriver = LinStor.getVolumeDefinitionDataDatabaseDriver();
-            volDfn = volDfnDriver.load(
+            volDfn = volDfnDriverProvider.get().load(
                 res.getDefinition(),
                 volNr,
                 true,
                 transMgr
             );
 
-            StorPoolDefinitionDataDatabaseDriver storPoolDfnDriver = LinStor.getStorPoolDefinitionDataDatabaseDriver();
-            StorPoolDefinitionData storPoolDfn = storPoolDfnDriver.load(
+            StorPoolDefinitionData storPoolDfn = storPoolDfnDriverProvider.get().load(
                 storPoolName,
                 true,
                 transMgr
             );
 
-            StorPoolDataDatabaseDriver storPoolDriver = LinStor.getStorPoolDataDatabaseDriver();
-            StorPoolData storPool = storPoolDriver.load(
+            StorPoolData storPool = storPoolDriverProvider.get().load(
                 res.getAssignedNode(),
                 storPoolDfn,
                 true,
@@ -352,7 +358,9 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         resultSet.getString(VOL_BLOCK_DEVICE),
                         resultSet.getString(VOL_META_DISK),
                         resultSet.getLong(VOL_FLAGS),
-                        transMgr
+                        transMgr,
+                        this,
+                        propsContainerFactory
                     );
                     errorReporter.logTrace("Volume created %s", getId(volData));
                     if (!cacheCleared)

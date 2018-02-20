@@ -1,23 +1,14 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.UUID;
-
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.VlmPojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -25,6 +16,13 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.UUID;
 
 /**
  *
@@ -65,38 +63,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, Boolean> deleted;
 
-
-    /*
-     * used by getInstance
-     */
-    private VolumeData(
-        AccessContext accCtx,
-        Resource resRef,
-        VolumeDefinition volDfn,
-        StorPool storPoolRef,
-        String blockDevicePathRef,
-        String metaDiskPathRef,
-        long initFlags,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            resRef,
-            volDfn,
-            storPoolRef,
-            blockDevicePathRef,
-            metaDiskPathRef,
-            initFlags,
-            transMgr
-        );
-    }
-
-    /*
-     * used by database drivers and tests
-     */
     VolumeData(
         UUID uuid,
         AccessContext accCtx,
@@ -106,7 +72,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        VolumeDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory
     )
         throws SQLException, AccessDeniedException
     {
@@ -118,18 +86,17 @@ public class VolumeData extends BaseTransactionObject implements Volume
         storPool = storPoolRef;
         blockDevicePath = blockDevicePathRef;
         metaDiskPath = metaDiskPathRef;
-
-        dbDriver = LinStor.getVolumeDataDatabaseDriver();
+        dbDriver = dbDriverRef;
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
             this,
-            dbDriver.getStateFlagsPersistence(),
+            this.dbDriver.getStateFlagsPersistence(),
             initFlags
         );
 
         volumeConnections = new TransactionMap<>(new HashMap<Volume, VolumeConnection>(), null);
-        volumeProps = PropsContainer.getInstance(
+        volumeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
                 resRef.getDefinition().getName(),
@@ -158,98 +125,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    public static VolumeData getInstance(
-        AccessContext accCtx,
-        Resource resRef,
-        VolumeDefinition volDfn,
-        StorPool storPool,
-        String blockDevicePathRef,
-        String metaDiskPathRef,
-        VlmFlags[] flags,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VolumeData volData = null;
-
-        VolumeDataDatabaseDriver driver = LinStor.getVolumeDataDatabaseDriver();
-        volData = driver.load(resRef, volDfn, false, transMgr);
-
-        if (failIfExists && volData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The Volume already exists");
-        }
-
-        if (volData == null && createIfNotExists)
-        {
-            volData = new VolumeData(
-                accCtx,
-                resRef,
-                volDfn,
-                storPool,
-                blockDevicePathRef,
-                metaDiskPathRef,
-                StateFlagsBits.getMask(flags),
-                transMgr
-            );
-            driver.create(volData, transMgr);
-        }
-        if (volData != null)
-        {
-            volData.initialized();
-            volData.setConnection(transMgr);
-        }
-        return volData;
-    }
-
-    public static VolumeData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID vlmUuid,
-        Resource rscRef,
-        VolumeDefinition vlmDfn,
-        StorPool storPoolRef,
-        String blockDevicePathRef,
-        String metaDiskPathRef,
-        VlmFlags[] flags,
-        SatelliteTransactionMgr transMgr
-    )
-    {
-        VolumeDataDatabaseDriver driver = LinStor.getVolumeDataDatabaseDriver();
-        VolumeData vlmData;
-        try
-        {
-            vlmData = driver.load(rscRef, vlmDfn, false, transMgr);
-            if (vlmData == null)
-            {
-                vlmData = new VolumeData(
-                    vlmUuid,
-                    accCtx,
-                    rscRef,
-                    vlmDfn,
-                    storPoolRef,
-                    blockDevicePathRef,
-                    metaDiskPathRef,
-                    StateFlagsBits.getMask(flags),
-                    transMgr
-                );
-            }
-            vlmData.initialized();
-            vlmData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-
-        return vlmData;
     }
 
     @Override

@@ -1,26 +1,8 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.dbdrivers.DatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -53,13 +35,6 @@ public abstract class LinStor
     // Core system services
     //
     protected CoreTimer timerEventSvc;
-
-    // Database drivers
-    protected static DbAccessor securityDbDriver;
-    protected static DatabaseDriver persistenceDbDriver;
-
-    protected static StorPoolDefinition disklessStorPoolDfn;
-    protected static StorPoolData disklessStorPool;
 
     // Error & exception logging facility
     private ErrorReporter errorLog;
@@ -167,82 +142,5 @@ public abstract class LinStor
         System.out.println();
 
         System.out.println("System components initialization in progress\n");
-    }
-
-    // static Database reference getters
-
-    public static PropsConDatabaseDriver getPropConDatabaseDriver()
-    {
-        return persistenceDbDriver.getPropsDatabaseDriver();
-    }
-
-    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getNodeDatabaseDriver();
-    }
-
-    public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
-    {
-        return securityDbDriver.getObjectProtectionDatabaseDriver();
-    }
-
-    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getResourceDataDatabaseDriver();
-    }
-
-    public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getResourceDefinitionDataDatabaseDriver();
-    }
-
-    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getVolumeDataDatabaseDriver();
-    }
-
-    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver();
-    }
-
-    public static StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getStorPoolDataDatabaseDriver();
-    }
-
-    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getStorPoolDefinitionDataDatabaseDriver();
-    }
-
-    public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getNetInterfaceDataDatabaseDriver();
-    }
-
-    public static SatelliteConnectionDataDatabaseDriver getSatelliteConnectionDataDatabaseDriver()
-    {
-        return persistenceDbDriver.getSatelliteConnectionDataDatabaseDriver();
-    }
-
-    public static NodeConnectionDataDatabaseDriver getNodeConnectionDatabaseDriver()
-    {
-        return persistenceDbDriver.getNodeConnectionDataDatabaseDriver();
-    }
-
-    public static ResourceConnectionDataDatabaseDriver getResourceConnectionDatabaseDriver()
-    {
-        return persistenceDbDriver.getResourceConnectionDataDatabaseDriver();
-    }
-
-    public static VolumeConnectionDataDatabaseDriver getVolumeConnectionDatabaseDriver()
-    {
-        return persistenceDbDriver.getVolumeConnectionDataDatabaseDriver();
-    }
-
-    public static StorPoolDefinition getDisklessStorPoolDfn()
-    {
-        return disklessStorPoolDfn;
     }
 }

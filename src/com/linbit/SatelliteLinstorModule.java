@@ -6,8 +6,8 @@ import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.logging.ErrorReporter;
-import javax.inject.Named;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 public class SatelliteLinstorModule extends AbstractModule

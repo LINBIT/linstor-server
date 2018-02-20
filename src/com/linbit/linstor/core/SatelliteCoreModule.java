@@ -8,7 +8,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -56,13 +56,13 @@ public class SatelliteCoreModule extends AbstractModule
     @Provides
     @Singleton
     @Named(SATELLITE_PROPS)
-    public Props loadPropsContainer()
+    public Props loadPropsContainer(PropsContainerFactory propsContainerFactory)
     {
         Props propsContainer;
         try
         {
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            propsContainer = PropsContainer.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME, transMgr);
+            propsContainer = propsContainerFactory.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME, transMgr);
             transMgr.commit();
         }
         catch (SQLException exc)

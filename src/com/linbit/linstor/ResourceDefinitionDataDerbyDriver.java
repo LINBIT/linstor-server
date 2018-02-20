@@ -8,11 +8,11 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -90,6 +90,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
     private final Provider<ResourceDataDerbyDriver> resourceDriverProvider;
     private final Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProvider;
+    private final ObjectProtectionDatabaseDriver objProtDriver;
+    private final PropsContainerFactory propsContainerFactory;
 
     @Inject
     public ResourceDefinitionDataDerbyDriver(
@@ -97,13 +99,17 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         ErrorReporter errorReporterRef,
         Map<ResourceName, ResourceDefinition> resDfnMapRef,
         Provider<ResourceDataDerbyDriver> resourceDriverProviderRef,
-        Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProviderRef
+        Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProviderRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         resourceDriverProvider = resourceDriverProviderRef;
         volumeDefinitionDriverProvider = volumeDefinitionDriverProviderRef;
+        objProtDriver = objProtDriverRef;
+        propsContainerFactory = propsContainerFactoryRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
         portDriver = new PortDriver();
         transTypeDriver = new TransportTypeDriver();
@@ -255,7 +261,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     resultSet.getLong(RD_FLAGS),
                     resultSet.getString(RD_SECRET),
                     TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),
-                    transMgr
+                    transMgr,
+                    this,
+                    propsContainerFactory
                 );
                 // cache the resDfn BEFORE we load the conDfns
                 if (!cacheCleared)
@@ -310,7 +318,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private ObjectProtection getObjectProtection(ResourceName resourceName, TransactionMgr transMgr)
         throws SQLException, ImplementationError
     {
-        ObjectProtectionDatabaseDriver objProtDriver = LinStor.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(resourceName),
             false, // no need to log a warning, as we would fail then anyways

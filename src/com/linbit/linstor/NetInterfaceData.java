@@ -1,20 +1,16 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
-
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Implementation of a network interface
@@ -37,44 +33,22 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     private final TransactionSimpleObject<NetInterfaceData, Boolean> deleted;
 
-    // used by getInstance
-    private NetInterfaceData(
-        AccessContext accCtx,
-        Node node,
-        NetInterfaceName name,
-        LsIpAddress addr,
-        TransactionMgr transMgr
-    )
-        throws AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            name,
-            node,
-            addr
-        );
-
-        setConnection(transMgr);
-    }
-
-    // used by db drivers and tests
     NetInterfaceData(
         UUID uuid,
         AccessContext accCtx,
         NetInterfaceName netName,
         Node node,
-        LsIpAddress addr
+        LsIpAddress addr,
+        NetInterfaceDataDatabaseDriver dbDriverRef
     )
         throws AccessDeniedException
     {
         niUuid = uuid;
         niNode = node;
         niName = netName;
+        dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
-
-        dbDriver = LinStor.getNetInterfaceDataDatabaseDriver();
 
         niAddress = new TransactionSimpleObject<>(
             this,
@@ -94,80 +68,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    public static NetInterfaceData getInstance(
-        AccessContext accCtx,
-        Node node,
-        NetInterfaceName name,
-        LsIpAddress addr,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        NetInterfaceData netData = null;
-        NetInterfaceDataDatabaseDriver driver = LinStor.getNetInterfaceDataDatabaseDriver();
-
-        netData = driver.load(node, name, false, transMgr);
-
-        if (failIfExists && netData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The NetInterface already exists");
-        }
-
-        if (netData == null && createIfNotExists)
-        {
-            netData = new NetInterfaceData(accCtx, node, name, addr, transMgr);
-            driver.create(netData, transMgr);
-        }
-        if (netData != null)
-        {
-            netData.initialized();
-        }
-
-        return netData;
-    }
-
-    public static NetInterfaceData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Node node,
-        NetInterfaceName netName,
-        LsIpAddress addr,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        NetInterfaceDataDatabaseDriver driver = LinStor.getNetInterfaceDataDatabaseDriver();
-
-        NetInterfaceData netData;
-        try
-        {
-            netData = driver.load(node, netName, false, transMgr);
-            if (netData == null)
-            {
-                netData = new NetInterfaceData(
-                    uuid,
-                    accCtx,
-                    netName,
-                    node,
-                    addr
-                );
-            }
-            netData.initialized();
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return netData;
     }
 
     @Override

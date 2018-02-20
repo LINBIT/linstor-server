@@ -1,36 +1,30 @@
 package com.linbit.linstor.core;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.net.InetSocketAddress;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
+import com.google.inject.Inject;
+import com.google.inject.testing.fieldbinder.Bind;
+import com.google.inject.testing.fieldbinder.BoundFieldModule;
+import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.api.utils.DummyTcpConnector;
-import com.linbit.linstor.netcom.NetComContainer;
-import com.linbit.linstor.netcom.TcpConnector;
-import org.junit.Assert;
-import org.junit.Before;
 import com.linbit.TransactionMgr;
-import com.linbit.drbd.md.MetaData;
-import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.api.utils.DummyTcpConnector;
 import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
 import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
-import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.dbdrivers.ControllerDbModule;
+import com.linbit.linstor.netcom.NetComContainer;
+import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
@@ -38,77 +32,68 @@ import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.testclient.ApiRCUtils;
+import org.junit.Assert;
+import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import javax.inject.Named;
+import java.net.InetSocketAddress;
+import java.sql.SQLException;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public abstract class ApiTestBase extends DerbyBase
 {
-    @Mock
-    protected SatelliteConnector satelliteConnector;
-
-    @Mock
-    protected NetComContainer netComContainer;
-
-    protected final static long CRT = ApiConsts.MASK_CRT;
-    protected final static long DEL = ApiConsts.MASK_DEL;
-    protected final static long MOD = ApiConsts.MASK_MOD;
-
     protected static final AccessContext ALICE_ACC_CTX;
     protected static final AccessContext BOB_ACC_CTX;
-
     static
     {
         ALICE_ACC_CTX = TestAccessContextProvider.ALICE_ACC_CTX;
         BOB_ACC_CTX = TestAccessContextProvider.BOB_ACC_CTX;
     }
 
-    /*
-     * Controller fields START
-     */
-    protected static MetaDataApi metaData;
-    protected static ObjectProtection nodesMapProt;
-    protected static ObjectProtection rscDfnMapProt;
-    protected static ObjectProtection storPoolDfnMapProt;
-    protected static ReadWriteLock nodesMapLock;
-    protected static ReadWriteLock rscDfnMapLock;
-    protected static ReadWriteLock storPoolDfnMapLock;
-    protected static ReadWriteLock ctrlConfLock;
-    protected static Props ctrlConf;
-    protected static ObjectProtection ctrlConfProt;
-    /*
-     * Controller fields END
-     */
-    private static TcpConnector tcpConnector;
+    @Bind @Mock
+    protected SatelliteConnector satelliteConnector;
 
-    public ApiTestBase()
-    {
-        tcpConnector = new DummyTcpConnector();
-    }
+    @Bind @Mock
+    protected NetComContainer netComContainer;
+
+    @Inject @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN)
+    protected StorPoolDefinition disklessStorPoolDfn;
+
+    @Inject @Named(ControllerSecurityModule.NODES_MAP_PROT)
+    protected ObjectProtection nodesMapProt;
+
+    @Inject @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT)
+    protected ObjectProtection rscDfnMapProt;
+
+    @Inject @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)
+    protected ObjectProtection storPoolDfnMapProt;
+
+    @Inject @Named(ControllerCoreModule.CONTROLLER_PROPS)
+    protected Props ctrlConf;
 
     @Before
     @Override
     public void setUp() throws Exception
     {
-        super.setUp();
         MockitoAnnotations.initMocks(this);
 
-        metaData = new MetaData();
+        super.setUp(Modules.combine(
+            new ApiCallHandlerModule(),
+            new CtrlApiCallHandlerModule(),
+            new ControllerSecurityModule(),
+            new ControllerCoreModule(),
+            new ConfigModule(),
+            BoundFieldModule.of(this)
+        ));
 
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);
 
-        nodesMapProt = ObjectProtection.getInstance(SYS_CTX, "/sys/controller/nodesMap", true, transMgr);
-        rscDfnMapProt = ObjectProtection.getInstance(SYS_CTX, "/sys/controller/rscDfnMap", true, transMgr);
-        storPoolDfnMapProt = ObjectProtection.getInstance(SYS_CTX, "/sys/controller/storPoolMap", true, transMgr);
-
-        nodesMapLock = new ReentrantReadWriteLock(true);
-        rscDfnMapLock = new ReentrantReadWriteLock(true);
-        storPoolDfnMapLock = new ReentrantReadWriteLock(true);
-        ctrlConfLock = new ReentrantReadWriteLock(true);
-
-        ctrlConf = PropsContainer.getInstance("CTRLCFG", transMgr);
-        ctrlConfProt = ObjectProtection.getInstance(SYS_CTX, "/sys/controller/conf", true, transMgr);
-
+        ctrlConf.setConnection(transMgr);
         ctrlConf.setProp(Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
         ctrlConf.setProp(Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC, "ignore");
 
@@ -118,6 +103,7 @@ public abstract class ApiTestBase extends DerbyBase
         transMgr.commit();
         dbConnPool.returnConnection(transMgr);
 
+        TcpConnector tcpConnector = new DummyTcpConnector();
         Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class))).thenReturn(tcpConnector);
     }
 
@@ -140,11 +126,16 @@ public abstract class ApiTestBase extends DerbyBase
 
         accCtx.subjectDomain.addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CONTROL);
 
+        nodesMapProt.setConnection(transMgr);
+        rscDfnMapProt.setConnection(transMgr);
+        storPoolDfnMapProt.setConnection(transMgr);
         nodesMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
         rscDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
         storPoolDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
 
-        LinStor.disklessStorPoolDfn.getObjProt().addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
+        ObjectProtection disklessStorPoolDfnProt = disklessStorPoolDfn.getObjProt();
+        disklessStorPoolDfnProt.setConnection(transMgr);
+        disklessStorPoolDfnProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
     }
 
     protected static NetInterfaceApi createNetInterfaceApi(String name, String address)

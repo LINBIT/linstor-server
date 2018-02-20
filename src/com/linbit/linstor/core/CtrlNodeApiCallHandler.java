@@ -12,17 +12,19 @@ import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.NetInterfaceData;
+import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.SatelliteConnectionData;
+import com.linbit.linstor.SatelliteConnectionDataFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
@@ -70,6 +72,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection nodesMapProt;
     private final SatelliteConnector satelliteConnector;
     private final NetComContainer netComContainer;
+    private final NodeDataControllerFactory nodeDataFactory;
+    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -82,10 +87,14 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         SatelliteConnector satelliteConnectorRef,
-        NetComContainer netComContainerRef
+        NetComContainer netComContainerRef,
+        CtrlObjectFactories objectFactories,
+        NodeDataControllerFactory nodeDataFactoryRef,
+        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef
     )
     {
-        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer);
+        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer, objectFactories);
         super.setNullOnAutoClose(
             currentNodeName,
             currentNodeType
@@ -96,6 +105,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         nodesMapProt = nodesMapProtRef;
         satelliteConnector = satelliteConnectorRef;
         netComContainer = netComContainerRef;
+        nodeDataFactory = nodeDataFactoryRef;
+        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        satelliteConnectionDataFactory = satelliteConnectionDataFactoryRef;
     }
 
     /**
@@ -640,7 +652,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NodeData node;
         try
         {
-            node = NodeData.getInstance(
+            node = nodeDataFactory.getInstance(
                 currentAccCtx.get(),
                 nodeName,
                 type,
@@ -741,7 +753,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NetInterfaceData netIf;
         try
         {
-            netIf = NetInterfaceData.getInstance(
+            netIf = netInterfaceDataFactory.getInstance(
                 currentAccCtx.get(),
                 node,
                 netName,
@@ -791,7 +803,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
 
-            SatelliteConnectionData.getInstance(
+            satelliteConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 node,
                 netIf,

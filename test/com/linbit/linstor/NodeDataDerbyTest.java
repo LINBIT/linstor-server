@@ -1,13 +1,6 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.*;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.List;
-
-import org.junit.Test;
-
+import com.google.inject.Inject;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
@@ -23,6 +16,17 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.storage.StorageDriver;
+import org.junit.Test;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class NodeDataDerbyTest extends DerbyBase
 {
@@ -53,7 +57,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
     private final NodeName nodeName;
 
-    private NodeDataDerbyDriver dbDriver;
+    @Inject private NodeDataDerbyDriver dbDriver;
     private TransactionMgr transMgr;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
@@ -72,11 +76,10 @@ public class NodeDataDerbyTest extends DerbyBase
         super.setUp();
         assertEquals("NODES table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODES);
 
-        dbDriver = (NodeDataDerbyDriver) LinStor.getNodeDataDatabaseDriver();
         transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
-        objProt = ObjectProtection.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName), true, transMgr);
+        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName), true, transMgr);
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
         node = new NodeData(
@@ -86,8 +89,9 @@ public class NodeDataDerbyTest extends DerbyBase
             nodeName,
             initialType,
             initialFlags,
-            randomUUID(),
-            transMgr
+            transMgr,
+            dbDriver,
+            propsContainerFactory
         );
     }
 
@@ -115,7 +119,7 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        NodeData.getInstance(
+        nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName,
             null,
@@ -159,7 +163,7 @@ public class NodeDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
 
-        ObjectProtection loadedObjProt = ObjectProtection.getInstance(
+        ObjectProtection loadedObjProt = objectProtectionFactory.getInstance(
             SYS_CTX,
             ObjectProtection.buildPath(nodeName),
             false,
@@ -181,7 +185,7 @@ public class NodeDataDerbyTest extends DerbyBase
         insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
-        NodeData loaded = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        NodeData loaded = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
 
         assertNotNull(loaded);
         loaded.setConnection(transMgr);
@@ -218,13 +222,13 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        NodeData loadedNode = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
         assertNull(loadedNode);
 
         insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
-        loadedNode = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
 
         assertNotNull(loadedNode);
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
@@ -322,7 +326,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         {
             // node1
-            NodeData node1 = NodeData.getInstance(
+            NodeData node1 = nodeDataFactory.getInstance(
                 SYS_CTX,
                 nodeName,
                 NodeType.AUXILIARY,
@@ -337,7 +341,7 @@ public class NodeDataDerbyTest extends DerbyBase
             nodesMap.put(node1.getName(), node1);
 
             // node1's netIface
-            NetInterfaceData netIf = NetInterfaceData.getInstance(
+            NetInterfaceData netIf = netInterfaceDataFactory.getInstance(
                 SYS_CTX,
                 node1,
                 netName,
@@ -349,7 +353,7 @@ public class NodeDataDerbyTest extends DerbyBase
             netIfUuid = netIf.getUuid();
 
             // node2
-            NodeData node2 = NodeData.getInstance(
+            NodeData node2 = nodeDataFactory.getInstance(
                 SYS_CTX,
                 nodeName2,
                 NodeType.AUXILIARY,
@@ -362,7 +366,7 @@ public class NodeDataDerbyTest extends DerbyBase
             nodesMap.put(node2.getName(), node2);
 
             // resDfn
-            ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance(
+            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 resName,
                 resPort,
@@ -379,7 +383,7 @@ public class NodeDataDerbyTest extends DerbyBase
             rscDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
-            VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(
+            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 resDfn,
                 volDfnNr,
@@ -394,7 +398,7 @@ public class NodeDataDerbyTest extends DerbyBase
             volDfnUuid = volDfn.getUuid();
 
             // storPoolDfn
-            StorPoolDefinitionData storPoolDfn = StorPoolDefinitionData.getInstance(
+            StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 poolName,
                 transMgr,
@@ -406,7 +410,7 @@ public class NodeDataDerbyTest extends DerbyBase
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
             // node1 storPool
-            StorPoolData storPool1 = StorPoolData.getInstance(
+            StorPoolData storPool1 = storPoolDataFactory.getInstance(
                 SYS_CTX,
                 node1,
                 storPoolDfn,
@@ -418,7 +422,7 @@ public class NodeDataDerbyTest extends DerbyBase
             storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
             // node2 storPool
-            StorPoolData storPool2 = StorPoolData.getInstance(
+            StorPoolData storPool2 = storPoolDataFactory.getInstance(
                 SYS_CTX,
                 node2,
                 storPoolDfn,
@@ -430,7 +434,7 @@ public class NodeDataDerbyTest extends DerbyBase
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 
             // node1 res
-            ResourceData res1 = ResourceData.getInstance(
+            ResourceData res1 = resourceDataFactory.getInstance(
                 SYS_CTX,
                 resDfn,
                 node1,
@@ -444,7 +448,7 @@ public class NodeDataDerbyTest extends DerbyBase
             res1Uuid = res1.getUuid();
 
             // node1 vol
-            VolumeData vol1 = VolumeData.getInstance(
+            VolumeData vol1 = volumeDataFactory.getInstance(
                 SYS_CTX,
                 res1,
                 volDfn,
@@ -460,7 +464,7 @@ public class NodeDataDerbyTest extends DerbyBase
             vol1Uuid = vol1.getUuid();
 
             // node2 res
-            ResourceData res2 = ResourceData.getInstance(
+            ResourceData res2 = resourceDataFactory.getInstance(
                 SYS_CTX,
                 resDfn,
                 node2,
@@ -474,7 +478,7 @@ public class NodeDataDerbyTest extends DerbyBase
             res2Uuid = res2.getUuid();
 
             // node2 vol
-            VolumeData vol2 = VolumeData.getInstance(
+            VolumeData vol2 = volumeDataFactory.getInstance(
                 SYS_CTX,
                 res2,
                 volDfn,
@@ -490,7 +494,7 @@ public class NodeDataDerbyTest extends DerbyBase
             vol2Uuid = vol2.getUuid();
 
             // nodeCon node1 <-> node2
-            NodeConnectionData nodeCon = NodeConnectionData.getInstance(
+            NodeConnectionData nodeCon = nodeConnectionDataFactory.getInstance(
                 SYS_CTX,
                 node1,
                 node2,
@@ -502,7 +506,7 @@ public class NodeDataDerbyTest extends DerbyBase
             nodeConUuid = nodeCon.getUuid();
 
             // resCon res1 <-> res2
-            ResourceConnectionData resCon = ResourceConnectionData.getInstance(
+            ResourceConnectionData resCon = resourceConnectionDataFactory.getInstance(
                 SYS_CTX,
                 res1,
                 res2,
@@ -514,7 +518,7 @@ public class NodeDataDerbyTest extends DerbyBase
             resConUuid = resCon.getUuid();
 
             // volCon vol1 <-> vol2
-            VolumeConnectionData volCon = VolumeConnectionData.getInstance(
+            VolumeConnectionData volCon = volumeConnectionDataFactory.getInstance(
                 SYS_CTX,
                 vol1,
                 vol2,
@@ -529,8 +533,8 @@ public class NodeDataDerbyTest extends DerbyBase
         }
 //        clearCaches();
 
-        NodeData loadedNode = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
-        NodeData loadedNode2 = NodeData.getInstance(SYS_CTX, nodeName2, null, null, transMgr, false, false);
+        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, null, null, transMgr, false, false);
 
         assertNotNull(loadedNode);
 
@@ -735,7 +739,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        NodeData nodeData = NodeData.getInstance(
+        NodeData nodeData = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName,
             null,
@@ -761,7 +765,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        NodeData nodeData = NodeData.getInstance(
+        NodeData nodeData = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName,
             null,
@@ -799,7 +803,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(node, transMgr);
         NodeName nodeName2 = new NodeName("NodeName2");
-        NodeData node2 = NodeData.getInstance(
+        NodeData node2 = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName2,
             NodeType.CONTROLLER,
@@ -833,7 +837,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(node, transMgr);
 
-        NodeData.getInstance(SYS_CTX, nodeName, initialType, null, transMgr, false, true);
+        nodeDataFactory.getInstance(SYS_CTX, nodeName, initialType, null, transMgr, false, true);
     }
 
 }

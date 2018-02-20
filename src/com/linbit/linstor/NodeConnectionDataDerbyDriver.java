@@ -7,6 +7,7 @@ import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
@@ -53,17 +54,20 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final Provider<NodeDataDerbyDriver> nodeDriverProvider;
+    private final PropsContainerFactory propsContainerFactory;
 
     @Inject
     public NodeConnectionDataDerbyDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Provider<NodeDataDerbyDriver> nodeDriverProviderRef
+        Provider<NodeDataDerbyDriver> nodeDriverProviderRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
         nodeDriverProvider = nodeDriverProviderRef;
+        propsContainerFactory = propsContainerFactoryRef;
     }
 
     @Override
@@ -197,7 +201,9 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
                     dbCtx,
                     sourceNode,
                     targetNode,
-                    transMgr
+                    this,
+                    transMgr,
+                    propsContainerFactory
                 );
             }
             catch (AccessDeniedException accDeniedExc)

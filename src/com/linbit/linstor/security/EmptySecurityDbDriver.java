@@ -1,9 +1,5 @@
 package com.linbit.linstor.security;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
@@ -11,6 +7,9 @@ import com.linbit.linstor.annotation.SystemContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @Singleton
 public class EmptySecurityDbDriver implements DbAccessor
@@ -18,12 +17,9 @@ public class EmptySecurityDbDriver implements DbAccessor
     public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER =
         new NoOpObjectDatabaseDriver<Object, Object>();
 
-    private final ObjectProtection objProt;
-
     @Inject
-    public EmptySecurityDbDriver(@SystemContext AccessContext accCtx)
+    public EmptySecurityDbDriver()
     {
-        objProt = new ObjectProtection(accCtx, null, null);
     }
 
     @Override
@@ -81,12 +77,6 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
-    {
-        return new EmptyObjectProtectionDatabaseDriver();
-    }
-
-    @Override
     public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
     {
         // no-op
@@ -98,10 +88,14 @@ public class EmptySecurityDbDriver implements DbAccessor
         // no-op
     }
 
-    private class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
+    public static class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
-        EmptyObjectProtectionDatabaseDriver()
+        private final ObjectProtection objProt;
+
+        @Inject
+        EmptyObjectProtectionDatabaseDriver(@SystemContext AccessContext accCtx)
         {
+            objProt = new ObjectProtection(accCtx, null, null);
         }
 
         @Override

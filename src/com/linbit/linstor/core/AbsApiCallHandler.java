@@ -1,11 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
@@ -34,14 +28,20 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+
+import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 abstract class AbsApiCallHandler implements AutoCloseable
 {
@@ -73,6 +73,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final DbConnectionPool dbConnPool;
     protected final AccessContext apiCtx;
     protected final CtrlStltSerializer internalComSerializer;
+    private final CtrlObjectFactories objectFactories;
 
     private ThreadLocal<?>[] customThreadLocals;
 
@@ -82,7 +83,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
         DbConnectionPool dbConnPoolRef,
         AccessContext apiCtxRef,
         long objMaskRef,
-        CtrlStltSerializer serializerRef
+        CtrlStltSerializer serializerRef,
+        CtrlObjectFactories objectFactoriesRef
     )
     {
         errorReporter = errorReporterRef;
@@ -90,6 +92,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         apiCtx = apiCtxRef;
         objMask = objMaskRef;
         internalComSerializer = serializerRef;
+        objectFactories = objectFactoriesRef;
     }
 
     public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocalsRef)
@@ -405,7 +408,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         NodeData node;
         try
         {
-            node = NodeData.getInstance(
+            node = objectFactories.getNodeDataFactory().getInstance(
                 currentAccCtx.get(),
                 nodeName,
                 null,
@@ -467,7 +470,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = ResourceDefinitionData.getInstance(
+            rscDfn = objectFactories.getResourceDefinitionDataFactory().getInstance(
                 currentAccCtx.get(),
                 rscName,
                 null, // port
@@ -524,7 +527,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         ResourceData rscData;
         try
         {
-            rscData = ResourceData.getInstance(
+            rscData = objectFactories.getResourceDataFactory().getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 node,
@@ -587,7 +590,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         StorPoolDefinitionData storPoolDfn;
         try
         {
-            storPoolDfn = StorPoolDefinitionData.getInstance(
+            storPoolDfn = objectFactories.getStorPoolDefinitionDataFactory().getInstance(
                 currentAccCtx.get(),
                 storPoolName,
                 currentTransMgr.get(),
@@ -644,7 +647,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         StorPoolData storPool;
         try
         {
-            storPool = StorPoolData.getInstance(
+            storPool = objectFactories.getStorPoolDataFactory().getInstance(
                 currentAccCtx.get(),
                 node,
                 storPoolDfn,

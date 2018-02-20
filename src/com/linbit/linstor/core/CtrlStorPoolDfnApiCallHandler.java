@@ -7,6 +7,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
+import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -40,6 +41,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
+    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -49,7 +51,9 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef
+        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
+        CtrlObjectFactories objectFactories,
+        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef
     )
     {
         super(
@@ -57,12 +61,14 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL_DFN,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
         super.setNullOnAutoClose(currentStorPoolNameStr);
         clientComSerializer = clientComSerializerRef;
         storPoolDfnMap = storPoolDfnMapRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -353,7 +359,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         StorPoolDefinitionData storPoolDfn;
         try
         {
-            storPoolDfn = StorPoolDefinitionData.getInstance(
+            storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 currentAccCtx.get(),
                 asStorPoolName(storPoolNameStr),
                 currentTransMgr.get(),

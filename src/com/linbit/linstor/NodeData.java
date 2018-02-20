@@ -1,27 +1,18 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -29,11 +20,16 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.storage.DisklessDriver;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  *
@@ -84,38 +80,6 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient StorPoolData disklessStorPool;
 
-    /*
-     * Only used by getInstance method
-     */
-    private NodeData(
-        AccessContext accCtx,
-        NodeName nameRef,
-        NodeType type,
-        long initialFlags,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            accCtx,
-            UUID.randomUUID(),
-            ObjectProtection.getInstance(
-                accCtx,
-                ObjectProtection.buildPath(nameRef),
-                true,
-                transMgr
-            ),
-            nameRef,
-            type,
-            initialFlags,
-            UUID.randomUUID(),
-            transMgr
-        );
-    }
-
-    /*
-     * Used by dbDrivers and tests
-     */
     NodeData(
         AccessContext accCtx,
         UUID uuidRef,
@@ -123,8 +87,9 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeName nameRef,
         NodeType type,
         long initialFlags,
-        UUID disklessStorPoolUuid,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        NodeDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory
     )
         throws SQLException, AccessDeniedException
     {
@@ -134,14 +99,14 @@ public class NodeData extends BaseTransactionObject implements Node
         dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         clNodeName = nameRef;
-        dbDriver = LinStor.getNodeDataDatabaseDriver();
+        dbDriver = dbDriverRef;
 
         resourceMap = new TransactionMap<>(new TreeMap<ResourceName, Resource>(), null);
         netInterfaceMap = new TransactionMap<>(new TreeMap<NetInterfaceName, NetInterface>(), null);
         storPoolMap = new TransactionMap<>(new TreeMap<StorPoolName, StorPool>(), null);
         deleted = new TransactionSimpleObject<>(this, false, null);
 
-        nodeProps = PropsContainer.getInstance(
+        nodeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef),
             transMgr
         );
@@ -169,113 +134,6 @@ public class NodeData extends BaseTransactionObject implements Node
             deleted,
             satelliteConnection
         );
-    }
-
-    public static NodeData getInstance(
-        AccessContext accCtx,
-        NodeName nameRef,
-        NodeType type,
-        NodeFlag[] flags,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        NodeData nodeData = null;
-
-        NodeDataDatabaseDriver dbDriver = LinStor.getNodeDataDatabaseDriver();
-        nodeData = dbDriver.load(nameRef, false, transMgr);
-
-        if (failIfExists && nodeData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The Node already exists");
-        }
-
-        if (nodeData == null && createIfNotExists)
-        {
-            nodeData = new NodeData(
-                accCtx,
-                nameRef,
-                type,
-                StateFlagsBits.getMask(flags),
-                transMgr
-            );
-            dbDriver.create(nodeData, transMgr);
-
-            nodeData.disklessStorPool = StorPoolData.getInstance(
-                accCtx,
-                nodeData,
-                LinStor.getDisklessStorPoolDfn(),
-                DisklessDriver.class.getSimpleName(),
-                transMgr,
-                createIfNotExists,
-                failIfExists
-            );
-
-        }
-        if (nodeData != null)
-        {
-            nodeData.initialized();
-            nodeData.setConnection(transMgr);
-        }
-        return nodeData;
-    }
-
-    public static NodeData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        NodeName nameRef,
-        NodeType typeRef,
-        NodeFlag[] flags,
-        UUID disklessStorPoolUuid,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        NodeData nodeData = null;
-        NodeDataDatabaseDriver dbDriver = LinStor.getNodeDataDatabaseDriver();
-        try
-        {
-            nodeData = dbDriver.load(nameRef, false, transMgr);
-            if (nodeData == null)
-            {
-                nodeData = new NodeData(
-                    accCtx,
-                    uuid,
-                    ObjectProtection.getInstance(
-                        accCtx,
-                        "",
-                        true,
-                        transMgr
-                    ),
-                    nameRef,
-                    typeRef,
-                    StateFlagsBits.getMask(flags),
-                    disklessStorPoolUuid,
-                    transMgr
-                );
-
-                nodeData.disklessStorPool = StorPoolData.getInstanceSatellite(
-                    accCtx,
-                    disklessStorPoolUuid,
-                    nodeData,
-                    LinStor.getDisklessStorPoolDfn(),
-                    DisklessDriver.class.getSimpleName(),
-                    transMgr
-                );
-            }
-            nodeData.initialized();
-            nodeData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return nodeData;
     }
 
     @Override

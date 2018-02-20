@@ -1,9 +1,11 @@
 package com.linbit.linstor.security;
 
-import static org.junit.Assert.fail;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import java.sql.SQLException;
+
+import static org.junit.Assert.fail;
 
 
 /**
@@ -11,7 +13,7 @@ import org.junit.Test;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class SecurityModelTest extends DerbyBase
+public class SecurityModelTest
 {
     private AccessContext sysCtx;
     private AccessContext publicCtx;
@@ -24,7 +26,6 @@ public class SecurityModelTest extends DerbyBase
 
     private SecurityType userType;
 
-    @Override
     @Before
     public void setUp() throws Exception
     {
@@ -639,5 +640,10 @@ public class SecurityModelTest extends DerbyBase
         );
         SecurityLevel.set(banditCtx, SecurityLevel.NO_SECURITY, null, null);
         fail("SecurityLevel change by unauthorized role succeeded");
+    }
+
+    protected void setSecurityLevel(SecurityLevel level) throws AccessDeniedException, SQLException
+    {
+        SecurityLevel.set(sysCtx, level, null, null);
     }
 }

@@ -1,17 +1,7 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
@@ -21,11 +11,11 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -33,6 +23,14 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  *
@@ -70,35 +68,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private final TransactionSimpleObject<VolumeDefinitionData, Boolean> deleted;
 
-    /*
-     * used by getInstance
-     */
-    private VolumeDefinitionData(
-        AccessContext accCtx,
-        ResourceDefinition resDfnRef,
-        VolumeNumber volNr,
-        MinorNumber minor,
-        long volSize,
-        long initFlags,
-        TransactionMgr transMgr
-    )
-        throws MdException, AccessDeniedException, SQLException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            resDfnRef,
-            volNr,
-            minor,
-            volSize,
-            initFlags,
-            transMgr
-        );
-    }
-
-    /*
-     * used by database drivers and tests
-     */
     VolumeDefinitionData(
         UUID uuid,
         AccessContext accCtx,
@@ -107,7 +76,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         MinorNumber minor,
         long volSize,
         long initFlags,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        VolumeDefinitionDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory
     )
         throws MdException, AccessDeniedException, SQLException
     {
@@ -142,7 +113,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         dbgInstanceId = UUID.randomUUID();
         resourceDfn = resDfnRef;
 
-        dbDriver = LinStor.getVolumeDefinitionDataDatabaseDriver();
+        dbDriver = dbDriverRef;
 
         volumeNr = volNr;
         minorNr = new TransactionSimpleObject<>(
@@ -156,7 +127,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             dbDriver.getVolumeSizeDriver()
         );
 
-        vlmDfnProps = PropsContainer.getInstance(
+        vlmDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
             transMgr
         );
@@ -187,96 +158,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    public static VolumeDefinitionData getInstance(
-        AccessContext accCtx,
-        ResourceDefinition resDfn,
-        VolumeNumber volNr,
-        MinorNumber minor,
-        Long volSize,
-        VlmDfnFlags[] initFlags,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException
-    {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VolumeDefinitionData volDfnData = null;
-
-        VolumeDefinitionDataDatabaseDriver driver = LinStor.getVolumeDefinitionDataDatabaseDriver();
-
-        volDfnData = driver.load(resDfn, volNr, false, transMgr);
-
-        if (failIfExists && volDfnData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The VolumeDefinition already exists");
-        }
-
-        if (volDfnData == null && createIfNotExists)
-        {
-            volDfnData = new VolumeDefinitionData(
-                accCtx,
-                resDfn,
-                volNr,
-                minor,
-                volSize,
-                StateFlagsBits.getMask(initFlags),
-                transMgr
-            );
-            driver.create(volDfnData, transMgr);
-        }
-
-        if (volDfnData != null)
-        {
-            volDfnData.initialized();
-            volDfnData.setConnection(transMgr);
-        }
-        return volDfnData;
-    }
-
-    public static VolumeDefinitionData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID vlmDfnUuid,
-        ResourceDefinition rscDfn,
-        VolumeNumber vlmNr,
-        long vlmSize,
-        MinorNumber minorNumber,
-        VlmDfnFlags[] flags,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        VolumeDefinitionDataDatabaseDriver driver = LinStor.getVolumeDefinitionDataDatabaseDriver();
-        VolumeDefinitionData vlmDfnData;
-        try
-        {
-            vlmDfnData = driver.load(rscDfn, vlmNr, false, transMgr);
-            if (vlmDfnData == null)
-            {
-                vlmDfnData = new VolumeDefinitionData(
-                    vlmDfnUuid,
-                    accCtx,
-                    rscDfn,
-                    vlmNr,
-                    minorNumber,
-                    vlmSize,
-                    StateFlagsBits.getMask(flags),
-                    transMgr
-                );
-            }
-            vlmDfnData.initialized();
-            vlmDfnData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return vlmDfnData;
     }
 
     @Override

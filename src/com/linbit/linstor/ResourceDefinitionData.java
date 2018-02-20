@@ -1,24 +1,15 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -26,8 +17,15 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  *
@@ -70,40 +68,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
-    /*
-     * used by getInstance
-     */
-    private ResourceDefinitionData(
-        AccessContext accCtx,
-        ResourceName resName,
-        TcpPortNumber portNr,
-        long initialFlags,
-        String sharedSecret,
-        TransportType transType,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            ObjectProtection.getInstance(
-                accCtx,
-                ObjectProtection.buildPath(resName),
-                true,
-                transMgr
-            ),
-            resName,
-            portNr,
-            initialFlags,
-            sharedSecret,
-            transType,
-            transMgr
-        );
-    }
-
-    /*
-     * used by database drivers
-     */
     ResourceDefinitionData(
         UUID objIdRef,
         ObjectProtection objProtRef,
@@ -112,7 +76,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         long initialFlags,
         String secretRef,
         TransportType transTypeRef,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        ResourceDefinitionDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory
     )
         throws SQLException
     {
@@ -123,21 +89,20 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objProt = objProtRef;
         resourceName = resName;
         secret = secretRef;
+        dbDriver = dbDriverRef;
 
-        dbDriver = LinStor.getResourceDefinitionDataDatabaseDriver();
-
-        port = new TransactionSimpleObject<>(this, portRef, dbDriver.getPortDriver());
+        port = new TransactionSimpleObject<>(this, portRef, this.dbDriver.getPortDriver());
         volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
         resourceMap = new TransactionMap<>(new TreeMap<NodeName, Resource>(), null);
         deleted = new TransactionSimpleObject<>(this, false, null);
 
-        rscDfnProps = PropsContainer.getInstance(
+        rscDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resName),
             transMgr
         );
-        flags = new RscDfnFlagsImpl(objProt, this, dbDriver.getStateFlagsPersistence(), initialFlags);
+        flags = new RscDfnFlagsImpl(objProt, this, this.dbDriver.getStateFlagsPersistence(), initialFlags);
 
-        transportType = new TransactionSimpleObject<>(this, transTypeRef, dbDriver.getTransportTypeDriver());
+        transportType = new TransactionSimpleObject<>(this, transTypeRef, this.dbDriver.getTransportTypeDriver());
 
         transObjs = Arrays.asList(
             flags,
@@ -149,93 +114,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             transportType,
             deleted
         );
-    }
-
-    public static ResourceDefinitionData getInstance(
-        AccessContext accCtx,
-        ResourceName resName,
-        TcpPortNumber port,
-        RscDfnFlags[] flags,
-        String secret,
-        TransportType transType,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        ResourceDefinitionDataDatabaseDriver driver = LinStor.getResourceDefinitionDataDatabaseDriver();
-
-        ResourceDefinitionData resDfn = null;
-        resDfn = driver.load(resName, false, transMgr);
-
-        if (failIfExists && resDfn != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The ResourceDefinition already exists");
-        }
-
-        if (resDfn == null && createIfNotExists)
-        {
-            resDfn = new ResourceDefinitionData(
-                accCtx,
-                resName,
-                port,
-                StateFlagsBits.getMask(flags),
-                secret,
-                transType,
-                transMgr
-            );
-            driver.create(resDfn, transMgr);
-        }
-        if (resDfn != null)
-        {
-            resDfn.initialized();
-            resDfn.setConnection(transMgr);
-        }
-        return resDfn;
-    }
-
-    public static ResourceDefinitionData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        ResourceName rscName,
-        TcpPortNumber portRef,
-        RscDfnFlags[] initFlags,
-        String secret,
-        TransportType transType,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        ResourceDefinitionDataDatabaseDriver driver = LinStor.getResourceDefinitionDataDatabaseDriver();
-        ResourceDefinitionData rscDfn = null;
-        try
-        {
-            rscDfn = driver.load(rscName, false, transMgr);
-            if (rscDfn == null)
-            {
-                rscDfn = new ResourceDefinitionData(
-                    uuid,
-                    ObjectProtection.getInstance(accCtx, "", false, transMgr),
-                    rscName,
-                    portRef,
-                    StateFlagsBits.getMask(initFlags),
-                    secret,
-                    transType,
-                    transMgr
-                );
-            }
-            rscDfn.initialized();
-            rscDfn.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return rscDfn;
     }
 
     @Override

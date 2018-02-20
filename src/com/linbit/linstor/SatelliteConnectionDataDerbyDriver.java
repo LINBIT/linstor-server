@@ -160,7 +160,8 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                                 node,
                                 netIf,
                                 port,
-                                encryptionType
+                                encryptionType,
+                                this
                             );
                             errorReporter.logTrace("SatelliteConnection restored from DB %s", getId(node));
                         }

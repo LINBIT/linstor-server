@@ -1,29 +1,19 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -32,6 +22,15 @@ import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
@@ -58,33 +57,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private transient TransactionSimpleObject<StorPoolData, Long> freeSpace;
 
-    /*
-     * used only by getInstance
-     */
-    private StorPoolData(
-        AccessContext accCtx,
-        Node nodeRef,
-        StorPoolDefinition storPoolDfnRef,
-        String storageDriverName,
-        boolean allowStorageDriverCreationFlag,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            nodeRef,
-            storPoolDfnRef,
-            storageDriverName,
-            allowStorageDriverCreationFlag,
-            transMgr
-        );
-    }
-
-    /*
-     * used by dbDrivers and tests
-     */
     StorPoolData(
         UUID id,
         AccessContext accCtx,
@@ -92,7 +64,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDefRef,
         String storageDriverName,
         boolean allowStorageDriverCreationRef,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        StorPoolDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory
     )
         throws SQLException, AccessDeniedException
     {
@@ -102,15 +76,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storageDriverKind = StorageDriverLoader.getKind(storageDriverName);
         allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
+        dbDriver = dbDriverRef;
         volumeMap = new TransactionMap<>(new TreeMap<String, Volume>(), null);
 
-        props = PropsContainer.getInstance(
+        props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
             transMgr
         );
         deleted = new TransactionSimpleObject<>(this, false, null);
-
-        dbDriver = LinStor.getStorPoolDataDatabaseDriver();
 
         freeSpace = new TransactionSimpleObject<>(this, 0L, null);
 
@@ -129,93 +102,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-
-    public static StorPoolData getInstance(
-        AccessContext accCtx,
-        Node nodeRef,
-        StorPoolDefinition storPoolDefRef,
-        String storDriverSimpleClassNameRef,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        nodeRef.getObjProt().requireAccess(accCtx, AccessType.USE);
-        storPoolDefRef.getObjProt().requireAccess(accCtx, AccessType.USE);
-        StorPoolData storPoolData = null;
-        StorPoolDataDatabaseDriver driver = LinStor.getStorPoolDataDatabaseDriver();
-
-        storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
-
-        if (failIfExists && storPoolData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The StorPool already exists");
-        }
-
-        if (storPoolData == null && createIfNotExists)
-        {
-            storPoolData = new StorPoolData(
-                accCtx,
-                nodeRef,
-                storPoolDefRef,
-                storDriverSimpleClassNameRef,
-                false,
-                transMgr
-            );
-            driver.create(storPoolData, transMgr);
-        }
-        if (storPoolData != null)
-        {
-            storPoolData.initialized();
-            storPoolData.setConnection(transMgr);
-        }
-        return storPoolData;
-    }
-
-    public static StorPoolData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Node nodeRef,
-        StorPoolDefinition storPoolDefRef,
-        String storDriverSimpleClassNameRef,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        StorPoolData storPoolData = null;
-        StorPoolDataDatabaseDriver driver = LinStor.getStorPoolDataDatabaseDriver();
-
-        try
-        {
-            storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
-            if (storPoolData == null)
-            {
-                storPoolData = new StorPoolData(
-                    uuid,
-                    accCtx,
-                    nodeRef,
-                    storPoolDefRef,
-                    storDriverSimpleClassNameRef,
-                    true,
-                    transMgr
-                );
-            }
-            storPoolData.initialized();
-            storPoolData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-
-
-        return storPoolData;
     }
 
     @Override

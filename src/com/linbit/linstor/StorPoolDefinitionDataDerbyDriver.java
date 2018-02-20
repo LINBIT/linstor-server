@@ -3,10 +3,10 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
@@ -48,14 +48,21 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     private final ErrorReporter errorReporter;
     private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
+    private final ObjectProtectionDatabaseDriver objProtDriver;
+    private final PropsContainerFactory propsContainerFactory;
+
     @Inject
     public StorPoolDefinitionDataDerbyDriver(
         ErrorReporter errorReporterRef,
-        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
+        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         errorReporter = errorReporterRef;
         storPoolDfnMap = storPoolDfnMapRef;
+        objProtDriver = objProtDriverRef;
+        propsContainerFactory = propsContainerFactoryRef;
     }
 
     @Override
@@ -154,7 +161,13 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
             ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
 
-            storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
+            storPoolDefinition = new StorPoolDefinitionData(
+                uuid,
+                objProt,
+                storPoolName,
+                this,
+                propsContainerFactory
+            );
             errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getId(storPoolName));
         }
         else
@@ -167,7 +180,6 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     private ObjectProtection getObjectProtection(StorPoolName storPoolName, TransactionMgr transMgr)
         throws SQLException, ImplementationError
     {
-        ObjectProtectionDatabaseDriver objProtDriver = LinStor.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPathSPD(storPoolName),
             false, // no need to log a warning, as we would fail then anyways

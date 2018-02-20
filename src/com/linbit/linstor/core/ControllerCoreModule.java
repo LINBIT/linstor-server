@@ -6,7 +6,7 @@ import com.google.inject.name.Names;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -35,7 +35,10 @@ public class ControllerCoreModule extends AbstractModule
     @Provides
     @Singleton
     @Named(CONTROLLER_PROPS)
-    public Props loadPropsContainer(DbConnectionPool dbConnPool)
+    public Props loadPropsContainer(
+        DbConnectionPool dbConnPool,
+        PropsContainerFactory propsContainerFactory
+    )
         throws SQLException
     {
         Props propsContainer;
@@ -43,7 +46,7 @@ public class ControllerCoreModule extends AbstractModule
         try
         {
             transMgr = new TransactionMgr(dbConnPool);
-            propsContainer = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
+            propsContainer = propsContainerFactory.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
             transMgr.commit();
         }
         finally

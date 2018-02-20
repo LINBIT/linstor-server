@@ -18,6 +18,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -28,8 +29,10 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.VolumeData;
+import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeDefinitionDataFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -77,6 +80,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
     private final String defaultStorPoolName;
+    private final ResourceDataFactory resourceDataFactory;
+    private final VolumeDataFactory volumeDataFactory;
+    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -89,7 +95,11 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         CoreModule.NodesMap nodesMapRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
+        CtrlObjectFactories objectFactories,
+        ResourceDataFactory resourceDataFactoryRef,
+        VolumeDataFactory volumeDataFactoryRef,
+        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef
     )
     {
         super(
@@ -97,7 +107,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
         super.setNullOnAutoClose(
             currentNodeName,
@@ -109,6 +120,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
         defaultStorPoolName = defaultStorPoolNameRef;
+        resourceDataFactory = resourceDataFactoryRef;
+        volumeDataFactory = volumeDataFactoryRef;
+        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
     }
 
     public ApiCallRc createResource(
@@ -826,7 +840,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         ResourceData rsc;
         try
         {
-            rsc = ResourceData.getInstance(
+            rsc = resourceDataFactory.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 node,
@@ -876,7 +890,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             String blockDevice = vlmApi == null ? null : vlmApi.getBlockDevice();
             String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
 
-            vlm = VolumeData.getInstance(
+            vlm = volumeDataFactory.getInstance(
                 currentAccCtx.get(),
                 rsc,
                 vlmDfn,
@@ -935,7 +949,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = VolumeDefinitionData.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 vlmNr,

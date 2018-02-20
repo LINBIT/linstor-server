@@ -10,6 +10,7 @@ import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -75,6 +76,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
+    private final PropsContainerFactory propsContainerFactory;
 
     private final FlagDriver flagsDriver;
     private final MinorNumberDriver minorNumberDriver;
@@ -83,11 +85,13 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     @Inject
     public VolumeDefinitionDataDerbyDriver(
         @SystemContext AccessContext accCtx,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        propsContainerFactory = propsContainerFactoryRef;
         flagsDriver = new FlagDriver();
         minorNumberDriver = new MinorNumberDriver();
         sizeDriver = new SizeDriver();
@@ -187,7 +191,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
                     resultSet.getLong(VD_SIZE),
                     resultSet.getLong(VD_FLAGS),
-                    transMgr
+                    transMgr,
+                    this,
+                    propsContainerFactory
                 );
                 errorReporter.logTrace("VolumeDefinition %s created during restore", getId(ret));
                 // restore references

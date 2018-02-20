@@ -7,6 +7,7 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
+import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -32,13 +33,16 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
+    private final VolumeConnectionDataFactory volumeConnectionDataFactory;
 
     @Inject
     CtrlVlmConnectionApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
-        @ApiContext AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef,
+        CtrlObjectFactories objectFactories,
+        VolumeConnectionDataFactory volumeConnectionDataFactoryRef
     )
     {
         super(
@@ -46,8 +50,10 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_VLM_CONN,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
+        volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
     }
 
     public ApiCallRc createVolumeConnection(
@@ -359,7 +365,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         VolumeConnectionData vlmConn;
         try
         {
-            vlmConn = VolumeConnectionData.getInstance(
+            vlmConn = volumeConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 sourceVolume,
                 targetVolume,
@@ -414,7 +420,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         VolumeConnectionData vlmConn;
         try
         {
-            vlmConn = VolumeConnectionData.getInstance(
+            vlmConn = volumeConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 vlm1,
                 vlm2,

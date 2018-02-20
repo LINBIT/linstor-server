@@ -1,11 +1,5 @@
 package com.linbit.linstor.security;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -16,7 +10,12 @@ import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.core.LinStor;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Security protection for linstor object
@@ -62,29 +61,15 @@ public final class ObjectProtection extends BaseTransactionObject
     private boolean persisted;
     private String objPath;
 
-    /**
-     * Loads an ObjectProtection instance from the database.
-     *
-     * The {@code accCtx} parameter is only used when no ObjectProtection was found in the
-     * database and the {@code createIfNotExists} parameter is set to true
-     *
-     * @param accCtx
-     * @param transMgr
-     * @param objPath
-     * @param createIfNotExists
-     * @return
-     * @throws SQLException
-     * @throws AccessDeniedException
-     */
-    public static ObjectProtection getInstance(
+    static ObjectProtection getInstance(
         AccessContext accCtx,
         String objPath,
         boolean createIfNotExists,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        ObjectProtectionDatabaseDriver dbDriver
     )
         throws SQLException, AccessDeniedException
     {
-        ObjectProtectionDatabaseDriver dbDriver = LinStor.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = null;
 
         objProt = dbDriver.loadObjectProtection(objPath, false, transMgr);

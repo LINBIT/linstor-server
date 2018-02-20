@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeConnectionData;
+import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -28,13 +29,16 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
+    private final NodeConnectionDataFactory nodeConnectionDataFactory;
 
     @Inject
     CtrlNodeConnectionApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
-        @ApiContext AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef,
+        CtrlObjectFactories objectFactories,
+        NodeConnectionDataFactory nodeConnectionDataFactoryRef
     )
     {
         super(
@@ -42,12 +46,14 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_NODE_CONN,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
         super.setNullOnAutoClose(
             currentNodeName1,
             currentNodeName2
         );
+        nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
     }
 
     public ApiCallRc createNodeConnection(
@@ -305,7 +311,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeConnectionData nodeConnection;
         try
         {
-            nodeConnection = NodeConnectionData.getInstance(
+            nodeConnection = nodeConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 node1,
                 node2,
@@ -348,7 +354,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeConnectionData nodeConn;
         try
         {
-            nodeConn = NodeConnectionData.getInstance(
+            nodeConn = nodeConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 node1,
                 node2,

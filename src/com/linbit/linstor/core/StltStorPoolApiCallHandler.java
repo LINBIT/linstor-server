@@ -1,13 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
@@ -16,9 +8,9 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionData;
+import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
@@ -29,6 +21,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
 
 @Singleton
 class StltStorPoolApiCallHandler
@@ -38,6 +37,8 @@ class StltStorPoolApiCallHandler
     private final DeviceManager deviceManager;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDataFactory storPoolDataFactory;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -45,7 +46,9 @@ class StltStorPoolApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         DeviceManager deviceManagerRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        ControllerPeerConnector controllerPeerConnectorRef,
+        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDataFactory storPoolDataFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -53,6 +56,8 @@ class StltStorPoolApiCallHandler
         deviceManager = deviceManagerRef;
         storPoolDfnMap = storPoolDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDataFactory = storPoolDataFactoryRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -165,7 +170,7 @@ class StltStorPoolApiCallHandler
             StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
             if (storPoolDfn == null)
             {
-                storPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
                     apiCtx,
                     storPoolRaw.getStorPoolDfnUuid(),
                     storPoolName,
@@ -178,7 +183,7 @@ class StltStorPoolApiCallHandler
                 storPoolDfnToRegister = storPoolDfn;
             }
 
-            storPool = StorPoolData.getInstanceSatellite(
+            storPool = storPoolDataFactory.getInstanceSatellite(
                 apiCtx,
                 storPoolRaw.getStorPoolUuid(),
                 controllerPeerConnector.getLocalNode(),

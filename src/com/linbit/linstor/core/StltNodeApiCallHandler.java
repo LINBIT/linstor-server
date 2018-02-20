@@ -1,26 +1,20 @@
 package com.linbit.linstor.core;
 
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.NetInterfaceData;
+import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeConnectionData;
+import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeDataSatelliteFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -32,6 +26,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 @Singleton
 class StltNodeApiCallHandler
@@ -42,6 +43,10 @@ class StltNodeApiCallHandler
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
     private final CoreModule.NodesMap nodesMap;
+    private final NodeDataSatelliteFactory nodeDataFactory;
+    private final NodeConnectionDataFactory nodeConnectionDataFactory;
+    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final ControllerPeerConnector controllerPeerConnector;
 
     @Inject
     StltNodeApiCallHandler(
@@ -50,7 +55,11 @@ class StltNodeApiCallHandler
         DeviceManager deviceManagerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        CoreModule.NodesMap nodesMapRef
+        CoreModule.NodesMap nodesMapRef,
+        NodeDataSatelliteFactory nodeDataFactoryRef,
+        NodeConnectionDataFactory nodeConnectionDataFactoryRef,
+        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        ControllerPeerConnector controllerPeerConnectorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -59,6 +68,10 @@ class StltNodeApiCallHandler
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         nodesMap = nodesMapRef;
+        nodeDataFactory = nodeDataFactoryRef;
+        nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
+        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
     }
 
     /**
@@ -134,14 +147,15 @@ class StltNodeApiCallHandler
             nodesWriteLock.lock();
 
             NodeFlag[] nodeFlags = NodeFlag.restoreFlags(nodePojo.getNodeFlags());
-            node = NodeData.getInstanceSatellite(
+            node = nodeDataFactory.getInstanceSatellite(
                 apiCtx,
                 nodePojo.getUuid(),
                 new NodeName(nodePojo.getName()),
                 NodeType.valueOf(nodePojo.getType()),
                 nodeFlags,
                 nodePojo.getDisklessStorPoolUuid(),
-                transMgr
+                transMgr,
+                controllerPeerConnector.getDisklessStorPoolDfn()
             );
             checkUuid(node, nodePojo);
 
@@ -153,16 +167,17 @@ class StltNodeApiCallHandler
 
             for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
-                NodeData otherNode = NodeData.getInstanceSatellite(
+                NodeData otherNode = nodeDataFactory.getInstanceSatellite(
                     apiCtx,
                     nodeConn.getOtherNodeUuid(),
                     new NodeName(nodeConn.getOtherNodeName()),
                     NodeType.valueOf(nodeConn.getOtherNodeType()),
                     NodeFlag.restoreFlags(nodeConn.getOtherNodeFlags()),
                     nodeConn.getOtherNodeDisklessStorPoolUuid(),
-                    transMgr
+                    transMgr,
+                    controllerPeerConnector.getDisklessStorPoolDfn()
                 );
-                NodeConnectionData nodeCon = NodeConnectionData.getInstanceSatellite(
+                NodeConnectionData nodeCon = nodeConnectionDataFactory.getInstanceSatellite(
                     apiCtx,
                     nodeConn.getNodeConnUuid(),
                     node,
@@ -181,7 +196,7 @@ class StltNodeApiCallHandler
                 NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
                 if (netIf == null)
                 {
-                    NetInterfaceData.getInstanceSatellite(
+                    netInterfaceDataFactory.getInstanceSatellite(
                         apiCtx,
                         netIfApi.getUuid(),
                         node,

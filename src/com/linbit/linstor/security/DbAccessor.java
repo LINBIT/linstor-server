@@ -35,6 +35,4 @@ public interface DbAccessor
         throws SQLException;
     void setAuthRequired(Connection dbConn, boolean requiredFlag)
         throws SQLException;
-
-    ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver();
 }

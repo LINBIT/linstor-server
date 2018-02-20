@@ -1,31 +1,29 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
+import org.junit.Test;
+
+import javax.inject.Inject;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class VolumeDataDerbyTest extends DerbyBase
 {
@@ -60,7 +58,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     private String blockDevicePath;
     private String metaDiskPath;
 
-    private VolumeDataDerbyDriver driver;
+    @Inject private VolumeDataDerbyDriver driver;
 
     @Override
     public void setUp() throws Exception
@@ -74,7 +72,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         nodeName = new NodeName("TestNodeName");
-        node = NodeData.getInstance(
+        node = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName,
             null,
@@ -86,7 +84,7 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         resName = new ResourceName("TestResName");
         resPort = new TcpPortNumber(9001);
-        resDfn = ResourceDefinitionData.getInstance(
+        resDfn = resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName,
             resPort,
@@ -99,7 +97,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         );
 
         nodeId = new NodeId(7);
-        res = ResourceData.getInstance(
+        res = resourceDataFactory.getInstance(
             SYS_CTX,
             resDfn,
             node,
@@ -111,7 +109,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         );
 
         storPoolName = new StorPoolName("TestStorPoolName");
-        storPoolDfn = StorPoolDefinitionData.getInstance(
+        storPoolDfn = storPoolDefinitionDataFactory.getInstance(
             SYS_CTX,
             storPoolName,
             transMgr,
@@ -119,7 +117,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             false
         );
 
-        storPool = StorPoolData.getInstance(
+        storPool = storPoolDataFactory.getInstance(
             SYS_CTX,
             node,
             storPoolDfn,
@@ -132,7 +130,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         volNr = new VolumeNumber(13);
         minor = new MinorNumber(42);
         volSize = 5_000_000;
-        volDfn = VolumeDefinitionData.getInstance(
+        volDfn = volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDfn,
             volNr,
@@ -147,8 +145,6 @@ public class VolumeDataDerbyTest extends DerbyBase
         uuid = randomUUID();
         blockDevicePath = "/dev/null";
         metaDiskPath = "/dev/not-null";
-
-        driver = (VolumeDataDerbyDriver) LinStor.getVolumeDataDatabaseDriver();
     }
 
     @Test
@@ -163,7 +159,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
@@ -188,7 +186,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        VolumeData volData = VolumeData.getInstance(
+        VolumeData volData = volumeDataFactory.getInstance(
             SYS_CTX,
             res,
             volDfn,
@@ -241,7 +239,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
@@ -262,7 +262,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
@@ -289,11 +291,13 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
-        VolumeData loadedVol = VolumeData.getInstance(
+        VolumeData loadedVol = volumeDataFactory.getInstance(
             SYS_CTX,
             res,
             volDfn,
@@ -311,7 +315,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        VolumeData storedInstance = VolumeData.getInstance(
+        VolumeData storedInstance = volumeDataFactory.getInstance(
             SYS_CTX,
             res,
             volDfn,
@@ -341,7 +345,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
@@ -375,7 +381,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
         vol.initialized();
@@ -403,7 +411,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
         String testKey = "TestKey";
@@ -450,7 +460,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
@@ -478,7 +490,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        VolumeData volData = VolumeData.getInstance(
+        VolumeData volData = volumeDataFactory.getInstance(
             SYS_CTX,
             res,
             volDfn,
@@ -506,7 +518,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     public void testSatelliteNoCreate() throws Exception
     {
         satelliteMode();
-        VolumeData volData = VolumeData.getInstance(
+        VolumeData volData = volumeDataFactory.getInstance(
             SYS_CTX,
             res,
             volDfn,
@@ -566,11 +578,13 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
         driver.create(vol, transMgr);
 
-        VolumeData.getInstance(
+        volumeDataFactory.getInstance(
             SYS_CTX,
             res,
             volDfn,

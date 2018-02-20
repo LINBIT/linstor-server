@@ -4,13 +4,11 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
@@ -59,17 +57,26 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     private boolean cacheCleared = false;
 
     private final Provider<VolumeDataDerbyDriver> volumeDriverProvider;
+    private final Provider<NodeDataDerbyDriver> nodeDriverProvider;
+    private final Provider<StorPoolDefinitionDataDerbyDriver> storPoolDefDriverProvider;
+    private final PropsContainerFactory propsContainerFactory;
 
     @Inject
     public StorPoolDataDerbyDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        Provider<VolumeDataDerbyDriver> volumeDriverProviderRef
+        Provider<VolumeDataDerbyDriver> volumeDriverProviderRef,
+        Provider<NodeDataDerbyDriver> nodeDriverProviderRef,
+        Provider<StorPoolDefinitionDataDerbyDriver> storPoolDefDriverProviderRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = dbCtxRef;
         errorReporter = errorReporterRef;
         volumeDriverProvider = volumeDriverProviderRef;
+        nodeDriverProvider = nodeDriverProviderRef;
+        storPoolDefDriverProvider = storPoolDefDriverProviderRef;
+        propsContainerFactory = propsContainerFactoryRef;
     }
 
     @Override
@@ -170,7 +177,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         throws SQLException
     {
         List<StorPoolData> storPoolList = new ArrayList<>();
-        NodeDataDatabaseDriver nodeDriver = LinStor.getNodeDataDatabaseDriver();
         while (resultSet.next())
         {
             StorPoolName storPoolName;
@@ -217,14 +223,13 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         invalidNameExc
                     );
                 }
-                node = nodeDriver.load(nodeName, true, transMgr);
+                node = nodeDriverProvider.get().load(nodeName, true, transMgr);
             }
 
             StorPoolData storPoolData = cacheGet(node, storPoolName);
             if (storPoolData == null)
             {
-                StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = LinStor.getStorPoolDefinitionDataDatabaseDriver();
-                StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(
+                StorPoolDefinitionData storPoolDef = storPoolDefDriverProvider.get().load(
                     storPoolName,
                     true,
                     transMgr
@@ -240,7 +245,9 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         resultSet.getString(SP_DRIVER),
                         // controller should not have an instance of storage driver.
                         false,
-                        transMgr
+                        transMgr,
+                        this,
+                        propsContainerFactory
                     );
                 }
                 catch (AccessDeniedException accDeniedExc)

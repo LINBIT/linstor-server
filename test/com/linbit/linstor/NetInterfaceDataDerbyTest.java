@@ -1,24 +1,22 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.TransactionMgr;
+import com.linbit.linstor.security.DerbyBase;
+import com.linbit.utils.UuidUtils;
+import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.junit.Test;
-
-import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.security.DerbyBase;
-import com.linbit.utils.UuidUtils;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class NetInterfaceDataDerbyTest extends DerbyBase
 {
@@ -58,7 +56,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node = NodeData.getInstance(
+        node = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName,
             null, // types
@@ -68,11 +66,11 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             false
         );
 
-        niUuid = java.util.UUID.randomUUID();
-        niData = new NetInterfaceData(niUuid, SYS_CTX, niName, node, niAddr); // does not persist
-
         dbDriver = new NetInterfaceDataDerbyDriver(SYS_CTX, errorReporter);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
+
+        niUuid = java.util.UUID.randomUUID();
+        niData = new NetInterfaceData(niUuid, SYS_CTX, niName, node, niAddr, dbDriver); // does not persist
     }
 
     @Test
@@ -115,7 +113,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         NetInterfaceName netInterfaceName = new NetInterfaceName("TestNetIface");
-        NetInterfaceData.getInstance(
+        netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node,
             netInterfaceName,
@@ -177,7 +175,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niData.initialized();
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceData netData1 = NetInterfaceData.getInstance(
+        NetInterfaceData netData1 = netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node,
             niName,
@@ -194,7 +192,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.displayValue, netData1.getName().displayValue);
         assertEquals(niAddrStr, netData1.getAddress(SYS_CTX).getAddress());
 
-        NetInterfaceData netData2 = NetInterfaceData.getInstance(
+        NetInterfaceData netData2 = netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node,
             niName,
@@ -227,7 +225,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        NetInterfaceData storedInstance = NetInterfaceData.getInstance(
+        NetInterfaceData storedInstance = netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node,
             niName,
@@ -325,7 +323,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        NetInterfaceData netData = NetInterfaceData.getInstance(
+        NetInterfaceData netData = netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node,
             niName,
@@ -355,7 +353,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         satelliteMode();
 
         NodeName nodeName2 = new NodeName("OtherNodeName");
-        NodeData node2 = NodeData.getInstance(
+        NodeData node2 = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName2,
             null, // types
@@ -365,7 +363,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             false
         );
 
-        NetInterfaceData netData = NetInterfaceData.getInstance(
+        NetInterfaceData netData = netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node2,
             niName,
@@ -404,7 +402,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceData.getInstance(
+        netInterfaceDataFactory.getInstance(
             SYS_CTX,
             node,
             niName,

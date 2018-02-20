@@ -1,24 +1,16 @@
 package com.linbit.linstor;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -31,6 +23,12 @@ import com.linbit.utils.UuidUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 @Singleton
 public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
@@ -82,6 +80,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private final Provider<VolumeDataDerbyDriver> volumeDriverProvider;
     private final Provider<ResourceConnectionDataDerbyDriver> resourceConnectionDriverProvider;
+    private final Provider<NodeDataDerbyDriver> nodeDataDatabaseDriverProvider;
+    private final Provider<ResourceDefinitionDataDerbyDriver> resDfnDriverProvider;
+    private final ObjectProtectionDatabaseDriver objProtDriver;
+    private final PropsContainerFactory propsContainerFactory;
+    private final VolumeDataFactory volumeDataFactory;
 
     private HashMap<ResPrimaryKey, ResourceData> resCache;
     private boolean cacheCleared = false;
@@ -91,13 +94,23 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         Provider<VolumeDataDerbyDriver> volumeDriverProviderRef,
-        Provider<ResourceConnectionDataDerbyDriver> resourceConnectionDriverProviderRef
+        Provider<ResourceConnectionDataDerbyDriver> resourceConnectionDriverProviderRef,
+        Provider<NodeDataDerbyDriver> nodeDataDatabaseDriverProviderRef,
+        Provider<ResourceDefinitionDataDerbyDriver> resDfnDriverProviderRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
+        PropsContainerFactory propsContainerFactoryRef,
+        VolumeDataFactory volumeDataFactoryRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         volumeDriverProvider = volumeDriverProviderRef;
         resourceConnectionDriverProvider = resourceConnectionDriverProviderRef;
+        nodeDataDatabaseDriverProvider = nodeDataDatabaseDriverProviderRef;
+        resDfnDriverProvider = resDfnDriverProviderRef;
+        objProtDriver = objProtDriverRef;
+        propsContainerFactory = propsContainerFactoryRef;
+        volumeDataFactory = volumeDataFactoryRef;
 
         flagDriver = new FlagDriver();
         resCache = new HashMap<>();
@@ -250,7 +263,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 {
                     try
                     {
-                        node = LinStor.getNodeDataDatabaseDriver().load(
+                        node = nodeDataDatabaseDriverProvider.get().load(
                             new NodeName(resultSet.getString(RES_NODE_NAME)),
                             true,
                             transMgr
@@ -291,10 +304,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 ResourceData resData = cacheGet(node, resName);
                 if (resData == null)
                 {
-
-                    ResourceDefinitionDataDatabaseDriver resDfnDriver =
-                        LinStor.getResourceDefinitionDataDatabaseDriver();
-                    ResourceDefinition resDfn = resDfnDriver.load(resName, true, transMgr);
+                    ResourceDefinition resDfn = resDfnDriverProvider.get().load(resName, true, transMgr);
 
                     Resource loadedRes = resDfn.getResource(accCtx, node.getName());
                     // although we just asked the cache, we also just loaded the resDfn.
@@ -338,7 +348,10 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             node,
                             nodeId,
                             resultSet.getLong(RES_FLAGS),
-                            transMgr
+                            transMgr,
+                            this,
+                            propsContainerFactory,
+                            volumeDataFactory
                         );
 
                         if (!cacheCleared)
@@ -394,7 +407,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private ObjectProtection getObjectProection(Node node, ResourceName resName, TransactionMgr transMgr)
         throws SQLException
     {
-        ObjectProtectionDatabaseDriver objProtDriver = LinStor.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(resName),
             false, // no need to log a warning, as we would fail then anyways

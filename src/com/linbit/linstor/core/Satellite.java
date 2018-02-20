@@ -19,7 +19,6 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCall;
@@ -39,7 +38,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.EmptySecurityDbDriver;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.timer.CoreTimer;
@@ -212,10 +210,6 @@ public final class Satellite extends LinStor implements CoreServices
             nodesMap = injector.getInstance(CoreModule.NodesMap.class);
             rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
             storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
-
-            // initialize noop databases drivers (needed for shutdownProt)
-            securityDbDriver = injector.getInstance(EmptySecurityDbDriver.class);
-            persistenceDbDriver = injector.getInstance(SatelliteDbDriver.class);
 
             applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
 

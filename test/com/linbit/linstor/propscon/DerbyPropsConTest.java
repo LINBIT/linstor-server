@@ -1,8 +1,7 @@
 package com.linbit.linstor.propscon;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.linbit.TransactionMgr;
+import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -11,9 +10,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.junit.Test;
-
-import com.linbit.TransactionMgr;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class DerbyPropsConTest extends DerbyPropsConBase
 {
@@ -24,7 +23,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         truncate();
         Connection con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        PropsContainer container = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, transMgr);
+        PropsContainer container = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, transMgr);
 
         String expectedKey = "key";
         String expectedValue = "value";
@@ -52,7 +51,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
     {
         Connection con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        PropsContainer container = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, transMgr);
+        PropsContainer container = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, transMgr);
 
         Map<String, String> map = new HashMap<>();
         map.put("a", "c");
@@ -70,7 +69,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
     {
         Connection con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        PropsContainer container = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, transMgr);
+        PropsContainer container = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, transMgr);
 
         Map<String, String> map = new HashMap<>();
         map.put("a", "c");
@@ -103,11 +102,11 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         Connection con1 = getConnection();
         Connection con2 = getConnection();
 
-        PropsContainer container1 = PropsContainer.getInstance(
+        PropsContainer container1 = propsContainerFactory.getInstance(
             expectedInstanceName1,
             new TransactionMgr(con1)
         );
-        PropsContainer container2 = PropsContainer.getInstance(
+        PropsContainer container2 = propsContainerFactory.getInstance(
             expectedInstanceName2,
             new TransactionMgr(con2)
         );
@@ -148,7 +147,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName, key, value);
 
         Connection con = getConnection();
-        Props props = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(con));
+        Props props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(con));
 
         Set<Entry<String,String>> entrySet = props.entrySet();
         assertEquals("Unexpected entries in PropsContainer", 1 , entrySet.size());
@@ -167,7 +166,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName, key1, value1);
         insert(instanceName, key2, value2);
 
-        Props props = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
+        Props props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
         assertEquals("Unexpected entries in PropsContainer", 2 , props.size());
 
         assertTrue("PropsContainer missing key [" + key1 + "]", props.keySet().contains(key1));
@@ -190,19 +189,19 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName, key1, value1);
         map.put(key1, value1);
 
-        Props props = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
+        Props props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
         checkExpectedMap(map, props);
 
         insert(instanceName, key2, value2);
         map.put(key2, value2);
 
-        props = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
+        props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
         checkExpectedMap(map, props);
 
         delete(instanceName, key2);
         map.remove(key2);
 
-        props = PropsContainer.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
+        props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME, new TransactionMgr(getConnection()));
         checkExpectedMap(map, props);
     }
 
@@ -228,8 +227,8 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName1, map1);
         insert(instanceName2, map2);
 
-        Props props1 = PropsContainer.getInstance(instanceName1, new TransactionMgr(con));
-        Props props2 = PropsContainer.getInstance(instanceName2, new TransactionMgr(con));
+        Props props1 = propsContainerFactory.getInstance(instanceName1, new TransactionMgr(con));
+        Props props2 = propsContainerFactory.getInstance(instanceName2, new TransactionMgr(con));
 
         checkExpectedMap(map1, props1);
         checkExpectedMap(map2, props2);

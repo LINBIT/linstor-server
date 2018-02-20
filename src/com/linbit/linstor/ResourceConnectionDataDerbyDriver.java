@@ -8,6 +8,7 @@ import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
@@ -60,19 +61,22 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
     private final Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProvider;
     private final Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProvider;
+    private final PropsContainerFactory propsContainerFactory;
 
     @Inject
     public ResourceConnectionDataDerbyDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProviderRef,
-        Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProviderRef
+        Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProviderRef,
+        PropsContainerFactory propsContainerFactoryRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         nodeDataDerbyDriverProvider = nodeDataDerbyDriverProviderRef;
         resourceDataDerbyDriverProvider = resourceDataDerbyDriverProviderRef;
+        propsContainerFactory = propsContainerFactoryRef;
     }
 
     @Override
@@ -194,7 +198,9 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
                     dbCtx,
                     sourceResource,
                     targetResource,
-                    transMgr
+                    transMgr,
+                    this,
+                    propsContainerFactory
                 );
             }
             catch (AccessDeniedException accDeniedExc)

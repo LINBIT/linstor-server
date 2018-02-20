@@ -36,7 +36,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
-        @ApiContext AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef,
+        CtrlObjectFactories objectFactories
     )
     {
         super(
@@ -44,7 +45,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_VLM,
-            null // interComSerializer
+            null, // interComSerializer
+            objectFactories
         );
         super.setNullOnAutoClose(
             currentNodeName,

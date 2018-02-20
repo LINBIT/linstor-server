@@ -1,7 +1,15 @@
 package com.linbit.linstor.propscon;
 
-import static com.linbit.linstor.propscon.CommonPropsTestUtils.*;
-import static org.junit.Assert.*;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
+import com.linbit.linstor.security.AccessDeniedException;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,24 +18,31 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import java.util.Set;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.core.CoreUtils;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.TestAccessContextProvider;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_KEY;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.SECOND_AMOUNT;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.SECOND_KEY;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.assertIteratorEqual;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.checkIfEntrySetIsValid;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.createEntry;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.fillProps;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateEntries;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateKeys;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateValues;
+import static com.linbit.linstor.propscon.CommonPropsTestUtils.glue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ReadOnlyPropsContainerTest
 {
+    private PropsContainerFactory propsContainerFactory;
     private PropsContainer writableProp;
     private ReadOnlyProps roProp;
     private Map<String, String> roMap;
@@ -42,14 +57,8 @@ public class ReadOnlyPropsContainerTest
         Map<ResourceName, ResourceDefinition> resDfnMap = new HashMap<>();
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();
 
-        CoreUtils.satelliteMode(
-            TestAccessContextProvider.SYS_CTX,
-            nodesMap,
-            resDfnMap,
-            storPoolDfnMap
-        );
-
-        writableProp = PropsContainer.getInstance(null, null);
+        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver());
+        writableProp = propsContainerFactory.getInstance(null, null);
         roProp = new ReadOnlyProps(writableProp);
 
         fillProps(writableProp, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -973,7 +982,7 @@ public class ReadOnlyPropsContainerTest
         clone.remove(FIRST_KEY+"0");
         assertFalse(roMap.equals(clone));
 
-        PropsContainer container = PropsContainer.getInstance(null, null);
+        PropsContainer container = propsContainerFactory.getInstance(null, null);
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(roMap.equals(container.map()));
     }

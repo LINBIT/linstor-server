@@ -228,12 +228,6 @@ public class DbDerbyPersistence implements DbAccessor
     }
 
 
-    @Override
-    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
-    {
-        return objProtDriver;
-    }
-
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException
     {
         Statement stmt = dbConn.createStatement();

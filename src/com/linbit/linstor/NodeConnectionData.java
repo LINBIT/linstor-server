@@ -1,21 +1,19 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
-
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Defines a connection between two LinStor nodes
@@ -39,39 +37,19 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
 
     private final TransactionSimpleObject<NodeConnectionData, Boolean> deleted;
 
-    /*
-     * used by getInstance
-     */
-    private NodeConnectionData(
-        AccessContext accCtx,
-        Node node1,
-        Node node2,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            node1,
-            node2,
-            transMgr
-        );
-    }
-
-    /*
-     * used by dbDrivers and tests
-     */
     NodeConnectionData(
         UUID uuid,
         AccessContext accCtx,
         Node node1,
         Node node2,
-        TransactionMgr transMgr
+        NodeConnectionDataDatabaseDriver dbDriverRef,
+        TransactionMgr transMgr,
+        PropsContainerFactory propsContainerFactory
     )
         throws SQLException, AccessDeniedException
     {
         objId = uuid;
+        dbDriver = dbDriverRef;
         dbgInstanceId = UUID.randomUUID();
 
         if (node1.getName().compareTo(node2.getName()) < 0)
@@ -85,7 +63,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             targetNode = node1;
         }
 
-        props = PropsContainer.getInstance(
+        props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 sourceNode.getName(),
                 targetNode.getName()
@@ -93,8 +71,6 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             transMgr
         );
         deleted = new TransactionSimpleObject<>(this, false, null);
-
-        dbDriver = LinStor.getNodeConnectionDatabaseDriver();
 
         transObjs = Arrays.asList(
             sourceNode,
@@ -110,121 +86,6 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    public static NodeConnectionData getInstance(
-        AccessContext accCtx,
-        Node node1,
-        Node node2,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
-    {
-        NodeConnectionData nodeConData = null;
-
-        Node source;
-        Node target;
-        if (node1.getName().compareTo(node2.getName()) < 0)
-        {
-            source = node1;
-            target = node2;
-        }
-        else
-        {
-            source = node2;
-            target = node1;
-        }
-
-        source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        NodeConnectionDataDatabaseDriver dbDriver = LinStor.getNodeConnectionDatabaseDriver();
-        nodeConData = dbDriver.load(
-            source,
-            target,
-            false,
-            transMgr
-        );
-
-        if (failIfExists && nodeConData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The NodeConnection already exists");
-        }
-
-        if (nodeConData == null && createIfNotExists)
-        {
-            nodeConData = new NodeConnectionData(
-                accCtx,
-                source,
-                target,
-                transMgr
-            );
-            dbDriver.create(nodeConData, transMgr);
-        }
-        if (nodeConData != null)
-        {
-            nodeConData.initialized();
-            nodeConData.setConnection(transMgr);
-        }
-        return nodeConData;
-    }
-
-    public static NodeConnectionData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Node node1,
-        Node node2,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        NodeConnectionData nodeConData = null;
-
-        Node source;
-        Node target;
-        if (node1.getName().compareTo(node2.getName()) < 0)
-        {
-            source = node1;
-            target = node2;
-        }
-        else
-        {
-            source = node2;
-            target = node1;
-        }
-
-        NodeConnectionDataDatabaseDriver dbDriver = LinStor.getNodeConnectionDatabaseDriver();
-        try
-        {
-            nodeConData = dbDriver.load(
-                source,
-                target,
-                false,
-                transMgr
-            );
-            if (nodeConData == null)
-            {
-                nodeConData = new NodeConnectionData(
-                    uuid,
-                    accCtx,
-                    source,
-                    target,
-                    transMgr
-                );
-            }
-            nodeConData.initialized();
-            nodeConData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return nodeConData;
     }
 
     @Override

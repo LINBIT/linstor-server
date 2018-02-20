@@ -7,11 +7,12 @@ import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -22,6 +23,7 @@ import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.PreparedStatement;
@@ -31,7 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Singleton
 public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
@@ -86,6 +87,10 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private final Provider<StorPoolDataDerbyDriver> storPoolDriverProvider;
     private final Provider<NodeConnectionDataDerbyDriver> nodeConnectionDriverProvider;
 
+    private final ObjectProtectionDatabaseDriver objProtDriver;
+    private final PropsContainerFactory propsContainerFactory;
+    private final StorPoolDefinition disklessStorPoolDfn;
+
     @Inject
     public NodeDataDerbyDriver(
         @SystemContext AccessContext privCtx,
@@ -95,7 +100,10 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         Provider<SatelliteConnectionDataDerbyDriver> satelliteConnectionDriverProviderRef,
         Provider<ResourceDataDerbyDriver> resourceDataDriverProviderRef,
         Provider<StorPoolDataDerbyDriver> storPoolDriverProviderRef,
-        Provider<NodeConnectionDataDerbyDriver> nodeConnectionDriverProviderRef
+        Provider<NodeConnectionDataDerbyDriver> nodeConnectionDriverProviderRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
+        PropsContainerFactory propsContainerFactoryRef,
+        @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN) StorPoolDefinition disklessStorPoolDfnRef
     )
     {
         dbCtx = privCtx;
@@ -106,6 +114,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         resourceDataDriverProvider = resourceDataDriverProviderRef;
         storPoolDriverProvider = storPoolDriverProviderRef;
         nodeConnectionDriverProvider = nodeConnectionDriverProviderRef;
+        objProtDriver = objProtDriverRef;
+        propsContainerFactory = propsContainerFactoryRef;
+        disklessStorPoolDfn = disklessStorPoolDfnRef;
 
         nodeCache = new HashMap<>();
 
@@ -222,8 +233,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     nodeName,
                     Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
                     resultSet.getLong(NODE_FLAGS),
-                    UUID.randomUUID(), // disklessStorPoolUuid
-                    transMgr
+                    transMgr,
+                    this,
+                    propsContainerFactory
                 );
 
                 errorReporter.logTrace("Node instance created %s", getId(node));
@@ -295,7 +307,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 node.setDisklessStorPool(
                     storPoolDriverProvider.get().load(
                         node,
-                        LinStor.getDisklessStorPoolDfn(),
+                        disklessStorPoolDfn,
                         true,
                         transMgr
                     )
@@ -318,7 +330,6 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
     private ObjectProtection getObjectProtection(NodeName nodeName, TransactionMgr transMgr) throws SQLException
     {
-        ObjectProtectionDatabaseDriver objProtDriver = LinStor.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(nodeName),
             false, // no need to log a warning, as we would fail then anyways

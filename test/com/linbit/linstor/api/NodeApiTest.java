@@ -1,13 +1,12 @@
 package com.linbit.linstor.api;
 
+import com.google.inject.Inject;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.CtrlNodeApiCallHandler;
@@ -26,7 +25,7 @@ import java.util.TreeSet;
 
 public class NodeApiTest extends ApiTestBase
 {
-    private CtrlNodeApiCallHandler nodeApiCallHandler;
+    @Inject private CtrlNodeApiCallHandler nodeApiCallHandler;
 
     private NodeName testNodeName;
     private NodeType testNodeType;
@@ -48,7 +47,7 @@ public class NodeApiTest extends ApiTestBase
     {
         super.setUp();
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-        testNode = NodeData.getInstance(
+        testNode = nodeDataFactory.getInstance(
             BOB_ACC_CTX,
             testNodeName,
             testNodeType,
@@ -62,19 +61,6 @@ public class NodeApiTest extends ApiTestBase
         transMgr.commit();
 
         dbConnPool.returnConnection(transMgr);
-
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(
-            errorReporter,
-            dbConnPool,
-            SYS_CTX,
-            new ProtoCtrlStltSerializer(errorReporter, SYS_CTX),
-            new ProtoCtrlClientSerializer(errorReporter, SYS_CTX),
-            ctrlConf,
-            nodesMap,
-            nodesMapProt,
-            satelliteConnector,
-            netComContainer
-        );
     }
 
     @Test

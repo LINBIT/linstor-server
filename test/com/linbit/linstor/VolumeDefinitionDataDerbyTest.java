@@ -1,20 +1,5 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -22,6 +7,19 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
+import org.junit.Test;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class VolumeDefinitionDataDerbyTest extends DerbyBase
 {
@@ -58,7 +56,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resName = new ResourceName("TestResource");
         resPort = new TcpPortNumber(9001);
-        resDfn = ResourceDefinitionData.getInstance(
+        resDfn = resourceDefinitionDataFactory.getInstance(
             SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
         );
 
@@ -66,6 +64,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         volNr = new VolumeNumber(13);
         minor = new MinorNumber(42);
         volSize = 5_000_000;
+        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter, propsContainerFactory);
         volDfn = new VolumeDefinitionData(
             uuid,
             SYS_CTX,
@@ -74,10 +73,10 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             minor,
             volSize,
             VlmDfnFlags.DELETE.flagValue,
-            transMgr
+            transMgr,
+            driver,
+            propsContainerFactory
         );
-
-        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter);
     }
 
     @Test
@@ -115,7 +114,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDefinition resDefinitionTest = ResourceDefinitionData.getInstance(
+        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 new ResourceName("TestResource2"),
                 resPort,
@@ -126,7 +125,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 true,
                 false);
 
-        VolumeDefinitionData.getInstance(
+        volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDefinitionTest,
             volNr,
@@ -172,7 +171,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        VolumeDefinitionData loadedVd = VolumeDefinitionData.getInstance(
+        VolumeDefinitionData loadedVd = volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDfn,
             volNr,
@@ -386,7 +385,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
+        VolumeDefinitionData volDfnSat = volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDfn,
             volNr,
@@ -419,7 +418,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        ResourceDefinitionData resDfn2 = ResourceDefinitionData.getInstance(
+        ResourceDefinitionData resDfn2 = resourceDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 new ResourceName("Resource2"),
                 resPort,
@@ -430,7 +429,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 true,
                 false);
 
-        VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
+        VolumeDefinitionData volDfnSat = volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDfn2,
             volNr,
@@ -458,6 +457,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        VolumeDefinitionData.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, false, true);
+        volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, false, true);
     }
 }

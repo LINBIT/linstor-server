@@ -1,21 +1,20 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Defines a connection between two LinStor resources
@@ -39,38 +38,19 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
     private final TransactionSimpleObject<ResourceConnectionData, Boolean> deleted;
 
-    /*
-     * used by getInstance
-     */
-    private ResourceConnectionData(
-        AccessContext accCtx,
-        Resource sourceResource,
-        Resource targetResource,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        this(
-            UUID.randomUUID(),
-            accCtx,
-            sourceResource,
-            targetResource,
-            transMgr
-        );
-    }
-
-    /*
-     * used by dbDrivers and tests
-     */
     ResourceConnectionData(
         UUID uuid,
         AccessContext accCtx,
         Resource sourceResourceRef,
         Resource targetResourceRef,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        ResourceConnectionDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory
     )
         throws SQLException, AccessDeniedException
     {
+        dbDriver = dbDriverRef;
+
         NodeName sourceNodeName = sourceResourceRef.getAssignedNode().getName();
         NodeName targetNodeName = targetResourceRef.getAssignedNode().getName();
         if (sourceResourceRef.getDefinition() != targetResourceRef.getDefinition())
@@ -103,7 +83,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             targetResource = sourceResourceRef;
         }
 
-        props = PropsContainer.getInstance(
+        props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 sourceNodeName,
                 targetNodeName,
@@ -113,8 +93,6 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         );
 
         deleted = new TransactionSimpleObject<>(this, false, null);
-
-        dbDriver = LinStor.getResourceConnectionDatabaseDriver();
 
         transObjs = Arrays.asList(
             sourceResource,
@@ -131,129 +109,6 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    public static ResourceConnectionData getInstance(
-        AccessContext accCtx,
-        Resource sourceResource,
-        Resource targetResource,
-        TransactionMgr transMgr,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
-    {
-        ResourceConnectionData rscConData = null;
-
-        Resource source;
-        Resource target;
-
-        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
-        NodeName targetNodeName = targetResource.getAssignedNode().getName();
-
-        if (sourceNodeName.compareTo(targetNodeName) < 0)
-        {
-            source = sourceResource;
-            target = targetResource;
-        }
-        else
-        {
-            source = targetResource;
-            target = sourceResource;
-        }
-        source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        ResourceConnectionDataDatabaseDriver dbDriver = LinStor.getResourceConnectionDatabaseDriver();
-
-        rscConData = dbDriver.load(
-            source,
-            target,
-            false,
-            transMgr
-        );
-
-        if (failIfExists && rscConData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
-        }
-
-        if (rscConData == null && createIfNotExists)
-        {
-            rscConData = new ResourceConnectionData(
-                accCtx,
-                source,
-                target,
-                transMgr
-            );
-            dbDriver.create(rscConData, transMgr);
-        }
-        if (rscConData != null)
-        {
-            rscConData.initialized();
-            rscConData.setConnection(transMgr);
-        }
-        return rscConData;
-    }
-
-    public static ResourceConnectionData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Resource sourceResource,
-        Resource targetResource,
-        SatelliteTransactionMgr transMgr
-    )
-        throws ImplementationError
-    {
-        ResourceConnectionData rscConData = null;
-        Resource source;
-        Resource target;
-
-        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
-        NodeName targetNodeName = targetResource.getAssignedNode().getName();
-
-        if (sourceNodeName.compareTo(targetNodeName) < 0)
-        {
-            source = sourceResource;
-            target = targetResource;
-        }
-        else
-        {
-            source = targetResource;
-            target = sourceResource;
-        }
-        ResourceConnectionDataDatabaseDriver dbDriver = LinStor.getResourceConnectionDatabaseDriver();
-
-        try
-        {
-            rscConData = dbDriver.load(
-                source,
-                target,
-                false,
-                transMgr
-            );
-
-            if (rscConData == null)
-            {
-                rscConData = new ResourceConnectionData(
-                    uuid,
-                    accCtx,
-                    source,
-                    target,
-                    transMgr
-                );
-            }
-            rscConData.initialized();
-            rscConData.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return rscConData;
     }
 
     @Override

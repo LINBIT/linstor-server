@@ -8,8 +8,10 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
+import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
@@ -49,6 +51,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDataFactory storPoolDataFactory;
 
     @Inject
     CtrlStorPoolApiCallHandler(
@@ -59,7 +63,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        CtrlObjectFactories objectFactories,
+        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDataFactory storPoolDataFactoryRef
     )
     {
         super(
@@ -67,9 +74,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
-        this.clientComSerializer = clientComSerializerRef;
         super.setNullOnAutoClose(
             currentNodeNameStr,
             currentStorPoolNameStr
@@ -78,6 +85,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         nodesMapProt = nodesMapProtRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
         storPoolDfnMap = storPoolDfnMapRef;
+
+        clientComSerializer = clientComSerializerRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDataFactory = storPoolDataFactoryRef;
     }
 
     public ApiCallRc createStorPool(
@@ -503,7 +514,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             if (storPoolDef == null)
             {
                 // implicitly create storage pool definition if it doesn't exist
-                storPoolDef = StorPoolDefinitionData.getInstance(
+                storPoolDef = storPoolDefinitionDataFactory.getInstance(
                     currentAccCtx.get(),
                     asStorPoolName(storPoolNameStr),
                     currentTransMgr.get(),
@@ -512,7 +523,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 );
             }
 
-            storPool = StorPoolData.getInstance(
+            storPool = storPoolDataFactory.getInstance(
                 currentAccCtx.get(),
                 node,
                 storPoolDef,

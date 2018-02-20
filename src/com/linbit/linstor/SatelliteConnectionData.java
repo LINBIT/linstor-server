@@ -1,19 +1,15 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
-
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
 
 public class SatelliteConnectionData extends BaseTransactionObject implements SatelliteConnection
 {
@@ -35,28 +31,13 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
 
     private final TransactionSimpleObject<SatelliteConnectionData, Boolean> deleted;
 
-    private SatelliteConnectionData(
-        Node nodeRef,
-        NetInterface netIfRef,
-        TcpPortNumber portRef,
-        EncryptionType encryptionTypeValue
-    )
-    {
-        this (
-            UUID.randomUUID(),
-            nodeRef,
-            netIfRef,
-            portRef,
-            encryptionTypeValue
-        );
-    }
-
     SatelliteConnectionData(
         UUID uuid,
         Node nodeRef,
         NetInterface netIfRef,
         TcpPortNumber portRef,
-        EncryptionType encryptionTypeRef
+        EncryptionType encryptionTypeRef,
+        SatelliteConnectionDataDatabaseDriver dbDriverRef
     )
     {
         ErrorCheck.ctorNotNull(SatelliteConnectionData.class, Node.class, nodeRef);
@@ -66,8 +47,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         dbgInstanceId = UUID.randomUUID();
         node = nodeRef;
         netIf = netIfRef;
-
-        dbDriver = LinStor.getSatelliteConnectionDataDatabaseDriver();
+        dbDriver = dbDriverRef;
 
         port = new TransactionSimpleObject<>(this, portRef, dbDriver.getSatelliteConnectionPortDriver());
         encryptionType = new TransactionSimpleObject<>(
@@ -82,76 +62,6 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
             encryptionType,
             deleted
         );
-    }
-
-    public static SatelliteConnection getInstance(
-        AccessContext accCtx,
-        Node node,
-        NetInterface netIf,
-        TcpPortNumber port,
-        EncryptionType encryptionType,
-        TransactionMgr transMgr,
-        boolean createIfNotExits,
-        boolean failIfExists
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        SatelliteConnectionDataDatabaseDriver driver = LinStor.getSatelliteConnectionDataDatabaseDriver();
-        SatelliteConnectionData stltConn = driver.load(node, false, transMgr);
-
-        if (failIfExists && stltConn != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The satellite connection already exists");
-        }
-
-        if (createIfNotExits && stltConn == null)
-        {
-            stltConn = new SatelliteConnectionData(node, netIf, port, encryptionType);
-            driver.create(stltConn, transMgr);
-
-            node.setSatelliteConnection(accCtx, stltConn);
-        }
-
-        if (stltConn != null)
-        {
-            stltConn.initialized();
-            stltConn.setConnection(transMgr);
-        }
-
-        return stltConn;
-    }
-
-    public static SatelliteConnectionData getInstanceSatellite(
-        UUID uuid,
-        Node node,
-        NetInterface netIf,
-        TcpPortNumber port,
-        EncryptionType encryptionType,
-        SatelliteTransactionMgr transMgr
-    )
-    {
-        SatelliteConnectionDataDatabaseDriver driver = LinStor.getSatelliteConnectionDataDatabaseDriver();
-        SatelliteConnectionData stltConn;
-        try
-        {
-            stltConn = driver.load(node, false, transMgr);
-            if (stltConn == null)
-            {
-                stltConn = new SatelliteConnectionData(uuid, node, netIf, port, encryptionType);
-            }
-            stltConn.initialized();
-            stltConn.setConnection(transMgr);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
-        }
-        return stltConn;
     }
 
     @Override

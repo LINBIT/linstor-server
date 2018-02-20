@@ -1,27 +1,16 @@
 package com.linbit.linstor.dbcp;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class TestDbConnectionPoolModule extends AbstractModule
+public class TestDbConnectionPoolLoader
 {
     private static final String DB_URL = "jdbc:derby:memory:testDB";
     private static final String DB_USER = "linstor";
     private static final String DB_PASSWORD = "linbit";
     private static final Properties DB_PROPS = new Properties();
 
-    @Override
-    protected void configure()
-    {
-    }
-
-    @Provides
-    @Singleton
-    public DbConnectionPool dbConnectionPool()
+    public DbConnectionPool loadDbConnectionPool()
         throws SQLException
     {
         // load the clientDriver...

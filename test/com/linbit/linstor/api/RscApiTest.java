@@ -1,38 +1,34 @@
 package com.linbit.linstor.api;
 
+import com.google.inject.Inject;
+import com.linbit.TransactionMgr;
+import com.linbit.linstor.Node.NodeFlag;
+import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.Volume.VlmApi;
+import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.core.ApiTestBase;
+import com.linbit.linstor.core.CtrlRscApiCallHandler;
+import junitparams.JUnitParamsRunner;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
-import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
-import com.linbit.linstor.core.ConfigModule;
-import com.linbit.linstor.core.CtrlRscApiCallHandler;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.core.ApiTestBase;
-
-import junitparams.JUnitParamsRunner;
-
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
 {
-    private CtrlRscApiCallHandler rscApiCallHandler;
+    @Inject private CtrlRscApiCallHandler rscApiCallHandler;
 
     private NodeName testControllerName;
     private NodeType testControllerType;
@@ -75,7 +71,7 @@ public class RscApiTest extends ApiTestBase
     {
         super.setUp();
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-        testControllerNode = NodeData.getInstance(
+        testControllerNode = nodeDataFactory.getInstance(
             BOB_ACC_CTX,
             testControllerName,
             testControllerType,
@@ -85,7 +81,7 @@ public class RscApiTest extends ApiTestBase
             true
         );
         nodesMap.put(testControllerName, testControllerNode);
-        testSatelliteNode = NodeData.getInstance(
+        testSatelliteNode = nodeDataFactory.getInstance(
             BOB_ACC_CTX,
             testSatelliteName,
             testSatelliteType,
@@ -96,7 +92,7 @@ public class RscApiTest extends ApiTestBase
         );
         nodesMap.put(testSatelliteName, testSatelliteNode);
 
-        testRscDfn = ResourceDefinitionData.getInstance(
+        testRscDfn = resourceDefinitionDataFactory.getInstance(
             BOB_ACC_CTX,
             testRscName,
             testRscDfnPort,
@@ -112,19 +108,6 @@ public class RscApiTest extends ApiTestBase
         transMgr.commit();
 
         dbConnPool.returnConnection(transMgr);
-
-        rscApiCallHandler = new CtrlRscApiCallHandler(
-            errorReporter,
-            dbConnPool,
-            new ProtoCtrlStltSerializer(errorReporter, SYS_CTX),
-            new ProtoCtrlClientSerializer(errorReporter, SYS_CTX),
-            SYS_CTX,
-            rscDfnMapProt,
-            rscDfnMap,
-            nodesMapProt,
-            nodesMap,
-            ConfigModule.DEFAULT_STOR_POOL_NAME
-        );
     }
 
     @Test

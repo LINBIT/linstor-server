@@ -6,6 +6,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
+import com.linbit.linstor.ResourceConnectionDataFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -31,13 +32,16 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private final ResourceConnectionDataFactory resourceConnectionDataFactory;
 
     @Inject
     CtrlRscConnectionApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
-        @ApiContext AccessContext apiCtxRef
+        @ApiContext AccessContext apiCtxRef,
+        CtrlObjectFactories objectFactories,
+        ResourceConnectionDataFactory resourceConnectionDataFactoryRef
     )
     {
         super(
@@ -45,13 +49,15 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC_CONN,
-            interComSerializer
+            interComSerializer,
+            objectFactories
         );
         super.setNullOnAutoClose(
             currentNodeName1,
             currentNodeName2,
             currentRscName
         );
+        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
     }
 
     public ApiCallRc createResourceConnection(
@@ -317,7 +323,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ResourceConnectionData rscConn;
         try
         {
-            rscConn = ResourceConnectionData.getInstance(
+            rscConn = resourceConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 rsc1,
                 rsc2,
@@ -369,7 +375,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ResourceConnectionData rscConn;
         try
         {
-            rscConn = ResourceConnectionData.getInstance(
+            rscConn = resourceConnectionDataFactory.getInstance(
                 currentAccCtx.get(),
                 rsc1,
                 rsc2,

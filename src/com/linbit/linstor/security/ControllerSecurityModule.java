@@ -25,7 +25,6 @@ public class ControllerSecurityModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(DbAccessor.class).to(DbDerbyPersistence.class);
     }
 
     @Provides
@@ -150,7 +149,8 @@ public class ControllerSecurityModule extends AbstractModule
     @Singleton
     public ProtectionBundle initializeObjectProtection(
         @SystemContext AccessContext initCtx,
-        DbConnectionPool dbConnPool
+        DbConnectionPool dbConnPool,
+        ObjectProtectionFactory objectProtectionFactory
     )
         throws SQLException, InitializationException
     {
@@ -162,19 +162,19 @@ public class ControllerSecurityModule extends AbstractModule
             transMgr = new TransactionMgr(dbConnPool);
 
             // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
-            bundle.nodesMapProt = ObjectProtection.getInstance(
+            bundle.nodesMapProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("nodesMap"),
                 true,
                 transMgr
             );
-            bundle.rscDfnMapProt = ObjectProtection.getInstance(
+            bundle.rscDfnMapProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("rscDfnMap"),
                 true,
                 transMgr
             );
-            bundle.storPoolDfnMapProt = ObjectProtection.getInstance(
+            bundle.storPoolDfnMapProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("storPoolMap"),
                 true,
@@ -182,14 +182,14 @@ public class ControllerSecurityModule extends AbstractModule
             );
 
             // initializing controller OP
-            bundle.ctrlConfProt = ObjectProtection.getInstance(
+            bundle.ctrlConfProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("conf"),
                 true,
                 transMgr
             );
 
-            bundle.shutdownProt = ObjectProtection.getInstance(
+            bundle.shutdownProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("shutdown"),
                 true,

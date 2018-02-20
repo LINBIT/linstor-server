@@ -17,6 +17,7 @@ import com.linbit.linstor.core.ApiCallHandlerModule;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.ControllerSatelliteConnectorModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.LinStorArguments;
@@ -24,7 +25,8 @@ import com.linbit.linstor.core.LinStorArgumentsModule;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
-import com.linbit.linstor.dbdrivers.DbDriversModule;
+import com.linbit.linstor.dbdrivers.ControllerDbModule;
+import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.debug.SatelliteDebugModule;
@@ -116,7 +118,8 @@ public final class Initializer
             new LinStorModule(),
             new CoreModule(),
             new ControllerCoreModule(),
-            new DbDriversModule(),
+            new ControllerSatelliteConnectorModule(),
+            new ControllerDbModule(),
             new DbConnectionPoolModule(),
             new NetComModule(),
             new NumberPoolModule(),
@@ -150,6 +153,7 @@ public final class Initializer
             new SatelliteLinstorModule(),
             new CoreModule(),
             new SatelliteCoreModule(),
+            new SatelliteDbModule(),
             new DrbdStateModule(),
             new ApiModule(apiType, apiCalls),
             new ApiCallHandlerModule(),

@@ -1,5 +1,17 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.utils.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,26 +27,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorSqlRuntimeException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.utils.StringUtils;
 
 /**
  * Hierarchical properties container
@@ -77,75 +75,21 @@ public class PropsContainer implements Props
     private Set<Map.Entry<String, String>> entrySetAccessor;
     private Collection<String> valuesCollectionAccessor;
 
-    protected PropsConDatabaseDriver dbDriver;
+    protected final PropsConDatabaseDriver dbDriver;
     protected TransactionMgr transMgr;
     private Map<String, String> cachedPropMap;
 
     private boolean initialized = false;
     protected String instanceName;
 
-    public static PropsContainer getInstance(String instanceName, TransactionMgr transMgr) throws SQLException
+    PropsContainer(
+        String key,
+        PropsContainer parent,
+        PropsConDatabaseDriver dbDriverRef
+    ) throws InvalidKeyException
     {
-        PropsContainer container;
-        try
-        {
-            container = new PropsContainer(null, null);
-        }
-        catch (InvalidKeyException keyExc)
-        {
-            // If root container creation generates an InvalidKeyException,
-            // that is always a bug in the implementation
-            throw new ImplementationError(
-                "Root container creation generated an exception",
-                keyExc
-            );
-        }
+        dbDriver = dbDriverRef;
 
-        container.dbDriver = LinStor.getPropConDatabaseDriver();
-        container.instanceName = instanceName;
-
-        if (transMgr != null)
-        {
-            container.setConnection(transMgr);
-
-            try
-            {
-                Map<String, String> loadedProps = container.dbDriver.load(instanceName, transMgr);
-                for (Entry<String, String> entry : loadedProps.entrySet())
-                {
-                    String key = entry.getKey();
-                    String value = entry.getValue();
-
-                    PropsContainer targetContainer = container;
-                    int idx = key.lastIndexOf(PATH_SEPARATOR);
-                    if (idx != -1)
-                    {
-                        targetContainer = container.ensureNamespaceExists(key.substring(0, idx));
-                    }
-                    String actualKey = key.substring(idx + 1);
-                    String oldValue = targetContainer.propMap.put(actualKey, value);
-                    if (oldValue == null)
-                    {
-                        targetContainer.modifySize(1);
-                    }
-                }
-            }
-            catch (InvalidKeyException invalidKeyExc)
-            {
-                throw new LinStorSqlRuntimeException(
-                    "PropsContainer could not be loaded because a key in the database has an invalid value.",
-                    invalidKeyExc
-                );
-            }
-        }
-
-        container.initialized();
-
-        return container;
-    }
-
-    PropsContainer(String key, PropsContainer parent) throws InvalidKeyException
-    {
         if (key == null && parent == null)
         {
             // Create root PropsContainer
@@ -829,7 +773,7 @@ public class PropsContainer implements Props
     @SuppressWarnings("unused") // for the throw of SQLException - which is needed by SerialPropsContainer
     PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, SQLException
     {
-        return new PropsContainer(key, con);
+        return new PropsContainer(key, con, dbDriver);
     }
 
     private PropsContainer getRoot()
@@ -2341,7 +2285,7 @@ public class PropsContainer implements Props
 
     public static void main(String[] args) throws SQLException
     {
-        Props rootCon = PropsContainer.getInstance(null, null);
+        Props rootCon = new PropsContainerFactory(null).getInstance(null, null);
         try
         {
             BufferedReader stdin = new BufferedReader(

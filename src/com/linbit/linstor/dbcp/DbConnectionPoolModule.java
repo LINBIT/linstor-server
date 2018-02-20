@@ -6,7 +6,6 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.RecreateDb;
-import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
@@ -28,6 +27,8 @@ public class DbConnectionPoolModule extends AbstractModule
 
     // Database connection URL configuration key
     private static final String DB_CONN_URL = "connection-url";
+
+    private static final String DEFAULT_DB_CONNECTION_URL = "jdbc:derby:directory:database";
 
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
@@ -57,8 +58,7 @@ public class DbConnectionPoolModule extends AbstractModule
     @Singleton
     public DbConnectionPool initializeDatabaseConnectionPool(
         ErrorReporter errorLogRef,
-        LinStorArguments args,
-        DatabaseDriver persistenceDbDriver
+        LinStorArguments args
     )
         throws SQLException, InitializationException
     {
@@ -66,12 +66,13 @@ public class DbConnectionPoolModule extends AbstractModule
 
         DbConnectionPool dbConnPool = new DbConnectionPool();
 
-        if (args.getMemoryDatabaseInitScript() == null) {
+        if (args.getMemoryDatabaseInitScript() == null)
+        {
             final Properties dbProps = loadDatabaseConfiguration(args);
 
             String connectionUrl = dbProps.getProperty(
                 DB_CONN_URL,
-                persistenceDbDriver.getDefaultConnectionUrl()
+                DEFAULT_DB_CONNECTION_URL
             );
 
             // Connect the database connection pool to the database
