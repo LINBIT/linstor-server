@@ -428,6 +428,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 rsc.delete(accCtx);
             }
 
+            rscDfnProps.delete();
+
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
 

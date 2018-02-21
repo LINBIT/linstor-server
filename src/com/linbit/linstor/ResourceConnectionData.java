@@ -300,6 +300,8 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             sourceResource.removeResourceConnection(accCtx, this);
             targetResource.removeResourceConnection(accCtx, this);
 
+            props.delete();
+
             dbDriver.delete(this, transMgr);
 
             deleted.set(true);

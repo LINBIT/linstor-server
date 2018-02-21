@@ -79,6 +79,12 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public void delete() throws AccessDeniedException
+    {
+        denyAccess();
+    }
+
+    @Override
     public void clear() throws AccessDeniedException
     {
         // throws UnsupportedOperationException

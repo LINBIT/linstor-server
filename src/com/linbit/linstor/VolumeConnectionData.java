@@ -304,6 +304,8 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             sourceVolume.removeVolumeConnection(accCtx, this);
             targetVolume.removeVolumeConnection(accCtx, this);
 
+            props.delete();
+
             dbDriver.delete(this, transMgr);
 
             deleted.set(true);

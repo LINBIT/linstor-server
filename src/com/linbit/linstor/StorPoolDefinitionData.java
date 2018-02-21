@@ -254,6 +254,8 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
                 storPool.delete(accCtx);
             }
 
+            props.delete();
+
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
 

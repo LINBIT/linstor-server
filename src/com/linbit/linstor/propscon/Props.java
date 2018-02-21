@@ -35,6 +35,8 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
 
     void clear() throws AccessDeniedException, SQLException;
 
+    void delete() throws AccessDeniedException, SQLException;
+
     int size();
     boolean isEmpty();
 

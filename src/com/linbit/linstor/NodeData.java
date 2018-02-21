@@ -611,6 +611,8 @@ public class NodeData extends BaseTransactionObject implements Node
                 nodeConn.delete(accCtx);
             }
 
+            nodeProps.delete();
+
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
 

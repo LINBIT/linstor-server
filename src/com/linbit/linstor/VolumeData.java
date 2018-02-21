@@ -417,6 +417,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             storPool.removeVolume(accCtx, this);
             ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
 
+            volumeProps.delete();
+
             dbDriver.delete(this, transMgr);
 
             deleted.set(true);

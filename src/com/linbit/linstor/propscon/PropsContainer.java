@@ -466,6 +466,12 @@ public class PropsContainer implements Props
         return changed;
     }
 
+    @Override
+    public void delete() throws SQLException
+    {
+        clear();
+    }
+
     /**
      * Removes all properties from this instance.
      *

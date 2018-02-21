@@ -519,6 +519,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 vlm.delete(accCtx);
             }
 
+            resourceProps.delete();
+
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
 

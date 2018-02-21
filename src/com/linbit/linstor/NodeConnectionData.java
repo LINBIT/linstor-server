@@ -273,6 +273,8 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             sourceNode.removeNodeConnection(accCtx, this);
             targetNode.removeNodeConnection(accCtx, this);
 
+            props.delete();
+
             dbDriver.delete(this, transMgr);
 
             deleted.set(true);

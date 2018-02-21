@@ -356,6 +356,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             ((NodeData) node).removeStorPool(accCtx, this);
             ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
 
+            props.delete();
+
             dbDriver.delete(this, transMgr);
 
             deleted.set(true);

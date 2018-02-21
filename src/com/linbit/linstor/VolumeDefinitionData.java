@@ -402,6 +402,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                 vlm.delete(accCtx);
             }
 
+            vlmDfnProps.delete();
+
             dbDriver.delete(this, transMgr);
 
             deleted.set(true);
