@@ -57,7 +57,6 @@ import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -237,37 +236,31 @@ class StltRscApiCallHandler
         // merge vlmDfns
         {
             Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
-            Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
-            while (iterateVolumeDfn.hasNext())
-            {
-                VolumeDefinition vlmDfn = iterateVolumeDfn.next();
-                vlmDfnsToDelete.put(vlmDfn.getVolumeNumber(), vlmDfn);
-            }
 
             for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
             {
                 VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
-                if (!Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
+                VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
+                VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
+                    apiCtx,
+                    vlmDfnRaw.getUuid(),
+                    rscDfn,
+                    vlmNr,
+                    vlmDfnRaw.getSize(),
+                    new MinorNumber(vlmDfnRaw.getMinorNr()),
+                    VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags()),
+                    transMgr
+                );
+                checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
+                Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
+                vlmDfnPropsMap.clear();
+                vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+
+                // corresponding volumes will be created later when iterating over (local|remote)vlmApis
+
+                if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
                 {
-                    VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
-                    VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
-                        apiCtx,
-                        vlmDfnRaw.getUuid(),
-                        rscDfn,
-                        vlmNr,
-                        vlmDfnRaw.getSize(),
-                        new MinorNumber(vlmDfnRaw.getMinorNr()),
-                        VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags()),
-                        transMgr
-                    );
-                    checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
-                    Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
-                    vlmDfnPropsMap.clear();
-                    vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
-
-                    // corresponding volumes will be created later when iterating over (local|remote)vlmApis
-
-                    vlmDfnsToDelete.remove(vlmNr);
+                    vlmDfnsToDelete.put(vlmNr, vlmDfn);
                 }
             }
 

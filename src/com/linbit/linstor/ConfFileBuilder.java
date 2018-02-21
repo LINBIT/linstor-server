@@ -166,45 +166,44 @@ public class ConfFileBuilder
                 }
             }
 
-//            FIXME: dead code (for connection meshes)
-//            if (!nodeMeshes.isEmpty())
-//            {
-//                appendLine("connection-mesh");
-//                try (Section connectionMeshSection = new Section())
-//                {
-//                    for (final Set<String> mesh : nodeMeshes)
-//                    {
-//                        appendIndent();
-//                        append("hosts");
-//                        for (String node : mesh)
-//                        {
-//                            append(" ");
-//                            append(node);
-//                        }
-//                        appendLine(";");
-//                    }
-//                }
-//            }
-//
-//            if (!singleConnections.isEmpty())
-//            {
-//                final Set<Entry<String,List<String>>> entrySet = singleConnections.entrySet();
-//                for (final Entry<String, List<String>> entry : entrySet)
-//                {
-//                    final String source = entry.getKey();
-//                    final List<String> targets = entry.getValue();
-//                    for (final String target : targets)
-//                    {
-//                        appendLine("connection");
-//                        try (Section connectionSection = new Section())
-//                        {
-//                            appendLine("host %s;", source);
-//                            appendLine("host %s;", target);
-//                        }
-//                    }
-//                }
-//            }
-
+            // FIXME: dead code (for connection meshes)
+            // if (!nodeMeshes.isEmpty())
+            // {
+            //     appendLine("connection-mesh");
+            //     try (Section connectionMeshSection = new Section())
+            //     {
+            //         for (final Set<String> mesh : nodeMeshes)
+            //         {
+            //             appendIndent();
+            //             append("hosts");
+            //             for (String node : mesh)
+            //             {
+            //                 append(" ");
+            //                 append(node);
+            //             }
+            //             appendLine(";");
+            //         }
+            //     }
+            // }
+            //
+            // if (!singleConnections.isEmpty())
+            // {
+            //     final Set<Entry<String,List<String>>> entrySet = singleConnections.entrySet();
+            //     for (final Entry<String, List<String>> entry : entrySet)
+            //     {
+            //         final String source = entry.getKey();
+            //         final List<String> targets = entry.getValue();
+            //         for (final String target : targets)
+            //         {
+            //             appendLine("connection");
+            //             try (Section connectionSection = new Section())
+            //             {
+            //                 appendLine("host %s;", source);
+            //                 appendLine("host %s;", target);
+            //             }
+            //         }
+            //     }
+            // }
         }
 
         return stringBuilder.toString();

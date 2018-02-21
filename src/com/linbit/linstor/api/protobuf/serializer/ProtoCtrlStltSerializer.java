@@ -212,6 +212,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         ArrayList<MsgIntRscData> serializedRscs = new ArrayList<>();
 
         LinkedList<Node> nodes = new LinkedList<Node>(nodeSet);
+
         while (!nodes.isEmpty())
         {
             Node node = nodes.removeFirst();
@@ -236,13 +237,16 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         }
         for (Resource rsc : resources)
         {
-            serializedRscs.add(
-                rscSerializerHelper.buildResourceDataMsg(
-                    rsc,
-                    fullSyncTimestamp,
-                    updateId
-                )
-            );
+            if (rsc.iterateVolumes().hasNext())
+            {
+                serializedRscs.add(
+                    rscSerializerHelper.buildResourceDataMsg(
+                        rsc,
+                        fullSyncTimestamp,
+                        updateId
+                    )
+                );
+            }
         }
 
         MsgIntFullSync.newBuilder()
