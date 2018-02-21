@@ -108,15 +108,12 @@ public class VolumeStateDevManager extends VolumeState
     public String toString()
     {
         StringBuilder vlmStateString = new StringBuilder();
-        vlmStateString.append("    Volume ").append(getVlmNr().value).append("\n");
-        vlmStateString.append("        skip          = ").append(isSkip()).append("\n");
-        vlmStateString.append("        isPresent     = ").append(isPresent()).append("\n");
-        vlmStateString.append("        hasDisk       = ").append(hasDisk()).append("\n");
-        vlmStateString.append("        diskFailed    = ").append(isDiskFailed()).append("\n");
-        vlmStateString.append("        hasMetaData   = ").append(hasMetaData()).append("\n");
-        vlmStateString.append("        checkMetaData = ").append(isCheckMetaData()).append("\n");
-        vlmStateString.append("        netSize       = ").append(getNetSize()).append(" kiB\n");
-        vlmStateString.append("        grossSize     = ").append(getGrossSize()).append(" kiB\n");
+        vlmStateString.append(super.toString());
+        vlmStateString.append("        skip            = ").append(isSkip()).append("\n");
+        vlmStateString.append("        driverKnown     = ").append(isDriverKnown()).append("\n");
+        vlmStateString.append("        driver          = ").append(getDriver()).append("\n");
+        vlmStateString.append("        storPoolName    = ").append(getStorPoolName()).append("\n");
+        vlmStateString.append("        storPoolVlmName = ").append(getStorVlmName()).append("\n");
         return vlmStateString.toString();
     }
 }

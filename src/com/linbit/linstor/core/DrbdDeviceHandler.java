@@ -483,6 +483,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 vlmState.setPresent(true);
                 DrbdVolume.DiskState diskState = drbdVlm.getDiskState();
+                vlmState.setDiskState(diskState.toString());
                 switch (diskState)
                 {
                     case DISKLESS:

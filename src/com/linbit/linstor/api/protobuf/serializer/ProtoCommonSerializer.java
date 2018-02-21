@@ -37,6 +37,10 @@ public class ProtoCommonSerializer
                 .setNetSize(vlmState.getNetSize())
                 .setGrossSize(vlmState.getGrossSize());
 
+            if (vlmState.getDiskState() != null)
+            {
+                vlmStateBuilder.setDiskState(vlmState.getDiskState());
+            }
             rscStateBuilder.addVlmStates(vlmStateBuilder);
         }
 

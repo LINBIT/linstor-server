@@ -98,6 +98,20 @@ public final class VlmStateOuterClass {
      * <code>required uint64 gross_size = 9;</code>
      */
     long getGrossSize();
+
+    /**
+     * <code>optional string disk_state = 10;</code>
+     */
+    boolean hasDiskState();
+    /**
+     * <code>optional string disk_state = 10;</code>
+     */
+    java.lang.String getDiskState();
+    /**
+     * <code>optional string disk_state = 10;</code>
+     */
+    com.google.protobuf.ByteString
+        getDiskStateBytes();
   }
   /**
    * Protobuf type {@code com.linbit.linstor.proto.VlmState}
@@ -120,6 +134,7 @@ public final class VlmStateOuterClass {
       diskFailed_ = false;
       netSize_ = 0L;
       grossSize_ = 0L;
+      diskState_ = "";
     }
 
     @java.lang.Override
@@ -193,6 +208,12 @@ public final class VlmStateOuterClass {
             case 72: {
               bitField0_ |= 0x00000100;
               grossSize_ = input.readUInt64();
+              break;
+            }
+            case 82: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000200;
+              diskState_ = bs;
               break;
             }
           }
@@ -355,6 +376,48 @@ public final class VlmStateOuterClass {
       return grossSize_;
     }
 
+    public static final int DISK_STATE_FIELD_NUMBER = 10;
+    private volatile java.lang.Object diskState_;
+    /**
+     * <code>optional string disk_state = 10;</code>
+     */
+    public boolean hasDiskState() {
+      return ((bitField0_ & 0x00000200) == 0x00000200);
+    }
+    /**
+     * <code>optional string disk_state = 10;</code>
+     */
+    public java.lang.String getDiskState() {
+      java.lang.Object ref = diskState_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          diskState_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string disk_state = 10;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDiskStateBytes() {
+      java.lang.Object ref = diskState_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        diskState_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -430,6 +493,9 @@ public final class VlmStateOuterClass {
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         output.writeUInt64(9, grossSize_);
       }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 10, diskState_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -473,6 +539,9 @@ public final class VlmStateOuterClass {
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(9, grossSize_);
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(10, diskState_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -536,6 +605,11 @@ public final class VlmStateOuterClass {
         result = result && (getGrossSize()
             == other.getGrossSize());
       }
+      result = result && (hasDiskState() == other.hasDiskState());
+      if (hasDiskState()) {
+        result = result && getDiskState()
+            .equals(other.getDiskState());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -589,6 +663,10 @@ public final class VlmStateOuterClass {
         hash = (37 * hash) + GROSS_SIZE_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getGrossSize());
+      }
+      if (hasDiskState()) {
+        hash = (37 * hash) + DISK_STATE_FIELD_NUMBER;
+        hash = (53 * hash) + getDiskState().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -726,6 +804,8 @@ public final class VlmStateOuterClass {
         bitField0_ = (bitField0_ & ~0x00000080);
         grossSize_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000100);
+        diskState_ = "";
+        bitField0_ = (bitField0_ & ~0x00000200);
         return this;
       }
 
@@ -786,6 +866,10 @@ public final class VlmStateOuterClass {
           to_bitField0_ |= 0x00000100;
         }
         result.grossSize_ = grossSize_;
+        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+          to_bitField0_ |= 0x00000200;
+        }
+        result.diskState_ = diskState_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -854,6 +938,11 @@ public final class VlmStateOuterClass {
         }
         if (other.hasGrossSize()) {
           setGrossSize(other.getGrossSize());
+        }
+        if (other.hasDiskState()) {
+          bitField0_ |= 0x00000200;
+          diskState_ = other.diskState_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1197,6 +1286,82 @@ public final class VlmStateOuterClass {
         onChanged();
         return this;
       }
+
+      private java.lang.Object diskState_ = "";
+      /**
+       * <code>optional string disk_state = 10;</code>
+       */
+      public boolean hasDiskState() {
+        return ((bitField0_ & 0x00000200) == 0x00000200);
+      }
+      /**
+       * <code>optional string disk_state = 10;</code>
+       */
+      public java.lang.String getDiskState() {
+        java.lang.Object ref = diskState_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            diskState_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string disk_state = 10;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDiskStateBytes() {
+        java.lang.Object ref = diskState_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          diskState_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string disk_state = 10;</code>
+       */
+      public Builder setDiskState(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000200;
+        diskState_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string disk_state = 10;</code>
+       */
+      public Builder clearDiskState() {
+        bitField0_ = (bitField0_ & ~0x00000200);
+        diskState_ = getDefaultInstance().getDiskState();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string disk_state = 10;</code>
+       */
+      public Builder setDiskStateBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000200;
+        diskState_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -1261,12 +1426,12 @@ public final class VlmStateOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\034linstor/proto/VlmState.proto\022\030com.linb" +
-      "it.linstor.proto\"\301\001\n\010VlmState\022\016\n\006vlm_nr\030" +
+      "it.linstor.proto\"\325\001\n\010VlmState\022\016\n\006vlm_nr\030" +
       "\001 \002(\021\022\024\n\014vlm_minor_nr\030\002 \002(\021\022\022\n\nis_presen" +
       "t\030\003 \002(\010\022\020\n\010has_disk\030\004 \002(\010\022\025\n\rhas_meta_da" +
       "ta\030\005 \002(\010\022\027\n\017check_meta_data\030\006 \002(\010\022\023\n\013dis" +
       "k_failed\030\007 \002(\010\022\020\n\010net_size\030\010 \002(\004\022\022\n\ngros" +
-      "s_size\030\t \002(\004"
+      "s_size\030\t \002(\004\022\022\n\ndisk_state\030\n \001(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1285,7 +1450,7 @@ public final class VlmStateOuterClass {
     internal_static_com_linbit_linstor_proto_VlmState_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_VlmState_descriptor,
-        new java.lang.String[] { "VlmNr", "VlmMinorNr", "IsPresent", "HasDisk", "HasMetaData", "CheckMetaData", "DiskFailed", "NetSize", "GrossSize", });
+        new java.lang.String[] { "VlmNr", "VlmMinorNr", "IsPresent", "HasDisk", "HasMetaData", "CheckMetaData", "DiskFailed", "NetSize", "GrossSize", "DiskState", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

@@ -57,7 +57,8 @@ public class UpdateStates implements ApiCall
                         protoVlmState.getCheckMetaData(),
                         protoVlmState.getDiskFailed(),
                         protoVlmState.getNetSize(),
-                        protoVlmState.getGrossSize()
+                        protoVlmState.getGrossSize(),
+                        protoVlmState.getDiskState()
                     )
                 );
             }

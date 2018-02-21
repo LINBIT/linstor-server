@@ -47,6 +47,11 @@ public class VolumeState
      */
     protected long grossSize = 0L;
 
+    /**
+     * Drbd disk state
+     */
+    protected String diskState = null;
+
     public VolumeState()
     {
     }
@@ -60,7 +65,8 @@ public class VolumeState
         boolean checkMetaDataRef,
         boolean diskFailedRef,
         long netSizeRef,
-        long grossSizeRef
+        long grossSizeRef,
+        final String diskStateRef
     )
     {
         vlmNr = vlmNrRef;
@@ -72,6 +78,7 @@ public class VolumeState
         diskFailed = diskFailedRef;
         netSize = netSizeRef;
         grossSize = grossSizeRef;
+        diskState = diskStateRef;
     }
 
     public VolumeNumber getVlmNr()
@@ -119,6 +126,11 @@ public class VolumeState
         return grossSize;
     }
 
+    public String getDiskState()
+    {
+        return diskState;
+    }
+
     public void setVlmNr(VolumeNumber vlmNrRef)
     {
         vlmNr = vlmNrRef;
@@ -164,6 +176,11 @@ public class VolumeState
         grossSize = grossSizeRef;
     }
 
+    public void setDiskState(final String diskStateRef)
+    {
+        diskState = diskStateRef;
+    }
+
     @Override
     public String toString()
     {
@@ -176,6 +193,7 @@ public class VolumeState
         vlmStateString.append("        checkMetaData = ").append(isCheckMetaData()).append("\n");
         vlmStateString.append("        netSize       = ").append(getNetSize()).append(" kiB\n");
         vlmStateString.append("        grossSize     = ").append(getGrossSize()).append(" kiB\n");
+        vlmStateString.append("        diskState     = ").append(getDiskState()).append("\n");
         return vlmStateString.toString();
     }
 }
