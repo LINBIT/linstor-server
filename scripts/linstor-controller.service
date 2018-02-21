@@ -4,10 +4,11 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-Type=oneshot
+Type=simple
 WorkingDirectory=/opt/linstor-server
 ExecStart=/opt/linstor-server/bin/Controller
 User=root
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target
