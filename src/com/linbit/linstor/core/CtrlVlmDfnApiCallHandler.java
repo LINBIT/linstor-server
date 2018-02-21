@@ -350,24 +350,41 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         )
         {
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
+            UUID vlmDfnUuid = vlmDfn.getUuid();
+            ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
 
-            // mark volumes to delete
+            // mark volumes to delete or check if all a 'CLEAN'
             Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(accCtx);
+            boolean allVlmClean = true;
             while (itVolumes.hasNext())
             {
                 Volume vlm = itVolumes.next();
-                vlm.markDeleted(accCtx);
+                if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.CLEAN))
+                {
+                    vlm.markDeleted(accCtx);
+                    allVlmClean = false;
+                }
             }
 
-            vlmDfn.markDeleted(accCtx);
+            String deleteAction;
+            if (allVlmClean)
+            {
+                vlmDfn.delete(accCtx);
+                deleteAction = " was deleted.";
+            }
+            else
+            {
+                vlmDfn.markDeleted(accCtx);
+                deleteAction = " marked for deletion.";
+            }
 
             commit();
 
-            updateSatellites(vlmDfn.getResourceDefinition());
+            updateSatellites(rscDfn);
 
             reportSuccess(
-                getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.",
-                getObjectDescriptionInlineFirstLetterCaps() + " UUID is:"  + vlmDfn.getUuid()
+                getObjectDescriptionInlineFirstLetterCaps() + deleteAction,
+                getObjectDescriptionInlineFirstLetterCaps() + " UUID is:"  + vlmDfnUuid
             );
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -424,6 +441,19 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 false,
                 false
             );
+
+            if (vlmDfn == null)
+            {
+                throw asExc(
+                    null, // throwable
+                    "Volume definition '" + rscName + "' with volume number '" + vlmNr + "' not found.",
+                    "The specified volume definition '" + rscName +
+                        "' with volume number '" + vlmNr + "' could not be found in the database", // cause
+                    null, // details
+                    "Create a volume definition with the name '" + rscName + "' first.", // correction
+                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN
+                );
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
