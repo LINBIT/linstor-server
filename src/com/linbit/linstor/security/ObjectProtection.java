@@ -361,6 +361,11 @@ public final class ObjectProtection extends BaseTransactionObject
         dbDriver.deleteOp(objPath, transMgr);
     }
 
+    public void setPersisted(boolean persistedRef)
+    {
+        persisted = persistedRef;
+    }
+
     private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
     {
         if (isInitialized())

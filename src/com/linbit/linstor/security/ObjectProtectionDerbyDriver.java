@@ -231,6 +231,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                         PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
                         AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
                         objProt = new ObjectProtection(accCtx, objPath, this);
+                        objProt.setPersisted(true);
                     }
                     catch (InvalidNameException invalidNameExc)
                     {
