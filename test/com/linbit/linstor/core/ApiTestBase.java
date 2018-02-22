@@ -166,7 +166,10 @@ public abstract class ApiTestBase extends DerbyBase
     {
         if (rcEntry.getReturnCode() != expectedRc)
         {
-            Assert.fail("Expected [" + index + "] RC to be " + resolveRC(expectedRc) + " but got " + resolveRC(rcEntry.getReturnCode()));
+            Assert.fail("Expected [" + index + "] RC to be " +
+                resolveRC(expectedRc) + " but got " +
+                resolveRC(rcEntry.getReturnCode())
+            );
         }
     }
 

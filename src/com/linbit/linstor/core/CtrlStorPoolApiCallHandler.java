@@ -630,7 +630,15 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         return getObjectDescriptionInline(currentNodeNameStr.get(), currentStorPoolNameStr.get());
     }
 
-    private String getObjectDescriptionInline(String nodeNameStr, String storPoolNameStr)
+    public static String getObjectDescriptionInline(StorPool storPool)
+    {
+        return getObjectDescriptionInline(
+            storPool.getNode().getName().displayValue,
+            storPool.getName().displayValue
+        );
+    }
+
+    public static String getObjectDescriptionInline(String nodeNameStr, String storPoolNameStr)
     {
         return "storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'";
     }

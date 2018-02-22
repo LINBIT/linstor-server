@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.testclient.ApiRCUtils;
@@ -16,34 +17,43 @@ public abstract class AbsApiCallTester
     public List<StltConnectingAttempt> expectedConnectingAttempts;
 
     public AbsApiCallTester(
-        AccessContext accCtx,
-        Peer peer,
+        AccessContext accCtxRef,
+        Peer peerRef,
         long objMask,
         long opMask,
         long... expectedRetCodes
     )
     {
-        this.accCtx = accCtx;
-        this.peer = peer;
+        this.accCtx = accCtxRef;
+        this.peer = peerRef;
 
         retCodes = new ArrayList<>();
         for (long expectedRetCode : expectedRetCodes)
         {
-            retCodes.add(objMask | opMask | expectedRetCode);
+            long rc = expectedRetCode;
+            if ((expectedRetCode & ApiConsts.MASK_NODE) == 0) // MASK_NODE has all objMask bits set
+            {
+                rc |= objMask;
+            }
+            if ((expectedRetCode & ApiConsts.MASK_DEL) == 0) // MASK_DEL has all opMask bits set
+            {
+                rc |= opMask;
+            }
+            retCodes.add(rc);
         }
 
         expectedConnectingAttempts = new ArrayList<>();
     }
 
-    public AbsApiCallTester accCtx(AccessContext accCtx)
+    public AbsApiCallTester accCtx(AccessContext accCtxRef)
     {
-        this.accCtx = accCtx;
+        this.accCtx = accCtxRef;
         return this;
     }
 
-    public AbsApiCallTester peer(Peer peer)
+    public AbsApiCallTester peer(Peer peerRef)
     {
-        this.peer = peer;
+        this.peer = peerRef;
         return this;
     }
 

@@ -243,7 +243,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         freeSpace.set(freeSpaceRef);
     }
 
-    public Long getFreeSpace(AccessContext accCtx) throws AccessDeniedException
+    @Override
+    public long getFreeSpace(AccessContext accCtx) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return freeSpace.get();

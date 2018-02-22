@@ -179,6 +179,7 @@ public class ApiConsts
     /*
      * Other failures
      */
+    public static final long FAIL_NOT_ENOUGH_NODES = 996 | MASK_ERROR;
     public static final long FAIL_IN_USE = 997 | MASK_ERROR;
     public static final long FAIL_UNKNOWN_ERROR = 998 | MASK_ERROR;
     public static final long FAIL_IMPL_ERROR = 999 | MASK_ERROR;

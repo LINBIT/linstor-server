@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
@@ -52,7 +53,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.FlagsHelper;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.sql.SQLException;
@@ -135,8 +135,36 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         List<VlmApi> vlmApiList
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        return createResource(
+            accCtx,
+            client,
+            nodeNameStr,
+            rscNameStr,
+            flagList,
+            rscPropsMap,
+            vlmApiList,
+            null,
+            null
+        );
+    }
 
+    public ApiCallRc createResource(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String rscNameStr,
+        List<String> flagList,
+        Map<String, String> rscPropsMap,
+        List<VlmApi> vlmApiList,
+        TransactionMgr transMgr,
+        ApiCallRcImpl apiCallRcRef
+    )
+    {
+        ApiCallRcImpl apiCallRc = apiCallRcRef;
+        if (apiCallRc == null)
+        {
+            apiCallRc = new ApiCallRcImpl();
+        }
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
@@ -144,7 +172,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null,
+                transMgr,
                 nodeNameStr,
                 rscNameStr
             );
@@ -305,7 +333,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 vlmCreatedRcEntry.setDetailsFormat(
                     "Volume UUID is: " + entry.getValue().getUuid().toString()
                 );
-                vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_VLM | ApiConsts.CREATED);
+                vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
                 vlmCreatedRcEntry.putAllObjRef(currentObjRefs.get());
                 vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
                 vlmCreatedRcEntry.putAllVariables(currentVariables.get());
@@ -314,22 +342,42 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 apiCallRc.addEntry(vlmCreatedRcEntry);
             }
         }
-        catch (ApiCallHandlerFailedException ignore)
+        catch (ApiCallHandlerFailedException apiCallHandlerFailedExc)
         {
-            // a report and a corresponding api-response already created. nothing to do here
+            // a report and a corresponding api-response already created.
+            // however, if the transMgr was not null, we are in the scope of an other
+            // api call. because of that we re-throw this exception
+            if (transMgr != null)
+            {
+                throw apiCallHandlerFailedExc;
+            }
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr),
-                getObjRefs(nodeNameStr, rscNameStr),
-                getVariables(nodeNameStr, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
-            );
+            if (transMgr != null)
+            {
+                if (exc instanceof ImplementationError)
+                {
+                    throw (ImplementationError) exc;
+                }
+                else
+                {
+                    throw new LinStorRuntimeException("Unknown Exception", exc);
+                }
+            }
+            else
+            {
+                reportStatic(
+                    exc,
+                    ApiCallType.CREATE,
+                    getObjectDescriptionInline(nodeNameStr, rscNameStr),
+                    getObjRefs(nodeNameStr, rscNameStr),
+                    getVariables(nodeNameStr, rscNameStr),
+                    apiCallRc,
+                    accCtx,
+                    client
+                );
+            }
         }
 
         return apiCallRc;
@@ -525,6 +573,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         return apiCallRc;
     }
+
+
 
     /**
      * This is called if a satellite has deleted its resource to notify the controller

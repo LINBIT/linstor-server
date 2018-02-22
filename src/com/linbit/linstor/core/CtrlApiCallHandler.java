@@ -14,6 +14,8 @@ import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ public class CtrlApiCallHandler
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
+    private final CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandler;
     private final CtrlVlmApiCallHandler vlmApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
@@ -55,6 +58,7 @@ public class CtrlApiCallHandler
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
         CtrlVlmDfnApiCallHandler vlmDfnApiCallHandlerRef,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
+        CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandlerRef,
         CtrlVlmApiCallHandler vlmApiCallHandlerRef,
         CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandlerRef,
         CtrlStorPoolApiCallHandler storPoolApiCallHandlerRef,
@@ -77,6 +81,7 @@ public class CtrlApiCallHandler
         rscDfnApiCallHandler = rscDfnApiCallHandlerRef;
         vlmDfnApiCallHandler = vlmDfnApiCallHandlerRef;
         rscApiCallHandler = rscApiCallHandlerRef;
+        rscAutoPlaceApiCallHandler = rscAutoPlaceApiCallHandlerRef;
         vlmApiCallHandler = vlmApiCallHandlerRef;
         storPoolDfnApiCallHandler = storPoolDfnApiCallHandlerRef;
         storPoolApiCallHandler = storPoolApiCallHandlerRef;
@@ -1657,5 +1662,43 @@ public class CtrlApiCallHandler
             storPoolWriteLock.unlock();
             nodeWriteLock.unlock();
         }
+    }
+
+    public ApiCallRc createResourcesAutoPlace(
+        String rscName,
+        int placeCount,
+        String storPoolName,
+        List<String> notPlaceWithRscList
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        List<Lock> locks = Arrays.asList(
+            ctrlConfigLock.readLock(),
+            nodesMapLock.writeLock(),
+            rscDfnMapLock.writeLock(),
+            storPoolDfnMapLock.writeLock()
+        );
+
+        try
+        {
+            locks.forEach(Lock::lock);
+
+            apiCallRc = rscAutoPlaceApiCallHandler.autoPlace(
+                accCtx,
+                peer,
+                rscName,
+                placeCount,
+                storPoolName,
+                notPlaceWithRscList
+            );
+        }
+        finally
+        {
+            Collections.reverse(locks);
+            locks.forEach(Lock::unlock);
+        }
+
+        return apiCallRc;
     }
 }

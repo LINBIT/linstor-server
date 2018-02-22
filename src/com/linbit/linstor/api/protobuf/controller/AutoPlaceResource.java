@@ -2,10 +2,14 @@ package com.linbit.linstor.api.protobuf.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ProtocolStringList;
+
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -36,12 +40,22 @@ public class AutoPlaceResource implements ApiCall
 
         System.out.println("AUTOPLACE message:\n" + msgAutoPlace.toString());
 
-        // TODO implement
-        ApiCallRcImpl rc = new ApiCallRcImpl();
-        ApiCallRcImpl.ApiCallRcEntry rci = new ApiCallRcImpl.ApiCallRcEntry();
-        rci.setMessageFormat("Not implemented yet.");
-        rci.setReturnCode(ApiConsts.MASK_ERROR | ApiConsts.FAIL_IMPL_ERROR);
-        rc.addEntry(rci);
+        ApiCallRc rc = apiCallHandler.createResourcesAutoPlace(
+            msgAutoPlace.getRscName(),
+            msgAutoPlace.getPlaceCount(),
+            msgAutoPlace.hasStoragePool() ? msgAutoPlace.getStoragePool() : null,
+            asList(msgAutoPlace.getNotPlaceWithRscList())
+        );
         apiCallAnswerer.answerApiCallRc(rc);
+    }
+
+    private List<String> asList(ProtocolStringList notPlaceWithRscList)
+    {
+        List<String> list = new ArrayList<>();
+        for (String notPlaceWithRsc : notPlaceWithRscList)
+        {
+            list.add(notPlaceWithRsc);
+        }
+        return list;
     }
 }

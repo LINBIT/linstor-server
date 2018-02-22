@@ -126,7 +126,7 @@ public class RscApiTest extends ApiTestBase
         private List<VlmApi> vlmApiDataList;
         private List<String> flags;
 
-        public CrtRscCall(long... expectedRc)
+        CrtRscCall(long... expectedRc)
         {
             super(
                 BOB_ACC_CTX,

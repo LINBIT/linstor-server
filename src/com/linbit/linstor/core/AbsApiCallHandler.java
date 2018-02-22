@@ -66,6 +66,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final ThreadLocal<ApiCallType> currentApiCallType = new ThreadLocal<>();
     protected final ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
     protected final ThreadLocal<TransactionMgr> currentTransMgr = new ThreadLocal<>();
+    private final ThreadLocal<Boolean> currentTransMgrAutoClose = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentObjRefs = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
 
@@ -117,10 +118,12 @@ abstract class AbsApiCallHandler implements AutoCloseable
         if (transMgr == null)
         {
             currentTransMgr.set(createNewTransMgr());
+            currentTransMgrAutoClose.set(true);
         }
         else
         {
             currentTransMgr.set(transMgr);
+            currentTransMgrAutoClose.set(false);
         }
         currentObjRefs.set(objRefs);
         currentVariables.set(vars);
@@ -130,7 +133,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
     @Override
     public void close()
     {
-        rollbackIfDirty();
+        boolean autoCloseTransMgr = currentTransMgrAutoClose.get();
+        if (autoCloseTransMgr)
+        {
+            rollbackIfDirty();
+        }
 
         currentAccCtx.set(null);
         currentClient.set(null);
@@ -139,6 +146,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         currentObjRefs.set(null);
         TransactionMgr transMgr = currentTransMgr.get();
         currentTransMgr.set(null);
+        currentTransMgrAutoClose.set(true);
         currentVariables.set(null);
 
         if (customThreadLocals != null)
@@ -148,7 +156,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 customThreadLocal.set(null);
             }
         }
-        if (transMgr != null)
+        if (transMgr != null && autoCloseTransMgr)
         {
             dbConnPool.returnConnection(transMgr);
         }

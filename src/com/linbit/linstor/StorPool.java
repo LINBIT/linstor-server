@@ -105,6 +105,8 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
     StorPoolApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
+    long getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
+
     public interface StorPoolApi
     {
         UUID getStorPoolUuid();
@@ -118,4 +120,5 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
         List<Volume.VlmApi> getVlmList();
         Map<String, String> getStorPoolStaticTraits();
     }
+
 }

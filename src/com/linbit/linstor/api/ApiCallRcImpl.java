@@ -1,5 +1,7 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.testclient.ApiRCUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -130,12 +132,13 @@ public class ApiCallRcImpl implements ApiCallRc
         {
             return variables;
         }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            ApiRCUtils.appendReadableRetCode(sb, returnCode);
+            return sb.toString();
+        }
     }
-
-    public static class RcGenerator
-    {
-
-    }
-
-
 }
