@@ -735,57 +735,6 @@ public class NodeDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testGetInstanceSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-
-        NodeData nodeData = nodeDataFactory.getInstance(
-            SYS_CTX,
-            nodeName,
-            null,
-            null,
-            null,
-            true,
-            false
-        );
-
-        assertNotNull(nodeData);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-
-    }
-
-    @Test
-    public void testGetInstanceSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-
-        NodeData nodeData = nodeDataFactory.getInstance(
-            SYS_CTX,
-            nodeName,
-            null,
-            null,
-            null,
-            false,
-            false
-        );
-
-        assertNull(nodeData);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
     public void testHalfValidName() throws Exception
     {
         dbDriver.create(node, transMgr);

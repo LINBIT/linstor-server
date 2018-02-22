@@ -485,64 +485,6 @@ public class VolumeDataDerbyTest extends DerbyBase
 
     }
 
-    @Test
-    public void testSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-
-        VolumeData volData = volumeDataFactory.getInstance(
-            SYS_CTX,
-            res,
-            volDfn,
-            storPool,
-            blockDevicePath,
-            metaDiskPath,
-            new VlmFlags[] { VlmFlags.CLEAN },
-            null, // transMgr
-            true,
-            false
-        );
-
-        checkLoaded(volData, null);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-        VolumeData volData = volumeDataFactory.getInstance(
-            SYS_CTX,
-            res,
-            volDfn,
-            storPool,
-            blockDevicePath,
-            metaDiskPath,
-            new VlmFlags[] { VlmFlags.CLEAN },
-            null, // transMgr
-            false,
-            false
-        );
-
-        assertNull(volData);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-
     private void checkLoaded(VolumeData loadedVol, java.util.UUID expectedUuid) throws AccessDeniedException
     {
         assertNotNull(loadedVol);

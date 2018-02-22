@@ -284,62 +284,6 @@ public class ResouceDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test
-    public void testGetInstanceSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-
-        ResourceData resData = resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node,
-            nodeId,
-            new RscFlags[] { RscFlags.CLEAN },
-            null,
-            true,
-            false
-        );
-
-        assertEquals(node, resData.getAssignedNode());
-        assertEquals(resDfn, resData.getDefinition());
-        assertEquals(nodeId, resData.getNodeId());
-        assertNotNull(resData.getObjProt());
-        assertNotNull(resData.getProps(SYS_CTX));
-        assertTrue(resData.getStateFlags().isSet(SYS_CTX, RscFlags.CLEAN));
-        assertNotNull(resData.getUuid());
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testGetInstanceSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-
-        ResourceData resData = resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node,
-            nodeId,
-            new RscFlags[] { RscFlags.CLEAN },
-            null,
-            false,
-            false
-        );
-
-        assertNull(resData);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {

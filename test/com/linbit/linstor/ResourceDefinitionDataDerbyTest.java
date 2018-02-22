@@ -434,61 +434,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testGetInstanceSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-        ResourceDefinitionData instance = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
-            resName,
-            port,
-            new RscDfnFlags[] { RscDfnFlags.DELETE },
-            "secret",
-            transportType,
-            null,
-            true,
-            false
-        );
-
-        assertNotNull(instance);
-        assertEquals(resName, instance.getName());
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testGetInstanceNoCreate() throws Exception
-    {
-        satelliteMode();
-        ResourceDefinitionData instance = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
-            resName,
-            port,
-            new RscDfnFlags[] { RscDfnFlags.DELETE },
-            "secret",
-            transportType,
-            null,
-            false,
-            false
-        );
-
-        assertNull(instance);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
     public void testHalfValidName() throws Exception
     {
         driver.create(resDfn, transMgr);

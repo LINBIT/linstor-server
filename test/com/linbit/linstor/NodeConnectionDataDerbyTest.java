@@ -160,58 +160,6 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test
-    public void testSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-        NodeConnectionData satelliteConDfn = nodeConnectionDataFactory.getInstance(
-            SYS_CTX,
-            nodeSrc,
-            nodeDst,
-            null,
-            true,
-            false
-        );
-
-        checkLoadedConDfn(satelliteConDfn, false);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-
-        NodeName sourceName2 = new NodeName("OtherSourceNode");
-        NodeName targetName2 = new NodeName("OtherTargetNode");
-        NodeData nodeSrc2 = nodeDataFactory.getInstance(SYS_CTX, sourceName2, null, null, transMgr, true, false);
-        NodeData nodeDst2 = nodeDataFactory.getInstance(SYS_CTX, targetName2, null, null, transMgr, true, false);
-
-        NodeConnectionData satelliteConDfn = nodeConnectionDataFactory.getInstance(
-            SYS_CTX,
-            nodeSrc2,
-            nodeDst2,
-            null,
-            false,
-            false
-        );
-
-        assertNull(satelliteConDfn);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {

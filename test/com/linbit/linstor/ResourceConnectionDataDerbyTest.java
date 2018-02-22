@@ -183,62 +183,6 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test
-    public void testSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-        ResourceConnectionData satelliteConDfn = resourceConnectionDataFactory.getInstance(
-            SYS_CTX,
-            resSrc,
-            resDst,
-            null,
-            true,
-            false
-        );
-
-        checkLoadedConDfn(satelliteConDfn, false);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-
-        NodeName srcNodeName2 = new NodeName("OtherSourceNodeName");
-        NodeName dstNodeName2 = new NodeName("OtherTargetNodeName");
-
-        NodeData nodeSrc2 = nodeDataFactory.getInstance(SYS_CTX, srcNodeName2, null, null, transMgr, true, false);
-        NodeData nodeDst2 = nodeDataFactory.getInstance(SYS_CTX, dstNodeName2, null, null, transMgr, true, false);
-
-        ResourceData resSrc2 = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc2, nodeIdSrc, null, transMgr, true, false);
-        ResourceData resDst2 = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst2, nodeIdDst, null, transMgr, true, false);
-
-        ResourceConnectionData satelliteConDfn = resourceConnectionDataFactory.getInstance(
-            SYS_CTX,
-            resSrc2,
-            resDst2,
-            null,
-            false,
-            false
-        );
-
-        assertNull(satelliteConDfn);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);

@@ -253,67 +253,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test
-    public void testGetInstanceSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-
-        StorPoolName spName2 = new StorPoolName("OtherStorPool");
-        StorPoolDefinitionData spdd2 = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName2, transMgr, true, false);
-
-        StorPoolData storPoolData = storPoolDataFactory.getInstanceSatellite(
-            SYS_CTX,
-            uuid,
-            node,
-            spdd2,
-            LvmDriver.class.getSimpleName(),
-            null
-        );
-
-        assertNotNull(storPoolData);
-
-        assertNotNull(storPoolData.getProps(SYS_CTX));
-        assertEquals(spdd2, storPoolData.getDefinition(SYS_CTX));
-        assertNotNull(storPoolData.getDriverKind(SYS_CTX));
-        assertTrue(storPoolData.getDriverKind(SYS_CTX) instanceof LvmDriverKind);
-        assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
-        assertEquals(spName2, storPoolData.getName());
-        assertNotNull(storPoolData.getUuid());
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testGetInstanceSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-
-        StorPoolName spName2 = new StorPoolName("OtherStorPool");
-        StorPoolDefinitionData spdd2 = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName2, transMgr, true, false);
-
-        StorPoolData storPoolData = storPoolDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            spdd2,
-            LvmDriver.class.getSimpleName(),
-            null,
-            false,
-            false
-        );
-
-        assertNull(storPoolData);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {

@@ -161,45 +161,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testGetInstanceSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-
-        StorPoolDefinitionData spddSat = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, null, true, false);
-
-        assertNotNull(spddSat);
-        assertNotNull(spddSat.getUuid());
-        assertEquals(spName, spddSat.getName());
-        assertNotNull(spddSat.getObjProt());
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testGetInstanceSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-
-        StorPoolDefinitionData spddSat = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, null, false, false);
-
-        assertNull(spddSat);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
     public void testHalfValidName() throws Exception
     {
         driver.create(spdd, transMgr);

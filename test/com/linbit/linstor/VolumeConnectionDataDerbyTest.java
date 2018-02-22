@@ -229,52 +229,6 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test
-    public void testSatelliteCreate() throws Exception
-    {
-        satelliteMode();
-        VolumeConnectionData satelliteConDfn = volumeConnectionDataFactory.getInstance(
-            SYS_CTX,
-            volSrc,
-            volDst,
-            null,
-            true,
-            false
-        );
-
-        checkLoadedConDfn(satelliteConDfn, false);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testSatelliteNoCreate() throws Exception
-    {
-        satelliteMode();
-        VolumeConnectionData satelliteConDfn = volumeConnectionDataFactory.getInstance(
-            SYS_CTX,
-            volSrc,
-            volDst,
-            null,
-            false,
-            false
-        );
-
-        assertNull(satelliteConDfn);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-        stmt.close();
-    }
-
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
