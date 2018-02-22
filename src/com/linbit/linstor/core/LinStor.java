@@ -1,9 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.timer.CoreTimer;
 
 import java.io.PrintStream;
@@ -37,7 +34,7 @@ public abstract class LinStor
     protected CoreTimer timerEventSvc;
 
     // Error & exception logging facility
-    private ErrorReporter errorLog;
+    protected ErrorReporter errorReporter;
 
     // Synchronization lock for major global changes
     public ReadWriteLock reconfigurationLock;
@@ -46,26 +43,6 @@ public abstract class LinStor
     public ReadWriteLock nodesMapLock;
     public ReadWriteLock rscDfnMapLock;
     public ReadWriteLock storPoolDfnMapLock;
-
-
-    LinStor()
-    {
-        // Null-initialize remaining components
-        errorLog = null;
-    }
-
-    public ErrorReporter getErrorReporter()
-    {
-        return errorLog;
-    }
-
-    public void setErrorLog(AccessContext accCtx, ErrorReporter errorLogRef)
-        throws AccessDeniedException
-    {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-
-        errorLog = errorLogRef;
-    }
 
     public static void printRunTimeInfo(PrintStream out)
     {

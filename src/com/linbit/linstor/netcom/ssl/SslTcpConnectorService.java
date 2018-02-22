@@ -20,8 +20,8 @@ import javax.net.ssl.SSLException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.TcpConnectorService;
@@ -32,7 +32,7 @@ public class SslTcpConnectorService extends TcpConnectorService
     private final SSLContext sslCtx;
 
     public SslTcpConnectorService(
-        final CoreServices coreSvcsRef,
+        final ErrorReporter errorReporter,
         final MessageProcessor msgProcessorRef,
         final AccessContext peerAccCtxRef,
         final AccessContext privAccCtxRef,
@@ -47,13 +47,13 @@ public class SslTcpConnectorService extends TcpConnectorService
         throws IOException, NoSuchAlgorithmException, KeyManagementException,
         UnrecoverableKeyException, KeyStoreException, CertificateException
     {
-        super(coreSvcsRef, msgProcessorRef, peerAccCtxRef, privAccCtxRef, connObserverRef);
+        super(errorReporter, msgProcessorRef, peerAccCtxRef, privAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
         initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
     public SslTcpConnectorService(
-        final CoreServices coreSvcsRef,
+        final ErrorReporter errorReporter,
         final MessageProcessor msgProcessorRef,
         final SocketAddress bindAddress,
         final AccessContext peerAccCtxRef,
@@ -69,7 +69,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         throws IOException, NoSuchAlgorithmException, KeyManagementException,
         UnrecoverableKeyException, KeyStoreException, CertificateException
     {
-        super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, privAccCtxRef, connObserverRef);
+        super(errorReporter, msgProcessorRef, bindAddress, peerAccCtxRef, privAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
         initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }

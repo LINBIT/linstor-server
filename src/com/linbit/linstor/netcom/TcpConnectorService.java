@@ -2,10 +2,10 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.*;
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.TcpConnectorMessage.ReadState;
 import com.linbit.linstor.netcom.TcpConnectorMessage.WriteState;
 import com.linbit.linstor.security.AccessContext;
@@ -66,7 +66,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     // Maximum number of connections to accept in one selector iteration
     public static final int MAX_ACCEPT_LOOP = 100;
 
-    private CoreServices coreSvcs;
+    private ErrorReporter errorReporter;
     private MessageProcessor msgProcessor;
 
     // Set by shutdown() to shut down the selector loop
@@ -155,14 +155,14 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
 
     public TcpConnectorService(
-        CoreServices coreSvcsRef,
+        ErrorReporter errorReporterRef,
         MessageProcessor msgProcessorRef,
         AccessContext defaultPeerAccCtxRef,
         AccessContext privilegedAccCtxRef,
         ConnectionObserver connObserverRef
     )
     {
-        ErrorCheck.ctorNotNull(TcpConnectorService.class, CoreServices.class, coreSvcsRef);
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, ErrorReporter.class, errorReporterRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, MessageProcessor.class, msgProcessorRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, defaultPeerAccCtxRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, privilegedAccCtxRef);
@@ -171,7 +171,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         bindAddress     = DEFAULT_BIND_ADDRESS;
         serverSocket    = null;
         serverSelector  = null;
-        coreSvcs        = coreSvcsRef;
+        errorReporter   = errorReporterRef;
         msgProcessor    = msgProcessorRef;
         // Prevent entering the run() method's selector loop
         // until initialize() has completed
@@ -183,7 +183,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     public TcpConnectorService(
-        CoreServices coreSvcsRef,
+        ErrorReporter errorReporter,
         MessageProcessor msgProcessorRef,
         SocketAddress bindAddressRef,
         AccessContext defaultPeerAccCtxRef,
@@ -191,7 +191,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         ConnectionObserver connObserverRef
     )
     {
-        this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef, privilegedAccCtxRef, connObserverRef);
+        this(errorReporter, msgProcessorRef, defaultPeerAccCtxRef, privilegedAccCtxRef, connObserverRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         bindAddress = bindAddressRef;
     }
@@ -504,12 +504,12 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // Anyway, the reason would be an implementation flaw of some
                                 // kind, therefore, log this error and then treat the connection's
                                 // state as a protocol error and close the connection.
-                                coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
+                                errorReporter.reportError(new ImplementationError(connExc));
                                 closeConnection(currentKey, true);
                             }
                             catch (IllegalMessageStateException msgStateExc)
                             {
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     new ImplementationError(
                                         "A message object with an illegal state was registered " +
                                         "as the target of an I/O read operation",
@@ -527,7 +527,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 {
                                     peerAccCtx = connPeer.getAccessContext();
                                 }
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to receive data from the peer"
                                 );
@@ -575,7 +575,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             }
                             catch (IOException ioExc)
                             {
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     Level.TRACE, ioExc, null, null,
                                     "I/O exception while attempting to accept a peer connection"
                                 );
@@ -615,12 +615,12 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // Anyway, the reason would be an implementation flaw of some
                                 // kind, therefore, log this error and then treat the connection's
                                 // state as a protocol error and close the connection.
-                                coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
+                                errorReporter.reportError(new ImplementationError(connExc));
                                 closeConnection(currentKey, true);
                             }
                             catch (IllegalMessageStateException msgStateExc)
                             {
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     new ImplementationError(
                                         "A message object with an illegal state was registered " +
                                         "as the target of an I/O write operation",
@@ -639,7 +639,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 {
                                     peerAccCtx = connPeer.getAccessContext();
                                 }
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to send data to the peer"
                                 );
@@ -662,7 +662,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 {
                                     peerAccCtx = connPeer.getAccessContext();
                                 }
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     Level.TRACE, ioExc, peerAccCtx, connPeer,
                                     "I/O exception while attempting to connect to the peer"
                                 );
@@ -680,7 +680,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     {
                         if (currentKey != null)
                         {
-                            coreSvcs.getErrorReporter().reportError(
+                            errorReporter.reportError(
                                 new ImplementationError(
                                     "Unhandled IllegalStateException",
                                     illState
@@ -697,7 +697,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             catch (ClosedSelectorException selectExc)
             {
                 // Selector became inoperative. Log error and attempt to reinitialize.
-                coreSvcs.getErrorReporter().reportError(selectExc);
+                errorReporter.reportError(selectExc);
                 reinitialize();
             }
             catch (IOException ioExc)
@@ -705,20 +705,20 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 // I/O error while selecting (likely), or an uncaught I/O error
                 // while performing I/O on a channel (should not happen)
                 // Log error and attempt to reinitialize.
-                coreSvcs.getErrorReporter().logDebug("IOException: %s", ioExc.getLocalizedMessage());
-                coreSvcs.getErrorReporter().reportError(Level.TRACE, ioExc);
+                errorReporter.logDebug("IOException: %s", ioExc.getLocalizedMessage());
+                errorReporter.reportError(Level.TRACE, ioExc);
                 reinitialize();
             }
             catch (Exception exc)
             {
                 // Uncaught exception. Log error and shut down.
-                coreSvcs.getErrorReporter().reportError(exc);
+                errorReporter.reportError(exc);
                 break;
             }
             catch (ImplementationError implErr)
             {
                 // Uncaught exception. Log error and shut down.
-                coreSvcs.getErrorReporter().reportError(implErr);
+                errorReporter.reportError(implErr);
                 break;
             }
         }
@@ -764,7 +764,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             {
                                 // Thrown by register() if the selector is from another I/O provider
                                 // than the channel that is being registered
-                                coreSvcs.getErrorReporter().reportError(
+                                errorReporter.reportError(
                                     new ImplementationError(
                                         "Registration of the channel with the selector failed, " +
                                         "because the channel was created by another type of " +
@@ -780,7 +780,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // in register() does not correspond with a supported I/O operation
                                 // Should not happen; log the error.
                                 // Connection was not accepted and will be closed in the finally block
-                                coreSvcs.getErrorReporter().reportError(illArg);
+                                errorReporter.reportError(illArg);
                             }
 
                             if (connKey != null)
@@ -821,7 +821,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 catch (IllegalBlockingModeException illModeExc)
                 {
                     // Implementation error, configureBlocking() skipped
-                    coreSvcs.getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new ImplementationError(
                             "The accept() operation failed because the new socket channel's " +
                             "blocking mode was not configured correctly",
@@ -836,7 +836,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     // with the selector, but has already been cancelled too (which should
                     // be impossible, because the channel is first registered after being
                     // accepted)
-                    coreSvcs.getErrorReporter().reportError(cancelExc);
+                    errorReporter.reportError(cancelExc);
                     // Connection was not accepted and will be closed in the finally block
                 }
                 catch (IOException ioExc)
@@ -844,7 +844,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     // May be thrown by getRemoteAddress()
                     // This will cause the connection to be rejected because its endpoint
                     // address is undeterminable
-                    coreSvcs.getErrorReporter().reportError(ioExc);
+                    errorReporter.reportError(ioExc);
                     // Connection was not accepted and will be closed in the finally block
                 }
                 finally
@@ -858,7 +858,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         }
                         catch (IOException ioExc)
                         {
-                            coreSvcs.getErrorReporter().reportError(ioExc);
+                            errorReporter.reportError(ioExc);
                         }
                     }
                 }
@@ -917,7 +917,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         catch (ConnectException conExc)
         {
             String message = conExc.getMessage();
-            coreSvcs.getErrorReporter().logTrace(
+            errorReporter.logTrace(
                 "Outbound connection to peer ID '" + peer.getId() +
                 "' failed" +
                 (message != null ? ": " + message : "")
@@ -958,7 +958,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             // If close() fails with an I/O error, the reason may be interesting
             // enough to file an error report
-            coreSvcs.getErrorReporter().reportError(closeIoExc);
+            errorReporter.reportError(closeIoExc);
         }
         currentKey.cancel();
     }
@@ -979,13 +979,13 @@ public class TcpConnectorService implements Runnable, TcpConnector
         catch (ClosedSelectorException selectExc)
         {
             // Cannot close any connections, because the selector is inoperative
-            coreSvcs.getErrorReporter().reportError(selectExc);
+            errorReporter.reportError(selectExc);
         }
         catch (IOException ioExc)
         {
             // If close() fails with an I/O error, the reason may be interesting
             // enough to file an error report
-            coreSvcs.getErrorReporter().reportError(ioExc);
+            errorReporter.reportError(ioExc);
         }
     }
 
@@ -1002,7 +1002,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             // If close() fails with an I/O error, the reason may be interesting
             // enough to file an error report
-            coreSvcs.getErrorReporter().reportError(ioExc);
+            errorReporter.reportError(ioExc);
         }
     }
 
@@ -1150,7 +1150,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
         catch (IOException ioExc)
         {
-            coreSvcs.getErrorReporter().reportError(ioExc);
+            errorReporter.reportError(ioExc);
         }
     }
 

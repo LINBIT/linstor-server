@@ -11,7 +11,6 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
@@ -67,7 +66,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class Satellite extends LinStor implements CoreServices
+public final class Satellite extends LinStor
 {
     // System module information
     public static final String MODULE = "Satellite";
@@ -187,10 +186,7 @@ public final class Satellite extends LinStor implements CoreServices
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            ErrorReporter errorLogRef = injector.getInstance(ErrorReporter.class);
-
-            // Initialize the error & exception reporting facility
-            setErrorLog(initCtx, errorLogRef);
+            errorReporter = injector.getInstance(ErrorReporter.class);
 
             systemServicesMap = injector.getInstance(Key.get(new TypeLiteral<Map<ServiceName, SystemService>>() {}));
 
@@ -228,14 +224,14 @@ public final class Satellite extends LinStor implements CoreServices
             // errorLogRef.logInfo("Initializing API call dispatcher");
             msgProc = injector.getInstance(CommonMessageProcessor.class);
 
-            errorLogRef.logInfo("Initializing StateTracker");
+            errorReporter.logInfo("Initializing StateTracker");
             {
                 DrbdEventService drbdEventSvc = injector.getInstance(DrbdEventService.class);
 
                 systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
             }
 
-            errorLogRef.logInfo("Initializing device manager");
+            errorReporter.logInfo("Initializing device manager");
             devMgr = injector.getInstance(DeviceManagerImpl.class);
             systemServicesMap.put(devMgr.getInstanceName(), devMgr);
 
@@ -243,7 +239,7 @@ public final class Satellite extends LinStor implements CoreServices
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             // Initialize the network communications service
-            errorLogRef.logInfo("Initializing main network communications service");
+            errorReporter.logInfo("Initializing main network communications service");
             initMainNetComService(initCtx);
         }
         catch (AccessDeniedException accessExc)
@@ -262,10 +258,9 @@ public final class Satellite extends LinStor implements CoreServices
 
     private void enterDebugConsole()
     {
-        ErrorReporter errLog = getErrorReporter();
         try
         {
-            errLog.logInfo("Entering debug console");
+            errorReporter.logInfo("Entering debug console");
 
             AccessContext privCtx = sysCtx.clone();
             AccessContext debugCtx = sysCtx.clone();
@@ -276,11 +271,11 @@ public final class Satellite extends LinStor implements CoreServices
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
-            errLog.logInfo("Debug console exited");
+            errorReporter.logInfo("Debug console exited");
         }
         catch (Throwable error)
         {
-            getErrorReporter().reportError(error);
+            errorReporter.reportError(error);
         }
 
         try
@@ -338,7 +333,7 @@ public final class Satellite extends LinStor implements CoreServices
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {
                 netComSvc = new TcpConnectorService(
-                    this,
+                    errorReporter,
                     msgProc,
                     bindAddress,
                     publicCtx,
@@ -359,7 +354,7 @@ public final class Satellite extends LinStor implements CoreServices
                 try
                 {
                     netComSvc = new SslTcpConnectorService(
-                        this,
+                        errorReporter,
                         msgProc,
                         bindAddress,
                         publicCtx,
@@ -375,7 +370,7 @@ public final class Satellite extends LinStor implements CoreServices
                 }
                 catch (KeyManagementException keyMgmtExc)
                 {
-                    getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new LinStorException(
                             "Initialization of the SSLContext failed. See cause for details",
                             keyMgmtExc
@@ -386,7 +381,7 @@ public final class Satellite extends LinStor implements CoreServices
                 {
                     String errorMsg = "A private or public key for the initialization of SSL encryption could " +
                         "not be loaded";
-                    getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new LinStorException(
                             errorMsg,
                             errorMsg,
@@ -399,7 +394,7 @@ public final class Satellite extends LinStor implements CoreServices
                 }
                 catch (NoSuchAlgorithmException exc)
                 {
-                    getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new LinStorException(
                             String.format(
                                 "SSL initialization failed: " +
@@ -428,7 +423,7 @@ public final class Satellite extends LinStor implements CoreServices
                 }
                 catch (CertificateException exc)
                 {
-                    getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new LinStorException(
                             "A required SSL certificate could not be loaded",
                             "A required SSL certificate could not be loaded from the keystore files",
@@ -449,7 +444,7 @@ public final class Satellite extends LinStor implements CoreServices
                     netComConnectors.put(netComSvc.getInstanceName(), netComSvc);
                     systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
                     netComSvc.start();
-                    getErrorReporter().logInfo(
+                    errorReporter.logInfo(
                         String.format(
                             "%s started on port %s:%d",
                             netComSvc.getInstanceName().displayValue,
@@ -464,7 +459,7 @@ public final class Satellite extends LinStor implements CoreServices
                     {
                         errorMsg = "The initial network communications service failed to start.";
                     }
-                    getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new LinStorException(
                             errorMsg,
                             errorMsg, // description
@@ -482,7 +477,7 @@ public final class Satellite extends LinStor implements CoreServices
                 if (!NET_COM_CONF_TYPE_PLAIN.equalsIgnoreCase(type) &&
                     !NET_COM_CONF_TYPE_SSL.equalsIgnoreCase(type))
                 {
-                    getErrorReporter().reportError(
+                    errorReporter.reportError(
                         new LinStorException(
                             // Message
                             String.format(
@@ -514,7 +509,7 @@ public final class Satellite extends LinStor implements CoreServices
         }
         catch (IOException ioExc)
         {
-            getErrorReporter().reportError(ioExc);
+            errorReporter.reportError(ioExc);
         }
     }
 

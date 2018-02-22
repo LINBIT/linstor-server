@@ -6,10 +6,8 @@ import java.util.Set;
 import com.linbit.Checks;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -29,17 +27,13 @@ public class Quorum
 
     public static final int FULL_MIN = 3;
 
-    private final Controller controller;
-    private final CoreServices coreSvcs;
     private final Set<Node> quorumNodes = new HashSet<>();
 
     private int quorumCount = 1;
     private int quorumFull = 1;
 
-    public Quorum(Controller controllerRef, CoreServices coreSvcsRef)
+    public Quorum()
     {
-        this.controller = controllerRef;
-        this.coreSvcs = coreSvcsRef;
     }
 
     /**

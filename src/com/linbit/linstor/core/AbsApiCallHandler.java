@@ -1090,7 +1090,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Map<String, String> objRefs,
         Map<String, String> variables,
         ApiCallRcImpl apiCallRc,
-        Controller controller,
+        ErrorReporter errorReporter,
         AccessContext accCtx,
         Peer peer
     )
@@ -1100,7 +1100,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throwable = new LinStorException(errorMsg);
         }
-        controller.getErrorReporter().reportError(
+        errorReporter.reportError(
             throwable,
             accCtx,
             peer,

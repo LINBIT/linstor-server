@@ -9,7 +9,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.logging.ErrorReporter;
 import org.slf4j.event.Level;
 
 public class TaskScheduleService implements SystemService, Runnable
@@ -57,11 +57,11 @@ public class TaskScheduleService implements SystemService, Runnable
 
     private final TreeMap<Long, LinkedList<Task>> tasks = new TreeMap<>();
     private final LinkedList<Task> newTasks = new LinkedList<>();
-    private final Controller controller;
+    private final ErrorReporter errorReporter;
 
-    public TaskScheduleService(Controller controllerRef)
+    public TaskScheduleService(ErrorReporter errorReporterRef)
     {
-        controller = controllerRef;
+        errorReporter = errorReporterRef;
         serviceInstanceName = SERVICE_NAME;
     }
 
@@ -235,7 +235,7 @@ public class TaskScheduleService implements SystemService, Runnable
         }
         catch (Exception exc)
         {
-            controller.getErrorReporter().reportError(
+            errorReporter.reportError(
                 Level.ERROR,
                 new ImplementationError(
                     "Unhandled exception caught in " + TaskScheduleService.class.getName(),

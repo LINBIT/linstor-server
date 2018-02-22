@@ -12,7 +12,6 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
 import com.linbit.WorkerPool;
-import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorModule;
@@ -82,7 +81,7 @@ import java.util.regex.Pattern;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class Controller extends LinStor implements CoreServices
+public final class Controller extends LinStor
 {
     // System module information
     public static final String MODULE = "Controller";
@@ -242,14 +241,11 @@ public final class Controller extends LinStor implements CoreServices
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            ErrorReporter errorLogRef = injector.getInstance(ErrorReporter.class);
-
-            // Initialize the error & exception reporting facility
-            setErrorLog(initCtx, errorLogRef);
+            errorReporter = injector.getInstance(ErrorReporter.class);
 
             systemServicesMap = injector.getInstance(Key.get(new TypeLiteral<Map<ServiceName, SystemService>>() {}));
 
-            taskScheduleService = new TaskScheduleService(this);
+            taskScheduleService = new TaskScheduleService(errorReporter);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
@@ -270,7 +266,7 @@ public final class Controller extends LinStor implements CoreServices
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP)
-            initializeSecurityObjects(errorLogRef, initCtx);
+            initializeSecurityObjects(errorReporter, initCtx);
 
             applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
 
@@ -283,9 +279,9 @@ public final class Controller extends LinStor implements CoreServices
             ctrlConfProt = injector.getInstance(
                 Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.CTRL_CONF_PROT)));
 
-            errorLogRef.logInfo("Core objects load from database is in progress");
+            errorReporter.logInfo("Core objects load from database is in progress");
             loadCoreObjects(initCtx);
-            errorLogRef.logInfo("Core objects load from database completed");
+            errorReporter.logInfo("Core objects load from database completed");
 
             netComContainer = injector.getInstance(NetComContainer.class);
 
@@ -309,15 +305,15 @@ public final class Controller extends LinStor implements CoreServices
 
             initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM),
-                errorLogRef,
+                errorReporter,
                 initCtx
             );
 
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
-            connectToKnownNodes(errorLogRef, initCtx);
+            connectToKnownNodes(errorReporter, initCtx);
 
-            errorLogRef.logInfo("Controller initialized");
+            errorReporter.logInfo("Controller initialized");
         }
         catch (AccessDeniedException accessExc)
         {
@@ -335,10 +331,9 @@ public final class Controller extends LinStor implements CoreServices
 
     private void enterDebugConsole()
     {
-        ErrorReporter errLog = getErrorReporter();
         try
         {
-            errLog.logInfo("Entering debug console");
+            errorReporter.logInfo("Entering debug console");
 
             AccessContext privCtx = sysCtx.clone();
             AccessContext debugCtx = sysCtx.clone();
@@ -349,11 +344,11 @@ public final class Controller extends LinStor implements CoreServices
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
-            errLog.logInfo("Debug console exited");
+            errorReporter.logInfo("Debug console exited");
         }
         catch (Throwable error)
         {
-            getErrorReporter().reportError(error);
+            errorReporter.reportError(error);
         }
 
         try
@@ -640,7 +635,7 @@ public final class Controller extends LinStor implements CoreServices
         if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
         {
             netComSvc = new TcpConnectorService(
-                this,
+                errorReporter,
                 msgProc,
                 bindAddress,
                 publicCtx,
@@ -706,7 +701,7 @@ public final class Controller extends LinStor implements CoreServices
             try
             {
                 netComSvc = new SslTcpConnectorService(
-                    this,
+                    errorReporter,
                     msgProc,
                     bindAddress,
                     publicCtx,
