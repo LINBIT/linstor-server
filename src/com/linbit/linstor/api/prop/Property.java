@@ -1,0 +1,74 @@
+package com.linbit.linstor.api.prop;
+
+import com.linbit.ImplementationError;
+import com.linbit.linstor.propscon.PropsContainer;
+
+public interface Property
+{
+    enum PropertyType
+    {
+        REGEX;
+
+        public static PropertyType valueOfIgnoreCase(String typeRef)
+        {
+            PropertyType ret = null;
+            for (PropertyType type : values())
+            {
+                if (type.name().equalsIgnoreCase(typeRef))
+                {
+                    ret = type;
+                    break;
+                }
+            }
+            return ret;
+        }
+    }
+
+    /**
+     * Returns the name of the property. This is NOT the key, just an internal
+     * name of the property for referencing this property
+     */
+    String getName();
+
+    /**
+     * Returns the full qualified key starting from the root {@link PropsContainer}
+     */
+    String getKey();
+
+    /**
+     * Returns the type the value has to be interpreted
+     */
+    PropertyType getType();
+
+    /**
+     * Returns the value the user input has to match later
+     */
+    String getValue();
+
+    /**
+     * If true and the "user value" does not match the property an {@link ImplementationError}
+     * will be thrown
+     */
+    boolean isInternal();
+
+    /**
+     * Describes the current property. Mostly used by the client
+     */
+    String getInfo();
+
+    /**
+     * Returns true if the value matches the configured property
+     */
+    boolean isValid(String value);
+
+    /**
+     * Describes this property. It should contain information about type, rule_name, and validation
+     * pattern
+     */
+    default String getDescription()
+    {
+        return this.getClass().getSimpleName() + ", " +
+            "name: '" + getName() + "', " +
+            "pattern: '" + getValue() + "'";
+    }
+}
