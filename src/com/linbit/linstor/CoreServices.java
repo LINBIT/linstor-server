@@ -12,6 +12,4 @@ import com.linbit.timer.Timer;
 public interface CoreServices
 {
     ErrorReporter getErrorReporter();
-
-    Timer<String, Action<String>> getTimer();
 }

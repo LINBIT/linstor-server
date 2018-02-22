@@ -15,7 +15,6 @@ import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
@@ -61,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -200,10 +198,7 @@ public final class Satellite extends LinStor implements CoreServices
             systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
-            {
-                CoreTimer timer = super.getTimer();
-                systemServicesMap.put(timer.getInstanceName(), timer);
-            }
+            systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
             // Initialize LinStor objects maps
             peerMap = injector.getInstance(CoreModule.PeerMap.class);
@@ -265,7 +260,7 @@ public final class Satellite extends LinStor implements CoreServices
         }
     }
 
-    public void enterDebugConsole()
+    private void enterDebugConsole()
     {
         ErrorReporter errLog = getErrorReporter();
         try
@@ -277,7 +272,7 @@ public final class Satellite extends LinStor implements CoreServices
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
             debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
+            DebugConsole dbgConsole = debugConsoleCreator.createDebugConsole(privCtx, debugCtx, null);
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
@@ -305,21 +300,6 @@ public final class Satellite extends LinStor implements CoreServices
                 accExc
             );
         }
-    }
-
-    public void shutdown(AccessContext accCtx) throws AccessDeniedException
-    {
-        applicationLifecycleManager.shutdown(accCtx);
-    }
-
-    public DebugConsole createDebugConsole(
-        AccessContext accCtx,
-        AccessContext debugCtx,
-        Peer client
-    )
-        throws AccessDeniedException
-    {
-        return debugConsoleCreator.createDebugConsole(accCtx, debugCtx, client);
     }
 
     private void initMainNetComService(AccessContext initCtx)
@@ -538,11 +518,6 @@ public final class Satellite extends LinStor implements CoreServices
         }
     }
 
-    public DeviceManager getDeviceManager()
-    {
-        return devMgr;
-    }
-
     public static void main(String[] args)
     {
         LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
@@ -579,72 +554,5 @@ public final class Satellite extends LinStor implements CoreServices
         }
 
         System.out.println();
-    }
-
-    public StltApiCallHandler getApiCallHandler()
-    {
-        return apiCallHandler;
-    }
-
-    public NodeData getLocalNode()
-    {
-        return controllerPeerConnector.getLocalNode();
-    }
-
-    public Peer getControllerPeer()
-    {
-        return controllerPeerConnector.getControllerPeer();
-    }
-
-    public void setControllerPeer(
-        Peer controllerPeerRef,
-        UUID nodeUuid,
-        String nodeName,
-        UUID disklessStorPoolDfnUuid,
-        UUID disklessStorPoolUuid
-    )
-    {
-        controllerPeerConnector.setControllerPeer(
-            controllerPeerRef,
-            nodeUuid,
-            nodeName,
-            disklessStorPoolDfnUuid,
-            disklessStorPoolUuid
-        );
-    }
-
-    public void setControllerPeerToCurrentLocalNode()
-    {
-        controllerPeerConnector.setControllerPeerToCurrentLocalNode();
-    }
-
-    public long getCurrentFullSyncId()
-    {
-        return updateMonitor.getCurrentFullSyncId();
-    }
-
-    public long getCurrentAwaitedUpdateId()
-    {
-        return updateMonitor.getCurrentAwaitedUpdateId();
-    }
-
-    public void awaitedUpdateApplied()
-    {
-        updateMonitor.awaitedUpdateApplied();
-    }
-
-    public long getNextFullSyncId()
-    {
-        return updateMonitor.getNextFullSyncId();
-    }
-
-    public void setFullSyncApplied()
-    {
-        updateMonitor.setFullSyncApplied();
-    }
-
-    public boolean isCurrentFullSyncApplied()
-    {
-        return updateMonitor.isCurrentFullSyncApplied();
     }
 }

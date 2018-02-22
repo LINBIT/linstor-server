@@ -54,11 +54,6 @@ public abstract class LinStor
         errorLog = null;
     }
 
-    public CoreTimer getTimer()
-    {
-        return timerEventSvc;
-    }
-
     public ErrorReporter getErrorReporter()
     {
         return errorLog;

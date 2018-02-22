@@ -253,10 +253,7 @@ public final class Controller extends LinStor implements CoreServices
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
-            {
-                CoreTimer timer = super.getTimer();
-                systemServicesMap.put(timer.getInstanceName(), timer);
-            }
+            systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
             dbConnPool = injector.getInstance(DbConnectionPool.class);
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
@@ -336,7 +333,7 @@ public final class Controller extends LinStor implements CoreServices
         }
     }
 
-    public void enterDebugConsole()
+    private void enterDebugConsole()
     {
         ErrorReporter errLog = getErrorReporter();
         try
@@ -348,7 +345,7 @@ public final class Controller extends LinStor implements CoreServices
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
             debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
+            DebugConsole dbgConsole = debugConsoleCreator.createDebugConsole(privCtx, debugCtx, null);
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
@@ -376,32 +373,6 @@ public final class Controller extends LinStor implements CoreServices
                 accExc
             );
         }
-    }
-
-    public void requireShutdownAccess(AccessContext accCtx) throws AccessDeniedException
-    {
-        applicationLifecycleManager.requireShutdownAccess(accCtx);
-    }
-
-    public void shutdown(AccessContext accCtx) throws AccessDeniedException
-    {
-        applicationLifecycleManager.shutdown(accCtx);
-    }
-
-    public DebugConsole createDebugConsole(
-        AccessContext accCtx,
-        AccessContext debugCtx,
-        Peer client
-    )
-        throws AccessDeniedException
-    {
-        return debugConsoleCreator.createDebugConsole(accCtx, debugCtx, client);
-    }
-
-    public void destroyDebugConsole(AccessContext accCtx, Peer client)
-        throws AccessDeniedException
-    {
-        debugConsoleCreator.destroyDebugConsole(accCtx, client);
     }
 
     boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef) throws SystemServiceStopException
