@@ -217,6 +217,7 @@ public class ApiConsts
     public static final String API_CRT_NODE_CONN = "CrtNodeConn";
     public static final String API_CRT_RSC_CONN = "CrtRscConn";
     public static final String API_CRT_VLM_CONN = "CrtVlmConn";
+    public static final String API_AUTO_PLACE_RSC = "AutoPlaceRsc";
 
     /*
      * Modify object APIs
