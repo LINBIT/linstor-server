@@ -56,6 +56,7 @@ import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
+
 import org.slf4j.event.Level;
 
 import java.io.IOException;
@@ -471,7 +472,6 @@ public final class Controller extends LinStor
         TransactionMgr transMgr = null;
         try
         {
-            DatabaseDriver dbDriver = injector.getInstance(DatabaseDriver.class); // TODO check why nested trans. broken
             transMgr = new TransactionMgr(dbConnPool);
             nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
             rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
@@ -502,7 +502,7 @@ public final class Controller extends LinStor
                 // FIXME: Loading or reloading the configuration must ensure to either load everything
                 //        or nothing to prevent ending up with a half-loaded configuration.
                 //        See also the TODO above.
-                dbDriver.loadAll(transMgr);
+                injector.getInstance(DatabaseDriver.class).loadAll(transMgr);
             }
             finally
             {

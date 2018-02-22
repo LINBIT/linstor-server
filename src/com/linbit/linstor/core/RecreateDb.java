@@ -111,7 +111,8 @@ public class RecreateDb
         return new PoolingDataSource<>(connPool);
     }
 
-    public static void runSql(Connection con, String sqlFilePath, BufferedReader br, boolean verbose) throws IOException, SQLException
+    public static void runSql(Connection con, String sqlFilePath, BufferedReader br, boolean verbose)
+        throws IOException, SQLException
     {
         if (verbose)
         {

@@ -85,9 +85,22 @@ public class DbConnectionPoolModule extends AbstractModule
         {
             // In memory database
             // Connect the database connection pool to the database
+            Properties props = new Properties();
+
+            /*
+             * WORKAROUND: Set the default SCHEMA for all connections.
+             * If no SCHEMA is defined, the user's name will be taken as default SCHEMA.
+             * The first connection does not need a SCHEMA to work properly.
+             * However, this changes with nested connections (opening a connection while an other
+             * is not closed yet).
+             * Without specifying a SCHEMA (in this case it is done by setting the db user
+             * to 'LINSTOR'), the nested connection will not find anything in the database, not
+             * even the tables or views and throws an SQLException.
+             */
+            props.setProperty("user", "LINSTOR");
             dbConnPool.initializeDataSource(
                 "jdbc:derby:memory:testDb;create=True",
-                new Properties()
+                props
             );
 
             Connection conn = null;

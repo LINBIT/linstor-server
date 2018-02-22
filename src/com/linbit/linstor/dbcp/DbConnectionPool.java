@@ -131,6 +131,7 @@ public class DbConnectionPool implements ControllerDatabase
                 threadLocalConnections.set(connections);
             }
             connections.add(dbConn);
+            dbConn.setAutoCommit(false);
         }
         return dbConn;
     }
