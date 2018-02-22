@@ -130,11 +130,13 @@ public class VlmPojo implements Volume.VlmApi
         return storPoolDfnUuid;
     }
 
+    @Override
     public Map<String, String> getStorPoolDfnProps()
     {
         return storPoolDfnProps;
     }
 
+    @Override
     public Map<String, String> getStorPoolProps()
     {
         return storPoolProps;

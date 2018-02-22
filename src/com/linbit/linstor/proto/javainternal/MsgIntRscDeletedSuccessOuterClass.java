@@ -35,50 +35,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
      */
     com.google.protobuf.ByteString
         getRscNameBytes();
-
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    java.util.List<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace> 
-        getFreeSpacesList();
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace getFreeSpaces(int index);
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    int getFreeSpacesCount();
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    java.util.List<? extends com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> 
-        getFreeSpacesOrBuilderList();
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder getFreeSpacesOrBuilder(
-        int index);
   }
   /**
    * <pre>
@@ -97,7 +53,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
     }
     private MsgIntRscDeletedSuccess() {
       rscName_ = "";
-      freeSpaces_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -131,15 +86,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
               rscName_ = s;
               break;
             }
-            case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                freeSpaces_ = new java.util.ArrayList<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace>();
-                mutable_bitField0_ |= 0x00000002;
-              }
-              freeSpaces_.add(
-                  input.readMessage(com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.PARSER, extensionRegistry));
-              break;
-            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -148,9 +94,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          freeSpaces_ = java.util.Collections.unmodifiableList(freeSpaces_);
-        }
         makeExtensionsImmutable();
       }
     }
@@ -166,7 +109,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
               com.linbit.linstor.proto.javainternal.MsgIntRscDeletedSuccessOuterClass.MsgIntRscDeletedSuccess.class, com.linbit.linstor.proto.javainternal.MsgIntRscDeletedSuccessOuterClass.MsgIntRscDeletedSuccess.Builder.class);
     }
 
-    private int bitField0_;
     public static final int RSC_NAME_FIELD_NUMBER = 1;
     private volatile java.lang.Object rscName_;
     /**
@@ -209,73 +151,12 @@ public final class MsgIntRscDeletedSuccessOuterClass {
       }
     }
 
-    public static final int FREE_SPACES_FIELD_NUMBER = 2;
-    private java.util.List<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace> freeSpaces_;
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    public java.util.List<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace> getFreeSpacesList() {
-      return freeSpaces_;
-    }
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    public java.util.List<? extends com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> 
-        getFreeSpacesOrBuilderList() {
-      return freeSpaces_;
-    }
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    public int getFreeSpacesCount() {
-      return freeSpaces_.size();
-    }
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace getFreeSpaces(int index) {
-      return freeSpaces_.get(index);
-    }
-    /**
-     * <pre>
-     * Free spaces
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-     */
-    public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder getFreeSpacesOrBuilder(
-        int index) {
-      return freeSpaces_.get(index);
-    }
-
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      for (int i = 0; i < getFreeSpacesCount(); i++) {
-        if (!getFreeSpaces(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -284,9 +165,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
                         throws java.io.IOException {
       if (!getRscNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscName_);
-      }
-      for (int i = 0; i < freeSpaces_.size(); i++) {
-        output.writeMessage(2, freeSpaces_.get(i));
       }
     }
 
@@ -297,10 +175,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
       size = 0;
       if (!getRscNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscName_);
-      }
-      for (int i = 0; i < freeSpaces_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, freeSpaces_.get(i));
       }
       memoizedSize = size;
       return size;
@@ -320,8 +194,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
       boolean result = true;
       result = result && getRscName()
           .equals(other.getRscName());
-      result = result && getFreeSpacesList()
-          .equals(other.getFreeSpacesList());
       return result;
     }
 
@@ -334,10 +206,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
       hash = (53 * hash) + getRscName().hashCode();
-      if (getFreeSpacesCount() > 0) {
-        hash = (37 * hash) + FREE_SPACES_FIELD_NUMBER;
-        hash = (53 * hash) + getFreeSpacesList().hashCode();
-      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -456,19 +324,12 @@ public final class MsgIntRscDeletedSuccessOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getFreeSpacesFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
         rscName_ = "";
 
-        if (freeSpacesBuilder_ == null) {
-          freeSpaces_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-        } else {
-          freeSpacesBuilder_.clear();
-        }
         return this;
       }
 
@@ -491,19 +352,7 @@ public final class MsgIntRscDeletedSuccessOuterClass {
 
       public com.linbit.linstor.proto.javainternal.MsgIntRscDeletedSuccessOuterClass.MsgIntRscDeletedSuccess buildPartial() {
         com.linbit.linstor.proto.javainternal.MsgIntRscDeletedSuccessOuterClass.MsgIntRscDeletedSuccess result = new com.linbit.linstor.proto.javainternal.MsgIntRscDeletedSuccessOuterClass.MsgIntRscDeletedSuccess(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
         result.rscName_ = rscName_;
-        if (freeSpacesBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
-            freeSpaces_ = java.util.Collections.unmodifiableList(freeSpaces_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.freeSpaces_ = freeSpaces_;
-        } else {
-          result.freeSpaces_ = freeSpacesBuilder_.build();
-        }
-        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -549,42 +398,11 @@ public final class MsgIntRscDeletedSuccessOuterClass {
           rscName_ = other.rscName_;
           onChanged();
         }
-        if (freeSpacesBuilder_ == null) {
-          if (!other.freeSpaces_.isEmpty()) {
-            if (freeSpaces_.isEmpty()) {
-              freeSpaces_ = other.freeSpaces_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureFreeSpacesIsMutable();
-              freeSpaces_.addAll(other.freeSpaces_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.freeSpaces_.isEmpty()) {
-            if (freeSpacesBuilder_.isEmpty()) {
-              freeSpacesBuilder_.dispose();
-              freeSpacesBuilder_ = null;
-              freeSpaces_ = other.freeSpaces_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              freeSpacesBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getFreeSpacesFieldBuilder() : null;
-            } else {
-              freeSpacesBuilder_.addAllMessages(other.freeSpaces_);
-            }
-          }
-        }
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
-        for (int i = 0; i < getFreeSpacesCount(); i++) {
-          if (!getFreeSpaces(i).isInitialized()) {
-            return false;
-          }
-        }
         return true;
       }
 
@@ -605,7 +423,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
         }
         return this;
       }
-      private int bitField0_;
 
       private java.lang.Object rscName_ = "";
       /**
@@ -695,318 +512,6 @@ public final class MsgIntRscDeletedSuccessOuterClass {
         onChanged();
         return this;
       }
-
-      private java.util.List<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace> freeSpaces_ =
-        java.util.Collections.emptyList();
-      private void ensureFreeSpacesIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          freeSpaces_ = new java.util.ArrayList<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace>(freeSpaces_);
-          bitField0_ |= 0x00000002;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> freeSpacesBuilder_;
-
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace> getFreeSpacesList() {
-        if (freeSpacesBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(freeSpaces_);
-        } else {
-          return freeSpacesBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public int getFreeSpacesCount() {
-        if (freeSpacesBuilder_ == null) {
-          return freeSpaces_.size();
-        } else {
-          return freeSpacesBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace getFreeSpaces(int index) {
-        if (freeSpacesBuilder_ == null) {
-          return freeSpaces_.get(index);
-        } else {
-          return freeSpacesBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder setFreeSpaces(
-          int index, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace value) {
-        if (freeSpacesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.set(index, value);
-          onChanged();
-        } else {
-          freeSpacesBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder setFreeSpaces(
-          int index, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder builderForValue) {
-        if (freeSpacesBuilder_ == null) {
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          freeSpacesBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder addFreeSpaces(com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace value) {
-        if (freeSpacesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.add(value);
-          onChanged();
-        } else {
-          freeSpacesBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder addFreeSpaces(
-          int index, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace value) {
-        if (freeSpacesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.add(index, value);
-          onChanged();
-        } else {
-          freeSpacesBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder addFreeSpaces(
-          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder builderForValue) {
-        if (freeSpacesBuilder_ == null) {
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.add(builderForValue.build());
-          onChanged();
-        } else {
-          freeSpacesBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder addFreeSpaces(
-          int index, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder builderForValue) {
-        if (freeSpacesBuilder_ == null) {
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          freeSpacesBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder addAllFreeSpaces(
-          java.lang.Iterable<? extends com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace> values) {
-        if (freeSpacesBuilder_ == null) {
-          ensureFreeSpacesIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, freeSpaces_);
-          onChanged();
-        } else {
-          freeSpacesBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder clearFreeSpaces() {
-        if (freeSpacesBuilder_ == null) {
-          freeSpaces_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          freeSpacesBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public Builder removeFreeSpaces(int index) {
-        if (freeSpacesBuilder_ == null) {
-          ensureFreeSpacesIsMutable();
-          freeSpaces_.remove(index);
-          onChanged();
-        } else {
-          freeSpacesBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder getFreeSpacesBuilder(
-          int index) {
-        return getFreeSpacesFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder getFreeSpacesOrBuilder(
-          int index) {
-        if (freeSpacesBuilder_ == null) {
-          return freeSpaces_.get(index);  } else {
-          return freeSpacesBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public java.util.List<? extends com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> 
-           getFreeSpacesOrBuilderList() {
-        if (freeSpacesBuilder_ != null) {
-          return freeSpacesBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(freeSpaces_);
-        }
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder addFreeSpacesBuilder() {
-        return getFreeSpacesFieldBuilder().addBuilder(
-            com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder addFreeSpacesBuilder(
-          int index) {
-        return getFreeSpacesFieldBuilder().addBuilder(
-            index, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Free spaces
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.StorPoolFreeSpace free_spaces = 2;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder> 
-           getFreeSpacesBuilderList() {
-        return getFreeSpacesFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> 
-          getFreeSpacesFieldBuilder() {
-        if (freeSpacesBuilder_ == null) {
-          freeSpacesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder>(
-                  freeSpaces_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
-                  getParentForChildren(),
-                  isClean());
-          freeSpaces_ = null;
-        }
-        return freeSpacesBuilder_;
-      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -1072,11 +577,8 @@ public final class MsgIntRscDeletedSuccessOuterClass {
     java.lang.String[] descriptorData = {
       "\n8linstor/proto/javainternal/MsgIntRscDe" +
       "letedSuccess.proto\022%com.linbit.linstor.p" +
-      "roto.javainternal\032%linstor/proto/StorPoo" +
-      "lFreeSpace.proto\"m\n\027MsgIntRscDeletedSucc" +
-      "ess\022\020\n\010rsc_name\030\001 \001(\t\022@\n\013free_spaces\030\002 \003" +
-      "(\0132+.com.linbit.linstor.proto.StorPoolFr" +
-      "eeSpaceb\006proto3"
+      "roto.javainternal\"+\n\027MsgIntRscDeletedSuc" +
+      "cess\022\020\n\010rsc_name\030\001 \001(\tb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1089,15 +591,13 @@ public final class MsgIntRscDeletedSuccessOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscDeletedSuccess_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscDeletedSuccess_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscDeletedSuccess_descriptor,
-        new java.lang.String[] { "RscName", "FreeSpaces", });
-    com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.getDescriptor();
+        new java.lang.String[] { "RscName", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

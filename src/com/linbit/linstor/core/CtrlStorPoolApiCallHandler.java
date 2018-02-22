@@ -437,8 +437,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         try
         {
             storPool.setRealFreeSpace(currentAccCtx.get(), freeSpace);
-
-System.out.println("setting free space for storPool: " + storPool + " to : " + freeSpace);
         }
         catch (AccessDeniedException accDeniedExc)
         {

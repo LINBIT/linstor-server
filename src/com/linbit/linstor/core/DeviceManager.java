@@ -21,6 +21,7 @@ public interface DeviceManager extends DrbdStateChange
         Map<ResourceName, Set<NodeName>> rscMap
     );
 
+    void notifyResourceApplied(Resource rsc);
     void notifyResourceDeleted(Resource rsc);
     void notifyVolumeDeleted(Volume vlm);
 

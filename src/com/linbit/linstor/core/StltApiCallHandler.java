@@ -4,10 +4,8 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -20,22 +18,16 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 @Singleton
@@ -44,7 +36,6 @@ public class StltApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
 
-    private final FileSystemWatch fileSystemWatch;
     private final CoreTimer timer;
     private final ControllerPeerConnector controllerPeerConnector;
     private final UpdateMonitor updateMonitor;
@@ -72,7 +63,6 @@ public class StltApiCallHandler
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        FileSystemWatch fileSystemWatchRef,
         CoreTimer timerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         UpdateMonitor updateMonitorRef,
@@ -94,7 +84,6 @@ public class StltApiCallHandler
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        fileSystemWatch = fileSystemWatchRef;
         timer = timerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         updateMonitor = updateMonitorRef;
@@ -421,43 +410,6 @@ public class StltApiCallHandler
             rscDfnMapLock.writeLock().unlock();
         }
 
-    }
-
-    public Map<StorPool, Long> getFreeSpace() throws StorageException
-    {
-        Map<StorPool, Long> freeSpaceMap = new HashMap<>();
-
-        Lock nodesMapReadLock = nodesMapLock.readLock();
-        Lock storPoolDfnMapReadLock = storPoolDfnMapLock.readLock();
-
-        try
-        {
-            nodesMapReadLock.lock();
-            storPoolDfnMapReadLock.lock();
-
-            Iterator<StorPool> iterateStorPools = controllerPeerConnector.getLocalNode().iterateStorPools(apiCtx);
-            while (iterateStorPools.hasNext())
-            {
-                StorPool storPool = iterateStorPools.next();
-                StorageDriver storageDriver = storPool.getDriver(apiCtx, errorReporter, fileSystemWatch, timer);
-                if (storageDriver != null)
-                {
-                    storPool.reconfigureStorageDriver(storageDriver);
-                    freeSpaceMap.put(storPool, storageDriver.getFreeSize());
-                }
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            errorReporter.reportError(new ImplementationError(exc));
-        }
-        finally
-        {
-            storPoolDfnMapReadLock.unlock();
-            nodesMapReadLock.unlock();
-        }
-
-        return freeSpaceMap;
     }
 
     private interface ApplyData

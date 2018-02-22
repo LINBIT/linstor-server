@@ -37,6 +37,7 @@ import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
@@ -284,6 +285,29 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
+    public void writeNotifyResourceApplied(
+        String resourceName,
+        UUID rscUuid,
+        Map<StorPool, Long> freeSpaceMap,
+        ByteArrayOutputStream baos
+        )
+            throws IOException
+    {
+        MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
+            .setRscId(
+                MsgIntObjectId.newBuilder()
+                    .setUuid(rscUuid.toString())
+                    .setName(resourceName)
+                    .build()
+            )
+            .addAllFreeSpace(
+                ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
+            )
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
     public void writeNotifyResourceDeleted(
         String nodeName,
         String resourceName,
@@ -314,7 +338,6 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         String resourceName,
         int volumeNr,
         UUID vlmUuid,
-        Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
     )
         throws IOException
@@ -323,9 +346,6 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             .setNodeName(nodeName)
             .setRscName(resourceName)
             .setVlmNr(volumeNr)
-            .addAllFreeSpace(
-                ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
-            )
             .build()
             .writeDelimitedTo(baos);
     }

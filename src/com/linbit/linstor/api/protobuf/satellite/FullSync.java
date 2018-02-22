@@ -11,6 +11,7 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -39,6 +40,7 @@ import java.util.Map.Entry;
 public class FullSync implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
+    private final StltApiCallHandlerUtils apiCallHandlerUtils;
     private final ApiCallAnswerer apiCallAnswerer;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Peer controllerPeer;
@@ -48,6 +50,7 @@ public class FullSync implements ApiCall
     @Inject
     public FullSync(
         StltApiCallHandler apiCallHandlerRef,
+        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         ApiCallAnswerer apiCallAnswererRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Peer controllerPeerRef,
@@ -56,6 +59,7 @@ public class FullSync implements ApiCall
     )
     {
         apiCallHandler = apiCallHandlerRef;
+        apiCallHandlerUtils = apiCallHandlerUtilsRef;
         apiCallAnswerer = apiCallAnswererRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         controllerPeer = controllerPeerRef;
@@ -83,7 +87,7 @@ public class FullSync implements ApiCall
         Map<StorPool, Long> freeSpaceMap;
         try
         {
-            freeSpaceMap = apiCallHandler.getFreeSpace();
+            freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
             MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
             for (Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
             {

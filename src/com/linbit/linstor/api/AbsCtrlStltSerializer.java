@@ -367,6 +367,25 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
+        public Builder notifyResourceApplied(
+            String resourceName,
+            UUID rscUuid,
+            Map<StorPool, Long> freeSpaceMap
+        )
+        {
+            try
+            {
+                writeNotifyResourceApplied(resourceName, rscUuid, freeSpaceMap, baos);
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
+                exceptionOccured = true;
+            }
+            return this;
+        }
+
+        @Override
         public Builder notifyResourceDeleted(
             String nodeName,
             String resourceName,
@@ -391,13 +410,12 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
             String nodeName,
             String resourceName,
             int volumeNr,
-            UUID vlmUuid,
-            Map<StorPool, Long> freeSpaceMap
+            UUID vlmUuid
         )
         {
             try
             {
-                writeNotifyVolumeDeleted(nodeName, resourceName, volumeNr, vlmUuid, freeSpaceMap, baos);
+                writeNotifyVolumeDeleted(nodeName, resourceName, volumeNr, vlmUuid, baos);
             }
             catch (IOException ioExc)
             {
@@ -551,6 +569,14 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     )
         throws IOException;
 
+    public abstract void writeNotifyResourceApplied(
+        String resourceName,
+        UUID rscUuid,
+        Map<StorPool, Long> freeSpaceMap,
+        ByteArrayOutputStream baos
+    )
+        throws IOException;
+
     public abstract void writeNotifyResourceDeleted(
         String nodeName,
         String resourceName,
@@ -565,7 +591,6 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         String resourceName,
         int volumeNr,
         UUID vlmUuid,
-        Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
     )
         throws IOException;

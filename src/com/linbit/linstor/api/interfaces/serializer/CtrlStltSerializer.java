@@ -60,12 +60,16 @@ public interface CtrlStltSerializer
             UUID rscUuid,
             Map<StorPool, Long> freeSpaceMap
         );
+        Builder notifyResourceApplied(
+            String resourceName,
+            UUID rscUuid,
+            Map<StorPool, Long> freeSpaceMap
+        );
         Builder notifyVolumeDeleted(
             String nodeName,
             String resourceName,
             int volumeNr,
-            UUID vlmUuid,
-            Map<StorPool, Long> freeSpaceMap
+            UUID vlmUuid
         );
 
         Builder requestNodeUpdate(UUID nodeUuid, String nodeName);

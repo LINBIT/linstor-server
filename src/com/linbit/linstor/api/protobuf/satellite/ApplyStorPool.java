@@ -12,6 +12,7 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.StltApiCallHandlerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -34,6 +35,7 @@ import java.util.UUID;
 public class ApplyStorPool implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
+    private final StltApiCallHandlerUtils apiCallHandlerUtils;
     private final ApiCallAnswerer apiCallAnswerer;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Peer controllerPeer;
@@ -42,6 +44,7 @@ public class ApplyStorPool implements ApiCall
     @Inject
     public ApplyStorPool(
         StltApiCallHandler apiCallHandlerRef,
+        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         ApiCallAnswerer apiCallAnswererRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Peer controllerPeerRef,
@@ -49,6 +52,7 @@ public class ApplyStorPool implements ApiCall
     )
     {
         apiCallHandler = apiCallHandlerRef;
+        apiCallHandlerUtils = apiCallHandlerUtilsRef;
         apiCallAnswerer = apiCallAnswererRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         controllerPeer = controllerPeerRef;
@@ -69,7 +73,7 @@ public class ApplyStorPool implements ApiCall
 
         try
         {
-            Map<StorPool, Long> freeSpaceMap = apiCallHandler.getFreeSpace();
+            Map<StorPool, Long> freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
             System.out.println(freeSpaceMap);
             System.out.println(storPoolData.getStorPoolName());
 

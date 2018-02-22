@@ -250,6 +250,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         ((ResourceData) rsc).unsetCreatePrimary();
                         setResourcePrimary(rsc);
                     }
+
+                    deviceManagerProvider.get().notifyResourceApplied(rsc);
                 }
             }
             catch (ResourceException rscExc)

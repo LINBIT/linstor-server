@@ -23,6 +23,7 @@ public class InternalApiConsts
     public static final String API_APPLY_RSC_DFN_DELETED = "ApplyDeletedRscDfn";
     public static final String API_NOTIFY_RSC_DEL        = "NotifyRscDel";
     public static final String API_NOTIFY_VLM_DEL        = "NotifyVlmDel";
+    public static final String API_NOTIFY_RSC_APPLIED    = "NotifyRscApplied";
     public static final String API_REQUEST_PRIMARY_RSC   = "RequestPrimaryRsc";
     public static final String API_PRIMARY_RSC           = "PrimaryRsc";
 

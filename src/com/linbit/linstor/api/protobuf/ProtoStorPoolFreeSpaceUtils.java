@@ -2,7 +2,7 @@ package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
-import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.StltApiCallHandlerUtils;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.storage.StorageException;
 
@@ -15,12 +15,12 @@ import java.util.Map.Entry;
 public class ProtoStorPoolFreeSpaceUtils
 {
     public static Iterable<StorPoolFreeSpace> getAllStorPoolFreeSpaces(
-        StltApiCallHandler apiCallHandler
+        StltApiCallHandlerUtils apiCallHandlerUtils
     )
         throws StorageException
     {
 
-        Map<StorPool, Long> freeSpaceMap = apiCallHandler.getFreeSpace();
+        Map<StorPool, Long> freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
         return getAllStorPoolFreeSpaces(freeSpaceMap);
     }
 

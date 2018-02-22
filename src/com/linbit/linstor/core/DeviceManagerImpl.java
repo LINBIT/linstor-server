@@ -119,7 +119,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private long cycleNr = 0;
 
-    private final Satellite satellite;
+    private final StltApiCallHandlerUtils apiCallHandlerUtils;
 
     @Inject
     DeviceManagerImpl(
@@ -136,7 +136,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         DrbdEventService drbdEventRef,
         @Named(STLT_WORKER_POOL_NAME) WorkQueue workQRef,
         DrbdDeviceHandler drbdDeviceHandlerRef,
-        Satellite satelliteRef
+        StltApiCallHandlerUtils apiCallHandlerUtilsRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -152,7 +152,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         drbdEvent = drbdEventRef;
         drbdHnd = drbdDeviceHandlerRef;
         workQ = workQRef;
-        satellite = satelliteRef;
+        apiCallHandlerUtils = apiCallHandlerUtilsRef;
 
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
@@ -776,9 +776,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestNodeUpdates(Map<NodeName, UUID> nodesMap)
+    private void requestNodeUpdates(Map<NodeName, UUID> updateNodesMap)
     {
-        for (Entry<NodeName, UUID> entry : nodesMap.entrySet())
+        for (Entry<NodeName, UUID> entry : updateNodesMap.entrySet())
         {
             errLog.logTrace("Requesting update for node '" + entry.getKey().displayValue + "'");
             stltUpdateRequester.requestNodeUpdate(
@@ -788,9 +788,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestRscDfnUpdates(Map<ResourceName, UUID> rscDfnMap)
+    private void requestRscDfnUpdates(Map<ResourceName, UUID> updateRscDfnMap)
     {
-        for (Entry<ResourceName, UUID> entry : rscDfnMap.entrySet())
+        for (Entry<ResourceName, UUID> entry : updateRscDfnMap.entrySet())
         {
             errLog.logTrace("Requesting update for resource definition '" + entry.getKey().displayValue + "'");
             stltUpdateRequester.requestRscDfnUpate(
@@ -855,6 +855,41 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
+    public void notifyResourceApplied(Resource rsc)
+    {
+        // Send applySuccess notification to the controller
+
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            String msgRscName = rsc.getDefinition().getName().displayValue;
+            UUID rscUuid = rsc.getUuid();
+
+            byte[] data = null;
+            try
+            {
+                data = interComSerializer
+                    .builder(InternalApiConsts.API_NOTIFY_RSC_APPLIED, 1)
+                    .notifyResourceApplied(
+                        msgRscName,
+                        rscUuid,
+                        apiCallHandlerUtils.getFreeSpace()
+                    )
+                    .build();
+            }
+            catch (StorageException exc)
+            {
+                errLog.reportError(exc);
+            }
+
+            if (data != null)
+            {
+                ctrlPeer.sendMessage(data);
+            }
+        }
+    }
+
+    @Override
     public void notifyResourceDeleted(Resource rsc)
     {
         // Send delete notification to the controller
@@ -874,13 +909,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         msgNodeName,
                         msgRscName,
                         rscUuid,
-                        satellite.getApiCallHandler().getFreeSpace()
+                        apiCallHandlerUtils.getFreeSpace()
                     )
                     .build();
             }
             catch (StorageException exc)
             {
-                satellite.getErrorReporter().reportError(exc);
+                errLog.reportError(exc);
             }
 
             if (data != null)
@@ -906,29 +941,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
-            byte[] data = null;
-            try
-            {
-                data = interComSerializer
-                    .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
-                    .notifyVolumeDeleted(
-                        msgNodeName,
-                        msgRscName,
-                        vlm.getVolumeDefinition().getVolumeNumber().value,
-                        vlm.getUuid(),
-                        satellite.getApiCallHandler().getFreeSpace()
-                    )
-                    .build();
-            }
-            catch (StorageException exc)
-            {
-                satellite.getErrorReporter().reportError(exc);
-            }
-
-            if (data != null)
-            {
-                ctrlPeer.sendMessage(data);
-            }
+            ctrlPeer.sendMessage(interComSerializer
+                .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
+                .notifyVolumeDeleted(
+                    msgNodeName,
+                    msgRscName,
+                    vlm.getVolumeDefinition().getVolumeNumber().value,
+                    vlm.getUuid()
+                )
+                .build()
+            );
         }
 
         // Remember the volume for removal after the DeviceHandler instances have finished
