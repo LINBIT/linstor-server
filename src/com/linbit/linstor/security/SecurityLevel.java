@@ -70,6 +70,10 @@ public enum SecurityLevel
                 ctrlDb.returnConnection(dbConn);
             }
         }
+        else
+        {
+            GLOBAL_SEC_LEVEL_REF.set(newLevel);
+        }
     }
 
     /**
