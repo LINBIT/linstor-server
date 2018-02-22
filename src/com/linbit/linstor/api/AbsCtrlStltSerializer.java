@@ -3,6 +3,7 @@ package com.linbit.linstor.api;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -366,11 +367,16 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder notifyResourceDeleted(String nodeName, String resourceName, UUID rscUuid)
+        public Builder notifyResourceDeleted(
+            String nodeName,
+            String resourceName,
+            UUID rscUuid,
+            Map<StorPool, Long> freeSpaceMap
+        )
         {
             try
             {
-                writeNotifyResourceDeleted(nodeName, resourceName, rscUuid, baos);
+                writeNotifyResourceDeleted(nodeName, resourceName, rscUuid, freeSpaceMap, baos);
             }
             catch (IOException ioExc)
             {
@@ -381,11 +387,17 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr, UUID vlmUuid)
+        public Builder notifyVolumeDeleted(
+            String nodeName,
+            String resourceName,
+            int volumeNr,
+            UUID vlmUuid,
+            Map<StorPool, Long> freeSpaceMap
+        )
         {
             try
             {
-                writeNotifyVolumeDeleted(nodeName, resourceName, volumeNr, vlmUuid, baos);
+                writeNotifyVolumeDeleted(nodeName, resourceName, volumeNr, vlmUuid, freeSpaceMap, baos);
             }
             catch (IOException ioExc)
             {
@@ -543,6 +555,7 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         String nodeName,
         String resourceName,
         UUID rscUuid,
+        Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
     )
         throws IOException;
@@ -552,6 +565,7 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         String resourceName,
         int volumeNr,
         UUID vlmUuid,
+        Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
     )
         throws IOException;

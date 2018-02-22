@@ -1641,7 +1641,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public void updateFreeSpace(Peer satellitePeer, List<FreeSpacePojo> freeSpacePojoList)
+    public void updateRealFreeSpace(Peer satellitePeer, FreeSpacePojo... freeSpacePojos)
     {
         Lock nodeWriteLock = nodesMapLock.writeLock();
         Lock storPoolWriteLock = storPoolDfnMapLock.writeLock();
@@ -1649,8 +1649,8 @@ public class CtrlApiCallHandler
         {
             nodeWriteLock.lock();
             storPoolWriteLock.lock();
-            
-            storPoolApiCallHandler.updateFreeSpace(satellitePeer, freeSpacePojoList);
+
+            storPoolApiCallHandler.updateRealFreeSpace(satellitePeer, freeSpacePojos);
         }
         finally
         {

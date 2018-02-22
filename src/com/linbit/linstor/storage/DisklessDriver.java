@@ -93,6 +93,6 @@ public class DisklessDriver implements StorageDriver
     @Override
     public long getFreeSize()
     {
-        return 0;
+        return Long.MAX_VALUE;
     }
 }

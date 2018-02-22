@@ -26,13 +26,15 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.AbsCtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.proto.MsgDelRscOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
+import com.linbit.linstor.proto.MsgIntDelRscOuterClass;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
+import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
@@ -286,14 +288,22 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         String nodeName,
         String resourceName,
         UUID rscUuid,
+        Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
     )
         throws IOException
     {
-        MsgDelRscOuterClass.MsgDelRsc.newBuilder()
-            .setNodeName(nodeName)
-            .setRscName(resourceName)
-            .setUuid(rscUuid.toString())
+        MsgIntDelRscOuterClass.MsgIntDelRsc.newBuilder()
+            .setDeletedRsc(
+                MsgDelRsc.newBuilder()
+                    .setNodeName(nodeName)
+                    .setRscName(resourceName)
+                    .setUuid(rscUuid.toString())
+                    .build()
+            )
+            .addAllFreeSpace(
+                ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
+            )
             .build()
             .writeDelimitedTo(baos);
     }
@@ -304,6 +314,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         String resourceName,
         int volumeNr,
         UUID vlmUuid,
+        Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
     )
         throws IOException
@@ -312,6 +323,9 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             .setNodeName(nodeName)
             .setRscName(resourceName)
             .setVlmNr(volumeNr)
+            .addAllFreeSpace(
+                ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
+            )
             .build()
             .writeDelimitedTo(baos);
     }

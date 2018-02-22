@@ -440,8 +440,11 @@ public class StltApiCallHandler
             {
                 StorPool storPool = iterateStorPools.next();
                 StorageDriver storageDriver = storPool.getDriver(apiCtx, errorReporter, fileSystemWatch, timer);
-                long freeSize = storageDriver.getFreeSize();
-                freeSpaceMap.put(storPool, freeSize);
+                if (storageDriver != null)
+                {
+                    storPool.reconfigureStorageDriver(storageDriver);
+                    freeSpaceMap.put(storPool, storageDriver.getFreeSize());
+                }
             }
         }
         catch (AccessDeniedException exc)

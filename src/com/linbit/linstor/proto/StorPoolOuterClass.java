@@ -305,6 +305,31 @@ public final class StorPoolOuterClass {
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStaticTraitsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Free space
+     * </pre>
+     *
+     * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+     */
+    boolean hasFreeSpace();
+    /**
+     * <pre>
+     * Free space
+     * </pre>
+     *
+     * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+     */
+    com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace getFreeSpace();
+    /**
+     * <pre>
+     * Free space
+     * </pre>
+     *
+     * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+     */
+    com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder getFreeSpaceOrBuilder();
   }
   /**
    * <pre>
@@ -422,6 +447,19 @@ public final class StorPoolOuterClass {
               }
               staticTraits_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+            case 82: {
+              com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000040) == 0x00000040)) {
+                subBuilder = freeSpace_.toBuilder();
+              }
+              freeSpace_ = input.readMessage(com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(freeSpace_);
+                freeSpace_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000040;
               break;
             }
           }
@@ -947,6 +985,39 @@ public final class StorPoolOuterClass {
       return staticTraits_.get(index);
     }
 
+    public static final int FREE_SPACE_FIELD_NUMBER = 10;
+    private com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace freeSpace_;
+    /**
+     * <pre>
+     * Free space
+     * </pre>
+     *
+     * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+     */
+    public boolean hasFreeSpace() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <pre>
+     * Free space
+     * </pre>
+     *
+     * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+     */
+    public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace getFreeSpace() {
+      return freeSpace_ == null ? com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance() : freeSpace_;
+    }
+    /**
+     * <pre>
+     * Free space
+     * </pre>
+     *
+     * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+     */
+    public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder getFreeSpaceOrBuilder() {
+      return freeSpace_ == null ? com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance() : freeSpace_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -983,6 +1054,12 @@ public final class StorPoolOuterClass {
           return false;
         }
       }
+      if (hasFreeSpace()) {
+        if (!getFreeSpace().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -1015,6 +1092,9 @@ public final class StorPoolOuterClass {
       }
       for (int i = 0; i < staticTraits_.size(); i++) {
         output.writeMessage(9, staticTraits_.get(i));
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeMessage(10, getFreeSpace());
       }
       unknownFields.writeTo(output);
     }
@@ -1053,6 +1133,10 @@ public final class StorPoolOuterClass {
       for (int i = 0; i < staticTraits_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(9, staticTraits_.get(i));
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(10, getFreeSpace());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1107,6 +1191,11 @@ public final class StorPoolOuterClass {
           .equals(other.getVlmsList());
       result = result && getStaticTraitsList()
           .equals(other.getStaticTraitsList());
+      result = result && (hasFreeSpace() == other.hasFreeSpace());
+      if (hasFreeSpace()) {
+        result = result && getFreeSpace()
+            .equals(other.getFreeSpace());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1153,6 +1242,10 @@ public final class StorPoolOuterClass {
       if (getStaticTraitsCount() > 0) {
         hash = (37 * hash) + STATIC_TRAITS_FIELD_NUMBER;
         hash = (53 * hash) + getStaticTraitsList().hashCode();
+      }
+      if (hasFreeSpace()) {
+        hash = (37 * hash) + FREE_SPACE_FIELD_NUMBER;
+        hash = (53 * hash) + getFreeSpace().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1275,6 +1368,7 @@ public final class StorPoolOuterClass {
           getPropsFieldBuilder();
           getVlmsFieldBuilder();
           getStaticTraitsFieldBuilder();
+          getFreeSpaceFieldBuilder();
         }
       }
       public Builder clear() {
@@ -1309,6 +1403,12 @@ public final class StorPoolOuterClass {
         } else {
           staticTraitsBuilder_.clear();
         }
+        if (freeSpaceBuilder_ == null) {
+          freeSpace_ = null;
+        } else {
+          freeSpaceBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000200);
         return this;
       }
 
@@ -1383,6 +1483,14 @@ public final class StorPoolOuterClass {
           result.staticTraits_ = staticTraits_;
         } else {
           result.staticTraits_ = staticTraitsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        if (freeSpaceBuilder_ == null) {
+          result.freeSpace_ = freeSpace_;
+        } else {
+          result.freeSpace_ = freeSpaceBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -1534,6 +1642,9 @@ public final class StorPoolOuterClass {
             }
           }
         }
+        if (other.hasFreeSpace()) {
+          mergeFreeSpace(other.getFreeSpace());
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -1561,6 +1672,11 @@ public final class StorPoolOuterClass {
         }
         for (int i = 0; i < getStaticTraitsCount(); i++) {
           if (!getStaticTraits(i).isInitialized()) {
+            return false;
+          }
+        }
+        if (hasFreeSpace()) {
+          if (!getFreeSpace().isInitialized()) {
             return false;
           }
         }
@@ -3121,6 +3237,160 @@ public final class StorPoolOuterClass {
         }
         return staticTraitsBuilder_;
       }
+
+      private com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace freeSpace_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> freeSpaceBuilder_;
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public boolean hasFreeSpace() {
+        return ((bitField0_ & 0x00000200) == 0x00000200);
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace getFreeSpace() {
+        if (freeSpaceBuilder_ == null) {
+          return freeSpace_ == null ? com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance() : freeSpace_;
+        } else {
+          return freeSpaceBuilder_.getMessage();
+        }
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public Builder setFreeSpace(com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace value) {
+        if (freeSpaceBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          freeSpace_ = value;
+          onChanged();
+        } else {
+          freeSpaceBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000200;
+        return this;
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public Builder setFreeSpace(
+          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder builderForValue) {
+        if (freeSpaceBuilder_ == null) {
+          freeSpace_ = builderForValue.build();
+          onChanged();
+        } else {
+          freeSpaceBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000200;
+        return this;
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public Builder mergeFreeSpace(com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace value) {
+        if (freeSpaceBuilder_ == null) {
+          if (((bitField0_ & 0x00000200) == 0x00000200) &&
+              freeSpace_ != null &&
+              freeSpace_ != com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance()) {
+            freeSpace_ =
+              com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder(freeSpace_).mergeFrom(value).buildPartial();
+          } else {
+            freeSpace_ = value;
+          }
+          onChanged();
+        } else {
+          freeSpaceBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000200;
+        return this;
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public Builder clearFreeSpace() {
+        if (freeSpaceBuilder_ == null) {
+          freeSpace_ = null;
+          onChanged();
+        } else {
+          freeSpaceBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000200);
+        return this;
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder getFreeSpaceBuilder() {
+        bitField0_ |= 0x00000200;
+        onChanged();
+        return getFreeSpaceFieldBuilder().getBuilder();
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      public com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder getFreeSpaceOrBuilder() {
+        if (freeSpaceBuilder_ != null) {
+          return freeSpaceBuilder_.getMessageOrBuilder();
+        } else {
+          return freeSpace_ == null ?
+              com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.getDefaultInstance() : freeSpace_;
+        }
+      }
+      /**
+       * <pre>
+       * Free space
+       * </pre>
+       *
+       * <code>optional .com.linbit.linstor.proto.StorPoolFreeSpace free_space = 10;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder> 
+          getFreeSpaceFieldBuilder() {
+        if (freeSpaceBuilder_ == null) {
+          freeSpaceBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.Builder, com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpaceOrBuilder>(
+                  getFreeSpace(),
+                  getParentForChildren(),
+                  isClean());
+          freeSpace_ = null;
+        }
+        return freeSpaceBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -3186,15 +3456,18 @@ public final class StorPoolOuterClass {
     java.lang.String[] descriptorData = {
       "\n\034linstor/proto/StorPool.proto\022\030com.linb" +
       "it.linstor.proto\032#linstor/proto/LinStorM" +
-      "apEntry.proto\032\027linstor/proto/Vlm.proto\"\265" +
-      "\002\n\010StorPool\022\026\n\016stor_pool_uuid\030\001 \001(\t\022\021\n\tn" +
-      "ode_uuid\030\002 \001(\t\022\021\n\tnode_name\030\003 \002(\t\022\032\n\022sto" +
-      "r_pool_dfn_uuid\030\004 \001(\t\022\026\n\016stor_pool_name\030" +
-      "\005 \002(\t\022\016\n\006driver\030\006 \002(\t\0228\n\005props\030\007 \003(\0132).c" +
-      "om.linbit.linstor.proto.LinStorMapEntry\022" +
-      "+\n\004vlms\030\010 \003(\0132\035.com.linbit.linstor.proto" +
-      ".Vlm\022@\n\rstatic_traits\030\t \003(\0132).com.linbit",
-      ".linstor.proto.LinStorMapEntryP\000P\001"
+      "apEntry.proto\032\027linstor/proto/Vlm.proto\032%" +
+      "linstor/proto/StorPoolFreeSpace.proto\"\366\002" +
+      "\n\010StorPool\022\026\n\016stor_pool_uuid\030\001 \001(\t\022\021\n\tno" +
+      "de_uuid\030\002 \001(\t\022\021\n\tnode_name\030\003 \002(\t\022\032\n\022stor" +
+      "_pool_dfn_uuid\030\004 \001(\t\022\026\n\016stor_pool_name\030\005" +
+      " \002(\t\022\016\n\006driver\030\006 \002(\t\0228\n\005props\030\007 \003(\0132).co" +
+      "m.linbit.linstor.proto.LinStorMapEntry\022+" +
+      "\n\004vlms\030\010 \003(\0132\035.com.linbit.linstor.proto.",
+      "Vlm\022@\n\rstatic_traits\030\t \003(\0132).com.linbit." +
+      "linstor.proto.LinStorMapEntry\022?\n\nfree_sp" +
+      "ace\030\n \001(\0132+.com.linbit.linstor.proto.Sto" +
+      "rPoolFreeSpaceP\000P\001P\002"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -3209,15 +3482,17 @@ public final class StorPoolOuterClass {
         new com.google.protobuf.Descriptors.FileDescriptor[] {
           com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor(),
           com.linbit.linstor.proto.VlmOuterClass.getDescriptor(),
+          com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_StorPool_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_StorPool_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_StorPool_descriptor,
-        new java.lang.String[] { "StorPoolUuid", "NodeUuid", "NodeName", "StorPoolDfnUuid", "StorPoolName", "Driver", "Props", "Vlms", "StaticTraits", });
+        new java.lang.String[] { "StorPoolUuid", "NodeUuid", "NodeName", "StorPoolDfnUuid", "StorPoolName", "Driver", "Props", "Vlms", "StaticTraits", "FreeSpace", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.VlmOuterClass.getDescriptor();
+    com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

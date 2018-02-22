@@ -2,24 +2,35 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.UpdateMonitor;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
+import com.linbit.linstor.proto.javainternal.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
+import com.linbit.linstor.storage.StorageException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Map.Entry;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_FULL_SYNC_DATA,
@@ -28,16 +39,28 @@ import java.util.TreeSet;
 public class FullSync implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
+    private final ApiCallAnswerer apiCallAnswerer;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final Peer controllerPeer;
+    private final ErrorReporter errorReporter;
+    private final UpdateMonitor updateMonitor;
 
     @Inject
     public FullSync(
         StltApiCallHandler apiCallHandlerRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        ApiCallAnswerer apiCallAnswererRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        Peer controllerPeerRef,
+        ErrorReporter errorReporterRef,
+        UpdateMonitor updateMonitorRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
+        apiCallAnswerer = apiCallAnswererRef;
         controllerPeerConnector = controllerPeerConnectorRef;
+        controllerPeer = controllerPeerRef;
+        errorReporter = errorReporterRef;
+        updateMonitor = updateMonitorRef;
     }
 
     @Override
@@ -56,6 +79,37 @@ public class FullSync implements ApiCall
             resources,
             fullSync.getFullSyncTimestamp()
         );
+
+        Map<StorPool, Long> freeSpaceMap;
+        try
+        {
+            freeSpaceMap = apiCallHandler.getFreeSpace();
+            MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
+            for (Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
+            {
+                StorPool storPool = entry.getKey();
+                builder.addFreeSpace(
+                    StorPoolFreeSpace.newBuilder()
+                        .setStorPoolUuid(storPool.getUuid().toString())
+                        .setStorPoolName(storPool.getName().displayValue)
+                        .setFreeSpace(entry.getValue())
+                        .build()
+                );
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            builder.build().writeDelimitedTo(baos);
+            controllerPeer.sendMessage(
+                apiCallAnswerer.prepareMessage(
+                    baos.toByteArray(),
+                    InternalApiConsts.API_FULL_SYNC_SUCCESS
+                )
+            );
+        }
+        catch (StorageException storageExc)
+        {
+            // TODO: report about this error to the controller
+            errorReporter.reportError(storageExc);
+        }
     }
 
     private ArrayList<NodePojo> asNodes(List<MsgIntNodeData> nodesList)

@@ -102,7 +102,6 @@ class StltStorPoolApiCallHandler
 
             transMgr.commit();
 
-
             errorReporter.logInfo(
                 "Storage pool '%s' created.",
                 storPoolName.displayValue

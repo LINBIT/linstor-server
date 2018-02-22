@@ -3,9 +3,12 @@ package com.linbit.linstor.api.protobuf.controller;
 import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgDelRscOuterClass;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
+import com.linbit.linstor.proto.MsgIntDelRscOuterClass.MsgIntDelRsc;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,21 +24,33 @@ import java.io.InputStream;
 public class NotifyResourceDeleted implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
+    private final Peer satellitePeer;
 
     @Inject
-    public NotifyResourceDeleted(CtrlApiCallHandler apiCallHandlerRef)
+    public NotifyResourceDeleted(
+        CtrlApiCallHandler apiCallHandlerRef,
+        Peer satellitePeerRef
+    )
     {
         apiCallHandler = apiCallHandlerRef;
+        satellitePeer = satellitePeerRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgDelRscOuterClass.MsgDelRsc msgDeleteRsc = MsgDelRscOuterClass.MsgDelRsc.parseDelimitedFrom(msgDataIn);
+        MsgIntDelRsc msgIntDeleteRsc = MsgIntDelRsc.parseDelimitedFrom(msgDataIn);
+        MsgDelRsc msgDeletedRsc = msgIntDeleteRsc.getDeletedRsc();
         apiCallHandler.resourceDeleted(
-            msgDeleteRsc.getNodeName(),
-            msgDeleteRsc.getRscName()
+            msgDeletedRsc.getNodeName(),
+            msgDeletedRsc.getRscName()
+        );
+        apiCallHandler.updateRealFreeSpace(
+            satellitePeer,
+            ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
+                msgIntDeleteRsc.getFreeSpaceList()
+            )
         );
     }
 }

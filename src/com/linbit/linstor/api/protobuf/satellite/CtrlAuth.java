@@ -2,7 +2,6 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.google.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
@@ -14,14 +13,10 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
-import com.linbit.linstor.storage.StorageException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.UUID;
-import java.util.Map.Entry;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_AUTH,
@@ -70,52 +65,31 @@ public class CtrlAuth implements ApiCall
             disklessStorPoolUuid,
             controllerPeer
         );
-        Map<StorPool, Long> freeSpaceMap;
-        try
+        if (apiCallRc == null)
         {
-            freeSpaceMap = apiCallHandler.getFreeSpace();
-            
-            if (apiCallRc == null)
-            {
-                // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
-                builder.setExpectedFullSyncId(updateMonitor.getNextFullSyncId());
-                
-                for (Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
-                {
-                    StorPool storPool = entry.getKey();
-                    builder.addFreeSpace(
-                        MsgIntAuthSuccessOuterClass.FreeSpace.newBuilder()
-                            .setStorPoolUuid(storPool.getUuid().toString())
-                            .setStorPoolName(storPool.getName().displayValue)
-                            .setFreeSpace(entry.getValue())
-                            .build()
-                    );
-                }
-                builder.build().writeDelimitedTo(baos);
-                
-                controllerPeer.sendMessage(
-                    apiCallAnswerer.prepareMessage(
-                        baos.toByteArray(),
-                        InternalApiConsts.API_AUTH_ACCEPT
-                    )
-                );
-            }
-            else
-            {
-                // whatever happened should be in the apiCallRc
-                controllerPeer.sendMessage(
-                    apiCallAnswerer.prepareMessage(
-                        apiCallAnswerer.createApiCallResponse(apiCallRc),
-                        InternalApiConsts.API_AUTH_ERROR
-                    )
-                );
-            }
+            // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
+            builder.setExpectedFullSyncId(updateMonitor.getNextFullSyncId());
+
+            builder.build().writeDelimitedTo(baos);
+
+            controllerPeer.sendMessage(
+                apiCallAnswerer.prepareMessage(
+                    baos.toByteArray(),
+                    InternalApiConsts.API_AUTH_ACCEPT
+                )
+            );
         }
-        catch (StorageException storageExc)
+        else
         {
-            errorReporter.reportError(storageExc);
+            // whatever happened should be in the apiCallRc
+            controllerPeer.sendMessage(
+                apiCallAnswerer.prepareMessage(
+                    apiCallAnswerer.createApiCallResponse(apiCallRc),
+                    InternalApiConsts.API_AUTH_ERROR
+                )
+            );
         }
     }
 }

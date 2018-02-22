@@ -55,6 +55,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
     private transient StorageDriver storageDriver;
+
     private transient TransactionSimpleObject<StorPoolData, Long> freeSpace;
 
     /*
@@ -111,8 +112,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         dbDriver = LinStor.getStorPoolDataDatabaseDriver();
 
-        freeSpace = new TransactionSimpleObject<StorPoolData, Long>(this, -1L, null);
-        
+        freeSpace = new TransactionSimpleObject<>(this, 0L, null);
+
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
             props,
@@ -282,12 +283,13 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public void reconfigureStorageDriver(StorageDriver storageDriver) throws StorageException
+    public void reconfigureStorageDriver(StorageDriver storageDriverRef)
+        throws StorageException
     {
         checkDeleted();
         try
         {
-            if (storageDriver.getKind().hasBackingStorage())
+            if (storageDriverRef.getKind().hasBackingStorage())
             {
                 Props namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
                 if (namespace == null)
@@ -298,7 +300,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                     );
                 }
                 Map<String, String> map = namespace.map();
-                storageDriver.setConfiguration(map);
+                storageDriverRef.setConfiguration(map);
             }
         }
         catch (InvalidKeyException invalidKeyExc)
@@ -349,7 +351,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return nodeName.value + "/" + rscName.value + "/" + volNr.value;
     }
 
-    public void setFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException, SQLException
+    public void setRealFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException, SQLException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         freeSpace.set(freeSpaceRef);
@@ -360,7 +362,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return freeSpace.get();
     }
-    
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException

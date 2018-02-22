@@ -7,9 +7,10 @@ public class InternalApiConsts
     public static final String API_AUTH_ACCEPT = "AuthAccept";
     public static final String API_AUTH_ERROR  = "AuthError";
 
-    public static final String API_FULL_SYNC_DATA   = "FullSyncData";
-    public static final String API_UPDATE_STATES    = "UpdateStates";
-    public static final String API_FULL_SYNC_FAILED = "FullSyncFailed";
+    public static final String API_FULL_SYNC_DATA    = "FullSyncData";
+    public static final String API_UPDATE_STATES     = "UpdateStates";
+    public static final String API_FULL_SYNC_FAILED  = "FullSyncFailed";
+    public static final String API_FULL_SYNC_SUCCESS = "FullSyncSuccess";
 
     public static final String API_CHANGED_NODE       = "ChangedNode";
     public static final String API_REQUEST_NODE       = "RequestNode";
@@ -34,6 +35,7 @@ public class InternalApiConsts
     public static final String API_REQUEST_STOR_POOL       = "RequestStorPool";
     public static final String API_APPLY_STOR_POOL         = "ApplyStorPool";
     public static final String API_APPLY_STOR_POOL_DELETED = "ApplyDeletedStorPool";
+    public static final String API_APPLY_STOR_POOL_SUCCESS = "ApplyStorPoolSuccess";
 
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 

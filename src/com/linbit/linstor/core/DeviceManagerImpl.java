@@ -26,6 +26,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import org.slf4j.event.Level;
@@ -118,6 +119,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private long cycleNr = 0;
 
+    private final Satellite satellite;
+
     @Inject
     DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -132,7 +135,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         CtrlStltSerializer interComSerializerRef,
         DrbdEventService drbdEventRef,
         @Named(STLT_WORKER_POOL_NAME) WorkQueue workQRef,
-        DrbdDeviceHandler drbdDeviceHandlerRef
+        DrbdDeviceHandler drbdDeviceHandlerRef,
+        Satellite satelliteRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -148,6 +152,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         drbdEvent = drbdEventRef;
         drbdHnd = drbdDeviceHandlerRef;
         workQ = workQRef;
+        satellite = satelliteRef;
 
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
@@ -351,6 +356,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public void fullSyncApplied()
     {
         synchronized (sched)
@@ -859,10 +865,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = rsc.getDefinition().getName().displayValue;
             UUID rscUuid = rsc.getUuid();
 
-            byte[] data = interComSerializer
-                .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
-                .notifyResourceDeleted(msgNodeName, msgRscName, rscUuid)
-                .build();
+            byte[] data = null;
+            try
+            {
+                data = interComSerializer
+                    .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
+                    .notifyResourceDeleted(
+                        msgNodeName,
+                        msgRscName,
+                        rscUuid,
+                        satellite.getApiCallHandler().getFreeSpace()
+                    )
+                    .build();
+            }
+            catch (StorageException exc)
+            {
+                satellite.getErrorReporter().reportError(exc);
+            }
 
             if (data != null)
             {
@@ -887,15 +906,24 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
-            byte[] data = interComSerializer
-                .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
-                .notifyVolumeDeleted(
-                    msgNodeName,
-                    msgRscName,
-                    vlm.getVolumeDefinition().getVolumeNumber().value,
-                    vlm.getUuid()
-                )
-                .build();
+            byte[] data = null;
+            try
+            {
+                data = interComSerializer
+                    .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
+                    .notifyVolumeDeleted(
+                        msgNodeName,
+                        msgRscName,
+                        vlm.getVolumeDefinition().getVolumeNumber().value,
+                        vlm.getUuid(),
+                        satellite.getApiCallHandler().getFreeSpace()
+                    )
+                    .build();
+            }
+            catch (StorageException exc)
+            {
+                satellite.getErrorReporter().reportError(exc);
+            }
 
             if (data != null)
             {

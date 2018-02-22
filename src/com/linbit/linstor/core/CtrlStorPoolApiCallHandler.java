@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
@@ -33,13 +32,10 @@ import com.linbit.linstor.security.ObjectProtection;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.apache.derby.impl.sql.compile.InListOperatorNode;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -393,12 +389,12 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             .build();
     }
 
-    void updateFreeSpace(Peer peer, List<FreeSpacePojo> freeSpacePojoList)
+    void updateRealFreeSpace(Peer peer, FreeSpacePojo[] freeSpacePojos)
     {
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                apiCtx, 
-                peer, 
+                apiCtx,
+                peer,
                 ApiCallType.MODIFY,
                 null, // apiCallRc
                 null, // transMgr
@@ -408,26 +404,26 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         )
         {
             String nodeName = peer.getNode().getName().displayValue;
-            
-            for (FreeSpacePojo freeSpacePojo : freeSpacePojoList)
+
+            for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
             {
                 currentStorPoolNameStr.set(freeSpacePojo.getStorPoolName());
-                
+
                 StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
                 if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
                 {
-                    setFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                    setRealFreeSpace(storPool, freeSpacePojo.getFreeSpace());
                 }
                 else
                 {
                     throw asExc(
-                        null, 
-                        "UUIDs mismatched when updating free space of " + getObjectDescriptionInline(), 
+                        null,
+                        "UUIDs mismatched when updating free space of " + getObjectDescriptionInline(),
                         ApiConsts.FAIL_UUID_STOR_POOL
                     );
                 }
             }
-            
+
             commit();
         }
         catch (ApiCallHandlerFailedException ignored)
@@ -436,15 +432,17 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void setFreeSpace(StorPoolData storPool, long freeSpace)
+    private void setRealFreeSpace(StorPoolData storPool, long freeSpace)
     {
         try
         {
-            storPool.setFreeSpace(currentAccCtx.get(), freeSpace);
+            storPool.setRealFreeSpace(currentAccCtx.get(), freeSpace);
+
+System.out.println("setting free space for storPool: " + storPool + " to : " + freeSpace);
         }
-        catch (AccessDeniedException exc)
+        catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(exc);
+            throw asImplError(accDeniedExc);
         }
         catch (SQLException exc)
         {

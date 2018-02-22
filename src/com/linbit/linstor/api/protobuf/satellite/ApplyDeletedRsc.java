@@ -6,7 +6,6 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
-
 import java.io.IOException;
 import java.io.InputStream;
 

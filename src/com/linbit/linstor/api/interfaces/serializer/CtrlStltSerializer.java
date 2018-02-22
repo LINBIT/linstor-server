@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -53,8 +54,19 @@ public interface CtrlStltSerializer
          */
         Builder resourceState(String nodeName, ResourceState rsc);
 
-        Builder notifyResourceDeleted(String nodeName, String resourceName, UUID rscUuid);
-        Builder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr, UUID vlmUuid);
+        Builder notifyResourceDeleted(
+            String nodeName,
+            String resourceName,
+            UUID rscUuid,
+            Map<StorPool, Long> freeSpaceMap
+        );
+        Builder notifyVolumeDeleted(
+            String nodeName,
+            String resourceName,
+            int volumeNr,
+            UUID vlmUuid,
+            Map<StorPool, Long> freeSpaceMap
+        );
 
         Builder requestNodeUpdate(UUID nodeUuid, String nodeName);
         Builder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
