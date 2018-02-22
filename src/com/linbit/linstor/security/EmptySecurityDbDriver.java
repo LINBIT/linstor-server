@@ -88,6 +88,7 @@ public class EmptySecurityDbDriver implements DbAccessor
         // no-op
     }
 
+    @Singleton
     public static class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
         private final ObjectProtection objProt;
