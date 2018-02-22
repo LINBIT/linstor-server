@@ -366,7 +366,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                     while (storPoolIterator.hasNext())
                     {
                         StorPool storPool = storPoolIterator.next();
-                        storPools.add(storPool.getApiData(accCtx, null, null));
+                        if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
+                        {
+                            storPools.add(storPool.getApiData(accCtx, null, null));
+                        }
                         // fullSyncId and updateId null, as they are not going to be serialized anyways
                     }
                 }

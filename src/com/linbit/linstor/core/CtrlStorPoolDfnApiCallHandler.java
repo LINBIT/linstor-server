@@ -305,7 +305,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             {
                 try
                 {
-                    storPoolDfns.add(storPoolDfn.getApiData(accCtx));
+                    if (!storPoolDfn.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
+                    {
+                        storPoolDfns.add(storPoolDfn.getApiData(accCtx));
+                    }
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
