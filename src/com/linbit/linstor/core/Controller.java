@@ -476,6 +476,7 @@ public final class Controller extends LinStor implements CoreServices
         TransactionMgr transMgr = null;
         try
         {
+            DatabaseDriver dbDriver = injector.getInstance(DatabaseDriver.class); // TODO check why nested trans. broken
             transMgr = new TransactionMgr(dbConnPool);
             nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
             rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
@@ -506,7 +507,7 @@ public final class Controller extends LinStor implements CoreServices
                 // FIXME: Loading or reloading the configuration must ensure to either load everything
                 //        or nothing to prevent ending up with a half-loaded configuration.
                 //        See also the TODO above.
-                injector.getInstance(DatabaseDriver.class).loadAll(transMgr);
+                dbDriver.loadAll(transMgr);
             }
             finally
             {
