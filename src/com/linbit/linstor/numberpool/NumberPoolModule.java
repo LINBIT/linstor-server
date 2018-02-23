@@ -3,6 +3,8 @@ package com.linbit.linstor.numberpool;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
@@ -10,6 +12,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -28,6 +31,7 @@ public class NumberPoolModule extends AbstractModule
     @Provides
     @Singleton
     public MinorNrPool minorNrPool(
+        ErrorReporter errorReporter,
         @SystemContext AccessContext initCtx,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.ResourceDefinitionMap rscDfnMap
@@ -46,7 +50,15 @@ public class NumberPoolModule extends AbstractModule
                 {
                     VolumeDefinition curVlmDfn = vlmIter.next();
                     MinorNumber minorNr = curVlmDfn.getMinorNr(initCtx);
-                    minorNrPool.allocate(minorNr.value);
+                    try
+                    {
+                        minorNrPool.allocate(minorNr.value);
+                    }
+                    catch (ValueOutOfRangeException | ValueInUseException exc)
+                    {
+                        errorReporter.logError(
+                            "Skipping initial allocation in pool: " + exc.getMessage());
+                    }
                 }
             }
         }

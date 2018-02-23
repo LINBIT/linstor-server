@@ -1,6 +1,8 @@
 package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 
 public interface MinorNrPool
 {
@@ -9,7 +11,12 @@ public interface MinorNrPool
      */
     void reloadRange();
 
-    void allocate(int nr);
+    int getRangeMin();
+
+    int getRangeMax();
+
+    void allocate(int nr)
+        throws ValueOutOfRangeException, ValueInUseException;
 
     int getFreeMinorNr() throws ExhaustedPoolException;
 }

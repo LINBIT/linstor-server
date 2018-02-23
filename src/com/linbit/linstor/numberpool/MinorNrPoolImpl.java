@@ -1,7 +1,9 @@
 package com.linbit.linstor.numberpool;
 
+import com.linbit.Checks;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.core.Controller;
@@ -13,6 +15,9 @@ import java.util.regex.Matcher;
 public class MinorNrPoolImpl implements MinorNrPool
 {
     public static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
+
+    public static final String MINOR_NR_IN_USE_EXC_FORMAT =
+        "Minor number %d is already in use";
 
     // we will load the ranges from the database, but if the database contains
     // invalid ranges (e.g. -1 for port), we will fall back to these defaults
@@ -77,10 +82,28 @@ public class MinorNrPoolImpl implements MinorNrPool
     }
 
     @Override
-    public void allocate(int nr)
+    public int getRangeMin()
     {
+        return minorNrRangeMin;
+    }
+
+    @Override
+    public int getRangeMax()
+    {
+        return minorNrRangeMax;
+    }
+
+    @Override
+    public void allocate(int nr)
+        throws ValueOutOfRangeException, ValueInUseException
+    {
+        Checks.genericRangeCheck(nr, minorNrRangeMin, minorNrRangeMax, MinorNumber.MINOR_NR_EXC_FORMAT);
         synchronized (minorNrPool)
         {
+            if (minorNrPool.isAllocated(nr))
+            {
+                throw new ValueInUseException(String.format(MINOR_NR_IN_USE_EXC_FORMAT, nr));
+            }
             minorNrPool.allocate(nr);
         }
     }

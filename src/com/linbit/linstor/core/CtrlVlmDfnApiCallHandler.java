@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
@@ -546,17 +547,19 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             {
                 minorNrInt = minorNrPool.getFreeMinorNr();
             }
+            else
+            {
+                minorNrPool.allocate(minorNrInt);
+            }
             freeMinorNr = new MinorNumber(minorNrInt);
         }
-        catch (ValueOutOfRangeException valOORangeExc)
+        catch (ValueOutOfRangeException | ValueInUseException exc)
         {
             throw asExc(
-                valOORangeExc,
+                exc,
                 String.format(
-                    "The specified minor number '%d' is invalid. Minor numbers have to be in range of %d - %d.",
-                    vlmDfnApi.getMinorNr(),
-                    MinorNumber.MINOR_NR_MIN,
-                    MinorNumber.MINOR_NR_MAX
+                    "The specified minor number '%d' is invalid.",
+                    vlmDfnApi.getMinorNr()
                 ),
                 ApiConsts.FAIL_INVLD_MINOR_NR
             );
@@ -567,8 +570,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 exhaustedPoolExc,
                 String.format(
                     "Could not find free minor number in range %d - %d.",
-                    MinorNumber.MINOR_NR_MIN,
-                    MinorNumber.MINOR_NR_MAX
+                    minorNrPool.getRangeMin(),
+                    minorNrPool.getRangeMax()
                 ),
                 ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR
             );
