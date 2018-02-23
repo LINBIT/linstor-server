@@ -214,8 +214,7 @@ public class ChildProcessHandler
             );
         }
         boolean killed = false;
-        // FIXME: destroyForcibly() is only in Java 1.8, using destroy() only
-        childProcess.destroy();
+        childProcess.destroyForcibly();
         try
         {
             waitFor(killTimeout);
