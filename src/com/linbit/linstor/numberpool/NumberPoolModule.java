@@ -27,11 +27,11 @@ public class NumberPoolModule extends AbstractModule
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
     // we will load the ranges from the database, but if the database contains
-    private static final int DEFAULT_MINOR_NR_MIN = 1000;
     // invalid ranges (e.g. -1 for port), we will fall back to these defaults
+    private static final int DEFAULT_MINOR_NR_MIN = 1000;
     private static final int DEFAULT_MINOR_NR_MAX = 49999;
 
-    public static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
+    private static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
     private static final String TCP_PORT_ELEMENT_NAME = "TCP port";
 
     // we will load the ranges from the database, but if the database contains
@@ -55,7 +55,8 @@ public class NumberPoolModule extends AbstractModule
     )
     {
         DynamicNumberPool minorNrPool = new DynamicNumberPoolImpl(
-            errorReporter, ctrlConfRef,
+            errorReporter,
+            ctrlConfRef,
             PROPSCON_KEY_MINOR_NR_RANGE,
             MINOR_NR_ELEMENT_NAME,
             MinorNumber::minorNrCheck,
@@ -110,7 +111,8 @@ public class NumberPoolModule extends AbstractModule
     )
     {
         DynamicNumberPool tcpPortPool = new DynamicNumberPoolImpl(
-            errorReporter, ctrlConfRef,
+            errorReporter,
+            ctrlConfRef,
             PROPSCON_KEY_TCP_PORT_RANGE,
             TCP_PORT_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
