@@ -33,6 +33,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -64,9 +65,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final int defaultAlStripes;
     private final long defaultAlSize;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final MinorNrPool minorNrPool;
+    private final DynamicNumberPool minorNrPool;
     private final ObjectProtection rscDfnMapProt;
-    private final TcpPortPool tcpPortPool;
+    private final DynamicNumberPool tcpPortPool;
     private final MetaDataApi metaDataApi;
     private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
     private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
@@ -82,9 +83,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         @Named(ConfigModule.CONFIG_AL_STRIPES) int defaultAlStripesRef,
         @Named(ConfigModule.CONFIG_AL_SIZE) long defaultAlSizeRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        MinorNrPool minorNrPoolRef,
+        @MinorNrPool DynamicNumberPool minorNrPoolRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        TcpPortPool tcpPortPoolRef,
+        @TcpPortPool DynamicNumberPool tcpPortPoolRef,
         MetaDataApi metaDataApiRef,
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
@@ -231,7 +232,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
-                freeMinorNr = new MinorNumber(minorNrPool.getFreeMinorNr());
+                freeMinorNr = new MinorNumber(minorNrPool.autoAllocate());
             }
             catch (ValueOutOfRangeException valueOutOfRangExc)
             {
@@ -647,7 +648,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
-                portInt = tcpPortPool.getFreeTcpPort();
+                portInt = tcpPortPool.autoAllocate();
             }
             catch (ExhaustedPoolException exc)
             {

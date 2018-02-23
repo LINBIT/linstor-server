@@ -1,22 +1,17 @@
 package com.linbit.linstor.numberpool;
 
-import com.linbit.ExhaustedPoolException;
-import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
+import javax.inject.Qualifier;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-public interface MinorNrPool
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Qualifier
+@Target({FIELD, PARAMETER, METHOD})
+@Retention(RUNTIME)
+public @interface MinorNrPool
 {
-    /**
-     * Caller must have write-locked the reconfigurationLock
-     */
-    void reloadRange();
-
-    int getRangeMin();
-
-    int getRangeMax();
-
-    void allocate(int nr)
-        throws ValueOutOfRangeException, ValueInUseException;
-
-    int getFreeMinorNr() throws ExhaustedPoolException;
 }

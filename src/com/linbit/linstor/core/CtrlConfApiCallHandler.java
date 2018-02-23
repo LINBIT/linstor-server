@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.Builder;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -31,8 +32,8 @@ public class CtrlConfApiCallHandler
     private final CtrlClientSerializer ctrlClientcomSrzl;
     private final ObjectProtection ctrlConfProt;
     private final Props ctrlConf;
-    private final TcpPortPool tcpPortPool;
-    private final MinorNrPool minorNrPool;
+    private final DynamicNumberPool tcpPortPool;
+    private final DynamicNumberPool minorNrPool;
 
     @Inject
     public CtrlConfApiCallHandler(
@@ -40,8 +41,8 @@ public class CtrlConfApiCallHandler
         CtrlClientSerializer ctrlClientcomSrzlRef,
         @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
-        TcpPortPool tcpPortPoolRef,
-        MinorNrPool minorNrPoolRef
+        @TcpPortPool DynamicNumberPool tcpPortPoolRef,
+        @MinorNrPool DynamicNumberPool minorNrPoolRef
     )
     {
         errorReporter = errorReporterRef;

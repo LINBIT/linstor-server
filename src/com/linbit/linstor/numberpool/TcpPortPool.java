@@ -1,15 +1,17 @@
 package com.linbit.linstor.numberpool;
 
-import com.linbit.ExhaustedPoolException;
+import javax.inject.Qualifier;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-public interface TcpPortPool
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Qualifier
+@Target({FIELD, PARAMETER, METHOD})
+@Retention(RUNTIME)
+public @interface TcpPortPool
 {
-    /**
-     * Caller must have write-locked the reconfigurationLock
-     */
-    void reloadRange();
-
-    void allocate(int nr);
-
-    int getFreeTcpPort() throws ExhaustedPoolException;
 }

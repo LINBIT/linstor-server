@@ -30,6 +30,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -56,7 +57,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
-    private final MinorNrPool minorNrPool;
+    private final DynamicNumberPool minorNrPool;
     private final String defaultStorPoolName;
     private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
 
@@ -68,7 +69,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtx,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        MinorNrPool minorNrPoolRef,
+        @MinorNrPool DynamicNumberPool minorNrPoolRef,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         CtrlObjectFactories objectFactories,
         VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef
@@ -545,7 +546,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             Integer minorNrInt = vlmDfnApi.getMinorNr();
             if (minorNrInt == null)
             {
-                minorNrInt = minorNrPool.getFreeMinorNr();
+                minorNrInt = minorNrPool.autoAllocate();
             }
             else
             {
