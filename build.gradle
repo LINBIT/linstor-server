@@ -13,7 +13,7 @@ apply plugin: 'eclipse'
 apply plugin: 'application'
 apply plugin: 'nebula.ospackage-base'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 sourceSets {
     main {
@@ -244,7 +244,7 @@ ospackage {
 
 // we might even split these to generate separate controller/satellite packages
 buildRpm {
-    requires('jre-headless', "1.7.0", GREATER | EQUAL)
+    requires('jre-headless', "1.8.0", GREATER | EQUAL)
     requires('lvm2')
 }
 
