@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaDataApi;
@@ -644,21 +645,36 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ResourceName rscName = asRscName(rscNameStr);
 
         Integer portInt = portIntRef;
-        if (portInt == null)
+        try
         {
-            try
+            if (portInt == null)
             {
                 portInt = tcpPortPool.autoAllocate();
             }
-            catch (ExhaustedPoolException exc)
+            else
             {
-                throw asExc(
-                    exc,
-                    "Could not find free tcp port in range " +
-                    TcpPortNumber.PORT_NR_MIN + " - " + TcpPortNumber.PORT_NR_MAX,
-                    ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
-                );
+                tcpPortPool.allocate(portInt);
             }
+        }
+        catch (ValueOutOfRangeException | ValueInUseException exc)
+        {
+            throw asExc(
+                exc,
+                String.format(
+                    "The specified TCP port '%d' is invalid.",
+                    portInt
+                ),
+                ApiConsts.FAIL_INVLD_RSC_PORT
+            );
+        }
+        catch (ExhaustedPoolException exc)
+        {
+            throw asExc(
+                exc,
+                "Could not find free tcp port in range " +
+                    tcpPortPool.getRangeMin() + " - " + tcpPortPool.getRangeMax(),
+                ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
+            );
         }
 
         ResourceDefinitionData rscDfn;
