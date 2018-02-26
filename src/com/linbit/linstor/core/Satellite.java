@@ -102,15 +102,9 @@ public final class Satellite extends LinStor
     private StltApiCallHandler apiCallHandler;
 
     // ============================================================
-    // Worker thread pool & message processing dispatcher
+    // Message processing dispatcher
     //
-    private WorkerPool workerThrPool = null;
     private CommonMessageProcessor msgProc;
-
-    // ============================================================
-    // Worker pool for satellite services operations - DeviceManager, etc.
-    //
-    private WorkerPool stltThrPool = null;
 
     // ============================================================
     // Core system services
@@ -207,14 +201,6 @@ public final class Satellite extends LinStor
             updateMonitor = injector.getInstance(UpdateMonitor.class);
 
             controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
-
-            // Initialize the worker thread pool
-            workerThrPool = injector.getInstance(
-                Key.get(WorkerPool.class, Names.named(LinStorModule.MAIN_WORKER_POOL_NAME)));
-
-            // Initialize the thread pool for satellite services operations
-            stltThrPool = injector.getInstance(
-                Key.get(WorkerPool.class, Names.named(SatelliteLinstorModule.STLT_WORKER_POOL_NAME)));
 
             apiCallHandler = injector.getInstance(StltApiCallHandler.class);
 

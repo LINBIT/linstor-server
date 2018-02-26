@@ -12,21 +12,18 @@ import javax.inject.Singleton;
 
 public class SatelliteLinstorModule extends AbstractModule
 {
+    // Name for worker pool for satellite services operations - DeviceManager, etc.
     public static final String STLT_WORKER_POOL_NAME = "StltWorkerPool";
 
     @Override
     protected void configure()
     {
-        bind(WorkQueue.class).annotatedWith(Names.named(LinStorModule.MAIN_WORKER_POOL_NAME))
-            .to(Key.get(WorkerPool.class, Names.named(LinStorModule.MAIN_WORKER_POOL_NAME)));
-        bind(WorkQueue.class).annotatedWith(Names.named(STLT_WORKER_POOL_NAME))
-            .to(Key.get(WorkerPool.class, Names.named(STLT_WORKER_POOL_NAME)));
     }
 
     @Provides
     @Singleton
     @Named(LinStorModule.MAIN_WORKER_POOL_NAME)
-    public WorkerPool initializeMainWorkerThreadPool(ErrorReporter errorLog)
+    public WorkQueue initializeMainWorkerThreadPool(ErrorReporter errorLog)
     {
         return WorkerPoolInitializer.createDefaultWorkerThreadPool(
             errorLog,
@@ -38,7 +35,7 @@ public class SatelliteLinstorModule extends AbstractModule
     @Provides
     @Singleton
     @Named(STLT_WORKER_POOL_NAME)
-    public WorkerPool initializeStltWorkerThreadPool(ErrorReporter errorLog)
+    public WorkQueue initializeStltWorkerThreadPool(ErrorReporter errorLog)
     {
         return WorkerPoolInitializer.createDefaultWorkerThreadPool(
             errorLog,

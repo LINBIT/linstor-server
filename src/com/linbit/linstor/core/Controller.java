@@ -116,9 +116,8 @@ public final class Controller extends LinStor
     private AccessContext publicCtx;
 
     // ============================================================
-    // Worker thread pool & message processing dispatcher
+    // Message processing dispatcher
     //
-    private WorkerPool workerThrPool = null;
     private CommonMessageProcessor msgProc;
 
     // Authentication & Authorization subsystems
@@ -285,9 +284,6 @@ public final class Controller extends LinStor
             errorReporter.logInfo("Core objects load from database completed");
 
             netComContainer = injector.getInstance(NetComContainer.class);
-
-            workerThrPool = injector.getInstance(
-                Key.get(WorkerPool.class, Names.named(LinStorModule.MAIN_WORKER_POOL_NAME)));
 
             // Initialize tasks
             reconnectorTask = injector.getInstance(ReconnectorTask.class);
