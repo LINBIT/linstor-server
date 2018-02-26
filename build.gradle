@@ -159,6 +159,10 @@ task showMeCache << {
   configurations.compile.each { println it }
 }
 
+task showMeTestCache << {
+  configurations.testCompile.each { println it }
+}
+
 /////////////////////////// Test commands ///////////////////////////
 task buildTestCommands(type:Exec) {
   workingDir 'test-support'

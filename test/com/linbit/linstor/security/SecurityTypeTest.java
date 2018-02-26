@@ -267,7 +267,7 @@ public class SecurityTypeTest
         protected SecTypeIteration getNext() throws Exception
         {
             long privLimit = getValue(IDX_PRIVS);
-            privLimit |= getValue(IDX_PRIV_MAC_OVRD) ? PRIV_MAC_OVRD.id : 0;
+            privLimit |= this.<Boolean>getValue(IDX_PRIV_MAC_OVRD) ? PRIV_MAC_OVRD.id : 0;
             AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, new PrivilegeSet(privLimit));
 
             SecTypeIteration iteration = new SecTypeIteration();
