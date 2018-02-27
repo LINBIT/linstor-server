@@ -1,12 +1,10 @@
-package com.linbit.linstor.testclient;
-
-import com.linbit.linstor.api.ApiConsts;
+package com.linbit.linstor.api;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ApiRCUtils
+public class ApiRcUtils
 {
     public static final long MASK_TYPE   = 0xC000000000000000L;
     public static final long MASK_OP     = 0x0000000003000000L;

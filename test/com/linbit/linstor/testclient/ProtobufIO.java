@@ -1,5 +1,6 @@
 package com.linbit.linstor.testclient;
 
+import com.linbit.linstor.api.ApiRcUtils;
 import static com.linbit.linstor.api.ApiConsts.MASK_ERROR;
 import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
 import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
@@ -278,7 +279,7 @@ public class ProtobufIO
             successCount++;
         }
 
-        ApiRCUtils.appendReadableRetCode(sb, retCode);
+        ApiRcUtils.appendReadableRetCode(sb, retCode);
         if ((retCode & 0x00FFFFFFFFFFFFFFL) == 0)
         {
             sb.append(" This looks wrong - please report to developer");
