@@ -164,6 +164,18 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
         }
         needsReinitialize = true;
         running = true;
+
+        // on shutdown we interrupted the thread AND inserted a poison element
+        // the poison element is needed in case the thread was not waiting in the .take()
+        // in this case the thread would not receive the interrupt.
+        // however, if the thread was in the .take() the poison element will poison the
+        // next thread's run method.
+        // although this .clear() might also clear other (not yet progressed) events, we
+        // will also restart the demonHandler, thus the events2 stream will fill our
+        // eventDeque properly.
+
+        eventDeque.clear();
+
         thread = new Thread(this, "DrbdEventService");
         thread.start();
         try
