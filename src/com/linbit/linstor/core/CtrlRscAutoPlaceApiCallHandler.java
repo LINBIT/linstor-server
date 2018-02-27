@@ -15,6 +15,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,6 +43,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 
+    private final ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final CtrlRscApiCallHandler rscApiCallHandler;
 
@@ -51,6 +54,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         // @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlObjectFactories objectFactories,
         CtrlRscApiCallHandler rscApiCallHandlerRef
@@ -67,6 +71,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         super.setNullOnAutoClose(
             currentRscName
         );
+        rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         rscApiCallHandler = rscApiCallHandlerRef;
     }
@@ -77,7 +82,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         String rscNameStr,
         int placeCount,
         String storPoolNameStr,
-        List<String> notPlaceWithRscListRef
+        List<String> notPlaceWithRscListRef,
+        String notPlaceWithRscRegexStr
     )
     {
         // TODO extract this method into an own interface implementation
@@ -85,6 +91,20 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         List<String> notPlaceWithRscList = notPlaceWithRscListRef.stream()
             .map(rscNameStrTmp -> rscNameStrTmp.toUpperCase())
             .collect(Collectors.toList());
+
+        if (notPlaceWithRscRegexStr != null)
+        {
+            Pattern notPlaceWithRscRegexPattern = Pattern.compile(
+                notPlaceWithRscRegexStr,
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+            );
+            notPlaceWithRscList.addAll(
+                rscDfnMap.keySet().stream()
+                    .map(rscName -> rscName.value)
+                    .filter(rscName -> notPlaceWithRscRegexPattern.matcher(rscName).find())
+                    .collect(Collectors.toList())
+            );
+        }
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
@@ -161,7 +181,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                     " * the storage pool '" + storPoolNameStr + "' has to have at least '" +
                     rscSize + "' free space\n" +
                     " * the current access context has enough privileges to use the node and the storage pool",
-                    null, // correction.... "construct additional servers"
+                    null, // correction.... "you must construct additional servers"
                     ApiConsts.FAIL_NOT_ENOUGH_NODES
                 );
                 throw new ApiCallHandlerFailedException();
@@ -193,6 +213,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                         apiCallRc
                     );
                 }
+                reportSuccess(
+                    "Resource '" + rscNameStr + "' successfully autoplaced on " + placeCount + " nodes",
+                    "Used storage pool: '" + candidate.storPoolName.displayValue + "'\n" +
+                    "Used nodes: '" + candidate.nodes.stream()
+                        .map(node -> node.getName().displayValue)
+                        .collect(Collectors.joining("', '")) + "'"
+                );
             }
         }
         catch (ApiCallHandlerFailedException ignore)

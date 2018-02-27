@@ -85,7 +85,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED // stlt2, rsc, vlm
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
                 .addStorPool("slow1", 10 * TB)
@@ -142,7 +143,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED // stlt2, rsc, vlm
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
                 .addStorPool("slow1", 10 * TB)
@@ -177,7 +179,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED // stlt2, rsc, vlm
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
                 .addStorPool("slow1", 10 * TB)
@@ -224,6 +227,128 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * TB)
         );
         expectNotDeployed(TEST_RSC_NAME);
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void doNotPlaceWithRscAndStorPoolTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.FAIL_NOT_ENOUGH_NODES
+            )
+            .stltBuilder("stlt1")
+                .addStorPool("slow1", 10 * TB)
+                .addStorPool("fast1", 100 * GB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("slow1", 10 * TB)
+                .addStorPool("fast1", 100 * GB)
+                .build()
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * TB)
+
+            .doNotPlaceWith("avoid1")
+            .setStorPool("slow1")
+
+            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addVlmDfn("avoid1", 0, 2 * TB)
+            .addRsc("avoid1", "slow1", "stlt1", "stlt2")
+        );
+        expectNotDeployed(TEST_RSC_NAME);
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void doNotPlaceWithRscRegexTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .stltBuilder("stlt1")
+                .addStorPool("slow1", 10 * TB)
+                .addStorPool("slow2", 20 * TB)
+                .addStorPool("fast1", 100 * GB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("slow1", 10 * TB)
+                .addStorPool("slow2", 20 * TB)
+                .addStorPool("fast1", 100 * GB)
+                .build()
+            .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
+
+            .setDoNotPlaceWithRegex("avoid.*")
+
+            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addVlmDfn("avoid1", 0, 2 * TB)
+                .addRsc("avoid1", "slow1", "stlt1", "stlt2")
+            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 1)
+            .addVlmDfn("avoid2", 0, 2 * TB)
+                .addRsc("avoid2", "slow2", "stlt1", "stlt2")
+        );
+
+        expectDeployed(
+            "fast1",
+            TEST_RSC_NAME,
+            "stlt1", "stlt2"
+        );
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void doNotPlaceWithRscSimpleRegexPrefixTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .stltBuilder("stlt1")
+                .addStorPool("slow1", 10 * TB)
+                .addStorPool("slow2", 20 * TB)
+                .addStorPool("fast1", 100 * GB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("slow1", 10 * TB)
+                .addStorPool("slow2", 20 * TB)
+                .addStorPool("fast1", 100 * GB)
+                .build()
+            .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
+
+            .setDoNotPlaceWithRegex("avoid") // no trailing ".*"
+
+            .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
+            .addVlmDfn("avoid1", 0, 2 * TB)
+                .addRsc("avoid1", "slow1", "stlt1", "stlt2")
+            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 1)
+            .addVlmDfn("avoid2", 0, 2 * TB)
+                .addRsc("avoid2", "slow2", "stlt1", "stlt2")
+        );
+
+        expectDeployed(
+            "fast1",
+            TEST_RSC_NAME,
+            "stlt1", "stlt2"
+        );
     }
 
     private void expectDeployed(
@@ -295,6 +420,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
         private String forceStorPool = null;
+        private String doNotPlaceWithRscRegexStr = null;
 
         RscAutoPlaceApiCall(
             String rscNameStrRef,
@@ -311,6 +437,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             );
             rscNameStr = rscNameStrRef;
             placeCount = placeCountRef;
+        }
+
+        public RscAutoPlaceApiCall setDoNotPlaceWithRegex(String doNotPlaceWithRscRegexStrRef)
+        {
+            doNotPlaceWithRscRegexStr = doNotPlaceWithRscRegexStrRef;
+            return this;
         }
 
         RscAutoPlaceApiCall setStorPool(String forceStorPoolRef)
@@ -334,7 +466,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 rscNameStr,
                 placeCount,
                 forceStorPool,
-                doNotPlaceWithRscList
+                doNotPlaceWithRscList,
+                doNotPlaceWithRscRegexStr
             );
         }
 

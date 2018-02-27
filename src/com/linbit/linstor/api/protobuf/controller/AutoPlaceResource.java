@@ -44,7 +44,8 @@ public class AutoPlaceResource implements ApiCall
             msgAutoPlace.getRscName(),
             msgAutoPlace.getPlaceCount(),
             msgAutoPlace.hasStoragePool() ? msgAutoPlace.getStoragePool() : null,
-            asList(msgAutoPlace.getNotPlaceWithRscList())
+            asList(msgAutoPlace.getNotPlaceWithRscList()),
+            msgAutoPlace.hasNotPlaceWithRscRegex() ? msgAutoPlace.getNotPlaceWithRscRegex() : null
         );
         apiCallAnswerer.answerApiCallRc(rc);
     }

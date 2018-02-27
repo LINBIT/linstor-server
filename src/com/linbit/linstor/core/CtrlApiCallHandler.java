@@ -1668,7 +1668,8 @@ public class CtrlApiCallHandler
         String rscName,
         int placeCount,
         String storPoolName,
-        List<String> notPlaceWithRscList
+        List<String> notPlaceWithRscList,
+        String notPlaceWithRscRegex
     )
     {
         ApiCallRc apiCallRc;
@@ -1690,7 +1691,8 @@ public class CtrlApiCallHandler
                 rscName,
                 placeCount,
                 storPoolName,
-                notPlaceWithRscList
+                notPlaceWithRscList,
+                notPlaceWithRscRegex
             );
         }
         finally

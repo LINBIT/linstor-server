@@ -73,6 +73,20 @@ public final class MsgAutoPlaceRscOuterClass {
      */
     com.google.protobuf.ByteString
         getNotPlaceWithRscBytes(int index);
+
+    /**
+     * <code>optional string not_place_with_rsc_regex = 5;</code>
+     */
+    boolean hasNotPlaceWithRscRegex();
+    /**
+     * <code>optional string not_place_with_rsc_regex = 5;</code>
+     */
+    java.lang.String getNotPlaceWithRscRegex();
+    /**
+     * <code>optional string not_place_with_rsc_regex = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getNotPlaceWithRscRegexBytes();
   }
   /**
    * <pre>
@@ -94,6 +108,7 @@ public final class MsgAutoPlaceRscOuterClass {
       placeCount_ = 0;
       storagePool_ = "";
       notPlaceWithRsc_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      notPlaceWithRscRegex_ = "";
     }
 
     @java.lang.Override
@@ -148,6 +163,12 @@ public final class MsgAutoPlaceRscOuterClass {
                 mutable_bitField0_ |= 0x00000008;
               }
               notPlaceWithRsc_.add(bs);
+              break;
+            }
+            case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000008;
+              notPlaceWithRscRegex_ = bs;
               break;
             }
           }
@@ -306,6 +327,48 @@ public final class MsgAutoPlaceRscOuterClass {
       return notPlaceWithRsc_.getByteString(index);
     }
 
+    public static final int NOT_PLACE_WITH_RSC_REGEX_FIELD_NUMBER = 5;
+    private volatile java.lang.Object notPlaceWithRscRegex_;
+    /**
+     * <code>optional string not_place_with_rsc_regex = 5;</code>
+     */
+    public boolean hasNotPlaceWithRscRegex() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional string not_place_with_rsc_regex = 5;</code>
+     */
+    public java.lang.String getNotPlaceWithRscRegex() {
+      java.lang.Object ref = notPlaceWithRscRegex_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          notPlaceWithRscRegex_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string not_place_with_rsc_regex = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNotPlaceWithRscRegexBytes() {
+      java.lang.Object ref = notPlaceWithRscRegex_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        notPlaceWithRscRegex_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -338,6 +401,9 @@ public final class MsgAutoPlaceRscOuterClass {
       for (int i = 0; i < notPlaceWithRsc_.size(); i++) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, notPlaceWithRsc_.getRaw(i));
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, notPlaceWithRscRegex_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -363,6 +429,9 @@ public final class MsgAutoPlaceRscOuterClass {
         }
         size += dataSize;
         size += 1 * getNotPlaceWithRscList().size();
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, notPlaceWithRscRegex_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -398,6 +467,11 @@ public final class MsgAutoPlaceRscOuterClass {
       }
       result = result && getNotPlaceWithRscList()
           .equals(other.getNotPlaceWithRscList());
+      result = result && (hasNotPlaceWithRscRegex() == other.hasNotPlaceWithRscRegex());
+      if (hasNotPlaceWithRscRegex()) {
+        result = result && getNotPlaceWithRscRegex()
+            .equals(other.getNotPlaceWithRscRegex());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -424,6 +498,10 @@ public final class MsgAutoPlaceRscOuterClass {
       if (getNotPlaceWithRscCount() > 0) {
         hash = (37 * hash) + NOT_PLACE_WITH_RSC_FIELD_NUMBER;
         hash = (53 * hash) + getNotPlaceWithRscList().hashCode();
+      }
+      if (hasNotPlaceWithRscRegex()) {
+        hash = (37 * hash) + NOT_PLACE_WITH_RSC_REGEX_FIELD_NUMBER;
+        hash = (53 * hash) + getNotPlaceWithRscRegex().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -555,6 +633,8 @@ public final class MsgAutoPlaceRscOuterClass {
         bitField0_ = (bitField0_ & ~0x00000004);
         notPlaceWithRsc_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000008);
+        notPlaceWithRscRegex_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -596,6 +676,10 @@ public final class MsgAutoPlaceRscOuterClass {
           bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.notPlaceWithRsc_ = notPlaceWithRsc_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.notPlaceWithRscRegex_ = notPlaceWithRscRegex_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -659,6 +743,11 @@ public final class MsgAutoPlaceRscOuterClass {
             ensureNotPlaceWithRscIsMutable();
             notPlaceWithRsc_.addAll(other.notPlaceWithRsc_);
           }
+          onChanged();
+        }
+        if (other.hasNotPlaceWithRscRegex()) {
+          bitField0_ |= 0x00000010;
+          notPlaceWithRscRegex_ = other.notPlaceWithRscRegex_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -971,6 +1060,82 @@ public final class MsgAutoPlaceRscOuterClass {
         onChanged();
         return this;
       }
+
+      private java.lang.Object notPlaceWithRscRegex_ = "";
+      /**
+       * <code>optional string not_place_with_rsc_regex = 5;</code>
+       */
+      public boolean hasNotPlaceWithRscRegex() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional string not_place_with_rsc_regex = 5;</code>
+       */
+      public java.lang.String getNotPlaceWithRscRegex() {
+        java.lang.Object ref = notPlaceWithRscRegex_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            notPlaceWithRscRegex_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string not_place_with_rsc_regex = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNotPlaceWithRscRegexBytes() {
+        java.lang.Object ref = notPlaceWithRscRegex_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          notPlaceWithRscRegex_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string not_place_with_rsc_regex = 5;</code>
+       */
+      public Builder setNotPlaceWithRscRegex(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        notPlaceWithRscRegex_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string not_place_with_rsc_regex = 5;</code>
+       */
+      public Builder clearNotPlaceWithRscRegex() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        notPlaceWithRscRegex_ = getDefaultInstance().getNotPlaceWithRscRegex();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string not_place_with_rsc_regex = 5;</code>
+       */
+      public Builder setNotPlaceWithRscRegexBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        notPlaceWithRscRegex_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -1035,10 +1200,11 @@ public final class MsgAutoPlaceRscOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n#linstor/proto/MsgAutoPlaceRsc.proto\022\030c" +
-      "om.linbit.linstor.proto\"j\n\017MsgAutoPlaceR" +
-      "sc\022\020\n\010rsc_name\030\001 \002(\t\022\023\n\013place_count\030\002 \002(" +
-      "\r\022\024\n\014storage_pool\030\003 \001(\t\022\032\n\022not_place_wit" +
-      "h_rsc\030\004 \003(\t"
+      "om.linbit.linstor.proto\"\214\001\n\017MsgAutoPlace" +
+      "Rsc\022\020\n\010rsc_name\030\001 \002(\t\022\023\n\013place_count\030\002 \002" +
+      "(\r\022\024\n\014storage_pool\030\003 \001(\t\022\032\n\022not_place_wi" +
+      "th_rsc\030\004 \003(\t\022 \n\030not_place_with_rsc_regex" +
+      "\030\005 \001(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1057,7 +1223,7 @@ public final class MsgAutoPlaceRscOuterClass {
     internal_static_com_linbit_linstor_proto_MsgAutoPlaceRsc_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgAutoPlaceRsc_descriptor,
-        new java.lang.String[] { "RscName", "PlaceCount", "StoragePool", "NotPlaceWithRsc", });
+        new java.lang.String[] { "RscName", "PlaceCount", "StoragePool", "NotPlaceWithRsc", "NotPlaceWithRscRegex", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
