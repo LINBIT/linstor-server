@@ -13,6 +13,7 @@ import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -478,5 +480,50 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resourceDefinitionDataFactory.create(
             SYS_CTX, resName, port, null, "secret", transportType, transMgr
         );
+    }
+
+    @Test
+    public void testAutoAllocateTcpPort() throws Exception
+    {
+        final int testTcpPort = 9876;
+
+        Mockito.when(tcpPortPoolMock.autoAllocate()).thenReturn(testTcpPort);
+
+        ResourceDefinitionData newRscDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX,
+            resName,
+            null, // auto allocate
+            null,
+            "secret",
+            transportType,
+            transMgr
+        );
+
+        assertThat(newRscDfn.getPort(SYS_CTX).value).isEqualTo(testTcpPort);
+    }
+
+    @Test
+    public void testDeleteDeallocateTcpPort() throws Exception
+    {
+        driver.create(resDfn, transMgr);
+        resDfn.initialized();
+        resDfn.setConnection(transMgr);
+        resDfn.delete(SYS_CTX);
+
+        Mockito.verify(tcpPortPoolMock).deallocate(port);
+    }
+
+    @Test
+    public void testModifyTcpPort() throws Exception
+    {
+        final int newTcpPort = 9876;
+
+        driver.create(resDfn, transMgr);
+        resDfn.initialized();
+        resDfn.setConnection(transMgr);
+        resDfn.setPort(SYS_CTX, new TcpPortNumber(newTcpPort));
+
+        Mockito.verify(tcpPortPoolMock).deallocate(port);
+        Mockito.verify(tcpPortPoolMock).allocate(newTcpPort);
     }
 }

@@ -3,13 +3,12 @@ package com.linbit.linstor;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 import org.junit.Test;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,10 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class VolumeDefinitionDataDerbyTest extends DerbyBase
@@ -381,5 +380,51 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         driver.create(volDfn, transMgr);
 
         volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
+    }
+
+    @Test
+    public void testAutoAllocateMinorNumber() throws Exception
+    {
+        final int testMinorNumber = 9876;
+        final VolumeNumber testVolumeNumber = new VolumeNumber(99);
+
+        Mockito.when(minorNrPoolMock.autoAllocate()).thenReturn(testMinorNumber);
+
+        VolumeDefinitionData newvolDfn = volumeDefinitionDataFactory.create(
+            SYS_CTX,
+            resDfn,
+            testVolumeNumber,
+            null, // auto allocate
+            volSize,
+            null,
+            transMgr
+        );
+
+        assertThat(newvolDfn.getMinorNr(SYS_CTX).value).isEqualTo(testMinorNumber);
+    }
+
+    @Test
+    public void testDeleteDeallocateMinorNumber() throws Exception
+    {
+        driver.create(volDfn, transMgr);
+        volDfn.initialized();
+        volDfn.setConnection(transMgr);
+        volDfn.delete(SYS_CTX);
+
+        Mockito.verify(minorNrPoolMock).deallocate(minor);
+    }
+
+    @Test
+    public void testModifyMinorNumber() throws Exception
+    {
+        final int newMinorNumber = 9876;
+
+        driver.create(volDfn, transMgr);
+        volDfn.initialized();
+        volDfn.setConnection(transMgr);
+        volDfn.setMinorNr(SYS_CTX, new MinorNumber(newMinorNumber));
+
+        Mockito.verify(minorNrPoolMock).deallocate(minor);
+        Mockito.verify(minorNrPoolMock).allocate(newMinorNumber);
     }
 }
