@@ -28,7 +28,7 @@ public class ConnectionPropsTest extends DerbyBase
     private NodeId nodeId1;
     private NodeId nodeId2;
     private VolumeNumber volNr;
-    private MinorNumber minor;
+    private Integer minor;
     private long volSize;
     private String blockDev1;
     private String metaDisk1;
@@ -74,7 +74,7 @@ public class ConnectionPropsTest extends DerbyBase
         nodeId1 = new NodeId(1);
         nodeId2 = new NodeId(2);
         volNr = new VolumeNumber(13);
-        minor = new MinorNumber(12);
+        minor = 12;
         volSize = 9001;
         blockDev1 = "/dev/vol1/block";
         metaDisk1= "/dev/vol1/meta";
@@ -98,7 +98,7 @@ public class ConnectionPropsTest extends DerbyBase
         storPool1 = storPoolDataFactory.getInstance(SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
         storPool2 = storPoolDataFactory.getInstance(SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
 
-        volDfn = volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, true, false);
+        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
 
         vol1 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null, transMgr, true, false);
         vol2 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool2, blockDev2, metaDisk2, null, transMgr, true, false);

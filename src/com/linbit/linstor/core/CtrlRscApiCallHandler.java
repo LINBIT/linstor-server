@@ -4,7 +4,6 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -33,7 +32,7 @@ import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataFactory;
+import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -82,7 +81,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     private final String defaultStorPoolName;
     private final ResourceDataFactory resourceDataFactory;
     private final VolumeDataFactory volumeDataFactory;
-    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -99,7 +98,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
-        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
     )
     {
         super(
@@ -999,16 +998,11 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.load(
                 currentAccCtx.get(),
                 rscDfn,
                 vlmNr,
-                null, // minor
-                null, // volsize
-                null, // flags
-                currentTransMgr.get(),
-                false, // do not create
-                false // do not fail if exists
+                currentTransMgr.get()
             );
 
             if (failIfNull && vlmDfn == null)
@@ -1035,10 +1029,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 "load " + getObjectDescriptionInline(),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
-        }
-        catch (LinStorDataAlreadyExistsException | MdException implErr)
-        {
-            throw asImplError(implErr);
         }
         catch (SQLException sqlExc)
         {

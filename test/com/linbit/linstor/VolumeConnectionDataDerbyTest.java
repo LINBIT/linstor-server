@@ -36,7 +36,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private final StorPoolName storPoolName;
     private final VolumeNumber volNr;
 
-    private final MinorNumber minor;
+    private final Integer minor;
     private final long volSize;
 
     private final String volBlockDevSrc;
@@ -74,7 +74,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         storPoolName = new StorPoolName("testStorPool");
         volNr = new VolumeNumber(42);
 
-        minor = new MinorNumber(43);
+        minor = 43;
         volSize = 9001;
 
         volBlockDevSrc="/dev/src/vol/block";
@@ -107,7 +107,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
             SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        volDfn = volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, true, false);
+        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);

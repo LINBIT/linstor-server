@@ -50,7 +50,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     private StorPoolData storPool;
 
     private VolumeNumber volNr;
-    private MinorNumber minor;
+    private Integer minor;
     private long volSize;
     private VolumeDefinition volDfn;
 
@@ -128,18 +128,16 @@ public class VolumeDataDerbyTest extends DerbyBase
         );
 
         volNr = new VolumeNumber(13);
-        minor = new MinorNumber(42);
+        minor = 42;
         volSize = 5_000_000;
-        volDfn = volumeDefinitionDataFactory.getInstance(
+        volDfn = volumeDefinitionDataFactory.create(
             SYS_CTX,
             resDfn,
             volNr,
             minor,
             volSize,
             null,
-            transMgr,
-            true,
-            false
+            transMgr
         );
 
         uuid = randomUUID();

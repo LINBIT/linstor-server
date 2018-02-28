@@ -336,18 +336,16 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         driver.create(resDfn, transMgr);
 
         VolumeNumber volNr = new VolumeNumber(13);
-        MinorNumber minor = new MinorNumber(42);
+        int minor = 42;
         long volSize = 5_000;
-        VolumeDefinitionData volDfn = volumeDefinitionDataFactory.getInstance(
+        VolumeDefinitionData volDfn = volumeDefinitionDataFactory.create(
             SYS_CTX,
             resDfn,
             volNr,
             minor,
             volSize,
             null,
-            transMgr,
-            true,
-            false
+            transMgr
         );
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
@@ -356,7 +354,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(loadedVolDfn);
         assertEquals(volDfn.getUuid(), loadedVolDfn.getUuid());
         assertEquals(volDfn.getFlags().getFlagsBits(SYS_CTX), loadedVolDfn.getFlags().getFlagsBits(SYS_CTX));
-        assertEquals(minor, loadedVolDfn.getMinorNr(SYS_CTX));
+        assertEquals(minor, loadedVolDfn.getMinorNr(SYS_CTX).value);
         assertEquals(volNr, loadedVolDfn.getVolumeNumber());
         assertEquals(volSize, loadedVolDfn.getVolumeSize(SYS_CTX));
         assertEquals(loadedResDfn, loadedVolDfn.getResourceDefinition());

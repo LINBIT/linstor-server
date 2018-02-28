@@ -10,7 +10,6 @@ import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -21,7 +20,7 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataFactory;
+import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
@@ -35,7 +34,6 @@ import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -66,12 +64,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final int defaultAlStripes;
     private final long defaultAlSize;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final DynamicNumberPool minorNrPool;
     private final ObjectProtection rscDfnMapProt;
     private final DynamicNumberPool tcpPortPool;
     private final MetaDataApi metaDataApi;
     private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
-    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
 
     @Inject
     CtrlRscDfnApiCallHandler(
@@ -84,13 +81,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         @Named(ConfigModule.CONFIG_AL_STRIPES) int defaultAlStripesRef,
         @Named(ConfigModule.CONFIG_AL_SIZE) long defaultAlSizeRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @MinorNrPool DynamicNumberPool minorNrPoolRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         @TcpPortPool DynamicNumberPool tcpPortPoolRef,
         MetaDataApi metaDataApiRef,
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
-        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
     )
     {
         super(
@@ -108,7 +104,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         defaultAlStripes = defaultAlStripesRef;
         defaultAlSize = defaultAlSizeRef;
         rscDfnMap = rscDfnMapRef;
-        minorNrPool = minorNrPoolRef;
         rscDfnMapProt = rscDfnMapProtRef;
         tcpPortPool = tcpPortPoolRef;
         metaDataApi = metaDataApiRef;
@@ -157,7 +152,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 // currentVlmDfnApi = vlmDfnApi;
 
                 volNr = getVlmNr(vlmDfnApi, rscDfn, apiCtx);
-                MinorNumber minorNr = getMinor(vlmDfnApi);
 
                 long size = vlmDfnApi.getSize();
 
@@ -167,7 +161,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 VolumeDefinitionData vlmDfn = createVlmDfn(
                     rscDfn,
                     volNr,
-                    minorNr,
+                    vlmDfnApi.getMinorNr(),
                     size
                 );
 
@@ -223,35 +217,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
-    }
-
-    private MinorNumber getMinor(VlmDfnApi vlmDfnApi) throws ValueOutOfRangeException, LinStorException
-    {
-        MinorNumber freeMinorNr;
-        Integer apiMinor = vlmDfnApi.getMinorNr();
-        if (apiMinor == null)
-        {
-            try
-            {
-                freeMinorNr = new MinorNumber(minorNrPool.autoAllocate());
-            }
-            catch (ValueOutOfRangeException valueOutOfRangExc)
-            {
-                throw new ImplementationError(
-                    "Failed to generate a valid minor number. Tried: '" + apiMinor + "'",
-                    valueOutOfRangExc
-                );
-            }
-            catch (ExhaustedPoolException exc)
-            {
-                throw new LinStorException("Could not found free minor number", exc);
-            }
-        }
-        else
-        {
-            freeMinorNr = new MinorNumber(apiMinor);
-        }
-        return freeMinorNr;
     }
 
     public ApiCallRc modifyRscDfn(
@@ -745,23 +710,21 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private VolumeDefinitionData createVlmDfn(
         ResourceDefinition rscDfn,
         VolumeNumber volNr,
-        MinorNumber minorNr,
+        Integer minorNr,
         long size
     )
     {
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.create(
                 currentAccCtx.get(),
                 rscDfn,
                 volNr,
                 minorNr,
                 size,
                 null, // VlmDfnFlags[]
-                currentTransMgr.get(),
-                true, // persist this entry
-                true // throw exception if the entry exists
+                currentTransMgr.get()
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -797,6 +760,25 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 "Gross size check failed for volume definition with volume number '" +
                     volNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "'.",
                 ApiConsts.FAIL_INVLD_VLM_SIZE
+            );
+        }
+        catch (ValueOutOfRangeException | ValueInUseException exc)
+        {
+            throw asExc(
+                exc,
+                String.format(
+                    "The specified minor number '%d' is invalid.",
+                    minorNr
+                ),
+                ApiConsts.FAIL_INVLD_MINOR_NR
+            );
+        }
+        catch (ExhaustedPoolException exhaustedPoolExc)
+        {
+            throw asExc(
+                exhaustedPoolExc,
+                "Could not find free minor number",
+                ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR
             );
         }
         return vlmDfn;

@@ -10,6 +10,8 @@ import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,6 +21,7 @@ import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -77,6 +80,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final PropsContainerFactory propsContainerFactory;
+    private final DynamicNumberPool minorNrPool;
 
     private final FlagDriver flagsDriver;
     private final MinorNumberDriver minorNumberDriver;
@@ -86,12 +90,14 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     public VolumeDefinitionDataDerbyDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         propsContainerFactory = propsContainerFactoryRef;
+        minorNrPool = minorNrPoolRef;
         flagsDriver = new FlagDriver();
         minorNumberDriver = new MinorNumberDriver();
         sizeDriver = new SizeDriver();
@@ -189,6 +195,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     resDfn,
                     volNr,
                     new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
+                    minorNrPool,
                     resultSet.getLong(VD_SIZE),
                     resultSet.getLong(VD_FLAGS),
                     transMgr,

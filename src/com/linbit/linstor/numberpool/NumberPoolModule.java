@@ -10,6 +10,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -23,6 +24,9 @@ import java.util.Iterator;
 
 public class NumberPoolModule extends AbstractModule
 {
+    public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
+    public static final String UNINITIALIZED_MINOR_NUMBER_POOL = "UninitializedMinorNumberPool";
+
     private static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
@@ -46,12 +50,10 @@ public class NumberPoolModule extends AbstractModule
 
     @Provides
     @Singleton
-    @MinorNrPool
+    @Named(UNINITIALIZED_MINOR_NUMBER_POOL)
     public DynamicNumberPool minorNrPool(
         ErrorReporter errorReporter,
-        @SystemContext AccessContext initCtx,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
-        CoreModule.ResourceDefinitionMap rscDfnMap
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
         DynamicNumberPool minorNrPool = new DynamicNumberPoolImpl(
@@ -65,10 +67,23 @@ public class NumberPoolModule extends AbstractModule
             DEFAULT_MINOR_NR_MAX
         );
 
+        minorNrPool.reloadRange();
+
+        return minorNrPool;
+    }
+
+    @Provides
+    @Singleton
+    @Named(MINOR_NUMBER_POOL)
+    public DynamicNumberPool initializeMinorNrPool(
+        ErrorReporter errorReporter,
+        @SystemContext AccessContext initCtx,
+        @Named(UNINITIALIZED_MINOR_NUMBER_POOL) DynamicNumberPool minorNrPool,
+        CoreModule.ResourceDefinitionMap rscDfnMap
+    )
+    {
         try
         {
-            minorNrPool.reloadRange();
-
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
             {
                 Iterator<VolumeDefinition> vlmIter = curRscDfn.iterateVolumeDfn(initCtx);

@@ -3,11 +3,13 @@ package com.linbit.linstor;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,6 +30,8 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                      VLM_SIZE + ", " + VLM_MINOR_NR + ", " + VLM_FLAGS +
         " FROM " + TBL_VOLUME_DEFINITIONS;
 
+    @Mock private DynamicNumberPool minorNrPool;
+
     private TransactionMgr transMgr;
 
     private ResourceName resName;
@@ -36,7 +40,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
     private java.util.UUID uuid;
     private VolumeNumber volNr;
-    private MinorNumber minor;
+    private int minor;
     private long volSize;
 
     private VolumeDefinitionData volDfn;
@@ -62,15 +66,16 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);
-        minor = new MinorNumber(42);
+        minor = 42;
         volSize = 5_000_000;
-        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter, propsContainerFactory);
+        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter, propsContainerFactory, minorNrPool);
         volDfn = new VolumeDefinitionData(
             uuid,
             SYS_CTX,
             resDfn,
             volNr,
-            minor,
+            new MinorNumber(minor),
+            minorNrPool,
             volSize,
             VlmDfnFlags.DELETE.flagValue,
             transMgr,
@@ -96,7 +101,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
-        assertEquals(minor.value, resultSet.getInt(VLM_MINOR_NR));
+        assertEquals(minor, resultSet.getInt(VLM_MINOR_NR));
         assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
@@ -125,16 +130,14 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 true,
                 false);
 
-        volumeDefinitionDataFactory.getInstance(
+        volumeDefinitionDataFactory.create(
             SYS_CTX,
             resDefinitionTest,
             volNr,
             minor,
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.DELETE },
-            transMgr,
-            true,
-            false
+            transMgr
         );
 
         resultSet = stmt.executeQuery();
@@ -142,7 +145,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals("TESTRESOURCE2", resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
-        assertEquals(minor.value, resultSet.getInt(VLM_MINOR_NR));
+        assertEquals(minor, resultSet.getInt(VLM_MINOR_NR));
         assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
@@ -162,7 +165,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX));
+        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX).value);
         assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
@@ -171,23 +174,18 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        VolumeDefinitionData loadedVd = volumeDefinitionDataFactory.getInstance(
+        VolumeDefinitionData loadedVd = volumeDefinitionDataFactory.load(
             SYS_CTX,
             resDfn,
             volNr,
-            minor,
-            volSize,
-            null,
-            transMgr,
-            false,
-            false
+            transMgr
         );
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX));
+        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX).value);
         assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
@@ -210,7 +208,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX));
+        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX).value);
         assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
@@ -385,6 +383,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, false, true);
+        volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
     }
 }

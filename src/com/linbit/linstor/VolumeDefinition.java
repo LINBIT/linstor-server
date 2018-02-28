@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.TransactionObject;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -30,7 +32,7 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
         throws AccessDeniedException;
 
     MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException;
 
     long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException;

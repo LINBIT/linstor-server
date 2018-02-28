@@ -148,6 +148,15 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         }
     }
 
+    @Override
+    public void deallocate(int nr)
+    {
+        synchronized (numberPool)
+        {
+            numberPool.deallocate(nr);
+        }
+    }
+
     public interface NumberRangeChecker
     {
         void check(Integer integer)

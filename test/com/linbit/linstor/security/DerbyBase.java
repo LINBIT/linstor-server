@@ -5,7 +5,8 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.util.Modules;
+import com.google.inject.testing.fieldbinder.Bind;
+import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -29,7 +30,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.VolumeDataFactory;
-import com.linbit.linstor.VolumeDefinitionDataFactory;
+import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -39,6 +40,8 @@ import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.testutils.TestCoreModule;
@@ -48,7 +51,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import javax.inject.Named;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -87,6 +93,12 @@ public abstract class DerbyBase implements DerbyTestConstants
     private Connection con;
     private List<Connection> connections = new ArrayList<>();
 
+    @Mock @Bind @Named(NumberPoolModule.MINOR_NUMBER_POOL)
+    protected DynamicNumberPool minorNrPoolMock;
+
+    @Mock @Bind @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL)
+    protected DynamicNumberPool uninitializedMinorNrPoolMock;
+
     @Inject private DbAccessor secureDbDriver;
     @Inject private DatabaseDriver persistenceDbDriver;
     @Inject protected CoreModule.NodesMap nodesMap;
@@ -103,7 +115,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     @Inject protected NodeConnectionDataFactory nodeConnectionDataFactory;
     @Inject protected StorPoolDataFactory storPoolDataFactory;
     @Inject protected VolumeDataFactory volumeDataFactory;
-    @Inject protected VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionDataFactory resourceDefinitionDataFactory;
     @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
 
@@ -151,6 +163,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         insertDefaults(con);
         errorReporter.logTrace("cleanups done, initializing: %s", testMethodName.getMethodName());
 
+        MockitoAnnotations.initMocks(this);
+
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
             new LoggingModule(errorReporter),
@@ -158,7 +172,8 @@ public abstract class DerbyBase implements DerbyTestConstants
             new CoreModule(),
             new SharedDbConnectionPoolModule(),
             new ControllerDbModule(),
-            additionalModule
+            additionalModule,
+            BoundFieldModule.of(this)
         );
         injector.injectMembers(this);
 

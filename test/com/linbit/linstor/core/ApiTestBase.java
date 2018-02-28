@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
-import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
@@ -80,15 +79,12 @@ public abstract class ApiTestBase extends DerbyBase
     @Override
     public void setUp() throws Exception
     {
-        MockitoAnnotations.initMocks(this);
-
         super.setUp(Modules.combine(
             new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule(),
             new ControllerSecurityModule(),
             new ControllerCoreModule(),
-            new ConfigModule(),
-            BoundFieldModule.of(this)
+            new ConfigModule()
         ));
 
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);

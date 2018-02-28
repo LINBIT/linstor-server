@@ -5,6 +5,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
@@ -12,6 +13,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -53,6 +55,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     // DRBD device minor number
     private final TransactionSimpleObject<VolumeDefinitionData, MinorNumber> minorNr;
 
+    private final DynamicNumberPool minorNrPool;
+
     // Net volume size in kiB
     private final TransactionSimpleObject<VolumeDefinitionData, Long> volumeSize;
 
@@ -74,6 +78,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
         MinorNumber minor,
+        DynamicNumberPool minorNrPoolRef,
         long volSize,
         long initFlags,
         TransactionMgr transMgr,
@@ -114,6 +119,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         resourceDfn = resDfnRef;
 
         dbDriver = dbDriverRef;
+        minorNrPool = minorNrPoolRef;
 
         volumeNr = volNr;
         minorNr = new TransactionSimpleObject<>(
@@ -200,10 +206,15 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     @Override
     public MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        if (minorNrPool != null)
+        {
+            minorNrPool.deallocate(minorNr.get().value);
+            minorNrPool.allocate(newMinorNr.value);
+        }
         return minorNr.set(newMinorNr);
     }
 
@@ -284,6 +295,11 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             }
 
             vlmDfnProps.delete();
+
+            if (minorNrPool != null)
+            {
+                minorNrPool.deallocate(minorNr.get().value);
+            }
 
             dbDriver.delete(this, transMgr);
 

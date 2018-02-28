@@ -10,7 +10,6 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -37,7 +36,7 @@ public class ResourceDefinitionDataSatelliteTest
 
     private java.util.UUID resDfnUuid;
 
-    @Inject private VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    @Inject private VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     @Inject private ResourceDefinitionDataFactory resourceDefinitionDataFactory;
 
     public ResourceDefinitionDataSatelliteTest() throws InvalidNameException, ValueOutOfRangeException

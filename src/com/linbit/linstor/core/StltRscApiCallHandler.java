@@ -39,7 +39,8 @@ import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataFactory;
+import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
+import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -76,7 +77,7 @@ class StltRscApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
-    private final VolumeDefinitionDataFactory volumeDefinitionDataFactory;
+    private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     private final NodeDataSatelliteFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ResourceDataFactory resourceDataFactory;
@@ -94,7 +95,7 @@ class StltRscApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
         ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
-        VolumeDefinitionDataFactory volumeDefinitionDataFactoryRef,
+        VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
         NodeDataSatelliteFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         ResourceDataFactory resourceDataFactoryRef,

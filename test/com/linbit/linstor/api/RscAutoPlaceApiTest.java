@@ -500,16 +500,14 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             rscDfn.setConnection(transMgr);
 
-            volumeDefinitionDataFactory.getInstance(
+            volumeDefinitionDataFactory.create(
                 BOB_ACC_CTX,
                 rscDfn,
                 new VolumeNumber(vlmNrRef),
-                new MinorNumber(MINOR_GEN.incrementAndGet()),
+                MINOR_GEN.incrementAndGet(),
                 sizeRef,
                 null,
-                transMgr,
-                true,
-                true
+                transMgr
             );
 
             transMgr.commit();

@@ -383,16 +383,14 @@ public class NodeDataDerbyTest extends DerbyBase
             rscDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
-            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.getInstance(
+            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.create(
                 SYS_CTX,
                 resDfn,
                 volDfnNr,
-                new MinorNumber(volDfnMinorNr),
+                volDfnMinorNr,
                 volDfnSize,
                 new VlmDfnFlags[] {VlmDfnFlags.DELETE},
-                transMgr,
-                true,
-                true
+                transMgr
             );
             volDfn.getProps(SYS_CTX).setProp(volDfnTestKey, volDfnTestValue);
             volDfnUuid = volDfn.getUuid();
