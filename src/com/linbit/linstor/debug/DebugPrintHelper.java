@@ -18,11 +18,18 @@ public class DebugPrintHelper
 
     private final String sprtText;
 
-    public DebugPrintHelper()
+    private static final DebugPrintHelper instance = new DebugPrintHelper();
+
+    private DebugPrintHelper()
     {
         char[] sprtTextData = new char[SPRT_TEXT_LENGTH];
         Arrays.fill(sprtTextData, SPRT_TEXT_CHAR);
         sprtText = new String(sprtTextData);
+    }
+
+    public static DebugPrintHelper getInstance()
+    {
+        return instance;
     }
 
     public void printMissingParamError(

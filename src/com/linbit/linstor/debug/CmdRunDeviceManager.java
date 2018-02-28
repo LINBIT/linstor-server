@@ -47,8 +47,6 @@ public class CmdRunDeviceManager extends BaseDebugCmd
     private final ReadWriteLock rscDfnMapLock;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
 
-    private final DebugPrintHelper debugPrintHelper;
-
     @Inject
     public CmdRunDeviceManager(
         DeviceManager deviceManagerRef,
@@ -73,8 +71,6 @@ public class CmdRunDeviceManager extends BaseDebugCmd
         deviceManager = deviceManagerRef;
         rscDfnMapLock = rscDfnMapLockRef;
         rscDfnMap = rscDfnMapRef;
-
-        debugPrintHelper = new DebugPrintHelper();
     }
 
     @Override

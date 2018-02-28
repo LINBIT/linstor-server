@@ -25,7 +25,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
 
     final boolean acceptsUndeclared = false;
 
-    private final DebugPrintHelper debugPrintHelper;
+    final DebugPrintHelper debugPrintHelper;
 
     final Map<String, String> dspNameMap;
 
@@ -56,7 +56,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         paramDescr  = paramDescrRef;
         undeclDescr = undeclDescrRef;
 
-        debugPrintHelper = new DebugPrintHelper();
+        debugPrintHelper = DebugPrintHelper.getInstance();
     }
 
     @Override

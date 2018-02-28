@@ -36,7 +36,7 @@ public class FilteredObjectLister<SearchType>
         objectTypeName = objectTypeNameRef;
         objectHandler = objectHandlerRef;
 
-        debugPrintHelper = new DebugPrintHelper();
+        debugPrintHelper = DebugPrintHelper.getInstance();
     }
 
     public void execute(
