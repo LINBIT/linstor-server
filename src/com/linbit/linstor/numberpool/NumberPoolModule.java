@@ -25,8 +25,14 @@ import java.util.Iterator;
 public class NumberPoolModule extends AbstractModule
 {
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
-    public static final String UNINITIALIZED_MINOR_NUMBER_POOL = "UninitializedMinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
+
+    // Dependency names for the pools before they have been initialized with data from the DB.
+    // This is necessary because both:
+    // a) Initialization of the pools depends on the initial core data from the DB
+    // b) Initialization of the core data from the DB requires references to the pools to instantiate the data objects
+    // Hence to avoid circular dependencies, uninitialized pools are when loading the initial core data.
+    public static final String UNINITIALIZED_MINOR_NUMBER_POOL = "UninitializedMinorNumberPool";
     public static final String UNINITIALIZED_TCP_PORT_POOL = "UninitializedTcpPortPool";
 
     private static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
