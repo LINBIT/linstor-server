@@ -23,6 +23,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.DisklessDriverKind;
+import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.utils.StreamUtils;
 
 import java.util.ArrayList;
@@ -122,6 +124,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
 
             // build a map of storage pools the user has access to and have enough free space
+            // and are not diskless
             Map<StorPoolName, List<StorPool>> storPools = storPoolDfnMap.values().stream()
                 .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(accCtx).hasAccess(AccessType.USE))
                 .flatMap(storPoolDfn ->
@@ -129,6 +132,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                         getStorPoolIterator(storPoolDfn)
                     )
                 )
+                .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
                 .filter(storPool -> storPool.getNode().getObjProt().queryAccess(accCtx).hasAccess(AccessType.USE))
                 .filter(storPool -> getFreeSpace(storPool) >= rscSize)
                 .collect(
@@ -240,6 +244,20 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             );
         }
         return apiCallRc;
+    }
+
+    private StorageDriverKind getDriverKind(StorPool storPool)
+    {
+        StorageDriverKind driverKind;
+        try
+        {
+            driverKind = storPool.getDriverKind(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asImplError(exc);
+        }
+        return driverKind;
     }
 
     private List<Candidate> filterCandidates(
