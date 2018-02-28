@@ -12,12 +12,12 @@ public class TestAccessContextProvider
 
     static
     {
-        Initializer initializer = new Initializer();
+        SecurityModule securityModule = new SecurityModule();
 
         try
         {
-            SYS_CTX = (AccessContext) getDeclaredField(Initializer.class, "SYSTEM_CTX", initializer);
-            PUBLIC_CTX = (AccessContext) getDeclaredField(Initializer.class, "PUBLIC_CTX", initializer);
+            SYS_CTX = (AccessContext) getDeclaredField(SecurityModule.class, "SYSTEM_CTX", securityModule);
+            PUBLIC_CTX = (AccessContext) getDeclaredField(SecurityModule.class, "PUBLIC_CTX", securityModule);
 
             PrivilegeSet alicePrivSet = new PrivilegeSet();
             ALICE_ACC_CTX = new AccessContext(
