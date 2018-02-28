@@ -27,5 +27,7 @@ public interface DeviceManager extends DrbdStateChange
 
     void fullSyncApplied();
 
+    void abortDeviceHandlers();
+
     StltUpdateTracker getUpdateTracker();
 }

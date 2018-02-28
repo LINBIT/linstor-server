@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -113,6 +114,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private DeviceHandler drbdHnd;
 
     private boolean stateAvailable;
+    private volatile boolean abortDevHndFlag;
     private DrbdEventService drbdEvent;
 
     private WorkQueue workQ;
@@ -160,6 +162,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
         drbdEvent.addDrbdStateChangeObserver(this);
         stateAvailable = drbdEvent.isDrbdStateAvailable();
+        abortDevHndFlag = false;
     }
 
     /**
@@ -169,7 +172,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
-        DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(drbdHnd, rsc, phaseLockRef);
+        DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(this, drbdHnd, rsc, phaseLockRef);
 
         workQ.submit(devHndInv);
     }
@@ -214,6 +217,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
+            // If the device manager is currently dispatching device handlers,
+            // abort early and stop the service as soon as possible
+            abortDevHndFlag = true;
             shutdownFlag.set(true);
             svcCondFlag.set(true);
             sched.notify();
@@ -369,6 +375,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             svcCondFlag.set(true);
             sched.notify();
         }
+    }
+
+    @Override
+    public void abortDeviceHandlers()
+    {
+        abortDevHndFlag = true;
     }
 
     @Override
@@ -637,9 +649,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             reconfigurationLock.readLock().lock();
             try
             {
+                abortDevHndFlag = false;
                 NodeData localNode = controllerPeerConnector.getLocalNode();
-                for (ResourceName rscName : dispatchRscSet)
+                Iterator<ResourceName> rscNameIter = dispatchRscSet.iterator();
+                while (rscNameIter.hasNext() && !abortDevHndFlag)
                 {
+                    ResourceName rscName = rscNameIter.next();
                     // Dispatch resources that were affected by changes to worker threads
                     // and to the resource's respective handler
                     ResourceDefinition rscDfn = rscDfnMap.get(rscName);
@@ -668,11 +683,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 }
                 dispatchRscSet.clear();
 
-                errLog.logTrace("Waiting for resource handlers to finish");
+                if (abortDevHndFlag)
+                {
+                    errLog.logTrace("Stopped dispatching resource handlers due to abort request");
+                }
+
+                errLog.logTrace("Waiting for queued resource handlers to finish");
                 // Wait until the phase advances from the current phase number after all
                 // device handlers have finished
                 phaseLock.await();
-                errLog.logTrace("All resource handlers finished");
+                errLog.logTrace("All dispatched resource handlers finished");
 
                 // Cleanup deleted objects
                 deletedObjectsCleanup();
@@ -962,12 +982,19 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     static class DeviceHandlerInvocation implements Runnable
     {
+        private final DeviceManagerImpl devMgr;
         private final DeviceHandler handler;
         private final Resource rsc;
         private final SyncPoint phaseLock;
 
-        DeviceHandlerInvocation(DeviceHandler handlerRef, Resource rscRef, SyncPoint phaseLockRef)
+        DeviceHandlerInvocation(
+            DeviceManagerImpl devMgrRef,
+            DeviceHandler handlerRef,
+            Resource rscRef,
+            SyncPoint phaseLockRef
+        )
         {
+            devMgr = devMgrRef;
             handler = handlerRef;
             rsc = rscRef;
             phaseLock = phaseLockRef;
@@ -979,7 +1006,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             try
             {
-                handler.dispatchResource(rsc);
+                if (!devMgr.abortDevHndFlag)
+                {
+                    handler.dispatchResource(rsc);
+                }
             }
             finally
             {
