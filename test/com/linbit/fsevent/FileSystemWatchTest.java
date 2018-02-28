@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -21,6 +22,7 @@ import org.junit.rules.TemporaryFolder;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.timer.Delay;
 
 /**
@@ -42,24 +44,52 @@ public class FileSystemWatchTest
     {
     }
 
-    private void createFile(String fileName)
+
+    private void createFile(String fileNameRef)
+    {
+        createFile(null, fileNameRef);
+    }
+
+    private void createFile(File parent, String fileNameRef)
     {
         String rootTestFolder = testFolder.getRoot().getAbsolutePath();
 
-
+        String fileName = fileNameRef;
         if (fileName.startsWith(rootTestFolder))
         {
             fileName = fileName.substring(rootTestFolder.length());
         }
         try
         {
-            testFolder.newFile(fileName);
+            if (parent == null)
+            {
+                testFolder.newFile(fileName);
+            }
+            else
+            {
+                Files.createFile(parent.toPath().resolve(fileName));
+            }
         }
         catch (IOException exc)
         {
             exc.printStackTrace();
             fail(String.format("Test failed, failed to create file '%s'", fileName));
         }
+    }
+
+    private File createFolder(String folderPath)
+    {
+        File folder = null;
+        try
+        {
+            folder = Files.createDirectories(Paths.get(folderPath)).toFile();
+        }
+        catch (IOException exc)
+        {
+            exc.printStackTrace();
+            fail(String.format("Test failed, failed to create folder '%s'", folderPath));
+        }
+        return folder;
     }
 
     private void deleteFile(String fileName)
@@ -126,7 +156,7 @@ public class FileSystemWatchTest
     {
         try
         {
-            fsw = new FileSystemWatch();
+            fsw = new FileSystemWatch(new EmptyErrorReporter());
             fsw.start();
         }
         catch (IOException ioExc)
@@ -143,9 +173,9 @@ public class FileSystemWatchTest
         {
             fsw.cancelAllWatchKeys();
         }
-        catch (IOException e)
+        catch (IOException exc)
         {
-            e.printStackTrace();
+            exc.printStackTrace();
         }
     }
 
@@ -176,13 +206,14 @@ public class FileSystemWatchTest
     /**
      * Waits for a single file to be created in a folder that doesn't exist yet.
      */
-    @Ignore
     @Test
     public void singleFileCreateWithoutParentTest() throws Exception
     {
-        String testFile = testFilePath("nonexisting/testfile.txt");
+        String fileName = "testfile.txt";
+        String folderName = "nonexisting";
+        String testFile = testFilePath(folderName + File.separator + fileName);
         deleteFile(testFile);
-        String folderPath = testFilePath("nonexisting");
+        String folderPath = testFilePath(folderName);
         deleteFile(folderPath);
 
         FileEventReceiver rec = new FileEventReceiver();
@@ -191,9 +222,10 @@ public class FileSystemWatchTest
         FileEntry entry = fsw.newFileEntry(testFile, FileSystemWatch.Event.CREATE, rec);
 
         // Create the file; should trigger the FileEventReceiver
-        createFile(testFile);
+        File folder = createFolder(folderPath);
+        createFile(folder, fileName);
         // Delete file; should not trigger the FileEventReceiver
-        deleteFile(testFile);
+        deleteFile(fileName + File.separator + testFile);
 
         Delay.sleep(TEST_DELAY);
 
@@ -598,7 +630,7 @@ public class FileSystemWatchTest
                     try
                     {
                         entryGroup.waitGroup();
-//                        System.out.println("multiFileConcurrentTest(): waitGroup() returned");
+                        // System.out.println("multiFileConcurrentTest(): waitGroup() returned");
                         flag.set(true);
                     }
                     catch (InterruptedException ignored)
@@ -639,7 +671,7 @@ public class FileSystemWatchTest
     /**
      * Tests the rollback when adding on of the entries for a new FileEntryGroup fails
      */
-    @Test(expected=IOException.class)
+    @Test(expected = IOException.class)
     public void multiFileRollbackTest() throws IOException
     {
         FileEntryGroupBuilder gBuilder = new FileEntryGroupBuilder();
@@ -662,18 +694,6 @@ public class FileSystemWatchTest
 
         EntryGroupReceiver gRec = new EntryGroupReceiver();
         final FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
-    }
-
-    /**
-     * Attempts to watch a directory that does not exist
-     */
-    @Test(expected=IOException.class)
-    public void watchNonexistentDirectoryTest() throws Exception
-    {
-        FileEntry testEntry = fsw.newFileEntry(
-            "/this/path/should/not/exist", FileSystemWatch.Event.CREATE,
-            new FileEventReceiver()
-        );
     }
 
     private static class FileEventReceiver implements FileObserver

@@ -7,14 +7,17 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.MathUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
@@ -101,9 +104,12 @@ public class FileSystemWatch implements Runnable, SystemService
     // This map enables fast lookup of FileEntry objects by path
     private final Map<Path, Set<FileEntry>> fileMap;
 
+    private final ErrorReporter errorReporter;
+
     @Inject
-    public FileSystemWatch() throws IOException
+    public FileSystemWatch(ErrorReporter errorReporterRef) throws IOException
     {
+        errorReporter = errorReporterRef;
         serviceInstanceName = SERVICE_NAME;
 
         mapLock = new Object();
@@ -618,26 +624,33 @@ public class FileSystemWatch implements Runnable, SystemService
 
     private void addWatcher(Path watchPath, Entry watchEntry) throws IOException
     {
-        synchronized (mapLock)
+        if (Files.notExists(watchPath))
         {
-            // If the directory referenced by the FileEntry is not currently
-            // being watched, register the directory and create a new entry
-            // for it in the watchMap. Otherwise, add the FileEntry to the
-            // list of watchers associated with the corresponding watchMap
-            // entry.
-            WatchMapEntry wMapEntry = watchMap.get(watchPath);
-            if (wMapEntry == null)
+            new NonExistingParentEntry(this, watchPath, watchEntry).handleNextEntry();
+        }
+        else
+        {
+            synchronized (mapLock)
             {
-                WatchKey key = watchPath.register(
-                    wSvc,
-                    StandardWatchEventKinds.ENTRY_CREATE,
-                    StandardWatchEventKinds.ENTRY_DELETE,
-                    StandardWatchEventKinds.ENTRY_MODIFY
-                );
-                wMapEntry = new WatchMapEntry(key);
-                watchMap.put(watchPath, wMapEntry);
+                // If the directory referenced by the FileEntry is not currently
+                // being watched, register the directory and create a new entry
+                // for it in the watchMap. Otherwise, add the FileEntry to the
+                // list of watchers associated with the corresponding watchMap
+                // entry.
+                WatchMapEntry wMapEntry = watchMap.get(watchPath);
+                if (wMapEntry == null)
+                {
+                    WatchKey key = watchPath.register(
+                        wSvc,
+                        StandardWatchEventKinds.ENTRY_CREATE,
+                        StandardWatchEventKinds.ENTRY_DELETE,
+                        StandardWatchEventKinds.ENTRY_MODIFY
+                    );
+                    wMapEntry = new WatchMapEntry(key);
+                    watchMap.put(watchPath, wMapEntry);
+                }
+                wMapEntry.entries.add(watchEntry);
             }
-            wMapEntry.entries.add(watchEntry);
         }
     }
 
@@ -986,6 +999,105 @@ public class FileSystemWatch implements Runnable, SystemService
         {
             key = keyRef;
             entries = new TreeSet<>();
+        }
+    }
+
+    private class NonExistingParentEntry implements DirectoryObserver
+    {
+        private final Path origWatchPath;
+        private final FileSystemWatch fsw;
+        private final Entry origEntry;
+        private final boolean isFileEntry;
+        private DirectoryEntry lastDirWatchEntry = null;
+
+        NonExistingParentEntry(
+            FileSystemWatch fswRef,
+            Path origWatchPathRef,
+            Entry origEntryRef
+        )
+        {
+            fsw = fswRef;
+            origWatchPath = origWatchPathRef;
+            origEntry = origEntryRef;
+            isFileEntry = origEntryRef instanceof FileEntry;
+        }
+
+        public void handleNextEntry()
+        {
+            try
+            {
+                Path watchPath = origWatchPath;
+
+                boolean useOrigEntry;
+
+                int missingParents = 0;
+                if (Files.notExists(watchPath))
+                {
+                    useOrigEntry = false;
+                    while (Files.notExists(watchPath))
+                    {
+                        missingParents++;
+                        watchPath = watchPath.getParent();
+                    }
+                }
+                else
+                {
+                    useOrigEntry = true;
+                }
+
+                boolean fileEntryReached = missingParents == 0 && isFileEntry;
+                if (Files.isDirectory(watchPath) && !fileEntryReached)
+                {
+                    if (useOrigEntry)
+                    {
+                        fsw.newDirectoryEntry(
+                            watchPath.toString(),
+                            origEntry.watchEvent,
+                            ((DirectoryEntry) origEntry).dObserver
+                        );
+                    }
+                    else
+                    {
+                        if (lastDirWatchEntry != null)
+                        {
+                            fsw.removeDirectoryEntry(lastDirWatchEntry);
+                        }
+                        lastDirWatchEntry = fsw.newDirectoryEntry(watchPath.toString(), Event.CREATE, this);
+                    }
+                }
+                else
+                {
+                    if (lastDirWatchEntry != null)
+                    {
+                        fsw.removeDirectoryEntry(lastDirWatchEntry);
+                    }
+                    // if watchPath is a not a directoy, we are done - no need to check useOrigEntry
+                    if (isFileEntry)
+                    {
+                        fsw.addFileEntry((FileEntry) origEntry);
+                    }
+                    else
+                    {
+                        fsw.addDirectoryEntry((DirectoryEntry) origEntry);
+                    }
+                }
+
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(
+                    ioExc,
+                    null,
+                    null,
+                    "An IO exception occured when trying to register a file watch event"
+                );
+            }
+        }
+
+        @Override
+        public void directoryEvent(DirectoryEntry watchEntry, Path filePath)
+        {
+            handleNextEntry();
         }
     }
 

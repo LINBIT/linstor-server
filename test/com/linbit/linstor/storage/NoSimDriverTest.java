@@ -64,7 +64,7 @@ public abstract class NoSimDriverTest
     public NoSimDriverTest(StorageDriverKind driverKind) throws IOException
     {
         errorReporter = new DefaultErrorStreamErrorReporter();
-        fileSystemWatch = new FileSystemWatch();
+        fileSystemWatch = new FileSystemWatch(errorReporter);
         timer = new CoreTimerImpl();
 
         extCommand = new DebugExtCmd(timer, errorReporter);

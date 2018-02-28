@@ -17,9 +17,9 @@ public class EmptyErrorReporter implements ErrorReporter
         this(true);
     }
 
-    public EmptyErrorReporter(boolean printStacktraces)
+    public EmptyErrorReporter(boolean printStacktracesRef)
     {
-        this.printStacktraces = printStacktraces;
+        printStacktraces = printStacktracesRef;
     }
 
     @Override
@@ -38,7 +38,13 @@ public class EmptyErrorReporter implements ErrorReporter
     }
 
     @Override
-    public String reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(
+        Level logLevel,
+        Throwable errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
     {
         // ignore
         return null; // no error report, no logName
