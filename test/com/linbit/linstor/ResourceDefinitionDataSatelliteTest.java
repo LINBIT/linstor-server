@@ -10,12 +10,14 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.TestSecurityModule;
+import com.linbit.linstor.testutils.TestCoreModule;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,6 +55,7 @@ public class ResourceDefinitionDataSatelliteTest
             new LoggingModule(new StdErrorReporter("TESTS", "")),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
+            new TestCoreModule(),
             new SatelliteDbModule()
         );
         injector.injectMembers(this);

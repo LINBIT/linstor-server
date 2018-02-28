@@ -11,6 +11,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.netcom.Peer;
 
 import java.util.Map;
@@ -33,17 +34,14 @@ public class CoreModule extends AbstractModule
         bind(new TypeLiteral<Map<ServiceName, SystemService>>() {})
             .toInstance(new TreeMap<ServiceName, SystemService>());
 
-        bind(NodesMap.class).toInstance(new NodesMapImpl());
-        bind(new TypeLiteral<Map<NodeName, Node>>() {}).to(NodesMap.class);
-
-        bind(ResourceDefinitionMap.class).toInstance(new ResourceDefinitionMapImpl());
-        bind(new TypeLiteral<Map<ResourceName, ResourceDefinition>>() {}).to(ResourceDefinitionMap.class);
-
-        bind(StorPoolDefinitionMap.class).toInstance(new StorPoolDefinitionMapImpl());
-        bind(new TypeLiteral<Map<StorPoolName, StorPoolDefinition>>() {}).to(StorPoolDefinitionMap.class);
+        bind(NodesMap.class).annotatedWith(Uninitialized.class)
+            .toInstance(new NodesMapImpl());
+        bind(ResourceDefinitionMap.class).annotatedWith(Uninitialized.class)
+            .toInstance(new ResourceDefinitionMapImpl());
+        bind(StorPoolDefinitionMap.class).annotatedWith(Uninitialized.class)
+            .toInstance(new StorPoolDefinitionMapImpl());
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
-        bind(new TypeLiteral<Map<String, Peer>>() {}).to(PeerMap.class);
 
         bind(ReadWriteLock.class).annotatedWith(Names.named(RECONFIGURATION_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));

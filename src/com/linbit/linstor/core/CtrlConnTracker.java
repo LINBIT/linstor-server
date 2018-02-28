@@ -17,13 +17,13 @@ import javax.inject.Singleton;
 class CtrlConnTracker implements ConnectionObserver
 {
     private final CtrlClientSerializer ctrlClientSerializer;
-    private final Map<String, Peer> peerMap;
+    private final CoreModule.PeerMap peerMap;
     private final ReconnectorTask reconnectorTask;
 
     @Inject
     CtrlConnTracker(
         CtrlClientSerializer ctrlClientSerializerRef,
-        Map<String, Peer> peerMapRef,
+        CoreModule.PeerMap peerMapRef,
         ReconnectorTask reconnectorTaskRef
     )
     {

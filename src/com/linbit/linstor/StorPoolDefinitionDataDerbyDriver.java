@@ -3,6 +3,8 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -46,7 +48,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         " WHERE " + SPD_NAME + " = ?";
 
     private final ErrorReporter errorReporter;
-    private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
@@ -54,7 +56,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     @Inject
     public StorPoolDefinitionDataDerbyDriver(
         ErrorReporter errorReporterRef,
-        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef,
+        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef
     )

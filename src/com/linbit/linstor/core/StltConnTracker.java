@@ -1,19 +1,15 @@
 package com.linbit.linstor.core;
 
-import java.util.Map;
-
 import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 
 class StltConnTracker implements ConnectionObserver
 {
-    private final Satellite satellite;
-    private final Map<String, Peer> peerMap;
+    private final CoreModule.PeerMap peerMap;
 
-    StltConnTracker(Satellite satelliteRef, Map<String, Peer> peerMapRef)
+    StltConnTracker(CoreModule.PeerMap peerMapRef)
     {
-        satellite = satelliteRef;
         peerMap = peerMapRef;
     }
 

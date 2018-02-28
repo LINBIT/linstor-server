@@ -5,14 +5,11 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.WorkerPool;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -28,7 +25,6 @@ import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
@@ -113,24 +109,10 @@ public final class Satellite extends LinStor
     private Map<ServiceName, SystemService> systemServicesMap;
 
     // Map of connected peers
-    private Map<String, Peer> peerMap;
+    private CoreModule.PeerMap peerMap;
 
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
-
-    // Satellite configuration properties
-    Props stltConf;
-
-    // Map of all managed nodes
-    Map<NodeName, Node> nodesMap;
-
-    // Map of all resource definitions
-    Map<ResourceName, ResourceDefinition> rscDfnMap;
-
-    // Map of all storage pools
-    Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
-
-    private ControllerPeerConnector controllerPeerConnector;
 
     // Device manager
     private DeviceManagerImpl devMgr = null;
@@ -190,17 +172,11 @@ public final class Satellite extends LinStor
             timerEventSvc = injector.getInstance(CoreTimer.class);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            // Initialize LinStor objects maps
             peerMap = injector.getInstance(CoreModule.PeerMap.class);
-            nodesMap = injector.getInstance(CoreModule.NodesMap.class);
-            rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
-            storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
             applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
 
             updateMonitor = injector.getInstance(UpdateMonitor.class);
-
-            controllerPeerConnector = injector.getInstance(ControllerPeerConnector.class);
 
             apiCallHandler = injector.getInstance(StltApiCallHandler.class);
 
@@ -324,7 +300,7 @@ public final class Satellite extends LinStor
                     bindAddress,
                     publicCtx,
                     initCtx,
-                    new StltConnTracker(this, peerMap)
+                    new StltConnTracker(peerMap)
                 );
             }
             else
@@ -345,7 +321,7 @@ public final class Satellite extends LinStor
                         bindAddress,
                         publicCtx,
                         initCtx,
-                        new StltConnTracker(this, peerMap),
+                        new StltConnTracker(peerMap),
                         sslProtocol,
                         keyStoreFile,
                         keyStorePasswd,

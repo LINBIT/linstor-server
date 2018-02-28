@@ -8,6 +8,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
@@ -79,7 +81,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final Map<ResourceName, ResourceDefinition> resDfnMap;
+    private final CoreModule.ResourceDefinitionMap resDfnMap;
 
     private final Map<ResourceName, ResourceDefinitionData> rscDfnCache;
     private boolean cacheCleared = false;
@@ -97,7 +99,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     public ResourceDefinitionDataDerbyDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        Map<ResourceName, ResourceDefinition> resDfnMapRef,
+        @Uninitialized CoreModule.ResourceDefinitionMap resDfnMapRef,
         Provider<ResourceDataDerbyDriver> resourceDriverProviderRef,
         Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,

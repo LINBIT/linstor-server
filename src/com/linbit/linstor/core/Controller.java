@@ -135,9 +135,6 @@ public final class Controller extends LinStor
     // Satellite reconnector service
     private TaskScheduleService taskScheduleService;
 
-    // Map of connected peers
-    private Map<String, Peer> peerMap;
-
     private NetComContainer netComContainer;
 
     private ApplicationLifecycleManager applicationLifecycleManager;
@@ -147,22 +144,9 @@ public final class Controller extends LinStor
 
     // Controller configuration properties
     Props ctrlConf;
-    ObjectProtection ctrlConfProt;
 
-    // ============================================================
-    // LinStor objects
-    //
     // Map of all managed nodes
     Map<NodeName, Node> nodesMap;
-    ObjectProtection nodesMapProt;
-
-    // Map of all resource definitions
-    Map<ResourceName, ResourceDefinition> rscDfnMap;
-    ObjectProtection rscDfnMapProt;
-
-    // Map of all storage pools
-    Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
-    ObjectProtection storPoolDfnMapProt;
 
     private ReconnectorTask reconnectorTask;
     private ConnectionObserver ctrlConnTracker;
@@ -245,43 +229,26 @@ public final class Controller extends LinStor
 
             systemServicesMap = injector.getInstance(Key.get(new TypeLiteral<Map<ServiceName, SystemService>>() {}));
 
+            dbConnPool = injector.getInstance(DbConnectionPool.class);
+            systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
+
+            // Object protection loading has a hidden dependency on initializing the security objects
+            // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP)
+            initializeSecurityObjects(errorReporter, initCtx);
+
             taskScheduleService = new TaskScheduleService(errorReporter);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
             timerEventSvc = injector.getInstance(CoreTimer.class);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            dbConnPool = injector.getInstance(DbConnectionPool.class);
-            systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
-
-            // Initialize LinStor objects maps
-            peerMap = injector.getInstance(CoreModule.PeerMap.class);
             nodesMap = injector.getInstance(CoreModule.NodesMap.class);
-            rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
-            storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
             idAuthentication = injector.getInstance(Authentication.class);
 
             ctrlConf = injector.getInstance(Key.get(Props.class, Names.named(ControllerCoreModule.CONTROLLER_PROPS)));
 
-            // Object protection loading has a hidden dependency on initializing the security objects
-            // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP)
-            initializeSecurityObjects(errorReporter, initCtx);
-
             applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
-
-            nodesMapProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.NODES_MAP_PROT)));
-            rscDfnMapProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.RSC_DFN_MAP_PROT)));
-            storPoolDfnMapProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)));
-            ctrlConfProt = injector.getInstance(
-                Key.get(ObjectProtection.class, Names.named(ControllerSecurityModule.CTRL_CONF_PROT)));
-
-            errorReporter.logInfo("Core objects load from database is in progress");
-            loadCoreObjects(initCtx);
-            errorReporter.logInfo("Core objects load from database completed");
 
             netComContainer = injector.getInstance(NetComContainer.class);
 
@@ -460,72 +427,6 @@ public final class Controller extends LinStor
             "Current security level is %s",
             SecurityLevel.get().name()
         );
-    }
-
-    private void loadCoreObjects(AccessContext initCtx)
-        throws AccessDeniedException, InitializationException
-    {
-        TransactionMgr transMgr = null;
-        try
-        {
-            transMgr = new TransactionMgr(dbConnPool);
-            nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
-            rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
-            storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
-
-            Lock recfgWriteLock = reconfigurationLock.writeLock();
-            try
-            {
-
-                // Replacing the entire configuration requires locking out all other tasks
-                //
-                // Since others task that use the configuration must hold the reconfiguration lock
-                // in read mode before locking any of the other system objects, locking the maps
-                // for nodes, resource definition, storage pool definitions, etc. can be skipped.
-                recfgWriteLock.lock();
-
-                // Clear the maps of any existing objects
-                //
-                // TODO: It would be better to keep the current configuration while trying to
-                //       load a new configuration, and only if loading the new configuration succeeded,
-                //       clear the old configuration and replace it with the new one
-                nodesMap.clear();
-                rscDfnMap.clear();
-                storPoolDfnMap.clear();
-
-                // Reload all objects
-                //
-                // FIXME: Loading or reloading the configuration must ensure to either load everything
-                //        or nothing to prevent ending up with a half-loaded configuration.
-                //        See also the TODO above.
-                injector.getInstance(DatabaseDriver.class).loadAll(transMgr);
-            }
-            finally
-            {
-                recfgWriteLock.unlock();
-            }
-        }
-        catch (SQLException exc)
-        {
-            throw new InitializationException(
-                "Loading the core objects from the database failed",
-                exc
-            );
-        }
-        finally
-        {
-            if (transMgr != null)
-            {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (Exception ignored)
-                {
-                }
-                dbConnPool.returnConnection(transMgr);
-            }
-        }
     }
 
     private void initNetComServices(

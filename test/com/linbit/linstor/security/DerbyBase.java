@@ -41,6 +41,7 @@ import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.testutils.TestCoreModule;
 import com.linbit.utils.UuidUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -138,7 +139,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     @Before
     public void setUp() throws Exception
     {
-        setUp(Modules.EMPTY_MODULE);
+        setUp(new TestCoreModule());
     }
 
     public void setUp(Module additionalModule) throws Exception

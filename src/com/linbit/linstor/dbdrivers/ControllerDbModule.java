@@ -23,6 +23,7 @@ import com.linbit.linstor.VolumeConnectionDataDerbyDriver;
 import com.linbit.linstor.VolumeDataDerbyDriver;
 import com.linbit.linstor.VolumeDefinitionDataDerbyDriver;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -90,7 +91,7 @@ public class ControllerDbModule extends AbstractModule
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactory,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
         DbConnectionPool dbConnPool,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMap
+        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap
     )
         throws AccessDeniedException
     {

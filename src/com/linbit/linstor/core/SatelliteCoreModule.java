@@ -1,12 +1,14 @@
 package com.linbit.linstor.core;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -40,6 +42,14 @@ public class SatelliteCoreModule extends AbstractModule
     {
         bind(String.class).annotatedWith(Names.named(CoreModule.MODULE_NAME))
             .toInstance(Satellite.MODULE);
+
+        // Core maps do not require initialization on the satellite
+        bind(CoreModule.NodesMap.class)
+            .to(Key.get(CoreModule.NodesMap.class, Uninitialized.class));
+        bind(CoreModule.ResourceDefinitionMap.class)
+            .to(Key.get(CoreModule.ResourceDefinitionMap.class, Uninitialized.class));
+        bind(CoreModule.StorPoolDefinitionMap.class)
+            .to(Key.get(CoreModule.StorPoolDefinitionMap.class, Uninitialized.class));
 
         bind(ReadWriteLock.class).annotatedWith(Names.named(STLT_CONF_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));

@@ -7,6 +7,8 @@ import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -74,7 +76,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private final Map<NodeName, Node> nodeCache;
     private boolean cacheCleared = false;
 
-    private final Map<NodeName, Node> nodesMap;
+    private final CoreModule.NodesMap nodesMap;
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
@@ -95,7 +97,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     public NodeDataDerbyDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Map<NodeName, Node> nodesMapRef,
+        @Uninitialized CoreModule.NodesMap nodesMapRef,
         Provider<NetInterfaceDataDerbyDriver> netInterfaceDriverProviderRef,
         Provider<SatelliteConnectionDataDerbyDriver> satelliteConnectionDriverProviderRef,
         Provider<ResourceDataDerbyDriver> resourceDataDriverProviderRef,

@@ -19,6 +19,8 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataDerbyDriver;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeDataDerbyDriver;
+import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
@@ -57,9 +59,9 @@ public class DerbyDriver implements DatabaseDriver
     private final StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriver;
     private final StorPoolDataDerbyDriver storPoolDriver;
 
-    private final Map<NodeName, Node> nodesMap;
-    private final Map<ResourceName, ResourceDefinition> rscDfnMap;
-    private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+    private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     @Inject
     public DerbyDriver(
@@ -69,9 +71,9 @@ public class DerbyDriver implements DatabaseDriver
         VolumeDataDerbyDriver volumeDriverRef,
         StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriverRef,
         StorPoolDataDerbyDriver storPoolDriverRef,
-        Map<NodeName, Node> nodesMapRef,
-        Map<ResourceName, ResourceDefinition> rscDfnMapRef,
-        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
+        @Uninitialized CoreModule.NodesMap nodesMapRef,
+        @Uninitialized CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
     )
     {
         nodeDriver = nodeDriverRef;
