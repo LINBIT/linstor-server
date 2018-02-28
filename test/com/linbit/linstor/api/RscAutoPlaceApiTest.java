@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -393,16 +392,14 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     {
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);
 
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
             BOB_ACC_CTX,
             new ResourceName(rscNameStr),
-            new TcpPortNumber(tcpPort),
+            tcpPort,
             null,
             "NotTellingYou",
             ResourceDefinition.TransportType.IP,
-            transMgr,
-            true,
-            true
+            transMgr
         );
 
         transMgr.commit();

@@ -22,7 +22,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionDataFactory;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinitionDataFactory;
+import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
@@ -99,6 +99,12 @@ public abstract class DerbyBase implements DerbyTestConstants
     @Mock @Bind @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL)
     protected DynamicNumberPool uninitializedMinorNrPoolMock;
 
+    @Mock @Bind @Named(NumberPoolModule.TCP_PORT_POOL)
+    protected DynamicNumberPool tcpPortPoolMock;
+
+    @Mock @Bind @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL)
+    protected DynamicNumberPool uninitializedTcpPortPoolMock;
+
     @Inject private DbAccessor secureDbDriver;
     @Inject private DatabaseDriver persistenceDbDriver;
     @Inject protected CoreModule.NodesMap nodesMap;
@@ -116,7 +122,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     @Inject protected StorPoolDataFactory storPoolDataFactory;
     @Inject protected VolumeDataFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
-    @Inject protected ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
 
     @BeforeClass

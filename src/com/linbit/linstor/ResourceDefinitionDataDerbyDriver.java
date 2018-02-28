@@ -14,6 +14,8 @@ import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -25,6 +27,7 @@ import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.PreparedStatement;
@@ -94,6 +97,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private final Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProvider;
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
+    private final DynamicNumberPool tcpPortPool;
 
     @Inject
     public ResourceDefinitionDataDerbyDriver(
@@ -103,7 +107,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         Provider<ResourceDataDerbyDriver> resourceDriverProviderRef,
         Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef
     )
     {
         dbCtx = accCtx;
@@ -112,6 +117,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         volumeDefinitionDriverProvider = volumeDefinitionDriverProviderRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        tcpPortPool = tcpPortPoolRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
         portDriver = new PortDriver();
         transTypeDriver = new TransportTypeDriver();
@@ -260,6 +266,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     objProt,
                     resourceName,
                     port,
+                    tcpPortPool,
                     resultSet.getLong(RD_FLAGS),
                     resultSet.getString(RD_SECRET),
                     TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),

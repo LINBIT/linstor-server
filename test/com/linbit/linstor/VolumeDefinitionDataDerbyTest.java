@@ -30,12 +30,10 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                      VLM_SIZE + ", " + VLM_MINOR_NR + ", " + VLM_FLAGS +
         " FROM " + TBL_VOLUME_DEFINITIONS;
 
-    @Mock private DynamicNumberPool minorNrPool;
-
     private TransactionMgr transMgr;
 
     private ResourceName resName;
-    private TcpPortNumber resPort;
+    private Integer resPort;
     private ResourceDefinition resDfn;
 
     private java.util.UUID uuid;
@@ -59,23 +57,23 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         resName = new ResourceName("TestResource");
-        resPort = new TcpPortNumber(9001);
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+        resPort = 9001;
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
         );
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter, propsContainerFactory, minorNrPool);
+        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter, propsContainerFactory, minorNrPoolMock);
         volDfn = new VolumeDefinitionData(
             uuid,
             SYS_CTX,
             resDfn,
             volNr,
             new MinorNumber(minor),
-            minorNrPool,
+            minorNrPoolMock,
             volSize,
             VlmDfnFlags.DELETE.flagValue,
             transMgr,
@@ -119,16 +117,15 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.create(
                 SYS_CTX,
                 new ResourceName("TestResource2"),
                 resPort,
                 null,
                 "secret",
                 TransportType.IP,
-                transMgr,
-                true,
-                false);
+                transMgr
+        );
 
         volumeDefinitionDataFactory.create(
             SYS_CTX,

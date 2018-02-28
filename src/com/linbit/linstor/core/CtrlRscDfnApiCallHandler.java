@@ -14,7 +14,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceDefinitionDataFactory;
+import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
@@ -33,8 +33,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -65,9 +63,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final long defaultAlSize;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
-    private final DynamicNumberPool tcpPortPool;
     private final MetaDataApi metaDataApi;
-    private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
 
     @Inject
@@ -82,10 +79,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         @Named(ConfigModule.CONFIG_AL_SIZE) long defaultAlSizeRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        @TcpPortPool DynamicNumberPool tcpPortPoolRef,
         MetaDataApi metaDataApiRef,
         CtrlObjectFactories objectFactories,
-        ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
     )
     {
@@ -105,7 +101,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         defaultAlSize = defaultAlSizeRef;
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
-        tcpPortPool = tcpPortPoolRef;
         metaDataApi = metaDataApiRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
@@ -583,7 +578,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private ResourceDefinitionData createRscDfn(
         String rscNameStr,
         String transportTypeStr,
-        Integer portIntRef,
+        Integer portInt,
         String secret
     )
     {
@@ -609,17 +604,18 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         ResourceName rscName = asRscName(rscNameStr);
 
-        Integer portInt = portIntRef;
+        ResourceDefinitionData rscDfn;
         try
         {
-            if (portInt == null)
-            {
-                portInt = tcpPortPool.autoAllocate();
-            }
-            else
-            {
-                tcpPortPool.allocate(portInt);
-            }
+            rscDfn = resourceDefinitionDataFactory.create(
+                currentAccCtx.get(),
+                rscName,
+                portInt,
+                null, // RscDfnFlags
+                secret,
+                transportType,
+                currentTransMgr.get()
+            );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
         {
@@ -636,25 +632,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             throw asExc(
                 exc,
-                "Could not find free tcp port in range " +
-                    tcpPortPool.getRangeMin() + " - " + tcpPortPool.getRangeMax(),
+                "Could not find free tcp port",
                 ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
-            );
-        }
-
-        ResourceDefinitionData rscDfn;
-        try
-        {
-            rscDfn = resourceDefinitionDataFactory.getInstance(
-                currentAccCtx.get(),
-                rscName,
-                asTcpPortNumber(portInt),
-                null, // RscDfnFlags
-                secret,
-                transportType,
-                currentTransMgr.get(),
-                true, // persist this entry
-                true // throw exception if the entry exists
             );
         }
         catch (AccessDeniedException accDeniedExc)

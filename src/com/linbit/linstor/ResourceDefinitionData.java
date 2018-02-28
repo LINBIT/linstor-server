@@ -4,8 +4,11 @@ import com.linbit.ErrorCheck;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -45,6 +48,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // Tcp Port
     private final TransactionSimpleObject<ResourceDefinitionData, TcpPortNumber> port;
 
+    private final DynamicNumberPool tcpPortPool;
+
     // Volumes of the resource
     private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
@@ -73,6 +78,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ObjectProtection objProtRef,
         ResourceName resName,
         TcpPortNumber portRef,
+        DynamicNumberPool tcpPortPoolRef,
         long initialFlags,
         String secretRef,
         TransportType transTypeRef,
@@ -90,6 +96,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         resourceName = resName;
         secret = secretRef;
         dbDriver = dbDriverRef;
+        tcpPortPool = tcpPortPoolRef;
 
         port = new TransactionSimpleObject<>(this, portRef, this.dbDriver.getPortDriver());
         volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
@@ -230,9 +237,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr) throws AccessDeniedException, SQLException
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr)
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
+        if (tcpPortPool != null)
+        {
+            tcpPortPool.deallocate(port.get().value);
+            tcpPortPool.allocate(portNr.value);
+        }
         return this.port.set(portNr);
     }
 
@@ -307,6 +320,11 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             }
 
             rscDfnProps.delete();
+
+            if (tcpPortPool != null)
+            {
+                tcpPortPool.deallocate(port.get().value);
+            }
 
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);

@@ -256,7 +256,7 @@ public class NodeDataDerbyTest extends DerbyBase
         // resDfn
         ResourceName resName = new ResourceName("TestResName");
         java.util.UUID resDfnUuid;
-        TcpPortNumber resPort = new TcpPortNumber(9001);
+        int resPort = 9001;
         String resDfnTestKey = "resDfnTestKey";
         String resDfnTestValue = "resDfnTestValue";
         TransportType transportType = TransportType.IP;
@@ -366,16 +366,14 @@ public class NodeDataDerbyTest extends DerbyBase
             nodesMap.put(node2.getName(), node2);
 
             // resDfn
-            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.getInstance(
+            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.create(
                 SYS_CTX,
                 resName,
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
                 transportType,
-                transMgr,
-                true,
-                true
+                transMgr
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
@@ -568,7 +566,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertNotNull(resDfn);
                 assertEquals(RscDfnFlags.DELETE.flagValue, resDfn.getFlags().getFlagsBits(SYS_CTX));
                 assertEquals(resName, resDfn.getName());
-                assertEquals(resPort, resDfn.getPort(SYS_CTX));
+                assertEquals(resPort, resDfn.getPort(SYS_CTX).value);
                 assertNotNull(resDfn.getObjProt());
                 {
                     Props resDfnProps = resDfn.getProps(SYS_CTX);

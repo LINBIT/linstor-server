@@ -37,7 +37,7 @@ public class ResourceDefinitionDataSatelliteTest
     private java.util.UUID resDfnUuid;
 
     @Inject private VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
-    @Inject private ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    @Inject private ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
 
     public ResourceDefinitionDataSatelliteTest() throws InvalidNameException, ValueOutOfRangeException
     {

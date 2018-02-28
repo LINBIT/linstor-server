@@ -478,16 +478,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = objectFactories.getResourceDefinitionDataFactory().getInstance(
-                currentAccCtx.get(),
+            rscDfn = objectFactories.getResourceDefinitionDataFactory().load(
                 rscName,
-                null, // port
-                null, // flags
-                null, // secret
-                null, // transType
-                currentTransMgr.get(),
-                false,
-                false
+                currentTransMgr.get()
             );
 
             if (failIfNull && rscDfn == null)
@@ -503,21 +496,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 );
             }
 
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "load resource definition '" + rscName.displayValue + "'.",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading resource definition caused DataAlreadyExistsExc.",
-                dataAlreadyExistsExc
-            );
         }
         catch (SQLException sqlExc)
         {

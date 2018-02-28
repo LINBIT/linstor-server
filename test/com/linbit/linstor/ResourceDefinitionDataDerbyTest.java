@@ -35,7 +35,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
-    private final TcpPortNumber port;
+    private final int port;
     private final NodeName nodeName;
     private final String secret;
     private final TransportType transportType;
@@ -53,7 +53,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public ResourceDefinitionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         resName = new ResourceName("TestResName");
-        port = new TcpPortNumber(4242);
+        port = 4242;
         nodeName = new NodeName("TestNodeName1");
         secret = "secret";
         transportType = TransportType.IP;
@@ -91,7 +91,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resDfnUuid,
             resDfnObjProt,
             resName,
-            port,
+            new TcpPortNumber(port),
+            tcpPortPoolMock,
             RscDfnFlags.DELETE.flagValue,
             secret,
             transportType,
@@ -113,7 +114,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
-        assertEquals(port.value, resultSet.getInt(TCP_PORT));
+        assertEquals(port, resultSet.getInt(TCP_PORT));
         assertEquals(secret, resultSet.getString(SECRET));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertEquals(ResourceDefinition.TransportType.IP.name(), resultSet.getString(TRANSPORT_TYPE));
@@ -126,16 +127,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceDefinitionDataFactory.getInstance(
+        resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             secret,
             transportType,
-            transMgr,
-            true,
-            false
+            transMgr
         );
 
         transMgr.commit();
@@ -147,7 +146,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         // uuid is now != resUuid because getInstance create a new resData object
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
-        assertEquals(port.value, resultSet.getInt(TCP_PORT));
+        assertEquals(port, resultSet.getInt(TCP_PORT));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertEquals(secret, resultSet.getString(SECRET));
         assertEquals(transportType.name(), resultSet.getString(TRANSPORT_TYPE));
@@ -178,7 +177,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
-        assertEquals(port, loadedResDfn.getPort(SYS_CTX));
+        assertEquals(port, loadedResDfn.getPort(SYS_CTX).value);
         assertEquals(secret, loadedResDfn.getSecret(SYS_CTX));
         assertEquals(transportType, loadedResDfn.getTransportType(SYS_CTX));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(SYS_CTX));
@@ -187,16 +186,9 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        ResourceDefinitionData loadedResDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
+        ResourceDefinitionData loadedResDfn = resourceDefinitionDataFactory.load(
             resName,
-            port,
-            new RscDfnFlags[] { RscDfnFlags.DELETE },
-            secret,
-            transportType,
-            transMgr,
-            false,
-            false
+            transMgr
         );
 
         assertNull(loadedResDfn);
@@ -216,22 +208,15 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             false
         );
 
-        loadedResDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
+        loadedResDfn = resourceDefinitionDataFactory.load(
             resName,
-            null,
-            null,
-            null,
-            null,
-            transMgr,
-            false,
-            false
+            transMgr
         );
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
-        assertEquals(port, loadedResDfn.getPort(SYS_CTX));
+        assertEquals(port, loadedResDfn.getPort(SYS_CTX).value);
         assertEquals(secret, loadedResDfn.getSecret(SYS_CTX));
         assertEquals(transportType, loadedResDfn.getTransportType(SYS_CTX));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(SYS_CTX));
@@ -240,16 +225,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             port,
             null,
             secret,
             transportType,
-            transMgr,
-            true,
-            false
+            transMgr
         );
         rscDfnMap.put(resName, storedInstance);
         // no clearCaches
@@ -466,16 +449,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(resDfn, transMgr);
         ResourceName resName2 = new ResourceName("ResName2");
-        resourceDefinitionDataFactory.getInstance(
+        resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName2,
             port,
             null,
             "secret",
             transportType,
-            transMgr,
-            true,
-            false
+            transMgr
         );
 
         clearCaches();
@@ -494,8 +475,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(resDfn, transMgr);
 
-        resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, port, null, "secret", transportType, transMgr, false, true
+        resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, port, null, "secret", transportType, transMgr
         );
     }
 }

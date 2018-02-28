@@ -29,7 +29,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         " FROM " + TBL_RESOURCE_CONNECTIONS;
 
     private final ResourceName resName;
-    private final TcpPortNumber resPort;
+    private final Integer resPort;
     private final NodeName sourceName;
     private final NodeName targetName;
 
@@ -53,7 +53,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     public ResourceConnectionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         resName = new ResourceName("testResourceName");
-        resPort = new TcpPortNumber(9001);
+        resPort = 9001;
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
     }
@@ -68,8 +68,8 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, transMgr, true, false);

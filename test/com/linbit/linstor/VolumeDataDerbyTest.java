@@ -39,7 +39,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     private NodeData node;
 
     private ResourceName resName;
-    private TcpPortNumber resPort;
+    private Integer resPort;
     private ResourceDefinitionData resDfn;
 
     private NodeId nodeId;
@@ -83,17 +83,15 @@ public class VolumeDataDerbyTest extends DerbyBase
         );
 
         resName = new ResourceName("TestResName");
-        resPort = new TcpPortNumber(9001);
-        resDfn = resourceDefinitionDataFactory.getInstance(
+        resPort = 9001;
+        resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             resPort,
             null,
             "secret",
             TransportType.IP,
-            transMgr,
-            true,
-            false
+            transMgr
         );
 
         nodeId = new NodeId(7);

@@ -2,7 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.ResourceDataFactory;
-import com.linbit.linstor.ResourceDefinitionDataFactory;
+import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
 
@@ -16,7 +16,7 @@ import javax.inject.Inject;
 public class CtrlObjectFactories
 {
     private final NodeDataControllerFactory nodeDataFactory;
-    private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private final ResourceDataFactory resourceDataFactory;
     private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
@@ -24,7 +24,7 @@ public class CtrlObjectFactories
     @Inject
     public CtrlObjectFactories(
         NodeDataControllerFactory nodeDataFactoryRef,
-        ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         ResourceDataFactory resourceDataFactoryRef,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef
@@ -42,7 +42,7 @@ public class CtrlObjectFactories
         return nodeDataFactory;
     }
 
-    public ResourceDefinitionDataFactory getResourceDefinitionDataFactory()
+    public ResourceDefinitionDataControllerFactory getResourceDefinitionDataFactory()
     {
         return resourceDefinitionDataFactory;
     }

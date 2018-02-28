@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
@@ -24,7 +25,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceDefinitionDataFactory;
+import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataFactory;
@@ -39,7 +40,6 @@ import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -76,7 +76,7 @@ class StltRscApiCallHandler
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
-    private final ResourceDefinitionDataFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
     private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     private final NodeDataSatelliteFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
@@ -94,7 +94,7 @@ class StltRscApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
-        ResourceDefinitionDataFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
         VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
         NodeDataSatelliteFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
@@ -219,7 +219,7 @@ class StltRscApiCallHandler
 
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public UpdatedObjects applyChanges(RscPojo rscRawData, SatelliteTransactionMgr transMgr)
-        throws DivergentDataException, InvalidNameException, ValueOutOfRangeException,
+        throws DivergentDataException, InvalidNameException, ValueOutOfRangeException, ValueInUseException,
         AccessDeniedException, SQLException, ImplementationError, InvalidIpAddressException
     {
         ResourceName rscName;

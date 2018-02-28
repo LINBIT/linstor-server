@@ -41,7 +41,7 @@ public class RscApiTest extends ApiTestBase
     private NodeData testSatelliteNode;
 
     private ResourceName testRscName;
-    private TcpPortNumber testRscDfnPort;
+    private Integer testRscDfnPort;
     private RscDfnFlags[] testRscDfnFlags;
     private String testRscDfnSecret;
     private TransportType tesTRscDfnTransportType;
@@ -59,7 +59,7 @@ public class RscApiTest extends ApiTestBase
         testSatelliteFlags = null;
 
         testRscName = new ResourceName("TestRsc");
-        testRscDfnPort = new TcpPortNumber(4242);
+        testRscDfnPort = 4242;
         testRscDfnFlags = null;
         testRscDfnSecret = "notTellingYou";
         tesTRscDfnTransportType = TransportType.IP;
@@ -92,16 +92,14 @@ public class RscApiTest extends ApiTestBase
         );
         nodesMap.put(testSatelliteName, testSatelliteNode);
 
-        testRscDfn = resourceDefinitionDataFactory.getInstance(
+        testRscDfn = resourceDefinitionDataFactory.create(
             BOB_ACC_CTX,
             testRscName,
             testRscDfnPort,
             testRscDfnFlags,
             testRscDfnSecret,
             tesTRscDfnTransportType,
-            transMgr,
-            true,
-            true
+            transMgr
         );
         rscDfnMap.put(testRscName, testRscDfn);
 

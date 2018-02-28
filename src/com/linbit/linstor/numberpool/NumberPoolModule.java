@@ -26,6 +26,8 @@ public class NumberPoolModule extends AbstractModule
 {
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String UNINITIALIZED_MINOR_NUMBER_POOL = "UninitializedMinorNumberPool";
+    public static final String TCP_PORT_POOL = "TcpPortPool";
+    public static final String UNINITIALIZED_TCP_PORT_POOL = "UninitializedTcpPortPool";
 
     private static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
@@ -117,12 +119,10 @@ public class NumberPoolModule extends AbstractModule
 
     @Provides
     @Singleton
-    @TcpPortPool
+    @Named(UNINITIALIZED_TCP_PORT_POOL)
     public DynamicNumberPool tcpPortPool(
         ErrorReporter errorReporter,
-        @SystemContext AccessContext initCtx,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
-        CoreModule.ResourceDefinitionMap rscDfnMap
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
         DynamicNumberPool tcpPortPool = new DynamicNumberPoolImpl(
@@ -136,10 +136,23 @@ public class NumberPoolModule extends AbstractModule
             DEFAULT_TCP_PORT_MAX
         );
 
+        tcpPortPool.reloadRange();
+
+        return tcpPortPool;
+    }
+
+    @Provides
+    @Singleton
+    @Named(TCP_PORT_POOL)
+    public DynamicNumberPool initializeTcpPortPool(
+        ErrorReporter errorReporter,
+        @SystemContext AccessContext initCtx,
+        @Named(UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPool,
+        CoreModule.ResourceDefinitionMap rscDfnMap
+    )
+    {
         try
         {
-            tcpPortPool.reloadRange();
-
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
             {
                 TcpPortNumber portNr = curRscDfn.getPort(initCtx);

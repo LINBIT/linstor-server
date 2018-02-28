@@ -22,7 +22,7 @@ public class ConnectionPropsTest extends DerbyBase
     private NodeName nodeName1;
     private NodeName nodeName2;
     private ResourceName resName;
-    private TcpPortNumber resDfnPort;
+    private Integer resDfnPort;
     private TransportType resDfnTransportType;
     private StorPoolName storPoolName;
     private NodeId nodeId1;
@@ -68,7 +68,7 @@ public class ConnectionPropsTest extends DerbyBase
         nodeName1 = new NodeName("Node1");
         nodeName2 = new NodeName("Node2");
         resName = new ResourceName("ResName");
-        resDfnPort = new TcpPortNumber(4242);
+        resDfnPort = 4242;
         resDfnTransportType = TransportType.IP;
         storPoolName = new StorPoolName("StorPool");
         nodeId1 = new NodeId(1);
@@ -86,8 +86,8 @@ public class ConnectionPropsTest extends DerbyBase
         node1 = nodeDataFactory.getInstance(SYS_CTX, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
         node2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
 
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, transMgr, true, false
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, transMgr
         );
 
         res1 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node1, nodeId1, null, transMgr, true, false);

@@ -32,7 +32,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private final NodeName sourceName;
     private final NodeName targetName;
     private final ResourceName resName;
-    private final TcpPortNumber resPort;
+    private final Integer resPort;
     private final StorPoolName storPoolName;
     private final VolumeNumber volNr;
 
@@ -70,7 +70,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
         resName = new ResourceName("testResourceName");
-        resPort = new TcpPortNumber(9001);
+        resPort = 9001;
         storPoolName = new StorPoolName("testStorPool");
         volNr = new VolumeNumber(42);
 
@@ -103,8 +103,8 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, transMgr, true, false);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
