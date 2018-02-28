@@ -47,68 +47,16 @@ import java.util.List;
  */
 public final class Initializer
 {
-    private static final AccessContext SYSTEM_CTX;
-    private static final AccessContext PUBLIC_CTX;
-
-    static
-    {
-        PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
-
-        // Create the system's security context
-        SYSTEM_CTX = new AccessContext(
-            Identity.SYSTEM_ID,
-            Role.SYSTEM_ROLE,
-            SecurityType.SYSTEM_TYPE,
-            sysPrivs
-        );
-
-        PrivilegeSet publicPrivs = new PrivilegeSet();
-
-        PUBLIC_CTX = new AccessContext(
-            Identity.PUBLIC_ID,
-            Role.PUBLIC_ROLE,
-            SecurityType.PUBLIC_TYPE,
-            publicPrivs
-        );
-    }
-
-    public Initializer()
-    {
-        try
-        {
-            AccessContext initCtx = SYSTEM_CTX.clone();
-            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-            // Adjust the type enforcement rules for the SYSTEM domain/type
-            SecurityType.SYSTEM_TYPE.addRule(
-                initCtx,
-                SecurityType.SYSTEM_TYPE, AccessType.CONTROL
-            );
-        }
-        catch (AccessDeniedException accessExc)
-        {
-            throw new ImplementationError(
-                "The built-in SYSTEM security context has insufficient privileges " +
-                "to initialize the security subsystem.",
-                accessExc
-            );
-        }
-    }
-
     public Controller initController(
         LinStorArguments cArgs,
         ErrorReporter errorLog,
         ApiType apiType,
         List<Class<? extends ApiCall>> apiCalls
     )
-        throws AccessDeniedException
     {
-        AccessContext initCtx = SYSTEM_CTX.clone();
-        initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
         Injector injector = Guice.createInjector(new GuiceConfigModule(),
             new LoggingModule(errorLog),
-            new SecurityModule(initCtx),
+            new SecurityModule(),
             new ControllerSecurityModule(),
             new LinStorArgumentsModule(cArgs),
             new ConfigModule(),
@@ -130,7 +78,7 @@ public final class Initializer
             new ControllerDebugModule()
         );
 
-        return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX);
+        return new Controller(injector);
     }
 
     public Satellite initSatellite(
@@ -139,14 +87,10 @@ public final class Initializer
         ApiType apiType,
         List<Class<? extends ApiCall>> apiCalls
     )
-        throws AccessDeniedException
     {
-        AccessContext initCtx = SYSTEM_CTX.clone();
-        initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
         Injector injector = Guice.createInjector(new GuiceConfigModule(),
             new LoggingModule(errorLog),
-            new SecurityModule(initCtx),
+            new SecurityModule(),
             new SatelliteSecurityModule(),
             new LinStorArgumentsModule(cArgs),
             new CoreTimerModule(),
@@ -161,7 +105,7 @@ public final class Initializer
             new SatelliteDebugModule()
         );
 
-        return new Satellite(injector, SYSTEM_CTX, PUBLIC_CTX);
+        return new Satellite(injector);
     }
 
     public static void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)

@@ -563,10 +563,10 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 switch (type)
                 {
                     case PLAIN:
-                        serviceType = Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
+                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
                         break;
                     case SSL:
-                        serviceType = Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
+                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
                         break;
                     default:
                         throw new ImplementationError(

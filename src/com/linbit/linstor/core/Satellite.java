@@ -10,12 +10,8 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.annotation.PublicContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
@@ -28,7 +24,6 @@ import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -127,16 +122,10 @@ public final class Satellite extends LinStor
     private DebugConsoleCreator debugConsoleCreator;
 
     public Satellite(
-        Injector injectorRef,
-        AccessContext sysCtxRef,
-        AccessContext publicCtxRef
+        Injector injectorRef
     )
     {
         injector = injectorRef;
-
-        // Initialize security contexts
-        sysCtx = sysCtxRef;
-        publicCtx = publicCtxRef;
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -144,14 +133,11 @@ public final class Satellite extends LinStor
 
     public void initialize()
     {
+        sysCtx = injector.getInstance(Key.get(AccessContext.class, SystemContext.class));
+        publicCtx = injector.getInstance(Key.get(AccessContext.class, PublicContext.class));
+
         reconfigurationLock = injector.getInstance(
             Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
-        nodesMapLock = injector.getInstance(
-            Key.get(ReadWriteLock.class, Names.named(CoreModule.NODES_MAP_LOCK)));
-        rscDfnMapLock = injector.getInstance(
-            Key.get(ReadWriteLock.class, Names.named(CoreModule.RSC_DFN_MAP_LOCK)));
-        storPoolDfnMapLock = injector.getInstance(
-            Key.get(ReadWriteLock.class, Names.named(CoreModule.STOR_POOL_DFN_MAP_LOCK)));
         stltConfLock = injector.getInstance(
             Key.get(ReadWriteLock.class, Names.named(SatelliteCoreModule.STLT_CONF_LOCK)));
 

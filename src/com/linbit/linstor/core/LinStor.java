@@ -39,11 +39,6 @@ public abstract class LinStor
     // Synchronization lock for major global changes
     public ReadWriteLock reconfigurationLock;
 
-    // Synchronization locks for linstor object maps
-    public ReadWriteLock nodesMapLock;
-    public ReadWriteLock rscDfnMapLock;
-    public ReadWriteLock storPoolDfnMapLock;
-
     public static void printRunTimeInfo(PrintStream out)
     {
         Properties sysProps = System.getProperties();

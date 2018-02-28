@@ -35,7 +35,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import javax.inject.Named;
 import java.net.InetSocketAddress;
@@ -90,8 +89,8 @@ public abstract class ApiTestBase extends DerbyBase
         TransactionMgr transMgr = new TransactionMgr(dbConnPool);
 
         ctrlConf.setConnection(transMgr);
-        ctrlConf.setProp(Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
-        ctrlConf.setProp(Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC, "ignore");
+        ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
+        ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC, "ignore");
 
         create(transMgr, ALICE_ACC_CTX);
         create(transMgr, BOB_ACC_CTX);
