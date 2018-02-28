@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import com.google.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -59,6 +60,7 @@ public class TaskScheduleService implements SystemService, Runnable
     private final LinkedList<Task> newTasks = new LinkedList<>();
     private final ErrorReporter errorReporter;
 
+    @Inject
     public TaskScheduleService(ErrorReporter errorReporterRef)
     {
         errorReporter = errorReporterRef;

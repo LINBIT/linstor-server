@@ -1,14 +1,10 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.timer.CoreTimer;
-
 import java.io.PrintStream;
 import java.util.Properties;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
- * LinStor common base class for the Controller and Satellite modules
+ * LinStor common constants and basic utilities
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -27,17 +23,6 @@ public abstract class LinStor
     public static final VersionInfoProvider VERSION_INFO_PROVIDER = new VersionInfoProviderImpl();
 
     public static final String DISKLESS_STOR_POOL_NAME = "DfltDisklessStorPool";
-
-    // ============================================================
-    // Core system services
-    //
-    protected CoreTimer timerEventSvc;
-
-    // Error & exception logging facility
-    protected ErrorReporter errorReporter;
-
-    // Synchronization lock for major global changes
-    public ReadWriteLock reconfigurationLock;
 
     public static void printRunTimeInfo(PrintStream out)
     {
@@ -109,5 +94,9 @@ public abstract class LinStor
         System.out.println();
 
         System.out.println("System components initialization in progress\n");
+    }
+
+    private LinStor()
+    {
     }
 }

@@ -1,29 +1,39 @@
 package com.linbit.linstor.core;
 
+import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
-import com.google.inject.name.Names;
+import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
+import com.linbit.linstor.debug.DebugModule;
+import com.linbit.linstor.debug.SatelliteDebugModule;
 import com.linbit.linstor.drbdstate.DrbdEventService;
+import com.linbit.linstor.drbdstate.DrbdStateModule;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.security.SatelliteSecurityModule;
+import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.timer.CoreTimerModule;
 
+import javax.inject.Named;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,48 +44,67 @@ import java.util.concurrent.locks.ReadWriteLock;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class Satellite extends LinStor
+public final class Satellite
 {
     // System module information
     public static final String MODULE = "Satellite";
 
-    private final Injector injector;
+    // Error & exception logging facility
+    private final ErrorReporter errorReporter;
 
     // System security context
-    private AccessContext sysCtx;
+    private final AccessContext sysCtx;
 
-    // ============================================================
-    // Core system services
-    //
+    private final CoreTimer timerEventSvc;
+
+    // Synchronization lock for major global changes
+    private final ReadWriteLock reconfigurationLock;
+
     // Map of controllable system services
-    private Map<ServiceName, SystemService> systemServicesMap;
+    private final Map<ServiceName, SystemService> systemServicesMap;
 
-    // Device manager
-    private DeviceManagerImpl devMgr = null;
+    private final DeviceManagerImpl devMgr;
 
-    private ApplicationLifecycleManager applicationLifecycleManager;
+    private final ApplicationLifecycleManager applicationLifecycleManager;
 
-    // Lock for major global changes
-    public ReadWriteLock stltConfLock;
+    private final DebugConsoleCreator debugConsoleCreator;
+    
+    private final FileSystemWatch fsWatchSvc;
 
-    private DebugConsoleCreator debugConsoleCreator;
+    private final DrbdEventService drbdEventSvc;
 
+    private final SatelliteNetComInitializer satelliteNetComInitializer;
+
+    @Inject
     public Satellite(
-        Injector injectorRef
+        ErrorReporter errorReporterRef,
+        @SystemContext AccessContext sysCtxRef,
+        CoreTimer timerEventSvcRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        Map<ServiceName, SystemService> systemServicesMapRef,
+        DeviceManagerImpl devMgrRef,
+        ApplicationLifecycleManager applicationLifecycleManagerRef,
+        DebugConsoleCreator debugConsoleCreatorRef,
+        FileSystemWatch fsWatchSvcRef,
+        DrbdEventService drbdEventSvcRef,
+        SatelliteNetComInitializer satelliteNetComInitializerRef
     )
     {
-        injector = injectorRef;
+        errorReporter = errorReporterRef;
+        sysCtx = sysCtxRef;
+        timerEventSvc = timerEventSvcRef;
+        reconfigurationLock = reconfigurationLockRef;
+        systemServicesMap = systemServicesMapRef;
+        devMgr = devMgrRef;
+        applicationLifecycleManager = applicationLifecycleManagerRef;
+        debugConsoleCreator = debugConsoleCreatorRef;
+        fsWatchSvc = fsWatchSvcRef;
+        drbdEventSvc = drbdEventSvcRef;
+        satelliteNetComInitializer = satelliteNetComInitializerRef;
     }
 
-    public void initialize()
+    public void start()
     {
-        sysCtx = injector.getInstance(Key.get(AccessContext.class, SystemContext.class));
-
-        reconfigurationLock = injector.getInstance(
-            Key.get(ReadWriteLock.class, Names.named(CoreModule.RECONFIGURATION_LOCK)));
-        stltConfLock = injector.getInstance(
-            Key.get(ReadWriteLock.class, Names.named(SatelliteCoreModule.STLT_CONF_LOCK)));
-
         reconfigurationLock.writeLock().lock();
 
         try
@@ -83,37 +112,15 @@ public final class Satellite extends LinStor
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            errorReporter = injector.getInstance(ErrorReporter.class);
-
-            systemServicesMap = injector.getInstance(Key.get(new TypeLiteral<Map<ServiceName, SystemService>>() {}));
-
-            FileSystemWatch fsWatchSvc = injector.getInstance(FileSystemWatch.class);
             systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
-
-            timerEventSvc = injector.getInstance(CoreTimer.class);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
-
-            applicationLifecycleManager = injector.getInstance(ApplicationLifecycleManager.class);
-
-            debugConsoleCreator = injector.getInstance(DebugConsoleCreator.class);
-
-            errorReporter.logInfo("Initializing StateTracker");
-            {
-                DrbdEventService drbdEventSvc = injector.getInstance(DrbdEventService.class);
-
-                systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
-            }
-
-            errorReporter.logInfo("Initializing device manager");
-            devMgr = injector.getInstance(DeviceManagerImpl.class);
+            systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
             systemServicesMap.put(devMgr.getInstanceName(), devMgr);
 
-            // Initialize system services
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
-            // Initialize the network communications service
             errorReporter.logInfo("Initializing main network communications service");
-            injector.getInstance(SatelliteNetComInitializer.class).initMainNetComService(initCtx);
+            satelliteNetComInitializer.initMainNetComService(initCtx);
         }
         catch (AccessDeniedException accessExc)
         {
@@ -176,11 +183,11 @@ public final class Satellite extends LinStor
 
         System.out.printf(
             "%s, Module %s\n",
-            Satellite.PROGRAM, Satellite.MODULE
+            LinStor.PROGRAM, Satellite.MODULE
         );
-        printStartupInfo();
+        LinStor.printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(Satellite.MODULE, "");
+        ErrorReporter errorLog = new StdErrorReporter(Satellite.MODULE, cArgs.getWorkingDirectory());
 
         try
         {
@@ -190,11 +197,27 @@ public final class Satellite extends LinStor
             List<Class<? extends ApiCall>> apiCalls =
                 new ApiCallLoader(errorLog).loadApiCalls(apiType, Arrays.asList("common", "satellite"));
 
-            // Initialize the Satellite module with the SYSTEM security context
-            Initializer sysInit = new Initializer();
-            Satellite instance = sysInit.initSatellite(cArgs, errorLog, apiType, apiCalls);
+            Injector injector = Guice.createInjector(
+                new GuiceConfigModule(),
+                new LoggingModule(errorLog),
+                new SecurityModule(),
+                new SatelliteSecurityModule(),
+                new LinStorArgumentsModule(cArgs),
+                new CoreTimerModule(),
+                new SatelliteLinstorModule(),
+                new CoreModule(),
+                new SatelliteCoreModule(),
+                new SatelliteDbModule(),
+                new DrbdStateModule(),
+                new ApiModule(apiType, apiCalls),
+                new ApiCallHandlerModule(),
+                new DebugModule(),
+                new SatelliteDebugModule()
+            );
 
-            instance.initialize();
+            Satellite instance = injector.getInstance(Satellite.class);
+            instance.start();
+
             if (cArgs.startDebugConsole())
             {
                 instance.enterDebugConsole();
