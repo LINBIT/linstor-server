@@ -212,14 +212,6 @@ class DrbdDeviceHandler implements DeviceHandler
             // Evaluate resource & volumes state by checking the DRBD state
             evaluateDrbdResource(rsc, rscDfn, rscState);
 
-            // TODO rework with drbdsetup events2 incremental update service
-            // Send ALL resource states to the controller
-            // This is very inefficient and still not perfect
-            // but until a prober drbdsetup events2 update tracker is in place must be good enough
-            Map<String, ResourceState> rscStates = new HashMap<>();
-            rscStates.put(rscName.getDisplayName(), rscState);
-            updateAllResourceStatesOnController(localNode.getPeer(wrkCtx), rscStates);
-
             try
             {
                 if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
@@ -262,6 +254,20 @@ class DrbdDeviceHandler implements DeviceHandler
                 // FIXME: Narrow exception handling
                 errLog.reportError(exc);
             }
+
+            // Reevaluate the resource after changes have been made
+            evaluateDrbdResource(rsc, rscDfn, rscState);
+            // Update only the current resource
+            // Upon startup, the satellite adjusts all resources and informs the controller about their state.
+            // Updating only the current resource may miss state changes of other resources, however,
+            // updating all resources may still miss state changes of other resources, but is also
+            // extremely slow.
+            // Therefore, update only the current resource until proper state tracking is implemented
+            // using the DrbdEventService
+            Map<String, ResourceState> rscStates = new HashMap<>();
+            rscStates.put(rscName.getDisplayName(), rscState);
+            // updateAllResourceStatesOnController(localNode.getPeer(wrkCtx), rscStates);
+            updateStatesOnController(localNode.getPeer(wrkCtx), rscStates.values());
         }
         catch (AccessDeniedException accExc)
         {

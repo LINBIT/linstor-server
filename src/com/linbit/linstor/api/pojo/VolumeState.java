@@ -81,6 +81,18 @@ public class VolumeState
         diskState = diskStateRef;
     }
 
+    public final void reset()
+    {
+        isPresent       = false;
+        hasDisk         = false;
+        hasMetaData     = true;
+        checkMetaData   = true;
+        diskFailed      = false;
+        netSize         = 0L;
+        grossSize       = 0L;
+        diskState       = null;
+    }
+
     public VolumeNumber getVlmNr()
     {
         return vlmNr;
