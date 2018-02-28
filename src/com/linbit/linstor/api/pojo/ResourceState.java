@@ -37,6 +37,13 @@ public class ResourceState
         volumeMap = volumes;
     }
 
+    public final void reset()
+    {
+        isPresent       = false;
+        requiresAdjust  = false;
+        isPrimary       = false;
+    }
+
     public String getRscName()
     {
         return rscName;
