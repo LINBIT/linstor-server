@@ -4,8 +4,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Named;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -19,6 +17,7 @@ public class SatelliteDebugModule extends AbstractModule
             Multibinder.newSetBinder(binder(), CommonDebugCmd.class);
 
         commandsBinder.addBinding().to(CmdRunDeviceManager.class);
+        commandsBinder.addBinding().to(CmdAbortDeviceManager.class);
     }
 
     // Use Provides methods because the ObjectProtection objects are not present on the satellite
