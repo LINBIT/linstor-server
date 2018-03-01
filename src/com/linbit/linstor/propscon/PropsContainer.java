@@ -622,7 +622,7 @@ public class PropsContainer implements Props
             safePath = sanitizePath(path, false);
         }
 
-        String[] pathElements= new String[2];
+        String[] pathElements = new String[2];
         int index = safePath.lastIndexOf('/');
         int pathLength;
         if (index != -1)

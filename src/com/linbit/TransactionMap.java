@@ -11,7 +11,7 @@ import java.util.Set;
 
 import com.linbit.linstor.LinStorSqlRuntimeException;
 
-public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
+public class TransactionMap<T, U> extends AbsTransactionObject implements Map<T, U>
 {
     private MapDatabaseDriver<T, U> dbDriver;
     private Map<T, U> map;
@@ -38,19 +38,8 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     }
 
     @Override
-    public void initialized()
+    public void postSetConnection(TransactionMgr transMgrRef)
     {
-        initialized = true;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgrRef)
-    {
-        if (!hasTransMgr() && isDirtyWithoutTransMgr())
-        {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
-        }
-
         if (transMgrRef != null)
         {
             if (transMgrRef != transMgr)
@@ -62,7 +51,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
                 // forward transaction manager on keys
                 for (T keySet : map.keySet())
                 {
-                    if (keySet instanceof TransactionObject)
+                    if (keySet instanceof AbsTransactionObject)
                     {
                         ((TransactionObject) keySet).setConnection(transMgr);
                     }
@@ -71,7 +60,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
                 // forward transaction manager on values
                 for (U valueList : map.values())
                 {
-                    if (valueList instanceof TransactionObject)
+                    if (valueList instanceof AbsTransactionObject)
                     {
                         ((TransactionObject) valueList).setConnection(transMgr);
                     }
@@ -85,14 +74,14 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     }
 
     @Override
-    public void commit()
+    public void commitImpl()
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         oldValues.clear();
     }
 
     @Override
-    public void rollback()
+    public void rollbackImpl()
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         for (Entry<T, U> entry : oldValues.entrySet())
@@ -114,18 +103,6 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     public boolean isDirty()
     {
         return !oldValues.isEmpty();
-    }
-
-    @Override
-    public boolean isDirtyWithoutTransMgr()
-    {
-        return !hasTransMgr() && isDirty();
-    }
-
-    @Override
-    public boolean hasTransMgr()
-    {
-        return transMgr != null;
     }
 
     @Override

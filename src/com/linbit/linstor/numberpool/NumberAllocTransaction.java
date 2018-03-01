@@ -1,9 +1,7 @@
 package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionObject;
+import com.linbit.AbsTransactionObject;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,12 +20,9 @@ import java.util.TreeSet;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class NumberAllocTransaction implements TransactionObject
+public class NumberAllocTransaction extends AbsTransactionObject
 {
     // For interface consistency
-    private boolean initComplete    = false;
-    private boolean trActMgrPresent = false;
-
     private final NumberPool pool;
 
     Set<Integer> allocatedNumbers;
@@ -39,28 +34,7 @@ public class NumberAllocTransaction implements TransactionObject
     }
 
     @Override
-    public void initialized()
-    {
-        initComplete = true;
-    }
-
-    @Override
-    public boolean isInitialized()
-    {
-        return initComplete;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
-    {
-        // The number pool objects are caches not backed by a database table
-        // Remember that the method was called for interface consistency
-        trActMgrPresent = true;
-        transMgr.register(this);
-    }
-
-    @Override
-    public void commit()
+    public void commitImpl()
     {
         // Numbers already allocated in the pool remain allocated, so the commit is a no-op
 
@@ -69,7 +43,7 @@ public class NumberAllocTransaction implements TransactionObject
     }
 
     @Override
-    public void rollback()
+    public void rollbackImpl()
     {
         int[] nrList = new int[allocatedNumbers.size()];
         int idx = 0;
@@ -91,13 +65,7 @@ public class NumberAllocTransaction implements TransactionObject
     @Override
     public boolean isDirtyWithoutTransMgr()
     {
-        return !allocatedNumbers.isEmpty() && !trActMgrPresent;
-    }
-
-    @Override
-    public boolean hasTransMgr()
-    {
-        return trActMgrPresent;
+        return !allocatedNumbers.isEmpty() && !hasTransMgr();
     }
 
     public boolean allocate(int nr)

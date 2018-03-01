@@ -3,7 +3,7 @@ package com.linbit;
 import java.sql.SQLException;
 import java.util.Objects;
 
-public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObject
+public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject
 {
     private boolean initialized = false;
 
@@ -11,8 +11,6 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     private ELEMENT object;
     private ELEMENT cachedObject;
     private SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
-
-    private TransactionMgr transMgr;
 
     public TransactionSimpleObject(
         PARENT parentRef,
@@ -57,31 +55,15 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     }
 
     @Override
-    public void initialized()
+    public void postSetConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        initialized = true;
-    }
-
-    @Override
-    public boolean isInitialized()
-    {
-        return initialized;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
-    {
-        if (!hasTransMgr() && isDirtyWithoutTransMgr())
-        {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
-        }
         if (transMgrRef != null)
         {
             if (transMgrRef != transMgr)
             {
                 transMgrRef.register(this);
                 // forward transaction manager to simple object
-                if (object instanceof TransactionObject)
+                if (object instanceof AbsTransactionObject)
                 {
                     ((TransactionObject) object).setConnection(transMgrRef);
                 }
@@ -91,14 +73,14 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     }
 
     @Override
-    public void commit()
+    public void commitImpl()
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         cachedObject = object;
     }
 
     @Override
-    public void rollback()
+    public void rollbackImpl()
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         object = cachedObject;
@@ -108,17 +90,5 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     public boolean isDirty()
     {
         return object != cachedObject;
-    }
-
-    @Override
-    public boolean isDirtyWithoutTransMgr()
-    {
-        return !hasTransMgr() && isDirty();
-    }
-
-    @Override
-    public boolean hasTransMgr()
-    {
-        return transMgr != null;
     }
 }

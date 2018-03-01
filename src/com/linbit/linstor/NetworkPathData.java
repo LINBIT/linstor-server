@@ -1,7 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionObject;
+import com.linbit.AbsTransactionObject;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -43,9 +43,9 @@ public class NetworkPathData extends BaseTransactionObject implements NetworkPat
         dbgInstanceId = UUID.randomUUID();
 
         transObjs = Arrays.asList(
-            (TransactionObject) srcInterface,
-            (TransactionObject) dstNode,
-            (TransactionObject) dstInterface
+            (AbsTransactionObject) srcInterface,
+            (AbsTransactionObject) dstNode,
+            (AbsTransactionObject) dstInterface
         );
     }
 

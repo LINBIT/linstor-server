@@ -2,25 +2,20 @@ package com.linbit.linstor;
 
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.AbsTransactionObject;
 
-public abstract class BaseTransactionObject implements TransactionObject
+public abstract class BaseTransactionObject extends AbsTransactionObject
 {
-    private boolean initialized = false;
     protected List<TransactionObject> transObjs;
-    protected TransactionMgr transMgr;
-
-    private boolean inCommit = false;
-    private boolean inRollback = false;
 
     @Override
     public void initialized()
     {
-        if (!initialized)
+        if (!isInitialized())
         {
-            initialized = true;
+            super.initialized();
             for (TransactionObject transObj : transObjs)
             {
                 transObj.initialized();
@@ -29,28 +24,8 @@ public abstract class BaseTransactionObject implements TransactionObject
     }
 
     @Override
-    public boolean isInitialized()
+    public void postSetConnection(TransactionMgr transMgr)
     {
-        return initialized;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
-    {
-        if (transMgr != null && transMgrRef != null && transMgrRef != transMgr)
-        {
-            throw new ImplementationError("attempt to replace an active transMgr", null);
-        }
-        if (!hasTransMgr() && isDirtyWithoutTransMgr())
-        {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated: " + this, null);
-        }
-        if (transMgrRef != null)
-        {
-            transMgrRef.register(this);
-        }
-        transMgr = transMgrRef;
-
         if (transMgr == null)
         {
             for (TransactionObject to : transObjs)
@@ -71,39 +46,28 @@ public abstract class BaseTransactionObject implements TransactionObject
     }
 
     @Override
-    public void commit()
+    public void commitImpl()
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
-        if (!inCommit)
+        for (TransactionObject transObj : transObjs)
         {
-            inCommit = true;
-            for (TransactionObject transObj : transObjs)
+            if (transObj.isDirty())
             {
-                if (transObj.isDirty())
-                {
-                    transObj.commit();
-                }
+                transObj.commit();
             }
-            inCommit = false;
         }
-        transMgr = null;
     }
 
     @Override
-    public void rollback()
+    public void rollbackImpl()
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
-        if (!inRollback)
+        for (TransactionObject transObj : transObjs)
         {
-            inRollback = true;
-            for (TransactionObject transObj : transObjs)
+            if (transObj.isDirty())
             {
-                if (transObj.isDirty())
-                {
-                    transObj.rollback();
-                }
+                transObj.rollback();
             }
-            inRollback = false;
         }
     }
 
@@ -126,7 +90,7 @@ public abstract class BaseTransactionObject implements TransactionObject
     public boolean isDirtyWithoutTransMgr()
     {
         boolean dirty = false;
-        if (transMgr != null)
+        if (hasTransMgr())
         {
             for (TransactionObject transObj : transObjs)
             {
@@ -138,11 +102,5 @@ public abstract class BaseTransactionObject implements TransactionObject
             }
         }
         return dirty;
-    }
-
-    @Override
-    public boolean hasTransMgr()
-    {
-        return transMgr != null;
     }
 }

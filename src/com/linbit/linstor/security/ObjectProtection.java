@@ -323,14 +323,13 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     @Override
-    public void commit()
+    public void commitImpl()
     {
-        super.commit();
         cachedAcl.clear();
     }
 
     @Override
-    public void rollback()
+    public void rollbackImpl()
     {
         super.rollback();
 
