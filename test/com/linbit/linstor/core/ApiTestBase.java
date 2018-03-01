@@ -13,7 +13,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.api.utils.DummyTcpConnector;
 import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
 import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
@@ -52,6 +51,9 @@ public abstract class ApiTestBase extends DerbyBase
         ALICE_ACC_CTX = TestAccessContextProvider.ALICE_ACC_CTX;
         BOB_ACC_CTX = TestAccessContextProvider.BOB_ACC_CTX;
     }
+
+    @Mock
+    protected TcpConnector tcpConnectorMock;
 
     @Bind @Mock
     protected SatelliteConnector satelliteConnector;
@@ -98,8 +100,8 @@ public abstract class ApiTestBase extends DerbyBase
         transMgr.commit();
         dbConnPool.returnConnection(transMgr);
 
-        TcpConnector tcpConnector = new DummyTcpConnector();
-        Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class))).thenReturn(tcpConnector);
+        Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class)))
+            .thenReturn(tcpConnectorMock);
     }
 
     private void create(TransactionMgr transMgr, AccessContext accCtx) throws AccessDeniedException, SQLException
