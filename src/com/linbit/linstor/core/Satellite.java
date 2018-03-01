@@ -68,7 +68,7 @@ public final class Satellite
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
     private final DebugConsoleCreator debugConsoleCreator;
-    
+
     private final FileSystemWatch fsWatchSvc;
 
     private final DrbdEventService drbdEventSvc;
@@ -105,6 +105,8 @@ public final class Satellite
 
     public void start()
     {
+        applicationLifecycleManager.installShutdownHook();
+
         reconfigurationLock.writeLock().lock();
 
         try

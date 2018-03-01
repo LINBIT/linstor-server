@@ -147,6 +147,8 @@ public final class Controller
     public void start()
         throws InvalidKeyException
     {
+        applicationLifecycleManager.installShutdownHook();
+
         reconfigurationLock.writeLock().lock();
 
         try
