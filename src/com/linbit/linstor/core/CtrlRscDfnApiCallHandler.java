@@ -633,7 +633,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             throw asExc(
                 exc,
                 "Could not find free tcp port",
-                ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
+                ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT
             );
         }
         catch (AccessDeniedException accDeniedExc)
