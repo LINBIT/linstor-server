@@ -257,6 +257,11 @@ class DrbdDeviceHandler implements DeviceHandler
             }
 
             // Reevaluate the resource after changes have been made
+            rscState.reset();
+            for (VolumeState vlmState : rscState.getVolumes())
+            {
+                vlmState.reset();
+            }
             evaluateDrbdResource(rsc, rscDfn, rscState);
             // Update only the current resource
             // Upon startup, the satellite adjusts all resources and informs the controller about their state.
