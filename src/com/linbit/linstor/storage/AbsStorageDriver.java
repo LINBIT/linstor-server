@@ -128,7 +128,8 @@ public abstract class AbsStorageDriver implements StorageDriver
 
             FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
             groupBuilder.newEntry(getExpectedVolumePath(identifier), Event.CREATE);
-            FileEntryGroup entryGroup = groupBuilder.create(fileSystemWatch, null);
+            FileEntryGroup entryGroup = groupBuilder.create(null);
+            fileSystemWatch.addFileEntryList(entryGroup.getEntryList());
             entryGroup.waitGroup(fileEventTimeout);
 
             final VolumeInfo info = getVolumeInfo(identifier);
@@ -238,7 +239,8 @@ public abstract class AbsStorageDriver implements StorageDriver
 
             FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
             groupBuilder.newEntry(getExpectedVolumePath(identifier), Event.DELETE);
-            FileEntryGroup entryGroup = groupBuilder.create(fileSystemWatch, null);
+            FileEntryGroup entryGroup = groupBuilder.create(null);
+            fileSystemWatch.addFileEntryList(entryGroup.getEntryList());
             entryGroup.waitGroup(fileEventTimeout);
         }
         catch (NoSuchFileException noSuchFileExc)

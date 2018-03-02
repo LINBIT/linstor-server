@@ -20,6 +20,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
@@ -71,7 +72,7 @@ public class StorageTestUtils
         ErrorReporter errRep = new EmptyErrorReporter();
         CoreTimer timer = new CoreTimerImpl();
 
-        driver = driverKind.makeStorageDriver(errRep, null, timer);
+        driver = driverKind.makeStorageDriver(errRep, Mockito.mock(FileSystemWatch.class), timer);
     }
 
     @After
@@ -187,7 +188,7 @@ public class StorageTestUtils
             }
 
             @Override
-            public FileEntryGroup create(FileSystemWatch watch, EntryGroupObserver observer) throws IOException
+            public FileEntryGroup create(EntryGroupObserver observer)
             {
                 return testFileEntryGroup;
             }

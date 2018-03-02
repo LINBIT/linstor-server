@@ -1,5 +1,6 @@
 package com.linbit.fsevent;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -8,11 +9,14 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.linbit.NegativeTimeException;
+import com.linbit.ValueOutOfRangeException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,7 +47,6 @@ public class FileSystemWatchTest
     public FileSystemWatchTest()
     {
     }
-
 
     private void createFile(String fileNameRef)
     {
@@ -149,6 +152,27 @@ public class FileSystemWatchTest
         {
             fail("EntryGroupObserver not triggered or triggered for the wrong FileEntryGroup");
         }
+    }
+
+    private AtomicBoolean waitGroupAsync(FileEntryGroup entryGroup, long timeout)
+    {
+        final AtomicBoolean flag = new AtomicBoolean();
+        flag.set(false);
+        new Thread(
+            () ->
+            {
+                try
+                {
+                    entryGroup.waitGroup(timeout);
+                    flag.set(true);
+                }
+                catch (InterruptedException | ValueOutOfRangeException |
+                    FsWatchTimeoutException | NegativeTimeException ignored)
+                {
+                }
+            }
+        ).start();
+        return flag;
     }
 
     @Before
@@ -360,7 +384,8 @@ public class FileSystemWatchTest
         gBuilder.newEntry(createFileTwo, FileSystemWatch.Event.CREATE);
 
         EntryGroupReceiver gRec = new EntryGroupReceiver();
-        FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
+        FileEntryGroup entryGroup = gBuilder.create(gRec);
+        fsw.addFileEntryList(entryGroup.getEntryList());
 
         createFile(createFileOne);
         if (gRec.isFinished(entryGroup))
@@ -397,7 +422,8 @@ public class FileSystemWatchTest
         gBuilder.newEntry(deleteFileTwo, FileSystemWatch.Event.DELETE);
 
         EntryGroupReceiver gRec = new EntryGroupReceiver();
-        FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
+        FileEntryGroup entryGroup = gBuilder.create(gRec);
+        fsw.addFileEntryList(entryGroup.getEntryList());
 
         deleteFile(deleteFileOne);
         Delay.sleep(TEST_DELAY);
@@ -441,7 +467,8 @@ public class FileSystemWatchTest
         gBuilder.newEntry(deleteFileFour, FileSystemWatch.Event.DELETE);
 
         EntryGroupReceiver gRec = new EntryGroupReceiver();
-        FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
+        FileEntryGroup entryGroup = gBuilder.create(gRec);
+        fsw.addFileEntryList(entryGroup.getEntryList());
 
         deleteFile(deleteFileThree);
         createFile(createFileOne);
@@ -540,7 +567,8 @@ public class FileSystemWatchTest
         gBuilder.newEntry(deleteFileFour, FileSystemWatch.Event.DELETE);
 
         EntryGroupReceiver gRec = new EntryGroupReceiver();
-        final FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
+        FileEntryGroup entryGroup = gBuilder.create(gRec);
+        fsw.addFileEntryList(entryGroup.getEntryList());
 
         deleteFile(deleteFileThree);
         createFile(createFileOne);
@@ -554,25 +582,7 @@ public class FileSystemWatchTest
         createFile(createFileTwo);
         deleteFile(deleteFileFour);
 
-        final AtomicBoolean flag = new AtomicBoolean();
-        flag.set(false);
-        new Thread(
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try
-                    {
-                        entryGroup.waitGroup();
-                        flag.set(true);
-                    }
-                    catch (InterruptedException ignored)
-                    {
-                    }
-                }
-            }
-        ).start();
+        final AtomicBoolean flag = waitGroupAsync(entryGroup, TEST_DELAY);
 
         Delay.sleep(TEST_DELAY);
 
@@ -617,28 +627,10 @@ public class FileSystemWatchTest
         gBuilder.newEntry(deleteFileFour, FileSystemWatch.Event.DELETE);
 
         EntryGroupReceiver gRec = new EntryGroupReceiver();
-        final FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
+        FileEntryGroup entryGroup = gBuilder.create(gRec);
+        fsw.addFileEntryList(entryGroup.getEntryList());
 
-        final AtomicBoolean flag = new AtomicBoolean();
-        flag.set(false);
-        new Thread(
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try
-                    {
-                        entryGroup.waitGroup();
-                        // System.out.println("multiFileConcurrentTest(): waitGroup() returned");
-                        flag.set(true);
-                    }
-                    catch (InterruptedException ignored)
-                    {
-                    }
-                }
-            }
-        ).start();
+        final AtomicBoolean flag = waitGroupAsync(entryGroup, TEST_DELAY * 3);
 
         deleteFile(deleteFileThree);
         createFile(createFileOne);
@@ -671,29 +663,46 @@ public class FileSystemWatchTest
     /**
      * Tests the rollback when adding on of the entries for a new FileEntryGroup fails
      */
-    @Test(expected = IOException.class)
-    public void multiFileRollbackTest() throws IOException
+    @Test
+    public void multiFileRollbackTest()
     {
-        FileEntryGroupBuilder gBuilder = new FileEntryGroupBuilder();
+        String createFile = testFilePath("file1");
+        String brokenPathFile = "broken-path-1";
 
-        String createFileOne = testFilePath("file1");
-        String deleteFileTwo = testFilePath("file2");
-        String createFileThree = testFilePath("file3");
-        String brokenPathFileOne = "/this/path/should/not/exist";
-        String deleteFileFour = testFilePath("file4");
-        String brokenPathFileTwo = "/this/path/should/not/exist";
-        String createFileFive = testFilePath("file5");
+        AtomicBoolean fileCreatedFlag = new AtomicBoolean();
 
-        gBuilder.newEntry(createFileOne, FileSystemWatch.Event.CREATE);
-        gBuilder.newEntry(deleteFileTwo, FileSystemWatch.Event.DELETE);
-        gBuilder.newEntry(createFileThree, FileSystemWatch.Event.CREATE);
-        gBuilder.newEntry(brokenPathFileOne, FileSystemWatch.Event.DELETE);
-        gBuilder.newEntry(deleteFileFour, FileSystemWatch.Event.DELETE);
-        gBuilder.newEntry(brokenPathFileTwo, FileSystemWatch.Event.CREATE);
-        gBuilder.newEntry(createFileFive, FileSystemWatch.Event.CREATE);
+        FileEntry createFileEntry = new FileEntry(
+            Paths.get(createFile),
+            FileSystemWatch.Event.CREATE,
+            watchEntry -> fileCreatedFlag.set(true),
+            true
+        );
 
-        EntryGroupReceiver gRec = new EntryGroupReceiver();
-        final FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
+        FileEntry brokenPathFileEntry = new FileEntry(
+            Paths.get(brokenPathFile),
+            FileSystemWatch.Event.DELETE,
+            watchEntry -> {},
+            true
+        );
+
+        boolean threw = false;
+        try
+        {
+            fsw.addFileEntryList(Arrays.asList(createFileEntry, brokenPathFileEntry));
+        }
+        catch (IOException ignored)
+        {
+            threw = true;
+        }
+        assertThat(threw).isTrue();
+
+        createFile(createFile);
+        Delay.sleep(TEST_DELAY);
+
+        if (fileCreatedFlag.get())
+        {
+            fail("file observer triggered although the watch should have been rolled back");
+        }
     }
 
     private static class FileEventReceiver implements FileObserver

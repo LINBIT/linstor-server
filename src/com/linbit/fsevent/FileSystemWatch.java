@@ -25,6 +25,7 @@ import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -378,16 +379,15 @@ public class FileSystemWatch implements Runnable, SystemService
     /**
      * Adds all listed entries to this FileSystemWatch's instance
      * in a transaction-safe way
-     *
+     * <p>
      * Either all entries will be added, or if adding an entry fails, no entries
      * will be added and none of the entries' observers will be called.
-     *
+     * <p>
      * For each entry, the same rules as described for the addFileEntry()
      * method apply.
      *
      * @param entryList List of FileEntry instances to add
      * @throws IOException If a file system related errors occur
-     *
      * @see FileSystemWatch#addFileEntry
      * @see FileSystemWatch.Event
      * @see FileObserver
@@ -405,7 +405,7 @@ public class FileSystemWatch implements Runnable, SystemService
                     addFileEntry(entry);
                 }
                 // Check whether files have already been created or deleted
-                for (FileEntry entry: entryList)
+                for (FileEntry entry : entryList)
                 {
                     if (probeFileEntry(entry))
                     {
@@ -843,10 +843,9 @@ public class FileSystemWatch implements Runnable, SystemService
             newEntry(file, event);
         }
 
-        public FileEntryGroup create(FileSystemWatch watch, EntryGroupObserver observer) throws IOException
+        public FileEntryGroup create(EntryGroupObserver observer)
         {
-            group.initialize(entryList.size(), observer);
-            watch.addFileEntryList(entryList);
+            group.initialize(entryList, observer);
             return group;
         }
     }
@@ -860,7 +859,7 @@ public class FileSystemWatch implements Runnable, SystemService
      */
     public static class FileEntryGroup implements FileObserver
     {
-        private int triggerCount;
+        private List<FileEntry> entryList;
         private final AtomicInteger eventCount;
         private EntryGroupObserver groupObserver;
         private boolean loopWait = true;
@@ -868,13 +867,13 @@ public class FileSystemWatch implements Runnable, SystemService
         private FileEntryGroup()
         {
             eventCount = new AtomicInteger();
-            triggerCount = 0;
+            entryList = Collections.emptyList();
             groupObserver = null;
         }
 
-        private void initialize(int targetCount, EntryGroupObserver observer)
+        private void initialize(List<FileEntry> entryListRef, EntryGroupObserver observer)
         {
-            triggerCount = targetCount;
+            entryList = entryListRef;
             groupObserver = observer;
         }
 
@@ -886,7 +885,7 @@ public class FileSystemWatch implements Runnable, SystemService
         public void fileEvent(FileEntry watchEntry)
         {
             int currentCount = eventCount.incrementAndGet();
-            if (currentCount >= triggerCount)
+            if (currentCount >= entryList.size())
             {
                 if (groupObserver != null)
                 {
@@ -900,38 +899,9 @@ public class FileSystemWatch implements Runnable, SystemService
             }
         }
 
-        /**
-         * Waits until each entry's event has happened
-         *
-         * @throws InterruptedException If the thread that called waitGroup() is interrupted
-         */
-        public void waitGroup() throws InterruptedException
+        public List<FileEntry> getEntryList()
         {
-            try
-            {
-                try
-                {
-                    waitGroup(0L);
-                }
-                catch (FsWatchTimeoutException timeoutExc)
-                {
-                    // This exception is not supposed to be thrown by waitGroup(long timeout)
-                    // if timeout == 0 (wait forever)
-                    // Therefore, if it still happens, report this as an implementation error
-                    throw new ImplementationError(
-                        FsWatchTimeoutException.class.getCanonicalName() +
-                        " thrown despite timeout == 0",
-                        timeoutExc
-                    );
-                }
-            }
-            catch (NegativeTimeException | ValueOutOfRangeException exc)
-            {
-                throw new ImplementationError(
-                    FileSystemWatch.class.getName() + ": Unexpected exception",
-                    exc
-                );
-            }
+            return entryList;
         }
 
         /**
