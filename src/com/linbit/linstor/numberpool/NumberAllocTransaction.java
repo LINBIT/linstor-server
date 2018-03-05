@@ -1,11 +1,15 @@
 package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.AbsTransactionObject;
+import com.linbit.linstor.transaction.AbsTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import javax.inject.Provider;
 
 /**
  * Provides transaction-safe allocation of multiple numbers from a number pool cache
@@ -27,8 +31,12 @@ public class NumberAllocTransaction extends AbsTransactionObject
 
     Set<Integer> allocatedNumbers;
 
-    public NumberAllocTransaction(NumberPool poolRef)
+    public NumberAllocTransaction(
+        NumberPool poolRef,
+        Provider<TransactionMgr> transMgrProvider
+    )
     {
+        super(transMgrProvider);
         allocatedNumbers = new TreeSet<>();
         pool = poolRef;
     }
@@ -70,6 +78,7 @@ public class NumberAllocTransaction extends AbsTransactionObject
 
     public boolean allocate(int nr)
     {
+        activateTransMgr();
         boolean allocFlag = pool.allocate(nr);
         if (allocFlag)
         {
@@ -80,6 +89,7 @@ public class NumberAllocTransaction extends AbsTransactionObject
 
     public Map<Integer, Boolean> multiAllocate(List<Integer> nrList)
     {
+        activateTransMgr();
         Map<Integer, Boolean> allocResult = pool.multiAllocate(nrList);
         for (Map.Entry<Integer, Boolean> nrAllocResult : allocResult.entrySet())
         {
@@ -95,6 +105,7 @@ public class NumberAllocTransaction extends AbsTransactionObject
 
     public int autoAllocate(int rangeStart, int rangeEnd) throws ExhaustedPoolException
     {
+        activateTransMgr();
         int nr = pool.autoAllocate(rangeStart, rangeEnd);
         allocatedNumbers.add(nr);
         return nr;
@@ -102,6 +113,7 @@ public class NumberAllocTransaction extends AbsTransactionObject
 
     public int autoAllocateFromOffset(int rangeStart, int rangeEnd, int offset) throws ExhaustedPoolException
     {
+        activateTransMgr();
         int nr = pool.autoAllocateFromOffset(rangeStart, rangeEnd, offset);
         allocatedNumbers.add(nr);
         return nr;

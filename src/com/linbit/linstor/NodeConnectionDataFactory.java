@@ -1,15 +1,17 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -17,22 +19,27 @@ public class NodeConnectionDataFactory
 {
     private final NodeConnectionDataDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public NodeConnectionDataFactory(
         NodeConnectionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public NodeConnectionData getInstance(
         AccessContext accCtx,
         Node node1,
         Node node2,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -56,12 +63,7 @@ public class NodeConnectionDataFactory
         source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        nodeConData = dbDriver.load(
-            source,
-            target,
-            false,
-            transMgr
-        );
+        nodeConData = dbDriver.load(source, target, false);
 
         if (failIfExists && nodeConData != null)
         {
@@ -76,15 +78,15 @@ public class NodeConnectionDataFactory
                 source,
                 target,
                 dbDriver,
-                transMgr,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
-            dbDriver.create(nodeConData, transMgr);
+            dbDriver.create(nodeConData);
         }
         if (nodeConData != null)
         {
             nodeConData.initialized();
-            nodeConData.setConnection(transMgr);
         }
         return nodeConData;
     }
@@ -93,8 +95,7 @@ public class NodeConnectionDataFactory
         AccessContext accCtx,
         UUID uuid,
         Node node1,
-        Node node2,
-        SatelliteTransactionMgr transMgr
+        Node node2
     )
         throws ImplementationError
     {
@@ -115,12 +116,7 @@ public class NodeConnectionDataFactory
 
         try
         {
-            nodeConData = dbDriver.load(
-                source,
-                target,
-                false,
-                transMgr
-            );
+            nodeConData = dbDriver.load(source, target, false);
             if (nodeConData == null)
             {
                 nodeConData = new NodeConnectionData(
@@ -128,11 +124,13 @@ public class NodeConnectionDataFactory
                     accCtx,
                     source,
                     target,
-                    dbDriver, transMgr,
-                    propsContainerFactory);
+                    dbDriver,
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
+                );
             }
             nodeConData.initialized();
-            nodeConData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

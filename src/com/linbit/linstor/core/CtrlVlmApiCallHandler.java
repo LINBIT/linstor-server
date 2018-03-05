@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
@@ -17,8 +16,11 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
@@ -31,13 +33,13 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
-
     @Inject
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
         DbConnectionPool dbConnectionPoolRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlObjectFactories objectFactories
+        CtrlObjectFactories objectFactories,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -46,7 +48,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_VLM,
             null, // interComSerializer
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(
             currentNodeName,
@@ -70,7 +73,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null,
                 nodeNameStr,
                 rscNameStr,
                 volumeNr
@@ -144,7 +146,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String nodeNameStr,
         String rscNameStr,
         Integer vlmNr
@@ -155,7 +156,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             client,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(nodeNameStr, rscNameStr, vlmNr),
             getVariables(nodeNameStr, rscNameStr, vlmNr)
         );

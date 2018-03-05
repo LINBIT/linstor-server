@@ -1,24 +1,5 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_KEY;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.SECOND_AMOUNT;
@@ -40,31 +21,45 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PropsContainerTest
+import com.linbit.linstor.security.DerbyBase;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class PropsContainerTest extends DerbyBase
 {
-    private PropsContainerFactory propsContainerFactory;
+    private static final String TEST_INSTANCE_NAME = "testInstanceName";
+
     private PropsContainer root;
-    private Map<String, String> map;
-    private Set<String> keySet;
-    private Set<Entry<String, String>> entrySet;
-    private Collection<String> values;
+    private Map<String, String> rootMap;
+    private Set<String> rootKeySet;
+    private Set<Entry<String, String>> rootEntrySet;
+    private Collection<String> rootValues;
 
+    @Override
     @Before
-    public void setUp() throws Throwable
+    public void setUp() throws Exception
     {
-        Map<NodeName, Node> nodesMap = new HashMap<>();
-        Map<ResourceName, ResourceDefinition> resDfnMap = new HashMap<>();
-        Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();
-
-        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver());
-        root = propsContainerFactory.getInstance(null, null);
+        super.setUp();
+//        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), transMgrProvider);
+        root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        commit();
 
-        map = root.map();
-        entrySet = root.entrySet();
-        keySet = root.keySet();
-        values = root.values();
+        rootMap = root.map();
+        rootEntrySet = root.entrySet();
+        rootKeySet = root.keySet();
+        rootValues = root.values();
     }
 
     @Test
@@ -308,7 +303,7 @@ public class PropsContainerTest
         map.put("", "root");
         root.setAllProps(map, null);
 
-        root.commit();
+        commit();
 
         final Map<String, String> overrideMap = new HashMap<>();
         overrideMap.put("a", "overriddenA");
@@ -320,7 +315,7 @@ public class PropsContainerTest
             root.setAllProps(overrideMap, null);
             fail("InvalidValueException expected");
         }
-        catch (InvalidValueException InvValueExc)
+        catch (InvalidValueException invValueExc)
         {
             // expected
         }
@@ -581,6 +576,7 @@ public class PropsContainerTest
         assertNull(root.getNamespace(first));
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testIterateNamespaces() throws Throwable
     {
@@ -738,8 +734,8 @@ public class PropsContainerTest
             generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
         );
 
-        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, entrySet.size());
-        assertEquals(expectedEntries, entrySet);
+        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, rootEntrySet.size());
+        assertEquals(expectedEntries, rootEntrySet);
     }
 
     @Test
@@ -771,52 +767,52 @@ public class PropsContainerTest
     {
         final String removedKey = FIRST_KEY + "0";
 
-        assertTrue(entrySet.contains(removedKey));
+        assertTrue(rootEntrySet.contains(removedKey));
 
         root.removeProp(removedKey);
 
-        assertFalse(entrySet.contains(removedKey));
+        assertFalse(rootEntrySet.contains(removedKey));
     }
 
     @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetSize() throws Throwable
     {
-        assertEquals(root.size(), entrySet.size());
+        assertEquals(root.size(), rootEntrySet.size());
 
         final String key = "key";
         root.setProp(key, "value");
-        assertEquals(root.size(), entrySet.size());
+        assertEquals(root.size(), rootEntrySet.size());
 
         root.setProp(key, "other value");
-        assertEquals(root.size(), entrySet.size());
+        assertEquals(root.size(), rootEntrySet.size());
 
         root.removeProp(key);
-        assertEquals(root.size(), entrySet.size());
+        assertEquals(root.size(), rootEntrySet.size());
 
         root.clear();
-        assertEquals(root.size(), entrySet.size());
+        assertEquals(root.size(), rootEntrySet.size());
 
         final Entry<String, String> entry = createEntry("key", "value");
-        entrySet.add(entry);
-        assertEquals(root.size(), entrySet.size());
+        rootEntrySet.add(entry);
+        assertEquals(root.size(), rootEntrySet.size());
 
-        entrySet.remove(entry.getKey());
-        assertEquals(root.size(), entrySet.size());
+        rootEntrySet.remove(entry.getKey());
+        assertEquals(root.size(), rootEntrySet.size());
     }
 
     @Test
     public void testEntrySetIsEmpty()
     {
         // we have filled root and keySet in the setup of JUnit
-        assertFalse(entrySet.isEmpty());
+        assertFalse(rootEntrySet.isEmpty());
 
-        entrySet.clear();
-        assertTrue(entrySet.isEmpty());
+        rootEntrySet.clear();
+        assertTrue(rootEntrySet.isEmpty());
 
         final Entry<String, String> entry = createEntry("key", "value");
-        entrySet.add(entry);
-        assertFalse(entrySet.isEmpty());
+        rootEntrySet.add(entry);
+        assertFalse(rootEntrySet.isEmpty());
     }
 
     @SuppressWarnings("unlikely-arg-type")
@@ -826,9 +822,9 @@ public class PropsContainerTest
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String key : generatedKeys)
         {
-            assertTrue(entrySet.contains(key));
+            assertTrue(rootEntrySet.contains(key));
         }
-        assertFalse(entrySet.contains("non existent"));
+        assertFalse(rootEntrySet.contains("non existent"));
     }
 
     @Test
@@ -847,9 +843,9 @@ public class PropsContainerTest
             FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
         );
 
+        // insert the "a/b" key after
         generatedEntries.add(
             FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)
-            // insert the "a/b" key after
         );
         // "first2" and before
         // "first0/second0"
@@ -861,7 +857,7 @@ public class PropsContainerTest
     public void testEntrySetIteratorUnsupportedRemove()
         throws Throwable
     {
-        final Iterator<Entry<String, String>> iterator = entrySet.iterator();
+        final Iterator<Entry<String, String>> iterator = rootEntrySet.iterator();
 
         iterator.next();
 
@@ -876,7 +872,7 @@ public class PropsContainerTest
         final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(
             FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
         );
-        assertArrayEquals(generatedEntryList.toArray(), entrySet.toArray());
+        assertArrayEquals(generatedEntryList.toArray(), rootEntrySet.toArray());
     }
 
     @Test
@@ -888,8 +884,8 @@ public class PropsContainerTest
         );
         final Entry<String, String>[] expectedEntries = new Entry[generatedEntryList.size()];
         generatedEntryList.toArray(expectedEntries);
-        final Entry<String, String>[] actualEntries = new Entry[entrySet.size()];
-        entrySet.toArray(actualEntries);
+        final Entry<String, String>[] actualEntries = new Entry[rootEntrySet.size()];
+        rootEntrySet.toArray(actualEntries);
 
         assertArrayEquals(expectedEntries, actualEntries);
     }
@@ -901,7 +897,7 @@ public class PropsContainerTest
         final String insertedKey = "test";
         final String insertedValue = "testValue";
         final Entry<String, String> insertedEntry = createEntry(insertedKey, insertedValue);
-        entrySet.add(insertedEntry);
+        rootEntrySet.add(insertedEntry);
         assertEquals(insertedValue, root.getProp(insertedKey));
 
         final String insertedContainer = "container";
@@ -912,7 +908,7 @@ public class PropsContainerTest
             insertedContainerKey, insertedContainerValue
         );
 
-        entrySet.add(insertedContainerEntry);
+        rootEntrySet.add(insertedContainerEntry);
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
         final Props containerNamespace = root.getNamespace(insertedContainer);
@@ -921,7 +917,7 @@ public class PropsContainerTest
         // do not override existing key
         final String existingKey = FIRST_KEY + "0";
         final String overriddenValue = "override";
-        entrySet.add(createEntry(existingKey, overriddenValue));
+        rootEntrySet.add(createEntry(existingKey, overriddenValue));
         assertNotEquals(overriddenValue, root.getProp(existingKey));
     }
 
@@ -932,7 +928,7 @@ public class PropsContainerTest
         final String insertedKey = "test";
         final String insertedValue = "testValue";
         final Entry<String, String> insertedEntry = createEntry(insertedKey, insertedValue);
-        entrySet.add(insertedEntry);
+        rootEntrySet.add(insertedEntry);
         assertEquals(insertedValue, root.getProp(insertedKey));
 
         final String insertedContainer = "container";
@@ -943,7 +939,7 @@ public class PropsContainerTest
             insertedContainerKey, insertedContainerValue
         );
 
-        entrySet.add(insertedContainerEntry);
+        rootEntrySet.add(insertedContainerEntry);
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
         final Props containerNamespace = root.getNamespace(insertedContainer);
@@ -952,7 +948,7 @@ public class PropsContainerTest
         // do not override existing key
         final String existingKey = FIRST_KEY + "0";
         final String overriddenValue = "override";
-        entrySet.add(createEntry(existingKey, overriddenValue));
+        rootEntrySet.add(createEntry(existingKey, overriddenValue));
         assertNotEquals(overriddenValue, root.getProp(existingKey));
     }
 
@@ -962,36 +958,36 @@ public class PropsContainerTest
         final Set<Entry<String, String>> expectedEntries = new HashSet<>(
             generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
-        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, entrySet.size());
-        assertEquals(expectedEntries, entrySet);
+        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, rootEntrySet.size());
+        assertEquals(expectedEntries, rootEntrySet);
 
         final String keyToRemove = FIRST_KEY + "0";
         Entry<String, String> entryToRemove = createEntry(keyToRemove, "0");
-        entrySet.remove(entryToRemove);
+        rootEntrySet.remove(entryToRemove);
         expectedEntries.remove(entryToRemove);
-        assertEquals(expectedEntries, entrySet);
+        assertEquals(expectedEntries, rootEntrySet);
 
-        entrySet.remove(createEntry("nonExistent", "some value"));
-        assertEquals(expectedEntries, entrySet);
+        rootEntrySet.remove(createEntry("nonExistent", "some value"));
+        assertEquals(expectedEntries, rootEntrySet);
     }
 
-    @SuppressWarnings("unlikely-arg-type")
+    @SuppressWarnings({"unlikely-arg-type", "checkstyle:magicnumber"})
     @Test
     public void testEntrySetContainsAll()
     {
         // final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT,
         // SECOND_KEY, SECOND_AMOUNT);
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        assertTrue(entrySet.containsAll(generatedKeys));
+        assertTrue(rootEntrySet.containsAll(generatedKeys));
 
         generatedKeys.remove(3); // randomly diced :)
-        assertTrue(entrySet.containsAll(generatedKeys));
+        assertTrue(rootEntrySet.containsAll(generatedKeys));
 
         // generatedEntries.add(createEntry("unknown key", "some value"));
         generatedKeys.add("unknown key");
-        assertFalse(entrySet.containsAll(generatedKeys));
+        assertFalse(rootEntrySet.containsAll(generatedKeys));
 
-        assertTrue(entrySet.containsAll(new ArrayList<>())); // empty list
+        assertTrue(rootEntrySet.containsAll(new ArrayList<>())); // empty list
     }
 
     @Test
@@ -1004,7 +1000,7 @@ public class PropsContainerTest
         entriesToAdd.add(createEntry("new key", "value"));
         entriesToAdd.add(createEntry(FIRST_KEY + "0", "other value"));
 
-        entrySet.addAll(entriesToAdd);
+        rootEntrySet.addAll(entriesToAdd);
         generatedEntries.addAll(entriesToAdd);
 
         Iterator<Entry<String, String>> tmpIt = generatedEntries.iterator();
@@ -1020,7 +1016,7 @@ public class PropsContainerTest
             }
         }
 
-        Iterator<Entry<String, String>> entrySetIterator = entrySet.iterator();
+        Iterator<Entry<String, String>> entrySetIterator = rootEntrySet.iterator();
         while (entrySetIterator.hasNext())
         {
             Entry<String, String> entrySetEntry = entrySetIterator.next();
@@ -1053,7 +1049,7 @@ public class PropsContainerTest
 
         try
         {
-            entrySet.addAll(entriesToAdd);
+            rootEntrySet.addAll(entriesToAdd);
             fail("addAll should have thrownd an IllegalArgumentException caused by a InvalidKeyException");
         }
         catch (IllegalArgumentException illegalArgExc)
@@ -1070,8 +1066,8 @@ public class PropsContainerTest
 
         try
         {
-            entrySet.addAll(entriesToAdd);
-            fail("addAll should have thrownd an IllegalArgumentException caused by a InvalidValueException");
+            rootEntrySet.addAll(entriesToAdd);
+            fail("addAll should have thrown an IllegalArgumentException caused by a InvalidValueException");
         }
         catch (IllegalArgumentException illegalArgExc)
         {
@@ -1087,11 +1083,11 @@ public class PropsContainerTest
         retainedKeys.add(FIRST_KEY + "0");
         retainedKeys.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
-        entrySet.retainAll(retainedKeys);
+        rootEntrySet.retainAll(retainedKeys);
 
-        assertTrue(entrySet.containsAll(retainedKeys));
+        assertTrue(rootEntrySet.containsAll(retainedKeys));
         final HashSet<String> remainingKeys = new HashSet<>();
-        for (Entry<String, String> entry : entrySet)
+        for (Entry<String, String> entry : rootEntrySet)
         {
             remainingKeys.add(entry.getKey());
         }
@@ -1110,47 +1106,48 @@ public class PropsContainerTest
         entriesToRemove.add(createEntry(glue(FIRST_KEY + "1", SECOND_KEY + "2"), "1_2"));
 
         generatedEntries.removeAll(entriesToRemove);
-        assertTrue(entrySet.removeAll(entriesToRemove));
+        assertTrue(rootEntrySet.removeAll(entriesToRemove));
 
-        assertEquals(generatedEntries.size(), entrySet.size());
-        assertEquals(generatedEntries, entrySet);
+        assertEquals(generatedEntries.size(), rootEntrySet.size());
+        assertEquals(generatedEntries, rootEntrySet);
     }
 
     @Test
     public void testEntrySetClear()
     {
-        assertFalse(entrySet.isEmpty());
-        entrySet.clear();
-        assertTrue(entrySet.isEmpty());
+        assertFalse(rootEntrySet.isEmpty());
+        rootEntrySet.clear();
+        assertTrue(rootEntrySet.isEmpty());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetEquals()
     {
-        final HashSet<Entry<String, String>> clone = new HashSet<>(entrySet);
+        final HashSet<Entry<String, String>> clone = new HashSet<>(rootEntrySet);
 
-        assertTrue(entrySet.equals(entrySet));
-        assertTrue(entrySet.equals(clone));
-        assertFalse(entrySet.equals(null));
-        assertFalse(entrySet.equals(root));
+        assertTrue(rootEntrySet.equals(rootEntrySet));
+        assertTrue(rootEntrySet.equals(clone));
+        assertFalse(rootEntrySet.equals(null));
+        assertFalse(rootEntrySet.equals(root));
 
         clone.remove(createEntry(FIRST_KEY + "0", "0"));
-        assertFalse(entrySet.equals(clone));
+        assertFalse(rootEntrySet.equals(clone));
     }
 
     @Test
     public void testEntrySetHashCode()
     {
-        final int origHashCode = entrySet.hashCode();
+        final int origHashCode = rootEntrySet.hashCode();
 
         final Entry<String, String> entry = createEntry("key", "value");
-        entrySet.add(entry);
+        rootEntrySet.add(entry);
 
-        assertNotEquals(origHashCode, entrySet.hashCode());
+        assertNotEquals(origHashCode, rootEntrySet.hashCode());
 
-        entrySet.remove(entry);
+        rootEntrySet.remove(entry);
 
-        assertEquals(origHashCode, entrySet.hashCode());
+        assertEquals(origHashCode, rootEntrySet.hashCode());
     }
 
     /*
@@ -1164,8 +1161,8 @@ public class PropsContainerTest
             generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
         );
 
-        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, keySet.size());
-        assertEquals(expectedKeys, keySet);
+        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, rootKeySet.size());
+        assertEquals(expectedKeys, rootKeySet);
     }
 
     @Test
@@ -1195,49 +1192,49 @@ public class PropsContainerTest
 
         final String removedKey = FIRST_KEY + "0";
 
-        assertTrue(keySet.contains(removedKey));
+        assertTrue(rootKeySet.contains(removedKey));
 
         root.removeProp(removedKey);
 
-        assertFalse(keySet.contains(removedKey));
+        assertFalse(rootKeySet.contains(removedKey));
     }
 
     @Test
     public void testKeySetSize() throws Throwable
     {
-        assertEquals(root.size(), keySet.size());
+        assertEquals(root.size(), rootKeySet.size());
 
         final String key = "key";
         root.setProp(key, "value");
-        assertEquals(root.size(), keySet.size());
+        assertEquals(root.size(), rootKeySet.size());
 
         root.setProp(key, "other value");
-        assertEquals(root.size(), keySet.size());
+        assertEquals(root.size(), rootKeySet.size());
 
         root.removeProp(key);
-        assertEquals(root.size(), keySet.size());
+        assertEquals(root.size(), rootKeySet.size());
 
         root.clear();
-        assertEquals(root.size(), keySet.size());
+        assertEquals(root.size(), rootKeySet.size());
 
-        keySet.add(key);
-        assertEquals(root.size(), keySet.size());
+        rootKeySet.add(key);
+        assertEquals(root.size(), rootKeySet.size());
 
-        keySet.remove(key);
-        assertEquals(root.size(), keySet.size());
+        rootKeySet.remove(key);
+        assertEquals(root.size(), rootKeySet.size());
     }
 
     @Test
     public void testKeySetIsEmpty()
     {
         // we have filled root and keySet in the setup of JUnit
-        assertFalse(keySet.isEmpty());
+        assertFalse(rootKeySet.isEmpty());
 
-        keySet.clear();
-        assertTrue(keySet.isEmpty());
+        rootKeySet.clear();
+        assertTrue(rootKeySet.isEmpty());
 
-        keySet.add("key");
-        assertFalse(keySet.isEmpty());
+        rootKeySet.add("key");
+        assertFalse(rootKeySet.isEmpty());
     }
 
     @Test
@@ -1248,9 +1245,9 @@ public class PropsContainerTest
         );
         for (final String key : generatedKeys)
         {
-            assertTrue(keySet.contains(key));
+            assertTrue(rootKeySet.contains(key));
         }
-        assertFalse(keySet.contains("non existent"));
+        assertFalse(rootKeySet.contains("non existent"));
     }
 
     @Test
@@ -1274,7 +1271,7 @@ public class PropsContainerTest
     public void testKeySetIteratorUnsupportedRemove()
         throws Throwable
     {
-        final Iterator<String> iterator = keySet.iterator();
+        final Iterator<String> iterator = rootKeySet.iterator();
 
         iterator.next();
 
@@ -1289,7 +1286,7 @@ public class PropsContainerTest
         final ArrayList<String> generatedKeyList = generateKeys(
             FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
         );
-        assertArrayEquals(generatedKeyList.toArray(), keySet.toArray());
+        assertArrayEquals(generatedKeyList.toArray(), rootKeySet.toArray());
     }
 
     @Test
@@ -1298,8 +1295,8 @@ public class PropsContainerTest
         final ArrayList<String> generatedKeyList = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         final String[] expectedKeys = new String[generatedKeyList.size()];
         generatedKeyList.toArray(expectedKeys);
-        final String[] actualKeys = new String[keySet.size()];
-        keySet.toArray(actualKeys);
+        final String[] actualKeys = new String[rootKeySet.size()];
+        rootKeySet.toArray(actualKeys);
 
         assertArrayEquals(expectedKeys, actualKeys);
     }
@@ -1309,13 +1306,13 @@ public class PropsContainerTest
     {
         // create a new entry with defined key and empty string as value
         final String insertedKey = "test";
-        keySet.add(insertedKey);
+        rootKeySet.add(insertedKey);
         assertEquals("", root.getProp(insertedKey));
 
         final String insertedContainer = "container";
         final String insertedEntryKey = "test";
         final String insertedContainerkey = glue(insertedContainer, insertedEntryKey);
-        keySet.add(insertedContainerkey);
+        rootKeySet.add(insertedContainerkey);
         assertEquals("", root.getProp(insertedContainerkey));
         assertEquals("", root.getProp(insertedEntryKey, insertedContainer));
         final Props containerNamespace = root.getNamespace(insertedContainer);
@@ -1323,7 +1320,7 @@ public class PropsContainerTest
 
         // do not override existing key
         final String existingKey = FIRST_KEY + "0";
-        keySet.add(existingKey);
+        rootKeySet.add(existingKey);
         assertNotEquals("", root.getProp(existingKey));
     }
 
@@ -1334,31 +1331,32 @@ public class PropsContainerTest
             generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
         );
 
-        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, keySet.size());
-        assertEquals(expectedKeys, keySet);
+        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, rootKeySet.size());
+        assertEquals(expectedKeys, rootKeySet);
 
         final String keyToRemove = FIRST_KEY + "0";
-        keySet.remove(keyToRemove);
+        rootKeySet.remove(keyToRemove);
         expectedKeys.remove(keyToRemove);
-        assertEquals(expectedKeys, keySet);
+        assertEquals(expectedKeys, rootKeySet);
 
-        keySet.remove("non existent");
-        assertEquals(expectedKeys, keySet);
+        rootKeySet.remove("non existent");
+        assertEquals(expectedKeys, rootKeySet);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testKeySetContainsAll()
     {
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        assertTrue(keySet.containsAll(generatedKeys));
+        assertTrue(rootKeySet.containsAll(generatedKeys));
 
         generatedKeys.remove(3); // randomly diced :)
-        assertTrue(keySet.containsAll(generatedKeys));
+        assertTrue(rootKeySet.containsAll(generatedKeys));
 
         generatedKeys.add("unknown key");
-        assertFalse(keySet.containsAll(generatedKeys));
+        assertFalse(rootKeySet.containsAll(generatedKeys));
 
-        assertTrue(keySet.containsAll(new ArrayList<>())); // empty list
+        assertTrue(rootKeySet.containsAll(new ArrayList<>())); // empty list
     }
 
     @Test
@@ -1372,10 +1370,10 @@ public class PropsContainerTest
         keysToAdd.add("new key");
         keysToAdd.add(FIRST_KEY + "0");
 
-        keySet.addAll(keysToAdd);
+        rootKeySet.addAll(keysToAdd);
         generatedKeys.addAll(keysToAdd);
 
-        assertEquals(generatedKeys, keySet);
+        assertEquals(generatedKeys, rootKeySet);
     }
 
     @Test
@@ -1385,10 +1383,10 @@ public class PropsContainerTest
         retainedKeys.add(FIRST_KEY + "0");
         retainedKeys.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
-        keySet.retainAll(retainedKeys);
+        rootKeySet.retainAll(retainedKeys);
 
-        assertTrue(keySet.containsAll(retainedKeys));
-        assertTrue(retainedKeys.containsAll(keySet));
+        assertTrue(rootKeySet.containsAll(retainedKeys));
+        assertTrue(retainedKeys.containsAll(rootKeySet));
     }
 
     @Test
@@ -1403,48 +1401,49 @@ public class PropsContainerTest
         keysToRemove.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         generatedKeys.removeAll(keysToRemove);
-        keySet.removeAll(keysToRemove);
+        rootKeySet.removeAll(keysToRemove);
 
-        assertEquals(generatedKeys, keySet);
+        assertEquals(generatedKeys, rootKeySet);
     }
 
     @Test
     public void testKeySetClear()
     {
-        assertFalse(keySet.isEmpty());
-        keySet.clear();
-        assertTrue(keySet.isEmpty());
+        assertFalse(rootKeySet.isEmpty());
+        rootKeySet.clear();
+        assertTrue(rootKeySet.isEmpty());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testKeySetEquals()
     {
-        final HashSet<String> clone = new HashSet<>(keySet);
+        final HashSet<String> clone = new HashSet<>(rootKeySet);
 
-        assertTrue(keySet.equals(keySet));
-        assertTrue(keySet.equals(clone));
-        assertFalse(keySet.equals(null));
-        assertFalse(keySet.equals(root));
+        assertTrue(rootKeySet.equals(rootKeySet));
+        assertTrue(rootKeySet.equals(clone));
+        assertFalse(rootKeySet.equals(null));
+        assertFalse(rootKeySet.equals(root));
 
         clone.remove(FIRST_KEY + "0");
-        assertFalse(keySet.equals(clone));
+        assertFalse(rootKeySet.equals(clone));
     }
 
     @Test
     public void testKeySetHashCode()
     {
-        final int origHashCode = keySet.hashCode();
+        final int origHashCode = rootKeySet.hashCode();
 
         final String key = "key";
-        keySet.add(key);
+        rootKeySet.add(key);
 
-        final int changedHashCode = keySet.hashCode();
+        final int changedHashCode = rootKeySet.hashCode();
 
         assertNotEquals(origHashCode, changedHashCode);
 
-        keySet.remove(key);
+        rootKeySet.remove(key);
 
-        assertEquals(origHashCode, keySet.hashCode());
+        assertEquals(origHashCode, rootKeySet.hashCode());
     }
 
     /*
@@ -1454,7 +1453,7 @@ public class PropsContainerTest
     @Test
     public void testMap() throws Throwable
     {
-        final Set<Entry<String, String>> entrySet = map.entrySet();
+        final Set<Entry<String, String>> entrySet = rootMap.entrySet();
 
         checkIfEntrySetIsValid(FIRST_KEY, SECOND_KEY, FIRST_AMOUNT, SECOND_AMOUNT, entrySet);
     }
@@ -1467,56 +1466,56 @@ public class PropsContainerTest
 
         root.setProp(key, value);
 
-        assertEquals(value, map.get(key));
+        assertEquals(value, rootMap.get(key));
     }
 
     @Test
     public void testMapRemoveFromProps() throws Throwable
     {
         final String key = FIRST_KEY + "0";
-        assertEquals("0", map.get(key));
+        assertEquals("0", rootMap.get(key));
 
         root.removeProp(key);
 
-        assertNull(map.get(key));
+        assertNull(rootMap.get(key));
     }
 
     @Test
     public void testMapSize() throws Throwable
     {
-        assertEquals(root.size(), map.size());
+        assertEquals(root.size(), rootMap.size());
 
         final String key = "key";
         root.setProp(key, "value");
-        assertEquals(root.size(), map.size());
+        assertEquals(root.size(), rootMap.size());
 
         root.setProp(key, "other value");
-        assertEquals(root.size(), map.size());
+        assertEquals(root.size(), rootMap.size());
 
         root.removeProp(FIRST_KEY + "0");
-        assertEquals(root.size(), map.size());
+        assertEquals(root.size(), rootMap.size());
 
         root.removeProp("non existent");
-        assertEquals(root.size(), map.size());
+        assertEquals(root.size(), rootMap.size());
 
         root.clear();
-        assertEquals(root.size(), map.size());
+        assertEquals(root.size(), rootMap.size());
     }
 
     @Test
     public void testMapIsEmpty()
     {
         // map is filled in setup
-        assertFalse(map.isEmpty());
+        assertFalse(rootMap.isEmpty());
 
-        map.clear();
-        assertTrue(map.isEmpty());
+        rootMap.clear();
+        assertTrue(rootMap.isEmpty());
 
-        map.put("test", "test");
-        assertFalse(map.isEmpty());
+        rootMap.put("test", "test");
+        assertFalse(rootMap.isEmpty());
 
-        map.remove("test");
-        assertTrue(map.isEmpty());
+        rootMap.remove("test");
+        assertTrue(rootMap.isEmpty());
     }
 
     @Test
@@ -1525,13 +1524,13 @@ public class PropsContainerTest
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String key : keys)
         {
-            assertTrue(map.containsKey(key));
+            assertTrue(rootMap.containsKey(key));
         }
-        assertFalse(map.containsKey("non existent"));
+        assertFalse(rootMap.containsKey("non existent"));
 
         final String removedKey = FIRST_KEY + "0";
-        map.remove(removedKey);
-        assertFalse(map.containsKey(removedKey));
+        rootMap.remove(removedKey);
+        assertFalse(rootMap.containsKey(removedKey));
     }
 
     @Test
@@ -1540,12 +1539,12 @@ public class PropsContainerTest
         final Collection<String> values = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String value : values)
         {
-            assertTrue(map.containsValue(value));
+            assertTrue(rootMap.containsValue(value));
         }
-        assertFalse(map.containsValue("non existent"));
+        assertFalse(rootMap.containsValue("non existent"));
 
-        map.remove(FIRST_KEY + "0");
-        assertFalse(map.containsValue("0"));
+        rootMap.remove(FIRST_KEY + "0");
+        assertFalse(rootMap.containsValue("0"));
     }
 
     @Test
@@ -1554,9 +1553,9 @@ public class PropsContainerTest
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String key : keys)
         {
-            assertEquals(root.getProp(key), map.get(key));
+            assertEquals(root.getProp(key), rootMap.get(key));
         }
-        assertNull(map.get("non existant"));
+        assertNull(rootMap.get("non existant"));
     }
 
     @Test
@@ -1564,7 +1563,7 @@ public class PropsContainerTest
     {
         final String insertedKey = "new key";
         final String insertedValue = "new value";
-        map.put(insertedKey, insertedValue);
+        rootMap.put(insertedKey, insertedValue);
 
         assertEquals(insertedValue, root.getProp(insertedKey));
 
@@ -1572,7 +1571,7 @@ public class PropsContainerTest
         final String containerKey = "key";
         final String insertedContainerKey = glue(container, containerKey);
         final String insertedContainerValue = "old value";
-        map.put(insertedContainerKey, insertedContainerValue);
+        rootMap.put(insertedContainerKey, insertedContainerValue);
 
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         Props containerNamespace = root.getNamespace(container);
@@ -1584,7 +1583,7 @@ public class PropsContainerTest
     {
         final String insertedKey = null;
         final String insertedValue = "new value";
-        map.put(insertedKey, insertedValue);
+        rootMap.put(insertedKey, insertedValue);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -1592,23 +1591,23 @@ public class PropsContainerTest
     {
         final String insertedKey = "new key";
         final String insertedValue = null;
-        map.put(insertedKey, insertedValue);
+        rootMap.put(insertedKey, insertedValue);
     }
 
     @Test
     public void testMapRemove() throws Throwable
     {
         final String removedEntryKey = FIRST_KEY + "0";
-        map.remove(removedEntryKey);
+        rootMap.remove(removedEntryKey);
         assertNull(root.getProp(removedEntryKey));
 
         final String removedNamespace = FIRST_KEY + "0";
         final String removedContainerKey = glue(removedNamespace, SECOND_KEY + "2");
-        map.remove(removedContainerKey);
+        rootMap.remove(removedContainerKey);
         assertNull(root.getProp(removedContainerKey));
 
-        map.remove(glue(removedNamespace, "second0"));
-        map.remove(glue(removedNamespace, "second1"));
+        rootMap.remove(glue(removedNamespace, "second0"));
+        rootMap.remove(glue(removedNamespace, "second1"));
         // remove the other two entries, thus the namespace should get deleted too
         assertNull(root.getNamespace(removedNamespace));
     }
@@ -1629,13 +1628,13 @@ public class PropsContainerTest
         mapToInsert.put(insertedContainerKey, insertedContainerValue);
         mapToInsert.put(overriddenKey, overriddenValue);
 
-        map.putAll(mapToInsert);
+        rootMap.putAll(mapToInsert);
 
-        assertEquals(insertedValue, map.get(insertedKey));
+        assertEquals(insertedValue, rootMap.get(insertedKey));
         assertEquals(insertedValue, root.getProp(insertedKey));
-        assertEquals(insertedContainerValue, map.get(insertedContainerKey));
+        assertEquals(insertedContainerValue, rootMap.get(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
-        assertEquals(overriddenValue, map.get(overriddenKey));
+        assertEquals(overriddenValue, rootMap.get(overriddenKey));
         assertEquals(overriddenValue, root.getProp(overriddenKey));
     }
 
@@ -1646,7 +1645,7 @@ public class PropsContainerTest
 
         mapToInsert.put(null, "value");
 
-        map.putAll(mapToInsert);
+        rootMap.putAll(mapToInsert);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -1656,16 +1655,16 @@ public class PropsContainerTest
 
         mapToInsert.put("key", null);
 
-        map.putAll(mapToInsert);
+        rootMap.putAll(mapToInsert);
     }
 
     @Test
     public void testMapClear()
     {
-        assertFalse(map.isEmpty());
+        assertFalse(rootMap.isEmpty());
 
-        map.clear();
-        assertTrue(map.isEmpty());
+        rootMap.clear();
+        assertTrue(rootMap.isEmpty());
     }
 
     @Test
@@ -1674,35 +1673,35 @@ public class PropsContainerTest
         // we assume that map contains the correct data
         // thus we clone all entries into a new hashmap, and call map.equals
 
-        final HashMap<String, String> clone = new HashMap<>(map);
+        final HashMap<String, String> clone = new HashMap<>(rootMap);
 
-        assertTrue(map.equals(map));
-        assertTrue(map.equals(clone));
-        assertFalse(map.equals(null));
-        assertFalse(map.equals(root));
+        assertTrue(rootMap.equals(rootMap));
+        assertTrue(rootMap.equals(clone));
+        assertFalse(rootMap.equals(null));
+        assertFalse(rootMap.equals(root));
 
         clone.remove(FIRST_KEY + "0");
-        assertFalse(map.equals(clone));
+        assertFalse(rootMap.equals(clone));
 
-        PropsContainer container = propsContainerFactory.getInstance(null, null);
+        PropsContainer container = propsContainerFactory.getInstance("dummyTestInstance");
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        assertTrue(map.equals(container.map()));
+        assertTrue(rootMap.equals(container.map()));
     }
 
     @Test
     public void testMapHashCode()
     {
-        final int origHashCode = map.hashCode();
+        final int origHashCode = rootMap.hashCode();
 
         final String key = "key";
         final String value = "value";
-        map.put(key, value);
+        rootMap.put(key, value);
 
-        assertNotEquals(origHashCode, map.hashCode());
+        assertNotEquals(origHashCode, rootMap.hashCode());
 
-        map.remove(key);
+        rootMap.remove(key);
 
-        assertEquals(origHashCode, map.hashCode());
+        assertEquals(origHashCode, rootMap.hashCode());
     }
 
     @Test
@@ -1713,9 +1712,9 @@ public class PropsContainerTest
         final String value = "value";
         root.setProp(key, value);
 
-        map = root.map();
+        rootMap = root.map();
 
-        final Entry<String, String> entry = map.entrySet().iterator().next();
+        final Entry<String, String> entry = rootMap.entrySet().iterator().next();
 
         assertEquals(key, entry.getKey());
     }
@@ -1728,9 +1727,9 @@ public class PropsContainerTest
         final String value = "value";
         root.setProp(key, value);
 
-        map = root.map();
+        rootMap = root.map();
 
-        final Entry<String, String> entry = map.entrySet().iterator().next();
+        final Entry<String, String> entry = rootMap.entrySet().iterator().next();
 
         assertEquals(value, entry.getValue());
     }
@@ -1743,14 +1742,14 @@ public class PropsContainerTest
         final String value = "value";
         root.setProp(key, value);
 
-        map = root.map();
+        rootMap = root.map();
 
-        final Entry<String, String> entry = map.entrySet().iterator().next();
+        final Entry<String, String> entry = rootMap.entrySet().iterator().next();
 
         final String otherValue = "other";
         entry.setValue(otherValue);
 
-        assertEquals(otherValue, map.get(key));
+        assertEquals(otherValue, rootMap.get(key));
         assertEquals(otherValue, root.getProp(key));
     }
 
@@ -1762,9 +1761,9 @@ public class PropsContainerTest
         final String value = "value";
         root.setProp(key, value);
 
-        map = root.map();
+        rootMap = root.map();
 
-        final Entry<String, String> entry = map.entrySet().iterator().next();
+        final Entry<String, String> entry = rootMap.entrySet().iterator().next();
 
         assertTrue(entry.equals(entry));
 
@@ -1783,9 +1782,9 @@ public class PropsContainerTest
     @Test
     public void testMapEntryHashCode()
     {
-        final Entry<String, String> entry = map.entrySet().iterator().next();
+        final Entry<String, String> entry = rootMap.entrySet().iterator().next();
         final int origEntryHashCode = entry.hashCode();
-        final int origMapHashCode = map.hashCode();
+        final int origMapHashCode = rootMap.hashCode();
 
         final String originalValue = entry.getValue();
         entry.setValue("otherValue");
@@ -1794,7 +1793,7 @@ public class PropsContainerTest
 
         entry.setValue(originalValue);
 
-        assertEquals(origMapHashCode, map.hashCode());
+        assertEquals(origMapHashCode, rootMap.hashCode());
     }
 
     /*
@@ -1806,9 +1805,9 @@ public class PropsContainerTest
     {
         final Collection<String> expectedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
-        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, values.size());
-        assertTrue(expectedValues.containsAll(values));
-        assertTrue(values.containsAll(expectedValues));
+        assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, rootValues.size());
+        assertTrue(expectedValues.containsAll(rootValues));
+        assertTrue(rootValues.containsAll(expectedValues));
     }
 
     @Test
@@ -1839,43 +1838,43 @@ public class PropsContainerTest
         final String removedKey = FIRST_KEY + "0";
         final String removedValue = "0";
 
-        assertTrue(values.contains(removedValue));
+        assertTrue(rootValues.contains(removedValue));
 
         root.removeProp(removedKey);
 
-        assertFalse(values.contains(removedKey));
+        assertFalse(rootValues.contains(removedKey));
     }
 
     @Test
     public void testValuesSize() throws Throwable
     {
-        assertEquals(root.size(), values.size());
+        assertEquals(root.size(), rootValues.size());
 
         final String key = "key";
         root.setProp(key, "value");
-        assertEquals(root.size(), values.size());
+        assertEquals(root.size(), rootValues.size());
 
         root.setProp(key, "other value");
-        assertEquals(root.size(), values.size());
+        assertEquals(root.size(), rootValues.size());
 
         root.removeProp(key);
-        assertEquals(root.size(), values.size());
+        assertEquals(root.size(), rootValues.size());
 
         root.clear();
-        assertEquals(root.size(), values.size());
+        assertEquals(root.size(), rootValues.size());
     }
 
     @Test
     public void testValuesIsEmpty() throws Throwable
     {
         // we have filled root and keySet in the setup of JUnit
-        assertFalse(values.isEmpty());
+        assertFalse(rootValues.isEmpty());
 
-        values.clear();
-        assertTrue(values.isEmpty());
+        rootValues.clear();
+        assertTrue(rootValues.isEmpty());
 
         root.setProp("key", "value");
-        assertFalse(values.isEmpty());
+        assertFalse(rootValues.isEmpty());
     }
 
     @Test
@@ -1884,9 +1883,9 @@ public class PropsContainerTest
         final Collection<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String value : generatedValues)
         {
-            assertTrue(values.contains(value));
+            assertTrue(rootValues.contains(value));
         }
-        assertFalse(values.contains("non existent"));
+        assertFalse(rootValues.contains("non existent"));
     }
 
     @Test
@@ -1911,7 +1910,7 @@ public class PropsContainerTest
     public void testValuesColIteratorUnsupportedRemove()
         throws Throwable
     {
-        final Iterator<String> iterator = values.iterator();
+        final Iterator<String> iterator = rootValues.iterator();
 
         iterator.next();
 
@@ -1926,7 +1925,7 @@ public class PropsContainerTest
         final ArrayList<String> generatedValueList = generateValues(
             FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
         );
-        assertArrayEquals(generatedValueList.toArray(), values.toArray());
+        assertArrayEquals(generatedValueList.toArray(), rootValues.toArray());
     }
 
     @Test
@@ -1937,8 +1936,8 @@ public class PropsContainerTest
         );
         final String[] expectedValues = new String[generatedValueList.size()];
         generatedValueList.toArray(expectedValues);
-        final String[] actualValues = new String[values.size()];
-        values.toArray(actualValues);
+        final String[] actualValues = new String[rootValues.size()];
+        rootValues.toArray(actualValues);
 
         assertArrayEquals(expectedValues, actualValues);
     }
@@ -1946,34 +1945,35 @@ public class PropsContainerTest
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesAdd() throws Throwable
     {
-        values.add("some value");
+        rootValues.add("some value");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesRemove() throws Throwable
     {
-        values.remove("0");
+        rootValues.remove("0");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testValuesContainsAll()
     {
         final ArrayList<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        assertTrue(values.containsAll(generatedValues));
+        assertTrue(rootValues.containsAll(generatedValues));
 
         generatedValues.remove(3); // randomly diced :)
-        assertTrue(values.containsAll(generatedValues));
+        assertTrue(rootValues.containsAll(generatedValues));
 
         generatedValues.add("unknown key");
-        assertFalse(values.containsAll(generatedValues));
+        assertFalse(rootValues.containsAll(generatedValues));
 
-        assertTrue(values.containsAll(new ArrayList<>())); // empty list
+        assertTrue(rootValues.containsAll(new ArrayList<>())); // empty list
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesAddAll()
     {
-        values.addAll(new ArrayList<String>());
+        rootValues.addAll(new ArrayList<String>());
     }
 
     @Test
@@ -1983,10 +1983,10 @@ public class PropsContainerTest
         retainedValues.add("0");
         retainedValues.add("1_2");
 
-        values.retainAll(retainedValues);
+        rootValues.retainAll(retainedValues);
 
-        assertTrue(values.containsAll(retainedValues));
-        assertTrue(retainedValues.containsAll(values));
+        assertTrue(rootValues.containsAll(retainedValues));
+        assertTrue(retainedValues.containsAll(rootValues));
     }
 
     @Test
@@ -2001,11 +2001,11 @@ public class PropsContainerTest
         valuesToRemove.add("1_2");
 
         generatedValues.removeAll(valuesToRemove);
-        values.removeAll(valuesToRemove);
+        rootValues.removeAll(valuesToRemove);
 
-        assertEquals(values.size(), generatedValues.size());
+        assertEquals(rootValues.size(), generatedValues.size());
 
-        Iterator<String> iterator = values.iterator();
+        Iterator<String> iterator = rootValues.iterator();
         while (iterator.hasNext())
         {
             generatedValues.remove(iterator.next());
@@ -2016,37 +2016,37 @@ public class PropsContainerTest
     @Test
     public void testValuesClear()
     {
-        assertFalse(values.isEmpty());
-        values.clear();
-        assertTrue(values.isEmpty());
+        assertFalse(rootValues.isEmpty());
+        rootValues.clear();
+        assertTrue(rootValues.isEmpty());
     }
 
     @Test
     public void testValuesEquals()
     {
-        final HashSet<String> clone = new HashSet<>(values);
+        final HashSet<String> clone = new HashSet<>(rootValues);
 
-        assertTrue(values.equals(values));
-        assertTrue(values.equals(clone));
-        assertFalse(values.equals(null));
-        assertFalse(values.equals(root));
+        assertTrue(rootValues.equals(rootValues));
+        assertTrue(rootValues.equals(clone));
+        assertFalse(rootValues.equals(null));
+        assertFalse(rootValues.equals(root));
 
         clone.remove("0");
-        assertFalse(values.equals(clone));
+        assertFalse(rootValues.equals(clone));
     }
 
     @Test
     public void testValuesHashCode() throws Throwable
     {
-        final int origHashCode = values.hashCode();
+        final int origHashCode = rootValues.hashCode();
 
         final String key = "key";
         root.setProp(key, "value");
 
-        assertNotEquals(origHashCode, values.hashCode());
+        assertNotEquals(origHashCode, rootValues.hashCode());
 
         root.removeProp(key);
 
-        assertEquals(origHashCode, values.hashCode());
+        assertEquals(origHashCode, rootValues.hashCode());
     }
 }

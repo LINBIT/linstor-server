@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
@@ -11,7 +10,6 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDrive
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-
 import javax.inject.Inject;
 
 public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
@@ -48,7 +46,7 @@ public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
     }
 
     @Override
-    public void create(VolumeDefinitionData volDfnData, TransactionMgr transMgr)
+    public void create(VolumeDefinitionData volDfnData)
     {
         // no-op
     }
@@ -57,10 +55,8 @@ public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
     public VolumeDefinitionData load(
         ResourceDefinition resourceDefinition,
         VolumeNumber volumeNumber,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
-
     {
         VolumeDefinitionData volumeDfn = null;
         try
@@ -75,7 +71,7 @@ public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
     }
 
     @Override
-    public void delete(VolumeDefinitionData data, TransactionMgr transMgr)
+    public void delete(VolumeDefinitionData data)
     {
         // no-op
     }

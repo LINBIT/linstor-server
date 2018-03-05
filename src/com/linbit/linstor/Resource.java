@@ -1,8 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionObject;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -10,6 +8,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -52,11 +51,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
 
     StateFlags<RscFlags> getStateFlags();
 
-    void adjustVolumes(
-        AccessContext apiCtx,
-        TransactionMgr transMgr,
-        String defaultStorPoolName
-    )
+    void adjustVolumes(AccessContext apiCtx, String defaultStorPoolName)
         throws InvalidNameException, LinStorException;
 
     void markDeleted(AccessContext accCtx)

@@ -7,9 +7,9 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
+
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
@@ -28,6 +28,7 @@ import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
@@ -45,16 +46,23 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.testutils.TestCoreModule;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -67,12 +75,14 @@ import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public abstract class DerbyBase implements DerbyTestConstants
 {
     @Rule
     public TestName testMethodName = new TestName();
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(10); // 10 seconds max per method tested
 
     private static final String SELECT_PROPS_BY_INSTANCE =
         " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
@@ -125,6 +135,10 @@ public abstract class DerbyBase implements DerbyTestConstants
     @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
 
+    @Inject protected LinStorScope testScope;
+    @Inject protected TransactionObjectFactory transObjFactory;
+    @Inject protected Provider<TransactionMgr> transMgrProvider;
+
     @BeforeClass
     public static void setUpBeforeClass()
         throws SQLException, InvalidNameException
@@ -146,7 +160,7 @@ public abstract class DerbyBase implements DerbyTestConstants
                 dbConnPool.returnConnection(connection);
             }
 
-            DbDerbyPersistence initializationSecureDbDriver = new DbDerbyPersistence(SYS_CTX, errorReporter);
+            DbDerbyPersistence initializationSecureDbDriver = new DbDerbyPersistence();
 
             Identity.load(dbConnPool, initializationSecureDbDriver);
             SecurityType.load(dbConnPool, initializationSecureDbDriver);
@@ -162,12 +176,13 @@ public abstract class DerbyBase implements DerbyTestConstants
 
     public void setUp(Module additionalModule) throws Exception
     {
-        con = getConnection();
+        con = getNewConnection();
 
         errorReporter.logTrace("Running cleanups for next method: %s", testMethodName.getMethodName());
         truncateTables();
         insertDefaults(con);
         errorReporter.logTrace("cleanups done, initializing: %s", testMethodName.getMethodName());
+//        dbConnPool.returnConnection(con);
 
         MockitoAnnotations.initMocks(this);
 
@@ -178,21 +193,30 @@ public abstract class DerbyBase implements DerbyTestConstants
             new CoreModule(),
             new SharedDbConnectionPoolModule(),
             new ControllerDbModule(),
+            new ControllerTransactionMgrModule(),
+            new TestApiModule(),
             additionalModule,
             BoundFieldModule.of(this)
         );
         injector.injectMembers(this);
 
-        Connection tmpCon = dbConnPool.getConnection();
 
-        TransactionMgr transMgr = new TransactionMgr(tmpCon);
+        TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
+        testScope.enter();
+        testScope.seed(TransactionMgr.class, transMgr);
+
         // make sure to seal the internal caches
-        persistenceDbDriver.loadAll(transMgr);
+        persistenceDbDriver.loadAll();
 
         transMgr.commit();
+        testScope.exit();
         dbConnPool.returnConnection(transMgr);
 
         clearCaches();
+
+        transMgr = new ControllerTransactionMgr(dbConnPool);
+        testScope.enter();
+        testScope.seed(TransactionMgr.class, transMgr);
     }
 
     protected void clearCaches()
@@ -205,34 +229,51 @@ public abstract class DerbyBase implements DerbyTestConstants
     protected void satelliteMode()
     {
         // TODO
-//        CoreUtils.satelliteMode(SYS_CTX, nodesMap, rscDfnMap, storPoolDfnMap);
+        // CoreUtils.satelliteMode(SYS_CTX, nodesMap, rscDfnMap, storPoolDfnMap);
     }
 
     @After
     public void tearDown() throws Exception
     {
-        for (Statement statement : statements)
+        try
         {
-            statement.close();
-        }
-        for (Connection connection : connections)
-        {
-            dbConnPool.returnConnection(connection);
-        }
-        connections.clear();
+            for (Statement statement : statements)
+            {
+                statement.close();
+            }
+            for (Connection connection : connections)
+            {
+                dbConnPool.returnConnection(connection);
+            }
+            connections.clear();
 
-        if (dbConnPool != null && dbConnPool.closeAllThreadLocalConnections())
+            if (dbConnPool != null)
+            {
+                dbConnPool.closeAllThreadLocalConnections();
+            }
+        }
+        finally
         {
-            fail("Unclosed database connection");
+            testScope.exit();
         }
     }
 
-    protected Connection getConnection() throws SQLException
+    protected Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
+    }
+
+    protected Connection getNewConnection() throws SQLException
     {
         Connection connection = dbConnPool.getConnection();
         connection.setAutoCommit(false);
         connections.add(connection);
         return connection;
+    }
+
+    protected void commit() throws SQLException
+    {
+        transMgrProvider.get().commit();
     }
 
     protected void add(Statement stmt)
@@ -362,15 +403,14 @@ public abstract class DerbyBase implements DerbyTestConstants
         return java.util.UUID.randomUUID();
     }
 
-    protected static void testProps(
-        TransactionMgr transMgr,
+    protected void testProps(
         String instanceName,
         Map<String, String> testMap
     )
         throws SQLException
     {
         TreeMap<String, String> map = new TreeMap<>(testMap);
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_PROPS_BY_INSTANCE);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_PROPS_BY_INSTANCE);
         stmt.setString(1, instanceName.toUpperCase());
         ResultSet resultSet = stmt.executeQuery();
 
@@ -387,9 +427,10 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertIdentity(TransactionMgr transMgr, IdentityName name) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertIdentity(TransactionMgr transMgr, IdentityName name) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_IDENTITIES +
             " (" + IDENTITY_NAME + ", " + IDENTITY_DSP_NAME + ") " +
             " VALUES (?, ?)"
@@ -400,9 +441,10 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertSecType(TransactionMgr transMgr, SecTypeName name) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertSecType(TransactionMgr transMgr, SecTypeName name) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_TYPES +
             " (" + TYPE_NAME + ", " + TYPE_DSP_NAME + ") " +
             " VALUES (?, ?)"
@@ -413,9 +455,10 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertRole(TransactionMgr transMgr, RoleName name, SecTypeName domain) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertRole(TransactionMgr transMgr, RoleName name, SecTypeName domain) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_ROLES +
             " (" + ROLE_NAME + ", " + ROLE_DSP_NAME + ", " + DOMAIN_NAME + ") " +
             " VALUES (?, ?, ?)"
@@ -427,14 +470,15 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertObjProt(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertObjProt(
         TransactionMgr transMgr,
         String objPath,
         AccessContext accCtx
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_SEC_OBJECT_PROTECTION);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_SEC_OBJECT_PROTECTION);
         stmt.setString(1, objPath);
         stmt.setString(2, accCtx.subjectId.name.value);
         stmt.setString(3, accCtx.subjectRole.name.value);
@@ -443,8 +487,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertNode(
-        TransactionMgr transMgr,
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertNode(
         java.util.UUID uuid,
         NodeName nodeName,
         long flags,
@@ -458,7 +502,7 @@ public abstract class DerbyBase implements DerbyTestConstants
             typeMask |= type.getFlagValue();
         }
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_NODES);
+        PreparedStatement stmt = getConnection().prepareStatement(INSERT_NODES);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, nodeName.value);
         stmt.setString(3, nodeName.displayValue);
@@ -468,7 +512,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertNetInterface(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertNetInterface(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -478,7 +523,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_NODE_NET_INTERFACES);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_NODE_NET_INTERFACES);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, nodeName.value);
         stmt.setString(3, netName.value);
@@ -489,7 +534,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertNodeCon(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertNodeCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
@@ -497,7 +543,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_NODE_CONNECTIONS);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_NODE_CONNECTIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
@@ -505,7 +551,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertResCon(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertResCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
@@ -514,7 +561,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_RESOURCE_CONNECTIONS);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_RESOURCE_CONNECTIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
@@ -523,7 +570,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertVolCon(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertVolCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
@@ -533,7 +581,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_VOLUME_CONNECTIONS);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_VOLUME_CONNECTIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
@@ -543,7 +591,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertResDfn(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertResDfn(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         ResourceName resName,
@@ -551,7 +600,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_RESOURCE_DEFINITIONS);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_RESOURCE_DEFINITIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, resName.value);
         stmt.setString(3, resName.displayValue);
@@ -560,7 +609,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertRes(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertRes(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -570,7 +620,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_RESOURCES);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_RESOURCES);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, nodeName.value);
         stmt.setString(3, resName.value);
@@ -580,7 +630,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertVolDfn(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertVolDfn(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         ResourceName resName,
@@ -591,7 +642,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_VOLUME_DEFINITIONS);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_VOLUME_DEFINITIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, resName.value);
         stmt.setInt(3, volId.value);
@@ -602,7 +653,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertVol(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertVol(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -615,7 +667,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_VOLUMES);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_VOLUMES);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, nodeName.value);
         stmt.setString(3, resName.value);
@@ -628,14 +680,15 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertStorPoolDfn(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertStorPoolDfn(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         StorPoolName poolName
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_STOR_POOL_DEFINITIONS);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_STOR_POOL_DEFINITIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, poolName.value);
         stmt.setString(3, poolName.displayValue);
@@ -643,7 +696,8 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertStorPool(
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertStorPool(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -652,7 +706,7 @@ public abstract class DerbyBase implements DerbyTestConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_NODE_STOR_POOL);
+        PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_NODE_STOR_POOL);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, nodeName.value);
         stmt.setString(3, poolName.value);
@@ -661,15 +715,15 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.close();
     }
 
-    public static void insertProp(
-        TransactionMgr transMgr,
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void insertProp(
         String instance,
         String key,
         String value
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_PROPS_CONTAINERS);
+        PreparedStatement stmt = getConnection().prepareStatement(INSERT_PROPS_CONTAINERS);
         stmt.setString(1, instance.toUpperCase());
         stmt.setString(2, key);
         stmt.setString(3, value);

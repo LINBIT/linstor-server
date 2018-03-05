@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.propscon.Props;
@@ -22,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class VolumeDataDerbyTest extends DerbyBase
@@ -32,8 +30,6 @@ public class VolumeDataDerbyTest extends DerbyBase
                      VLM_NR + ", " + BLOCK_DEVICE_PATH + ", " + META_DISK_PATH + ", " +
                      VLM_FLAGS +
         " FROM " + TBL_VOLUMES;
-
-    private TransactionMgr transMgr;
 
     private NodeName nodeName;
     private NodeData node;
@@ -69,15 +65,12 @@ public class VolumeDataDerbyTest extends DerbyBase
             TBL_COL_COUNT_VOLUMES
         );
 
-        transMgr = new TransactionMgr(getConnection());
-
         nodeName = new NodeName("TestNodeName");
         node = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName,
             null,
             null,
-            transMgr,
             true,
             false
         );
@@ -90,8 +83,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             resPort,
             null,
             "secret",
-            TransportType.IP,
-            transMgr
+            TransportType.IP
         );
 
         nodeId = new NodeId(7);
@@ -101,7 +93,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             node,
             nodeId,
             null,
-            transMgr,
             true,
             false
         );
@@ -110,7 +101,6 @@ public class VolumeDataDerbyTest extends DerbyBase
         storPoolDfn = storPoolDefinitionDataFactory.getInstance(
             SYS_CTX,
             storPoolName,
-            transMgr,
             true,
             false
         );
@@ -120,7 +110,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             node,
             storPoolDfn,
             LvmDriver.class.getSimpleName(),
-            transMgr,
             true,
             false
         );
@@ -134,8 +123,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            null,
-            transMgr
+            null
         );
 
         uuid = randomUUID();
@@ -155,13 +143,15 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOLS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -190,10 +180,10 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
-            transMgr,
             true,
             false
         );
+        commit();
 
         assertNotNull(volData);
         assertNotNull(volData.getUuid());
@@ -206,7 +196,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         assertEquals(resDfn, volData.getResourceDefinition());
         assertEquals(volDfn, volData.getVolumeDefinition());
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOLS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -235,13 +225,14 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
 
-        VolumeData loadedVol = driver.load(res, volDfn, true, transMgr);
+        VolumeData loadedVol = driver.load(res, volDfn, true);
 
         checkLoaded(loadedVol, uuid);
     }
@@ -258,15 +249,15 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
 
         List<VolumeData> volList = driver.loadAllVolumesByResource(
-            res,
-            transMgr
+            res
         );
 
         assertEquals(1, volList.size());
@@ -287,11 +278,12 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
 
         VolumeData loadedVol = volumeDataFactory.getInstance(
             SYS_CTX,
@@ -301,7 +293,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             null, // flags
-            transMgr,
             false,
             false
         );
@@ -319,14 +310,13 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             null,
-            transMgr,
             true,
             false
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(res, volDfn, true, transMgr));
+        assertEquals(storedInstance, driver.load(res, volDfn, true));
     }
 
     @Test
@@ -341,13 +331,15 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOLS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -355,7 +347,8 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         resultSet.close();
 
-        driver.delete(vol, transMgr);
+        driver.delete(vol);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -377,13 +370,14 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
+        commit();
         vol.initialized();
-        vol.setConnection(transMgr);
 
         String testKey = "TestKey";
         String testValue = "TestValue";
@@ -392,7 +386,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
 
-        testProps(transMgr, PropsContainer.buildPath(nodeName, resName, volNr), map);
+        testProps(PropsContainer.buildPath(nodeName, resName, volNr), map);
     }
 
     @Test
@@ -407,14 +401,16 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
+        commit();
         String testKey = "TestKey";
         String testValue = "TestValue";
-        insertProp(transMgr, PropsContainer.buildPath(nodeName, resName, volNr), testKey, testValue);
+        insertProp(PropsContainer.buildPath(nodeName, resName, volNr), testKey, testValue);
 
         /*
          * This test is a bit hacky.
@@ -431,7 +427,7 @@ public class VolumeDataDerbyTest extends DerbyBase
          */
         res.removeVolume(SYS_CTX, vol);
 
-        VolumeData loadedVol = driver.load(res, volDfn, true, transMgr);
+        VolumeData loadedVol = driver.load(res, volDfn, true);
 
         /*
          *  NOTE: as the "driver.load(...)" has to create a new instance of VolumeData,
@@ -456,20 +452,20 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
 
         vol.initialized();
-        vol.setConnection(transMgr);
 
         vol.getFlags().disableAllFlags(SYS_CTX);
 
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOLS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -516,11 +512,12 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(vol, transMgr);
+        driver.create(vol);
 
         volumeDataFactory.getInstance(
             SYS_CTX,
@@ -530,7 +527,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             null,
-            transMgr,
             false,
             true
         );
@@ -542,9 +538,9 @@ public class VolumeDataDerbyTest extends DerbyBase
      */
     public void testTransactionObjectsCommit() throws Exception
     {
-        assertNotEquals(transMgr.sizeObjects(), 0);
-        transMgr.commit();
-        assertEquals(0, transMgr.sizeObjects());
+        assertNotEquals(transMgrProvider.get().sizeObjects(), 0);
+        commit();
+        assertEquals(0, transMgrProvider.get().sizeObjects());
         assertFalse(node.hasTransMgr());
         assertFalse(resDfn.hasTransMgr());
         assertFalse(res.hasTransMgr());
@@ -559,9 +555,9 @@ public class VolumeDataDerbyTest extends DerbyBase
      */
     public void testTransactionObjectsRollback() throws Exception
     {
-        assertNotEquals(transMgr.sizeObjects(), 0);
-        transMgr.rollback();
-        assertEquals(0, transMgr.sizeObjects());
+        assertNotEquals(transMgrProvider.get().sizeObjects(), 0);
+        transMgrProvider.get().rollback();
+        assertEquals(0, transMgrProvider.get().sizeObjects());
         assertFalse(node.hasTransMgr());
         assertFalse(resDfn.hasTransMgr());
         assertFalse(res.hasTransMgr());
@@ -582,10 +578,10 @@ public class VolumeDataDerbyTest extends DerbyBase
      */
     public void testTransactionObjectsRollbackDirty() throws Exception
     {
-        assertNotEquals(transMgr.sizeObjects(), 0);
+        assertNotEquals(transMgrProvider.get().sizeObjects(), 0);
         resDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
-        transMgr.rollback();
-        assertEquals(0, transMgr.sizeObjects());
+        transMgrProvider.get().rollback();
+        assertEquals(0, transMgrProvider.get().sizeObjects());
         assertFalse(node.hasTransMgr());
         assertFalse(resDfn.hasTransMgr());
         assertFalse(res.hasTransMgr());

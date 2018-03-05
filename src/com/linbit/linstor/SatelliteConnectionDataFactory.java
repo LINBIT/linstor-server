@@ -1,25 +1,35 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
 public class SatelliteConnectionDataFactory
 {
     private final SatelliteConnectionDataDatabaseDriver driver;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public SatelliteConnectionDataFactory(SatelliteConnectionDataDatabaseDriver driverRef)
+    public SatelliteConnectionDataFactory(
+        SatelliteConnectionDataDatabaseDriver driverRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
+    )
     {
         driver = driverRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public SatelliteConnection getInstance(
@@ -28,7 +38,6 @@ public class SatelliteConnectionDataFactory
         NetInterface netIf,
         TcpPortNumber port,
         SatelliteConnection.EncryptionType encryptionType,
-        TransactionMgr transMgr,
         boolean createIfNotExits,
         boolean failIfExists
     )
@@ -36,7 +45,7 @@ public class SatelliteConnectionDataFactory
     {
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        SatelliteConnectionData stltConn = driver.load(node, false, transMgr);
+        SatelliteConnectionData stltConn = driver.load(node, false);
 
         if (failIfExists && stltConn != null)
         {
@@ -45,8 +54,17 @@ public class SatelliteConnectionDataFactory
 
         if (createIfNotExits && stltConn == null)
         {
-            stltConn = new SatelliteConnectionData(UUID.randomUUID(), node, netIf, port, encryptionType, driver);
-            driver.create(stltConn, transMgr);
+            stltConn = new SatelliteConnectionData(
+                UUID.randomUUID(),
+                node,
+                netIf,
+                port,
+                encryptionType,
+                driver,
+                transObjFactory,
+                transMgrProvider
+            );
+            driver.create(stltConn);
 
             node.setSatelliteConnection(accCtx, stltConn);
         }
@@ -54,7 +72,6 @@ public class SatelliteConnectionDataFactory
         if (stltConn != null)
         {
             stltConn.initialized();
-            stltConn.setConnection(transMgr);
         }
 
         return stltConn;
@@ -65,20 +82,27 @@ public class SatelliteConnectionDataFactory
         Node node,
         NetInterface netIf,
         TcpPortNumber port,
-        SatelliteConnection.EncryptionType encryptionType,
-        SatelliteTransactionMgr transMgr
+        SatelliteConnection.EncryptionType encryptionType
     )
     {
         SatelliteConnectionData stltConn;
         try
         {
-            stltConn = driver.load(node, false, transMgr);
+            stltConn = driver.load(node, false);
             if (stltConn == null)
             {
-                stltConn = new SatelliteConnectionData(uuid, node, netIf, port, encryptionType, driver);
+                stltConn = new SatelliteConnectionData(
+                    uuid,
+                    node,
+                    netIf,
+                    port,
+                    encryptionType,
+                    driver,
+                    transObjFactory,
+                    transMgrProvider
+                );
             }
             stltConn.initialized();
-            stltConn.setConnection(transMgr);
         }
         catch (Exception exc)
         {

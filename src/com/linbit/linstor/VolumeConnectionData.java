@@ -1,8 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -11,10 +9,16 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  * Defines a connection between two LinStor volumes
@@ -43,12 +47,15 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         AccessContext accCtx,
         Volume sourceVolumeRef,
         Volume targetVolumeRef,
-        TransactionMgr transMgr,
         VolumeConnectionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws SQLException, AccessDeniedException
     {
+        super(transMgrProviderRef);
+
         if (sourceVolumeRef.getVolumeDefinition() != targetVolumeRef.getVolumeDefinition() ||
             sourceVolumeRef.getResourceDefinition() != targetVolumeRef.getResourceDefinition())
         {
@@ -92,10 +99,9 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                 targetNodeName,
                 sourceVolumeRef.getResourceDefinition().getName(),
                 sourceVolumeRef.getVolumeDefinition().getVolumeNumber()
-            ),
-            transMgr
+            )
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             sourceVolume,
@@ -106,6 +112,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 
         sourceVolume.setVolumeConnection(accCtx, this);
         targetVolume.setVolumeConnection(accCtx, this);
+        activateTransMgr();
     }
 
     @Override
@@ -162,7 +169,8 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 
             props.delete();
 
-            dbDriver.delete(this, transMgr);
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }

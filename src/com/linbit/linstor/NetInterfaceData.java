@@ -1,16 +1,21 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionObject;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  * Implementation of a network interface
@@ -39,10 +44,14 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         NetInterfaceName netName,
         Node node,
         LsIpAddress addr,
-        NetInterfaceDataDatabaseDriver dbDriverRef
+        NetInterfaceDataDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws AccessDeniedException
     {
+        super(transMgrProviderRef);
+
         niUuid = uuid;
         niNode = node;
         niName = netName;
@@ -50,18 +59,19 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         dbgInstanceId = UUID.randomUUID();
 
-        niAddress = new TransactionSimpleObject<>(
+        niAddress = transObjFactory.createTransactionSimpleObject(
             this,
             addr,
             dbDriver.getNetInterfaceAddressDriver()
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             niAddress,
             deleted
         );
         ((NodeData) node).addNetInterface(accCtx, this);
+        activateTransMgr();
     }
 
     @Override
@@ -117,7 +127,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
             ((NodeData) niNode).removeNetInterface(accCtx, this);
-            dbDriver.delete(this, transMgr);
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }
@@ -144,7 +155,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     @Override
     public String toString()
     {
-        return "Node: '" + niNode.getName() + "', "+
+        return "Node: '" + niNode.getName() + "', " +
                "NetInterfaceName: '" + niName + "'";
     }
 }

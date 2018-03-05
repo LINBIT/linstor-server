@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
@@ -10,7 +9,6 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 
 public class SatelliteNiDriver implements NetInterfaceDataDatabaseDriver
@@ -35,8 +33,7 @@ public class SatelliteNiDriver implements NetInterfaceDataDatabaseDriver
     public NetInterfaceData load(
         Node node,
         NetInterfaceName netInterfaceName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
 
     {
@@ -53,13 +50,13 @@ public class SatelliteNiDriver implements NetInterfaceDataDatabaseDriver
     }
 
     @Override
-    public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr)
+    public void create(NetInterfaceData netInterfaceData)
     {
         // no-op
     }
 
     @Override
-    public void delete(NetInterfaceData data, TransactionMgr transMgr)
+    public void delete(NetInterfaceData data)
     {
         // no-op
     }

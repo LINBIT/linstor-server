@@ -1,14 +1,12 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link NodeConnectionData}.
@@ -29,9 +27,6 @@ public interface NodeConnectionDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  Used to restore references, like {@link com.linbit.linstor.Node}, {@link com.linbit.linstor.Resource},
-     *  etc.
      *
      * @return
      *  An instance which contains valid references, but is not
@@ -42,8 +37,7 @@ public interface NodeConnectionDataDatabaseDriver
     NodeConnectionData load(
         Node sourceNode,
         Node targetNode,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
         throws SQLException;
 
@@ -52,42 +46,31 @@ public interface NodeConnectionDataDatabaseDriver
      * {@code node}, regardless if {@code node} is the source or the target of the
      * specific {@link com.linbit.linstor.NodeConnection}.
      * <br>
-     * @param transMgr
-     *  Used to restore references, like {@link com.linbit.linstor.Node}, {@link com.linbit.linstor.Resource},
-     *  etc.
      *
      * @return
      *  A list of instances which contain valid references, but are not
-     *  initialized yet in regards of {@link com.linbit.linstor.BaseTransactionObject#initialized()}
+     *  initialized yet in regards of {@link com.linbit.linstor.transaction.BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */
-    List<NodeConnectionData> loadAllByNode(
-        Node node,
-        TransactionMgr transMgr
-    )
-        throws SQLException;
+    List<NodeConnectionData> loadAllByNode(Node node) throws SQLException;
 
     /**
      * Persists the given {@link com.linbit.linstor.NodeConnectionData} into the database.
      *
      * @param nodeConDfnData
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
+    void create(NodeConnectionData nodeConDfnData) throws SQLException;
 
     /**
      * Removes the given {@link NodeConnectionData} from the database
      *
      * @param nodeConDfnData
      *  The data identifying the database entry to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
+    void delete(NodeConnectionData nodeConDfnData) throws SQLException;
 
 }

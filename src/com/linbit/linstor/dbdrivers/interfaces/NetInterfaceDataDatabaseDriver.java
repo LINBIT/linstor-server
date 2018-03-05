@@ -1,14 +1,12 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link NetInterfaceData}.
@@ -27,8 +25,6 @@ public interface NetInterfaceDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @return
      *  An instance which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
@@ -38,8 +34,7 @@ public interface NetInterfaceDataDatabaseDriver
     NetInterfaceData load(
         Node node,
         NetInterfaceName netInterfaceName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
         throws SQLException;
 
@@ -48,22 +43,18 @@ public interface NetInterfaceDataDatabaseDriver
      *
      * @param netInterfaceData
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
+    void create(NetInterfaceData netInterfaceData) throws SQLException;
 
     /**
      * Removes the given {@link NetInterfaceData} from the database
      *
      * @param netInterfaceData
      *  The data identifying the database entry to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
+    void delete(NetInterfaceData netInterfaceData) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted ipAddress.

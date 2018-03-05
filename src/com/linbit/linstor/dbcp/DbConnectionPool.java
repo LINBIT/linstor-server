@@ -5,10 +5,8 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -134,15 +132,6 @@ public class DbConnectionPool implements ControllerDatabase
             dbConn.setAutoCommit(false);
         }
         return dbConn;
-    }
-
-    public void returnConnection(TransactionMgr transMgr)
-    {
-        if (transMgr != null)
-        {
-            returnConnection(transMgr.dbCon);
-            transMgr.clearTransactionObjects();
-        }
     }
 
     @Override

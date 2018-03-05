@@ -1,10 +1,13 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.AbsTransactionObject;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.util.Arrays;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  * Defines a network path between two DRBD resources
@@ -30,8 +33,14 @@ public class NetworkPathData extends BaseTransactionObject implements NetworkPat
         return objId;
     }
 
-    public NetworkPathData(NetInterface fromInterface, Node toNode, NetInterface toInterface)
+    public NetworkPathData(
+        NetInterface fromInterface,
+        Node toNode,
+        NetInterface toInterface,
+        Provider<TransactionMgr> transMgrProvider
+    )
     {
+        super(transMgrProvider);
         ErrorCheck.ctorNotNull(NetworkPathData.class, NetInterface.class, fromInterface);
         ErrorCheck.ctorNotNull(NetworkPathData.class, Node.class, toNode);
         ErrorCheck.ctorNotNull(NetworkPathData.class, NetInterface.class, toInterface);
@@ -43,9 +52,9 @@ public class NetworkPathData extends BaseTransactionObject implements NetworkPat
         dbgInstanceId = UUID.randomUUID();
 
         transObjs = Arrays.asList(
-            (AbsTransactionObject) srcInterface,
-            (AbsTransactionObject) dstNode,
-            (AbsTransactionObject) dstInterface
+            srcInterface,
+            dstNode,
+            dstInterface
         );
     }
 

@@ -4,14 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.linbit.Checks;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
-
 import java.sql.SQLException;
 import java.util.TreeSet;
 
@@ -209,13 +207,12 @@ public class Quorum
      * @param accCtx
      * @throws AccessDeniedException
      */
-    public void readjustQignoreFlags(AccessContext accCtx, TransactionMgr transMgr)
+    public void readjustQignoreFlags(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         for (Node node : quorumNodes)
         {
             StateFlags<NodeFlag> flags = node.getFlags();
-            flags.setConnection(transMgr);
             flags.disableFlags(accCtx, NodeFlag.QIGNORE);
         }
     }

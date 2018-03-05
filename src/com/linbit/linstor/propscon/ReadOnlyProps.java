@@ -1,7 +1,7 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.util.Collection;
 import java.util.Collections;

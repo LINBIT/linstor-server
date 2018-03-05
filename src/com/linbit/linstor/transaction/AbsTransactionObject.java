@@ -1,6 +1,11 @@
-package com.linbit;
+package com.linbit.linstor.transaction;
+
+import com.linbit.ImplementationError;
+import com.linbit.linstor.propscon.PropsContainer;
 
 import java.sql.Connection;
+
+import javax.inject.Provider;
 
 /**
  * Interface for objects that can apply or undo one or multiple
@@ -15,11 +20,17 @@ import java.sql.Connection;
  */
 public abstract class AbsTransactionObject implements TransactionObject
 {
+    private final Provider<TransactionMgr> transMgrProvider;
+
     private boolean initialized = false;
-    protected TransactionMgr transMgr = null;
+    private TransactionMgr activeTransMgr = null;
     private boolean inCommit = false;
     private boolean inRollback = false;
 
+    public AbsTransactionObject(Provider<TransactionMgr> transMgrProviderRef)
+    {
+        transMgrProvider = transMgrProviderRef;
+    }
 
     @Override
     public void initialized()
@@ -33,24 +44,38 @@ public abstract class AbsTransactionObject implements TransactionObject
         return initialized;
     }
 
+    /**
+     * This method can be overridden in case of hierarchical data-structures where
+     * "this" represents just a sub-structure but the root of the data structure should
+     * be added to the TransactionMgr. This is the case for example for our {@link PropsContainer}
+     * @return
+     */
+    protected TransactionObject getObjectToRegister()
+    {
+        return this;
+    }
+
     @Override
     public final void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (transMgr != null && transMgrRef != null && transMgrRef != transMgr)
+        if (activeTransMgr != transMgrRef) // prevent cyclic .setConnection calls
         {
-            throw new ImplementationError("attempt to replace an active transMgr", null);
-        }
-        if (!hasTransMgr() && isDirtyWithoutTransMgr())
-        {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated: " + this, null);
-        }
-        if (transMgrRef != null)
-        {
-            transMgrRef.register(this);
-        }
-        transMgr = transMgrRef;
+            if (activeTransMgr != null && transMgrRef != null)
+            {
+                throw new ImplementationError("attempt to replace an active transMgr", null);
+            }
+            if (!hasTransMgr() && isDirtyWithoutTransMgr())
+            {
+                throw new ImplementationError("setConnection was called AFTER data was manipulated: " + this, null);
+            }
+            if (transMgrRef != null)
+            {
+                transMgrRef.register(getObjectToRegister());
+            }
 
-        postSetConnection(transMgrRef);
+            activeTransMgr = transMgrRef;
+            postSetConnection(transMgrRef);
+        }
     }
 
     /**
@@ -66,13 +91,14 @@ public abstract class AbsTransactionObject implements TransactionObject
     @Override
     public final void commit()
     {
+        assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         if (!inCommit)
         {
             inCommit = true;
             commitImpl();
             inCommit = false;
         }
-        transMgr = null;
+        activeTransMgr = null;
     }
 
     protected final boolean inCommit()
@@ -85,13 +111,14 @@ public abstract class AbsTransactionObject implements TransactionObject
     @Override
     public final void rollback()
     {
+        assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         if (!inRollback)
         {
             inRollback = true;
             rollbackImpl();
             inRollback = false;
         }
-        transMgr = null;
+        activeTransMgr = null;
     }
 
 
@@ -105,12 +132,17 @@ public abstract class AbsTransactionObject implements TransactionObject
     @Override
     public final boolean hasTransMgr()
     {
-        return transMgr != null;
+        return activeTransMgr != null;
     }
 
     @Override
     public boolean isDirtyWithoutTransMgr()
     {
         return !hasTransMgr() && isDirty();
+    }
+
+    protected final void activateTransMgr()
+    {
+        setConnection(transMgrProvider.get());
     }
 }

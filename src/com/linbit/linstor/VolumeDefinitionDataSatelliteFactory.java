@@ -1,28 +1,37 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.util.UUID;
 
 public class VolumeDefinitionDataSatelliteFactory
 {
     private final VolumeDefinitionDataDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public VolumeDefinitionDataSatelliteFactory(
         VolumeDefinitionDataDatabaseDriver driverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public VolumeDefinitionData getInstanceSatellite(
@@ -32,15 +41,14 @@ public class VolumeDefinitionDataSatelliteFactory
         VolumeNumber vlmNr,
         long vlmSize,
         MinorNumber minorNumber,
-        VolumeDefinition.VlmDfnFlags[] flags,
-        SatelliteTransactionMgr transMgr
+        VolumeDefinition.VlmDfnFlags[] flags
     )
         throws ImplementationError
     {
         VolumeDefinitionData vlmDfnData;
         try
         {
-            vlmDfnData = driver.load(rscDfn, vlmNr, false, transMgr);
+            vlmDfnData = driver.load(rscDfn, vlmNr, false);
             if (vlmDfnData == null)
             {
                 vlmDfnData = new VolumeDefinitionData(
@@ -52,13 +60,13 @@ public class VolumeDefinitionDataSatelliteFactory
                     null,
                     vlmSize,
                     StateFlagsBits.getMask(flags),
-                    transMgr,
                     driver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             vlmDfnData.initialized();
-            vlmDfnData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

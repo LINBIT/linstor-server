@@ -3,9 +3,6 @@ package com.linbit.linstor;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMap;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.LinStor;
@@ -20,8 +17,11 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
@@ -88,13 +90,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node nodeRef,
         NodeId nodeIdRef,
         long initFlags,
-        TransactionMgr transMgr,
         ResourceDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
-        VolumeDataFactory volumeDataFactoryRef
+        VolumeDataFactory volumeDataFactoryRef,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws SQLException, AccessDeniedException
     {
+        super(transMgrProviderRef);
         dbDriver = dbDriverRef;
         volumeDataFactory = volumeDataFactoryRef;
 
@@ -106,19 +110,24 @@ public class ResourceData extends BaseTransactionObject implements Resource
         objId = objIdRef;
         dbgInstanceId = UUID.randomUUID();
 
-        resourceConnections = new TransactionMap<>(new HashMap<Resource, ResourceConnection>(), null);
-        volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, Volume>(), null);
+        resourceConnections = transObjFactory.createTransactionMap(new HashMap<Resource, ResourceConnection>(), null);
+        volumeMap = transObjFactory.createTransactionMap(new TreeMap<VolumeNumber, Volume>(), null);
         resourceProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 nodeRef.getName(),
                 resDfnRef.getName()
-            ),
-            transMgr
+            )
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
         objProt = objProtRef;
 
-        flags = new RscFlagsImpl(objProt, this, dbDriver.getStateFlagPersistence(), initFlags);
+        flags = transObjFactory.createStateFlagsImpl(
+            objProt,
+            this,
+            RscFlags.class,
+            dbDriver.getStateFlagPersistence(),
+            initFlags
+        );
 
         transObjs = Arrays.asList(
             resourceDfn,
@@ -133,6 +142,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         ((NodeData) nodeRef).addResource(accCtx, this);
         ((ResourceDefinitionData) resDfnRef).addResource(accCtx, this);
+        activateTransMgr();
     }
 
     @Override
@@ -248,11 +258,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public void adjustVolumes(
-        AccessContext apiCtx,
-        TransactionMgr transMgr,
-        String defaultStorPoolName
-    )
+    public void adjustVolumes(AccessContext apiCtx, String defaultStorPoolName)
         throws InvalidNameException, LinStorException
     {
         checkDeleted();
@@ -313,7 +319,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
                         null, // blockDevicePathRef,
                         null, // metaDiskPathRef,
                         null,
-                        transMgr,
                         true,
                         true
                     );
@@ -403,7 +408,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resourceProps.delete();
 
             objProt.delete(accCtx);
-            dbDriver.delete(this, transMgr);
+
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }
@@ -470,24 +477,5 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    private static final class RscFlagsImpl extends StateFlagsBits<ResourceData, RscFlags>
-    {
-        RscFlagsImpl(
-            ObjectProtection objProtRef,
-            ResourceData parent,
-            StateFlagsPersistence<ResourceData> persistenceRef,
-            long initMask
-        )
-        {
-            super(
-                objProtRef,
-                parent,
-                StateFlagsBits.getMask(RscFlags.values()),
-                persistenceRef,
-                initMask
-            );
-        }
     }
 }

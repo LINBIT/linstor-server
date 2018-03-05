@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
@@ -13,9 +12,13 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -24,17 +27,23 @@ public class VolumeDefinitionDataControllerFactory
     private final VolumeDefinitionDataDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final DynamicNumberPool minorNrPool;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public VolumeDefinitionDataControllerFactory(
         VolumeDefinitionDataDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef
+        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
         minorNrPool = minorNrPoolRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public VolumeDefinitionData create(
@@ -43,15 +52,14 @@ public class VolumeDefinitionDataControllerFactory
         VolumeNumber volNr,
         Integer minor,
         Long volSize,
-        VolumeDefinition.VlmDfnFlags[] initFlags,
-        TransactionMgr transMgr
+        VolumeDefinition.VlmDfnFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
         resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false, transMgr);
+        VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false);
 
         if (volDfnData != null)
         {
@@ -78,33 +86,31 @@ public class VolumeDefinitionDataControllerFactory
             minorNrPool,
             volSize,
             StateFlagsBits.getMask(initFlags),
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(volDfnData, transMgr);
+        driver.create(volDfnData);
 
         volDfnData.initialized();
-        volDfnData.setConnection(transMgr);
         return volDfnData;
     }
 
     public VolumeDefinitionData load(
         AccessContext accCtx,
         ResourceDefinition resDfn,
-        VolumeNumber volNr,
-        TransactionMgr transMgr
+        VolumeNumber volNr
     )
         throws SQLException, AccessDeniedException
     {
         resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false, transMgr);
+        VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false);
 
         if (volDfnData != null)
         {
             volDfnData.initialized();
-            volDfnData.setConnection(transMgr);
         }
         return volDfnData;
     }

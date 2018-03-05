@@ -1,7 +1,7 @@
 package com.linbit.linstor;
 
 import com.google.inject.Inject;
-import com.linbit.TransactionMgr;
+
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -16,7 +16,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class StorPoolDefinitionDataDerbyTest extends DerbyBase
@@ -27,7 +26,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         " WHERE " + UUID + " <> x'f51611c6528f4793a87a866d09e6733a' AND " + // default storage pool
                     UUID + " <> x'622807ebc8c444f0b03da08173c8fa1b'"; // default diskless storage pool
 
-    private TransactionMgr transMgr;
     private StorPoolName spName;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
@@ -36,26 +34,38 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
     @Inject private StorPoolDefinitionDataDerbyDriver driver;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_STOR_POOL_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 3, TBL_COL_COUNT_STOR_POOL_DEFINITIONS);
-
-        transMgr = new TransactionMgr(getConnection());
+        assertEquals(
+            TBL_STOR_POOL_DEFINITIONS + " table's column count has changed. Update tests accordingly!",
+            3,
+            TBL_COL_COUNT_STOR_POOL_DEFINITIONS
+        );
 
         uuid = randomUUID();
         spName = new StorPoolName("TestStorPool");
-        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPathSPD(spName), true, transMgr);
-        spdd = new StorPoolDefinitionData(uuid, objProt, spName, driver, propsContainerFactory);
+        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPathSPD(spName), true);
+        spdd = new StorPoolDefinitionData(
+            uuid,
+            objProt,
+            spName,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -71,14 +81,15 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        StorPoolDefinitionData spd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, transMgr, true, false);
+        StorPoolDefinitionData spd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, true, false);
+        commit();
 
         assertNotNull(spd);
         assertNotNull(spd.getUuid());
         assertEquals(spName, spd.getName());
         assertNotNull(spd.getObjProt());
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -94,9 +105,9 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
 
-        StorPoolDefinitionData loadedSpdd = driver.load(spName, true, transMgr);
+        StorPoolDefinitionData loadedSpdd = driver.load(spName, true);
 
         assertNotNull(loadedSpdd);
         assertEquals(uuid, loadedSpdd.getUuid());
@@ -107,9 +118,9 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
 
-        StorPoolDefinitionData loadedSpdd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, transMgr, false, false);
+        StorPoolDefinitionData loadedSpdd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, false, false);
         assertNotNull(loadedSpdd);
         assertEquals(uuid, loadedSpdd.getUuid());
         assertEquals(spName, loadedSpdd.getName());
@@ -119,29 +130,30 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
         super.storPoolDfnMap.put(spName, spdd);
         // no clearCaches
 
-        assertEquals(spdd, driver.load(spName, true, transMgr));
+        assertEquals(spdd, driver.load(spName, true));
     }
 
     @Test
     public void testCacheGetInstance() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
         storPoolDfnMap.put(spName, spdd);
 
         // no clearCaches
-        assertEquals(spdd, storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, transMgr, false, false));
+        assertEquals(spdd, storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, false, false));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -149,7 +161,8 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
 
-        driver.delete(spdd, transMgr);
+        driver.delete(spdd);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -163,11 +176,11 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testHalfValidName() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
 
         StorPoolName halfValidName = new StorPoolName(spdd.getName().value);
 
-        StorPoolDefinitionData loadedSpdd = driver.load(halfValidName, true, transMgr);
+        StorPoolDefinitionData loadedSpdd = driver.load(halfValidName, true);
 
         assertNotNull(loadedSpdd);
         assertEquals(spdd.getName(), loadedSpdd.getName());
@@ -175,8 +188,9 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     }
 
     private StorPoolDefinitionData findStorPoolDefinitionDatabyName(
-            List<StorPoolDefinitionData> listStorPoolDefs,
-            StorPoolName spName)
+        List<StorPoolDefinitionData> listStorPoolDefs,
+        StorPoolName spName
+    )
     {
         StorPoolDefinitionData data = null;
         for (StorPoolDefinitionData spdd : listStorPoolDefs)
@@ -193,11 +207,11 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
         StorPoolName spName2 = new StorPoolName("StorPoolName2");
-        storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName2, transMgr, true, false);
+        storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName2, true, false);
 
-        List<StorPoolDefinitionData> storpools = driver.loadAll(transMgr);
+        List<StorPoolDefinitionData> storpools = driver.loadAll();
 
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, new StorPoolName(ConfigModule.DEFAULT_STOR_POOL_NAME)));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
@@ -211,8 +225,8 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        driver.create(spdd, transMgr);
+        driver.create(spdd);
 
-        storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, transMgr, false, true);
+        storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, false, true);
     }
 }

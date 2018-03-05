@@ -1,8 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
@@ -18,8 +16,10 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.HashSet;
@@ -39,6 +39,7 @@ class StltStorPoolApiCallHandler
     private final ControllerPeerConnector controllerPeerConnector;
     private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -48,7 +49,8 @@ class StltStorPoolApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef
+        StorPoolDataFactory storPoolDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -58,6 +60,7 @@ class StltStorPoolApiCallHandler
         controllerPeerConnector = controllerPeerConnectorRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -76,10 +79,8 @@ class StltStorPoolApiCallHandler
             StorPoolDefinition removedStorPoolDfn = storPoolDfnMap.remove(storPoolName); // just to be sure
             if (removedStorPoolDfn != null)
             {
-                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-                removedStorPoolDfn.setConnection(transMgr);
                 removedStorPoolDfn.delete(apiCtx);
-                transMgr.commit();
+                transMgrProvider.get().commit();
             }
 
             errorReporter.logInfo("Storage pool definition '" + storPoolNameStr +
@@ -96,16 +97,71 @@ class StltStorPoolApiCallHandler
         }
     }
 
-    public void applyChanges(StorPoolPojo storPoolRaw)
+    public ChangedData applyChanges(StorPoolPojo storPoolRaw)
     {
+        ChangedData changedData = null;
         try
         {
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            ChangedData changedData = applyChanges(storPoolRaw, transMgr);
+            StorPoolName storPoolName;
 
-            StorPoolName storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
+            StorPoolDefinition storPoolDfnToRegister = null;
 
-            transMgr.commit();
+            // TODO: uncomment the next line once the localNode gets requested from the controller
+            // checkUuid(satellite.localNode, storPoolRaw);
+
+            storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
+            NodeData localNode = controllerPeerConnector.getLocalNode();
+            StorPool storPool;
+            if (localNode == null)
+            {
+                throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
+            }
+            storPool = localNode.getStorPool(apiCtx, storPoolName);
+            Map<ResourceName, UUID> changedResourcesMap = new TreeMap<>();
+            if (storPool != null)
+            {
+                checkUuid(storPool, storPoolRaw);
+                checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
+
+                storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
+
+                Collection<Volume> volumes = storPool.getVolumes(apiCtx);
+                for (Volume vlm : volumes)
+                {
+                    ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                    changedResourcesMap.put(rscDfn.getName(), rscDfn.getUuid());
+                }
+            }
+            else
+            {
+                StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
+                if (storPoolDfn == null)
+                {
+                    storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
+                        apiCtx,
+                        storPoolRaw.getStorPoolDfnUuid(),
+                        storPoolName
+                    );
+                    checkUuid(storPoolDfn, storPoolRaw);
+
+                    storPoolDfn.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolDfnProps());
+
+                    storPoolDfnToRegister = storPoolDfn;
+                }
+
+                storPool = storPoolDataFactory.getInstanceSatellite(
+                    apiCtx,
+                    storPoolRaw.getStorPoolUuid(),
+                    controllerPeerConnector.getLocalNode(),
+                    storPoolDfn,
+                    storPoolRaw.getDriver()
+                );
+                storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
+            }
+
+            changedData = new ChangedData(storPoolDfnToRegister, changedResourcesMap);
+
+            transMgrProvider.get().commit();
 
             errorReporter.logInfo(
                 "Storage pool '%s' created.",
@@ -124,77 +180,13 @@ class StltStorPoolApiCallHandler
             storPoolSet.add(storPoolName);
             deviceManager.storPoolUpdateApplied(storPoolSet);
             deviceManager.getUpdateTracker().checkMultipleResources(changedData.changedResourcesMap);
+
         }
         catch (Exception | ImplementationError exc)
         {
             errorReporter.reportError(exc);
         }
-    }
 
-    public ChangedData applyChanges(StorPoolPojo storPoolRaw, SatelliteTransactionMgr transMgr)
-        throws DivergentDataException, InvalidNameException, AccessDeniedException
-    {
-        StorPoolName storPoolName;
-
-        StorPoolDefinition storPoolDfnToRegister = null;
-
-        // TODO: uncomment the next line once the localNode gets requested from the controller
-        // checkUuid(satellite.localNode, storPoolRaw);
-
-        storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
-        NodeData localNode = controllerPeerConnector.getLocalNode();
-        StorPool storPool;
-        if (localNode == null)
-        {
-            throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
-        }
-        storPool = localNode.getStorPool(apiCtx, storPoolName);
-        Map<ResourceName, UUID> changedResourcesMap = new TreeMap<>();
-        if (storPool != null)
-        {
-            checkUuid(storPool, storPoolRaw);
-            checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
-
-            storPool.setConnection(transMgr);
-            storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
-
-            Collection<Volume> volumes = storPool.getVolumes(apiCtx);
-            for (Volume vlm : volumes)
-            {
-                ResourceDefinition rscDfn = vlm.getResourceDefinition();
-                changedResourcesMap.put(rscDfn.getName(), rscDfn.getUuid());
-            }
-        }
-        else
-        {
-            StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
-            if (storPoolDfn == null)
-            {
-                storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    storPoolRaw.getStorPoolDfnUuid(),
-                    storPoolName,
-                    transMgr
-                );
-                checkUuid(storPoolDfn, storPoolRaw);
-
-                storPoolDfn.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolDfnProps());
-
-                storPoolDfnToRegister = storPoolDfn;
-            }
-
-            storPool = storPoolDataFactory.getInstanceSatellite(
-                apiCtx,
-                storPoolRaw.getStorPoolUuid(),
-                controllerPeerConnector.getLocalNode(),
-                storPoolDfn,
-                storPoolRaw.getDriver(),
-                transMgr
-            );
-            storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
-        }
-
-        ChangedData changedData = new ChangedData(storPoolDfnToRegister, changedResourcesMap);
         return changedData;
     }
 

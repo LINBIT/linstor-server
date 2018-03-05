@@ -1,9 +1,10 @@
 package com.linbit.linstor.debug;
 
 import com.google.inject.Inject;
-import com.linbit.TransactionMgr;
+
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -13,6 +14,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import java.io.PrintStream;
@@ -49,13 +52,15 @@ public class CmdSetConfValue extends BaseDebugCmd
     private final ReadWriteLock confLock;
     private final Props conf;
     private final ObjectProtection confProt;
+    private final LinStorScope debugScope;
 
     @Inject
     public CmdSetConfValue(
         DbConnectionPool dbConnectionPoolRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
-        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef
+        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef,
+        LinStorScope debugScopeRef
     )
     {
         super(
@@ -73,6 +78,7 @@ public class CmdSetConfValue extends BaseDebugCmd
         confLock = confLockRef;
         conf = confRef;
         confProt = confProtRef;
+        debugScope = debugScopeRef;
     }
 
     @Override
@@ -97,8 +103,9 @@ public class CmdSetConfValue extends BaseDebugCmd
                 confProt.requireAccess(accCtx, AccessType.CHANGE);
 
                 // Commit changes to the database
-                transMgr = new TransactionMgr(dbConnectionPool);
-                conf.setConnection(transMgr);
+                transMgr = new ControllerTransactionMgr(dbConnectionPool);
+                debugScope.enter();
+                debugScope.seed(TransactionMgr.class, transMgr);
 
                 String previous = conf.setProp(key, value, namespace);
 
@@ -162,6 +169,7 @@ public class CmdSetConfValue extends BaseDebugCmd
         }
         finally
         {
+            debugScope.exit();
             confLock.writeLock().unlock();
 
             if (transMgr != null)

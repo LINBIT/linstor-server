@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.annotation.SystemContext;
@@ -12,10 +11,15 @@ import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDr
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -61,22 +65,29 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
 
     private final AccessContext privCtx;
     private final ErrorReporter errorReporter;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SatelliteConnectionDataDerbyDriver(
         @SystemContext AccessContext privCtxRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         privCtx = privCtxRef;
         errorReporter = errorReporterRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
-    public void create(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(SatelliteConnection satelliteConnectionData) throws SQLException
     {
         errorReporter.logTrace("Creating SatelliteConnection %s", getId(satelliteConnectionData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SC_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(satelliteConnectionData.getUuid()));
             stmt.setString(2, satelliteConnectionData.getNode().getName().value);
@@ -90,11 +101,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
 
     }
     @Override
-    public SatelliteConnectionData load(
-        Node node,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    public SatelliteConnectionData load(Node node, boolean logWarnIfNotExists)
         throws SQLException
     {
         errorReporter.logTrace("Loading SatelliteConnection %s", getId(node));
@@ -105,7 +112,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
             stltConn = (SatelliteConnectionData) node.getSatelliteConnection(privCtx);
             if (stltConn == null)
             {
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_SELECT_BY_NODE))
+                try (PreparedStatement stmt = getConnection().prepareStatement(SC_SELECT_BY_NODE))
                 {
                     stmt.setString(1, node.getName().value);
                     try (ResultSet resultSet = stmt.executeQuery())
@@ -161,7 +168,9 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                                 netIf,
                                 port,
                                 encryptionType,
-                                this
+                                this,
+                                transObjFactory,
+                                transMgrProvider
                             );
                             errorReporter.logTrace("SatelliteConnection restored from DB %s", getId(node));
                         }
@@ -189,10 +198,10 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     }
 
     @Override
-    public void delete(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
+    public void delete(SatelliteConnection satelliteConnectionData) throws SQLException
     {
         errorReporter.logTrace("Deleting SatelliteConnection %s", getId(satelliteConnectionData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SC_DELETE))
         {
             stmt.setString(1, satelliteConnectionData.getNode().getName().value);
             stmt.executeUpdate();
@@ -235,13 +244,18 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
         return "(NodeName = " + nodeName + ", NetIfName = " + netIfName + ")";
     }
 
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
+    }
+
     private class PortDriver implements SingleColumnDatabaseDriver<SatelliteConnectionData, TcpPortNumber>
     {
         @Override
-        public void update(SatelliteConnectionData stltConn, TcpPortNumber port, TransactionMgr transMgr)
+        public void update(SatelliteConnectionData stltConn, TcpPortNumber port)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_UPDATE_PORT))
+            try (PreparedStatement stmt = getConnection().prepareStatement(SC_UPDATE_PORT))
             {
                 int oldPort = stltConn.getPort().value;
 
@@ -269,10 +283,10 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     private class TypeDriver implements SingleColumnDatabaseDriver<SatelliteConnectionData, EncryptionType>
     {
         @Override
-        public void update(SatelliteConnectionData stltConn, EncryptionType type, TransactionMgr transMgr)
+        public void update(SatelliteConnectionData stltConn, EncryptionType type)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_UPDATE_TYPE))
+            try (PreparedStatement stmt = getConnection().prepareStatement(SC_UPDATE_TYPE))
             {
                 String oldType = stltConn.getEncryptionType().name();
 

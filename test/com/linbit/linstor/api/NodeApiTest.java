@@ -1,7 +1,5 @@
 package com.linbit.linstor.api;
 
-import com.google.inject.Inject;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
@@ -22,6 +20,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import javax.inject.Inject;
 
 public class NodeApiTest extends ApiTestBase
 {
@@ -46,21 +46,17 @@ public class NodeApiTest extends ApiTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        TransactionMgr transMgr = new TransactionMgr(dbConnPool);
         testNode = nodeDataFactory.getInstance(
             BOB_ACC_CTX,
             testNodeName,
             testNodeType,
             null,
-            transMgr,
             true,
             true
         );
         testNode.setPeer(SYS_CTX, mockPeer);
         nodesMap.put(testNodeName, testNode);
-        transMgr.commit();
-
-        dbConnPool.returnConnection(transMgr);
+        commit();
     }
 
     @Test
@@ -75,6 +71,8 @@ public class NodeApiTest extends ApiTestBase
     @Test
     public void crtSecondAccDenied() throws Exception
     {
+        // FIXME: this test only works because the first API call succeeds.
+        // if it would fail, the transaction is currently NOT rolled back.
         evaluateTest(
             new CreateNodeCall(ApiConsts.CREATED)
                 .expectStltConnectingAttempt()
@@ -87,12 +85,8 @@ public class NodeApiTest extends ApiTestBase
     @Test
     public void crtFailNodesMapViewAccDenied() throws Exception
     {
-        TransactionMgr transMgr = new TransactionMgr(getConnection());
-        nodesMapProt.setConnection(transMgr);
         nodesMapProt.delAclEntry(SYS_CTX, PUBLIC_CTX.subjectRole);
         nodesMapProt.addAclEntry(SYS_CTX, PUBLIC_CTX.subjectRole, AccessType.VIEW);
-        transMgr.commit();
-        dbConnPool.returnConnection(transMgr);
 
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
@@ -157,6 +151,11 @@ public class NodeApiTest extends ApiTestBase
                 .addNetIfApis("net0", "127.0.0.1.42")
                 .addStltApis("net0")
         );
+    }
+
+    @Test
+    public void ctrInvalidNetAddrV6() throws Exception
+    {
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_ADDR)
                 .clearNetIfApis()

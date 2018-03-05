@@ -1,15 +1,20 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 public class SatelliteConnectionData extends BaseTransactionObject implements SatelliteConnection
 {
@@ -37,9 +42,12 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         NetInterface netIfRef,
         TcpPortNumber portRef,
         EncryptionType encryptionTypeRef,
-        SatelliteConnectionDataDatabaseDriver dbDriverRef
+        SatelliteConnectionDataDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
+        super(transMgrProviderRef);
         ErrorCheck.ctorNotNull(SatelliteConnectionData.class, Node.class, nodeRef);
         ErrorCheck.ctorNotNull(SatelliteConnectionData.class, NetInterface.class, netIfRef);
 
@@ -49,11 +57,17 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         netIf = netIfRef;
         dbDriver = dbDriverRef;
 
-        port = new TransactionSimpleObject<>(this, portRef, dbDriver.getSatelliteConnectionPortDriver());
-        encryptionType = new TransactionSimpleObject<>(
-            this, encryptionTypeRef, dbDriver.getSatelliteConnectionTypeDriver()
+        port = transObjFactory.createTransactionSimpleObject(
+            this,
+            portRef,
+            dbDriver.getSatelliteConnectionPortDriver()
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        encryptionType = transObjFactory.createTransactionSimpleObject(
+            this,
+            encryptionTypeRef,
+            dbDriver.getSatelliteConnectionTypeDriver()
+        );
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             node,
@@ -62,6 +76,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
             encryptionType,
             deleted
         );
+        activateTransMgr();
     }
 
     @Override
@@ -131,7 +146,8 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
             node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
             ((NodeData) node).removeSatelliteconnection(accCtx, this);
-            dbDriver.delete(this, transMgr);
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }

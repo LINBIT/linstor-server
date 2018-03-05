@@ -1,11 +1,9 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
-
 import javax.inject.Inject;
 
 public class SatelliteStorPoolDfnDriver implements StorPoolDefinitionDataDatabaseDriver
@@ -19,24 +17,19 @@ public class SatelliteStorPoolDfnDriver implements StorPoolDefinitionDataDatabas
     }
 
     @Override
-    public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr)
+    public void create(StorPoolDefinitionData storPoolDefinitionData)
     {
         // no-op
     }
 
     @Override
-    public StorPoolDefinitionData load(
-        StorPoolName storPoolName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
-
+    public StorPoolDefinitionData load(StorPoolName storPoolName, boolean logWarnIfNotExists)
     {
         return (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
     }
 
     @Override
-    public void delete(StorPoolDefinitionData data, TransactionMgr transMgr)
+    public void delete(StorPoolDefinitionData data)
     {
         // no-op
     }

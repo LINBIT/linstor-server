@@ -1,7 +1,7 @@
 package com.linbit.linstor.api;
 
 import com.google.inject.Inject;
-import com.linbit.TransactionMgr;
+
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
@@ -10,7 +10,6 @@ import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
@@ -47,6 +46,7 @@ public class RscApiTest extends ApiTestBase
     private TransportType tesTRscDfnTransportType;
     private ResourceDefinitionData testRscDfn;
 
+    @SuppressWarnings("checkstype:magicnumber")
     public RscApiTest() throws Exception
     {
         super();
@@ -70,13 +70,11 @@ public class RscApiTest extends ApiTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        TransactionMgr transMgr = new TransactionMgr(dbConnPool);
         testControllerNode = nodeDataFactory.getInstance(
             BOB_ACC_CTX,
             testControllerName,
             testControllerType,
             testControllerFlags,
-            transMgr,
             true,
             true
         );
@@ -86,7 +84,6 @@ public class RscApiTest extends ApiTestBase
             testSatelliteName,
             testSatelliteType,
             testSatelliteFlags, // flags
-            transMgr,
             true,
             true
         );
@@ -98,14 +95,9 @@ public class RscApiTest extends ApiTestBase
             testRscDfnPort,
             testRscDfnFlags,
             testRscDfnSecret,
-            tesTRscDfnTransportType,
-            transMgr
+            tesTRscDfnTransportType
         );
         rscDfnMap.put(testRscName, testRscDfn);
-
-        transMgr.commit();
-
-        dbConnPool.returnConnection(transMgr);
     }
 
     @Test

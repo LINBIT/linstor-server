@@ -2,12 +2,12 @@ package com.linbit.linstor;
 
 import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.UuidUtils;
 import org.junit.Test;
 
@@ -19,7 +19,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class VolumeConnectionDataDerbyTest extends DerbyBase
@@ -65,6 +64,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private NodeId nodeIdSrc;
     private NodeId nodeIdDst;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public VolumeConnectionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         sourceName = new NodeName("testNodeSource");
@@ -77,9 +77,9 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         minor = 43;
         volSize = 9001;
 
-        volBlockDevSrc="/dev/src/vol/block";
+        volBlockDevSrc = "/dev/src/vol/block";
         volMetaDiskPathSrc = "/dev/src/vol/meta";
-        volBlockDevDst ="/dev/dst/vol/block";
+        volBlockDevDst = "/dev/dst/vol/block";
         volMetaDiskPathDst = "/dev/dst/vol/meta";
     }
 
@@ -94,42 +94,58 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
             TBL_COL_COUNT_VOLUME_CONNECTIONS
         );
 
-        transMgr = new TransactionMgr(getConnection());
-
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, transMgr, true, false);
+        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, transMgr, true, false);
+        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
+        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
-        resDst = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
+        resSrc = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, true, false);
+        resDst = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, true, false);
 
-        storPoolDfn = storPoolDefinitionDataFactory.getInstance(SYS_CTX, storPoolName, transMgr, true, false);
+        storPoolDfn = storPoolDefinitionDataFactory.getInstance(SYS_CTX, storPoolName, true, false);
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
-        storPool1 = storPoolDataFactory.getInstance(SYS_CTX, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
-        storPool2 = storPoolDataFactory.getInstance(SYS_CTX, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
+        storPool1 = storPoolDataFactory.getInstance(
+            SYS_CTX, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        );
+        storPool2 = storPoolDataFactory.getInstance(
+            SYS_CTX, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        );
 
-        volSrc = volumeDataFactory.getInstance(SYS_CTX, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true, false);
-        volDst = volumeDataFactory.getInstance(SYS_CTX, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);
+        volSrc = volumeDataFactory.getInstance(
+            SYS_CTX, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null, true, false
+        );
+        volDst = volumeDataFactory.getInstance(
+            SYS_CTX, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null, true, false
+        );
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(uuid, SYS_CTX, volSrc, volDst, transMgr, driver, propsContainerFactory);
-        driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(
+            uuid,
+            SYS_CTX,
+            volSrc,
+            volDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(volCon);
+        commit();
 
         checkDbPersist(true);
     }
@@ -137,7 +153,8 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, transMgr, true, false);
+        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, true, false);
+        commit();
 
         checkDbPersist(false);
     }
@@ -145,10 +162,19 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(uuid, SYS_CTX, volSrc, volDst, transMgr, driver, propsContainerFactory);
-        driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(
+            uuid,
+            SYS_CTX,
+            volSrc,
+            volDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(volCon);
 
-        VolumeConnectionData loadedConDfn = driver.load(volSrc , volDst, true, transMgr);
+        VolumeConnectionData loadedConDfn = driver.load(volSrc, volDst, true);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -156,10 +182,19 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(uuid, SYS_CTX, volSrc, volDst, transMgr, driver, propsContainerFactory);
-        driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(
+            uuid,
+            SYS_CTX,
+            volSrc,
+            volDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(volCon);
 
-        List<VolumeConnectionData> cons = driver.loadAllByVolume(volSrc, transMgr);
+        List<VolumeConnectionData> cons = driver.loadAllByVolume(volSrc);
 
         assertNotNull(cons);
 
@@ -174,14 +209,22 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(uuid, SYS_CTX, volSrc, volDst, transMgr, driver, propsContainerFactory);
-        driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(
+            uuid,
+            SYS_CTX,
+            volSrc,
+            volDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(volCon);
 
         VolumeConnectionData loadedConDfn = volumeConnectionDataFactory.getInstance(
             SYS_CTX,
             volSrc,
             volDst,
-            transMgr,
             false,
             false
         );
@@ -196,30 +239,40 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
             SYS_CTX,
             volSrc,
             volDst,
-            transMgr,
             true,
             false
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(volSrc, volDst, true, transMgr));
+        assertEquals(storedInstance, driver.load(volSrc, volDst, true));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(uuid, SYS_CTX, volSrc, volDst, transMgr, driver, propsContainerFactory);
-        driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(
+            uuid,
+            SYS_CTX,
+            volSrc,
+            volDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(volCon);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VLM_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(volCon, transMgr);
+        driver.delete(volCon);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -231,7 +284,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VLM_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -269,9 +322,18 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(uuid, SYS_CTX, volSrc, volDst, transMgr, driver, propsContainerFactory);
-       driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(
+            uuid,
+            SYS_CTX,
+            volSrc,
+            volDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(volCon);
 
-        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, transMgr, false, true);
+        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, false, true);
     }
 }

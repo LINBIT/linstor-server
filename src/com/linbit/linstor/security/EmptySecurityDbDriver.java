@@ -2,10 +2,12 @@ package com.linbit.linstor.security;
 
 import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -94,59 +96,49 @@ public class EmptySecurityDbDriver implements DbAccessor
         private final ObjectProtection objProt;
 
         @Inject
-        EmptyObjectProtectionDatabaseDriver(@SystemContext AccessContext accCtx)
-        {
-            objProt = new ObjectProtection(accCtx, null, null);
-        }
-
-        @Override
-        public void insertOp(ObjectProtection objProtRef, TransactionMgr transMgr) throws SQLException
-        {
-            // no-op
-        }
-
-        @Override
-        public void deleteOp(String objPath, TransactionMgr transMgr) throws SQLException
-        {
-            // no-op
-        }
-
-        @Override
-        public void insertAcl(
-            ObjectProtection objProtRef,
-            Role role,
-            AccessType grantedAccess,
-            TransactionMgr transMgr
+        EmptyObjectProtectionDatabaseDriver(
+            @SystemContext AccessContext accCtx,
+            Provider<TransactionMgr> transMgrProviderRef,
+            TransactionObjectFactory transObjFactoryRef
         )
+        {
+            objProt = new ObjectProtection(accCtx, null, null, transObjFactoryRef, transMgrProviderRef);
+        }
+
+        @Override
+        public void insertOp(ObjectProtection objProtRef) throws SQLException
+        {
+            // no-op
+        }
+
+        @Override
+        public void deleteOp(String objPath) throws SQLException
+        {
+            // no-op
+        }
+
+        @Override
+        public void insertAcl(ObjectProtection objProtRef, Role role, AccessType grantedAccess)
             throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void updateAcl(
-            ObjectProtection objProtRef,
-            Role role,
-            AccessType grantedAccess,
-            TransactionMgr transMgr
-        )
+        public void updateAcl(ObjectProtection objProtRef, Role role, AccessType grantedAccess)
             throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void deleteAcl(ObjectProtection objProtRef, Role role, TransactionMgr transMgr) throws SQLException
+        public void deleteAcl(ObjectProtection objProtRef, Role role) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public ObjectProtection loadObjectProtection(
-            String objPath,
-            boolean logWarnIfNotExists,
-            TransactionMgr transMgr
-        )
+        public ObjectProtection loadObjectProtection(String objPath, boolean logWarnIfNotExists)
             throws SQLException
         {
             return objProt;

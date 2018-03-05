@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.SystemContext;
@@ -17,12 +16,16 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,6 +88,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final VolumeDataFactory volumeDataFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     private HashMap<ResPrimaryKey, ResourceData> resCache;
     private boolean cacheCleared = false;
@@ -99,7 +104,9 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         Provider<ResourceDefinitionDataDerbyDriver> resDfnDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef
+        VolumeDataFactory volumeDataFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
@@ -111,21 +118,24 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
 
         flagDriver = new FlagDriver();
         resCache = new HashMap<>();
     }
 
     @Override
-    public void create(ResourceData res, TransactionMgr transMgr) throws SQLException
+    public void create(ResourceData res) throws SQLException
     {
-        create(dbCtx, res, transMgr);
+        create(dbCtx, res);
     }
 
-    private void create(AccessContext accCtx, ResourceData res, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    private void create(AccessContext accCtx, ResourceData res) throws SQLException
     {
         errorReporter.logTrace("Creating Resource %s", getId(res));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(res.getUuid()));
             stmt.setString(2, res.getAssignedNode().getName().value);
@@ -141,11 +151,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         errorReporter.logTrace("Resource created %s", getId(res));
     }
 
-    public void ensureResExists(AccessContext accCtx, ResourceData res, TransactionMgr transMgr)
+    public void ensureResExists(AccessContext accCtx, ResourceData res)
         throws SQLException
     {
         errorReporter.logTrace("Ensuring Resource exists %s", getId(res));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
         {
             stmt.setString(1, res.getAssignedNode().getName().value);
             stmt.setString(2, res.getDefinition().getName().value);
@@ -154,30 +164,25 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             {
                 if (!resultSet.next())
                 {
-                    create(accCtx, res, transMgr);
+                    create(accCtx, res);
                 }
             }
         }
     }
 
     @Override
-    public ResourceData load(
-        Node node,
-        ResourceName resourceName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    public ResourceData load(Node node, ResourceName resourceName, boolean logWarnIfNotExists)
         throws SQLException
     {
         errorReporter.logTrace("Loading Resource %s", getId(node, resourceName));
         ResourceData ret = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
         {
             stmt.setString(1, node.getName().value);
             stmt.setString(2, resourceName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                List<ResourceData> list = load(resultSet, dbCtx, node, transMgr);
+                List<ResourceData> list = load(resultSet, dbCtx, node);
 
                 if (!list.isEmpty())
                 {
@@ -196,19 +201,18 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     public List<ResourceData> loadResourceDataByResourceDefinition(
         ResourceDefinitionData resDfn,
-        TransactionMgr transMgr,
         AccessContext accCtx
     )
         throws SQLException
     {
         errorReporter.logTrace("Loading all Resources by ResourceDefinition %s", getTraceResDfnId(resDfn));
         List<ResourceData> resList;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_RES_DFN))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT_BY_RES_DFN))
         {
             stmt.setString(1, resDfn.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                resList = load(resultSet, accCtx, null, transMgr);
+                resList = load(resultSet, accCtx, null);
             }
         }
         errorReporter.logTrace(
@@ -219,17 +223,17 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return resList;
     }
 
-    public List<ResourceData> loadResourceData(AccessContext accCtx, NodeData node, TransactionMgr transMgr)
+    public List<ResourceData> loadResourceData(AccessContext accCtx, NodeData node)
         throws SQLException
     {
         errorReporter.logTrace("Loading all Resources by Node %s", getTraceNodeId(node));
         List<ResourceData> ret;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_NODE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT_BY_NODE))
         {
             stmt.setString(1, node.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(resultSet, accCtx, node, transMgr);
+                ret = load(resultSet, accCtx, node);
             }
         }
         errorReporter.logTrace(
@@ -240,12 +244,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return ret;
     }
 
-    private List<ResourceData> load(
-        ResultSet resultSet,
-        AccessContext accCtx,
-        Node globalNode,
-        TransactionMgr transMgr
-    )
+    private List<ResourceData> load(ResultSet resultSet, AccessContext accCtx, Node globalNode)
         throws SQLException
     {
         List<ResourceData> resList = new ArrayList<>();
@@ -265,8 +264,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     {
                         node = nodeDataDatabaseDriverProvider.get().load(
                             new NodeName(resultSet.getString(RES_NODE_NAME)),
-                            true,
-                            transMgr
+                            true
                         );
                     }
                     catch (InvalidNameException invalidNameExc)
@@ -304,7 +302,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 ResourceData resData = cacheGet(node, resName);
                 if (resData == null)
                 {
-                    ResourceDefinition resDfn = resDfnDriverProvider.get().load(resName, true, transMgr);
+                    ResourceDefinition resDfn = resDfnDriverProvider.get().load(resName, true);
 
                     Resource loadedRes = resDfn.getResource(accCtx, node.getName());
                     // although we just asked the cache, we also just loaded the resDfn.
@@ -318,7 +316,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     if (loadedRes == null)
                     {
                         // here we are currently loading our own resDfn, and it is loading us
-                        ObjectProtection objProt = getObjectProection(node, resName, transMgr);
+                        ObjectProtection objProt = getObjectProection(node, resName);
 
                         NodeId nodeId;
                         try
@@ -348,10 +346,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             node,
                             nodeId,
                             resultSet.getLong(RES_FLAGS),
-                            transMgr,
                             this,
                             propsContainerFactory,
-                            volumeDataFactory
+                            volumeDataFactory,
+                            transObjFactory,
+                            transMgrProvider
                         );
 
                         if (!cacheCleared)
@@ -362,10 +361,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         errorReporter.logTrace("Resource instance created %s", getId(resData));
 
                         // restore ResourceConnection
-                        List<ResourceConnectionData> cons = resourceConnectionDriverProvider.get().loadAllByResource(
-                            resData,
-                            transMgr
-                        );
+                        List<ResourceConnectionData> cons = resourceConnectionDriverProvider.get()
+                            .loadAllByResource(resData);
                         for (ResourceConnection conDfn : cons)
                         {
                             resData.setResourceConnection(accCtx, conDfn);
@@ -376,8 +373,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         );
 
                         // restore volumes
-                        List<VolumeData> volList =
-                            volumeDriverProvider.get().loadAllVolumesByResource(resData, transMgr);
+                        List<VolumeData> volList = volumeDriverProvider.get()
+                            .loadAllVolumesByResource(resData);
                         for (VolumeData volData : volList)
                         {
                             resData.putVolume(accCtx, volData);
@@ -404,13 +401,12 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return resList;
     }
 
-    private ObjectProtection getObjectProection(Node node, ResourceName resName, TransactionMgr transMgr)
+    private ObjectProtection getObjectProection(Node node, ResourceName resName)
         throws SQLException
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(resName),
-            false, // no need to log a warning, as we would fail then anyways
-            transMgr
+            false // no need to log a warning, as we would fail then anyways
         );
         if (objProt == null)
         {
@@ -423,10 +419,10 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public void delete(ResourceData resource, TransactionMgr transMgr) throws SQLException
+    public void delete(ResourceData resource) throws SQLException
     {
         errorReporter.logTrace("Deleting Resource %s", getId(resource));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_DELETE))
         {
             stmt.setString(1, resource.getAssignedNode().getName().value);
             stmt.setString(2, resource.getDefinition().getName().value);
@@ -490,7 +486,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private class FlagDriver implements StateFlagsPersistence<ResourceData>
     {
         @Override
-        public void persist(ResourceData resource, long flags, TransactionMgr transMgr) throws SQLException
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void persist(ResourceData resource, long flags) throws SQLException
         {
             try
             {
@@ -514,7 +511,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     toFlags,
                     getId(resource)
                 );
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_UPDATE_FLAG))
+                try (PreparedStatement stmt = getConnection().prepareStatement(RES_UPDATE_FLAG))
                 {
                     stmt.setLong(1, flags);
 
@@ -541,6 +538,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     {
         cacheCleared = true;
         resCache.clear();
+    }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
     }
 
     private static class ResPrimaryKey

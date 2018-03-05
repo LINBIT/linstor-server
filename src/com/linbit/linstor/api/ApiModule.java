@@ -9,6 +9,7 @@ import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.util.List;
 
@@ -44,23 +45,26 @@ public class ApiModule extends AbstractModule
             apiCallDescriptorBinder.addBinding(descriptor.getName()).toInstance(descriptor);
         }
 
-        ApiCallScope apiCallScope = new ApiCallScope();
+        LinStorScope apiCallScope = new LinStorScope();
         bindScope(ApiCallScoped.class, apiCallScope);
-        bind(ApiCallScope.class).toInstance(apiCallScope);
+        bind(LinStorScope.class).toInstance(apiCallScope);
 
         bind(AccessContext.class)
             .annotatedWith(PeerContext.class)
-            .toProvider(ApiCallScope.<AccessContext>seededKeyProvider())
+            .toProvider(LinStorScope.<AccessContext>seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Peer.class)
-            .toProvider(ApiCallScope.<Peer>seededKeyProvider())
+            .toProvider(LinStorScope.<Peer>seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Message.class)
-            .toProvider(ApiCallScope.<Message>seededKeyProvider())
+            .toProvider(LinStorScope.<Message>seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Integer.class)
             .annotatedWith(Names.named(ApiModule.MSG_ID))
-            .toProvider(ApiCallScope.<Integer>seededKeyProvider())
+            .toProvider(LinStorScope.<Integer>seededKeyProvider())
+            .in(ApiCallScoped.class);
+        bind(TransactionMgr.class)
+            .toProvider(LinStorScope.<TransactionMgr>seededKeyProvider())
             .in(ApiCallScoped.class);
     }
 }

@@ -1,12 +1,10 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-
 import javax.inject.Inject;
 
 public class SatelliteVolDriver implements VolumeDataDatabaseDriver
@@ -29,21 +27,20 @@ public class SatelliteVolDriver implements VolumeDataDatabaseDriver
     public VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefinition,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
     {
         return (VolumeData) resource.getVolume(volumeDefinition.getVolumeNumber());
     }
 
     @Override
-    public void create(VolumeData vol, TransactionMgr transMgr)
+    public void create(VolumeData vol)
     {
         // no-op
     }
 
     @Override
-    public void delete(VolumeData data, TransactionMgr transMgr)
+    public void delete(VolumeData data)
     {
         // no-op
     }

@@ -1,7 +1,7 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.TransactionObject;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.Collection;

@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,7 +17,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ResourceConnectionDataDerbyTest extends DerbyBase
@@ -32,8 +30,6 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     private final Integer resPort;
     private final NodeName sourceName;
     private final NodeName targetName;
-
-    private TransactionMgr transMgr;
 
     private java.util.UUID uuid;
     private ResourceDefinitionData resDfn;
@@ -50,6 +46,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     private ResourceData resSrc;
     private ResourceData resDst;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public ResourceConnectionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         resName = new ResourceName("testResourceName");
@@ -58,36 +55,49 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         targetName = new NodeName("testNodeTarget");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_RESOURCE_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 4, TBL_COL_COUNT_RESOURCE_CONNECTIONS);
-
-        transMgr = new TransactionMgr(getConnection());
+        assertEquals(
+            TBL_RESOURCE_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
+            4,
+            TBL_COL_COUNT_RESOURCE_CONNECTIONS
+        );
 
         uuid = randomUUID();
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, transMgr, true, false);
-        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, transMgr, true, false);
+        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
+        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
-        resDst = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
+        resSrc = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, true, false);
+        resDst = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, true, false);
 
-        resCon = new ResourceConnectionData(uuid, SYS_CTX, resSrc, resDst, transMgr, driver, propsContainerFactory);
+        resCon = new ResourceConnectionData(
+            uuid,
+            SYS_CTX,
+            resSrc,
+            resDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(resCon, transMgr);
+        driver.create(resCon);
+        commit();
 
         checkDbPersist(true);
     }
@@ -95,7 +105,8 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, transMgr, true, false);
+        resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, true, false);
+        commit();
 
         checkDbPersist(false);
     }
@@ -103,9 +114,9 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(resCon, transMgr);
+        driver.create(resCon);
 
-        ResourceConnectionData loadedConDfn = driver.load(resSrc , resDst, true, transMgr);
+        ResourceConnectionData loadedConDfn = driver.load(resSrc, resDst, true);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -113,9 +124,9 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(resCon, transMgr);
+        driver.create(resCon);
 
-        List<ResourceConnectionData> cons = driver.loadAllByResource(resSrc, transMgr);
+        List<ResourceConnectionData> cons = driver.loadAllByResource(resSrc);
 
         assertNotNull(cons);
 
@@ -130,13 +141,12 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(resCon, transMgr);
+        driver.create(resCon);
 
         ResourceConnectionData loadedConDfn = resourceConnectionDataFactory.getInstance(
             SYS_CTX,
             resSrc,
             resDst,
-            transMgr,
             false,
             false
         );
@@ -151,29 +161,29 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
             SYS_CTX,
             resSrc,
             resDst,
-            transMgr,
             true,
             false
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(resSrc, resDst, true, transMgr));
+        assertEquals(storedInstance, driver.load(resSrc, resDst, true));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(resCon, transMgr);
+        driver.create(resCon);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(resCon, transMgr);
+        driver.delete(resCon);
 
         resultSet = stmt.executeQuery();
 
@@ -185,7 +195,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
 
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -222,8 +232,8 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        driver.create(resCon, transMgr);
+        driver.create(resCon);
 
-        resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, transMgr, false, true);
+        resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, false, true);
     }
 }

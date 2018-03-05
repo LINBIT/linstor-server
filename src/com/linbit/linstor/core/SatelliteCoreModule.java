@@ -5,16 +5,18 @@ import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -66,14 +68,22 @@ public class SatelliteCoreModule extends AbstractModule
     @Provides
     @Singleton
     @Named(SATELLITE_PROPS)
-    public Props loadPropsContainer(PropsContainerFactory propsContainerFactory)
+    public Props loadPropsContainer(
+        PropsContainerFactory propsContainerFactory,
+        LinStorScope initScope
+    )
     {
         Props propsContainer;
         try
         {
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            propsContainer = propsContainerFactory.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME, transMgr);
+            initScope.enter();
+            initScope.seed(TransactionMgr.class, transMgr);
+
+            propsContainer = propsContainerFactory.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME);
+
             transMgr.commit();
+            initScope.exit();
         }
         catch (SQLException exc)
         {

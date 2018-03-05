@@ -32,6 +32,7 @@ import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
+import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
 
 import javax.inject.Named;
 import java.util.Arrays;
@@ -214,7 +215,8 @@ public final class Satellite
                 new ApiModule(apiType, apiCalls),
                 new ApiCallHandlerModule(),
                 new DebugModule(),
-                new SatelliteDebugModule()
+                new SatelliteDebugModule(),
+                new SatelliteTransactionMgrModule()
             );
 
             Satellite instance = injector.getInstance(Satellite.class);

@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
@@ -19,8 +18,11 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +43,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
-        ResourceConnectionDataFactory resourceConnectionDataFactoryRef
+        ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -50,7 +53,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_RSC_CONN,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(
             currentNodeName1,
@@ -77,7 +81,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 nodeName1Str,
                 nodeName2Str,
                 rscNameStr
@@ -131,7 +134,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null, // new transMgr
                 nodeName1,
                 nodeName2,
                 rscNameStr
@@ -201,7 +203,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
                 nodeName1Str,
                 nodeName2Str,
                 rscNameStr
@@ -242,7 +243,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String nodeName1,
         String nodeName2,
         String rscNameStr
@@ -253,7 +253,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             client,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(nodeName1, nodeName2, rscNameStr),
             getVariables(nodeName1, nodeName2, rscNameStr)
         );
@@ -327,7 +327,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 currentAccCtx.get(),
                 rsc1,
                 rsc2,
-                currentTransMgr.get(),
                 true,
                 true
             );
@@ -379,7 +378,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 currentAccCtx.get(),
                 rsc1,
                 rsc2,
-                currentTransMgr.get(),
                 false,
                 false
             );

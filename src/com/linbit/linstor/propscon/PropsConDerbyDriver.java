@@ -1,12 +1,15 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,33 +48,39 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         "    WHERE " + COL_INSTANCE + " = ? ";
 
     private final ErrorReporter errorReporter;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public PropsConDerbyDriver(ErrorReporter errorReporterRef)
+    public PropsConDerbyDriver(
+        ErrorReporter errorReporterRef,
+        Provider<TransactionMgr> transMgrProviderRef
+    )
     {
         errorReporter = errorReporterRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
-    public void persist(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
+    public void persist(String instanceName, String key, String value) throws SQLException
     {
-        persistImpl(instanceName, key, value, transMgr);
+        persistImpl(instanceName, key, value);
     }
 
     @Override
-    public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr) throws SQLException
+    public void persist(String instanceName, Map<String, String> props) throws SQLException
     {
         for (Entry<String, String> entry : props.entrySet())
         {
-            persistImpl(instanceName, entry.getKey(), entry.getValue(), transMgr);
+            persistImpl(instanceName, entry.getKey(), entry.getValue());
         }
     }
 
-    private void persistImpl(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    private void persistImpl(String instanceName, String key, String value) throws SQLException
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
         try (
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+            PreparedStatement stmt = getConnection().prepareStatement(
                 SELECT_ENTRY_FOR_UPDATE,
                 ResultSet.TYPE_SCROLL_SENSITIVE,
                 ResultSet.CONCUR_UPDATABLE
@@ -103,11 +112,11 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void remove(String instanceName, String key, TransactionMgr transMgr) throws SQLException
+    public void remove(String instanceName, String key) throws SQLException
     {
         errorReporter.logTrace("Removing property %s", getId(instanceName, key));
 
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY))
+        try (PreparedStatement stmt = getConnection().prepareStatement(REMOVE_ENTRY))
         {
             stmt.setString(1, instanceName.toUpperCase());
             stmt.setString(2, key);
@@ -119,9 +128,9 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr) throws SQLException
+    public void remove(String instanceName, Set<String> keys) throws SQLException
     {
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY))
+        try (PreparedStatement stmt = getConnection().prepareStatement(REMOVE_ENTRY))
         {
             stmt.setString(1, instanceName.toUpperCase());
             for (String key : keys)
@@ -137,12 +146,15 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void removeAll(String instanceName, TransactionMgr transMgr) throws SQLException
+    public void removeAll(String instanceName) throws SQLException
     {
         errorReporter.logTrace("Removing all properties by instance %s", getId(instanceName));
 
         int rowsUpdated;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ALL_ENTRIES))
+        try (
+            PreparedStatement stmt = getConnection()
+                .prepareStatement(REMOVE_ALL_ENTRIES)
+        )
         {
             stmt.setString(1, instanceName.toUpperCase());
             rowsUpdated = stmt.executeUpdate();
@@ -155,11 +167,12 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException
+    public Map<String, String> load(String instanceName) throws SQLException
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
         Map<String, String> ret = new TreeMap<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE))
+        Connection connection = getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE))
         {
             stmt.setString(1, instanceName.toUpperCase());
 
@@ -181,6 +194,12 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         );
         return ret;
     }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
+    }
+
 
     private String getId(String instanceName)
     {

@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
@@ -8,7 +7,6 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 
 public class SatelliteStorPoolDriver implements StorPoolDataDatabaseDriver
@@ -25,10 +23,8 @@ public class SatelliteStorPoolDriver implements StorPoolDataDatabaseDriver
     public StorPoolData load(
         Node node,
         StorPoolDefinition storPoolDefinition,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
-
     {
         StorPoolData storPool = null;
         try
@@ -43,19 +39,19 @@ public class SatelliteStorPoolDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public void create(StorPoolData storPoolData, TransactionMgr transMgr)
+    public void create(StorPoolData storPoolData)
     {
         // no-op
     }
 
     @Override
-    public void delete(StorPoolData data, TransactionMgr transMgr)
+    public void delete(StorPoolData data)
     {
         // no-op
     }
 
     @Override
-    public void ensureEntryExists(StorPoolData data, TransactionMgr transMgr)
+    public void ensureEntryExists(StorPoolData data)
     {
         // no-op
     }

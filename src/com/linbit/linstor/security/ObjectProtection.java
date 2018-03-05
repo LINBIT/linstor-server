@@ -3,19 +3,22 @@ package com.linbit.linstor.security;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionObject;
-import com.linbit.TransactionSimpleObject;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.inject.Provider;
 
 /**
  * Security protection for linstor object
@@ -65,25 +68,32 @@ public final class ObjectProtection extends BaseTransactionObject
         AccessContext accCtx,
         String objPath,
         boolean createIfNotExists,
-        TransactionMgr transMgr,
+        Provider<TransactionMgr> transMgrProvider,
+        TransactionObjectFactory transObjFactoryRef,
         ObjectProtectionDatabaseDriver dbDriver
     )
         throws SQLException, AccessDeniedException
     {
         ObjectProtection objProt = null;
 
-        objProt = dbDriver.loadObjectProtection(objPath, false, transMgr);
+        objProt = dbDriver.loadObjectProtection(objPath, false);
 
         if (objProt == null && createIfNotExists)
         {
-            objProt = new ObjectProtection(accCtx, objPath, dbDriver);
-            dbDriver.insertOp(objProt, transMgr);
+            objProt = new ObjectProtection(
+                accCtx,
+                objPath,
+                dbDriver,
+                transObjFactoryRef,
+                transMgrProvider
+            );
+            dbDriver.insertOp(objProt);
             // as we just created a new ObjProt, we have to set the permissions
             // use the *Impl to skip the access checks as there are no rules yet and would cause
             // an exception
             objProt.addAclEntryImpl(accCtx.subjectRole, AccessType.CONTROL);
             // as we are not initialized yet, we have to add the acl entry manually in the DB
-            dbDriver.insertAcl(objProt, accCtx.subjectRole, AccessType.CONTROL, transMgr);
+            dbDriver.insertAcl(objProt, accCtx.subjectRole, AccessType.CONTROL);
         }
 
         if (objProt != null)
@@ -92,19 +102,9 @@ public final class ObjectProtection extends BaseTransactionObject
             objProt.objPath = objPath;
             objProt.dbDriver = dbDriver;
 
-            if (transMgr == null)
-            {
-                // satellite
-                objProt.persisted = false;
-            }
-            else
-            {
-                transMgr.register(objProt);
-                objProt.persisted = true;
-            }
+            objProt.persisted = true;
 
             objProt.initialized();
-            objProt.setConnection(transMgr);
         }
 
         return objProt;
@@ -115,10 +115,19 @@ public final class ObjectProtection extends BaseTransactionObject
      *
      * @param accCtx The object creator's access context
      * @param driver The DatabaseDriver. Can be null for temporary objects
+     * @param transObjFactoryRef
+     * @param transMgrProvider
      * @throws SQLException
      */
-    ObjectProtection(AccessContext accCtx, String objPathRef, ObjectProtectionDatabaseDriver driver)
+    ObjectProtection(
+        AccessContext accCtx,
+        String objPathRef,
+        ObjectProtectionDatabaseDriver driver,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProvider
+    )
     {
+        super(transMgrProvider);
         ErrorCheck.ctorNotNull(ObjectProtection.class, AccessContext.class, accCtx);
 
         dbDriver = driver;
@@ -135,9 +144,9 @@ public final class ObjectProtection extends BaseTransactionObject
             secTypeDriver = driver.getSecurityTypeDriver();
         }
 
-        objectCreator = new TransactionSimpleObject<>(this, accCtx.subjectId, idDriver);
-        objectOwner = new TransactionSimpleObject<>(this, accCtx.subjectRole, roleDriver);
-        objectType = new TransactionSimpleObject<>(this, accCtx.subjectDomain, secTypeDriver);
+        objectCreator = transObjFactoryRef.createTransactionSimpleObject(this, accCtx.subjectId, idDriver);
+        objectOwner = transObjFactoryRef.createTransactionSimpleObject(this, accCtx.subjectRole, roleDriver);
+        objectType = transObjFactoryRef.createTransactionSimpleObject(this, accCtx.subjectDomain, secTypeDriver);
         objectAcl = new AccessControlList();
         cachedAcl = new HashMap<>();
 
@@ -357,7 +366,8 @@ public final class ObjectProtection extends BaseTransactionObject
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         requireAccess(accCtx, AccessType.CONTROL);
-        dbDriver.deleteOp(objPath, transMgr);
+        activateTransMgr();
+        dbDriver.deleteOp(objPath);
     }
 
     public void setPersisted(boolean persistedRef)
@@ -371,13 +381,14 @@ public final class ObjectProtection extends BaseTransactionObject
         {
             ensureObjProtIsPersisted();
 
+            activateTransMgr();
             if (oldEntry == null)
             {
-                dbDriver.insertAcl(this, entryRole, grantedAccess, transMgr);
+                dbDriver.insertAcl(this, entryRole, grantedAccess);
             }
             else
             {
-                dbDriver.updateAcl(this, entryRole, grantedAccess, transMgr);
+                dbDriver.updateAcl(this, entryRole, grantedAccess);
             }
 
             if (!cachedAcl.containsKey(entryRole))
@@ -393,7 +404,8 @@ public final class ObjectProtection extends BaseTransactionObject
         {
             ensureObjProtIsPersisted();
 
-            dbDriver.deleteAcl(this, entryRole, transMgr);
+            activateTransMgr();
+            dbDriver.deleteAcl(this, entryRole);
 
             if (!cachedAcl.containsKey(entryRole))
             {
@@ -406,7 +418,8 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         if (!persisted)
         {
-            dbDriver.insertOp(this, transMgr);
+            activateTransMgr();
+            dbDriver.insertOp(this);
             persisted = true;
         }
     }

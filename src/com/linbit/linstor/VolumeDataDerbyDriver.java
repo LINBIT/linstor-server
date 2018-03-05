@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.SystemContext;
@@ -15,12 +14,16 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -89,6 +92,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private final Provider<StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverProvider;
     private final Provider<StorPoolDataDerbyDriver> storPoolDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     private HashMap<VolPrimaryKey, VolumeData> volCache;
     private boolean cacheCleared = false;
@@ -103,7 +108,9 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         Provider<VolumeDefinitionDataDerbyDriver> volDfnDriverProviderRef,
         Provider<StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverProviderRef,
         Provider<StorPoolDataDerbyDriver> storPoolDriverProviderRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = privCtx;
@@ -115,6 +122,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         storPoolDfnDriverProvider = storPoolDfnDriverProviderRef;
         storPoolDriverProvider = storPoolDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
 
         flagPersistenceDriver = new VolFlagsPersistence();
 
@@ -122,16 +131,16 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefintion,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
         throws SQLException
     {
         VolumeData ret = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
         {
             errorReporter.logTrace(
                 "Loading Volume %s",
@@ -147,8 +156,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 List<VolumeData> volList = load(
                     dbCtx,
                     resource,
-                    resultSet,
-                    transMgr
+                    resultSet
                 );
 
                 if (!volList.isEmpty())
@@ -172,14 +180,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return ret;
     }
 
-    public List<VolumeData> loadAllVolumesByResource(
-        Resource resRef,
-        TransactionMgr transMgr
-    )
-        throws SQLException
+    public List<VolumeData> loadAllVolumesByResource(Resource resRef) throws SQLException
     {
         List<VolumeData> ret;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_BY_RES))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_RES))
         {
             errorReporter.logTrace(
                 "Loading all Volumes by resource %s",
@@ -189,21 +193,18 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(2, resRef.getDefinition().getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(dbCtx, resRef, resultSet, transMgr);
+                ret = load(dbCtx, resRef, resultSet);
             }
         }
         errorReporter.logTrace("%d volumes loaded for resource %s", ret.size(), getId(resRef));
         return ret;
     }
 
-    public List<VolumeData> getVolumesByStorPool(
-        StorPoolData storPoolData,
-        TransactionMgr transMgr
-    )
+    public List<VolumeData> getVolumesByStorPool(StorPoolData storPoolData)
         throws SQLException
     {
         List<VolumeData> ret;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_BY_STOR_POOL))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_STOR_POOL))
         {
             errorReporter.logTrace(
                 "Loading all Volumes by StorPool %s",
@@ -213,19 +214,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(2, getStorPoolDfn(storPoolData).getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(dbCtx, null, resultSet, transMgr);
+                ret = load(dbCtx, null, resultSet);
             }
         }
         errorReporter.logTrace("%d volumes loaded for StorPool %s", ret.size(), getId(storPoolData));
         return ret;
     }
 
-    private List<VolumeData> load(
-        AccessContext accCtx,
-        Resource resRef,
-        ResultSet resultSet,
-        TransactionMgr transMgr
-    )
+    private List<VolumeData> load(AccessContext accCtx, Resource resRef, ResultSet resultSet)
         throws SQLException
     {
         List<VolumeData> volList = new ArrayList<>();
@@ -280,8 +276,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         );
                     }
                 }
-                Node node = nodeDriverProvider.get().load(nodeName, true, transMgr);
-                res = resourceDriverProvider.get().load(node, resName, true, transMgr);
+                Node node = nodeDriverProvider.get().load(nodeName, true);
+                res = resourceDriverProvider.get().load(node, resName, true);
             }
 
             try
@@ -321,21 +317,18 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             volDfn = volDfnDriverProvider.get().load(
                 res.getDefinition(),
                 volNr,
-                true,
-                transMgr
+                true
             );
 
             StorPoolDefinitionData storPoolDfn = storPoolDfnDriverProvider.get().load(
                 storPoolName,
-                true,
-                transMgr
+                true
             );
 
             StorPoolData storPool = storPoolDriverProvider.get().load(
                 res.getAssignedNode(),
                 storPoolDfn,
-                true,
-                transMgr
+                true
             );
 
             VolumeData volData = cacheGet(res.getAssignedNode(), res.getDefinition(), volNr);
@@ -358,9 +351,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         resultSet.getString(VOL_BLOCK_DEVICE),
                         resultSet.getString(VOL_META_DISK),
                         resultSet.getLong(VOL_FLAGS),
-                        transMgr,
                         this,
-                        propsContainerFactory
+                        propsContainerFactory,
+                        transObjFactory,
+                        transMgrProvider
                     );
                     errorReporter.logTrace("Volume created %s", getId(volData));
                     if (!cacheCleared)
@@ -386,7 +380,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
                     // restore volCon
                     List<VolumeConnectionData> volConDfnList =
-                        volumeConnectionDriverProvider.get().loadAllByVolume(volData, transMgr);
+                        volumeConnectionDriverProvider.get().loadAllByVolume(volData);
                     for (VolumeConnectionData volConDfn : volConDfnList)
                     {
                         volData.setVolumeConnection(dbCtx, volConDfn);
@@ -415,9 +409,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
     @Override
-    public void create(VolumeData vol, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(VolumeData vol) throws SQLException
     {
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
         {
             errorReporter.logTrace("Creating Volume %s", getId(vol));
 
@@ -440,9 +435,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
     @Override
-    public void delete(VolumeData volume, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void delete(VolumeData volume) throws SQLException
     {
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
         {
             errorReporter.logTrace("Deleting Volume %s", getId(volume));
 
@@ -515,7 +511,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     private String getResId(String nodeName, String resName)
     {
-        return "(NodeName=" + nodeName + " ResName=" + resName+ ")";
+        return "(NodeName=" + nodeName + " ResName=" + resName + ")";
     }
 
     private String getId(StorPoolData storPool)
@@ -550,13 +546,19 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         volCache.clear();
     }
 
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
+    }
+
     private class VolFlagsPersistence implements StateFlagsPersistence<VolumeData>
     {
         @Override
-        public void persist(VolumeData volume, long flags, TransactionMgr transMgr)
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void persist(VolumeData volume, long flags)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(UPDATE_FLAGS))
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_FLAGS))
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(

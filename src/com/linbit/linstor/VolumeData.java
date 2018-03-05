@@ -1,8 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionMap;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -12,10 +9,12 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -23,6 +22,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  *
@@ -72,12 +73,15 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
-        TransactionMgr transMgr,
         VolumeDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws SQLException, AccessDeniedException
     {
+        super(transMgrProviderRef);
+
         objId = uuid;
         dbgInstanceId = UUID.randomUUID();
         resource = resRef;
@@ -88,23 +92,23 @@ public class VolumeData extends BaseTransactionObject implements Volume
         metaDiskPath = metaDiskPathRef;
         dbDriver = dbDriverRef;
 
-        flags = new VlmFlagsImpl(
+        flags = transObjFactory.createStateFlagsImpl(
             resRef.getObjProt(),
             this,
+            VlmFlags.class,
             this.dbDriver.getStateFlagsPersistence(),
             initFlags
         );
 
-        volumeConnections = new TransactionMap<>(new HashMap<Volume, VolumeConnection>(), null);
+        volumeConnections = transObjFactory.createTransactionMap(new HashMap<Volume, VolumeConnection>(), null);
         volumeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
                 resRef.getDefinition().getName(),
                 volDfnRef.getVolumeNumber()
-            ),
-            transMgr
+            )
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             resource,
@@ -119,6 +123,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         ((ResourceData) resRef).putVolume(accCtx, this);
         ((StorPoolData) storPoolRef).putVolume(accCtx, this);
         ((VolumeDefinitionData) volDfnRef).putVolume(accCtx, this);
+        activateTransMgr();
     }
 
     @Override
@@ -294,7 +299,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
             volumeProps.delete();
 
-            dbDriver.delete(this, transMgr);
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }
@@ -335,26 +341,5 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
                 getStorPool(accCtx).getProps(accCtx).map()
         );
-    }
-
-    private final class VlmFlagsImpl extends StateFlagsBits<VolumeData, VlmFlags>
-    {
-        VlmFlagsImpl(
-            ObjectProtection objProtRef,
-            VolumeData parent,
-            StateFlagsPersistence<VolumeData> persistenceRef,
-            long initFlags
-        )
-        {
-            super(
-                objProtRef,
-                parent,
-                StateFlagsBits.getMask(
-                    VlmFlags.values()
-                ),
-                persistenceRef,
-                initFlags
-            );
-        }
     }
 }

@@ -1,9 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionMap;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
@@ -18,8 +15,11 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -29,6 +29,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  *
@@ -82,12 +84,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         long initialFlags,
         String secretRef,
         TransportType transTypeRef,
-        TransactionMgr transMgr,
         ResourceDefinitionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws SQLException
     {
+        super(transMgrProviderRef);
+
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ObjectProtection.class, objProtRef);
         objId = objIdRef;
@@ -98,18 +103,31 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         dbDriver = dbDriverRef;
         tcpPortPool = tcpPortPoolRef;
 
-        port = new TransactionSimpleObject<>(this, portRef, this.dbDriver.getPortDriver());
-        volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
-        resourceMap = new TransactionMap<>(new TreeMap<NodeName, Resource>(), null);
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        port = transObjFactory.createTransactionSimpleObject(
+            this,
+            portRef,
+            this.dbDriver.getPortDriver()
+        );
+        volumeMap = transObjFactory.createTransactionMap(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
+        resourceMap = transObjFactory.createTransactionMap(new TreeMap<NodeName, Resource>(), null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         rscDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(resName),
-            transMgr
+            PropsContainer.buildPath(resName)
         );
-        flags = new RscDfnFlagsImpl(objProt, this, this.dbDriver.getStateFlagsPersistence(), initialFlags);
+        flags = transObjFactory.createStateFlagsImpl(
+            objProt,
+            this,
+            RscDfnFlags.class,
+            dbDriver.getStateFlagsPersistence(),
+            initialFlags
+        );
 
-        transportType = new TransactionSimpleObject<>(this, transTypeRef, this.dbDriver.getTransportTypeDriver());
+        transportType = transObjFactory.createTransactionSimpleObject(
+            this,
+            transTypeRef,
+            this.dbDriver.getTransportTypeDriver()
+        );
 
         transObjs = Arrays.asList(
             flags,
@@ -121,6 +139,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             transportType,
             deleted
         );
+        activateTransMgr();
     }
 
     @Override
@@ -327,7 +346,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             }
 
             objProt.delete(accCtx);
-            dbDriver.delete(this, transMgr);
+
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }
@@ -374,18 +395,5 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    private static final class RscDfnFlagsImpl extends StateFlagsBits<ResourceDefinitionData, RscDfnFlags>
-    {
-        RscDfnFlagsImpl(
-            ObjectProtection objProtRef,
-            ResourceDefinitionData parent,
-            StateFlagsPersistence<ResourceDefinitionData> persistenceRef,
-            long initialFlags
-        )
-        {
-            super(objProtRef, parent, StateFlagsBits.getMask(RscDfnFlags.values()), persistenceRef, initialFlags);
-        }
     }
 }

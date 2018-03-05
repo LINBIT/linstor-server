@@ -1,8 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionMap;
-import com.linbit.TransactionObject;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -13,6 +10,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,6 +24,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 public class StorPoolDefinitionData extends BaseTransactionObject implements StorPoolDefinition
 {
@@ -41,22 +46,25 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         ObjectProtection objProtRef,
         StorPoolName nameRef,
         StorPoolDefinitionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws SQLException
     {
+        super(transMgrProviderRef);
+
         uuid = id;
         dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         name = nameRef;
         dbDriver = dbDriverRef;
-        storPools = new TransactionMap<>(new TreeMap<NodeName, StorPool>(), null);
+        storPools = transObjFactory.createTransactionMap(new TreeMap<NodeName, StorPool>(), null);
 
         props = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(nameRef),
-            transMgr
+            PropsContainer.buildPath(nameRef)
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             objProt,
@@ -64,6 +72,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             props,
             deleted
         );
+        activateTransMgr();
     }
 
     @Override
@@ -148,8 +157,9 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
 
             props.delete();
 
+            activateTransMgr();
             objProt.delete(accCtx);
-            dbDriver.delete(this, transMgr);
+            dbDriver.delete(this);
 
             deleted.set(true);
         }

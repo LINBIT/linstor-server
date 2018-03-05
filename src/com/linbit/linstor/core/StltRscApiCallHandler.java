@@ -1,10 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
@@ -50,10 +47,11 @@ import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -84,6 +82,7 @@ class StltRscApiCallHandler
     private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     StltRscApiCallHandler(
@@ -101,7 +100,8 @@ class StltRscApiCallHandler
         ResourceDataFactory resourceDataFactoryRef,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef
+        VolumeDataFactory volumeDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -119,6 +119,7 @@ class StltRscApiCallHandler
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     /**
@@ -138,10 +139,8 @@ class StltRscApiCallHandler
             ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName); // just to be sure
             if (removedRscDfn != null)
             {
-                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-                removedRscDfn.setConnection(transMgr);
                 removedRscDfn.delete(apiCtx);
-                transMgr.commit();
+                transMgrProvider.get().commit();
             }
 
             errorReporter.logInfo("Resource definition '" + rscNameStr +
@@ -162,27 +161,392 @@ class StltRscApiCallHandler
         }
     }
 
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void applyChanges(RscPojo rscRawData)
     {
         try
         {
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            UpdatedObjects updatedObjects = applyChanges(rscRawData, transMgr);
+            ResourceName rscName;
 
-            transMgr.commit();
+            ResourceDefinitionData rscDfnToRegister = null;
+            List<NodeData> nodesToRegister = new ArrayList<>();
+
+            Map<ResourceName, Set<NodeName>> createdRscMap = new TreeMap<>();
+            Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
+
+            rscName = new ResourceName(rscRawData.getName());
+            String rscDfnSecret = rscRawData.getRscDfnSecret();
+            TransportType rscDfnTransportType = TransportType.byValue(rscRawData.getRscDfnTransportType());
+            TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
+            RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
+
+            ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
+
+            Resource localRsc = null;
+            Set<Resource> otherRscs = new HashSet<>();
+            if (rscDfn == null)
+            {
+                rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
+                    apiCtx,
+                    rscRawData.getRscDfnUuid(),
+                    rscName,
+                    port,
+                    rscDfnFlags,
+                    rscDfnSecret,
+                    rscDfnTransportType
+                );
+
+                checkUuid(rscDfn, rscRawData);
+                rscDfnToRegister = rscDfn;
+            }
+            rscDfn.setPort(apiCtx, port);
+            Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
+            rscDfnProps.clear();
+            rscDfnProps.putAll(rscRawData.getRscDfnProps());
+            rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
+
+            // merge vlmDfns
+            {
+                Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
+
+                for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
+                {
+                    VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
+                    VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
+                    VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
+                        apiCtx,
+                        vlmDfnRaw.getUuid(),
+                        rscDfn,
+                        vlmNr,
+                        vlmDfnRaw.getSize(),
+                        new MinorNumber(vlmDfnRaw.getMinorNr()),
+                        VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
+                    );
+                    checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
+                    Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
+                    vlmDfnPropsMap.clear();
+                    vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+
+                    // corresponding volumes will be created later when iterating over (local|remote)vlmApis
+
+                    if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
+                    {
+                        vlmDfnsToDelete.put(vlmNr, vlmDfn);
+                    }
+                }
+
+                for (Entry<VolumeNumber, VolumeDefinition> entry : vlmDfnsToDelete.entrySet())
+                {
+                     VolumeDefinition vlmDfn = entry.getValue();
+                     Iterator<Volume> iterateVolumes = vlmDfn.iterateVolumes(apiCtx);
+                     while (iterateVolumes.hasNext())
+                     {
+                         Volume vlm = iterateVolumes.next();
+                         vlm.markDeleted(apiCtx);
+                     }
+                     vlmDfn.markDeleted(apiCtx);
+                }
+            }
+
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
+            if (!rscIterator.hasNext())
+            {
+                // our rscDfn is empty
+                // that means, just create everything we need
+
+                NodeData localNode = controllerPeerConnector.getLocalNode();
+
+                localRsc = createRsc(
+                    rscRawData.getLocalRscUuid(),
+                    localNode,
+                    rscDfn,
+                    new NodeId(rscRawData.getLocalRscNodeId()),
+                    RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
+                    rscRawData.getLocalRscProps(),
+                    rscRawData.getLocalVlms(),
+                    false
+                );
+
+                add(localRsc, createdRscMap);
+
+                for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
+                {
+                    NodeData remoteNode = nodeDataFactory.getInstanceSatellite(
+                        apiCtx,
+                        otherRscRaw.getNodeUuid(),
+                        new NodeName(otherRscRaw.getNodeName()),
+                        NodeType.valueOf(otherRscRaw.getNodeType()),
+                        NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
+                        otherRscRaw.getNodeDisklessStorPoolUuid(),
+                        controllerPeerConnector.getDisklessStorPoolDfn()
+                    );
+                    checkUuid(remoteNode, otherRscRaw);
+
+                    // set node's netinterfaces
+                    for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
+                    {
+                        netInterfaceDataFactory.getInstanceSatellite(
+                            apiCtx,
+                            otherNodeNetIf.getUuid(),
+                            remoteNode,
+                            new NetInterfaceName(otherNodeNetIf.getName()),
+                            new LsIpAddress(otherNodeNetIf.getAddress())
+                        );
+                    }
+                    nodesToRegister.add(remoteNode);
+
+                    ResourceData remoteRsc = createRsc(
+                        otherRscRaw.getRscUuid(),
+                        remoteNode,
+                        rscDfn,
+                        new NodeId(otherRscRaw.getRscNodeId()),
+                        RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
+                        otherRscRaw.getRscProps(),
+                        otherRscRaw.getVlms(),
+                        true
+                    );
+                    otherRscs.add(remoteRsc);
+
+                    add(remoteRsc, createdRscMap);
+                }
+            }
+            else
+            {
+                // iterator contains at least one resource.
+                List<Resource> removedList = new ArrayList<>();
+                List<Resource> newResources = new ArrayList<>();
+                List<Resource> modifiedResources = new ArrayList<>();
+                List<Node> nodesToRemove = new ArrayList<>();
+
+                // first we split the existing resources into our local resource and a list of others
+                while (rscIterator.hasNext())
+                {
+                    Resource rsc = rscIterator.next();
+                    if (rsc.getUuid().equals(rscRawData.getLocalRscUuid()))
+                    {
+                        localRsc = rsc;
+                    }
+                    else
+                    {
+                        removedList.add(rsc);
+                    }
+                    // TODO: resources will still remain in the rscDfn. maybe this will get a problem
+                }
+                // now we should have found our localRsc, and added all all other resources in removedList
+                // we will delete them from the list as we find them with matching uuid and node names
+
+                if (localRsc == null)
+                {
+                    throw new DivergentUuidsException(
+                        String.format(
+                            "The local resource with the UUID '%s' was not found in the stored " +
+                                "resource definition '%s'.",
+                            rscRawData.getLocalRscUuid().toString(),
+                            rscName
+                        )
+                    );
+                }
+
+                // update volumes
+                {
+
+                    // we do not have to care about deletion, as the merge of vlmDfns should have already marked
+                    // all the corresponding volumes for deletion
+                    for (VlmApi vlmApi : rscRawData.getLocalVlms())
+                    {
+                        Volume vlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
+                        if (vlm == null)
+                        {
+                            createVlm(vlmApi, localRsc, false);
+                        }
+                    }
+                }
+
+                // update props
+                {
+                    Map<String, String> localRscProps = localRsc.getProps(apiCtx).map();
+                    localRscProps.clear();
+                    localRscProps.putAll(rscRawData.getLocalRscProps());
+                }
+
+                // update flags
+                localRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(rscRawData.getLocalRscFlags()));
+
+                add(localRsc, updatedRscMap);
+
+                for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
+                {
+                    Resource remoteRsc = null;
+                    for (Resource removed : removedList)
+                    {
+                        if (otherRsc.getRscUuid().equals(removed.getUuid()))
+                        {
+                            if (!otherRsc.getNodeName().equals(
+                                removed.getAssignedNode().getName().displayValue)
+                            )
+                            {
+                                throw new DivergentDataException(
+                                    "The resource with UUID '%s' was deployed on node '%s' but is now " +
+                                        "on node '%s' (this should have cause a delete and re-deploy of that resource)."
+                                );
+                            }
+                            if (!otherRsc.getNodeUuid().equals(
+                                removed.getAssignedNode().getUuid())
+                            )
+                            {
+                                throw new DivergentUuidsException(
+                                    "Node",
+                                    removed.getAssignedNode().getName().displayValue,
+                                    otherRsc.getNodeName(),
+                                    removed.getAssignedNode().getUuid(),
+                                    otherRsc.getNodeUuid()
+                                );
+                            }
+
+                            remoteRsc = removed;
+                            break;
+                        }
+                    }
+                    if (remoteRsc == null)
+                    {
+                        // controller sent us a resource that we don't know
+                        // create its node
+                        NodeName nodeName = new NodeName(otherRsc.getNodeName());
+                        NodeData remoteNode = (NodeData) nodesMap.get(nodeName);
+                        if (remoteNode == null)
+                        {
+                            remoteNode = nodeDataFactory.getInstanceSatellite(
+                                apiCtx,
+                                otherRsc.getNodeUuid(),
+                                nodeName,
+                                NodeType.valueOf(otherRsc.getNodeType()),
+                                NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
+                                otherRsc.getNodeDisklessStorPoolUuid(),
+                                controllerPeerConnector.getDisklessStorPoolDfn()
+                            );
+
+                            // set node's netinterfaces
+                            for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRsc.getNetInterfacefPojos())
+                            {
+                                netInterfaceDataFactory.getInstanceSatellite(
+                                    apiCtx,
+                                    otherNodeNetIf.getUuid(),
+                                    remoteNode,
+                                    new NetInterfaceName(otherNodeNetIf.getName()),
+                                    new LsIpAddress(otherNodeNetIf.getAddress())
+                                );
+                            }
+
+                            nodesToRegister.add(remoteNode);
+                        }
+                        else
+                        {
+                            checkUuid(remoteNode, otherRsc);
+                        }
+                        Map<String, String> map = remoteNode.getProps(apiCtx).map();
+                        map.clear();
+                        map.putAll(otherRsc.getNodeProps());
+
+                        // create resource
+                        remoteRsc = createRsc(
+                            otherRsc.getRscUuid(),
+                            remoteNode,
+                            rscDfn,
+                            new NodeId(otherRsc.getRscNodeId()),
+                            RscFlags.restoreFlags(otherRsc.getRscFlags()),
+                            otherRsc.getRscProps(),
+                            otherRsc.getVlms(),
+                            true
+                        );
+
+                        // everything ok, mark the resource as new
+                        newResources.add(remoteRsc);
+
+                        add(remoteRsc, createdRscMap);
+                    }
+                    else
+                    {
+                        // we found the resource by the uuid the controller sent us
+                        Node remoteNode = remoteRsc.getAssignedNode();
+                        // check if the node uuids also match
+                        checkUuid(remoteNode, otherRsc);
+
+                        // update node props
+                        Map<String, String> remoteNodeProps = remoteNode.getProps(apiCtx).map();
+                        remoteNodeProps.clear();
+                        remoteNodeProps.putAll(otherRsc.getNodeProps());
+
+                        // update matching resource props
+                        Map<String, String> remoteRscProps = remoteRsc.getProps(apiCtx).map();
+                        remoteRscProps.clear();
+                        remoteRscProps.putAll(otherRsc.getRscProps());
+
+                        // update flags
+                        remoteRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(otherRsc.getRscFlags()));
+
+                        // update volumes
+                        {
+                            // we do not have to care about deletion, as the merge of vlmDfns should have already marked
+                            // all the corresponding volumes for deletion
+                            for (VlmApi remoteVlmApi : otherRsc.getVlms())
+                            {
+                                Volume vlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
+                                if (vlm == null)
+                                {
+                                    createVlm(remoteVlmApi, remoteRsc, true);
+                                }
+                                else
+                                {
+                                    StorPool remoteVlmStorPool = vlm.getStorPool(apiCtx);
+                                    remoteVlmStorPool.getProps(apiCtx).map().putAll(remoteVlmApi.getStorPoolProps());
+                                }
+                            }
+                        }
+
+                        // everything ok, mark the resource to be kept
+                        removedList.remove(remoteRsc);
+                        modifiedResources.add(remoteRsc);
+
+                        add(remoteRsc, updatedRscMap);
+                    }
+                    otherRscs.add(remoteRsc);
+                }
+                // all resources have been created or updated
+
+                // cleanup
+
+                // first, iterate over all resources marked for deletion and unlink them from rscDfn and node
+                for (Resource rsc : removedList)
+                {
+                    rsc.markDeleted(apiCtx);
+                }
+            }
+
+            if (rscDfnToRegister != null)
+            {
+                rscDfnMap.put(rscName, rscDfnToRegister);
+            }
+            for (Node node : nodesToRegister)
+            {
+                nodesMap.put(node.getName(), node);
+            }
+
+            transMgrProvider.get().commit();
 
             Map<ResourceName, Set<NodeName>> devMgrNotifications = new TreeMap<>();
 
-            reportSuccess(updatedObjects.createdRscMap, "created");
-            reportSuccess(updatedObjects.updatedRscMap, "updated");
+            reportSuccess(createdRscMap, "created");
+            reportSuccess(updatedRscMap, "updated");
 
-            devMgrNotifications.putAll(updatedObjects.createdRscMap);
-            devMgrNotifications.putAll(updatedObjects.updatedRscMap);
+            devMgrNotifications.putAll(createdRscMap);
+            devMgrNotifications.putAll(updatedRscMap);
 
             deviceManager.rscUpdateApplied(devMgrNotifications);
+
         }
         catch (Exception | ImplementationError exc)
         {
+            // TODO: kill connection?
             errorReporter.reportError(exc);
         }
     }
@@ -217,393 +581,6 @@ class StltRscApiCallHandler
         }
     }
 
-    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
-    public UpdatedObjects applyChanges(RscPojo rscRawData, SatelliteTransactionMgr transMgr)
-        throws DivergentDataException, InvalidNameException, ValueOutOfRangeException, ValueInUseException,
-        AccessDeniedException, SQLException, ImplementationError, InvalidIpAddressException
-    {
-        ResourceName rscName;
-
-        ResourceDefinitionData rscDfnToRegister = null;
-        List<NodeData> nodesToRegister = new ArrayList<>();
-
-        Map<ResourceName, Set<NodeName>> createdRscMap = new TreeMap<>();
-        Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
-
-        rscName = new ResourceName(rscRawData.getName());
-        String rscDfnSecret = rscRawData.getRscDfnSecret();
-        TransportType rscDfnTransportType = TransportType.byValue(rscRawData.getRscDfnTransportType());
-        TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
-        RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
-
-        ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
-
-        Resource localRsc = null;
-        Set<Resource> otherRscs = new HashSet<>();
-        if (rscDfn == null)
-        {
-            rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
-                apiCtx,
-                rscRawData.getRscDfnUuid(),
-                rscName,
-                port,
-                rscDfnFlags,
-                rscDfnSecret,
-                rscDfnTransportType,
-                transMgr
-            );
-
-            checkUuid(rscDfn, rscRawData);
-            rscDfnToRegister = rscDfn;
-        }
-        rscDfn.setConnection(transMgr);
-        rscDfn.setPort(apiCtx, port);
-        Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
-        rscDfnProps.clear();
-        rscDfnProps.putAll(rscRawData.getRscDfnProps());
-        rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
-
-        // merge vlmDfns
-        {
-            Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
-
-            for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
-            {
-                VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
-                VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
-                VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    vlmDfnRaw.getUuid(),
-                    rscDfn,
-                    vlmNr,
-                    vlmDfnRaw.getSize(),
-                    new MinorNumber(vlmDfnRaw.getMinorNr()),
-                    VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags()),
-                    transMgr
-                );
-                checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
-                Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
-                vlmDfnPropsMap.clear();
-                vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
-
-                // corresponding volumes will be created later when iterating over (local|remote)vlmApis
-
-                if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
-                {
-                    vlmDfnsToDelete.put(vlmNr, vlmDfn);
-                }
-            }
-
-            for (Entry<VolumeNumber, VolumeDefinition> entry : vlmDfnsToDelete.entrySet())
-            {
-                 VolumeDefinition vlmDfn = entry.getValue();
-                 Iterator<Volume> iterateVolumes = vlmDfn.iterateVolumes(apiCtx);
-                 while (iterateVolumes.hasNext())
-                 {
-                     Volume vlm = iterateVolumes.next();
-                     vlm.markDeleted(apiCtx);
-                 }
-                 vlmDfn.markDeleted(apiCtx);
-            }
-        }
-
-        Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
-        if (!rscIterator.hasNext())
-        {
-            // our rscDfn is empty
-            // that means, just create everything we need
-
-            NodeData localNode = controllerPeerConnector.getLocalNode();
-
-            localRsc = createRsc(
-                rscRawData.getLocalRscUuid(),
-                localNode,
-                rscDfn,
-                new NodeId(rscRawData.getLocalRscNodeId()),
-                RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
-                rscRawData.getLocalRscProps(),
-                rscRawData.getLocalVlms(),
-                transMgr,
-                false
-            );
-
-            add(localRsc, createdRscMap);
-
-            for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
-            {
-                NodeData remoteNode = nodeDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    otherRscRaw.getNodeUuid(),
-                    new NodeName(otherRscRaw.getNodeName()),
-                    NodeType.valueOf(otherRscRaw.getNodeType()),
-                    NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
-                    otherRscRaw.getNodeDisklessStorPoolUuid(),
-                    transMgr,
-                    controllerPeerConnector.getDisklessStorPoolDfn()
-                );
-                checkUuid(remoteNode, otherRscRaw);
-
-                // set node's netinterfaces
-                for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
-                {
-                    netInterfaceDataFactory.getInstanceSatellite(
-                        apiCtx,
-                        otherNodeNetIf.getUuid(),
-                        remoteNode,
-                        new NetInterfaceName(otherNodeNetIf.getName()),
-                        new LsIpAddress(otherNodeNetIf.getAddress()),
-                        transMgr
-                    );
-                }
-                nodesToRegister.add(remoteNode);
-
-                ResourceData remoteRsc = createRsc(
-                    otherRscRaw.getRscUuid(),
-                    remoteNode,
-                    rscDfn,
-                    new NodeId(otherRscRaw.getRscNodeId()),
-                    RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
-                    otherRscRaw.getRscProps(),
-                    otherRscRaw.getVlms(),
-                    transMgr,
-                    true
-                );
-                otherRscs.add(remoteRsc);
-
-                add(remoteRsc, createdRscMap);
-            }
-        }
-        else
-        {
-            // iterator contains at least one resource.
-            List<Resource> removedList = new ArrayList<>();
-            List<Resource> newResources = new ArrayList<>();
-            List<Resource> modifiedResources = new ArrayList<>();
-            List<Node> nodesToRemove = new ArrayList<>();
-
-            // first we split the existing resources into our local resource and a list of others
-            while (rscIterator.hasNext())
-            {
-                Resource rsc = rscIterator.next();
-                if (rsc.getUuid().equals(rscRawData.getLocalRscUuid()))
-                {
-                    localRsc = rsc;
-                }
-                else
-                {
-                    removedList.add(rsc);
-                }
-                // TODO: resources will still remain in the rscDfn. maybe this will get a problem
-            }
-            // now we should have found our localRsc, and added all all other resources in removedList
-            // we will delete them from the list as we find them with matching uuid and node names
-
-            if (localRsc == null)
-            {
-                throw new DivergentUuidsException(
-                    String.format(
-                        "The local resource with the UUID '%s' was not found in the stored " +
-                            "resource definition '%s'.",
-                        rscRawData.getLocalRscUuid().toString(),
-                        rscName
-                    )
-                );
-            }
-
-            localRsc.setConnection(transMgr);
-
-            // update volumes
-            {
-
-                // we do not have to care about deletion, as the merge of vlmDfns should have already marked
-                // all the corresponding volumes for deletion
-                for (VlmApi vlmApi : rscRawData.getLocalVlms())
-                {
-                    Volume vlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
-                    if (vlm == null)
-                    {
-                        createVlm(vlmApi, localRsc, false, transMgr);
-                    }
-                }
-            }
-
-            // update props
-            {
-                Map<String, String> localRscProps = localRsc.getProps(apiCtx).map();
-                localRscProps.clear();
-                localRscProps.putAll(rscRawData.getLocalRscProps());
-            }
-
-            // update flags
-            localRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(rscRawData.getLocalRscFlags()));
-
-            add(localRsc, updatedRscMap);
-
-            for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
-            {
-                Resource remoteRsc = null;
-                for (Resource removed : removedList)
-                {
-                    if (otherRsc.getRscUuid().equals(removed.getUuid()))
-                    {
-                        if (!otherRsc.getNodeName().equals(
-                            removed.getAssignedNode().getName().displayValue)
-                        )
-                        {
-                            throw new DivergentDataException(
-                                "The resource with UUID '%s' was deployed on node '%s' but is now " +
-                                    "on node '%s' (this should have cause a delete and re-deploy of that resource)."
-                            );
-                        }
-                        if (!otherRsc.getNodeUuid().equals(
-                            removed.getAssignedNode().getUuid())
-                        )
-                        {
-                            throw new DivergentUuidsException(
-                                "Node",
-                                removed.getAssignedNode().getName().displayValue,
-                                otherRsc.getNodeName(),
-                                removed.getAssignedNode().getUuid(),
-                                otherRsc.getNodeUuid()
-                            );
-                        }
-
-                        remoteRsc = removed;
-                        break;
-                    }
-                }
-                if (remoteRsc == null)
-                {
-                    // controller sent us a resource that we don't know
-                    // create its node
-                    NodeName nodeName = new NodeName(otherRsc.getNodeName());
-                    NodeData remoteNode = (NodeData) nodesMap.get(nodeName);
-                    if (remoteNode == null)
-                    {
-                        remoteNode = nodeDataFactory.getInstanceSatellite(
-                            apiCtx,
-                            otherRsc.getNodeUuid(),
-                            nodeName,
-                            NodeType.valueOf(otherRsc.getNodeType()),
-                            NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
-                            otherRsc.getNodeDisklessStorPoolUuid(),
-                            transMgr,
-                            controllerPeerConnector.getDisklessStorPoolDfn()
-                        );
-
-                        // set node's netinterfaces
-                        for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRsc.getNetInterfacefPojos())
-                        {
-                            netInterfaceDataFactory.getInstanceSatellite(
-                                apiCtx,
-                                otherNodeNetIf.getUuid(),
-                                remoteNode,
-                                new NetInterfaceName(otherNodeNetIf.getName()),
-                                new LsIpAddress(otherNodeNetIf.getAddress()),
-                                transMgr
-                            );
-                        }
-
-                        nodesToRegister.add(remoteNode);
-                    }
-                    else
-                    {
-                        checkUuid(remoteNode, otherRsc);
-                    }
-                    Map<String, String> map = remoteNode.getProps(apiCtx).map();
-                    map.clear();
-                    map.putAll(otherRsc.getNodeProps());
-
-                    // create resource
-                    remoteRsc = createRsc(
-                        otherRsc.getRscUuid(),
-                        remoteNode,
-                        rscDfn,
-                        new NodeId(otherRsc.getRscNodeId()),
-                        RscFlags.restoreFlags(otherRsc.getRscFlags()),
-                        otherRsc.getRscProps(),
-                        otherRsc.getVlms(),
-                        transMgr,
-                        true
-                    );
-
-                    // everything ok, mark the resource as new
-                    newResources.add(remoteRsc);
-
-                    add(remoteRsc, createdRscMap);
-                }
-                else
-                {
-                    // we found the resource by the uuid the controller sent us
-                    Node remoteNode = remoteRsc.getAssignedNode();
-                    // check if the node uuids also match
-                    checkUuid(remoteNode, otherRsc);
-
-                    // update node props
-                    remoteNode.setConnection(transMgr);
-                    Map<String, String> remoteNodeProps = remoteNode.getProps(apiCtx).map();
-                    remoteNodeProps.clear();
-                    remoteNodeProps.putAll(otherRsc.getNodeProps());
-
-                    // update matching resource props
-                    remoteRsc.setConnection(transMgr);
-                    Map<String, String> remoteRscProps = remoteRsc.getProps(apiCtx).map();
-                    remoteRscProps.clear();
-                    remoteRscProps.putAll(otherRsc.getRscProps());
-
-                    // update flags
-                    remoteRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(otherRsc.getRscFlags()));
-
-                    // update volumes
-                    {
-                        // we do not have to care about deletion, as the merge of vlmDfns should have already marked
-                        // all the corresponding volumes for deletion
-                        for (VlmApi remoteVlmApi : otherRsc.getVlms())
-                        {
-                            Volume vlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
-                            if (vlm == null)
-                            {
-                                createVlm(remoteVlmApi, remoteRsc, true, transMgr);
-                            }
-                            else
-                            {
-                                StorPool remoteVlmStorPool = vlm.getStorPool(apiCtx);
-                                remoteVlmStorPool.getProps(apiCtx).map().putAll(remoteVlmApi.getStorPoolProps());
-                            }
-                        }
-                    }
-
-                    // everything ok, mark the resource to be kept
-                    removedList.remove(remoteRsc);
-                    modifiedResources.add(remoteRsc);
-
-                    add(remoteRsc, updatedRscMap);
-                }
-                otherRscs.add(remoteRsc);
-            }
-            // all resources have been created or updated
-
-            // cleanup
-
-            // first, iterate over all resources marked for deletion and unlink them from rscDfn and node
-            for (Resource rsc : removedList)
-            {
-                rsc.markDeleted(apiCtx);
-            }
-        }
-
-        if (rscDfnToRegister != null)
-        {
-            rscDfnMap.put(rscName, rscDfnToRegister);
-        }
-        for (Node node : nodesToRegister)
-        {
-            nodesMap.put(node.getName(), node);
-        }
-
-        return new UpdatedObjects(createdRscMap, updatedRscMap);
-    }
-
     private void add(Resource rsc, Map<ResourceName, Set<NodeName>> map)
     {
         Set<NodeName> set = map.get(rsc.getDefinition().getName());
@@ -623,7 +600,6 @@ class StltRscApiCallHandler
         RscFlags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,
-        SatelliteTransactionMgr transMgr,
         boolean remoteRsc
     )
         throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException
@@ -634,8 +610,7 @@ class StltRscApiCallHandler
             node,
             rscDfn,
             nodeId,
-            flags,
-            transMgr
+            flags
         );
 
         checkUuid(
@@ -645,7 +620,6 @@ class StltRscApiCallHandler
             rsc.toString(),
             "Node: '" + node.getName().displayValue + "', RscName: '" + rscDfn.getName().displayValue + "'"
         );
-        rsc.setConnection(transMgr);
 
         Map<String, String> map = rsc.getProps(apiCtx).map();
         map.clear();
@@ -653,7 +627,7 @@ class StltRscApiCallHandler
 
         for (Volume.VlmApi vlmRaw : vlms)
         {
-            createVlm(vlmRaw, rsc, remoteRsc, transMgr);
+            createVlm(vlmRaw, rsc, remoteRsc);
         }
 
         return rsc;
@@ -662,8 +636,7 @@ class StltRscApiCallHandler
     private void createVlm(
         VlmApi vlmApi,
         Resource rsc,
-        boolean remoteRsc,
-        SatelliteTransactionMgr transMgr
+        boolean remoteRsc
     )
         throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException
     {
@@ -683,8 +656,7 @@ class StltRscApiCallHandler
                     storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
                         apiCtx,
                         vlmApi.getStorPoolDfnUuid(),
-                        new StorPoolName(vlmApi.getStorPoolName()),
-                        transMgr
+                        new StorPoolName(vlmApi.getStorPoolName())
                     );
 
                     storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
@@ -696,8 +668,7 @@ class StltRscApiCallHandler
                     vlmApi.getStorPoolUuid(),
                     rsc.getAssignedNode(),
                     storPoolDfn,
-                    vlmApi.getStorDriverSimpleClassName(),
-                    transMgr
+                    vlmApi.getStorDriverSimpleClassName()
                 );
                 storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
             }
@@ -727,8 +698,7 @@ class StltRscApiCallHandler
             storPool,
             vlmApi.getBlockDevice(),
             vlmApi.getMetaDisk(),
-            Volume.VlmFlags.restoreFlags(vlmApi.getFlags()),
-            transMgr
+            Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
         );
     }
 

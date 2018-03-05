@@ -1,15 +1,13 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link ResourceData}.
@@ -27,21 +25,13 @@ public interface ResourceDataDatabaseDriver
      * @param resourceName
      *  Part of the primary key specifying the database entry
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr}, used to restore references, like {@link com.linbit.linstor.Node},
-     *  {@link com.linbit.linstor.Resource}, and so on
      * @return
      *  A {@link ResourceConnectionData} which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */
-    ResourceData load(
-        Node node,
-        ResourceName resourceName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    ResourceData load(Node node, ResourceName resourceName, boolean logWarnIfNotExists)
         throws SQLException;
 
     /**
@@ -53,22 +43,20 @@ public interface ResourceDataDatabaseDriver
      *
      * @param resource
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void create(ResourceData resource, TransactionMgr transMgr) throws SQLException;
+    void create(ResourceData resource) throws SQLException;
 
     /**
      * Removes the given {@link ResourceData} from the database.
      *
      * @param resource
      *  The data identifying the row to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void delete(ResourceData resource, TransactionMgr transMgr) throws SQLException;
+    void delete(ResourceData resource) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted flags.

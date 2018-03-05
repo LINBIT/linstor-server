@@ -1,24 +1,28 @@
-package com.linbit;
+package com.linbit.linstor.transaction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.google.inject.Inject;
+
+import com.linbit.ImplementationError;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 
-public class TransactionMgr
+public class ControllerTransactionMgr implements TransactionMgr
 {
     private final boolean isSatellite;
     public final Connection dbCon;
     private Set<TransactionObject> transObjects;
 
-    public TransactionMgr(DbConnectionPool dbConnPool) throws SQLException
+    @Inject
+    public ControllerTransactionMgr(DbConnectionPool dbConnPool) throws SQLException
     {
         this(dbConnPool.getConnection());
     }
 
-    public TransactionMgr(Connection con) throws SQLException
+    public ControllerTransactionMgr(Connection con) throws SQLException
     {
         isSatellite = false;
         con.setAutoCommit(false);
@@ -26,16 +30,17 @@ public class TransactionMgr
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
 
-    TransactionMgr()
+    ControllerTransactionMgr()
     {
         isSatellite = true;
         dbCon = null;
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
 
+    @Override
     public void register(TransactionObject transObj)
     {
-        if (transObj.isDirtyWithoutTransMgr())
+        if (transObj.isDirtyWithoutTransMgr() && !transObjects.contains(transObj))
         {
             throw new ImplementationError(
                 "Connection set after TransactionObject modified " + transObj,
@@ -45,6 +50,7 @@ public class TransactionMgr
         transObjects.add(transObj);
     }
 
+    @Override
     public void commit() throws SQLException
     {
         if (!isSatellite)
@@ -64,6 +70,7 @@ public class TransactionMgr
     }
 
 
+    @Override
     public void rollback() throws SQLException
     {
         for (TransactionObject transObj : transObjects)
@@ -82,6 +89,7 @@ public class TransactionMgr
         clearTransactionObjects();
     }
 
+    @Override
     public void clearTransactionObjects()
     {
         // if no SQLException happened so far
@@ -94,6 +102,7 @@ public class TransactionMgr
         transObjects.clear();
     }
 
+    @Override
     public boolean isDirty()
     {
         boolean dirty = false;
@@ -108,29 +117,21 @@ public class TransactionMgr
         return dirty;
     }
 
+    @Override
     public int sizeObjects()
     {
         return transObjects.size();
     }
 
-    public static boolean isCalledFromTransactionMgr(String methodName)
-    {
-        StackTraceElement[] stack = new Throwable().getStackTrace();
-        boolean ret = false;
-        for (StackTraceElement elem : stack)
-        {
-            if (elem.getClassName().equals(TransactionMgr.class.getName()) && elem.getMethodName().equals(methodName))
-            {
-                ret = true;
-                break;
-            }
-        }
-
-        return ret;
-    }
-
+    @Override
     public boolean isRegistered(TransactionObject to)
     {
         return transObjects.contains(to);
+    }
+
+    @Override
+    public Connection getConnection()
+    {
+        return dbCon;
     }
 }

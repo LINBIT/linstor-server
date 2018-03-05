@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -11,10 +10,15 @@ import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -66,15 +70,21 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public NetInterfaceDataDerbyDriver(
         @SystemContext AccessContext ctx,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = ctx;
         errorReporter = errorReporterRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
 
         netIfAddressDriver = new NodeNetInterfaceAddressDriver();
     }
@@ -83,14 +93,15 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     public NetInterfaceData load(
         Node node,
         NetInterfaceName niName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr)
+        boolean logWarnIfNotExists
+    )
         throws SQLException
     {
         errorReporter.logTrace("Loading NetInterface %s", getId(node, niName));
 
         NetInterfaceData netIfData = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
+
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
         {
             stmt.setString(1, node.getName().value);
             stmt.setString(2, niName.value);
@@ -129,10 +140,11 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(NetInterfaceData netInterfaceData) throws SQLException
     {
         errorReporter.logTrace("Creating NetInterface %s", getId(netInterfaceData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_INSERT))
         {
             LsIpAddress inetAddress = getAddress(netInterfaceData);
 
@@ -147,10 +159,10 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         errorReporter.logTrace("NetInterface created %s", getId(netInterfaceData));
     }
 
-    public void ensureEntryExists(NetInterfaceData netIfData, TransactionMgr transMgr) throws SQLException
+    public void ensureEntryExists(NetInterfaceData netIfData) throws SQLException
     {
         errorReporter.logTrace("Ensuring NetInterface exists %s", getId(netIfData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
         {
             stmt.setString(1, netIfData.getNode().getName().value);
             stmt.setString(2, netIfData.getName().value);
@@ -158,7 +170,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             {
                 if (!resultSet.next())
                 {
-                    create(netIfData, transMgr);
+                    create(netIfData);
                 }
             }
         }
@@ -166,10 +178,10 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
+    public void delete(NetInterfaceData netInterfaceData) throws SQLException
     {
         errorReporter.logTrace("Deleting NetInterface %s", getId(netInterfaceData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_DELETE))
         {
             stmt.setString(1, netInterfaceData.getNode().getName().value);
             stmt.setString(2, netInterfaceData.getName().value);
@@ -185,12 +197,12 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return netIfAddressDriver;
     }
 
-    public List<NetInterfaceData> loadNetInterfaceData(Node node, TransactionMgr transMgr)
+    public List<NetInterfaceData> loadNetInterfaceData(Node node)
         throws SQLException
     {
         errorReporter.logTrace("Loading all NetInterfaces by node %s", getId(node));
         List<NetInterfaceData> netIfDataList;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE))
         {
             stmt.setString(1, node.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
@@ -279,7 +291,9 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     netName,
                     node,
                     addr,
-                    this
+                    this,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             catch (AccessDeniedException accDeniedExc)
@@ -303,6 +317,11 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
         return ret;
+    }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
     }
 
     private String getId(Node node, NetInterfaceName niName)
@@ -339,7 +358,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>
     {
         @Override
-        public void update(NetInterfaceData parent, LsIpAddress inetAddress, TransactionMgr transMgr)
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(NetInterfaceData parent, LsIpAddress inetAddress)
             throws SQLException
         {
             errorReporter.logTrace(
@@ -348,7 +368,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 inetAddress.getAddress(),
                 getId(parent)
             );
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_UPDATE_ADR))
+            try (PreparedStatement stmt = getConnection().prepareStatement(NNI_UPDATE_ADR))
             {
                 stmt.setString(1, inetAddress.getAddress());
                 stmt.setString(2, parent.getNode().getName().value);

@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
@@ -13,9 +12,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -25,19 +28,25 @@ public class ResourceDefinitionDataControllerFactory
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final DynamicNumberPool tcpPortPool;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceDefinitionDataControllerFactory(
         ResourceDefinitionDataDatabaseDriver driverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef
+        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         tcpPortPool = tcpPortPoolRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public ResourceDefinitionData create(
@@ -46,15 +55,14 @@ public class ResourceDefinitionDataControllerFactory
         Integer port,
         ResourceDefinition.RscDfnFlags[] flags,
         String secret,
-        ResourceDefinition.TransportType transType,
-        TransactionMgr transMgr
+        ResourceDefinition.TransportType transType
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
 
         ResourceDefinitionData resDfn = null;
-        resDfn = driver.load(resName, false, transMgr);
+        resDfn = driver.load(resName, false);
 
         if (resDfn != null)
         {
@@ -77,8 +85,7 @@ public class ResourceDefinitionDataControllerFactory
             objectProtectionFactory.getInstance(
                 accCtx,
                 ObjectProtection.buildPath(resName),
-                true,
-                transMgr
+                true
             ),
             resName,
             chosenTcpPort,
@@ -86,30 +93,26 @@ public class ResourceDefinitionDataControllerFactory
             StateFlagsBits.getMask(flags),
             secret,
             transType,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        driver.create(resDfn, transMgr);
+        driver.create(resDfn);
 
         resDfn.initialized();
-        resDfn.setConnection(transMgr);
         return resDfn;
     }
 
-    public ResourceDefinitionData load(
-        ResourceName resName,
-        TransactionMgr transMgr
-    )
+    public ResourceDefinitionData load(ResourceName resName)
         throws SQLException
     {
 
-        ResourceDefinitionData resDfn = driver.load(resName, false, transMgr);
+        ResourceDefinitionData resDfn = driver.load(resName, false);
 
         if (resDfn != null)
         {
             resDfn.initialized();
-            resDfn.setConnection(transMgr);
         }
         return resDfn;
     }

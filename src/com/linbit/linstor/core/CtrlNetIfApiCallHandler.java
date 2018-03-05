@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.NetInterface;
@@ -25,9 +24,12 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,10 +56,19 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         NetComContainer netComContainerRef,
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef
+        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NET_IF, serializerRef, objectFactories);
+        super(
+            errorReporterRef,
+            dbConnectionPoolRef,
+            apiCtxRef,
+            ApiConsts.MASK_NET_IF,
+            serializerRef,
+            objectFactories,
+            transMgrProviderRef
+        );
         super.setNullOnAutoClose(
             currentNodeName,
             currentNetIfName
@@ -86,7 +97,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null,
                 nodeNameStr,
                 netIfNameStr
             );
@@ -152,7 +162,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null,
                 nodeNameStr,
                 netIfNameStr
             );
@@ -226,7 +235,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null,
                 nodeNameStr,
                 netIfNameStr
             );
@@ -304,7 +312,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 node,
                 netIfName,
                 asLsIpAddress(address),
-                currentTransMgr.get(),
                 true,
                 true
             );
@@ -350,7 +357,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 netIf,
                 asTcpPortNumber(stltPort),
                 SatelliteConnection.EncryptionType.valueOf(stltEncrType.toUpperCase()),
-                currentTransMgr.get(),
                 true,
                 true
             );
@@ -551,7 +557,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String nodeNameStr,
         String netIfNameStr
     )
@@ -561,7 +566,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             client,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(nodeNameStr),
             getVariables(nodeNameStr, netIfNameStr)
         );

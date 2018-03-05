@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -9,6 +8,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
+import com.linbit.linstor.transaction.TransactionMgr;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,6 +60,7 @@ public class ConnectionPropsTest extends DerbyBase
 
     private PriorityProps conProps;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Override
     @Before
     public void setUp() throws Exception
@@ -81,31 +83,33 @@ public class ConnectionPropsTest extends DerbyBase
         blockDev2 = "/dev/vol2/block";
         metaDisk2 = "/dev/vol2/meta";
 
-        transMgr = new TransactionMgr(getConnection());
-
-        node1 = nodeDataFactory.getInstance(SYS_CTX, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
-        node2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
+        node1 = nodeDataFactory.getInstance(SYS_CTX, nodeName1, NodeType.CONTROLLER, null, true, false);
+        node2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, NodeType.CONTROLLER, null, true, false);
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, transMgr
+            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType
         );
 
-        res1 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node1, nodeId1, null, transMgr, true, false);
-        res2 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node2, nodeId2, null, transMgr, true, false);
+        res1 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node1, nodeId1, null, true, false);
+        res2 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node2, nodeId2, null, true, false);
 
-        storPoolDfn = storPoolDefinitionDataFactory.getInstance(SYS_CTX, storPoolName, transMgr, true, false);
+        storPoolDfn = storPoolDefinitionDataFactory.getInstance(SYS_CTX, storPoolName, true, false);
 
-        storPool1 = storPoolDataFactory.getInstance(SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
-        storPool2 = storPoolDataFactory.getInstance(SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
+        storPool1 = storPoolDataFactory.getInstance(
+            SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        );
+        storPool2 = storPoolDataFactory.getInstance(
+            SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        );
 
-        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
+        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
-        vol1 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null, transMgr, true, false);
-        vol2 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool2, blockDev2, metaDisk2, null, transMgr, true, false);
+        vol1 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null, true, false);
+        vol2 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool2, blockDev2, metaDisk2, null, true, false);
 
-        nodeCon = nodeConnectionDataFactory.getInstance(SYS_CTX, node1, node2, transMgr, true, false);
-        resCon = resourceConnectionDataFactory.getInstance(SYS_CTX, res1, res2, transMgr, true, false);
-        volCon = volumeConnectionDataFactory.getInstance(SYS_CTX, vol1, vol2, transMgr, true, false);
+        nodeCon = nodeConnectionDataFactory.getInstance(SYS_CTX, node1, node2, true, false);
+        resCon = resourceConnectionDataFactory.getInstance(SYS_CTX, res1, res2, true, false);
+        volCon = volumeConnectionDataFactory.getInstance(SYS_CTX, vol1, vol2, true, false);
 
         nodeConProps = nodeCon.getProps(SYS_CTX);
         resConProps = resCon.getProps(SYS_CTX);

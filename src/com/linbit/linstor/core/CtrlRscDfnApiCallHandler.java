@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
@@ -41,9 +40,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +84,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         MetaDataApi metaDataApiRef,
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -91,7 +94,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_RSC_DFN,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(currentRscNameStr);
         clientComSerializer = clientComSerializerRef;
@@ -130,7 +134,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 rscNameStr
             );
         )
@@ -231,7 +234,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null, // create new
                 rscNameStr
             )
         )
@@ -306,7 +308,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
                 rscNameStr
             );
         )
@@ -394,7 +395,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 satellite,
                 ApiCallType.MODIFY,
                 null, // apiCallRc
-                null, // create new transMgr
                 rscNameStr
             )
         )
@@ -537,7 +537,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String rscNameStr
     )
     {
@@ -546,7 +545,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             peer,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(rscNameStr),
             getVariables(rscNameStr)
         );
@@ -613,8 +612,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 portInt,
                 null, // RscDfnFlags
                 secret,
-                transportType,
-                currentTransMgr.get()
+                transportType
             );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
@@ -702,8 +700,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 volNr,
                 minorNr,
                 size,
-                null, // VlmDfnFlags[]
-                currentTransMgr.get()
+                null // VlmDfnFlags[]
             );
         }
         catch (AccessDeniedException accDeniedExc)

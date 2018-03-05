@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -17,7 +16,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
@@ -26,7 +24,6 @@ import com.linbit.linstor.core.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.storage.LvmDriver;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -390,20 +387,14 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private ResourceDefinitionData createRscDfn(String rscNameStr, int tcpPort)
         throws Exception
     {
-        TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-
         ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
             BOB_ACC_CTX,
             new ResourceName(rscNameStr),
             tcpPort,
             null,
             "NotTellingYou",
-            ResourceDefinition.TransportType.IP,
-            transMgr
+            ResourceDefinition.TransportType.IP
         );
-
-        transMgr.commit();
-        dbConnPool.returnConnection(transMgr);
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);
 
@@ -470,14 +461,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         SatelliteBuilder stltBuilder(String stltName) throws Exception
         {
-            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-
             NodeData stlt = nodeDataFactory.getInstance(
                 BOB_ACC_CTX,
                 new NodeName(stltName),
                 Node.NodeType.SATELLITE,
                 null,
-                transMgr,
                 true,
                 true
             );
@@ -485,17 +473,13 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             stlt.setPeer(SYS_CTX, mockPeer);
             nodesMap.put(stlt.getName(), stlt);
 
-            return new SatelliteBuilder(this, stlt, transMgr);
+            return new SatelliteBuilder(this, stlt);
         }
 
         RscAutoPlaceApiCall addVlmDfn(String rscNameStrRef, int vlmNrRef, long sizeRef) throws Exception
         {
-            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-
             ResourceName rscName = new ResourceName(rscNameStrRef);
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
-
-            rscDfn.setConnection(transMgr);
 
             volumeDefinitionDataFactory.create(
                 BOB_ACC_CTX,
@@ -503,12 +487,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 new VolumeNumber(vlmNrRef),
                 MINOR_GEN.incrementAndGet(),
                 sizeRef,
-                null,
-                transMgr
+                null
             );
-
-            transMgr.commit();
-            dbConnPool.returnConnection(transMgr);
 
             return this;
         }
@@ -545,13 +525,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     {
         private final RscAutoPlaceApiCall parent;
         private final NodeData stlt;
-        private final TransactionMgr transMgr;
 
-        SatelliteBuilder(RscAutoPlaceApiCall parentRef, NodeData stltRef, TransactionMgr transMgrRef)
+        SatelliteBuilder(RscAutoPlaceApiCall parentRef, NodeData stltRef)
         {
             parent = parentRef;
             stlt = stltRef;
-            transMgr = transMgrRef;
         }
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize) throws Exception
@@ -559,7 +537,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 BOB_ACC_CTX,
                 new StorPoolName(storPoolName),
-                transMgr,
                 true,
                 false
             );
@@ -571,7 +548,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 stlt,
                 storPoolDfn,
                 LvmDriver.class.getSimpleName(),
-                transMgr,
                 true,
                 false
             );
@@ -583,8 +559,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         public RscAutoPlaceApiCall build() throws Exception
         {
-            transMgr.commit();
-            dbConnPool.returnConnection(transMgr);
             return parent;
         }
     }

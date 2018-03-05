@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
@@ -19,9 +18,11 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.Map.Entry;
@@ -59,6 +60,8 @@ public class StltApiCallHandler
 
     private final TreeMap<Long, ApplyData> dataToApply;
 
+    private final Provider<TransactionMgr> transMgrProvider;
+
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -79,7 +82,8 @@ public class StltApiCallHandler
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -101,6 +105,7 @@ public class StltApiCallHandler
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
+        transMgrProvider = transMgrProviderRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -191,10 +196,9 @@ public class StltApiCallHandler
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
 
-                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
                 for (NodePojo node : nodes)
                 {
-                    Node curNode = nodeHandler.applyChanges(node, transMgr);
+                    Node curNode = nodeHandler.applyChanges(node);
                     if (curNode != null)
                     {
                         nodesMap.put(curNode.getName(), curNode);
@@ -204,7 +208,7 @@ public class StltApiCallHandler
 
                 for (StorPoolPojo storPool : storPools)
                 {
-                    ChangedData appliedChanges = storPoolHandler.applyChanges(storPool, transMgr);
+                    ChangedData appliedChanges = storPoolHandler.applyChanges(storPool);
                     StorPoolDefinition storPoolDfnToRegister = appliedChanges.storPoolDfnToRegister;
                     if (storPoolDfnToRegister != null)
                     {
@@ -217,10 +221,10 @@ public class StltApiCallHandler
 
                 for (RscPojo rsc : resources)
                 {
-                    rscHandler.applyChanges(rsc, transMgr);
+                    rscHandler.applyChanges(rsc);
                 }
 
-                transMgr.commit();
+                transMgrProvider.get().commit();
 
                 for (NodePojo node : nodes)
                 {

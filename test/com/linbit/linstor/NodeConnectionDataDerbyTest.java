@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
@@ -16,7 +15,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class NodeConnectionDataDerbyTest extends DerbyBase
@@ -27,8 +25,6 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
 
     private final NodeName sourceName;
     private final NodeName targetName;
-
-    private TransactionMgr transMgr;
 
     private java.util.UUID uuid;
     private NodeData nodeSrc;
@@ -43,28 +39,34 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         targetName = new NodeName("testNodeTarget");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_NODE_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 3, TBL_COL_COUNT_NODE_CONNECTIONS);
-
-        transMgr = new TransactionMgr(getConnection());
+        assertEquals(
+            TBL_NODE_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
+            3,
+            TBL_COL_COUNT_NODE_CONNECTIONS
+        );
 
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, transMgr, true, false);
+        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, transMgr, true, false);
+        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        nodeCon = new NodeConnectionData(uuid, SYS_CTX, nodeSrc, nodeDst, driver, transMgr, propsContainerFactory);
+        nodeCon = new NodeConnectionData(
+            uuid, SYS_CTX, nodeSrc, nodeDst, driver, propsContainerFactory, transObjFactory, transMgrProvider
+        );
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(nodeCon, transMgr);
+        driver.create(nodeCon);
+        commit();
 
         checkDbPersist(true);
     }
@@ -72,7 +74,8 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, transMgr, true, false);
+        nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, true, false);
+        commit();
 
         checkDbPersist(false);
     }
@@ -80,9 +83,9 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(nodeCon, transMgr);
+        driver.create(nodeCon);
 
-        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, true, transMgr);
+        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, true);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -90,9 +93,9 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(nodeCon, transMgr);
+        driver.create(nodeCon);
 
-        List<NodeConnectionData> cons = driver.loadAllByNode(nodeSrc, transMgr);
+        List<NodeConnectionData> cons = driver.loadAllByNode(nodeSrc);
 
         assertNotNull(cons);
 
@@ -107,13 +110,12 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(nodeCon, transMgr);
+        driver.create(nodeCon);
 
         NodeConnectionData loadedConDfn = nodeConnectionDataFactory.getInstance(
             SYS_CTX,
             nodeSrc,
             nodeDst,
-            transMgr,
             false,
             false
         );
@@ -128,29 +130,30 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
             SYS_CTX,
             nodeSrc,
             nodeDst,
-            transMgr,
             true,
             false
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, true, transMgr));
+        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, true));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(nodeCon, transMgr);
+        driver.create(nodeCon);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(nodeCon, transMgr);
+        driver.delete(nodeCon);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -163,15 +166,15 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        driver.create(nodeCon, transMgr);
+        driver.create(nodeCon);
 
-        nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, transMgr, false, true);
+        nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, false, true);
     }
 
 
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());

@@ -1,15 +1,17 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -17,22 +19,27 @@ public class ResourceConnectionDataFactory
 {
     private final ResourceConnectionDataDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceConnectionDataFactory(
         ResourceConnectionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public ResourceConnectionData getInstance(
         AccessContext accCtx,
         Resource sourceResource,
         Resource targetResource,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -60,12 +67,7 @@ public class ResourceConnectionDataFactory
         target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
 
-        rscConData = dbDriver.load(
-            source,
-            target,
-            false,
-            transMgr
-        );
+        rscConData = dbDriver.load(source, target, false);
 
         if (failIfExists && rscConData != null)
         {
@@ -79,16 +81,16 @@ public class ResourceConnectionDataFactory
                 accCtx,
                 source,
                 target,
-                transMgr,
                 dbDriver,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
-            dbDriver.create(rscConData, transMgr);
+            dbDriver.create(rscConData);
         }
         if (rscConData != null)
         {
             rscConData.initialized();
-            rscConData.setConnection(transMgr);
         }
         return rscConData;
     }
@@ -97,8 +99,7 @@ public class ResourceConnectionDataFactory
         AccessContext accCtx,
         UUID uuid,
         Resource sourceResource,
-        Resource targetResource,
-        SatelliteTransactionMgr transMgr
+        Resource targetResource
     )
         throws ImplementationError
     {
@@ -122,12 +123,7 @@ public class ResourceConnectionDataFactory
 
         try
         {
-            rscConData = dbDriver.load(
-                source,
-                target,
-                false,
-                transMgr
-            );
+            rscConData = dbDriver.load(source, target, false);
 
             if (rscConData == null)
             {
@@ -136,13 +132,13 @@ public class ResourceConnectionDataFactory
                     accCtx,
                     source,
                     target,
-                    transMgr,
                     dbDriver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             rscConData.initialized();
-            rscConData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

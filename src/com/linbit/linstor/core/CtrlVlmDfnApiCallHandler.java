@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
@@ -36,9 +35,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -68,7 +70,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         CtrlObjectFactories objectFactories,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -77,7 +80,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             apiCtx,
             ApiConsts.MASK_VLM_DFN,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(
             currentRscNameStr,
@@ -120,7 +124,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 rscNameStr,
                 null // no vlmNr
             )
@@ -244,7 +247,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null, // create new transMgr
                 rscName,
                 vlmNr
             )
@@ -345,7 +347,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
                 rscName,
                 vlmNr
             );
@@ -435,8 +436,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             vlmDfn = volumeDefinitionDataFactory.load(
                 currentAccCtx.get(),
                 rscDfn,
-                new VolumeNumber(vlmNr),
-                currentTransMgr.get()
+                new VolumeNumber(vlmNr)
             );
 
             if (vlmDfn == null)
@@ -541,8 +541,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 volNr,
                 minorNr,
                 size,
-                vlmDfnInitFlags,
-                currentTransMgr.get()
+                vlmDfnInitFlags
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -630,7 +629,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rsc.adjustVolumes(apiCtx, currentTransMgr.get(), defaultStorPoolName);
+            rsc.adjustVolumes(apiCtx, defaultStorPoolName);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -780,7 +779,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType apiCallType,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String rscNameStr,
         Integer vlmNr
     )
@@ -790,7 +788,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             client,
             apiCallType,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(rscNameStr, vlmNr),
             getVariables(rscNameStr, vlmNr)
         );

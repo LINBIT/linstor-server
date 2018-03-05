@@ -1,16 +1,14 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link NodeData}.
@@ -26,43 +24,32 @@ public interface NodeDataDatabaseDriver
      *  The primary key identifying the row to load
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr}, used to restore references, like {@link com.linbit.linstor.Node},
-     *  {@link com.linbit.linstor.Resource}, and so on
+     *
      * @return
      *  An instance which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */
-    NodeData load(
-        NodeName nodeName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
-        throws SQLException;
+    NodeData load(NodeName nodeName, boolean logWarnIfNotExists) throws SQLException;
 
     /**
      * Persists the given {@link NodeData} into the database.
      *
      * @param nodeData
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void create(NodeData nodeData, TransactionMgr transMgr) throws SQLException;
+    void create(NodeData nodeData) throws SQLException;
 
     /**
      * Removes the given {@link NodeData} from the database
      *
      * @param node
      *  The data identifying the database entry to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void delete(NodeData node, TransactionMgr transMgr) throws SQLException;
+    void delete(NodeData node) throws SQLException;
 
     /**
      * A special sub-driver to update the persisted {@link NodeFlag}s. The data record

@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
@@ -29,6 +28,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.TestAccessContextProvider;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.api.ApiRcUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,6 +37,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.List;
@@ -76,8 +79,11 @@ public abstract class ApiTestBase extends DerbyBase
     @Inject @Named(ControllerCoreModule.CONTROLLER_PROPS)
     protected Props ctrlConf;
 
+    @Inject Provider<TransactionMgr> transMgrProvider;
+
     @Before
     @Override
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void setUp() throws Exception
     {
         super.setUp(Modules.combine(
@@ -88,7 +94,13 @@ public abstract class ApiTestBase extends DerbyBase
             new ConfigModule()
         ));
 
-        TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+        TransactionMgr superTransMgr = transMgrProvider.get();
+
+        testScope.exit();
+        testScope.enter();
+
+        TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
+        testScope.seed(TransactionMgr.class, transMgr);
 
         ctrlConf.setConnection(transMgr);
         ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
@@ -99,6 +111,11 @@ public abstract class ApiTestBase extends DerbyBase
 
         transMgr.commit();
         dbConnPool.returnConnection(transMgr);
+
+        testScope.exit();
+        testScope.enter();
+
+        testScope.seed(TransactionMgr.class, superTransMgr);
 
         Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class)))
             .thenReturn(tcpConnectorMock);

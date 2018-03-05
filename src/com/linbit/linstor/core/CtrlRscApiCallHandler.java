@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -52,8 +51,12 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.transaction.TransactionMgr;
+
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +101,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -107,7 +111,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_RSC,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(
             currentNodeName,
@@ -142,7 +147,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             flagList,
             rscPropsMap,
             vlmApiList,
-            null,
+            true,
             null
         );
     }
@@ -155,7 +160,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         List<String> flagList,
         Map<String, String> rscPropsMap,
         List<VlmApi> vlmApiList,
-        TransactionMgr transMgr,
+        boolean autoCloseCurrentTransMgr,
         ApiCallRcImpl apiCallRcRef
     )
     {
@@ -171,7 +176,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                transMgr,
+                autoCloseCurrentTransMgr,
                 nodeNameStr,
                 rscNameStr
             );
@@ -344,16 +349,16 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         catch (ApiCallHandlerFailedException apiCallHandlerFailedExc)
         {
             // a report and a corresponding api-response already created.
-            // however, if the transMgr was not null, we are in the scope of an other
-            // api call. because of that we re-throw this exception
-            if (transMgr != null)
+            // however, if the autoCloseCurrentTransMgr was set to false, we are in the scope of an
+            // other api call. because of that we re-throw this exception
+            if (!autoCloseCurrentTransMgr)
             {
                 throw apiCallHandlerFailedExc;
             }
         }
         catch (Exception | ImplementationError exc)
         {
-            if (transMgr != null)
+            if (!autoCloseCurrentTransMgr)
             {
                 if (exc instanceof ImplementationError)
                 {
@@ -449,7 +454,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null,
+                true, // autoClose
                 nodeNameStr,
                 rscNameStr
             );
@@ -517,7 +522,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
+                true, // autoClose
                 nodeNameStr,
                 rscNameStr
             );
@@ -600,7 +605,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
+                true, // autoClose
                 nodeNameStr,
                 rscNameStr
             );
@@ -821,7 +826,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
+        boolean autoCloseCurrentTransMgr,
         String nodeNameStr,
         String rscNameStr
     )
@@ -831,7 +836,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             peer,
             type,
             apiCallRc,
-            transMgr,
+            autoCloseCurrentTransMgr,
             getObjRefs(nodeNameStr, rscNameStr),
             getVariables(nodeNameStr, rscNameStr)
         );
@@ -895,7 +900,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 node,
                 nodeId,
                 flags,
-                currentTransMgr.get(),
                 true, // persist this entry
                 true // throw exception if the entry exists
             );
@@ -947,7 +951,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 blockDevice,
                 metaDisk,
                 null, // flags
-                currentTransMgr.get(),
                 true, // persist this entry
                 true // throw exception if the entry exists
             );
@@ -1001,8 +1004,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             vlmDfn = volumeDefinitionDataFactory.load(
                 currentAccCtx.get(),
                 rscDfn,
-                vlmNr,
-                currentTransMgr.get()
+                vlmNr
             );
 
             if (failIfNull && vlmDfn == null)

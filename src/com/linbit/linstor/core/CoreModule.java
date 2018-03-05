@@ -13,7 +13,6 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.netcom.Peer;
-
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -31,7 +30,10 @@ public class CoreModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(new TypeLiteral<Map<ServiceName, SystemService>>() {})
+        bind(new TypeLiteral<Map<ServiceName, SystemService>>()
+            {
+            }
+            )
             .toInstance(new TreeMap<ServiceName, SystemService>());
 
         bind(NodesMap.class).annotatedWith(Uninitialized.class)

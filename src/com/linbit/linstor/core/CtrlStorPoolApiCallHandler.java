@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
@@ -30,9 +29,11 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -66,7 +67,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlObjectFactories objectFactories,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef
+        StorPoolDataFactory storPoolDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -75,7 +77,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(
             currentNodeNameStr,
@@ -108,7 +111,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 nodeNameStr,
                 storPoolNameStr
             );
@@ -167,7 +169,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null, // new transMgr
                 nodeNameStr,
                 storPoolNameStr
             );
@@ -235,7 +236,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
                 nodeNameStr,
                 storPoolNameStr
             );
@@ -411,7 +411,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 peer,
                 ApiCallType.MODIFY,
                 null, // apiCallRc
-                null, // transMgr
                 peer.getNode().getName().displayValue,
                 null // storPoolName
             );
@@ -467,7 +466,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String nodeNameStr,
         String storPoolNameStr
     )
@@ -477,7 +475,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             peer,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(nodeNameStr, storPoolNameStr),
             getVariables(nodeNameStr, storPoolNameStr)
         );
@@ -520,7 +518,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 storPoolDef = storPoolDefinitionDataFactory.getInstance(
                     currentAccCtx.get(),
                     asStorPoolName(storPoolNameStr),
-                    currentTransMgr.get(),
                     true,  // create and persist if not exists
                     false  // do not throw exception if exists
                 );
@@ -531,7 +528,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 node,
                 storPoolDef,
                 driver,
-                currentTransMgr.get(),
                 true,
                 true
             );

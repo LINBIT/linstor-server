@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.google.inject.Inject;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -34,7 +33,6 @@ public class ResouceDataDerbyTest extends DerbyBase
     private final Integer resPort;
     private final NodeId nodeId;
 
-    private TransactionMgr transMgr;
     private NodeData node;
     private ResourceDefinitionData resDfn;
 
@@ -44,6 +42,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
     @Inject private ResourceDataDerbyDriver driver;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public ResouceDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         nodeName = new NodeName("TestNodeName");
@@ -52,21 +51,24 @@ public class ResouceDataDerbyTest extends DerbyBase
         nodeId = new NodeId(13);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_RESOURCES + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_RESOURCES);
+        assertEquals(
+            TBL_RESOURCES + " table's column count has changed. Update tests accordingly!",
+            5,
+            TBL_COL_COUNT_RESOURCES
+        );
 
-        transMgr = new TransactionMgr(getConnection());
-
-        node = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, true, false);
+        node = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, true, false);
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
 
         resUuid = randomUUID();
-        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName, resName), true, transMgr);
+        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName, resName), true);
 
         initFlags = RscFlags.CLEAN.flagValue;
     }
@@ -74,10 +76,24 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testPersist() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resource / resourceDefinition", resultSet.next());
@@ -101,14 +117,13 @@ public class ResouceDataDerbyTest extends DerbyBase
             node,
             nodeId,
             new RscFlags[] { RscFlags.DELETE },
-            transMgr,
             true,
             false
         );
 
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resource / resourceDefinition", resultSet.next());
@@ -126,10 +141,23 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
 
-        ResourceData loadedRes = driver.load(node, resName, true, transMgr);
+        ResourceData loadedRes = driver.load(node, resName, true);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -150,14 +178,26 @@ public class ResouceDataDerbyTest extends DerbyBase
             node,
             nodeId,
             null,
-            transMgr,
             false,
             false
         );
         assertNull(loadedRes);
 
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
 
         loadedRes = resourceDataFactory.getInstance(
             SYS_CTX,
@@ -165,7 +205,6 @@ public class ResouceDataDerbyTest extends DerbyBase
             node,
             nodeId,
             null,
-            transMgr,
             false,
             false
         );
@@ -183,10 +222,23 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
 
-        List<ResourceData> resList= driver.loadResourceData(SYS_CTX, node, transMgr);
+        List<ResourceData> resList = driver.loadResourceData(SYS_CTX, node);
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
@@ -210,24 +262,38 @@ public class ResouceDataDerbyTest extends DerbyBase
             node,
             nodeId,
             null,
-            transMgr,
             true,
             false
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(node, resName, true, transMgr));
+        assertEquals(storedInstance, driver.load(node, resName, true));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
-        driver.delete(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
+        commit();
+        driver.delete(res);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -239,12 +305,27 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testStateFlagPersistence() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
+        commit();
         StateFlagsPersistence<ResourceData> stateFlagPersistence = driver.getStateFlagPersistence();
-        stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.DELETE), transMgr);
+        stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.DELETE));
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -259,14 +340,28 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testEnsureExists() throws Exception
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.ensureResExists(SYS_CTX, res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.ensureResExists(SYS_CTX, res);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -274,7 +369,8 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.ensureResExists(SYS_CTX, res, transMgr);
+        driver.ensureResExists(SYS_CTX, res);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -287,9 +383,22 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr, driver, propsContainerFactory, volumeDataFactory);
-        driver.create(res, transMgr);
+        ResourceData res = new ResourceData(
+            resUuid,
+            SYS_CTX,
+            objProt,
+            resDfn,
+            node,
+            nodeId,
+            initFlags,
+            driver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(res);
 
-        resourceDataFactory.getInstance(SYS_CTX, resDfn, node, nodeId, null, transMgr, false, true);
+        resourceDataFactory.getInstance(SYS_CTX, resDfn, node, nodeId, null, false, true);
     }
 }

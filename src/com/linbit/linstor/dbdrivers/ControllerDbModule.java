@@ -4,7 +4,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NetInterfaceDataDerbyDriver;
 import com.linbit.linstor.NodeConnectionDataDerbyDriver;
@@ -24,6 +23,7 @@ import com.linbit.linstor.VolumeDataDerbyDriver;
 import com.linbit.linstor.VolumeDefinitionDataDerbyDriver;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -48,6 +48,8 @@ import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbDerbyPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtectionDerbyDriver;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -91,7 +93,8 @@ public class ControllerDbModule extends AbstractModule
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactory,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
         DbConnectionPool dbConnPool,
-        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap
+        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap,
+        LinStorScope initScopeScope
     )
         throws AccessDeniedException
     {
@@ -100,17 +103,20 @@ public class ControllerDbModule extends AbstractModule
         try
         {
             storPoolDfnMapLock.writeLock().lock();
-            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+            TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
+
+            initScopeScope.enter();
+            initScopeScope.seed(TransactionMgr.class, transMgr);
 
             disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 initCtx,
                 new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
-                transMgr,
                 true,
                 false
             );
 
             transMgr.commit();
+            initScopeScope.exit();
 
             storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
             dbConnPool.returnConnection(transMgr);

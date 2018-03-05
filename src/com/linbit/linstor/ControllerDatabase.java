@@ -3,6 +3,9 @@ package com.linbit.linstor;
 import java.sql.SQLException;
 import java.util.Properties;
 import com.linbit.SystemService;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
+
 import java.sql.Connection;
 
 /**
@@ -12,8 +15,8 @@ import java.sql.Connection;
  */
 public interface ControllerDatabase extends SystemService
 {
-    static final int DEFAULT_TIMEOUT = 60000;
-    static final int DEFAULT_MAX_OPEN_STMT = 100;
+    int DEFAULT_TIMEOUT = 60000;
+    int DEFAULT_MAX_OPEN_STMT = 100;
 
     void setTimeout(int timeout);
     void setMaxOpenPreparedStatements(int maxOpen);
@@ -25,6 +28,15 @@ public interface ControllerDatabase extends SystemService
 
     // Must be able to handle dbConn == null as a valid input
     void returnConnection(Connection dbConn);
+
+    default void returnConnection(TransactionMgr transMgr)
+    {
+        if (transMgr != null)
+        {
+            returnConnection(((ControllerTransactionMgr) transMgr).dbCon);
+            transMgr.clearTransactionObjects();
+        }
+    }
 
     @Override
     void shutdown();

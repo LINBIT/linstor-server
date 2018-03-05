@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
@@ -24,9 +23,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,7 +55,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         CtrlObjectFactories objectFactories,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef
+        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -62,7 +65,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL_DFN,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(currentStorPoolNameStr);
         clientComSerializer = clientComSerializerRef;
@@ -86,7 +90,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 storPoolNameStr
             );
         )
@@ -138,7 +141,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null,
                 storPoolNameStr
             );
         )
@@ -201,7 +203,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
                 storPoolNameStr
             );
         )
@@ -338,7 +339,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String storPoolNameStr
     )
     {
@@ -347,7 +347,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             peer,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(storPoolNameStr),
             getVariables(storPoolNameStr)
         );
@@ -365,7 +365,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 currentAccCtx.get(),
                 asStorPoolName(storPoolNameStr),
-                currentTransMgr.get(),
                 true, // persist this entry
                 true // fail if already exists
             );

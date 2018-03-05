@@ -1,14 +1,17 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.util.UUID;
 
 public class ResourceDefinitionDataSatelliteFactory
@@ -16,17 +19,23 @@ public class ResourceDefinitionDataSatelliteFactory
     private final ResourceDefinitionDataDatabaseDriver driver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceDefinitionDataSatelliteFactory(
         ResourceDefinitionDataDatabaseDriver driverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public ResourceDefinitionData getInstanceSatellite(
@@ -36,33 +45,32 @@ public class ResourceDefinitionDataSatelliteFactory
         TcpPortNumber portRef,
         ResourceDefinition.RscDfnFlags[] initFlags,
         String secret,
-        ResourceDefinition.TransportType transType,
-        SatelliteTransactionMgr transMgr
+        ResourceDefinition.TransportType transType
     )
         throws ImplementationError
     {
         ResourceDefinitionData rscDfn = null;
         try
         {
-            rscDfn = driver.load(rscName, false, transMgr);
+            rscDfn = driver.load(rscName, false);
             if (rscDfn == null)
             {
                 rscDfn = new ResourceDefinitionData(
                     uuid,
-                    objectProtectionFactory.getInstance(accCtx, "", false, transMgr),
+                    objectProtectionFactory.getInstance(accCtx, "", false),
                     rscName,
                     portRef,
                     null,
                     StateFlagsBits.getMask(initFlags),
                     secret,
                     transType,
-                    transMgr,
                     driver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             rscDfn.initialized();
-            rscDfn.setConnection(transMgr);
         }
         catch (Exception exc)
         {

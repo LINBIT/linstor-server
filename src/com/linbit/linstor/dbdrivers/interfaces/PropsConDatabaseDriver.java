@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.propscon.Props;
 
 /**
@@ -19,40 +18,40 @@ public interface PropsConDatabaseDriver
      *
      * @throws SQLException
      */
-    Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException;
+    Map<String, String> load(String instanceName) throws SQLException;
 
     /**
      * Performs an insert or update for the given key/value pair
      *
      * @throws SQLException
      */
-    void persist(String isntanceName, String key, String value, TransactionMgr transMgr) throws SQLException;
+    void persist(String isntanceName, String key, String value) throws SQLException;
 
     /**
      * Performs an insert or update for the given key/value pairs
      *
      * @throws SQLException
      */
-    void persist(String isntanceName, Map<String, String> props, TransactionMgr transMgr) throws SQLException;
+    void persist(String isntanceName, Map<String, String> props) throws SQLException;
 
     /**
      * Removes the given key from the database
      *
      * @throws SQLException
      */
-    void remove(String isntanceName, String key, TransactionMgr transMgr) throws SQLException;
+    void remove(String isntanceName, String key) throws SQLException;
 
     /**
      * Removes the given keys from the database
      *
      * @throws SQLException
      */
-    void remove(String isntanceName, Set<String> keys, TransactionMgr transMgr) throws SQLException;
+    void remove(String isntanceName, Set<String> keys) throws SQLException;
 
     /**
      * Removes all entries of this instance from the database
      *
      * @throws SQLException
      */
-    void removeAll(String isntanceName, TransactionMgr transMgr) throws SQLException;
+    void removeAll(String isntanceName) throws SQLException;
 }

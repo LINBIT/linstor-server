@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
@@ -16,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -29,8 +30,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                      VLM_SIZE + ", " + VLM_MINOR_NR + ", " + VLM_FLAGS +
         " FROM " + TBL_VOLUME_DEFINITIONS;
 
-    private TransactionMgr transMgr;
-
     private ResourceName resName;
     private Integer resPort;
     private ResourceDefinition resDfn;
@@ -42,8 +41,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
     private VolumeDefinitionData volDfn;
 
-    private VolumeDefinitionDataDerbyDriver driver;
+    @Inject private VolumeDefinitionDataDerbyDriver driver;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Override
     public void setUp() throws Exception
     {
@@ -53,19 +53,16 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             TBL_COL_COUNT_VOLUME_DEFINITIONS
         );
 
-        transMgr = new TransactionMgr(getConnection());
-
         resName = new ResourceName("TestResource");
         resPort = 9001;
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter, propsContainerFactory, minorNrPoolMock);
         volDfn = new VolumeDefinitionData(
             uuid,
             SYS_CTX,
@@ -75,22 +72,24 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             minorNrPoolMock,
             volSize,
             VlmDfnFlags.DELETE.flagValue,
-            transMgr,
             driver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
+        commit();
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
@@ -110,7 +109,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -122,8 +121,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 resPort,
                 null,
                 "secret",
-                TransportType.IP,
-                transMgr
+                TransportType.IP
         );
 
         volumeDefinitionDataFactory.create(
@@ -132,9 +130,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] { VlmDfnFlags.DELETE },
-            transMgr
+            new VlmDfnFlags[] { VlmDfnFlags.DELETE }
         );
+        commit();
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
@@ -153,9 +151,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
 
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, true, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, true);
         assertNotNull(loadedVd);
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
@@ -168,13 +166,12 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
 
         VolumeDefinitionData loadedVd = volumeDefinitionDataFactory.load(
             SYS_CTX,
             resDfn,
-            volNr,
-            transMgr
+            volNr
         );
 
         assertNotNull(loadedVd);
@@ -188,11 +185,10 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
 
         List<VolumeDefinition> volDfnList = driver.loadAllVolumeDefinitionsByResourceDefinition(
             resDfn,
-            transMgr,
             SYS_CTX
         );
 
@@ -211,16 +207,18 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(volDfn, transMgr);
+        driver.delete(volDfn);
+        commit();
 
         resultSet = stmt.executeQuery();
 
@@ -232,33 +230,32 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPropsConPersist() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
         volDfn.initialized();
-        volDfn.setConnection(transMgr);
 
         Props props = volDfn.getProps(SYS_CTX);
         String testKey = "TestKey";
         String testValue = "TestValue";
         props.setProp(testKey, testValue);
 
-        transMgr.commit();
+        commit();
 
-        volDfn.setConnection(transMgr);
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
-        testProps(transMgr, PropsContainer.buildPath(resName, volNr), map);
+        testProps(PropsContainer.buildPath(resName, volNr), map);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testMinorNrDriverUpdate() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
         MinorNumber newMinorNr = new MinorNumber(32);
-        driver.getMinorNumberDriver().update(volDfn, newMinorNr, transMgr);
+        driver.getMinorNumberDriver().update(volDfn, newMinorNr);
 
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -269,19 +266,19 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testMinorNrInstanceUpdate() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
         volDfn.initialized();
-        volDfn.setConnection(transMgr);
 
         MinorNumber minor2 = new MinorNumber(32);
         volDfn.setMinorNr(SYS_CTX, minor2);
 
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -295,15 +292,14 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testFlagsUpdateInstance() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
         volDfn.initialized();
-        volDfn.setConnection(transMgr);
 
         volDfn.getFlags().disableAllFlags(SYS_CTX);
 
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -317,11 +313,12 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testFlagsUpdateDriver() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
+        commit();
         long newFlagMask = 0;
-        driver.getStateFlagsPersistence().persist(volDfn, newFlagMask, transMgr);
+        driver.getStateFlagsPersistence().persist(volDfn, newFlagMask);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -332,20 +329,20 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testVolSizeUpdateInstance() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
 
         volDfn.initialized();
-        volDfn.setConnection(transMgr);
 
         long size = 9001;
         volDfn.setVolumeSize(SYS_CTX, size);
 
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -356,14 +353,16 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testVolSizeUpdateDriver() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
+        commit();
         long size = 9001;
-        driver.getVolumeSizeDriver().update(volDfn, size, transMgr);
+        driver.getVolumeSizeDriver().update(volDfn, size);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -377,9 +376,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
 
-        volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr);
+        volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
     }
 
     @Test
@@ -396,8 +395,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             testVolumeNumber,
             null, // auto allocate
             volSize,
-            null,
-            transMgr
+            null
         );
 
         assertThat(newvolDfn.getMinorNr(SYS_CTX).value).isEqualTo(testMinorNumber);
@@ -406,9 +404,8 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testDeleteDeallocateMinorNumber() throws Exception
     {
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
         volDfn.initialized();
-        volDfn.setConnection(transMgr);
         volDfn.delete(SYS_CTX);
 
         Mockito.verify(minorNrPoolMock).deallocate(minor);
@@ -419,9 +416,8 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         final int newMinorNumber = 9876;
 
-        driver.create(volDfn, transMgr);
+        driver.create(volDfn);
         volDfn.initialized();
-        volDfn.setConnection(transMgr);
         volDfn.setMinorNr(SYS_CTX, new MinorNumber(newMinorNumber));
 
         Mockito.verify(minorNrPoolMock).deallocate(minor);

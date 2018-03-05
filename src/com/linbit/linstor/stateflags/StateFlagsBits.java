@@ -4,19 +4,23 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
+import javax.inject.Provider;
+
+import com.linbit.ErrorCheck;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.AbsTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 /**
  * State flags for linstor core objects
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements StateFlags<FLAG>
+public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransactionObject
+    implements StateFlags<FLAG>
 {
     private final ObjectProtection objProt;
     private final PRIMARY_KEY pk;
@@ -26,19 +30,17 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     private final long mask;
     private final StateFlagsPersistence<PRIMARY_KEY> persistence;
 
-    private TransactionMgr transMgr;
-
     private boolean initialized = false;
-
 
     public StateFlagsBits(
         final ObjectProtection objProtRef,
         final PRIMARY_KEY parent,
         final long validFlagsMask,
-        final StateFlagsPersistence<PRIMARY_KEY> persistenceRef
+        final StateFlagsPersistence<PRIMARY_KEY> persistenceRef,
+        final Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        this(objProtRef, parent, validFlagsMask, persistenceRef, 0L);
+        this(objProtRef, parent, validFlagsMask, persistenceRef, 0L, transMgrProviderRef);
     }
 
     public StateFlagsBits(
@@ -46,9 +48,16 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
         final PRIMARY_KEY pkRef,
         final long validFlagsMask,
         final StateFlagsPersistence<PRIMARY_KEY> persistenceRef,
-        final long initialFlags
+        final long initialFlags,
+        final Provider<TransactionMgr> transMgrProviderRef
     )
     {
+        super(transMgrProviderRef);
+
+        ErrorCheck.ctorNotNull(StateFlagsBits.class, ObjectProtection.class, objProtRef);
+        ErrorCheck.ctorNotNull(StateFlagsBits.class, Object.class, pkRef);
+        ErrorCheck.ctorNotNull(StateFlagsBits.class, StateFlagsPersistence.class, persistenceRef);
+
         objProt = objProtRef;
         pk = pkRef;
         mask = validFlagsMask;
@@ -195,13 +204,13 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     }
 
     @Override
-    public void commit()
+    public void commitImpl()
     {
         stateFlags = changedStateFlags;
     }
 
     @Override
-    public void rollback()
+    public void rollbackImpl()
     {
         changedStateFlags = stateFlags;
     }
@@ -216,26 +225,6 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     public boolean isDirtyWithoutTransMgr()
     {
         return !hasTransMgr() && isDirty();
-    }
-
-    @Override
-    public boolean hasTransMgr()
-    {
-        return transMgr != null;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
-    {
-        if (!hasTransMgr() && isDirtyWithoutTransMgr())
-        {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
-        }
-        if (transMgrRef != null)
-        {
-            transMgrRef.register(this);
-        }
-        transMgr = transMgrRef;
     }
 
     @Override
@@ -264,41 +253,14 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     {
         if (initialized)
         {
-            if (persistence != null)
-            {
-                persistence.persist(pk, bits, transMgr);
-                changedStateFlags = bits;
-            }
-            else
-            {
-                String npeMsg;
-                if (persistence == null)
-                {
-                    npeMsg = "Persistence and transMgr are null";
-                }
-                else
-                {
-                    if (persistence == null)
-                    {
-                        npeMsg = "Persistence is null";
-                    }
-                    else
-                    {
-                        npeMsg = "transMgr is null";
-                    }
-                }
-                throw new ImplementationError(
-                    "Initilized StateFlagsBits is missing persistence implementation reference " +
-                    " or TransactionManager reference.\n" +
-                    "Possible missing call of .setConnection(TransactionManager)",
-                    new NullPointerException(npeMsg)
-                );
-            }
+            activateTransMgr();
+            persistence.persist(pk, bits);
+            changedStateFlags = bits;
         }
         else
         {
             changedStateFlags = bits;
-            commit();
+            commitImpl();
         }
     }
 

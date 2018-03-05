@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -23,6 +22,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
@@ -30,6 +31,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -98,6 +101,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final DynamicNumberPool tcpPortPool;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceDefinitionDataDerbyDriver(
@@ -108,7 +113,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         Provider<VolumeDefinitionDataDerbyDriver> volumeDefinitionDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef
+        @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
@@ -118,6 +125,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         tcpPortPool = tcpPortPoolRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
         portDriver = new PortDriver();
         transTypeDriver = new TransportTypeDriver();
@@ -126,10 +135,11 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public void create(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(ResourceDefinitionData resourceDefinition) throws SQLException
     {
         errorReporter.logTrace("Creating ResourceDfinition %s", getId(resourceDefinition));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RD_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
             stmt.setString(2, resourceDefinition.getName().value);
@@ -149,10 +159,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public boolean exists(ResourceName resourceName, TransactionMgr transMgr) throws SQLException
+    public boolean exists(ResourceName resourceName) throws SQLException
     {
         boolean exists = false;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT))
         {
             stmt.setString(1, resourceName.value);
             try (ResultSet resultSet = stmt.executeQuery())
@@ -164,23 +174,19 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public ResourceDefinitionData load(
-        ResourceName resourceName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    public ResourceDefinitionData load(ResourceName resourceName, boolean logWarnIfNotExists)
         throws SQLException
     {
         errorReporter.logTrace("Loading ResourceDefinition %s", getId(resourceName));
         ResourceDefinitionData resDfn = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT))
         {
             stmt.setString(1, resourceName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 if (resultSet.next())
                 {
-                    resDfn = load(resultSet, transMgr);
+                    resDfn = load(resultSet);
                 }
                 else
                 if (logWarnIfNotExists)
@@ -192,18 +198,18 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return resDfn;
     }
 
-    public List<ResourceDefinitionData> loadAll(TransactionMgr transMgr) throws SQLException
+    public List<ResourceDefinitionData> loadAll() throws SQLException
     {
         errorReporter.logTrace("Loading all ResourceDefinitions");
         List<ResourceDefinitionData> list = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT_ALL))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
                     list.add(
-                        load(resultSet, transMgr)
+                        load(resultSet)
                     );
                 }
             }
@@ -212,7 +218,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return list;
     }
 
-    private ResourceDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
+    private ResourceDefinitionData load(ResultSet resultSet) throws SQLException
     {
         ResourceDefinitionData resDfn;
         ResourceName resourceName;
@@ -259,7 +265,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         {
             try
             {
-                ObjectProtection objProt = getObjectProtection(resourceName, transMgr);
+                ObjectProtection objProt = getObjectProtection(resourceName);
 
                 resDfn = new ResourceDefinitionData(
                     UuidUtils.asUuid(resultSet.getBytes(RD_UUID)),
@@ -270,9 +276,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     resultSet.getLong(RD_FLAGS),
                     resultSet.getString(RD_SECRET),
                     TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),
-                    transMgr,
                     this,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
                 // cache the resDfn BEFORE we load the conDfns
                 if (!cacheCleared)
@@ -286,7 +293,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 List<VolumeDefinition> volDfns =
                     volumeDefinitionDriverProvider.get().loadAllVolumeDefinitionsByResourceDefinition(
                     resDfn,
-                    transMgr,
                     dbCtx
                 );
                 for (VolumeDefinition volDfn : volDfns)
@@ -301,7 +307,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 // restore resources
                 List<ResourceData> resList = resourceDriverProvider.get().loadResourceDataByResourceDefinition(
                     resDfn,
-                    transMgr,
                     dbCtx
                 );
                 for (ResourceData res : resList)
@@ -324,13 +329,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return resDfn;
     }
 
-    private ObjectProtection getObjectProtection(ResourceName resourceName, TransactionMgr transMgr)
+    private ObjectProtection getObjectProtection(ResourceName resourceName)
         throws SQLException, ImplementationError
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(resourceName),
-            false, // no need to log a warning, as we would fail then anyways
-            transMgr
+            false // no need to log a warning, as we would fail then anyways
         );
         if (objProt == null)
         {
@@ -349,10 +353,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public void delete(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
+    public void delete(ResourceDefinitionData resourceDefinition) throws SQLException
     {
         errorReporter.logTrace("Deleting ResourceDefinition %s", getId(resourceDefinition));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(RD_DELETE))
         {
             stmt.setString(1, resourceDefinition.getName().value);
             stmt.executeUpdate();
@@ -378,6 +382,11 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return transTypeDriver;
     }
 
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
+    }
+
     private String getId(ResourceDefinitionData resourceDefinition)
     {
         return getId(resourceDefinition.getName().displayValue);
@@ -396,7 +405,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private class ResDfnFlagsPersistence implements StateFlagsPersistence<ResourceDefinitionData>
     {
         @Override
-        public void persist(ResourceDefinitionData resourceDefinition, long flags, TransactionMgr transMgr)
+        public void persist(ResourceDefinitionData resourceDefinition, long flags)
             throws SQLException
         {
             try
@@ -421,7 +430,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     toFlags,
                     getId(resourceDefinition)
                 );
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_FLAGS))
+                try (PreparedStatement stmt = getConnection().prepareStatement(RD_UPDATE_FLAGS))
                 {
                     stmt.setLong(1, flags);
                     stmt.setString(2, resourceDefinition.getName().value);
@@ -444,7 +453,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private class PortDriver implements SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber>
     {
         @Override
-        public void update(ResourceDefinitionData resourceDefinition, TcpPortNumber port, TransactionMgr transMgr)
+        public void update(ResourceDefinitionData resourceDefinition, TcpPortNumber port)
             throws SQLException
         {
             try
@@ -455,7 +464,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     port.value,
                     getId(resourceDefinition)
                 );
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_PORT))
+                try (PreparedStatement stmt = getConnection().prepareStatement(RD_UPDATE_PORT))
                 {
                     stmt.setInt(1, port.value);
                     stmt.setString(2, resourceDefinition.getName().value);
@@ -481,8 +490,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         @Override
         public void update(
             ResourceDefinitionData resourceDefinition,
-            TransportType transType,
-            TransactionMgr transMgr
+            TransportType transType
         )
             throws SQLException
         {
@@ -494,7 +502,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     transType.name(),
                     getId(resourceDefinition)
                 );
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_TRANS_TYPE))
+                try (
+                    PreparedStatement stmt =
+                        getConnection().prepareStatement(RD_UPDATE_TRANS_TYPE)
+                )
                 {
                     stmt.setString(1, transType.name());
                     stmt.setString(2, resourceDefinition.getName().value);

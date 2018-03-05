@@ -3,8 +3,10 @@ package com.linbit.linstor.security;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -38,7 +40,8 @@ public class SatelliteSecurityModule extends AbstractModule
     @Named(SecurityModule.SHUTDOWN_PROT)
     public ObjectProtection shutdownProt(
         @SystemContext AccessContext sysCtx,
-        ObjectProtectionFactory objectProtectionFactory
+        ObjectProtectionFactory objectProtectionFactory,
+        LinStorScope initScope
     )
         throws AccessDeniedException
     {
@@ -49,8 +52,7 @@ public class SatelliteSecurityModule extends AbstractModule
             shutdownProt = objectProtectionFactory.getInstance(
                 sysCtx,
                 ObjectProtection.buildPathSatellite("shutdown"),
-                true,
-                null
+                true
             );
         }
         catch (SQLException sqlExc)
@@ -66,9 +68,13 @@ public class SatelliteSecurityModule extends AbstractModule
         try
         {
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            shutdownProt.setConnection(transMgr);
+            initScope.enter();
+            initScope.seed(TransactionMgr.class, transMgr);
+
             shutdownProt.addAclEntry(sysCtx, sysCtx.getRole(), AccessType.CONTROL);
+
             transMgr.commit();
+            initScope.exit();
         }
         catch (SQLException sqlExc)
         {

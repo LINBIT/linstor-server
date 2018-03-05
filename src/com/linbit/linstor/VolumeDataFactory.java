@@ -1,16 +1,18 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -18,15 +20,21 @@ public class VolumeDataFactory
 {
     private final VolumeDataDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public VolumeDataFactory(
         VolumeDataDatabaseDriver driverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public VolumeData getInstance(
@@ -37,7 +45,6 @@ public class VolumeDataFactory
         String blockDevicePathRef,
         String metaDiskPathRef,
         Volume.VlmFlags[] flags,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -46,7 +53,7 @@ public class VolumeDataFactory
         resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         VolumeData volData = null;
 
-        volData = driver.load(resRef, volDfn, false, transMgr);
+        volData = driver.load(resRef, volDfn, false);
 
         if (failIfExists && volData != null)
         {
@@ -64,16 +71,16 @@ public class VolumeDataFactory
                 blockDevicePathRef,
                 metaDiskPathRef,
                 StateFlagsBits.getMask(flags),
-                transMgr,
                 driver,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
-            driver.create(volData, transMgr);
+            driver.create(volData);
         }
         if (volData != null)
         {
             volData.initialized();
-            volData.setConnection(transMgr);
         }
         return volData;
     }
@@ -86,14 +93,13 @@ public class VolumeDataFactory
         StorPool storPoolRef,
         String blockDevicePathRef,
         String metaDiskPathRef,
-        Volume.VlmFlags[] flags,
-        SatelliteTransactionMgr transMgr
+        Volume.VlmFlags[] flags
     )
     {
         VolumeData vlmData;
         try
         {
-            vlmData = driver.load(rscRef, vlmDfn, false, transMgr);
+            vlmData = driver.load(rscRef, vlmDfn, false);
             if (vlmData == null)
             {
                 vlmData = new VolumeData(
@@ -105,13 +111,13 @@ public class VolumeDataFactory
                     blockDevicePathRef,
                     metaDiskPathRef,
                     StateFlagsBits.getMask(flags),
-                    transMgr,
                     driver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             vlmData.initialized();
-            vlmData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

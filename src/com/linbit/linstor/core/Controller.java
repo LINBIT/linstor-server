@@ -49,6 +49,7 @@ import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
+import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
 import javax.inject.Named;
 import java.sql.SQLException;
@@ -292,7 +293,8 @@ public final class Controller
                 new ApiCallHandlerModule(),
                 new CtrlApiCallHandlerModule(),
                 new DebugModule(),
-                new ControllerDebugModule()
+                new ControllerDebugModule(),
+                new ControllerTransactionMgrModule()
             );
 
             // Object protection loading has a hidden dependency on initializing the security objects

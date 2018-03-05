@@ -1,25 +1,35 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
 public class NetInterfaceDataFactory
 {
     private final NetInterfaceDataDatabaseDriver driver;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public NetInterfaceDataFactory(NetInterfaceDataDatabaseDriver driverRef)
+    public NetInterfaceDataFactory(
+        NetInterfaceDataDatabaseDriver driverRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
+    )
     {
         driver = driverRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public NetInterfaceData getInstance(
@@ -27,7 +37,6 @@ public class NetInterfaceDataFactory
         Node node,
         NetInterfaceName name,
         LsIpAddress addr,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -37,7 +46,7 @@ public class NetInterfaceDataFactory
 
         NetInterfaceData netData = null;
 
-        netData = driver.load(node, name, false, transMgr);
+        netData = driver.load(node, name, false);
 
         if (failIfExists && netData != null)
         {
@@ -46,9 +55,17 @@ public class NetInterfaceDataFactory
 
         if (netData == null && createIfNotExists)
         {
-            netData = new NetInterfaceData(UUID.randomUUID(), accCtx, name, node, addr, driver);
-            netData.setConnection(transMgr);
-            driver.create(netData, transMgr);
+            netData = new NetInterfaceData(
+                UUID.randomUUID(),
+                accCtx,
+                name,
+                node,
+                addr,
+                driver,
+                transObjFactory,
+                transMgrProvider
+            );
+            driver.create(netData);
         }
         if (netData != null)
         {
@@ -63,8 +80,7 @@ public class NetInterfaceDataFactory
         UUID uuid,
         Node node,
         NetInterfaceName netName,
-        LsIpAddress addr,
-        SatelliteTransactionMgr transMgr
+        LsIpAddress addr
     )
         throws ImplementationError
     {
@@ -72,7 +88,7 @@ public class NetInterfaceDataFactory
         NetInterfaceData netData;
         try
         {
-            netData = driver.load(node, netName, false, transMgr);
+            netData = driver.load(node, netName, false);
             if (netData == null)
             {
                 netData = new NetInterfaceData(
@@ -81,7 +97,9 @@ public class NetInterfaceDataFactory
                     netName,
                     node,
                     addr,
-                    driver
+                    driver,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             netData.initialized();

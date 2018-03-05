@@ -1,6 +1,5 @@
 package com.linbit.linstor.propscon;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -34,7 +33,7 @@ public class DerbyPropsConBase extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
-        dbDriver = new PropsConDerbyDriver(errorReporter);
+        dbDriver = new PropsConDerbyDriver(errorReporter, transMgrProvider);
     }
 
     protected String debugGetAllProps() throws SQLException
@@ -87,7 +86,7 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected void insert(String instanceName, String key, String value) throws SQLException
     {
-        try (Connection con = getConnection())
+        try (Connection con = getNewConnection())
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
             {
@@ -102,7 +101,7 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected void insert(String instanceName, Map<String, String> map) throws SQLException
     {
-        try (Connection con = getConnection())
+        try (Connection con = getNewConnection())
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
             {
@@ -140,7 +139,7 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected void delete(String instanceName, String key) throws SQLException
     {
-        try (Connection con = getConnection())
+        try (Connection con = getNewConnection())
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(DELETE))
             {
@@ -154,7 +153,7 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected void truncate() throws SQLException
     {
-        try (Connection con = getConnection())
+        try (Connection con = getNewConnection())
         {
             try (PreparedStatement stmt = con.prepareStatement(TRUNCATE_PROPS_CONTAINERS))
             {

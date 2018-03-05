@@ -1,15 +1,17 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -17,22 +19,27 @@ public class VolumeConnectionDataFactory
 {
     private final VolumeConnectionDataDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public VolumeConnectionDataFactory(
         VolumeConnectionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public VolumeConnectionData getInstance(
         AccessContext accCtx,
         Volume sourceVolume,
         Volume targetVolume,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -61,8 +68,7 @@ public class VolumeConnectionDataFactory
         volConData = dbDriver.load(
             source,
             target,
-            false,
-            transMgr
+            false
         );
 
         if (failIfExists && volConData != null)
@@ -77,17 +83,17 @@ public class VolumeConnectionDataFactory
                 accCtx,
                 source,
                 target,
-                transMgr,
                 dbDriver,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
 
-            dbDriver.create(volConData, transMgr);
+            dbDriver.create(volConData);
         }
         if (volConData != null)
         {
             volConData.initialized();
-            volConData.setConnection(transMgr);
         }
         return volConData;
     }
@@ -96,8 +102,7 @@ public class VolumeConnectionDataFactory
         AccessContext accCtx,
         UUID uuid,
         Volume sourceVolume,
-        Volume targetVolume,
-        SatelliteTransactionMgr transMgr
+        Volume targetVolume
     )
         throws ImplementationError
     {
@@ -123,8 +128,7 @@ public class VolumeConnectionDataFactory
             volConData = dbDriver.load(
                 source,
                 target,
-                false,
-                transMgr
+                false
             );
             if (volConData == null)
             {
@@ -133,13 +137,13 @@ public class VolumeConnectionDataFactory
                     accCtx,
                     source,
                     target,
-                    transMgr,
                     dbDriver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             volConData.initialized();
-            volConData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

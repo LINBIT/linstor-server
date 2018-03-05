@@ -1,12 +1,16 @@
-package com.linbit;
+package com.linbit.linstor.transaction;
+
+import com.linbit.ImplementationError;
+import com.linbit.NoOpObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 
 import java.sql.SQLException;
 import java.util.Objects;
 
+import javax.inject.Provider;
+
 public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject
 {
-    private boolean initialized = false;
-
     private PARENT parent;
     private ELEMENT object;
     private ELEMENT cachedObject;
@@ -15,9 +19,11 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     public TransactionSimpleObject(
         PARENT parentRef,
         ELEMENT objRef,
-        SingleColumnDatabaseDriver<PARENT, ELEMENT> driverRef
+        SingleColumnDatabaseDriver<PARENT, ELEMENT> driverRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
+        super(transMgrProviderRef);
         parent = parentRef;
         object = objRef;
         cachedObject = objRef;
@@ -33,11 +39,12 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
 
     public ELEMENT set(ELEMENT obj) throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             if (!Objects.equals(obj, cachedObject))
             {
-                dbDriver.update(parent, obj, transMgr);
+                activateTransMgr();
+                dbDriver.update(parent, obj);
             }
         }
         else
@@ -57,19 +64,11 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     @Override
     public void postSetConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (transMgrRef != null)
+        // forward transaction manager to simple object
+        if (object instanceof TransactionObject)
         {
-            if (transMgrRef != transMgr)
-            {
-                transMgrRef.register(this);
-                // forward transaction manager to simple object
-                if (object instanceof AbsTransactionObject)
-                {
-                    ((TransactionObject) object).setConnection(transMgrRef);
-                }
-            }
+            ((TransactionObject) object).setConnection(transMgrRef);
         }
-        transMgr = transMgrRef;
     }
 
     @Override

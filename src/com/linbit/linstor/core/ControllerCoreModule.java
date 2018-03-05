@@ -3,9 +3,10 @@ package com.linbit.linstor.core;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
-import com.linbit.TransactionMgr;
+
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -17,6 +18,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -48,7 +51,8 @@ public class ControllerCoreModule extends AbstractModule
     @Named(CONTROLLER_PROPS)
     public Props loadPropsContainer(
         DbConnectionPool dbConnPool,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        LinStorScope initScope
     )
         throws SQLException
     {
@@ -56,9 +60,13 @@ public class ControllerCoreModule extends AbstractModule
         TransactionMgr transMgr = null;
         try
         {
-            transMgr = new TransactionMgr(dbConnPool);
-            propsContainer = propsContainerFactory.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
+            transMgr = new ControllerTransactionMgr(dbConnPool);
+            initScope.enter();
+            initScope.seed(TransactionMgr.class, transMgr);
+
+            propsContainer = propsContainerFactory.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME);
             transMgr.commit();
+            initScope.exit();
         }
         finally
         {
@@ -104,7 +112,8 @@ public class ControllerCoreModule extends AbstractModule
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLock,
         DbConnectionPool dbConnPool,
-        DatabaseDriver databaseDriver
+        DatabaseDriver databaseDriver,
+        LinStorScope initScope
     )
         throws AccessDeniedException, InitializationException
     {
@@ -113,7 +122,7 @@ public class ControllerCoreModule extends AbstractModule
         TransactionMgr transMgr = null;
         try
         {
-            transMgr = new TransactionMgr(dbConnPool);
+            transMgr = new ControllerTransactionMgr(dbConnPool);
             nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
             rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
             storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
@@ -129,7 +138,14 @@ public class ControllerCoreModule extends AbstractModule
                 // for nodes, resource definition, storage pool definitions, etc. can be skipped.
                 recfgWriteLock.lock();
 
-                databaseDriver.loadAll(transMgr);
+                initScope.enter();
+                initScope.seed(TransactionMgr.class, transMgr);
+
+                databaseDriver.loadAll();
+
+                transMgr.commit();
+                initScope.exit();
+
             }
             finally
             {

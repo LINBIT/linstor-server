@@ -14,6 +14,8 @@ import static com.linbit.linstor.security.Privilege.PRIV_OBJ_VIEW;
 import static com.linbit.linstor.security.Privilege.PRIV_SYS_ALL;
 import static org.junit.Assert.*;
 
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,6 +34,7 @@ public class ObjectProtectionTest
 
     private SecurityType userSecDomain;
     private SecurityType someOtherUserSecDomain;
+    private TransactionObjectFactory transObjFactory;
 
     @Before
     public void setUp() throws Exception
@@ -55,6 +58,8 @@ public class ObjectProtectionTest
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
         someOtherUserSecDomain = new SecurityType(new SecTypeName("SomeOtherUserSecType"));
 
+        transObjFactory = new TransactionObjectFactory(() -> null);
+
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
 
@@ -62,7 +67,7 @@ public class ObjectProtectionTest
     public void testGetOwner() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(accCtx, null, null);
+        ObjectProtection objProt = new ObjectProtection(accCtx, null, null, transObjFactory, null);
 
         assertEquals(userRole, objProt.getOwner());
 
@@ -237,7 +242,7 @@ public class ObjectProtectionTest
     public void testGetCreator() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(accCtx, null, null);
+        ObjectProtection objProt = new ObjectProtection(accCtx, null, null, transObjFactory, null);
 
         assertEquals(userId, objProt.getCreator());
 
@@ -276,7 +281,7 @@ public class ObjectProtectionTest
                 {
                     objProt.requireAccess(accCtx, wantedAccessType);
                 }
-                catch (AccessDeniedException e)
+                catch (AccessDeniedException exc)
                 {
                     fail("Access denied while it should not");
                 }
@@ -288,7 +293,7 @@ public class ObjectProtectionTest
                     objProt.requireAccess(accCtx, wantedAccessType);
                     fail("Access granted while it should not");
                 }
-                catch (AccessDeniedException e)
+                catch (AccessDeniedException exc)
                 {
                     // expected
                 }
@@ -318,7 +323,7 @@ public class ObjectProtectionTest
                     objProt.setSecurityType(accCtx, userSecDomain);
                     fail("Access granted while it should not");
                 }
-                catch (AccessDeniedException e)
+                catch (AccessDeniedException exc)
                 {
                     // expected
                 }
@@ -331,7 +336,7 @@ public class ObjectProtectionTest
                     objProt.setSecurityType(accCtx, userSecDomain);
                     assertEquals(userSecDomain, objProt.getSecurityType());
                 }
-                catch (AccessDeniedException e)
+                catch (AccessDeniedException exc)
                 {
                     fail("Access denied while it should not");
                 }
@@ -360,14 +365,14 @@ public class ObjectProtectionTest
 
     private class AccessIterator extends AbsSecurityIterator<AccessIteration>
     {
-        private final int OBJ_ACL_IDX = 0;
-        private final int OBJ_SEC_IDX = 1;
-        private final int OBJ_OWN_IDX = 2;
+        private static final int OBJ_ACL_IDX = 0;
+        private static final int OBJ_SEC_IDX = 1;
+        private static final int OBJ_OWN_IDX = 2;
 
-        private final int ACC_MAC_OVRD_IDX = 3;
-        private final int ACC_PRIV_IDX = 4;
+        private static final int ACC_MAC_OVRD_IDX = 3;
+        private static final int ACC_PRIV_IDX = 4;
 
-        private final int WANTED_ACC_CTX_IDX = 5;
+        private static final int WANTED_ACC_CTX_IDX = 5;
 
         AccessIterator(boolean iterateSecurityLevels, int... skipColumns)
         {
@@ -418,7 +423,7 @@ public class ObjectProtectionTest
             AccessContext objCtx = new AccessContext(someOtherUserId, subjRole, someOtherUserSecDomain, privSysAll);
             objCtx.privEffective.enablePrivileges(PRIVILEGE_LIST);
 
-            ObjectProtection objProt = new ObjectProtection(objCtx, null, null);
+            ObjectProtection objProt = new ObjectProtection(objCtx, null, null, transObjFactory, null);
 
 
             if (aclEntry != null)

@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataSatelliteFactory;
@@ -16,9 +15,12 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.UUID;
@@ -43,6 +45,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
     private final NodeDataSatelliteFactory nodeDataFactory;
 
+    private final Provider<TransactionMgr> transMgrProvider;
+
     // Local NodeName received from the currently active controller
     private NodeName localNodeName;
 
@@ -62,7 +66,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
-        NodeDataSatelliteFactory nodeDataFactoryRef
+        NodeDataSatelliteFactory nodeDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         nodesMap = nodesMapRef;
@@ -76,6 +81,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         sysCtx = sysCtxRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         nodeDataFactory = nodeDataFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
@@ -117,15 +123,13 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             AccessContext tmpCtx = sysCtx.clone();
             tmpCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             NodeData localNode;
             try
             {
                 disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
                     tmpCtx,
                     disklessStorPoolDfnUuid,
-                    new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
-                    transMgr
+                    new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)
                 );
 
                 localNodeName = new NodeName(nodeName);
@@ -137,10 +141,10 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                     Node.NodeType.SATELLITE,
                     new Node.NodeFlag[] {},
                     disklessStorPoolUuid,
-                    transMgr,
                     disklessStorPoolDfn
                 );
-                transMgr.commit();
+
+                transMgrProvider.get().commit();
 
                 nodesMap.clear();
                 rscDfnMap.clear();

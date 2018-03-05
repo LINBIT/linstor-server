@@ -3,9 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -35,7 +33,7 @@ public class SatelliteDbDriver implements DatabaseDriver
     }
 
     @Override
-    public void loadAll(TransactionMgr transMgr)
+    public void loadAll()
     {
         // no-op
     }

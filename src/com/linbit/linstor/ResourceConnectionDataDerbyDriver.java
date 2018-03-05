@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -11,11 +10,15 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -62,6 +65,8 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     private final Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProvider;
     private final Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceConnectionDataDerbyDriver(
@@ -69,7 +74,9 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         ErrorReporter errorReporterRef,
         Provider<NodeDataDerbyDriver> nodeDataDerbyDriverProviderRef,
         Provider<ResourceDataDerbyDriver> resourceDataDerbyDriverProviderRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
@@ -77,14 +84,16 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         nodeDataDerbyDriverProvider = nodeDataDerbyDriverProviderRef;
         resourceDataDerbyDriverProvider = resourceDataDerbyDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public ResourceConnectionData load(
         Resource sourceResource,
         Resource targetResource,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
         throws SQLException
     {
@@ -104,7 +113,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         }
 
         ResourceConnectionData ret = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
         {
             stmt.setString(1, sourceResource.getAssignedNode().getName().value);
             stmt.setString(2, targetResource.getAssignedNode().getName().value);
@@ -114,7 +123,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             {
                 if (resultSet.next())
                 {
-                    ret = restoreResourceConnection(resultSet, transMgr);
+                    ret = restoreResourceConnection(resultSet);
                     // traceLog about loaded from DB|cache in restoreConDfn method
                 }
                 else
@@ -130,13 +139,8 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         return ret;
     }
 
-    private ResourceConnectionData restoreResourceConnection(
-        ResultSet resultSet,
-        TransactionMgr transMgr
-    )
-        throws SQLException
+    private ResourceConnectionData restoreResourceConnection(ResultSet resultSet) throws SQLException
     {
-
         NodeName sourceNodeName = null;
         NodeName targetNodeName = null;
         ResourceName resourceName = null;
@@ -181,12 +185,12 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         }
 
         NodeDataDerbyDriver nodeDataDerbyDriver = nodeDataDerbyDriverProvider.get();
-        Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, true, transMgr);
-        Node targetNode = nodeDataDerbyDriver.load(targetNodeName, true, transMgr);
+        Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, true);
+        Node targetNode = nodeDataDerbyDriver.load(targetNodeName, true);
 
         ResourceDataDerbyDriver resourceDataDerbyDriver = resourceDataDerbyDriverProvider.get();
-        Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, true, transMgr);
-        Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, true, transMgr);
+        Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, true);
+        Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, true);
 
         ResourceConnectionData resConData = cacheGet(sourceResource, targetResource);
         if (resConData == null)
@@ -198,9 +202,10 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
                     dbCtx,
                     sourceResource,
                     targetResource,
-                    transMgr,
                     this,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             catch (AccessDeniedException accDeniedExc)
@@ -218,11 +223,8 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     }
 
     @Override
-    public List<ResourceConnectionData> loadAllByResource(
-        Resource resource,
-        TransactionMgr transMgr
-    )
-        throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public List<ResourceConnectionData> loadAllByResource(Resource resource) throws SQLException
     {
         errorReporter.logTrace(
             "Loading all ResourceConnections for Resource %s",
@@ -230,7 +232,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         );
 
         List<ResourceConnectionData> connections = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_BY_RES_SRC_OR_DST))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_RES_SRC_OR_DST))
         {
             NodeName nodeName = resource.getAssignedNode().getName();
             stmt.setString(1, nodeName.value);
@@ -240,11 +242,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             {
                 while (resultSet.next())
                 {
-                    ResourceConnectionData conDfn = restoreResourceConnection(
-                        resultSet,
-                        transMgr
-                    );
-                    connections.add(conDfn);
+                    connections.add(restoreResourceConnection(resultSet));
                 }
             }
         }
@@ -258,10 +256,11 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     }
 
     @Override
-    public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(ResourceConnectionData conDfnData) throws SQLException
     {
         errorReporter.logTrace("Creating ResourceConnection %s", getId(conDfnData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
         {
             NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
             NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getAssignedNode().getName();
@@ -283,7 +282,8 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     }
 
     @Override
-    public void delete(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void delete(ResourceConnectionData conDfnData) throws SQLException
     {
         errorReporter.logTrace("Deleting ResourceConnection %s", getId(conDfnData));
         try
@@ -292,7 +292,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getAssignedNode().getName();
             ResourceName resName = conDfnData.getSourceResource(dbCtx).getDefinition().getName();
 
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
+            try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
             {
                 stmt.setString(1, sourceNodeName.value);
                 stmt.setString(2, targetNodeName.value);
@@ -308,10 +308,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         }
     }
 
-    private ResourceConnectionData cacheGet(
-        Resource sourceResource,
-        Resource targetResource
-    )
+    private ResourceConnectionData cacheGet(Resource sourceResource, Resource targetResource)
     {
         ResourceConnectionData ret = null;
         try
@@ -323,6 +320,11 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
         return ret;
+    }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
     }
 
     private String getId(ResourceConnectionData conData)

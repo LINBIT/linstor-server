@@ -1,15 +1,19 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.storage.DisklessDriver;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.util.UUID;
 
 public class NodeDataSatelliteFactory
@@ -18,19 +22,25 @@ public class NodeDataSatelliteFactory
     private final ObjectProtectionFactory objectProtectionFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public NodeDataSatelliteFactory(
         NodeDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public NodeData getInstanceSatellite(
@@ -40,7 +50,6 @@ public class NodeDataSatelliteFactory
         Node.NodeType typeRef,
         Node.NodeFlag[] flags,
         UUID disklessStorPoolUuid,
-        SatelliteTransactionMgr transMgr,
         StorPoolDefinition disklessStorPoolDfn
     )
         throws ImplementationError
@@ -48,7 +57,7 @@ public class NodeDataSatelliteFactory
         NodeData nodeData = null;
         try
         {
-            nodeData = dbDriver.load(nameRef, false, transMgr);
+            nodeData = dbDriver.load(nameRef, false);
             if (nodeData == null)
             {
                 nodeData = new NodeData(
@@ -57,15 +66,15 @@ public class NodeDataSatelliteFactory
                     objectProtectionFactory.getInstance(
                         accCtx,
                         "",
-                        true,
-                        transMgr
+                        true
                     ),
                     nameRef,
                     typeRef,
                     StateFlagsBits.getMask(flags),
-                    transMgr,
                     dbDriver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
 
                 nodeData.setDisklessStorPool(storPoolDataFactory.getInstanceSatellite(
@@ -73,12 +82,10 @@ public class NodeDataSatelliteFactory
                     disklessStorPoolUuid,
                     nodeData,
                     disklessStorPoolDfn,
-                    DisklessDriver.class.getSimpleName(),
-                    transMgr
+                    DisklessDriver.class.getSimpleName()
                 ));
             }
             nodeData.initialized();
-            nodeData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

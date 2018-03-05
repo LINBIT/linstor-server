@@ -6,7 +6,6 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,9 +39,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ReadOnlyPropsContainerTest
+public class ReadOnlyPropsContainerTest extends DerbyPropsConBase
 {
-    private PropsContainerFactory propsContainerFactory;
+    private static final String TEST_INSTANCE_NAME = "testInstanceName";
+
     private PropsContainer writableProp;
     private ReadOnlyProps roProp;
     private Map<String, String> roMap;
@@ -50,15 +50,17 @@ public class ReadOnlyPropsContainerTest
     private Set<Entry<String, String>> roEntrySet;
     private Collection<String> roValues;
 
+    @Override
     @Before
-    public void setUp() throws Throwable
+    public void setUp() throws Exception
     {
+        super.setUp();
         Map<NodeName, Node> nodesMap = new HashMap<>();
         Map<ResourceName, ResourceDefinition> resDfnMap = new HashMap<>();
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();
 
-        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver());
-        writableProp = propsContainerFactory.getInstance(null, null);
+//        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), transMgrProvider);
+        writableProp = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
         roProp = new ReadOnlyProps(writableProp);
 
         fillProps(writableProp, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -979,10 +981,10 @@ public class ReadOnlyPropsContainerTest
         assertFalse(roMap.equals(null));
         assertFalse(roMap.equals(roProp));
 
-        clone.remove(FIRST_KEY+"0");
+        clone.remove(FIRST_KEY + "0");
         assertFalse(roMap.equals(clone));
 
-        PropsContainer container = propsContainerFactory.getInstance(null, null);
+        PropsContainer container = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(roMap.equals(container.map()));
     }

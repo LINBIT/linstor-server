@@ -1,9 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
-import com.linbit.InvalidNameException;
-import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceDataFactory;
@@ -21,18 +18,19 @@ import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 @Singleton
 class StltNodeApiCallHandler
@@ -47,6 +45,7 @@ class StltNodeApiCallHandler
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     StltNodeApiCallHandler(
@@ -59,7 +58,8 @@ class StltNodeApiCallHandler
         NodeDataSatelliteFactory nodeDataFactoryRef,
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        ControllerPeerConnector controllerPeerConnectorRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -72,6 +72,7 @@ class StltNodeApiCallHandler
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     /**
@@ -91,10 +92,8 @@ class StltNodeApiCallHandler
             Node removedNode = nodesMap.remove(nodeName); // just to be sure
             if (removedNode != null)
             {
-                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-                removedNode.setConnection(transMgr);
                 removedNode.delete(apiCtx);
-                transMgr.commit();
+                transMgrProvider.get().commit();
             }
 
             errorReporter.logInfo("Node '" + nodeNameStr + "' removed by Controller.");
@@ -110,37 +109,12 @@ class StltNodeApiCallHandler
         }
     }
 
-    public void applyChanges(NodePojo nodePojo)
-    {
-        try
-        {
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-
-            Node node = applyChanges(nodePojo, transMgr);
-            NodeName nodeName = new NodeName(nodePojo.getName());
-            transMgr.commit();
-
-            nodesMap.put(nodeName, node);
-            errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
-            Set<NodeName> updatedNodes = new TreeSet<>();
-            updatedNodes.add(new NodeName(nodePojo.getName()));
-            deviceManager.nodeUpdateApplied(updatedNodes);
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            // TODO: kill connection?
-            errorReporter.reportError(exc);
-        }
-    }
-
-    public NodeData applyChanges(NodePojo nodePojo, SatelliteTransactionMgr transMgr)
-        throws DivergentUuidsException, ImplementationError, InvalidNameException, AccessDeniedException,
-        SQLException, InvalidIpAddressException
+    public NodeData applyChanges(NodePojo nodePojo)
     {
         Lock reConfReadLock = reconfigurationLock.readLock();
         Lock nodesWriteLock = nodesMapLock.writeLock();
 
-        NodeData node;
+        NodeData node = null;
         try
         {
             reConfReadLock.lock();
@@ -154,7 +128,6 @@ class StltNodeApiCallHandler
                 NodeType.valueOf(nodePojo.getType()),
                 nodeFlags,
                 nodePojo.getDisklessStorPoolUuid(),
-                transMgr,
                 controllerPeerConnector.getDisklessStorPoolDfn()
             );
             checkUuid(node, nodePojo);
@@ -174,15 +147,13 @@ class StltNodeApiCallHandler
                     NodeType.valueOf(nodeConn.getOtherNodeType()),
                     NodeFlag.restoreFlags(nodeConn.getOtherNodeFlags()),
                     nodeConn.getOtherNodeDisklessStorPoolUuid(),
-                    transMgr,
                     controllerPeerConnector.getDisklessStorPoolDfn()
                 );
                 NodeConnectionData nodeCon = nodeConnectionDataFactory.getInstanceSatellite(
                     apiCtx,
                     nodeConn.getNodeConnUuid(),
                     node,
-                    otherNode,
-                    transMgr
+                    otherNode
                 );
                 Map<String, String> props = nodeCon.getProps(apiCtx).map();
                 props.clear();
@@ -201,8 +172,7 @@ class StltNodeApiCallHandler
                         netIfApi.getUuid(),
                         node,
                         netIfName,
-                        ipAddress,
-                        transMgr
+                        ipAddress
                     );
                 }
                 else
@@ -210,6 +180,19 @@ class StltNodeApiCallHandler
                     netIf.setAddress(apiCtx, ipAddress);
                 }
             }
+
+            transMgrProvider.get().commit();
+
+            nodesMap.put(node.getName(), node);
+            errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
+            Set<NodeName> updatedNodes = new TreeSet<>();
+            updatedNodes.add(new NodeName(nodePojo.getName()));
+            deviceManager.nodeUpdateApplied(updatedNodes);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // TODO: kill connection?
+            errorReporter.reportError(exc);
         }
         finally
         {

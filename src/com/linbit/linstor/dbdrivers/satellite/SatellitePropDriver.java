@@ -1,8 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
-
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
@@ -16,37 +14,37 @@ public class SatellitePropDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public Map<String, String> load(String instanceName, TransactionMgr transMgr)
+    public Map<String, String> load(String instanceName)
     {
         return Collections.emptyMap();
     }
 
     @Override
-    public void persist(String instanceName, String key, String value, TransactionMgr transMgr)
+    public void persist(String instanceName, String key, String value)
     {
         // no-op
     }
 
     @Override
-    public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr)
+    public void persist(String instanceName, Map<String, String> props)
     {
         // no-op
     }
 
     @Override
-    public void remove(String instanceName, String key, TransactionMgr transMgr)
+    public void remove(String instanceName, String key)
     {
         // no-op
     }
 
     @Override
-    public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr)
+    public void remove(String instanceName, Set<String> keys)
     {
         // no-op
     }
 
     @Override
-    public void removeAll(String instanceName, TransactionMgr transMgr)
+    public void removeAll(String instanceName)
     {
         // no-op
     }

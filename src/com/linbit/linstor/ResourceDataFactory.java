@@ -1,8 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -11,8 +9,12 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -22,19 +24,25 @@ public class ResourceDataFactory
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final VolumeDataFactory volumeDataFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceDataFactory(
         ResourceDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef
+        VolumeDataFactory volumeDataFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public ResourceData getInstance(
@@ -43,7 +51,6 @@ public class ResourceDataFactory
         Node node,
         NodeId nodeId,
         Resource.RscFlags[] initFlags,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -53,7 +60,7 @@ public class ResourceDataFactory
         ResourceData resData = null;
 
 
-        resData = dbDriver.load(node, resDfn.getName(), false, transMgr);
+        resData = dbDriver.load(node, resDfn.getName(), false);
 
         if (failIfExists && resData != null)
         {
@@ -71,25 +78,24 @@ public class ResourceDataFactory
                         node.getName(),
                         resDfn.getName()
                     ),
-                    true,
-                    transMgr
+                    true
                 ),
                 resDfn,
                 node,
                 nodeId,
                 StateFlagsBits.getMask(initFlags),
-                transMgr,
                 dbDriver,
                 propsContainerFactory,
-                volumeDataFactory
+                volumeDataFactory,
+                transObjFactory,
+                transMgrProvider
             );
-            dbDriver.create(resData, transMgr);
+            dbDriver.create(resData);
         }
 
         if (resData != null)
         {
             resData.initialized();
-            resData.setConnection(transMgr);
         }
         return resData;
     }
@@ -100,33 +106,32 @@ public class ResourceDataFactory
         Node node,
         ResourceDefinition rscDfn,
         NodeId nodeId,
-        Resource.RscFlags[] initFlags,
-        SatelliteTransactionMgr transMgr
+        Resource.RscFlags[] initFlags
     )
         throws ImplementationError
     {
         ResourceData rscData;
         try
         {
-            rscData = dbDriver.load(node, rscDfn.getName(), false, transMgr);
+            rscData = dbDriver.load(node, rscDfn.getName(), false);
             if (rscData == null)
             {
                 rscData = new ResourceData(
                     uuid,
                     accCtx,
-                    objectProtectionFactory.getInstance(accCtx, "", false, transMgr),
+                    objectProtectionFactory.getInstance(accCtx, "", false),
                     rscDfn,
                     node,
                     nodeId,
                     StateFlagsBits.getMask(initFlags),
-                    transMgr,
                     dbDriver,
                     propsContainerFactory,
-                    volumeDataFactory
+                    volumeDataFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             rscData.initialized();
-            rscData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

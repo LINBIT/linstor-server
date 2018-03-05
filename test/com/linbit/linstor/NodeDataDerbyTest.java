@@ -1,7 +1,7 @@
 package com.linbit.linstor;
 
 import com.google.inject.Inject;
-import com.linbit.TransactionMgr;
+
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Resource.RscFlags;
@@ -58,7 +58,6 @@ public class NodeDataDerbyTest extends DerbyBase
     private final NodeName nodeName;
 
     @Inject private NodeDataDerbyDriver dbDriver;
-    private TransactionMgr transMgr;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
     private long initialFlags;
@@ -70,16 +69,25 @@ public class NodeDataDerbyTest extends DerbyBase
         nodeName = new NodeName("TestNodeName");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
+
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals("NODES table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODES);
+        assertEquals(
+            "NODES table's column count has changed. Update tests accordingly!",
+            5,
+            TBL_COL_COUNT_NODES
+        );
 
-        transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
-        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName), true, transMgr);
+        objProt = objectProtectionFactory.getInstance(
+            SYS_CTX,
+            ObjectProtection.buildPath(nodeName),
+            true
+        );
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
         node = new NodeData(
@@ -89,9 +97,10 @@ public class NodeDataDerbyTest extends DerbyBase
             nodeName,
             initialType,
             initialFlags,
-            transMgr,
             dbDriver,
-            propsContainerFactory
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
     }
 
@@ -99,9 +108,10 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testPersistSimple() throws Exception
     {
         node.initialized();
-        dbDriver.create(node, transMgr);
+        dbDriver.create(node);
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -124,13 +134,12 @@ public class NodeDataDerbyTest extends DerbyBase
             nodeName,
             null,
             null,
-            transMgr,
             true,
             false
         );
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist NodeData instance", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
@@ -142,21 +151,21 @@ public class NodeDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
 
-        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES_FOR_NODE);
+        stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent resource", resultSet.next());
         resultSet.close();
         stmt.close();
 
-        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NET_INTERFACES_FOR_NODE);
+        stmt = getConnection().prepareStatement(SELECT_ALL_NET_INTERFACES_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent net interface", resultSet.next());
         resultSet.close();
         stmt.close();
 
-        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS_FOR_NODE);
+        stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOLS_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent stor pool", resultSet.next());
@@ -166,12 +175,11 @@ public class NodeDataDerbyTest extends DerbyBase
         ObjectProtection loadedObjProt = objectProtectionFactory.getInstance(
             SYS_CTX,
             ObjectProtection.buildPath(nodeName),
-            false,
-            transMgr
+            false
         );
         assertNotNull("Database did not persist objectProtection", loadedObjProt);
 
-        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_PROPS_FOR_NODE);
+        stmt = getConnection().prepareStatement(SELECT_ALL_PROPS_FOR_NODE);
         stmt.setString(1, "NODES/" + nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent properties", resultSet.next());
@@ -182,17 +190,16 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testUpdateFlags() throws Exception
     {
-        insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
-        transMgr.commit();
+        insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
+        commit();
 
-        NodeData loaded = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        NodeData loaded = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
 
         assertNotNull(loaded);
-        loaded.setConnection(transMgr);
         loaded.getFlags().enableFlags(SYS_CTX, NodeFlag.DELETE);
-        transMgr.commit();
+        commit();
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database deleted NodeData", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
@@ -208,9 +215,9 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadSimple() throws Exception
     {
-        dbDriver.create(node, transMgr);
+        dbDriver.create(node);
 
-        NodeData loaded = dbDriver.load(nodeName, true, transMgr);
+        NodeData loaded = dbDriver.load(nodeName, true);
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
@@ -222,13 +229,13 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
         assertNull(loadedNode);
 
-        insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
-        transMgr.commit();
+        insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
+        commit();
 
-        loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
 
         assertNotNull(loadedNode);
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
@@ -331,7 +338,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 nodeName,
                 NodeType.AUXILIARY,
                 new NodeFlag[] {NodeFlag.QIGNORE},
-                transMgr,
                 true,
                 true
             );
@@ -346,7 +352,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 node1,
                 netName,
                 new LsIpAddress(netHost),
-                transMgr,
                 true,
                 true
             );
@@ -358,7 +363,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 nodeName2,
                 NodeType.AUXILIARY,
                 null,
-                transMgr,
                 true,
                 true
             );
@@ -372,8 +376,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
-                transportType,
-                transMgr
+                transportType
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
@@ -387,8 +390,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 volDfnNr,
                 volDfnMinorNr,
                 volDfnSize,
-                new VlmDfnFlags[] {VlmDfnFlags.DELETE},
-                transMgr
+                new VlmDfnFlags[] {VlmDfnFlags.DELETE}
             );
             volDfn.getProps(SYS_CTX).setProp(volDfnTestKey, volDfnTestValue);
             volDfnUuid = volDfn.getUuid();
@@ -397,7 +399,6 @@ public class NodeDataDerbyTest extends DerbyBase
             StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 poolName,
-                transMgr,
                 true,
                 true
             );
@@ -411,7 +412,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 node1,
                 storPoolDfn,
                 storPoolDriver1,
-                transMgr,
                 true,
                 true
             );
@@ -423,7 +423,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 node2,
                 storPoolDfn,
                 storPoolDriver2,
-                transMgr,
                 true,
                 true
             );
@@ -436,7 +435,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 node1,
                 node1Id,
                 new RscFlags[] {RscFlags.CLEAN},
-                transMgr,
                 true,
                 true
             );
@@ -452,7 +450,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 vol1TestBlockDev,
                 vol1TestMetaDisk,
                 new VlmFlags[] {VlmFlags.CLEAN},
-                transMgr,
                 true,
                 true
             );
@@ -466,7 +463,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 node2,
                 node2Id,
                 new RscFlags[] {RscFlags.CLEAN},
-                transMgr,
                 true,
                 true
             );
@@ -482,7 +478,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 vol2TestBlockDev,
                 vol2TestMetaDisk,
                 new VlmFlags[] {VlmFlags.CLEAN},
-                transMgr,
                 true,
                 true
             );
@@ -494,7 +489,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 SYS_CTX,
                 node1,
                 node2,
-                transMgr,
                 true,
                 true
             );
@@ -506,7 +500,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 SYS_CTX,
                 res1,
                 res2,
-                transMgr,
                 true,
                 true
             );
@@ -518,19 +511,18 @@ public class NodeDataDerbyTest extends DerbyBase
                 SYS_CTX,
                 vol1,
                 vol2,
-                transMgr,
                 true,
                 true
             );
             volCon.getProps(SYS_CTX).setProp(volConTestKey, volConTestValue);
             volConUuid = volCon.getUuid();
 
-            transMgr.commit();
+            commit();
         }
 //        clearCaches();
 
-        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
-        NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, null, null, transMgr, false, false);
+        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
+        NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, null, null, false, false);
 
         assertNotNull(loadedNode);
 
@@ -705,23 +697,25 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        dbDriver.create(node, transMgr);
+        dbDriver.create(node);
         nodesMap.put(nodeName, node);
         // no clearCaches
 
-        assertEquals(node, dbDriver.load(nodeName, true, transMgr));
+        assertEquals(node, dbDriver.load(nodeName, true));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        dbDriver.create(node, transMgr);
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
+        dbDriver.create(node);
+        commit();
+        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
         resultSet.close();
 
-        dbDriver.delete(node, transMgr);
+        dbDriver.delete(node);
+        commit();
         resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -733,10 +727,10 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testHalfValidName() throws Exception
     {
-        dbDriver.create(node, transMgr);
+        dbDriver.create(node);
 
         NodeName halfValidName = new NodeName(node.getName().value);
-        NodeData loadedNode = dbDriver.load(halfValidName, true, transMgr);
+        NodeData loadedNode = dbDriver.load(halfValidName, true);
 
         assertNotNull(loadedNode);
         assertEquals(node.getName(), loadedNode.getName());
@@ -746,24 +740,23 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        dbDriver.create(node, transMgr);
+        dbDriver.create(node);
         NodeName nodeName2 = new NodeName("NodeName2");
         NodeData node2 = nodeDataFactory.getInstance(
             SYS_CTX,
             nodeName2,
             NodeType.CONTROLLER,
             null,
-            transMgr,
             true,
             false
         );
         nodesMap.put(nodeName, node);
         nodesMap.put(nodeName2, node2);
-        List<NodeData> allNodes = dbDriver.loadAll(transMgr);
+        List<NodeData> allNodes = dbDriver.loadAll();
         assertEquals(2, allNodes.size());
 
         clearCaches();
-        allNodes = dbDriver.loadAll(transMgr);
+        allNodes = dbDriver.loadAll();
         assertEquals(2, allNodes.size());
 
         assertEquals(node.getName().value, allNodes.get(0).getName().value);
@@ -780,9 +773,9 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        dbDriver.create(node, transMgr);
+        dbDriver.create(node);
 
-        nodeDataFactory.getInstance(SYS_CTX, nodeName, initialType, null, transMgr, false, true);
+        nodeDataFactory.getInstance(SYS_CTX, nodeName, initialType, null, false, true);
     }
 
 }

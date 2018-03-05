@@ -86,8 +86,8 @@ public class StorageTestUtils
             {
                 sb.append(cmd).append("\n");
             }
-            sb.setLength(sb.length()-1);
-            fail("Not all expected commands were called: \n"+sb.toString());
+            sb.setLength(sb.length() - 1);
+            fail("Not all expected commands were called: \n" + sb.toString());
         }
     }
 
@@ -98,7 +98,7 @@ public class StorageTestUtils
             driver.setConfiguration(config);
             fail(StorageException.class.getName() + " expected");
         }
-        catch (StorageException e)
+        catch (StorageException exc)
         {
             // expected
         }
@@ -110,7 +110,7 @@ public class StorageTestUtils
         int idx = 0;
         while (idx < strings.length)
         {
-            map.put(strings[idx], strings[idx+1]);
+            map.put(strings[idx], strings[idx + 1]);
             idx += 2;
         }
         return map;
@@ -153,20 +153,22 @@ public class StorageTestUtils
             String[] split = path.split(File.pathSeparator);
 
             folders = new Path[split.length];
-            for (int i = 0; i < split.length; i++)
+            for (int idx = 0; idx < split.length; idx++)
             {
-                folders[i] = Paths.get(split[i]);
+                folders[idx] = Paths.get(split[idx]);
             }
         }
         return folders;
     }
 
-    protected static <T> T getInstance(Class<T> clazz, Object... parameters) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    protected static <T> T getInstance(Class<T> clazz, Object... parameters)
+        throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException,
+        IllegalArgumentException, InvocationTargetException
     {
         Class<?>[] parameterClasses = new Class[parameters.length];
-        for (int i = 0; i < parameters.length; i++)
+        for (int idx = 0; idx < parameters.length; idx++)
         {
-            parameterClasses[i] = parameters[i].getClass();
+            parameterClasses[idx] = parameters[idx].getClass();
         }
         Constructor<T> constructor = clazz.getDeclaredConstructor(parameterClasses);
         boolean accessible = constructor.isAccessible();
@@ -176,7 +178,11 @@ public class StorageTestUtils
         return ret;
     }
 
-    protected static FileEntryGroupBuilder getTestFileEntryGroupBuilder(final String expectedFilePath, final Event expectedEvent, final FileEntryGroup testFileEntryGroup)
+    protected static FileEntryGroupBuilder getTestFileEntryGroupBuilder(
+        final String expectedFilePath,
+        final Event expectedEvent,
+        final FileEntryGroup testFileEntryGroup
+    )
     {
         return new FileEntryGroupBuilder()
         {

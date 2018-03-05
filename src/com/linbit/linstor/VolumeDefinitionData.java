@@ -2,9 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionMap;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
@@ -21,10 +18,12 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -33,6 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  *
@@ -81,12 +82,14 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         DynamicNumberPool minorNrPoolRef,
         long volSize,
         long initFlags,
-        TransactionMgr transMgr,
         VolumeDefinitionDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws MdException, AccessDeniedException, SQLException
     {
+        super(transMgrProviderRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
@@ -122,31 +125,33 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         minorNrPool = minorNrPoolRef;
 
         volumeNr = volNr;
-        minorNr = new TransactionSimpleObject<>(
+        minorNr = transObjFactory.createTransactionSimpleObject(
             this,
             minor,
             dbDriver.getMinorNumberDriver()
         );
-        volumeSize = new TransactionSimpleObject<>(
+        volumeSize = transObjFactory.createTransactionSimpleObject(
             this,
             volSize,
             dbDriver.getVolumeSizeDriver()
         );
 
         vlmDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
-            transMgr
+            PropsContainer.buildPath(resDfnRef.getName(), volumeNr)
         );
 
-        volumes = new TransactionMap<>(new TreeMap<String, Volume>(), null);
+        volumes = transObjFactory.createTransactionMap(new TreeMap<String, Volume>(), null);
 
-        flags = new VlmDfnFlagsImpl(
+        flags = transObjFactory.createStateFlagsImpl(
             resDfnRef.getObjProt(),
             this,
-            dbDriver.getStateFlagsPersistence(),
+            VlmDfnFlags.class,
+            this.dbDriver.getStateFlagsPersistence(),
             initFlags
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+
+
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             vlmDfnProps,
@@ -158,6 +163,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         );
 
         ((ResourceDefinitionData) resourceDfn).putVolumeDefinition(accCtx, this);
+        activateTransMgr();
     }
 
     @Override
@@ -301,7 +307,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                 minorNrPool.deallocate(minorNr.get().value);
             }
 
-            dbDriver.delete(this, transMgr);
+            dbDriver.delete(this);
 
             deleted.set(true);
         }
@@ -335,24 +341,5 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         return "Rsc: '" + resourceDfn.getName() + "', " +
                "VlmNr: '" + volumeNr + "'";
-    }
-
-    private static final class VlmDfnFlagsImpl extends StateFlagsBits<VolumeDefinitionData, VlmDfnFlags>
-    {
-        VlmDfnFlagsImpl(
-            ObjectProtection objProtRef,
-            VolumeDefinitionData parent,
-            StateFlagsPersistence<VolumeDefinitionData> persistenceRef,
-            long initFlags
-        )
-        {
-            super(
-                objProtRef,
-                parent,
-                StateFlagsBits.getMask(VlmDfnFlags.values()),
-                persistenceRef,
-                initFlags
-            );
-        }
     }
 }

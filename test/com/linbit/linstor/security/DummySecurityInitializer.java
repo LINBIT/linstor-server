@@ -1,7 +1,16 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 public class DummySecurityInitializer
 {
+    private static TransactionObjectFactory transObjFactory;
+
+    static
+    {
+        transObjFactory = new TransactionObjectFactory(() -> null);
+    }
+
     public static AccessContext getSystemAccessContext()
     {
         PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
@@ -38,6 +47,6 @@ public class DummySecurityInitializer
 
     public static ObjectProtection getDummyObjectProtection(AccessContext accCtx)
     {
-        return new ObjectProtection(accCtx, null, null);
+        return new ObjectProtection(accCtx, null, null, transObjFactory, null);
     }
 }

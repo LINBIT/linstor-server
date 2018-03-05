@@ -6,8 +6,9 @@ import java.util.UUID;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionObject;
 
-public interface NodeConnection extends DbgInstanceUuid
+public interface NodeConnection extends DbgInstanceUuid, TransactionObject
 {
     UUID getUuid();
 

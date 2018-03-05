@@ -3,12 +3,14 @@ package com.linbit.linstor.security;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -150,7 +152,8 @@ public class ControllerSecurityModule extends AbstractModule
     public ProtectionBundle initializeObjectProtection(
         @SystemContext AccessContext initCtx,
         DbConnectionPool dbConnPool,
-        ObjectProtectionFactory objectProtectionFactory
+        ObjectProtectionFactory objectProtectionFactory,
+        LinStorScope initScope
     )
         throws SQLException, InitializationException
     {
@@ -159,41 +162,38 @@ public class ControllerSecurityModule extends AbstractModule
         TransactionMgr transMgr = null;
         try
         {
-            transMgr = new TransactionMgr(dbConnPool);
+            transMgr = new ControllerTransactionMgr(dbConnPool);
+            initScope.enter();
+            initScope.seed(TransactionMgr.class, transMgr);
 
             // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
             bundle.nodesMapProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("nodesMap"),
-                true,
-                transMgr
+                true
             );
             bundle.rscDfnMapProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("rscDfnMap"),
-                true,
-                transMgr
+                true
             );
             bundle.storPoolDfnMapProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("storPoolMap"),
-                true,
-                transMgr
+                true
             );
 
             // initializing controller OP
             bundle.ctrlConfProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("conf"),
-                true,
-                transMgr
+                true
             );
 
             bundle.shutdownProt = objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("shutdown"),
-                true,
-                transMgr
+                true
             );
 
             bundle.shutdownProt.setConnection(transMgr);
@@ -216,6 +216,7 @@ public class ControllerSecurityModule extends AbstractModule
             {
                 dbConnPool.returnConnection(transMgr);
             }
+            initScope.exit();
         }
 
         return bundle;

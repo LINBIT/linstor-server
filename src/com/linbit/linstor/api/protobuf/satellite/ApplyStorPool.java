@@ -74,8 +74,6 @@ public class ApplyStorPool implements ApiCall
         try
         {
             Map<StorPool, Long> freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
-            System.out.println(freeSpaceMap);
-            System.out.println(storPoolData.getStorPoolName());
 
             Long requestedFreeSpace = null;
 

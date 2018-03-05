@@ -1,10 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMap;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionObject;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -22,6 +18,12 @@ import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -31,6 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
@@ -64,12 +68,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDefRef,
         String storageDriverName,
         boolean allowStorageDriverCreationRef,
-        TransactionMgr transMgr,
         StorPoolDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef
     )
         throws SQLException, AccessDeniedException
     {
+        super(transMgrProviderRef);
         uuid = id;
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
@@ -77,15 +83,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
-        volumeMap = new TransactionMap<>(new TreeMap<String, Volume>(), null);
+        volumeMap = transObjFactory.createTransactionMap(new TreeMap<String, Volume>(), null);
 
         props = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
-            transMgr
+            PropsContainer.buildPath(storPoolDef.getName(), node.getName())
         );
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
-        freeSpace = new TransactionSimpleObject<>(this, 0L, null);
+        freeSpace = transObjFactory.createTransactionSimpleObject(this, 0L, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
@@ -96,6 +101,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         ((NodeData) nodeRef).addStorPool(accCtx, this);
         ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, this);
+        activateTransMgr();
     }
 
     @Override
@@ -264,7 +270,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
             props.delete();
 
-            dbDriver.delete(this, transMgr);
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }

@@ -38,8 +38,6 @@ public class AutoPlaceResource implements ApiCall
     {
         MsgAutoPlaceRsc msgAutoPlace = MsgAutoPlaceRsc.parseDelimitedFrom(msgDataIn);
 
-        System.out.println("AUTOPLACE message:\n" + msgAutoPlace.toString());
-
         ApiCallRc rc = apiCallHandler.createResourcesAutoPlace(
             msgAutoPlace.getRscName(),
             msgAutoPlace.getPlaceCount(),

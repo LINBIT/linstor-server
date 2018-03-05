@@ -1,13 +1,11 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
@@ -23,13 +21,7 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
     }
 
     @Override
-    public ResourceConnectionData load(
-        Resource source,
-        Resource target,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
-
+    public ResourceConnectionData load(Resource source, Resource target, boolean logWarnIfNotExists)
     {
         ResourceConnectionData resourceConnection = null;
         try
@@ -44,23 +36,19 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
     }
 
     @Override
-    public List<ResourceConnectionData> loadAllByResource(
-        Resource resource,
-        TransactionMgr transMgr
-    )
-
+    public List<ResourceConnectionData> loadAllByResource(Resource resource)
     {
         return Collections.emptyList();
     }
 
     @Override
-    public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr)
+    public void create(ResourceConnectionData conDfnData)
     {
         // no-op
     }
 
     @Override
-    public void delete(ResourceConnectionData data, TransactionMgr transMgr)
+    public void delete(ResourceConnectionData data)
     {
         // no-op
     }

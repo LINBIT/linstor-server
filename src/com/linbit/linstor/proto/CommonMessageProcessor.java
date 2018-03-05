@@ -1,15 +1,14 @@
 package com.linbit.linstor.proto;
 
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallScope;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
@@ -23,12 +22,7 @@ import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
-import org.slf4j.event.Level;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import com.linbit.linstor.transaction.TransactionMgr;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,6 +33,15 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import org.slf4j.event.Level;
+
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 
 /**
  * Dispatcher for received messages
@@ -52,17 +55,22 @@ public class CommonMessageProcessor implements MessageProcessor
 
     private final ErrorReporter errorLog;
     private final WorkQueue workQ;
-    private final ApiCallScope apiCallScope;
+    private final LinStorScope apiCallScope;
     private final Map<String, Provider<ApiCall>> apiCallProviders;
     private final Map<String, ApiCallDescriptor> apiCallDescriptors;
+    private final Provider<TransactionMgr> transactionProvider;
+
+    private final ControllerDatabase dbConnPool;
 
     @Inject
     public CommonMessageProcessor(
         ErrorReporter errorLogRef,
         @Named(LinStorModule.MAIN_WORKER_POOL_NAME) WorkQueue workQRef,
-        ApiCallScope apiCallScopeRef,
+        LinStorScope apiCallScopeRef,
         Map<String, Provider<ApiCall>> apiCallProvidersRef,
-        Map<String, ApiCallDescriptor> apiCallDescriptorsRef
+        Map<String, ApiCallDescriptor> apiCallDescriptorsRef,
+        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> transactionProviderRef,
+        ControllerDatabase dbConnPoolRef
     )
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
@@ -72,6 +80,9 @@ public class CommonMessageProcessor implements MessageProcessor
         apiCallScope = apiCallScopeRef;
         apiCallProviders = apiCallProvidersRef;
         apiCallDescriptors = apiCallDescriptorsRef;
+        transactionProvider = transactionProviderRef;
+
+        dbConnPool = dbConnPoolRef;
     }
 
     public Map<String, ApiCallDescriptor> getApiCallDescriptors()
@@ -183,7 +194,6 @@ public class CommonMessageProcessor implements MessageProcessor
                         apiCallDescriptor,
                         client.getAccessContext(),
                         errorLog,
-                        apiCallScope,
                         msg, msgId, msgDataIn,
                         client
                     );
@@ -260,13 +270,12 @@ public class CommonMessageProcessor implements MessageProcessor
     }
 
 
-    static class ApiCallInvocation implements Runnable
+    class ApiCallInvocation implements Runnable
     {
-        private final Provider<ApiCall>         apiCallProvider;
-        private final ApiCallDescriptor                   apiCallDescriptor;
+        private final Provider<ApiCall> apiCallProvider;
+        private final ApiCallDescriptor apiCallDescriptor;
         private final AccessContext   accCtx;
         private final ErrorReporter   errLog;
-        private final ApiCallScope    apiCallScope;
         private final Message         msg;
         private final int             msgId;
         private final InputStream     msgDataIn;
@@ -276,27 +285,27 @@ public class CommonMessageProcessor implements MessageProcessor
             Provider<ApiCall> apiCallProviderRef,
             ApiCallDescriptor apiCallDescriptorRef, AccessContext accCtxRef,
             ErrorReporter errLogRef,
-            ApiCallScope apiCallScopeRef,
             Message msgRef,
             int msgIdRef,
             InputStream msgDataInRef,
             Peer clientRef
         )
         {
-            apiCallProvider  = apiCallProviderRef;
+            apiCallProvider   = apiCallProviderRef;
             apiCallDescriptor = apiCallDescriptorRef;
-            accCtx      = accCtxRef;
-            errLog      = errLogRef;
-            apiCallScope = apiCallScopeRef;
-            msg         = msgRef;
-            msgId       = msgIdRef;
-            msgDataIn   = msgDataInRef;
-            client      = clientRef;
+            accCtx       = accCtxRef;
+            errLog       = errLogRef;
+            msg          = msgRef;
+            msgId        = msgIdRef;
+            msgDataIn    = msgDataInRef;
+            client       = clientRef;
         }
 
         @Override
         public void run()
         {
+            TransactionMgr transMgr = null;
+            transMgr = transactionProvider.get();
             apiCallScope.enter();
             try
             {
@@ -304,6 +313,7 @@ public class CommonMessageProcessor implements MessageProcessor
                 apiCallScope.seed(Peer.class, client);
                 apiCallScope.seed(Message.class, msg);
                 apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
+                apiCallScope.seed(TransactionMgr.class, transMgr);
                 ApiCall apiCall = apiCallProvider.get();
                 apiCall.execute(msgDataIn);
             }
@@ -319,6 +329,10 @@ public class CommonMessageProcessor implements MessageProcessor
             }
             finally
             {
+                if (transMgr != null)
+                {
+                    dbConnPool.returnConnection(transMgr);
+                }
                 apiCallScope.exit();
             }
         }

@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -11,11 +10,15 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,6 +63,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     private final Provider<NodeDataDerbyDriver> nodeDriverProvider;
     private final Provider<StorPoolDefinitionDataDerbyDriver> storPoolDefDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public StorPoolDataDerbyDriver(
@@ -68,7 +73,9 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         Provider<VolumeDataDerbyDriver> volumeDriverProviderRef,
         Provider<NodeDataDerbyDriver> nodeDriverProviderRef,
         Provider<StorPoolDefinitionDataDerbyDriver> storPoolDefDriverProviderRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = dbCtxRef;
@@ -77,13 +84,16 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         nodeDriverProvider = nodeDriverProviderRef;
         storPoolDefDriverProvider = storPoolDefDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
-    public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(StorPoolData storPoolData) throws SQLException
     {
         errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SP_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
             stmt.setString(2, storPoolData.getNode().getName().value);
@@ -95,25 +105,20 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public StorPoolData load(
-        Node node,
-        StorPoolDefinition storPoolDfn,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    public StorPoolData load(Node node, StorPoolDefinition storPoolDfn, boolean logWarnIfNotExists)
         throws SQLException
     {
         errorReporter.logTrace("Loading StorPool %s", getId(node, storPoolDfn));
         StorPoolData sp = cacheGet(node, storPoolDfn);
         if (sp == null)
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE_AND_SP))
+            try (PreparedStatement stmt = getConnection().prepareStatement(SP_SELECT_BY_NODE_AND_SP))
             {
                 stmt.setString(1, node.getName().value);
                 stmt.setString(2, storPoolDfn.getName().value);
                 try (ResultSet resultSet = stmt.executeQuery())
                 {
-                    List<StorPoolData> list = restore(node, resultSet, transMgr);
+                    List<StorPoolData> list = restore(node, resultSet);
                     if (list.isEmpty())
                     {
                         if (logWarnIfNotExists)
@@ -144,21 +149,18 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         return sp;
     }
 
-    public List<StorPoolData> loadStorPools(
-        NodeData node,
-        TransactionMgr transMgr
-    )
+    public List<StorPoolData> loadStorPools(NodeData node)
         throws SQLException
     {
         errorReporter.logTrace("Loading all StorPools for Node (NodeName=%s)", node.getName().value);
         List<StorPoolData> storPoolList = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SP_SELECT_BY_NODE))
         {
             stmt.setString(1, node.getName().value);
 
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                storPoolList = restore(node, resultSet, transMgr);
+                storPoolList = restore(node, resultSet);
             }
         }
         errorReporter.logTrace(
@@ -169,11 +171,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         return storPoolList;
     }
 
-    private List<StorPoolData> restore(
-        Node nodeRef,
-        ResultSet resultSet,
-        TransactionMgr transMgr
-    )
+    private List<StorPoolData> restore(Node nodeRef, ResultSet resultSet)
         throws SQLException
     {
         List<StorPoolData> storPoolList = new ArrayList<>();
@@ -223,7 +221,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         invalidNameExc
                     );
                 }
-                node = nodeDriverProvider.get().load(nodeName, true, transMgr);
+                node = nodeDriverProvider.get().load(nodeName, true);
             }
 
             StorPoolData storPoolData = cacheGet(node, storPoolName);
@@ -231,8 +229,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             {
                 StorPoolDefinitionData storPoolDef = storPoolDefDriverProvider.get().load(
                     storPoolName,
-                    true,
-                    transMgr
+                    true
                 );
 
                 try
@@ -245,9 +242,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         resultSet.getString(SP_DRIVER),
                         // controller should not have an instance of storage driver.
                         false,
-                        transMgr,
                         this,
-                        propsContainerFactory
+                        propsContainerFactory,
+                        transObjFactory,
+                        transMgrProvider
                     );
                 }
                 catch (AccessDeniedException accDeniedExc)
@@ -268,8 +266,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
                 // restore volumes
                 List<VolumeData> volumes = volumeDriverProvider.get().getVolumesByStorPool(
-                    storPoolData,
-                    transMgr
+                    storPoolData
                 );
                 try
                 {
@@ -299,10 +296,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException
+    public void delete(StorPoolData storPool) throws SQLException
     {
         errorReporter.logTrace("Deleting StorPool %s", getId(storPool));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SP_DELETE))
         {
             Node node = storPool.getNode();
             StorPoolDefinition storPoolDfn = storPool.getDefinition(dbCtx);
@@ -320,12 +317,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public void ensureEntryExists(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
+    public void ensureEntryExists(StorPoolData storPoolData) throws SQLException
     {
         errorReporter.logTrace("Ensuring StorPool exists %s", getId(storPoolData));
         Node node = storPoolData.getNode();
         StorPoolDefinition storPoolDfn;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE_AND_SP);)
+        try (PreparedStatement stmt = getConnection().prepareStatement(SP_SELECT_BY_NODE_AND_SP);)
         {
             storPoolDfn = storPoolData.getDefinition(dbCtx);
 
@@ -336,7 +333,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             {
                 if (!resultSet.next())
                 {
-                    create(storPoolData, transMgr);
+                    create(storPoolData);
                 }
                 else
                 {
@@ -379,6 +376,11 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             );
         }
         return ret;
+    }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
     }
 
     private String getId(StorPoolData storPoolData)

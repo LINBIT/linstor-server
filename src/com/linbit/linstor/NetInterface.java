@@ -1,8 +1,8 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionObject;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.UUID;

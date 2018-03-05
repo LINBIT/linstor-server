@@ -7,10 +7,10 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
@@ -25,6 +25,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
+
 import org.slf4j.event.Level;
 
 import javax.inject.Named;
@@ -65,6 +68,7 @@ public final class ControllerNetComInitializer
     private final ConnectionObserver ctrlConnTracker;
     private final NetComContainer netComContainer;
     private final Map<ServiceName, SystemService> systemServicesMap;
+    private final LinStorScope initScope;
 
     @Inject
     public ControllerNetComInitializer(
@@ -76,7 +80,8 @@ public final class ControllerNetComInitializer
         CommonMessageProcessor msgProcRef,
         CtrlConnTracker ctrlConnTrackerRef,
         NetComContainer netComContainerRef,
-        Map<ServiceName, SystemService> systemServicesMapRef
+        Map<ServiceName, SystemService> systemServicesMapRef,
+        LinStorScope initScopeRef
     )
     {
         errorReporter = errorReporterRef;
@@ -88,9 +93,10 @@ public final class ControllerNetComInitializer
         ctrlConnTracker = ctrlConnTrackerRef;
         netComContainer = netComContainerRef;
         systemServicesMap = systemServicesMapRef;
+        initScope = initScopeRef;
     }
 
-    public boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef) 
+    public boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef)
         throws SystemServiceStopException
     {
         ServiceName serviceName;
@@ -283,10 +289,14 @@ public final class ControllerNetComInitializer
                     TransactionMgr transMgr = null;
                     try
                     {
-                        transMgr = new TransactionMgr(dbConnPool);
-                        ctrlConf.setConnection(transMgr);
+                        transMgr = new ControllerTransactionMgr(dbConnPool);
+                        initScope.enter();
+                        initScope.seed(TransactionMgr.class, transMgr);
+
                         ctrlConf.setProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, serviceName.displayValue);
+
                         transMgr.commit();
+                        initScope.exit();
                     }
                     catch (SQLException sqlExc)
                     {
@@ -356,10 +366,14 @@ public final class ControllerNetComInitializer
                         TransactionMgr transMgr = null;
                         try
                         {
-                            transMgr = new TransactionMgr(dbConnPool);
-                            ctrlConf.setConnection(transMgr);
+                            transMgr = new ControllerTransactionMgr(dbConnPool);
+                            initScope.enter();
+                            initScope.seed(TransactionMgr.class, transMgr);
+
                             ctrlConf.setProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC, serviceName.displayValue);
+
                             transMgr.commit();
+                            initScope.exit();
                         }
                         catch (SQLException sqlExc)
                         {

@@ -1,8 +1,5 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.logging.ErrorReporter;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.sql.Connection;
@@ -99,15 +96,9 @@ public class DbDerbyPersistence implements DbAccessor
         "INSERT INTO " + TBL_SEC_CONFIGURATION + " (" + ENTRY_KEY + ", " + ENTRY_DSP_KEY + ", " + ENTRY_VALUE +
         ") VALUES('" + SecurityDbConsts.KEY_AUTH_REQ + "', '" + SecurityDbConsts.KEY_DSP_AUTH_REQ + "', ?)";
 
-    private final ObjectProtectionDatabaseDriver objProtDriver;
-
     @Inject
-    public DbDerbyPersistence(
-        @SystemContext AccessContext privCtx,
-        ErrorReporter errorReporter
-    )
+    public DbDerbyPersistence()
     {
-        objProtDriver = new ObjectProtectionDerbyDriver(privCtx, errorReporter);
     }
 
     @Override
@@ -179,14 +170,15 @@ public class DbDerbyPersistence implements DbAccessor
         try
         {
             // Delete any existing security level entry
+            try (Statement delStmt = dbConn.createStatement())
             {
-                Statement delStmt = dbConn.createStatement();
+
                 delStmt.execute(DEL_SEC_LEVEL);
             }
 
             // Insert the new security level entry
+            try (PreparedStatement insStmt = dbConn.prepareStatement(INS_SEC_LEVEL))
             {
-                PreparedStatement insStmt = dbConn.prepareStatement(INS_SEC_LEVEL);
                 insStmt.setString(1, newLevel.name().toUpperCase());
                 insStmt.execute();
             }
@@ -205,14 +197,14 @@ public class DbDerbyPersistence implements DbAccessor
         try
         {
             // Delete any existing authentication requirement entry
+            try (Statement delStmt = dbConn.createStatement())
             {
-                Statement delStmt = dbConn.createStatement();
                 delStmt.execute(DEL_AUTH_REQUIRED);
             }
 
             // Insert the new authentication requirement
+            try (PreparedStatement insStmt = dbConn.prepareStatement(INS_AUTH_REQUIRED))
             {
-                PreparedStatement insStmt = dbConn.prepareStatement(INS_AUTH_REQUIRED);
 
                 String dbValue = requiredFlag ? Boolean.toString(true) : Boolean.toString(false);
                 insStmt.setString(1, dbValue);

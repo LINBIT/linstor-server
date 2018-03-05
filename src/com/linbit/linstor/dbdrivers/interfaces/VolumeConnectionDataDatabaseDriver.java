@@ -1,14 +1,12 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
+import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link com.linbit.linstor.VolumeConnectionData}.
@@ -29,8 +27,6 @@ public interface VolumeConnectionDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  Used to restore references, like {@link com.linbit.linstor.Node}, {@link com.linbit.linstor.Resource}, and so on
      *
      * @return
      *  An instance which contains valid references, but is not
@@ -38,12 +34,7 @@ public interface VolumeConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    VolumeConnectionData load(
-        Volume sourceVolume,
-        Volume targetVolume,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    VolumeConnectionData load(Volume sourceVolume, Volume targetVolume, boolean logWarnIfNotExists)
         throws SQLException;
 
     /**
@@ -53,8 +44,6 @@ public interface VolumeConnectionDataDatabaseDriver
      * <br>
      * @param volume
      *  Part of the primary key specifying the database entry
-     * @param transMgr
-     *  Used to restore references, like {@link com.linbit.linstor.Node}, {@link com.linbit.linstor.Resource}, and so on
      *
      * @return
      *  A list of instances which contain valid references, but are not
@@ -62,32 +51,25 @@ public interface VolumeConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    List<VolumeConnectionData> loadAllByVolume(
-        Volume volume,
-        TransactionMgr transMgr
-    )
-        throws SQLException;
-
+    List<VolumeConnectionData> loadAllByVolume(Volume volume) throws SQLException;
 
     /**
      * Persists the given {@link com.linbit.linstor.VolumeConnectionData} into the database.
      *
      * @param conDfnData
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
+    void create(VolumeConnectionData conDfnData) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.VolumeConnectionData} from the database
      *
      * @param conDfnData
      *  The data identifying the database entry to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
+    void delete(VolumeConnectionData conDfnData) throws SQLException;
 }

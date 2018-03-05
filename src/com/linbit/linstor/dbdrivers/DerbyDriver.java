@@ -3,7 +3,6 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataDerbyDriver;
@@ -22,6 +21,7 @@ import com.linbit.linstor.VolumeDataDerbyDriver;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -88,25 +88,25 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     @Override
-    public void loadAll(TransactionMgr transMgr) throws SQLException
+    public void loadAll() throws SQLException
     {
         // order is somewhat important here, storage pool definitions should be loaded first
         // and added to the storPoolDfnMap, otherwise the later node loading will not correctly
         // link its storage pools with the definitions.
 
-        List<StorPoolDefinitionData> storPoolDfnList = storPoolDefinitionDriver.loadAll(transMgr);
+        List<StorPoolDefinitionData> storPoolDfnList = storPoolDefinitionDriver.loadAll();
         for (StorPoolDefinition curStorPoolDfn : storPoolDfnList)
         {
             storPoolDfnMap.put(curStorPoolDfn.getName(), curStorPoolDfn);
         }
 
-        List<NodeData> nodeList = nodeDriver.loadAll(transMgr);
+        List<NodeData> nodeList = nodeDriver.loadAll();
         for (Node curNode : nodeList)
         {
             nodesMap.put(curNode.getName(), curNode);
         }
 
-        List<ResourceDefinitionData> rscDfnList = resesourceDefinitionDriver.loadAll(transMgr);
+        List<ResourceDefinitionData> rscDfnList = resesourceDefinitionDriver.loadAll();
 
         nodeDriver.clearCache();
         resesourceDefinitionDriver.clearCache();

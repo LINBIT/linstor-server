@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -25,6 +24,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.StreamUtils;
 
 import java.util.ArrayList;
@@ -40,6 +40,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
@@ -59,7 +60,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlObjectFactories objectFactories,
-        CtrlRscApiCallHandler rscApiCallHandlerRef
+        CtrlRscApiCallHandler rscApiCallHandlerRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -68,7 +70,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_RSC,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         super.setNullOnAutoClose(
             currentRscName
@@ -115,7 +118,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 rscNameStr
             );
         )
@@ -213,7 +215,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                         Collections.emptyList(),
                         rscPropsMap,
                         Collections.emptyList(),
-                        currentTransMgr.get(),
+                        false, // createResource api should NOT autoClose the current transaction
+                        // we will close it when we are finished with the autoPlace
                         apiCallRc
                     );
                 }
@@ -395,7 +398,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String rscNameStr
     )
     {
@@ -404,7 +406,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             peer,
             type,
             apiCallRc,
-            transMgr,
+            true,
             getObjRefs(rscNameStr),
             getVariables(rscNameStr)
         );

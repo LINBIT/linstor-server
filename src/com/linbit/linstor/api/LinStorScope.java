@@ -32,14 +32,15 @@ import java.util.Map;
  *       .in(ApiCallScoped.class);
  * </code></pre>
  */
-public class ApiCallScope implements Scope
+public class LinStorScope implements Scope
 {
     private static final Provider<Object> SEEDED_KEY_PROVIDER =
         new Provider<Object>()
         {
+            @Override
             public Object get()
             {
-                throw new IllegalStateException("Not yet seeded in API call scope");
+                throw new IllegalStateException("Not yet seeded");
             }
         };
 
@@ -47,13 +48,13 @@ public class ApiCallScope implements Scope
 
     public void enter()
     {
-        checkState(values.get() == null, "An API call is already in progress");
+        checkState(values.get() == null, "The current scope has already been entered");
         values.set(Maps.<Key<?>, Object>newHashMap());
     }
 
     public void exit()
     {
-        checkState(values.get() != null, "No API call in progress");
+        checkState(values.get() != null, "There is no current scope to exit");
         values.remove();
     }
 
@@ -61,7 +62,7 @@ public class ApiCallScope implements Scope
     {
         Map<Key<?>, Object> scopedObjects = getScopedObjectMap(key);
         checkState(!scopedObjects.containsKey(key),
-            "A value for the key %s was already added to the API call scope. Old value: %s New value: %s",
+            "A value for the key %s was already added to the current scope. Old value: %s New value: %s",
             key, scopedObjects.get(key), value);
         scopedObjects.put(key, value);
     }
@@ -76,6 +77,7 @@ public class ApiCallScope implements Scope
     {
         return new Provider<T>()
         {
+            @Override
             public T get()
             {
                 Map<Key<?>, Object> scopedObjects = getScopedObjectMap(key);

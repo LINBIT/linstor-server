@@ -1,17 +1,17 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.StorageDriverLoader;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -19,15 +19,21 @@ public class StorPoolDataFactory
 {
     private final StorPoolDataDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public StorPoolDataFactory(
         StorPoolDataDatabaseDriver driverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public StorPoolData getInstance(
@@ -35,7 +41,6 @@ public class StorPoolDataFactory
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         String storDriverSimpleClassNameRef,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -45,7 +50,7 @@ public class StorPoolDataFactory
         storPoolDefRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         StorPoolData storPoolData = null;
 
-        storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
+        storPoolData = driver.load(nodeRef, storPoolDefRef, false);
 
         if (failIfExists && storPoolData != null)
         {
@@ -61,16 +66,16 @@ public class StorPoolDataFactory
                 storPoolDefRef,
                 storDriverSimpleClassNameRef,
                 false,
-                transMgr,
                 driver,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
-            driver.create(storPoolData, transMgr);
+            driver.create(storPoolData);
         }
         if (storPoolData != null)
         {
             storPoolData.initialized();
-            storPoolData.setConnection(transMgr);
         }
         return storPoolData;
     }
@@ -80,8 +85,7 @@ public class StorPoolDataFactory
         UUID uuid,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        String storDriverSimpleClassNameRef,
-        SatelliteTransactionMgr transMgr
+        String storDriverSimpleClassNameRef
     )
         throws ImplementationError
     {
@@ -89,7 +93,7 @@ public class StorPoolDataFactory
 
         try
         {
-            storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
+            storPoolData = driver.load(nodeRef, storPoolDefRef, false);
             if (storPoolData == null)
             {
                 storPoolData = new StorPoolData(
@@ -99,13 +103,13 @@ public class StorPoolDataFactory
                     storPoolDefRef,
                     storDriverSimpleClassNameRef,
                     true,
-                    transMgr,
                     driver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             storPoolData.initialized();
-            storPoolData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

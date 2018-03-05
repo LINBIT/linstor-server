@@ -6,8 +6,9 @@ import java.util.UUID;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionObject;
 
-public interface VolumeConnection extends DbgInstanceUuid
+public interface VolumeConnection extends DbgInstanceUuid, TransactionObject
 {
     UUID getUuid();
 

@@ -1,9 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ServiceName;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceDefinition;
-
 import java.sql.SQLException;
 
 /**
@@ -25,5 +23,5 @@ public interface DatabaseDriver
      *
      * @throws SQLException
      */
-    void loadAll(TransactionMgr transMgr) throws SQLException;
+    void loadAll() throws SQLException;
 }

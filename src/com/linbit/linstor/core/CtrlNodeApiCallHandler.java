@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -47,9 +46,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -91,10 +93,19 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef
+        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        super(errorReporterRef, dbConnectionPoolRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer, objectFactories);
+        super(
+            errorReporterRef,
+            dbConnectionPoolRef,
+            apiCtxRef,
+            ApiConsts.MASK_NODE,
+            interComSerializer,
+            objectFactories,
+            transMgrProviderRef
+        );
         super.setNullOnAutoClose(
             currentNodeName,
             currentNodeType
@@ -167,7 +178,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new TransactionMgr
                 nodeNameStr,
                 nodeTypeStr
             )
@@ -263,7 +273,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null, // create transMgr
                 nodeNameStr,
                 nodeTypeStr
             )
@@ -327,7 +336,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null,
                 nodeNameStr,
                 null
             )
@@ -657,7 +665,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 nodeName,
                 type,
                 new NodeFlag[0],
-                currentTransMgr.get(),
                 true,
                 true
             );
@@ -758,7 +765,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 node,
                 netName,
                 addr,
-                currentTransMgr.get(),
                 true,   // persist node
                 true    // throw LinStorDataAlreadyExistsException if needed
             );
@@ -809,7 +815,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 netIf,
                 stltNetIfPort,
                 stltNetIfEncryptionType,
-                currentTransMgr.get(),
                 true,
                 true
             );
@@ -872,7 +877,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rsc.setConnection(currentTransMgr.get());
             rsc.markDeleted(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
@@ -926,7 +930,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPool.setConnection(currentTransMgr.get());
             storPool.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
@@ -1017,7 +1020,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType apiCallType,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String nodeNameStr,
         String nodeTypeStr
     )
@@ -1027,7 +1029,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             client,
             apiCallType,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(nodeNameStr),
             getVariables(nodeNameStr)
         );

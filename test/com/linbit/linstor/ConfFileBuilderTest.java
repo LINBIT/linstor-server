@@ -45,6 +45,7 @@ public class ConfFileBuilderTest
         dummyObjectProtection = DummySecurityInitializer.getDummyObjectProtection(accessContext);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testMatchingBraceCounts()
         throws Exception
@@ -62,6 +63,7 @@ public class ConfFileBuilderTest
         assertThat(leftBraceCount).isEqualTo(rightBraceCount);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testKeywordOccurrences()
         throws Exception
@@ -87,6 +89,7 @@ public class ConfFileBuilderTest
         assertThat(countOccurrences(confFile, "^ *host ")).isEqualTo(2);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testDeletedVolume()
         throws Exception
@@ -109,6 +112,7 @@ public class ConfFileBuilderTest
         assertThat(countOccurrences(confFileDeleted, "^ *volume ")).isEqualTo(0);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testDeletedPeerResource()
         throws Exception
@@ -133,6 +137,7 @@ public class ConfFileBuilderTest
         assertThat(countOccurrences(confFileDeleted, "^ *connection")).isEqualTo(0);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private Resource makeMockResource(
         final int volumeNumber,
         final String ipAddr,
@@ -162,7 +167,9 @@ public class ConfFileBuilderTest
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
         when(volumeDefinition.getMinorNr(any(AccessContext.class))).thenReturn(new MinorNumber(99));
 
-        when(volumeFlags.isUnset(any(AccessContext.class), varArgEq(new Volume.VlmFlags[]{Volume.VlmFlags.DELETE, VlmFlags.CLEAN})))
+        when(volumeFlags.isUnset(
+            any(AccessContext.class),
+            varArgEq(new Volume.VlmFlags[] { Volume.VlmFlags.DELETE, VlmFlags.CLEAN } )))
             .thenReturn(!volumeDeleted);
 
         when(volume.getFlags()).thenReturn(volumeFlags);

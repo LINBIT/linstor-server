@@ -1,4 +1,6 @@
-package com.linbit;
+package com.linbit.linstor.transaction;
+
+import com.linbit.ImplementationError;
 
 public interface TransactionObject
 {

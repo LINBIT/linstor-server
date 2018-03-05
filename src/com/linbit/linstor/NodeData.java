@@ -1,10 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionMap;
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionObject;
-import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -18,8 +14,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 /**
  *
@@ -87,12 +89,14 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeName nameRef,
         NodeType type,
         long initialFlags,
-        TransactionMgr transMgr,
         NodeDataDatabaseDriver dbDriverRef,
-        PropsContainerFactory propsContainerFactory
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProvider
     )
         throws SQLException, AccessDeniedException
     {
+        super(transMgrProvider);
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
 
         objId = uuidRef;
@@ -101,26 +105,31 @@ public class NodeData extends BaseTransactionObject implements Node
         clNodeName = nameRef;
         dbDriver = dbDriverRef;
 
-        resourceMap = new TransactionMap<>(new TreeMap<ResourceName, Resource>(), null);
-        netInterfaceMap = new TransactionMap<>(new TreeMap<NetInterfaceName, NetInterface>(), null);
-        storPoolMap = new TransactionMap<>(new TreeMap<StorPoolName, StorPool>(), null);
-        deleted = new TransactionSimpleObject<>(this, false, null);
+        resourceMap = transObjFactory.createTransactionMap(new TreeMap<ResourceName, Resource>(), null);
+        netInterfaceMap = transObjFactory.createTransactionMap(new TreeMap<NetInterfaceName, NetInterface>(), null);
+        storPoolMap = transObjFactory.createTransactionMap(new TreeMap<StorPoolName, StorPool>(), null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         nodeProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(nameRef),
-            transMgr
+            PropsContainer.buildPath(nameRef)
         );
-        nodeConnections = new TransactionMap<>(new HashMap<Node, NodeConnection>(), null);
+        nodeConnections = transObjFactory.createTransactionMap(new HashMap<Node, NodeConnection>(), null);
 
-        flags = new NodeFlagsImpl(this, objProt, dbDriver.getStateFlagPersistence(), initialFlags);
+        flags = transObjFactory.createStateFlagsImpl(
+            objProt,
+            this,
+            NodeFlag.class,
+            dbDriver.getStateFlagPersistence(),
+            initialFlags
+        );
 
         // Default to creating an AUXILIARY type node
         NodeType checkedType = type == null ? NodeType.AUXILIARY : type;
-        nodeType = new TransactionSimpleObject<NodeData, Node.NodeType>(
+        nodeType = transObjFactory.createTransactionSimpleObject(
             this, checkedType, dbDriver.getNodeTypeDriver()
         );
 
-        satelliteConnection = new TransactionSimpleObject<NodeData, SatelliteConnection>(this, null, null);
+        satelliteConnection = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             flags,
@@ -134,6 +143,7 @@ public class NodeData extends BaseTransactionObject implements Node
             deleted,
             satelliteConnection
         );
+        activateTransMgr();
     }
 
     @Override
@@ -470,9 +480,10 @@ public class NodeData extends BaseTransactionObject implements Node
             }
 
             nodeProps.delete();
-
             objProt.delete(accCtx);
-            dbDriver.delete(this, transMgr);
+
+            activateTransMgr();
+            dbDriver.delete(this);
 
             deleted.set(true);
         }
@@ -561,18 +572,5 @@ public class NodeData extends BaseTransactionObject implements Node
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
-    }
-
-    private static final class NodeFlagsImpl extends StateFlagsBits<NodeData, NodeFlag>
-    {
-        NodeFlagsImpl(
-            NodeData parent,
-            ObjectProtection objProtRef,
-            StateFlagsPersistence<NodeData> persistenceRef,
-            long initialFlags
-        )
-        {
-            super(objProtRef, parent, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef, initialFlags);
-        }
     }
 }

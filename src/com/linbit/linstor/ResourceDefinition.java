@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.TransactionObject;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.propscon.Props;
@@ -10,6 +9,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;

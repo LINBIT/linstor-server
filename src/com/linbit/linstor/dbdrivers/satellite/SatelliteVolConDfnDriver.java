@@ -1,13 +1,11 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
@@ -26,10 +24,8 @@ public class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDri
     public VolumeConnectionData load(
         Volume sourceVolume,
         Volume targetVolume,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
-
     {
         VolumeConnectionData volumeConnection = null;
         try
@@ -44,23 +40,19 @@ public class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDri
     }
 
     @Override
-    public List<VolumeConnectionData> loadAllByVolume(
-        Volume volume,
-        TransactionMgr transMgr
-    )
-
+    public List<VolumeConnectionData> loadAllByVolume(Volume volume)
     {
         return Collections.emptyList();
     }
 
     @Override
-    public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr)
+    public void create(VolumeConnectionData conDfnData)
     {
         // no-op
     }
 
     @Override
-    public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr)
+    public void delete(VolumeConnectionData conDfnData)
     {
         // no-op
     }

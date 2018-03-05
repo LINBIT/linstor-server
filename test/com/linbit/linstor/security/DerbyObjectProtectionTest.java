@@ -1,7 +1,6 @@
 package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
 import org.junit.Test;
 
@@ -41,10 +40,11 @@ public class DerbyObjectProtectionTest extends DerbyBase
     {
         @SuppressWarnings("resource")
         final Connection con = getConnection();
-        final TransactionMgr transMgr = new TransactionMgr(con);
 
         final String objPath = "testPath";
-        objectProtectionFactory.getInstance(SYS_CTX, objPath, true, transMgr);
+        objectProtectionFactory.getInstance(SYS_CTX, objPath, true);
+
+        commit();
 
         final PreparedStatement stmt = con.prepareStatement(OP_SELECT);
         stmt.setString(1, objPath);
@@ -66,10 +66,6 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
     public void testCreateUnknownIdObjProt() throws Exception
     {
-        @SuppressWarnings("resource")
-        final Connection con = getConnection();
-        final TransactionMgr transMgr = new TransactionMgr(con);
-
         final String objPath = "testPath";
 
         AccessContext accCtx = new AccessContext(
@@ -78,17 +74,13 @@ public class DerbyObjectProtectionTest extends DerbyBase
             SYS_CTX.subjectDomain,
             SYS_CTX.privEffective
         );
-        objectProtectionFactory.getInstance(accCtx, objPath, true, transMgr);
+        objectProtectionFactory.getInstance(accCtx, objPath, true);
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
     @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
     public void testCreateUnknownRoleObjProt() throws Exception
     {
-        @SuppressWarnings("resource")
-        final Connection con = getConnection();
-        final TransactionMgr transMgr = new TransactionMgr(con);
-
         final String objPath = "testPath";
 
         AccessContext accCtx = new AccessContext(
@@ -97,17 +89,13 @@ public class DerbyObjectProtectionTest extends DerbyBase
             SYS_CTX.subjectDomain,
             SYS_CTX.privEffective
         );
-        objectProtectionFactory.getInstance(accCtx, objPath, true, transMgr);
+        objectProtectionFactory.getInstance(accCtx, objPath, true);
         fail("Creating an ObjectProtection with an unknown role should have failed");
     }
 
     @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
     public void testCreateUnknownSecTypeObjProt() throws Exception
     {
-        @SuppressWarnings("resource")
-        final Connection con = getConnection();
-        final TransactionMgr transMgr = new TransactionMgr(con);
-
         final String objPath = "testPath";
 
         AccessContext accCtx = new AccessContext(
@@ -116,15 +104,15 @@ public class DerbyObjectProtectionTest extends DerbyBase
             new SecurityType(new SecTypeName("UNKNOWN")),
             SYS_CTX.privEffective
         );
-        objectProtectionFactory.getInstance(accCtx, objPath, true, transMgr);
+        objectProtectionFactory.getInstance(accCtx, objPath, true);
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"checkstyle:magicnumber"})
     @Test
     public void testLoadSimpleObjProt() throws SQLException, AccessDeniedException
     {
-        Connection con = getConnection();
+        Connection con = getNewConnection();
         PreparedStatement stmt = con.prepareStatement(OP_INSERT);
         final String objPath = "testPath";
         stmt.setString(1, objPath);
@@ -137,27 +125,22 @@ public class DerbyObjectProtectionTest extends DerbyBase
         con.commit();
         con.close();
 
-        con = getConnection();
-        TransactionMgr transMgr = new TransactionMgr(con);
-        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, false, transMgr);
+        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, false);
 
         assertEquals(SYS_CTX.subjectId, objProt.getCreator());
         assertEquals(SYS_CTX.subjectRole, objProt.getOwner());
         assertEquals(SYS_CTX.subjectDomain, objProt.getSecurityType());
     }
 
-
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testAddAcl() throws SQLException, AccessDeniedException, InvalidNameException
     {
         @SuppressWarnings("resource")
         Connection con = getConnection();
-        TransactionMgr transMgr = new TransactionMgr(con);
 
         final String objPath = "testPath";
 
-        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, true, transMgr);
-        objProt.setConnection(transMgr);
         Role testRole = Role.create(SYS_CTX, new RoleName("test"));
 
         PreparedStatement stmt = con.prepareStatement(ROLES_INSERT);
@@ -169,8 +152,10 @@ public class DerbyObjectProtectionTest extends DerbyBase
         stmt.executeUpdate();
         stmt.close();
 
+        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, true);
         objProt.addAclEntry(SYS_CTX, testRole, AccessType.CHANGE);
-        transMgr.commit();
+
+        commit();
 
         stmt = con.prepareStatement(ACL_SELECT_BY_OBJPATH_AND_ROLE);
         stmt.setString(1, objPath);
@@ -192,16 +177,18 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test
     public void testRemoveAcl() throws Exception
     {
-        @SuppressWarnings("resource")
-        Connection con = getConnection();
-        TransactionMgr transMgr = new TransactionMgr(con);
-
         final String objPath = "testPath";
-        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, true, transMgr);
-        objProt.setConnection(transMgr);
+        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, true);
         objProt.addAclEntry(SYS_CTX, SYS_CTX.subjectRole, AccessType.CHANGE);
 
+        commit();
+
         objProt.delAclEntry(SYS_CTX, SYS_CTX.subjectRole);
+
+        commit();
+
+        @SuppressWarnings("resource")
+        Connection con = getConnection();
 
         PreparedStatement stmt = con.prepareStatement(ACL_SELECT);
         stmt.setString(1, objPath);
@@ -213,11 +200,11 @@ public class DerbyObjectProtectionTest extends DerbyBase
         stmt.close();
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test
     public void testLoadObjProtWithAcl() throws Exception
     {
-        Connection con = getConnection();
+        Connection con = getNewConnection();
 
         final String objPath = "testPath";
 
@@ -239,9 +226,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         con.commit();
         con.close();
 
-        con = getConnection();
-        TransactionMgr transMgr = new TransactionMgr(con);
-        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, false, transMgr);
+        ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, false);
 
         assertEquals(AccessType.CHANGE, objProt.getAcl().getEntry(SYS_CTX));
     }

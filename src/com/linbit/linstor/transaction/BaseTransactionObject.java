@@ -1,14 +1,17 @@
-package com.linbit.linstor;
+package com.linbit.linstor.transaction;
 
 import java.util.List;
 
-import com.linbit.TransactionMgr;
-import com.linbit.TransactionObject;
-import com.linbit.AbsTransactionObject;
+import javax.inject.Provider;
 
 public abstract class BaseTransactionObject extends AbsTransactionObject
 {
     protected List<TransactionObject> transObjs;
+
+    public BaseTransactionObject(Provider<TransactionMgr> transMgrProvider)
+    {
+        super(transMgrProvider);
+    }
 
     @Override
     public void initialized()
@@ -24,31 +27,8 @@ public abstract class BaseTransactionObject extends AbsTransactionObject
     }
 
     @Override
-    public void postSetConnection(TransactionMgr transMgr)
-    {
-        if (transMgr == null)
-        {
-            for (TransactionObject to : transObjs)
-            {
-                to.setConnection(transMgr);
-            }
-        }
-        else
-        {
-            for (TransactionObject to : transObjs)
-            {
-                if (!transMgr.isRegistered(to)) // avoid infinite recursion
-                {
-                    to.setConnection(transMgr);
-                }
-            }
-        }
-    }
-
-    @Override
     public void commitImpl()
     {
-        assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         for (TransactionObject transObj : transObjs)
         {
             if (transObj.isDirty())
@@ -61,7 +41,6 @@ public abstract class BaseTransactionObject extends AbsTransactionObject
     @Override
     public void rollbackImpl()
     {
-        assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         for (TransactionObject transObj : transObjs)
         {
             if (transObj.isDirty())

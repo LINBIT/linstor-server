@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnectionData;
@@ -10,7 +9,6 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 import java.sql.SQLException;
 
@@ -28,8 +26,7 @@ public class SatelliteConnectionDriver implements SatelliteConnectionDataDatabas
     @Override
     public SatelliteConnectionData load(
         Node node,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
         throws SQLException
     {
@@ -46,13 +43,13 @@ public class SatelliteConnectionDriver implements SatelliteConnectionDataDatabas
     }
 
     @Override
-    public void create(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
+    public void create(SatelliteConnection satelliteConnectionData) throws SQLException
     {
         // no-op
     }
 
     @Override
-    public void delete(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
+    public void delete(SatelliteConnection satelliteConnectionData) throws SQLException
     {
         // no-op
     }
@@ -66,9 +63,11 @@ public class SatelliteConnectionDriver implements SatelliteConnectionDataDatabas
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<SatelliteConnectionData, SatelliteConnection.EncryptionType> getSatelliteConnectionTypeDriver()
+    public SingleColumnDatabaseDriver<SatelliteConnectionData, SatelliteConnection.EncryptionType>
+        getSatelliteConnectionTypeDriver()
     {
-        return (SingleColumnDatabaseDriver<SatelliteConnectionData, SatelliteConnection.EncryptionType>) singleColDriver;
+        return (SingleColumnDatabaseDriver<SatelliteConnectionData, SatelliteConnection.EncryptionType>)
+            singleColDriver;
     }
 
 }

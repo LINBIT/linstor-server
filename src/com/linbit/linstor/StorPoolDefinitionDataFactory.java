@@ -1,16 +1,18 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.SatelliteTransactionMgr;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -19,23 +21,28 @@ public class StorPoolDefinitionDataFactory
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public StorPoolDefinitionDataFactory(
         StorPoolDefinitionDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public StorPoolDefinitionData getInstance(
         AccessContext accCtx,
         StorPoolName nameRef,
-        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -43,7 +50,7 @@ public class StorPoolDefinitionDataFactory
     {
         StorPoolDefinitionData storPoolDfn = null;
 
-        storPoolDfn = dbDriver.load(nameRef, false, transMgr);
+        storPoolDfn = dbDriver.load(nameRef, false);
 
         if (failIfExists && storPoolDfn != null)
         {
@@ -57,21 +64,21 @@ public class StorPoolDefinitionDataFactory
                 objectProtectionFactory.getInstance(
                     accCtx,
                     ObjectProtection.buildPathSPD(nameRef),
-                    true,
-                    transMgr
+                    true
                 ),
                 nameRef,
                 dbDriver,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
 
-            dbDriver.create(storPoolDfn, transMgr);
+            dbDriver.create(storPoolDfn);
         }
 
         if (storPoolDfn != null)
         {
             storPoolDfn.initialized();
-            storPoolDfn.setConnection(transMgr);
         }
 
         return storPoolDfn;
@@ -80,8 +87,7 @@ public class StorPoolDefinitionDataFactory
     public StorPoolDefinitionData getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
-        StorPoolName nameRef,
-        SatelliteTransactionMgr transMgr
+        StorPoolName nameRef
     )
         throws ImplementationError
     {
@@ -89,7 +95,7 @@ public class StorPoolDefinitionDataFactory
 
         try
         {
-            storPoolDfn = dbDriver.load(nameRef, false, transMgr);
+            storPoolDfn = dbDriver.load(nameRef, false);
             if (storPoolDfn == null)
             {
                 storPoolDfn = new StorPoolDefinitionData(
@@ -97,16 +103,16 @@ public class StorPoolDefinitionDataFactory
                     objectProtectionFactory.getInstance(
                         accCtx,
                         "",
-                        true,
-                        transMgr
+                        true
                     ),
                     nameRef,
                     dbDriver,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
             }
             storPoolDfn.initialized();
-            storPoolDfn.setConnection(transMgr);
         }
         catch (Exception exc)
         {

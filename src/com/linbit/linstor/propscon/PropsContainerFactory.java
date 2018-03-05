@@ -1,30 +1,37 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Map;
 
 public class PropsContainerFactory
 {
     private final PropsConDatabaseDriver dbDriver;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public PropsContainerFactory(PropsConDatabaseDriver dbDriverRef)
+    public PropsContainerFactory(
+        PropsConDatabaseDriver dbDriverRef,
+        Provider<TransactionMgr> transMgrProviderRef
+    )
     {
         dbDriver = dbDriverRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
-    public PropsContainer getInstance(String instanceName, TransactionMgr transMgr) throws SQLException
+    public PropsContainer getInstance(String instanceName) throws SQLException
     {
         PropsContainer container;
         try
         {
-            container = new PropsContainer(null, null, dbDriver);
+            container = new PropsContainer(null, null, dbDriver, transMgrProvider);
         }
         catch (InvalidKeyException keyExc)
         {
@@ -38,13 +45,12 @@ public class PropsContainerFactory
 
         container.instanceName = instanceName;
 
-        if (transMgr != null)
+        if (transMgrProvider.get() != null)
         {
-            container.setConnection(transMgr);
-
+            // container.setConnection(transMgr); // TODO this should not be needed, or committed at the end
             try
             {
-                Map<String, String> loadedProps = dbDriver.load(instanceName, transMgr);
+                Map<String, String> loadedProps = dbDriver.load(instanceName);
                 for (Map.Entry<String, String> entry : loadedProps.entrySet())
                 {
                     String key = entry.getKey();

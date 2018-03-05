@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -36,12 +35,15 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.inject.Provider;
 
 abstract class AbsApiCallHandler implements AutoCloseable
 {
@@ -65,7 +67,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final ThreadLocal<Peer> currentClient = new ThreadLocal<>();
     protected final ThreadLocal<ApiCallType> currentApiCallType = new ThreadLocal<>();
     protected final ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
-    protected final ThreadLocal<TransactionMgr> currentTransMgr = new ThreadLocal<>();
     private final ThreadLocal<Boolean> currentTransMgrAutoClose = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentObjRefs = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
@@ -76,6 +77,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final CtrlStltSerializer internalComSerializer;
     private final CtrlObjectFactories objectFactories;
 
+    private final Provider<TransactionMgr> transMgrProvider;
+
     private ThreadLocal<?>[] customThreadLocals;
 
 
@@ -85,7 +88,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
         AccessContext apiCtxRef,
         long objMaskRef,
         CtrlStltSerializer serializerRef,
-        CtrlObjectFactories objectFactoriesRef
+        CtrlObjectFactories objectFactoriesRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -94,6 +98,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         objMask = objMaskRef;
         internalComSerializer = serializerRef;
         objectFactories = objectFactoriesRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocalsRef)
@@ -106,7 +111,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
+        boolean autoCloseTransMgr,
         Map<String, String> objRefs,
         Map<String, String> vars
     )
@@ -115,16 +120,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         currentClient.set(client);
         currentApiCallType.set(type);
         currentApiCallRc.set(apiCallRc);
-        if (transMgr == null)
-        {
-            currentTransMgr.set(createNewTransMgr());
-            currentTransMgrAutoClose.set(true);
-        }
-        else
-        {
-            currentTransMgr.set(transMgr);
-            currentTransMgrAutoClose.set(false);
-        }
+        currentTransMgrAutoClose.set(autoCloseTransMgr);
         currentObjRefs.set(objRefs);
         currentVariables.set(vars);
         return this;
@@ -136,7 +132,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
         boolean autoCloseTransMgr = currentTransMgrAutoClose.get();
         if (autoCloseTransMgr)
         {
-            rollbackIfDirty();
+            rollbackIfDirty(); // also returns the transMgr to dbConnPool
+            // (i.e. closes the db connection)
         }
 
         currentAccCtx.set(null);
@@ -144,8 +141,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
         currentApiCallType.set(null);
         currentApiCallRc.set(null);
         currentObjRefs.set(null);
-        TransactionMgr transMgr = currentTransMgr.get();
-        currentTransMgr.set(null);
         currentTransMgrAutoClose.set(true);
         currentVariables.set(null);
 
@@ -155,10 +150,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
             {
                 customThreadLocal.set(null);
             }
-        }
-        if (transMgr != null && autoCloseTransMgr)
-        {
-            dbConnPool.returnConnection(transMgr);
         }
     }
 
@@ -421,7 +412,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 nodeName,
                 null,
                 null,
-                currentTransMgr.get(),
                 false,
                 false
             );
@@ -478,10 +468,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = objectFactories.getResourceDefinitionDataFactory().load(
-                rscName,
-                currentTransMgr.get()
-            );
+            rscDfn = objectFactories.getResourceDefinitionDataFactory().load(rscName);
 
             if (failIfNull && rscDfn == null)
             {
@@ -519,7 +506,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 node,
                 null,
                 null,
-                currentTransMgr.get(),
                 false,
                 false
             );
@@ -579,7 +565,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
             storPoolDfn = objectFactories.getStorPoolDefinitionDataFactory().getInstance(
                 currentAccCtx.get(),
                 storPoolName,
-                currentTransMgr.get(),
                 false,
                 false
             );
@@ -638,7 +623,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 node,
                 storPoolDfn,
                 null, // storDriverSimpleClassName
-                currentTransMgr.get(),
                 false,
                 false
             );
@@ -1351,25 +1335,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
         );
     }
 
-    protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
-    {
-        TransactionMgr transactionMgr;
-        try
-        {
-            transactionMgr = new TransactionMgr(dbConnPool.getConnection());
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(sqlExc, "creating a new transaction manager");
-        }
-        return transactionMgr;
-    }
-
     protected final void commit() throws ApiCallHandlerFailedException
     {
         try
         {
-            currentTransMgr.get().commit();
+            transMgrProvider.get().commit();
         }
         catch (SQLException sqlExc)
         {
@@ -1383,32 +1353,25 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected void rollbackIfDirty()
     {
-        TransactionMgr transMgr = currentTransMgr.get();
+        TransactionMgr transMgr = transMgrProvider.get();
         if (transMgr != null)
         {
-            try
+            if (transMgr.isDirty())
             {
-                if (transMgr.isDirty())
+                try
                 {
-                    try
-                    {
-                        transMgr.rollback();
-                    }
-                    catch (SQLException sqlExc)
-                    {
-                        report(
-                            sqlExc,
-                            "A database error occured while trying to rollback the " +
-                            getAction("creation", "modification", "deletion") +
-                            " of " + getObjectDescriptionInline() + ".",
-                            ApiConsts.FAIL_SQL_ROLLBACK
-                        );
-                    }
+                    transMgr.rollback();
                 }
-            }
-            finally
-            {
-                dbConnPool.returnConnection(transMgr);
+                catch (SQLException sqlExc)
+                {
+                    report(
+                        sqlExc,
+                        "A database error occured while trying to rollback the " +
+                        getAction("creation", "modification", "deletion") +
+                        " of " + getObjectDescriptionInline() + ".",
+                        ApiConsts.FAIL_SQL_ROLLBACK
+                    );
+                }
             }
         }
     }

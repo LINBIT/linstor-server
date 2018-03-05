@@ -1,18 +1,29 @@
 package com.linbit.linstor.security;
 
-import com.linbit.TransactionMgr;
-
 import javax.inject.Inject;
+import javax.inject.Provider;
+
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import java.sql.SQLException;
 
 public class ObjectProtectionFactory
 {
     private final ObjectProtectionDatabaseDriver dbDriver;
+    private final Provider<TransactionMgr> transMgrProvider;
+    private final TransactionObjectFactory transObjFactory;
 
     @Inject
-    public ObjectProtectionFactory(ObjectProtectionDatabaseDriver dbDriverRef)
+    public ObjectProtectionFactory(
+        ObjectProtectionDatabaseDriver dbDriverRef,
+        Provider<TransactionMgr> transMgrProviderRef,
+        TransactionObjectFactory transObjFactoryRef
+    )
     {
         dbDriver = dbDriverRef;
+        transMgrProvider = transMgrProviderRef;
+        transObjFactory = transObjFactoryRef;
     }
 
     /**
@@ -32,11 +43,17 @@ public class ObjectProtectionFactory
     public ObjectProtection getInstance(
         AccessContext accCtx,
         String objPath,
-        boolean createIfNotExists,
-        TransactionMgr transMgr
+        boolean createIfNotExists
     )
         throws SQLException, AccessDeniedException
     {
-        return ObjectProtection.getInstance(accCtx, objPath, createIfNotExists, transMgr, dbDriver);
+        return ObjectProtection.getInstance(
+            accCtx,
+            objPath,
+            createIfNotExists,
+            transMgrProvider,
+            transObjFactory,
+            dbDriver
+        );
     }
 }

@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.UUID;
 
-import com.linbit.TransactionObject;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.Satellite;
@@ -16,6 +15,7 @@ import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.List;
 import java.util.Map;

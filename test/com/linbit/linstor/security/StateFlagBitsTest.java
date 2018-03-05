@@ -13,6 +13,7 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.testutils.SimpleIterator;
 import java.sql.SQLException;
 
@@ -30,6 +31,7 @@ public class StateFlagBitsTest
 
     private SecurityType userSecDomain;
     private SecurityType someOtherUserSecDomain;
+    private TransactionObjectFactory transObjFactory;
 
     @Before
     public void setUp() throws InvalidNameException, AccessDeniedException, SQLException
@@ -52,6 +54,8 @@ public class StateFlagBitsTest
 
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
         someOtherUserSecDomain = new SecurityType(new SecTypeName("SomeOtherUserSecType"));
+
+        transObjFactory = new TransactionObjectFactory(() -> null);
 
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
@@ -670,7 +674,7 @@ public class StateFlagBitsTest
     private ObjectProtection createObjectProtection(AccessType... grantedAccess) throws AccessDeniedException, SQLException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(objCtx, null, null);
+        ObjectProtection objProt = new ObjectProtection(objCtx, null, null, transObjFactory, null);
         for (AccessType grantedAt : grantedAccess)
         {
             if (grantedAt != null)
@@ -741,7 +745,7 @@ public class StateFlagBitsTest
     {
         StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
-            super(objProtRef, new Object(), validFlagsMask, null);
+            super(objProtRef, new Object(), validFlagsMask, ((objProt, flags) -> {} ), null);
             // as this test should not test persistence, this should be no problem.
         }
     }

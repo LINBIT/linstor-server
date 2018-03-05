@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -17,12 +16,17 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,28 +89,35 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private final FlagDriver flagsDriver;
     private final MinorNumberDriver minorNumberDriver;
     private final SizeDriver sizeDriver;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public VolumeDefinitionDataDerbyDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef
+        @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         propsContainerFactory = propsContainerFactoryRef;
         minorNrPool = minorNrPoolRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
         flagsDriver = new FlagDriver();
         minorNumberDriver = new MinorNumberDriver();
         sizeDriver = new SizeDriver();
     }
 
     @Override
-    public void create(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(VolumeDefinitionData volumeDefinition) throws SQLException
     {
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(VD_INSERT))
         {
             errorReporter.logTrace("Creating VolumeDefinition %s", getId(volumeDefinition));
 
@@ -131,14 +142,13 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     public VolumeDefinitionData load(
         ResourceDefinition resourceDefinition,
         VolumeNumber volumeNumber,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
+        boolean logWarnIfNotExists
     )
         throws SQLException
     {
         errorReporter.logTrace("Loading VolumeDefinition %s", getId(resourceDefinition, volumeNumber));
         VolumeDefinitionData ret = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(VD_SELECT))
         {
             stmt.setString(1, resourceDefinition.getName().value);
             stmt.setInt(2, volumeNumber.value);
@@ -153,7 +163,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                             resultSet,
                             resourceDefinition,
                             volumeNumber,
-                            transMgr,
                             dbCtx
                         );
                         errorReporter.logTrace("VolumeDefinition loaded %s", getId(resourceDefinition, volumeNumber));
@@ -176,7 +185,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         ResultSet resultSet,
         ResourceDefinition resDfn,
         VolumeNumber volNr,
-        TransactionMgr transMgr,
         AccessContext accCtx
     )
         throws SQLException
@@ -198,9 +206,10 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     minorNrPool,
                     resultSet.getLong(VD_SIZE),
                     resultSet.getLong(VD_FLAGS),
-                    transMgr,
                     this,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
                 errorReporter.logTrace("VolumeDefinition %s created during restore", getId(ret));
                 // restore references
@@ -248,7 +257,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
     public List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
             ResourceDefinition resDfn,
-            TransactionMgr transMgr,
             AccessContext accCtx
     )
         throws SQLException
@@ -258,7 +266,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             resDfn.getName().value
         );
         List<VolumeDefinition> ret = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT_BY_RES_DFN))
+        try (PreparedStatement stmt = getConnection().prepareStatement(VD_SELECT_BY_RES_DFN))
         {
             stmt.setString(1, resDfn.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
@@ -288,7 +296,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                         resultSet,
                         resDfn,
                         volNr,
-                        transMgr,
                         accCtx
                     );
                     errorReporter.logTrace("VolumeDefinition created %s", getId(volDfn));
@@ -301,10 +308,10 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     }
 
     @Override
-    public void delete(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
+    public void delete(VolumeDefinitionData volumeDefinition) throws SQLException
     {
         errorReporter.logTrace("Deleting VolumeDefinition %s", getId(volumeDefinition));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(VD_DELETE))
         {
             stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(2, volumeDefinition.getVolumeNumber().value);
@@ -347,6 +354,11 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return ret;
     }
 
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
+    }
+
     private String getId(VolumeDefinitionData volDfn)
     {
         return getId(
@@ -371,10 +383,11 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
     {
         @Override
-        public void persist(VolumeDefinitionData volumeDefinition, long flags, TransactionMgr transMgr)
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void persist(VolumeDefinitionData volumeDefinition, long flags)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_FLAGS))
+            try (PreparedStatement stmt = getConnection().prepareStatement(VD_UPDATE_FLAGS))
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
@@ -418,10 +431,11 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private class MinorNumberDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>
     {
         @Override
-        public void update(VolumeDefinitionData volumeDefinition, MinorNumber newNumber, TransactionMgr transMgr)
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(VolumeDefinitionData volumeDefinition, MinorNumber newNumber)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_MINOR_NR))
+            try (PreparedStatement stmt = getConnection().prepareStatement(VD_UPDATE_MINOR_NR))
             {
                 errorReporter.logTrace(
                     "Updating VolumeDefinition's MinorNumber from [%d] to [%d] %s",
@@ -451,10 +465,11 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private class SizeDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, Long>
     {
         @Override
-        public void update(VolumeDefinitionData volumeDefinition, Long size, TransactionMgr transMgr)
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(VolumeDefinitionData volumeDefinition, Long size)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_SIZE))
+            try (PreparedStatement stmt = getConnection().prepareStatement(VD_UPDATE_SIZE))
             {
                 errorReporter.logTrace(
                     "Updating VolumeDefinition's Size from [%d] to [%d] %s",

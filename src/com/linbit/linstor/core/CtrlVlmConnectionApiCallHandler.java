@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
@@ -19,8 +18,11 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +44,8 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
-        VolumeConnectionDataFactory volumeConnectionDataFactoryRef
+        VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(
@@ -51,7 +54,8 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             apiCtxRef,
             ApiConsts.MASK_VLM_CONN,
             interComSerializer,
-            objectFactories
+            objectFactories,
+            transMgrProviderRef
         );
         volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
     }
@@ -74,7 +78,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
-                null, // create new transMgr
                 nodeName1Str,
                 nodeName2Str,
                 rscNameStr,
@@ -131,7 +134,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.MODIFY,
                 apiCallRc,
-                null, // new transMgr
                 nodeName1Str,
                 nodeName2Str,
                 rscNameStr,
@@ -203,7 +205,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 client,
                 ApiCallType.DELETE,
                 apiCallRc,
-                null, // create new transMgr
                 nodeName1Str,
                 nodeName2Str,
                 rscNameStr,
@@ -254,7 +255,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr,
         String nodeName1,
         String nodeName2,
         String rscNameStr,
@@ -266,7 +266,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             client,
             type,
             apiCallRc,
-            transMgr,
+            true, // autoClose
             getObjRefs(nodeName1, nodeName2, rscNameStr, vlmNr),
             getVariables(nodeName1, nodeName2, rscNameStr, vlmNr)
         );
@@ -369,7 +369,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 currentAccCtx.get(),
                 sourceVolume,
                 targetVolume,
-                currentTransMgr.get(),
                 true,
                 true
             );
@@ -424,7 +423,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 currentAccCtx.get(),
                 vlm1,
                 vlm2,
-                currentTransMgr.get(),
                 false,
                 false
             );

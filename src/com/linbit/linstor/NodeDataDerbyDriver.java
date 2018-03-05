@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
@@ -21,6 +20,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
@@ -28,6 +29,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -93,6 +96,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private final PropsContainerFactory propsContainerFactory;
     private final StorPoolDefinition disklessStorPoolDfn;
 
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
+
     @Inject
     public NodeDataDerbyDriver(
         @SystemContext AccessContext privCtx,
@@ -105,7 +111,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         Provider<NodeConnectionDataDerbyDriver> nodeConnectionDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN) StorPoolDefinition disklessStorPoolDfnRef
+        @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN) StorPoolDefinition disklessStorPoolDfnRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = privCtx;
@@ -119,6 +127,8 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         disklessStorPoolDfn = disklessStorPoolDfnRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
 
         nodeCache = new HashMap<>();
 
@@ -128,10 +138,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public void create(NodeData node, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(NodeData node) throws SQLException
     {
         errorReporter.logTrace("Creating Node %s", getId(node));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NODE_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(node.getUuid()));
             stmt.setString(2, node.getName().value);
@@ -148,18 +159,18 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
     }
 
-    public List<NodeData> loadAll(TransactionMgr transMgr) throws SQLException
+    public List<NodeData> loadAll() throws SQLException
     {
         errorReporter.logTrace("Loading all Nodes");
         List<NodeData> list = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT_ALL))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NODE_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
                     list.add(
-                        load(resultSet, transMgr)
+                        load(resultSet)
                     );
                 }
             }
@@ -169,19 +180,19 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public NodeData load(NodeName nodeName, boolean logWarnIfNotExists, TransactionMgr transMgr)
+    public NodeData load(NodeName nodeName, boolean logWarnIfNotExists)
         throws SQLException
     {
         NodeData node = null;
         errorReporter.logTrace("Loading node %s", getId(nodeName));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NODE_SELECT))
         {
             stmt.setString(1, nodeName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 if (resultSet.next())
                 {
-                    node = load(resultSet, transMgr);
+                    node = load(resultSet);
                 }
                 else
                 if (logWarnIfNotExists)
@@ -196,7 +207,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         return node;
     }
 
-    private NodeData load(ResultSet resultSet, TransactionMgr transMgr)
+    private NodeData load(ResultSet resultSet)
         throws SQLException, ImplementationError
     {
         NodeData node;
@@ -224,7 +235,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
         if (node == null)
         {
-            ObjectProtection objProt = getObjectProtection(nodeName, transMgr);
+            ObjectProtection objProt = getObjectProtection(nodeName);
 
             try
             {
@@ -235,9 +246,10 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     nodeName,
                     Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
                     resultSet.getLong(NODE_FLAGS),
-                    transMgr,
                     this,
-                    propsContainerFactory
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider
                 );
 
                 errorReporter.logTrace("Node instance created %s", getId(node));
@@ -251,8 +263,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 {
                     nodeCache.put(nodeName, node);
                 }
-                List<NetInterfaceData> netIfaces =
-                    netInterfaceDriverProvider.get().loadNetInterfaceData(node, transMgr);
+                List<NetInterfaceData> netIfaces = netInterfaceDriverProvider.get().loadNetInterfaceData(node);
                 for (NetInterfaceData netIf : netIfaces)
                 {
                     node.addNetInterface(dbCtx, netIf);
@@ -264,7 +275,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 );
 
                 SatelliteConnectionData satelliteConnection =
-                    satelliteConnectionDriverProvider.get().load(node, true, transMgr);
+                    satelliteConnectionDriverProvider.get().load(node, true);
                 node.setSatelliteConnection(dbCtx, satelliteConnection);
                 errorReporter.logTrace(
                     "Node's SatelliteConnection restored %s",
@@ -272,7 +283,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 );
 
                 List<ResourceData> resList =
-                    resourceDataDriverProvider.get().loadResourceData(dbCtx, node, transMgr);
+                    resourceDataDriverProvider.get().loadResourceData(dbCtx, node);
                 for (ResourceData res : resList)
                 {
                     node.addResource(dbCtx, res);
@@ -283,7 +294,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     resList.size()
                 );
 
-                List<StorPoolData> storPoolList = storPoolDriverProvider.get().loadStorPools(node, transMgr);
+                List<StorPoolData> storPoolList = storPoolDriverProvider.get().loadStorPools(node);
                 for (StorPoolData storPool : storPoolList)
                 {
                     node.addStorPool(dbCtx, storPool);
@@ -295,7 +306,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 );
 
                 List<NodeConnectionData> nodeConDfnList =
-                    nodeConnectionDriverProvider.get().loadAllByNode(node, transMgr);
+                    nodeConnectionDriverProvider.get().loadAllByNode(node);
                 for (NodeConnectionData nodeConDfn : nodeConDfnList)
                 {
                     node.setNodeConnection(dbCtx, nodeConDfn);
@@ -310,8 +321,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     storPoolDriverProvider.get().load(
                         node,
                         disklessStorPoolDfn,
-                        true,
-                        transMgr
+                        true
                     )
                 );
                 errorReporter.logTrace("Node's diskless storPool restored %s", getId(node));
@@ -330,12 +340,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         return node;
     }
 
-    private ObjectProtection getObjectProtection(NodeName nodeName, TransactionMgr transMgr) throws SQLException
+    private ObjectProtection getObjectProtection(NodeName nodeName) throws SQLException
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(nodeName),
-            false, // no need to log a warning, as we would fail then anyways
-            transMgr
+            false // no need to log a warning, as we would fail then anyways
         );
         if (objProt == null)
         {
@@ -348,10 +357,10 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public void delete(NodeData node, TransactionMgr transMgr) throws SQLException
+    public void delete(NodeData node) throws SQLException
     {
         errorReporter.logTrace("Deleting node %s", getId(node));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NODE_DELETE))
         {
             stmt.setString(1, node.getName().value);
 
@@ -364,6 +373,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     {
         cacheCleared = true;
         nodeCache.clear();
+    }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
     }
 
     @Override
@@ -396,7 +410,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private class NodeFlagPersistence implements StateFlagsPersistence<NodeData>
     {
         @Override
-        public void persist(NodeData node, long flags, TransactionMgr transMgr) throws SQLException
+        public void persist(NodeData node, long flags) throws SQLException
         {
             try
             {
@@ -420,7 +434,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     toFlags,
                     getId(node)
                 );
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_FLAGS))
+                try (PreparedStatement stmt = getConnection().prepareStatement(NODE_UPDATE_FLAGS))
                 {
                     stmt.setLong(1, flags);
                     stmt.setString(2, node.getName().value);
@@ -443,7 +457,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private class NodeTypeDriver implements SingleColumnDatabaseDriver<NodeData, NodeType>
     {
         @Override
-        public void update(NodeData parent, NodeType element, TransactionMgr transMgr) throws SQLException
+        public void update(NodeData parent, NodeType element) throws SQLException
         {
             try
             {
@@ -452,7 +466,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     element.name(),
                     getId(parent)
                 );
-                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_TYPE))
+                try (PreparedStatement stmt = getConnection().prepareStatement(NODE_UPDATE_TYPE))
                 {
                     stmt.setLong(1, element.getFlagValue());
                     stmt.setString(2, parent.getName().value);

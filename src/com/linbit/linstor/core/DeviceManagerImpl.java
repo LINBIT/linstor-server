@@ -3,7 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import static com.linbit.SatelliteLinstorModule.STLT_WORKER_POOL_NAME;
-import com.linbit.SatelliteTransactionMgr;
+
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
@@ -19,6 +19,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -27,12 +28,15 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import org.slf4j.event.Level;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -91,6 +95,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
 
+    private final LinStorScope deviceMgrScope;
+    private final Provider<TransactionMgr> transMgrProvider;
+
     private static final ServiceName DEV_MGR_NAME;
     static
     {
@@ -123,6 +130,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
 
+
     @Inject
     DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -138,7 +146,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         DrbdEventService drbdEventRef,
         @Named(STLT_WORKER_POOL_NAME) WorkQueue workQRef,
         DrbdDeviceHandler drbdDeviceHandlerRef,
-        StltApiCallHandlerUtils apiCallHandlerUtilsRef
+        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
+        LinStorScope deviceMgrScopeRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -155,6 +165,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         drbdHnd = drbdDeviceHandlerRef;
         workQ = workQRef;
         apiCallHandlerUtils = apiCallHandlerUtilsRef;
+        deviceMgrScope = deviceMgrScopeRef;
+        transMgrProvider = transMgrProviderRef;
 
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
@@ -647,6 +659,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         if (!dispatchRscSet.isEmpty())
         {
             reconfigurationLock.readLock().lock();
+
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            deviceMgrScope.enter();
+            deviceMgrScope.seed(TransactionMgr.class, transMgr);
+
             try
             {
                 abortDevHndFlag = false;
@@ -699,6 +716,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             }
             finally
             {
+                deviceMgrScope.exit();
                 reconfigurationLock.readLock().unlock();
             }
         }
@@ -727,7 +745,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Lock nodeMapWrLock = nodesMapLock.writeLock();
         Lock rscDfnMapWrLock = rscDfnMapLock.writeLock();
 
-        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         rcfgRdLock.lock();
         try
         {
@@ -745,7 +762,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         for (Resource delRsc : rscMap.values())
                         {
                             Node peerNode = delRsc.getAssignedNode();
-                            delRsc.setConnection(transMgr);
                             delRsc.delete(wrkCtx);
                             if (peerNode != controllerPeerConnector.getLocalNode())
                             {
@@ -759,7 +775,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                                 }
                             }
                         }
-                        transMgr.commit();
+                        transMgrProvider.get().commit();
                         // Since the local node no longer has the resource, it also does not need
                         // to know about the resource definition any longer, therefore
                         // delete the resource definition as well

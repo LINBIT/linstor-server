@@ -1,15 +1,13 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
+import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link ResourceConnectionData}.
@@ -30,8 +28,6 @@ public interface ResourceConnectionDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  Used to restore references, like {@link com.linbit.linstor.Node}, {@link com.linbit.linstor.Resource}, and so on
      *
      * @return
      *  An instance which contains valid references, but is not
@@ -39,12 +35,7 @@ public interface ResourceConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    ResourceConnectionData load(
-        Resource source,
-        Resource target,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    ResourceConnectionData load(Resource source, Resource target, boolean logWarnIfNotExists)
         throws SQLException;
 
     /**
@@ -54,8 +45,6 @@ public interface ResourceConnectionDataDatabaseDriver
      * <br>
      * @param resource
      *  Part of the primary key specifying the database entry
-     * @param transMgr
-     *  Used to restore references, like {@link com.linbit.linstor.Node}, {@link com.linbit.linstor.Resource}, and so on
      *
      * @return
      *  A list of instances which contain valid references, but are not
@@ -63,33 +52,23 @@ public interface ResourceConnectionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    List<ResourceConnectionData> loadAllByResource(
-        Resource resource,
-        TransactionMgr transMgr
-    )
-        throws SQLException;
-
+    List<ResourceConnectionData> loadAllByResource(Resource resource) throws SQLException;
 
     /**
      * Persists the given {@link ResourceConnectionData} into the database.
      *
      * @param resConDfnData
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void create(ResourceConnectionData resConDfnData, TransactionMgr transMgr) throws SQLException;
+    void create(ResourceConnectionData resConDfnData) throws SQLException;
 
     /**
      * Removes the given {@link ResourceConnectionData} from the database
      *
      * @param resConDfnData
      *  The data identifying the database entry to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
-    void delete(ResourceConnectionData resConDfnData, TransactionMgr transMgr) throws SQLException;
-
+    void delete(ResourceConnectionData resConDfnData) throws SQLException;
 }

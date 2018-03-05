@@ -7,6 +7,8 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.fail;
 
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 
 /**
  * Tests the security model
@@ -25,11 +27,13 @@ public class SecurityModelTest
     private Role banditRole;
 
     private SecurityType userType;
+    private TransactionObjectFactory transObjFactory;
 
     @Before
     public void setUp() throws Exception
     {
         // Restore the global security level to MAC before each test
+        transObjFactory = new TransactionObjectFactory(null);
         setSecurityLevel(SecurityLevel.MAC);
     }
 
@@ -74,14 +78,14 @@ public class SecurityModelTest
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, userType
         );
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
         prot.requireAccess(buddyCtx, AccessType.VIEW);
         prot.requireAccess(buddyCtx, AccessType.USE);
         prot.requireAccess(buddyCtx, AccessType.CHANGE);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacObjProtAclDeny()
         throws Throwable
     {
@@ -90,7 +94,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -108,7 +112,7 @@ public class SecurityModelTest
         fail("Access by unauthorized role succeeded");
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacObjProtAclDeny()
         throws Throwable
     {
@@ -119,7 +123,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -137,7 +141,7 @@ public class SecurityModelTest
         fail("Access by unauthorized role succeeded");
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacTypeDeny()
         throws Throwable
     {
@@ -146,7 +150,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -173,7 +177,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
         );
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
         // Authorize buddy to change access control entries
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
         // As buddy, add an entry allowing public VIEW access
@@ -190,7 +194,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
         );
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
         // Authorize buddy to change access control entries
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
         // As buddy, add an entry allowing public VIEW access
@@ -198,7 +202,7 @@ public class SecurityModelTest
     }
 
     // Test ACL modification by unauthorized user at the MAC security level
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacBanditAclModify()
         throws Throwable
     {
@@ -207,7 +211,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant CONTROL access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
 
@@ -226,7 +230,7 @@ public class SecurityModelTest
     }
 
     // Test ACL modification by unauthorized user at the RBAC security level
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacBanditAclModify()
         throws Throwable
     {
@@ -237,7 +241,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant CONTROL access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
 
@@ -262,7 +266,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             prot.setSecurityType(sysCtx, sysCtx.getDomain());
         }
         catch (AccessDeniedException deniedExc)
@@ -271,7 +275,7 @@ public class SecurityModelTest
         }
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacBanditTypeModify()
         throws Throwable
     {
@@ -280,7 +284,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -295,7 +299,7 @@ public class SecurityModelTest
         prot.setSecurityType(banditCtx, sysCtx.getDomain());
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacBanditTypeModify()
         throws Throwable
     {
@@ -306,7 +310,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -328,7 +332,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
             prot.setOwner(sysCtx, buddyRole);
         }
@@ -338,7 +342,7 @@ public class SecurityModelTest
         }
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacBanditOwnerModify()
         throws Throwable
     {
@@ -347,7 +351,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -361,7 +365,7 @@ public class SecurityModelTest
         prot.setOwner(banditCtx, buddyRole);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacBanditOwnerModify()
         throws Throwable
     {
@@ -372,7 +376,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -391,7 +395,7 @@ public class SecurityModelTest
         throws Throwable
     {
         // Create object as creator
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
         AccessContext clone1Sys = sysCtx.clone();
         clone1Sys.getEffectivePrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
@@ -431,7 +435,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = null;
         try
         {
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             buddyCtx = sysCtx.impersonate(
                 buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
@@ -476,7 +480,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = null;
         try
         {
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             buddyCtx = sysCtx.impersonate(
                 buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
@@ -516,14 +520,13 @@ public class SecurityModelTest
         throws Throwable
     {
         ObjectProtection prot = null;
-        AccessContext banditCtx = null;
 
         // Create object as creator
-        prot = new ObjectProtection(creatorCtx, null, null);
+        prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
         prot.resetCreator(sysCtx);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacBanditCreatorModify()
         throws Throwable
     {
@@ -532,7 +535,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -546,14 +549,14 @@ public class SecurityModelTest
         prot.resetCreator(banditCtx);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelMacImpersonateDeny()
         throws Throwable
     {
         publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacImpersonateDeny()
         throws Throwable
     {
@@ -573,7 +576,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -592,7 +595,7 @@ public class SecurityModelTest
         prot.requireAccess(otherDomainCtx, AccessType.VIEW);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testSecLevelRbacAclDeny()
         throws Throwable
     {
@@ -601,7 +604,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null, null);
+            prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -627,11 +630,11 @@ public class SecurityModelTest
 
         ObjectProtection prot = null;
         // Create the object as creator
-        prot = new ObjectProtection(creatorCtx, null, null);
+        prot = new ObjectProtection(creatorCtx, null, null, transObjFactory, null);
         prot.requireAccess(publicCtx, AccessType.CONTROL);
     }
 
-    @Test(expected=AccessDeniedException.class)
+    @Test(expected = AccessDeniedException.class)
     public void testBanditSetSecLevel()
         throws Throwable
     {

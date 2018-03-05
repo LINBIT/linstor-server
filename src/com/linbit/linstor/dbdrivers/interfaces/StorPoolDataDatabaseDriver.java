@@ -1,15 +1,12 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.BaseTransactionObject;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 /**
  * Database driver for {@link com.linbit.linstor.StorPoolData}.
@@ -28,21 +25,14 @@ public interface StorPoolDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr}, used to restore references, like {@link NodeData},
-     *  {@link ResourceData}, and so on
+     *
      * @return
      *  An instance which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */
-    StorPoolData load(
-        Node node,
-        StorPoolDefinition storPoolDefinition,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    StorPoolData load(Node node, StorPoolDefinition storPoolDefinition, boolean logWarnIfNotExists)
         throws SQLException;
 
     /**
@@ -50,22 +40,20 @@ public interface StorPoolDataDatabaseDriver
      *
      * @param storPool
      *  The data to be stored (including the primary key)
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void create(StorPoolData storPool, TransactionMgr transMgr) throws SQLException;
+    void create(StorPoolData storPool) throws SQLException;
 
     /**
      * Removes the given {@link com.linbit.linstor.StorPoolData} from the database.
      *
      * @param storPool
      *  The data identifying the row to delete
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException;
+    void delete(StorPoolData storPool) throws SQLException;
 
     /**
      * Checks if the stored primary key already exists in the database.
@@ -74,10 +62,9 @@ public interface StorPoolDataDatabaseDriver
      *
      * @param storPool
      *  The data identifying the row to exist
-     * @param transMgr
-     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
+     *
      * @throws SQLException
      */
-    void ensureEntryExists(StorPoolData storPool, TransactionMgr transMgr)
+    void ensureEntryExists(StorPoolData storPool)
         throws SQLException;
 }

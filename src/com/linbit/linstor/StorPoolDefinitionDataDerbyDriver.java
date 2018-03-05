@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -11,16 +10,20 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Singleton
@@ -52,27 +55,34 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public StorPoolDefinitionDataDerbyDriver(
         ErrorReporter errorReporterRef,
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
-        PropsContainerFactory propsContainerFactoryRef
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
         storPoolDfnMap = storPoolDfnMapRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
-    public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void create(StorPoolDefinitionData storPoolDefinitionData) throws SQLException
     {
         errorReporter.logTrace("Creating StorPoolDefinition %s", getId(storPoolDefinitionData));
 
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SPD_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(storPoolDefinitionData.getUuid()));
             stmt.setString(2, storPoolDefinitionData.getName().value);
@@ -83,24 +93,20 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     }
 
     @Override
-    public StorPoolDefinitionData load(
-        StorPoolName storPoolName,
-        boolean logWarnIfNotExists,
-        TransactionMgr transMgr
-    )
+    public StorPoolDefinitionData load(StorPoolName storPoolName, boolean logWarnIfNotExists)
         throws SQLException
     {
         errorReporter.logTrace("Loading StorPoolDefinition %s", getId(storPoolName));
 
         StorPoolDefinitionData storPoolDefinition = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SPD_SELECT))
         {
             stmt.setString(1, storPoolName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 if (resultSet.next())
                 {
-                    storPoolDefinition = load(resultSet, transMgr);
+                    storPoolDefinition = load(resultSet);
                 }
                 else
                 if (logWarnIfNotExists)
@@ -115,18 +121,18 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         return storPoolDefinition;
     }
 
-    public List<StorPoolDefinitionData> loadAll(TransactionMgr transMgr) throws SQLException
+    public List<StorPoolDefinitionData> loadAll() throws SQLException
     {
         errorReporter.logTrace("Loading all StorPoolDefinitions");
         List<StorPoolDefinitionData> list = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT_ALL))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SPD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
                     list.add(
-                        load(resultSet, transMgr)
+                        load(resultSet)
                     );
                 }
             }
@@ -135,7 +141,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         return list;
     }
 
-    public StorPoolDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
+    public StorPoolDefinitionData load(ResultSet resultSet) throws SQLException
     {
         StorPoolDefinitionData storPoolDefinition = null;
         StorPoolName storPoolName;
@@ -161,14 +167,16 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         {
             UUID uuid = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
 
-            ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
+            ObjectProtection objProt = getObjectProtection(storPoolName);
 
             storPoolDefinition = new StorPoolDefinitionData(
                 uuid,
                 objProt,
                 storPoolName,
                 this,
-                propsContainerFactory
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
             errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getId(storPoolName));
         }
@@ -179,13 +187,12 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         return storPoolDefinition;
     }
 
-    private ObjectProtection getObjectProtection(StorPoolName storPoolName, TransactionMgr transMgr)
+    private ObjectProtection getObjectProtection(StorPoolName storPoolName)
         throws SQLException, ImplementationError
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPathSPD(storPoolName),
-            false, // no need to log a warning, as we would fail then anyways
-            transMgr
+            false // no need to log a warning, as we would fail then anyways
         );
         if (objProt == null)
         {
@@ -198,10 +205,10 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     }
 
     @Override
-    public void delete(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
+    public void delete(StorPoolDefinitionData storPoolDefinitionData) throws SQLException
     {
         errorReporter.logTrace("Deleting StorPoolDefinition %s", getId(storPoolDefinitionData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SPD_DELETE))
         {
             stmt.setString(1, storPoolDefinitionData.getName().value);
             stmt.executeUpdate();
@@ -212,6 +219,11 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     private StorPoolDefinitionData cacheGet(StorPoolName sName)
     {
         return (StorPoolDefinitionData) storPoolDfnMap.get(sName);
+    }
+
+    private Connection getConnection()
+    {
+        return transMgrProvider.get().getConnection();
     }
 
     private String getId(StorPoolDefinitionData storPoolDefinition)
