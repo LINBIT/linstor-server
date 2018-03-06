@@ -18,6 +18,7 @@ nbproject/project.xml
 !Makefile
 !Jenkinsfile
 !README.md
+!docs/
 test-data/*
 test-support/TestProcess
 test-support/TestOutput
