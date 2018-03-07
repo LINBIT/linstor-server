@@ -478,6 +478,7 @@ public class NodeData extends BaseTransactionObject implements Node
         }
     }
 
+    @Override
     public boolean isDeleted()
     {
         return deleted.get();

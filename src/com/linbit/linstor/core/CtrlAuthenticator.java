@@ -12,14 +12,14 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 
-public class CtrlAuthenticationApiCallHandler
+public class CtrlAuthenticator
 {
     private final ErrorReporter errorReporter;
     private final CtrlStltSerializer serializer;
     private final AccessContext apiCtx;
 
     @Inject
-    CtrlAuthenticationApiCallHandler(
+    CtrlAuthenticator(
         ErrorReporter errorReporterRef,
         CtrlStltSerializer serializerRef,
         @ApiContext AccessContext apiCtxRef
@@ -35,21 +35,29 @@ public class CtrlAuthenticationApiCallHandler
         try
         {
             Node peerNode = peer.getNode();
-            errorReporter.logDebug("Sending authentication to satellite '" +
-                peerNode.getName() + "'");
-            // TODO make the shared secret customizable
-            peer.sendMessage(
-                serializer
-                    .builder(InternalApiConsts.API_AUTH, 1)
-                    .authMessage(
-                        peerNode.getUuid(),
-                        peerNode.getName().getDisplayName(),
-                        "Hello, LinStor!".getBytes(),
-                        peerNode.getDisklessStorPool(apiCtx).getDefinition(apiCtx).getUuid(),
-                        peerNode.getDisklessStorPool(apiCtx).getUuid()
-                    )
-                    .build()
-            );
+            if (peerNode.isDeleted())
+            {
+                errorReporter.logWarning(
+                    "Unable to complete authentication with peer '%s' because the node has been deleted", peer.getId());
+            }
+            else
+            {
+                errorReporter.logDebug("Sending authentication to satellite '" +
+                    peerNode.getName() + "'");
+                // TODO make the shared secret customizable
+                peer.sendMessage(
+                    serializer
+                        .builder(InternalApiConsts.API_AUTH, 1)
+                        .authMessage(
+                            peerNode.getUuid(),
+                            peerNode.getName().getDisplayName(),
+                            "Hello, LinStor!".getBytes(),
+                            peerNode.getDisklessStorPool(apiCtx).getDefinition(apiCtx).getUuid(),
+                            peerNode.getDisklessStorPool(apiCtx).getUuid()
+                        )
+                        .build()
+                );
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {

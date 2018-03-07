@@ -96,6 +96,8 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    boolean isDeleted();
+
     NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 

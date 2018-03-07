@@ -22,7 +22,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
 {
     private final ErrorReporter errorReporter;
     private final AccessContext connectorCtx;
-    private final CtrlAuthenticationApiCallHandler authApiCallHandler;
+    private final CtrlAuthenticator authenticator;
     private final PingTask pingTask;
     private final ReconnectorTask reconnectorTask;
 
@@ -30,14 +30,14 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     public SatelliteConnectorImpl(
         ErrorReporter errorReporterRef,
         @SatelliteConnectorContext AccessContext connectorCtxRef,
-        CtrlAuthenticationApiCallHandler authApiCallHandlerRef,
+        CtrlAuthenticator authenticatorRef,
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef
     )
     {
         errorReporter = errorReporterRef;
         connectorCtx = connectorCtxRef;
-        authApiCallHandler = authApiCallHandlerRef;
+        authenticator = authenticatorRef;
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
     }
@@ -63,7 +63,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                     if (peer.isConnected(false))
                     {
                         // no locks needed
-                        authApiCallHandler.completeAuthentication(peer);
+                        authenticator.completeAuthentication(peer);
                         pingTask.add(peer);
                     }
                     else

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import com.linbit.linstor.core.CtrlAuthenticationApiCallHandler;
+import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
@@ -22,16 +22,16 @@ public class ReconnectorTask implements Task
     private final LinkedList<Peer> peerList = new LinkedList<>();
     private final ErrorReporter errorReporter;
     private PingTask pingTask;
-    private Provider<CtrlAuthenticationApiCallHandler> authApiCallHandlerProvider;
+    private Provider<CtrlAuthenticator> authenticatorProvider;
 
     @Inject
     public ReconnectorTask(
         ErrorReporter errorReporterRef,
-        Provider<CtrlAuthenticationApiCallHandler> authApiCallHandlerProviderRef
+        Provider<CtrlAuthenticator> authenticatorRef
     )
     {
         errorReporter = errorReporterRef;
-        authApiCallHandlerProvider = authApiCallHandlerProviderRef;
+        authenticatorProvider = authenticatorRef;
     }
 
     void setPingTask(PingTask pingTaskRef)
@@ -54,7 +54,7 @@ public class ReconnectorTask implements Task
             if (peerList.remove(peer) && pingTask != null)
             {
                 // no locks needed
-                authApiCallHandlerProvider.get().completeAuthentication(peer);
+                authenticatorProvider.get().completeAuthentication(peer);
                 pingTask.add(peer);
             }
         }
