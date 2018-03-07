@@ -176,7 +176,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         // Prevent entering the run() method's selector loop
         // until initialize() has completed
         shutdownFlag    = new AtomicBoolean(true);
-        connObserver    = connObserverRef;
+        connObserver    = new SafeConnectionObserver(errorReporterRef, connObserverRef);
 
         defaultPeerAccCtx = defaultPeerAccCtxRef;
         privilegedAccCtx = privilegedAccCtxRef;
@@ -233,10 +233,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     connKey.attach(peer);
                     if (connected)
                     {
-                        if (connObserver != null)
-                        {
-                            connObserver.outboundConnectionEstablished(peer);
-                        }
+                        connObserver.outboundConnectionEstablished(peer);
                         // May throw SSLException
                         peer.connectionEstablished();
                     }
@@ -789,10 +786,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 TcpConnectorPeer connPeer = createTcpConnectorPeer(peerId, connKey, null);
                                 connKey.attach(connPeer);
                                 connPeer.connectionEstablished();
-                                if (connObserver != null)
-                                {
-                                    connObserver.inboundConnectionEstablished(connPeer);
-                                }
+                                connObserver.inboundConnectionEstablished(connPeer);
                                 accepted = true;
                             }
                         }
@@ -909,10 +903,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             channel.finishConnect();
             peer.connectionEstablished();
-            if (connObserver != null)
-            {
-                connObserver.outboundConnectionEstablished(peer);
-            }
+            connObserver.outboundConnectionEstablished(peer);
         }
         catch (ConnectException conExc)
         {
@@ -938,7 +929,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     private void closeConnection(SelectionKey currentKey, boolean allowReconnect)
     {
         Peer client = (TcpConnectorPeer) currentKey.attachment();
-        if (connObserver != null && client != null)
+        if (client != null)
         {
             connObserver.connectionClosed(client, allowReconnect);
             if (client.isConnected(false))
@@ -1193,5 +1184,74 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             selectorLoopThread.setName(serviceInstanceName.getDisplayName());
         }
+    }
+
+    private static class SafeConnectionObserver implements ConnectionObserver
+    {
+        private final ErrorReporter errorReporter;
+        private final ConnectionObserver connObserver;
+
+        private SafeConnectionObserver(
+            ErrorReporter errorReporterRef,
+            ConnectionObserver connObserverRef
+        )
+        {
+            errorReporter = errorReporterRef;
+            connObserver = connObserverRef;
+        }
+
+        @Override
+        public void outboundConnectionEstablished(Peer connPeer)
+        {
+            performConnectionObserverCall(
+                notNullConnObserver -> notNullConnObserver.outboundConnectionEstablished(connPeer),
+                "outbound connection established"
+            );
+        }
+
+        @Override
+        public void inboundConnectionEstablished(Peer connPeer)
+        {
+            performConnectionObserverCall(
+                notNullConnObserver -> notNullConnObserver.inboundConnectionEstablished(connPeer),
+                "inbound connection established"
+            );
+        }
+
+        @Override
+        public void connectionClosed(Peer connPeer, boolean allowReconnect)
+        {
+            performConnectionObserverCall(
+                notNullConnObserver -> notNullConnObserver.connectionClosed(connPeer, allowReconnect),
+                "connection closed"
+            );
+        }
+
+        private void performConnectionObserverCall(ConnectionObserverCall call, String eventDescription)
+        {
+            if (connObserver != null)
+            {
+                try
+                {
+                    call.run(connObserver);
+                }
+                catch (Exception exc)
+                {
+                    errorReporter.reportError(
+                        exc,
+                        null,
+                        null,
+                        "Exception thrown by connection observer when " + eventDescription
+                    );
+                }
+            }
+        }
+
+        @FunctionalInterface
+        private interface ConnectionObserverCall
+        {
+            void run(ConnectionObserver notNullConnObserver) throws Exception;
+        }
+
     }
 }
