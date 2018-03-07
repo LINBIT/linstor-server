@@ -232,27 +232,42 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             );
         )
         {
-            NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
 
-            Node node = netIf.getNode();
-            boolean closeConnection = netIf.equals(
-                node.getSatelliteConnection(apiCtx).getNetInterface()
-            );
-
-            UUID uuid = netIf.getUuid();
-            deleteNetIf(netIf);
-
-            commit();
-
-            reportSuccess(uuid);
-            if (closeConnection)
+            NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr, false);
+            if (netIf == null)
             {
-                // updateSatellites(node);
-                // FIXME: updating a satellite is risky here.
-                // when the sending takes too long, the connection will be already closed (next statement)
-                // for now, just close the connection. once a new connection is established, the
-                // satellite gets a full sync anyways
-                node.getPeer(apiCtx).closeConnection();
+                addAnswer(
+                    "Deletion of " + getObjectDescriptionInline() + " had no effect.",
+                    getObjectDescriptionInlineFirstLetterCaps() + " does not exist.",
+                    null,
+                    null,
+                    ApiConsts.WARN_NOT_FOUND
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+            else
+            {
+                Node node = netIf.getNode();
+                boolean closeConnection = false;
+                closeConnection = netIf.equals(
+                    node.getSatelliteConnection(apiCtx).getNetInterface()
+                );
+
+                UUID uuid = netIf.getUuid();
+                deleteNetIf(netIf);
+
+                commit();
+                reportSuccess(uuid);
+
+                if (closeConnection)
+                {
+                    // updateSatellites(node);
+                    // FIXME: updating a satellite is risky here.
+                    // when the sending takes too long, the connection will be already closed (next statement)
+                    // for now, just close the connection. once a new connection is established, the
+                    // satellite gets a full sync anyways
+                    node.getPeer(apiCtx).closeConnection();
+                }
             }
         }
         catch (ApiCallHandlerFailedException ignored)
@@ -367,6 +382,11 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
     private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr)
     {
+        return loadNetIf(nodeNameStr, netIfNameStr, true);
+    }
+
+    private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr, boolean failIfNull)
+    {
         Node node = loadNode(nodeNameStr, true);
         NetInterface netIf;
         try
@@ -375,6 +395,15 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 currentAccCtx.get(),
                 asNetInterfaceName(netIfNameStr)
             );
+
+            if (failIfNull && netIf == null)
+            {
+                throw asExc(
+                    null,
+                    "Node '" + nodeNameStr + "' has no network interface named '" + netIfNameStr + "'.",
+                    ApiConsts.FAIL_NOT_FOUND_NET_IF
+                );
+           }
         }
         catch (AccessDeniedException exc)
         {
