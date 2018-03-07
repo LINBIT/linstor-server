@@ -335,7 +335,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = asNodeName(nodeNameStr);
-            NodeData nodeData = loadNode(nodeName, true);
+            NodeData nodeData = loadNode(nodeName, false);
             if (nodeData == null)
             {
                 addAnswer(
