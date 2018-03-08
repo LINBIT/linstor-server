@@ -107,7 +107,7 @@ public final class Controller
     private final ReconnectorTask reconnectorTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
-    private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
+    private final SatelliteConnector satelliteConnector;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
     @Inject
@@ -124,7 +124,7 @@ public final class Controller
         TaskScheduleService taskScheduleServiceRef, PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
-        CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
+        SatelliteConnector satelliteConnectorRef,
         ControllerNetComInitializer controllerNetComInitializerRef
     )
     {
@@ -141,7 +141,7 @@ public final class Controller
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
-        ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
+        satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
     }
 
@@ -241,7 +241,7 @@ public final class Controller
             for (Node node : nodes)
             {
                 errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                ctrlNodeApiCallHandler.startConnecting(node, initCtx);
+                satelliteConnector.startConnecting(node, initCtx);
             }
             errorLogRef.logInfo("Reconnect requests sent");
         }

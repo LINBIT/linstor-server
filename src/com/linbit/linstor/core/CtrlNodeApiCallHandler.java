@@ -1,12 +1,9 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.ServiceName;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
@@ -20,7 +17,6 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.SatelliteConnectionDataFactory;
@@ -35,10 +31,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.TcpConnector;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -50,7 +43,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,11 +59,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
     private final CtrlClientSerializer clientComSerializer;
-    private final Props ctrlConf;
     private final CoreModule.NodesMap nodesMap;
     private final ObjectProtection nodesMapProt;
     private final SatelliteConnector satelliteConnector;
-    private final NetComContainer netComContainer;
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
@@ -82,11 +72,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         SatelliteConnector satelliteConnectorRef,
-        NetComContainer netComContainerRef,
         CtrlObjectFactories objectFactories,
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
@@ -107,11 +95,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             currentNodeType
         );
         clientComSerializer = clientComSerializerRef;
-        ctrlConf = ctrlConfRef;
         nodesMap = nodesMapRef;
         nodesMapProt = nodesMapProtRef;
         satelliteConnector = satelliteConnectorRef;
-        netComContainer = netComContainerRef;
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         satelliteConnectionDataFactory = satelliteConnectionDataFactoryRef;
@@ -228,7 +214,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                 if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                 {
-                    startConnecting(node, accCtx);
+                    satelliteConnector.startConnecting(node, accCtx);
                 }
             }
         }
@@ -542,88 +528,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 new ImplementationError(exc)
             );
         }
-    }
-
-    public void startConnecting(Node node, AccessContext initCtx)
-    {
-        startConnecting(node, initCtx, satelliteConnector, ctrlConf, netComContainer);
-    }
-
-    public static boolean startConnecting(
-        Node node,
-        AccessContext accCtx,
-        SatelliteConnector stltConnector,
-        Props ctrlProps,
-        NetComContainer netComs
-    )
-    {
-        boolean estabilshingConnection = false;
-        try
-        {
-            SatelliteConnection satelliteConnection = node.getSatelliteConnection(accCtx);
-            if (satelliteConnection != null)
-            {
-                EncryptionType type = satelliteConnection.getEncryptionType();
-                String serviceType;
-                switch (type)
-                {
-                    case PLAIN:
-                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
-                        break;
-                    case SSL:
-                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
-                        break;
-                    default:
-                        throw new ImplementationError(
-                            "Unhandled default case for EncryptionType",
-                            null
-                        );
-                }
-                ServiceName dfltConSvcName;
-                try
-                {
-                    dfltConSvcName = new ServiceName(
-                        ctrlProps.getProp(serviceType)
-                    );
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    throw new LinStorRuntimeException(
-                        "The ServiceName of the default TCP connector is not valid",
-                        invalidNameExc
-                    );
-                }
-                TcpConnector tcpConnector = netComs.getNetComConnector(dfltConSvcName);
-
-                if (tcpConnector != null)
-                {
-                    stltConnector.connectSatellite(
-                        new InetSocketAddress(
-                            satelliteConnection.getNetInterface().getAddress(accCtx).getAddress(),
-                            satelliteConnection.getPort().value
-                        ),
-                        tcpConnector,
-                        node
-                    );
-                    estabilshingConnection = true;
-                }
-                else
-                {
-                    throw new LinStorRuntimeException(
-                        "Attempt to establish a " + type + " connection without a proper connector defined"
-                    );
-                }
-            }
-        }
-        catch (AccessDeniedException | InvalidKeyException exc)
-        {
-            throw new LinStorRuntimeException(
-                "Access to an object protected by access controls was revoked while a " +
-                "controller<->satellite connect operation was in progress.",
-                exc
-            );
-        }
-        return estabilshingConnection;
     }
 
     private NodeType asNodeType(String nodeTypeStr) throws ApiCallHandlerFailedException

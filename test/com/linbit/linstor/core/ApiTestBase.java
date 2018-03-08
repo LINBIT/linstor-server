@@ -11,6 +11,7 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
 import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
@@ -30,7 +31,6 @@ import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.api.ApiRcUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -38,8 +38,6 @@ import org.mockito.Mockito;
 
 import javax.inject.Named;
 import javax.inject.Provider;
-
-import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -235,10 +233,9 @@ public abstract class ApiTestBase extends DerbyBase
         }
 
         Mockito.verify(satelliteConnector, Mockito.times(currentCall.expectedConnectingAttempts.size()))
-            .connectSatellite(
-                Mockito.any(InetSocketAddress.class),
-                Mockito.any(TcpConnector.class),
-                Mockito.any(Node.class)
+            .startConnecting(
+                Mockito.any(Node.class),
+                Mockito.any(AccessContext.class)
             );
     }
 }

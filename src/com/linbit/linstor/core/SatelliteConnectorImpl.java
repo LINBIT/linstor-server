@@ -1,18 +1,26 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,6 +30,8 @@ public class SatelliteConnectorImpl implements SatelliteConnector
 {
     private final ErrorReporter errorReporter;
     private final AccessContext connectorCtx;
+    private final Props ctrlConf;
+    private final NetComContainer netComContainer;
     private final CtrlAuthenticator authenticator;
     private final PingTask pingTask;
     private final ReconnectorTask reconnectorTask;
@@ -30,6 +40,8 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     public SatelliteConnectorImpl(
         ErrorReporter errorReporterRef,
         @SatelliteConnectorContext AccessContext connectorCtxRef,
+        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        NetComContainer netComContainerRef,
         CtrlAuthenticator authenticatorRef,
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef
@@ -37,12 +49,82 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     {
         errorReporter = errorReporterRef;
         connectorCtx = connectorCtxRef;
+        ctrlConf = ctrlConfRef;
+        netComContainer = netComContainerRef;
         authenticator = authenticatorRef;
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
     }
 
     @Override
+    public void startConnecting(Node node, AccessContext accCtx)
+    {
+        try
+        {
+            SatelliteConnection satelliteConnection = node.getSatelliteConnection(accCtx);
+            if (satelliteConnection != null)
+            {
+                SatelliteConnection.EncryptionType type = satelliteConnection.getEncryptionType();
+                String serviceType;
+                switch (type)
+                {
+                    case PLAIN:
+                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
+                        break;
+                    case SSL:
+                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
+                        break;
+                    default:
+                        throw new ImplementationError(
+                            "Unhandled default case for EncryptionType",
+                            null
+                        );
+                }
+                ServiceName dfltConSvcName;
+                try
+                {
+                    dfltConSvcName = new ServiceName(
+                        ctrlConf.getProp(serviceType)
+                    );
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    throw new LinStorRuntimeException(
+                        "The ServiceName of the default TCP connector is not valid",
+                        invalidNameExc
+                    );
+                }
+                TcpConnector tcpConnector = netComContainer.getNetComConnector(dfltConSvcName);
+
+                if (tcpConnector != null)
+                {
+                    connectSatellite(
+                        new InetSocketAddress(
+                            satelliteConnection.getNetInterface().getAddress(accCtx).getAddress(),
+                            satelliteConnection.getPort().value
+                        ),
+                        tcpConnector,
+                        node
+                    );
+                }
+                else
+                {
+                    throw new LinStorRuntimeException(
+                        "Attempt to establish a " + type + " connection without a proper connector defined"
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new LinStorRuntimeException(
+                "Access to an object protected by access controls was revoked while a " +
+                    "controller<->satellite connect operation was in progress.",
+                exc
+            );
+        }
+    }
+
     public void connectSatellite(
         final InetSocketAddress satelliteAddress,
         final TcpConnector tcpConnector,

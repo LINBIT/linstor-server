@@ -18,15 +18,12 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.Map;
@@ -37,9 +34,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNetIfName = new ThreadLocal<>();
-    private final Props ctrlConf;
     private final SatelliteConnector satelliteConnector;
-    private final NetComContainer netComContainer;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
 
@@ -48,9 +43,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         ErrorReporter errorReporterRef,
         CtrlStltSerializer serializerRef,
         @ApiContext AccessContext apiCtxRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         SatelliteConnector satelliteConnectorRef,
-        NetComContainer netComContainerRef,
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
@@ -69,9 +62,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             currentNodeName,
             currentNetIfName
         );
-        ctrlConf = ctrlConfRef;
         satelliteConnector = satelliteConnectorRef;
-        netComContainer = netComContainerRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         satelliteConnectionDataFactory = satelliteConnectionDataFactoryRef;
     }
@@ -114,7 +105,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             if (stltPort != null && stltEncrType != null)
             {
                 createStltConn(node, netIf, stltPort, stltEncrType);
-                startConnecting(node);
+                satelliteConnector.startConnecting(node, apiCtx);
             }
 
             commit();
@@ -193,7 +184,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             if (needsReconnect)
             {
                 node.getPeer(apiCtx).closeConnection();
-                startConnecting(node);
+                satelliteConnector.startConnecting(node, apiCtx);
             }
             updateSatellites(node);
         }
@@ -535,17 +526,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 "deleting " + getObjectDescriptionInline()
             );
         }
-    }
-
-    private void startConnecting(Node node)
-    {
-        CtrlNodeApiCallHandler.startConnecting(
-            node,
-            apiCtx,
-            satelliteConnector,
-            ctrlConf,
-            netComContainer
-        );
     }
 
     private AbsApiCallHandler setContext(
