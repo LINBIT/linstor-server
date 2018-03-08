@@ -59,6 +59,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -314,9 +315,6 @@ class StltRscApiCallHandler
             {
                 // iterator contains at least one resource.
                 List<Resource> removedList = new ArrayList<>();
-                List<Resource> newResources = new ArrayList<>();
-                List<Resource> modifiedResources = new ArrayList<>();
-                List<Node> nodesToRemove = new ArrayList<>();
 
                 // first we split the existing resources into our local resource and a list of others
                 while (rscIterator.hasNext())
@@ -377,6 +375,7 @@ class StltRscApiCallHandler
                 for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
                 {
                     Resource remoteRsc = null;
+
                     for (Resource removed : removedList)
                     {
                         if (otherRsc.getRscUuid().equals(removed.getUuid()))
@@ -459,9 +458,6 @@ class StltRscApiCallHandler
                             true
                         );
 
-                        // everything ok, mark the resource as new
-                        newResources.add(remoteRsc);
-
                         add(remoteRsc, createdRscMap);
                     }
                     else
@@ -505,20 +501,37 @@ class StltRscApiCallHandler
 
                         // everything ok, mark the resource to be kept
                         removedList.remove(remoteRsc);
-                        modifiedResources.add(remoteRsc);
 
                         add(remoteRsc, updatedRscMap);
                     }
-                    otherRscs.add(remoteRsc);
+                    if (remoteRsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DELETE))
+                    {
+                        // remote resources do not go through the device manager, which means
+                        // we have to delete them here.
+                        // otherwise the resource never gets deleted, which will cause a
+                        // divergent UUID exception when the "same" remote resource gets
+                        // recreated
+                        remoteRsc.delete(apiCtx);
+                    }
+                    else
+                    {
+                        otherRscs.add(remoteRsc);
+                    }
                 }
-                // all resources have been created or updated
+                // all resources have been created, updated or deleted
 
-                // cleanup
-
-                // first, iterate over all resources marked for deletion and unlink them from rscDfn and node
-                for (Resource rsc : removedList)
+                if (!removedList.isEmpty())
                 {
-                    rsc.markDeleted(apiCtx);
+                    errorReporter.reportError(
+                        new ImplementationError(
+                            "We know at least one resource the controller does not:\n   " +
+                                removedList.stream()
+                                    .map(rsc -> rsc.toString())
+                                    .collect(Collectors.joining(",\n   ")) +
+                                "\nThis could only happend if we missed a delete resource event.",
+                            null
+                        )
+                    );
                 }
             }
 
@@ -542,7 +555,6 @@ class StltRscApiCallHandler
             devMgrNotifications.putAll(updatedRscMap);
 
             deviceManager.rscUpdateApplied(devMgrNotifications);
-
         }
         catch (Exception | ImplementationError exc)
         {
