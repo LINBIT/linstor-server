@@ -88,6 +88,6 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     @Override
     public boolean isDirty()
     {
-        return object != cachedObject;
+        return !Objects.equals(object, cachedObject);
     }
 }
