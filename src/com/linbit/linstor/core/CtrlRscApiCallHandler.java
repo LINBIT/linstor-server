@@ -41,7 +41,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -56,7 +55,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +87,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     @Inject
     public CtrlRscApiCallHandler(
         ErrorReporter errorReporterRef,
-        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
@@ -107,7 +104,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         super(
             errorReporterRef,
-            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC,
             interComSerializer,

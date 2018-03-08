@@ -16,7 +16,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -27,6 +26,8 @@ import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.StreamUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,12 +36,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Provider;
 
 public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
@@ -53,7 +52,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
         ErrorReporter errorReporterRef,
-        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         // @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
@@ -66,7 +64,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     {
         super(
             errorReporterRef,
-            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_RSC,
             interComSerializer,

@@ -26,7 +26,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -40,7 +39,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -63,7 +61,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     @Inject
     CtrlVlmDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtx,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -76,7 +73,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         super(
             errorReporterRef,
-            dbConnectionPoolRef,
             apiCtx,
             ApiConsts.MASK_VLM_DFN,
             interComSerializer,

@@ -17,7 +17,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
@@ -29,7 +28,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,7 +46,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     @Inject
     CtrlNetIfApiCallHandler(
         ErrorReporter errorReporterRef,
-        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer serializerRef,
         @ApiContext AccessContext apiCtxRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
@@ -62,7 +59,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         super(
             errorReporterRef,
-            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_NET_IF,
             serializerRef,

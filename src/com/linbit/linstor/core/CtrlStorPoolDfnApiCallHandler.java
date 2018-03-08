@@ -14,7 +14,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -28,7 +27,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,7 +46,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     @Inject
     CtrlStorPoolDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        DbConnectionPool dbConnectionPoolRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
@@ -61,7 +58,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     {
         super(
             errorReporterRef,
-            dbConnectionPoolRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL_DFN,
             interComSerializer,

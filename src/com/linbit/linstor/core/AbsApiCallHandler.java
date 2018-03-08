@@ -29,7 +29,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -37,13 +36,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
+import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-
-import javax.inject.Provider;
 
 abstract class AbsApiCallHandler implements AutoCloseable
 {
@@ -72,7 +70,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
 
     protected final ErrorReporter errorReporter;
-    protected final DbConnectionPool dbConnPool;
     protected final AccessContext apiCtx;
     protected final CtrlStltSerializer internalComSerializer;
     private final CtrlObjectFactories objectFactories;
@@ -84,7 +81,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected AbsApiCallHandler(
         ErrorReporter errorReporterRef,
-        DbConnectionPool dbConnPoolRef,
         AccessContext apiCtxRef,
         long objMaskRef,
         CtrlStltSerializer serializerRef,
@@ -93,7 +89,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
     )
     {
         errorReporter = errorReporterRef;
-        dbConnPool = dbConnPoolRef;
         apiCtx = apiCtxRef;
         objMask = objMaskRef;
         internalComSerializer = serializerRef;
