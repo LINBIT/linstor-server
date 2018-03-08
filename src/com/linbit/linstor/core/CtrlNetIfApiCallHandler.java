@@ -18,6 +18,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -50,18 +51,20 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_NET_IF,
+            LinStorObject.NET_IF,
             serializerRef,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         satelliteConnector = satelliteConnectorRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
@@ -154,17 +157,14 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             if (stltPort != null && stltEncrType != null)
             {
                 SatelliteConnection stltConn = node.getSatelliteConnection(apiCtx);
-                if (stltPort != null && stltEncrType != null)
+                if (stltConn == null)
                 {
-                    if (stltConn == null)
-                    {
-                        createStltConn(node, netIf, stltPort, stltEncrType);
-                    }
-                    else
-                    {
-                        needsReconnect |= setStltPort(stltConn, stltPort);
-                        needsReconnect |= setStltEncrType(stltConn, stltEncrType);
-                    }
+                    createStltConn(node, netIf, stltPort, stltEncrType);
+                }
+                else
+                {
+                    needsReconnect |= setStltPort(stltConn, stltPort);
+                    needsReconnect |= setStltEncrType(stltConn, stltEncrType);
                 }
             }
 

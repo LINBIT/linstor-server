@@ -28,6 +28,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -77,18 +78,20 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
-        CtrlSecurityObjects secObjsRef
+        CtrlSecurityObjects secObjsRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtx,
-            ApiConsts.MASK_VLM_DFN,
+            LinStorObject.VOLUME_DEFINITION,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
 
         rscDfnMap = rscDfnMapRef;
@@ -231,7 +234,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     vlmDfnInitFlags
                 );
                 Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
-                propsMap.putAll(vlmDfnApi.getProps());
+
+                fillProperties(vlmDfnApi.getProps(), getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
                 if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
                 {
@@ -307,7 +311,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             Props props = getVlmDfnProps(vlmDfn);
             Map<String, String> propsMap = props.map();
 
-            propsMap.putAll(overrideProps);
+            fillProperties(overrideProps, getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
             for (String delKey : deletePropKeys)
             {

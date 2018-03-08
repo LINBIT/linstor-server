@@ -15,6 +15,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -56,18 +57,20 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whiteListProps
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_STOR_POOL_DFN,
+            LinStorObject.STORAGEPOOL_DEFINITION,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whiteListProps
         );
         clientComSerializer = clientComSerializerRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -93,7 +96,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             requireStorPoolDfnChangeAccess();
 
             StorPoolDefinitionData storPoolDfn = createStorPool(storPoolNameStr);
-            getProps(storPoolDfn).map().putAll(storPoolDfnProps);
+            fillProperties(storPoolDfnProps, getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
             commit();
 
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
@@ -150,7 +153,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             Props props = getProps(storPoolDfn);
             Map<String, String> propsMap = props.map();
 
-            propsMap.putAll(overrideProps);
+            fillProperties(overrideProps, getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
 
             for (String delKey : deletePropKeys)
             {

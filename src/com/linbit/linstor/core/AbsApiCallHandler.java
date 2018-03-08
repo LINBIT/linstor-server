@@ -29,8 +29,11 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -40,12 +43,13 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 
-abstract class AbsApiCallHandler implements AutoCloseable
+public abstract class AbsApiCallHandler implements AutoCloseable
 {
     protected enum ApiCallType
     {
@@ -61,7 +65,30 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    private final long objMask;
+    public enum LinStorObject
+    {
+        NODE(ApiConsts.MASK_NODE),
+        NET_IF(ApiConsts.MASK_NET_IF),
+        NODE_CONN(ApiConsts.MASK_NODE_CONN),
+        RESOURCE_DEFINITION(ApiConsts.MASK_RSC_DFN),
+        RESOURCE(ApiConsts.MASK_RSC),
+        RSC_CONN(ApiConsts.MASK_RSC_CONN),
+        VOLUME_DEFINITION(ApiConsts.MASK_VLM_DFN),
+        VOLUME(ApiConsts.MASK_VLM),
+        VOLUME_CONN(ApiConsts.MASK_VLM_CONN),
+        CONTROLLER(ApiConsts.MASK_CTRL_CONF),
+        STORAGEPOOL(ApiConsts.MASK_STOR_POOL),
+        STORAGEPOOL_DEFINITION(ApiConsts.MASK_STOR_POOL_DFN);
+
+        private long objMask;
+
+        LinStorObject(long objMaskRef)
+        {
+            objMask = objMaskRef;
+        }
+    }
+
+    private final LinStorObject linstorObj;
 
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
@@ -72,6 +99,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected final AccessContext peerAccCtx;
     protected final Provider<Peer> peer;
+    private final WhitelistProps propsWhiteList;
 
     protected static ThreadLocal<ApiCallType> apiCallType = new ThreadLocal<>();
     protected static ThreadLocal<ApiCallRcImpl> apiCallRc = new ThreadLocal<>();
@@ -79,25 +107,28 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected static ThreadLocal<Map<String, String>> objRefs = new ThreadLocal<>();
     protected static ThreadLocal<Map<String, String>> variables = new ThreadLocal<>();
 
+
     protected AbsApiCallHandler(
         ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
-        long objMaskRef,
+        LinStorObject linstorObjRef,
         CtrlStltSerializer serializerRef,
         CtrlObjectFactories objectFactoriesRef,
         Provider<TransactionMgr> transMgrProviderRef,
         AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps propsWhiteListRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        objMask = objMaskRef;
+        linstorObj = linstorObjRef;
         internalComSerializer = serializerRef;
         objectFactories = objectFactoriesRef;
         transMgrProvider = transMgrProviderRef;
         peerAccCtx = peerAccCtxRef;
         peer = peerRef;
+        propsWhiteList = propsWhiteListRef;
     }
 
     protected AbsApiCallHandler setContext(
@@ -859,7 +890,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         if (apiCallRc != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(retCode | apiCallType.get().opMask | objMask);
+            entry.setReturnCodeBit(retCode | apiCallType.get().opMask | linstorObj.objMask);
             entry.setMessageFormat(msg);
             entry.setCauseFormat(cause);
 
@@ -914,7 +945,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     )
     {
         String errorType;
-        long retCode = objMask | type.opMask;
+        long retCode = linstorObj.objMask | type.opMask;
         if (exc instanceof ImplementationError)
         {
             errorType = "implementation error";
@@ -1179,7 +1210,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                     null
                 );
         }
-        reportSuccess(msg, details, baseRetCode | objMask);
+        reportSuccess(msg, details, baseRetCode | linstorObj.objMask);
     }
 
 
@@ -1562,6 +1593,57 @@ abstract class AbsApiCallHandler implements AutoCloseable
             );
         }
         return ret;
+    }
+
+    protected void fillProperties(Map<String, String> sourceProps, Props targetProps, long failAccDeniedRc)
+    {
+        for (Entry<String, String> entry : sourceProps.entrySet())
+        {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (propsWhiteList.isAllowed(linstorObj, key, value, true))
+            {
+                try
+                {
+                    targetProps.setProp(key, value);
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw asAccDeniedExc(
+                        exc,
+                        "insert property '" + key + "'",
+                        failAccDeniedRc
+                    );
+                }
+                catch (InvalidKeyException exc)
+                {
+                    // we tried to insert an invalid but whitelisted key
+                    throw asImplError(exc);
+                }
+                catch (InvalidValueException exc)
+                {
+                    // we tried to insert an invalid but whitelisted value
+                    throw asImplError(exc);
+                }
+                catch (SQLException exc)
+                {
+                    throw asSqlExc(exc, "inserting property '" + key + "'");
+                }
+            }
+            else
+            {
+                // report
+                report(
+                    null,
+                    "Invalid property",
+                    "The value '" + value + "' is not valid for the key '" + key + "'",
+                    "The value must match '" + propsWhiteList.getRuleValue(linstorObj, key) + "'",
+                    null,
+                    ApiConsts.FAIL_INVLD_PROP
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+        }
     }
 
     protected String getObjectDescriptionInlineFirstLetterCaps()

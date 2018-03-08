@@ -30,6 +30,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -61,18 +62,20 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         CtrlRscApiCallHandler rscApiCallHandlerRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_RSC,
+            LinStorObject.RESOURCE,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;

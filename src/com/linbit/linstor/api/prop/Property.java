@@ -7,16 +7,22 @@ public interface Property
 {
     enum PropertyType
     {
-        REGEX;
+        REGEX,
+        SYMBOL,
+        BOOLEAN,
+        RANGE,
+        STRING,
+        NUMERIC_OR_SYMBOL;
 
         public static PropertyType valueOfIgnoreCase(String typeRef)
         {
+            String type = typeRef.replace("-", "_");
             PropertyType ret = null;
-            for (PropertyType type : values())
+            for (PropertyType propType : values())
             {
-                if (type.name().equalsIgnoreCase(typeRef))
+                if (propType.name().equalsIgnoreCase(type))
                 {
-                    ret = type;
+                    ret = propType;
                     break;
                 }
             }

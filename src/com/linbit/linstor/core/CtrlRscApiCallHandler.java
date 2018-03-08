@@ -42,6 +42,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -103,18 +104,20 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_RSC,
+            LinStorObject.RESOURCE,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         clientComSerializer = clientComSerializerRef;
         rscDfnMapProt = rscDfnMapProtRef;
@@ -179,7 +182,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
             Props rscProps = getProps(rsc);
-            rscProps.map().putAll(rscPropsMap);
+
+            fillProperties(rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
 
             boolean isRscDiskless = isDiskless(rsc);
 
@@ -226,7 +230,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
 
                 Props vlmProps = getProps(vlmData);
-                vlmProps.map().putAll(vlmApi.getVlmProps());
+
+                fillProperties(vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
 
                 vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
             }
@@ -458,7 +463,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             Props props = getProps(rsc);
             Map<String, String> propsMap = props.map();
 
-            propsMap.putAll(overrideProps);
+            fillProperties(overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
 
             for (String delKey : deletePropKeys)
             {

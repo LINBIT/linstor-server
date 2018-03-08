@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.prop;
 
-import com.linbit.ImplementationError;
+import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.util.HashMap;
@@ -10,23 +10,17 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class PropsWhitelist
-{
-    public enum LinStorObject
-    {
-        NODE,
-        RESOURCE_DEFINITION,
-        RESOURCE,
-        VOLUME_DEFINITION,
-        CONTROLLER,
-        STORAGEPOOL,
-        STORAGEPOOL_DEFINITION
-    }
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
+public class WhitelistProps
+{
     private ErrorReporter errorReporter;
     private Map<LinStorObject, Map<String, Property>> rules;
 
-    public PropsWhitelist(ErrorReporter errorReporterRef)
+    @Inject
+    public WhitelistProps(ErrorReporter errorReporterRef)
     {
         errorReporter = errorReporterRef;
 
@@ -39,7 +33,7 @@ public class PropsWhitelist
         Map<LinStorObject, List<String>> rulesStr = GeneratedPropertyRules.getWhitelistedRules();
 
         rules = new HashMap<>();
-        for (Entry<LinStorObject, List<String>> ruleEntry: rulesStr.entrySet())
+        for (Entry<LinStorObject, List<String>> ruleEntry : rulesStr.entrySet())
         {
             Map<String, Property> rulesPropMap = new HashMap<>();
             for (String ruleProp : ruleEntry.getValue())
@@ -51,22 +45,15 @@ public class PropsWhitelist
         }
     }
 
-    public boolean isAllowed(LinStorObject lsObj, String key, String value)
+    public boolean isAllowed(LinStorObject lsObj, String key, String value, boolean log)
     {
         boolean validProp = false;
         Property rule = rules.get(lsObj).get(key);
         if (rule != null)
         {
             validProp = rule.isValid(value);
-            if (!validProp)
+            if (!validProp && log)
             {
-                if (rule.isInternal())
-                {
-                    throw new ImplementationError(
-                        "Value '%s' for key '%s' is not valid. Rule matches for: %s",
-                        null
-                    );
-                }
                 errorReporter.logWarning(
                     "Value '%s' for key '%s' is not valid. Rule matches for: %s",
                     value,
@@ -77,9 +64,23 @@ public class PropsWhitelist
         }
         else
         {
-            errorReporter.logWarning("Ignoring unknown property key: %s", key);
+            if (log)
+            {
+                errorReporter.logWarning("Ignoring unknown property key: %s", key);
+            }
         }
-
         return validProp;
+    }
+
+    public Map<String, String> sanitize(LinStorObject lsObj, Map<String, String> props)
+    {
+        return props.entrySet().stream()
+            .filter(entry -> isAllowed(lsObj, entry.getKey(), entry.getValue(), false))
+            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+    }
+
+    public String getRuleValue(LinStorObject linstorObj, String key)
+    {
+        return rules.get(linstorObj).get(key).getValue();
     }
 }

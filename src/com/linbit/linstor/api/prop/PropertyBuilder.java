@@ -19,6 +19,9 @@ public class PropertyBuilder
     private String value;
     private boolean internal;
     private String info;
+    private String[] values;
+    private long max;
+    private long min;
 
     public PropertyBuilder()
     {
@@ -27,15 +30,49 @@ public class PropertyBuilder
     public Property build()
     {
         Property prop = null;
+
         switch (type)
         {
             case REGEX:
                 prop = new RegexProperty(name, key, value, internal, info);
                 break;
+            case SYMBOL:
+                prop = new RegexProperty(name, key, buildValuesEnumRegex(), internal, info);
+                break;
+            case BOOLEAN:
+                prop = new RegexProperty(
+                    name,
+                    key,
+                    "(?i)(?:true|false)",
+                    internal,
+                    info
+                );
+                break;
+            case RANGE:
+                prop = new RangeProperty(name, key, min, max, internal, info);
+                break;
+            case STRING:
+                prop = new StringProperty(name, key, internal, info);
+                break;
+            case NUMERIC_OR_SYMBOL:
+                prop = new NumericOrSymbolProperty(name, key, min, max, buildValuesEnumRegex(), internal, info);
+                break;
             default:
                 throw new ImplementationError("Unknown property type: " + type, null);
         }
         return prop;
+    }
+
+    private String buildValuesEnumRegex()
+    {
+        StringBuilder symbolValue = new StringBuilder("(?:");
+        for (String val : values)
+        {
+            symbolValue.append(val).append("|");
+        }
+        symbolValue.setLength(symbolValue.length() - 1);
+        symbolValue.append(")");
+        return symbolValue.toString();
     }
 
     public PropertyBuilder name(String nameRef)
@@ -44,7 +81,7 @@ public class PropertyBuilder
         return this;
     }
 
-    public PropertyBuilder key(String... keyRef)
+    public PropertyBuilder keyRef(String... keyRef)
     {
         List<String> keyList = new ArrayList<>();
         for (String keyPart : keyRef)
@@ -71,9 +108,19 @@ public class PropertyBuilder
         return this;
     }
 
+    public PropertyBuilder keyStr(String keyStr)
+    {
+        key = keyStr;
+        return this;
+    }
+
     public PropertyBuilder type(String typeRef)
     {
         type = PropertyType.valueOfIgnoreCase(typeRef);
+        if (type == null)
+        {
+            throw new NullPointerException("Unknown type '" + typeRef + "'");
+        }
         return this;
     }
 
@@ -93,5 +140,28 @@ public class PropertyBuilder
     {
         info = infoRef;
         return this;
+    }
+
+    public PropertyBuilder values(String... valuesRef)
+    {
+        values = valuesRef;
+        return this;
+    }
+
+    public PropertyBuilder max(String maxStr)
+    {
+        max = Long.parseLong(maxStr);
+        return this;
+    }
+
+    public PropertyBuilder min(String minStr)
+    {
+        min = Long.parseLong(minStr);
+        return this;
+    }
+
+    public static void main(String[] args)
+    {
+        GeneratedPropertyRules.getWhitelistedProperties();
     }
 }

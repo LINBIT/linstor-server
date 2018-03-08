@@ -27,6 +27,7 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -74,18 +75,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
-        CtrlVlmDfnApiCallHandler vlmDfnHandlerRef
+        CtrlVlmDfnApiCallHandler vlmDfnHandlerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_RSC_DFN,
+            LinStorObject.RESOURCE_DEFINITION,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         clientComSerializer = clientComSerializerRef;
 
@@ -117,7 +120,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             requireRscDfnMapChangeAccess();
             ResourceDefinitionData rscDfn = createRscDfn(rscNameStr, transportTypeStr, portInt, secret);
 
-            getProps(rscDfn).map().putAll(props);
+            fillProperties(props, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
             List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
@@ -208,7 +211,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
                 Map<String, String> map = getProps(rscDfn).map();
-                map.putAll(overrideProps);
+
+                fillProperties(overrideProps, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+
                 for (String delKey : deletePropKeys)
                 {
                     map.remove(delKey);

@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -41,18 +42,20 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_NODE_CONN,
+            LinStorObject.NODE_CONN,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
     }
@@ -78,7 +81,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
             NodeConnectionData nodeConn = createNodeConn(node1, node2);
 
-            getProps(nodeConn).map().putAll(nodeConnPropsMap);
+            fillProperties(nodeConnPropsMap, getProps(nodeConn), ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
 
             commit();
 
@@ -139,7 +142,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             Props props = getProps(nodeConn);
             Map<String, String> propsMap = props.map();
 
-            propsMap.putAll(overrideProps);
+            fillProperties(overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
 
             for (String delKey : deletePropKeys)
             {

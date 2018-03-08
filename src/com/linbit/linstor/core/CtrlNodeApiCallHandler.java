@@ -31,6 +31,7 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -84,18 +85,20 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps propsWhiteListRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_NODE,
+            LinStorObject.NODE,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            propsWhiteListRef
         );
         clientComSerializer = clientComSerializerRef;
         nodesMap = nodesMapRef;
@@ -170,8 +173,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
             Node node = createNode(nodeName, type);
 
-            Props nodeProps = getProps(node);
-            nodeProps.map().putAll(propsMap);
+            fillProperties(propsMap, getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
 
             if (netIfs.isEmpty())
             {
@@ -266,8 +268,11 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             {
                 setNodeType(node, nodeTypeStr);
             }
-            Map<String, String> nodeProps = getProps(node).map();
-            nodeProps.putAll(overrideProps);
+
+            Props props = getProps(node);
+            fillProperties(overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
+
+            Map<String, String> nodeProps = props.map();
             for (String key : deletePropKeys)
             {
                 nodeProps.remove(key);

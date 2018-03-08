@@ -21,8 +21,7 @@
 
 package com.linbit.linstor.api.prop;
 
-
-import com.linbit.linstor.api.prop.PropsWhitelist.LinStorObject;
+import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,67 +37,676 @@ public final class GeneratedPropertyRules
         List<Property> propertyList = new ArrayList<>();
         propertyList.add(
             new PropertyBuilder()
-                .name("minor_nr_range")
-                .info("Minor volume number range")
-                .type("regex")
-                .value("[0-9]+-[0-9]+")
-                .key("KEY_MINOR_NR_RANGE")
+                .name("protocol")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "A", 
+                    "B", 
+                    "C"
+                )
+                .keyStr("DrbdOptions/Net/protocol")
                 .build()
-            );
+        );
         propertyList.add(
             new PropertyBuilder()
-                .name("preferred_nic")
-                .info("Preferred network interface to use")
-                .type("regex")
-                .value("[a-zA-Z0-9]+")
-                .key("KEY_STOR_POOL_PREF_NIC")
+                .name("discard-zeroes-if-aligned")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/discard-zeroes-if-aligned")
                 .build()
-            );
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("c-fill-target")
+                .max("1048576")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/PeerDevice/c-fill-target")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("cpu-mask")
+                .internal("True")
+                .type("string")
+                .keyStr("DrbdOptions/Resource/cpu-mask")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("bitmap")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/PeerDevice/bitmap")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("twopc-retry-timeout")
+                .max("50")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Resource/twopc-retry-timeout")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("after-sb-0pri")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "disconnect", 
+                    "discard-younger-primary", 
+                    "discard-older-primary", 
+                    "discard-zero-changes", 
+                    "discard-least-changes", 
+                    "discard-local", 
+                    "discard-remote"
+                )
+                .keyStr("DrbdOptions/Net/after-sb-0pri")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("al-updates")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/al-updates")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("data-integrity-alg")
+                .internal("True")
+                .type("string")
+                .keyStr("DrbdOptions/Net/data-integrity-alg")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("md-flushes")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/md-flushes")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("max-io-depth")
+                .max("4294967295")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Resource/max-io-depth")
+                .min("4")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("always-asbp")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Net/always-asbp")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("congestion-extents")
+                .max("65534")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/congestion-extents")
+                .min("67")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("ping-int")
+                .max("120")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/ping-int")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("resync-after")
+                .max("1048575")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Disk/resync-after")
+                .min("-1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("c-max-rate")
+                .max("4194304")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/PeerDevice/c-max-rate")
+                .min("250")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("auto-promote")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Resource/auto-promote")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("use-rle")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Net/use-rle")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("csums-after-crash-only")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Net/csums-after-crash-only")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("peer-ack-window")
+                .max("204800")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Resource/peer-ack-window")
+                .min("2048")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("cram-hmac-alg")
+                .internal("True")
+                .type("string")
+                .keyStr("DrbdOptions/Net/cram-hmac-alg")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("disk-flushes")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/disk-flushes")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("after-sb-2pri")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "disconnect", 
+                    "call-pri-lost-after-sb", 
+                    "violently-as0p"
+                )
+                .keyStr("DrbdOptions/Net/after-sb-2pri")
+                .build()
+        );
         propertyList.add(
             new PropertyBuilder()
                 .name("stordriver_thinpool")
                 .internal("True")
                 .type("regex")
+                .keyRef("NAMESPC_STORAGE_DRIVER", "KEY_STOR_POOL_THIN_POOL")
                 .value("[a-zA-Z]+")
-                .key("NAMESPC_STORAGE_DRIVER", "KEY_STOR_POOL_THIN_POOL")
                 .build()
-            );
+        );
         propertyList.add(
             new PropertyBuilder()
-                .name("tcp_port_range")
-                .info("TCP port range for resource allocation")
-                .type("regex")
-                .value("[0-9]+-[0-9]+")
-                .key("KEY_TCP_PORT_RANGE")
-                .build()
-            );
-        propertyList.add(
-            new PropertyBuilder()
-                .name("stordriver_zpool")
+                .name("timeout")
+                .max("600")
                 .internal("True")
-                .type("regex")
-                .value("[a-zA-Z]+")
-                .key("NAMESPC_STORAGE_DRIVER", "KEY_STOR_POOL_ZPOOL")
+                .type("range")
+                .keyStr("DrbdOptions/Net/timeout")
+                .min("1")
                 .build()
-            );
+        );
         propertyList.add(
             new PropertyBuilder()
-                .name("storage_pool_name")
+                .name("after-sb-1pri")
+                .type("symbol")
                 .internal("True")
-                .type("regex")
-                .value("[a-zA-Z]+")
-                .key("KEY_STOR_POOL_NAME")
+                .values(
+                    "disconnect", 
+                    "consensus", 
+                    "discard-secondary", 
+                    "call-pri-lost-after-sb", 
+                    "violently-as0p"
+                )
+                .keyStr("DrbdOptions/Net/after-sb-1pri")
                 .build()
-            );
+        );
         propertyList.add(
             new PropertyBuilder()
                 .name("stordriver_volumegroup")
                 .internal("True")
                 .type("regex")
+                .keyRef("NAMESPC_STORAGE_DRIVER", "KEY_STOR_POOL_VOLUME_GROUP")
                 .value("[a-zA-Z]+")
-                .key("NAMESPC_STORAGE_DRIVER", "KEY_STOR_POOL_VOLUME_GROUP")
                 .build()
-            );
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("peer-ack-delay")
+                .max("10000")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Resource/peer-ack-delay")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("max-epoch-size")
+                .max("20000")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/max-epoch-size")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("auto-promote-timeout")
+                .max("600")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Resource/auto-promote-timeout")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("on-no-quorum")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "io-error", 
+                    "suspend-io"
+                )
+                .keyStr("DrbdOptions/Resource/on-no-quorum")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("on-no-data-accessible")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "io-error", 
+                    "suspend-io"
+                )
+                .keyStr("DrbdOptions/Resource/on-no-data-accessible")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("disk-timeout")
+                .max("6000")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Disk/disk-timeout")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("allow-two-primaries")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Net/allow-two-primaries")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("stordriver_zpool")
+                .internal("True")
+                .type("regex")
+                .keyRef("NAMESPC_STORAGE_DRIVER", "KEY_STOR_POOL_ZPOOL")
+                .value("[a-zA-Z]+")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("ko-count")
+                .max("200")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/ko-count")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("c-min-rate")
+                .max("4194304")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/PeerDevice/c-min-rate")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("ping-timeout")
+                .max("300")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/ping-timeout")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("disable-write-same")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/disable-write-same")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("sndbuf-size")
+                .max("10485760")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/sndbuf-size")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("rcvbuf-size")
+                .max("10485760")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/rcvbuf-size")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("max-buffers")
+                .max("131072")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/max-buffers")
+                .min("32")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("fencing")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "dont-care", 
+                    "resource-only", 
+                    "resource-and-stonith"
+                )
+                .keyStr("DrbdOptions/Net/fencing")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("resync-rate")
+                .max("4194304")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/PeerDevice/resync-rate")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("csums-alg")
+                .internal("True")
+                .type("string")
+                .keyStr("DrbdOptions/Net/csums-alg")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("tcp_port_range")
+                .info("Range for auto-allocation of resource TCP ports")
+                .type("regex")
+                .keyRef("KEY_TCP_PORT_AUTO_RANGE")
+                .value("[0-9]+-[0-9]+")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("twopc-timeout")
+                .max("600")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Resource/twopc-timeout")
+                .min("50")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("storage_pool_name")
+                .type("regex")
+                .keyRef("KEY_STOR_POOL_NAME")
+                .value("[a-zA-Z]+")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("on-congestion")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "block", 
+                    "pull-ahead", 
+                    "disconnect"
+                )
+                .keyStr("DrbdOptions/Net/on-congestion")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("disk-barrier")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/disk-barrier")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("read-balancing")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "prefer-local", 
+                    "prefer-remote", 
+                    "round-robin", 
+                    "least-pending", 
+                    "when-congested-remote", 
+                    "32K-striping", 
+                    "64K-striping", 
+                    "128K-striping", 
+                    "256K-striping", 
+                    "512K-striping", 
+                    "1M-striping"
+                )
+                .keyStr("DrbdOptions/Disk/read-balancing")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("minor_nr_range")
+                .info("Range for auto-allocation of volume minor numbers")
+                .type("regex")
+                .keyRef("KEY_MINOR_NR_AUTO_RANGE")
+                .value("[0-9]+-[0-9]+")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("preferred_nic")
+                .info("Preferred network interface to use")
+                .type("regex")
+                .keyRef("KEY_STOR_POOL_PREF_NIC")
+                .value("[a-zA-Z0-9]+")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("rr-conflict")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "disconnect", 
+                    "call-pri-lost", 
+                    "violently"
+                )
+                .keyStr("DrbdOptions/Net/rr-conflict")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("al-extents")
+                .max("65534")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Disk/al-extents")
+                .min("67")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("tcp-cork")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Net/tcp-cork")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("socket-check-timeout")
+                .max("300")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/socket-check-timeout")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("disk-drain")
+                .internal("True")
+                .type("boolean")
+                .keyStr("DrbdOptions/Disk/disk-drain")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("congestion-fill")
+                .max("20971520")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/congestion-fill")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("verify-alg")
+                .internal("True")
+                .type("string")
+                .keyStr("DrbdOptions/Net/verify-alg")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("quorum")
+                .min("1")
+                .max("32")
+                .internal("True")
+                .values(
+                    "off", 
+                    "majority", 
+                    "all"
+                )
+                .keyStr("DrbdOptions/Resource/quorum")
+                .type("numeric-or-symbol")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("shared-secret")
+                .internal("True")
+                .type("string")
+                .keyStr("DrbdOptions/Net/shared-secret")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("connect-int")
+                .max("120")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Net/connect-int")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("c-delay-target")
+                .max("100")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/PeerDevice/c-delay-target")
+                .min("1")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("rs-discard-granularity")
+                .max("1048576")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/Disk/rs-discard-granularity")
+                .min("0")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("on-io-error")
+                .type("symbol")
+                .internal("True")
+                .values(
+                    "pass_on", 
+                    "call-local-io-error", 
+                    "detach"
+                )
+                .keyStr("DrbdOptions/Disk/on-io-error")
+                .build()
+        );
+        propertyList.add(
+            new PropertyBuilder()
+                .name("c-plan-ahead")
+                .max("300")
+                .internal("True")
+                .type("range")
+                .keyStr("DrbdOptions/PeerDevice/c-plan-ahead")
+                .min("0")
+                .build()
+        );
         return propertyList;
     }
 
@@ -106,18 +714,150 @@ public final class GeneratedPropertyRules
     {
         Map<LinStorObject, List<String>> rules = new TreeMap<>();
         rules.put(LinStorObject.NODE, Collections.emptyList());
-        rules.put(LinStorObject.RESOURCE_DEFINITION, Collections.emptyList());
+        rules.put(LinStorObject.RESOURCE_DEFINITION,
+            Arrays.asList(
+                "peer-ack-delay",
+                "max-epoch-size",
+                "csums-alg",
+                "auto-promote-timeout",
+                "discard-zeroes-if-aligned",
+                "on-no-data-accessible",
+                "cpu-mask",
+                "allow-two-primaries",
+                "twopc-retry-timeout",
+                "after-sb-0pri",
+                "ko-count",
+                "data-integrity-alg",
+                "al-updates",
+                "protocol",
+                "ping-timeout",
+                "sndbuf-size",
+                "on-no-quorum",
+                "timeout",
+                "rcvbuf-size",
+                "max-buffers",
+                "md-flushes",
+                "max-io-depth",
+                "always-asbp",
+                "twopc-timeout",
+                "congestion-extents",
+                "on-congestion",
+                "congestion-fill",
+                "ping-int",
+                "disk-barrier",
+                "read-balancing",
+                "resync-after",
+                "disk-flushes",
+                "rr-conflict",
+                "al-extents",
+                "auto-promote",
+                "connect-int",
+                "tcp-cork",
+                "use-rle",
+                "fencing",
+                "csums-after-crash-only",
+                "socket-check-timeout",
+                "disk-drain",
+                "peer-ack-window",
+                "cram-hmac-alg",
+                "verify-alg",
+                "quorum",
+                "shared-secret",
+                "disk-timeout",
+                "disable-write-same",
+                "rs-discard-granularity",
+                "on-io-error",
+                "after-sb-2pri",
+                "after-sb-1pri"
+            )
+        );
         rules.put(LinStorObject.RESOURCE,
             Arrays.asList(
                 "storage_pool_name",
                 "preferred_nic"
             )
         );
-        rules.put(LinStorObject.VOLUME_DEFINITION, Collections.emptyList());
+        rules.put(LinStorObject.VOLUME_DEFINITION,
+            Arrays.asList(
+                "discard-zeroes-if-aligned",
+                "al-updates",
+                "md-flushes",
+                "disk-barrier",
+                "read-balancing",
+                "resync-after",
+                "disk-flushes",
+                "al-extents",
+                "disk-drain",
+                "disk-timeout",
+                "disable-write-same",
+                "rs-discard-granularity",
+                "on-io-error"
+            )
+        );
         rules.put(LinStorObject.CONTROLLER,
             Arrays.asList(
                 "tcp_port_range",
-                "minor_nr_range"
+                "minor_nr_range",
+                "peer-ack-delay",
+                "max-epoch-size",
+                "csums-alg",
+                "auto-promote-timeout",
+                "discard-zeroes-if-aligned",
+                "c-fill-target",
+                "on-no-data-accessible",
+                "cpu-mask",
+                "bitmap",
+                "allow-two-primaries",
+                "twopc-retry-timeout",
+                "after-sb-0pri",
+                "ko-count",
+                "c-min-rate",
+                "data-integrity-alg",
+                "al-updates",
+                "protocol",
+                "ping-timeout",
+                "c-delay-target",
+                "sndbuf-size",
+                "on-no-quorum",
+                "timeout",
+                "rcvbuf-size",
+                "max-buffers",
+                "md-flushes",
+                "resync-rate",
+                "max-io-depth",
+                "always-asbp",
+                "twopc-timeout",
+                "congestion-extents",
+                "on-congestion",
+                "congestion-fill",
+                "ping-int",
+                "disk-barrier",
+                "read-balancing",
+                "resync-after",
+                "disk-flushes",
+                "c-max-rate",
+                "rr-conflict",
+                "al-extents",
+                "auto-promote",
+                "connect-int",
+                "tcp-cork",
+                "use-rle",
+                "fencing",
+                "csums-after-crash-only",
+                "socket-check-timeout",
+                "disk-drain",
+                "peer-ack-window",
+                "cram-hmac-alg",
+                "verify-alg",
+                "quorum",
+                "shared-secret",
+                "disk-timeout",
+                "disable-write-same",
+                "rs-discard-granularity",
+                "on-io-error",
+                "after-sb-2pri",
+                "after-sb-1pri",
+                "c-plan-ahead"
             )
         );
         rules.put(LinStorObject.STORAGEPOOL,

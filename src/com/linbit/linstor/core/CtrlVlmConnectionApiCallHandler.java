@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -45,18 +46,20 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_VLM_CONN,
+            LinStorObject.VOLUME_CONN,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
     }
@@ -83,7 +86,8 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         )
         {
             VolumeConnectionData vlmConn = createVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
-            getProps(vlmConn).map().putAll(vlmConnPropsMap);
+
+            fillProperties(vlmConnPropsMap, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
 
             commit();
 
@@ -146,7 +150,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             Props props = getProps(vlmConn);
             Map<String, String> propsMap = props.map();
 
-            propsMap.putAll(overrideProps);
+            fillProperties(overrideProps, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
 
             for (String delKey : deletePropKeys)
             {

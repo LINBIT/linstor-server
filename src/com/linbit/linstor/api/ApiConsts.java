@@ -359,6 +359,11 @@ public class ApiConsts
     public static final String NAMESPC_STLT = "Satellite";
     public static final String NAMESPC_STORAGE_DRIVER = "StorDriver";
     public static final String NAMESPC_AUXILIARY = "Aux";
+    public static final String NAMESPC_DRBD_OPTIONS = "DrbdOptions";
+    public static final String NAMESPC_DRBD_NET_OPTIONS = "DrbdOptions/Net";
+    public static final String NAMESPC_DRBD_DISK_OPTIONS = "DrbdOptions/Disk";
+    public static final String NAMESPC_DRBD_RESOURCE_OPTIONS = "DrbdOptions/Resource";
+    public static final String NAMESPC_DRBD_PEER_DEVICE_OPTIONS = "DrbdOptions/PeerDevice";
 
     /*
      * Storage pool property keys

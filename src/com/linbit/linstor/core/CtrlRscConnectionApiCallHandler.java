@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -44,18 +45,20 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            ApiConsts.MASK_RSC_CONN,
+            LinStorObject.RSC_CONN,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef
+            peerRef,
+            whitelistPropsRef
         );
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
     }
@@ -80,7 +83,9 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         )
         {
             ResourceConnectionData rscConn = createRscConn(nodeName1Str, nodeName2Str, rscNameStr);
-            getProps(rscConn).map().putAll(rscConnPropsMap);
+
+            fillProperties(rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
+
             commit();
 
             updateSatellites(rscConn);
@@ -140,7 +145,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             Props props = getProps(rscConn);
             Map<String, String> propsMap = props.map();
 
-            propsMap.putAll(overrideProps);
+            fillProperties(overrideProps, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
             for (String delKey : deletePropKeys)
             {
