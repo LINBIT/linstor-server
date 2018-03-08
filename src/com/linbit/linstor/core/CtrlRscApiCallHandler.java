@@ -665,6 +665,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             if (deletedNodeName != null)
             {
                 nodesMap.remove(deletedNodeName);
+                node.getPeer(apiCtx).closeConnection();
                 addNodeDeletedAnswer(deletedNodeName, nodeUuid);
             }
         }

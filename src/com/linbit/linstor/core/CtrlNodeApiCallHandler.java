@@ -415,6 +415,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     if (!hasRsc)
                     {
                         nodesMap.remove(nodeName);
+                        nodeData.getPeer(apiCtx).closeConnection();
                     }
                     else
                     {
