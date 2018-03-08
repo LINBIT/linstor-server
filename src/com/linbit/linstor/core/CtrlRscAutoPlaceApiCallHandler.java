@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         // TODO extract this method into an own interface implementation
         // that the controller can choose between different auto-place strategies
         List<String> notPlaceWithRscList = notPlaceWithRscListRef.stream()
-            .map(rscNameStrTmp -> rscNameStrTmp.toUpperCase())
+            .map(String::toUpperCase)
             .collect(Collectors.toList());
 
         if (notPlaceWithRscRegexStr != null)
@@ -126,16 +127,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             // and are not diskless
             Map<StorPoolName, List<StorPool>> storPools = storPoolDfnMap.values().stream()
                 .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(accCtx).hasAccess(AccessType.USE))
-                .flatMap(storPoolDfn ->
-                    StreamUtils.toStream(
-                        getStorPoolIterator(storPoolDfn)
-                    )
-                )
+                .map(this::getStorPoolIterator)
+                .flatMap(StreamUtils::toStream)
                 .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
                 .filter(storPool -> storPool.getNode().getObjProt().queryAccess(accCtx).hasAccess(AccessType.USE))
                 .filter(storPool -> getFreeSpace(storPool) >= rscSize)
                 .collect(
-                    Collectors.groupingBy(storPool -> storPool.getName())
+                    Collectors.groupingBy(StorPool::getName)
                 );
 
             // apply the storage pool filter
@@ -270,12 +268,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         for (Entry<StorPoolName, List<StorPool>> entry: storPools.entrySet())
         {
             List<Node> nodeCandidates = entry.getValue().stream()
-                .sorted((sp1, sp2) -> Long.compare(
-                        getFreeSpace(sp1),
-                        getFreeSpace(sp2)
-                    )
-                )
-                .map(storPool -> storPool.getNode())
+                .sorted(Comparator.comparingLong(this::getFreeSpace))
+                .map(StorPool::getNode)
                 .filter(node -> hasNoResourceOf(node, notPlaceWithRscList))
                 .limit(placeCount)
                 .collect(Collectors.toList());
@@ -381,7 +375,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             );
             hasNoResourceOf = deployedRscStream
                 .map(rsc -> rsc.getDefinition().getName().value)
-                .noneMatch(deployedRscStr -> notPlaceWithRscList.contains(deployedRscStr));
+                .noneMatch(notPlaceWithRscList::contains);
         }
         catch (AccessDeniedException accDeniedExc)
         {
