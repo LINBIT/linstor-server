@@ -1,6 +1,8 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.linstor.security.DerbyBase;
+import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,10 +36,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PropsContainerTest extends DerbyBase
+public class PropsContainerTest
 {
     private static final String TEST_INSTANCE_NAME = "testInstanceName";
 
+    private TransactionMgr transactionMgr;
+
+    private PropsContainerFactory propsContainerFactory;
     private PropsContainer root;
     private Map<String, String> rootMap;
     private Set<String> rootKeySet;
@@ -47,12 +52,12 @@ public class PropsContainerTest extends DerbyBase
     @Before
     public void setUp() throws Exception
     {
-        super.setUpAndEnterScope();
-//        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), transMgrProvider);
+        transactionMgr = new SatelliteTransactionMgr();
+
+        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), () -> transactionMgr);
         root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        commit();
 
         rootMap = root.map();
         rootEntrySet = root.entrySet();
@@ -301,7 +306,7 @@ public class PropsContainerTest extends DerbyBase
         map.put("", "root");
         root.setAllProps(map, null);
 
-        commit();
+        transactionMgr.commit();
 
         final Map<String, String> overrideMap = new HashMap<>();
         overrideMap.put("a", "overriddenA");

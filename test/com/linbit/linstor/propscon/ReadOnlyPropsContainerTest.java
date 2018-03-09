@@ -1,12 +1,9 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,10 +36,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ReadOnlyPropsContainerTest extends DerbyPropsConBase
+public class ReadOnlyPropsContainerTest
 {
     private static final String TEST_INSTANCE_NAME = "testInstanceName";
 
+    private TransactionMgr transactionMgr;
+
+    private PropsContainerFactory propsContainerFactory;
     private PropsContainer writableProp;
     private ReadOnlyProps roProp;
     private Map<String, String> roMap;
@@ -50,16 +50,12 @@ public class ReadOnlyPropsContainerTest extends DerbyPropsConBase
     private Set<Entry<String, String>> roEntrySet;
     private Collection<String> roValues;
 
-    @Override
     @Before
     public void setUp() throws Exception
     {
-        super.setUpAndEnterScope();
-        Map<NodeName, Node> nodesMap = new HashMap<>();
-        Map<ResourceName, ResourceDefinition> resDfnMap = new HashMap<>();
-        Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();
+        transactionMgr = new SatelliteTransactionMgr();
 
-//        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), transMgrProvider);
+        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), () -> transactionMgr);
         writableProp = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
         roProp = new ReadOnlyProps(writableProp);
 
