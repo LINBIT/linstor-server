@@ -726,18 +726,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         throws AccessDeniedException
     {
         final Set<NodeName> localDelNodeSet = new TreeSet<>();
-        final Set<ResourceName> localDelRscSet  = new TreeSet<>();
+        final Set<ResourceName> localDelRscSet;
+        final Set<VolumeDefinition.Key> localDelVlmSet;
 
         // Shallow-copy the sets to avoid having to mix locking the sched lock and
         // the satellite's reconfigurationLock, rscDfnMapLock
         synchronized (sched)
         {
-            localDelRscSet.addAll(deletedRscSet);
+            localDelRscSet = new TreeSet<>(deletedRscSet);
             deletedRscSet.clear();
-            // FIXME: All functionality for deleting volumes can probably be removed.
-            //        Volumes are only deleted when a volume definition is deleted, which happens
-            //        only on the controller. An update would then be received for the resource
-            //        that contained the volume.
+            localDelVlmSet = new TreeSet<>(deletedVlmSet);
             deletedVlmSet.clear();
         }
 
@@ -751,6 +749,22 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             rscDfnMapWrLock.lock();
             try
             {
+                // From the perspective of this satellite, once a volume is deleted the corresponding peer volumes are
+                // irrelevant and we can delete our local copy of the entire volume definition.
+                for (VolumeDefinition.Key volumeKey : localDelVlmSet)
+                {
+                    ResourceDefinition curRscDfn = rscDfnMap.get(volumeKey.rscName);
+                    if (curRscDfn != null)
+                    {
+                        VolumeDefinition curVlmDfn = curRscDfn.getVolumeDfn(wrkCtx, volumeKey.vlmNr);
+                        if (curVlmDfn != null &&
+                            curVlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE))
+                        {
+                            curVlmDfn.delete(wrkCtx);
+                        }
+                    }
+                }
+
                 for (ResourceName curRscName : localDelRscSet)
                 {
                     ResourceDefinition curRscDfn = rscDfnMap.get(curRscName);

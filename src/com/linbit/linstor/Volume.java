@@ -55,6 +55,20 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
 
     void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
+    /**
+     * Flags lifecycle:
+     *
+     * <ol>
+     *     <li>Create API call: Neither CLEAN nor DELETE set; update sent to satellite when connected</li>
+     *     <li>Delete API call: DELETE set; update sent to satellite when connected</li>
+     *     <li>Satellite notifies successful deletion: DELETE and CLEAN set</li>
+     *     <li>Notification of successful deletion of final volume in volume definition:
+     *     Volume deleted on controller</li>
+     * </ol>
+     *
+     * CLEAN without DELETE may in future be used to indicate the situation where a volume has been created but not yet
+     * sent to the satellite.
+     */
     enum VlmFlags implements Flags
     {
         CLEAN(1L),

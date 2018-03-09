@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -163,6 +164,30 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
                 result = vlmNr.compareTo(other.vlmNr);
             }
             return result;
+        }
+
+        @Override
+        // Code style exception: Automatically generated code
+        @SuppressWarnings({"DescendantToken", "ParameterName"})
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+            Key key = (Key) o;
+            return Objects.equals(rscName, key.rscName) &&
+                Objects.equals(vlmNr, key.vlmNr);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(rscName, vlmNr);
         }
     }
 }

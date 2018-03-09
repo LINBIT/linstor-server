@@ -64,6 +64,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Singleton
 class StltRscApiCallHandler
@@ -206,6 +207,8 @@ class StltRscApiCallHandler
             rscDfnProps.putAll(rscRawData.getRscDfnProps());
             rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
 
+            Set<Integer> cleanDeletedVolumeNumbers = findCleanDeletedVolumeNumbers(rscRawData.getLocalVlms());
+
             // merge vlmDfns
             {
                 Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
@@ -214,25 +217,30 @@ class StltRscApiCallHandler
                 {
                     VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
                     VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
-                    VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
-                        apiCtx,
-                        vlmDfnRaw.getUuid(),
-                        rscDfn,
-                        vlmNr,
-                        vlmDfnRaw.getSize(),
-                        new MinorNumber(vlmDfnRaw.getMinorNr()),
-                        VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
-                    );
-                    checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
-                    Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
-                    vlmDfnPropsMap.clear();
-                    vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
 
-                    // corresponding volumes will be created later when iterating over (local|remote)vlmApis
-
-                    if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
+                    // Do not load volume definitions for which we have successfully deleted our local volume
+                    if (!cleanDeletedVolumeNumbers.contains(vlmNr.value))
                     {
-                        vlmDfnsToDelete.put(vlmNr, vlmDfn);
+                        VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
+                            apiCtx,
+                            vlmDfnRaw.getUuid(),
+                            rscDfn,
+                            vlmNr,
+                            vlmDfnRaw.getSize(),
+                            new MinorNumber(vlmDfnRaw.getMinorNr()),
+                            VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
+                        );
+                        checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
+                        Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
+                        vlmDfnPropsMap.clear();
+                        vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+
+                        // corresponding volumes will be created later when iterating over (local|remote)vlmApis
+
+                        if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
+                        {
+                            vlmDfnsToDelete.put(vlmNr, vlmDfn);
+                        }
                     }
                 }
 
@@ -245,7 +253,7 @@ class StltRscApiCallHandler
                          Volume vlm = iterateVolumes.next();
                          vlm.markDeleted(apiCtx);
                      }
-                     vlmDfn.markDeleted(apiCtx);
+                    vlmDfn.markDeleted(apiCtx);
                 }
             }
 
@@ -264,6 +272,7 @@ class StltRscApiCallHandler
                     new NodeId(rscRawData.getLocalRscNodeId()),
                     RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
+                    cleanDeletedVolumeNumbers,
                     rscRawData.getLocalVlms(),
                     false
                 );
@@ -303,6 +312,7 @@ class StltRscApiCallHandler
                         new NodeId(otherRscRaw.getRscNodeId()),
                         RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
+                        cleanDeletedVolumeNumbers,
                         otherRscRaw.getVlms(),
                         true
                     );
@@ -353,9 +363,14 @@ class StltRscApiCallHandler
                     for (VlmApi vlmApi : rscRawData.getLocalVlms())
                     {
                         Volume vlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
-                        if (vlm == null)
+
+                        if (vlm != null)
                         {
-                            createVlm(vlmApi, localRsc, false);
+                            checkUuid(vlm, vlmApi, localRsc.toString());
+                        }
+                        else
+                        {
+                            createVlm(cleanDeletedVolumeNumbers, vlmApi, localRsc, false);
                         }
                     }
                 }
@@ -454,6 +469,7 @@ class StltRscApiCallHandler
                             new NodeId(otherRsc.getRscNodeId()),
                             RscFlags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
+                            cleanDeletedVolumeNumbers,
                             otherRsc.getVlms(),
                             true
                         );
@@ -489,7 +505,7 @@ class StltRscApiCallHandler
                                 Volume vlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
                                 if (vlm == null)
                                 {
-                                    createVlm(remoteVlmApi, remoteRsc, true);
+                                    createVlm(cleanDeletedVolumeNumbers, remoteVlmApi, remoteRsc, true);
                                 }
                                 else
                                 {
@@ -611,6 +627,7 @@ class StltRscApiCallHandler
         NodeId nodeId,
         RscFlags[] flags,
         Map<String, String> rscProps,
+        Set<Integer> cleanDeletedVolumeNumbers,
         List<VolumeData.VlmApi> vlms,
         boolean remoteRsc
     )
@@ -639,79 +656,84 @@ class StltRscApiCallHandler
 
         for (Volume.VlmApi vlmRaw : vlms)
         {
-            createVlm(vlmRaw, rsc, remoteRsc);
+            createVlm(cleanDeletedVolumeNumbers, vlmRaw, rsc, remoteRsc);
         }
 
         return rsc;
     }
 
     private void createVlm(
+        Set<Integer> cleanDeletedVolumeNumbers,
         VlmApi vlmApi,
         Resource rsc,
         boolean remoteRsc
     )
         throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException
     {
-        StorPool storPool = rsc.getAssignedNode().getStorPool(
-            apiCtx,
-            new StorPoolName(vlmApi.getStorPoolName())
-        );
-
-        if (storPool == null)
+        // Do not load volumes for which we have successfully deleted our local volume
+        if (!cleanDeletedVolumeNumbers.contains(vlmApi.getVlmNr()))
         {
-            if (remoteRsc)
+            StorPool storPool = rsc.getAssignedNode().getStorPool(
+                apiCtx,
+                new StorPoolName(vlmApi.getStorPoolName())
+            );
+
+            if (storPool == null)
             {
-                StorPoolDefinition storPoolDfn =
-                    storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
-                if (storPoolDfn == null)
+                if (remoteRsc)
                 {
-                    storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
+                    StorPoolDefinition storPoolDfn =
+                        storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
+                    if (storPoolDfn == null)
+                    {
+                        storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
+                            apiCtx,
+                            vlmApi.getStorPoolDfnUuid(),
+                            new StorPoolName(vlmApi.getStorPoolName())
+                        );
+
+                        storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
+
+                        storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+                    }
+                    storPool = storPoolDataFactory.getInstanceSatellite(
                         apiCtx,
-                        vlmApi.getStorPoolDfnUuid(),
-                        new StorPoolName(vlmApi.getStorPoolName())
+                        vlmApi.getStorPoolUuid(),
+                        rsc.getAssignedNode(),
+                        storPoolDfn,
+                        vlmApi.getStorDriverSimpleClassName()
                     );
-
-                    storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
-
-                    storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+                    storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
                 }
-                storPool = storPoolDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    vlmApi.getStorPoolUuid(),
-                    rsc.getAssignedNode(),
-                    storPoolDfn,
-                    vlmApi.getStorDriverSimpleClassName()
-                );
-                storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
+                else
+                {
+                    throw new DivergentDataException("Unknown StorPool: '" + vlmApi.getStorPoolName() + "'");
+                }
             }
-            else
+            if (!remoteRsc && !storPool.getUuid().equals(vlmApi.getStorPoolUuid()))
             {
-                throw new DivergentDataException("Unknown StorPool: '" + vlmApi.getStorPoolName() + "'");
+                throw new DivergentUuidsException(
+                    "StorPool",
+                    storPool.toString(),
+                    vlmApi.getStorPoolName(),
+                    storPool.getUuid(),
+                    vlmApi.getStorPoolUuid()
+                );
             }
-        }
-        if (!remoteRsc && !storPool.getUuid().equals(vlmApi.getStorPoolUuid()))
-        {
-            throw new DivergentUuidsException(
-                "StorPool",
-                storPool.toString(),
-                vlmApi.getStorPoolName(),
-                storPool.getUuid(),
-                vlmApi.getStorPoolUuid()
+
+            VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
+
+            volumeDataFactory.getInstanceSatellite(
+                apiCtx,
+                vlmApi.getVlmUuid(),
+                rsc,
+                vlmDfn,
+                storPool,
+                vlmApi.getBlockDevice(),
+                vlmApi.getMetaDisk(),
+                Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
             );
         }
-
-        VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
-
-        volumeDataFactory.getInstanceSatellite(
-            apiCtx,
-            vlmApi.getVlmUuid(),
-            rsc,
-            vlmDfn,
-            storPool,
-            vlmApi.getBlockDevice(),
-            vlmApi.getMetaDisk(),
-            Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
-        );
     }
 
 
@@ -758,7 +780,7 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(
-        VolumeDefinitionData vlmDfn,
+        VolumeDefinition vlmDfn,
         VolumeDefinition.VlmDfnApi vlmDfnRaw,
         String remoteRscName
     )
@@ -778,9 +800,8 @@ class StltRscApiCallHandler
     }
 
     private void checkUuid(
-        VolumeData vlm,
-        Volume.VlmApi vlmRaw,
-        String remoteNodeName,
+        Volume vlm,
+        VlmApi vlmRaw,
         String remoteRscName
     )
         throws DivergentUuidsException
@@ -791,8 +812,7 @@ class StltRscApiCallHandler
             "Volume",
             vlm.toString(),
             String.format(
-                "Node: '%s', Rsc: '%s', VlmNr: '%d'",
-                remoteNodeName,
+                "Rsc: '%s', VlmNr: '%d'",
                 remoteRscName,
                 vlmRaw.getVlmNr()
             )
@@ -812,6 +832,25 @@ class StltRscApiCallHandler
                 remoteUuid
             );
         }
+    }
+
+    private Set<Integer> findCleanDeletedVolumeNumbers(List<Volume.VlmApi> localVlms)
+    {
+        return localVlms.stream()
+            .filter(this::isVolumeCleanDeleted)
+            .map(VlmApi::getVlmNr)
+            .collect(Collectors.toSet());
+    }
+
+    private boolean isVolumeCleanDeleted(VlmApi vlmApi)
+    {
+        return streamVolumeFlags(vlmApi).anyMatch(vlmFlag -> vlmFlag.equals(Volume.VlmFlags.DELETE)) &&
+            streamVolumeFlags(vlmApi).anyMatch(vlmFlag -> vlmFlag.equals(Volume.VlmFlags.CLEAN));
+    }
+
+    private Stream<Volume.VlmFlags> streamVolumeFlags(VlmApi vlmApi)
+    {
+        return Stream.of(Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
     }
 
     private static class UpdatedObjects
