@@ -33,8 +33,8 @@ import java.util.UUID;
 
 class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName;
-    private String netIfName;
+    private String currentNodeName;
+    private String currentNetIfName;
     private final SatelliteConnector satelliteConnector;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
@@ -525,8 +525,8 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             getObjRefs(nodeNameStr),
             getVariables(nodeNameStr, netIfNameStr)
         );
-        nodeName = nodeNameStr;
-        netIfName = netIfNameStr;
+        currentNodeName = nodeNameStr;
+        currentNetIfName = netIfNameStr;
 
         return this;
     }
@@ -549,7 +549,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return getObjectDescription(nodeName, netIfName);
+        return getObjectDescription(currentNodeName, currentNetIfName);
     }
 
     public static String getObjectDescription(String nodeName, String netIfName)
@@ -560,7 +560,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(nodeName, netIfName);
+        return getObjectDescriptionInline(currentNodeName, currentNetIfName);
     }
 
     public static String getObjectDescriptionInline(String nodeName, String netIfName)

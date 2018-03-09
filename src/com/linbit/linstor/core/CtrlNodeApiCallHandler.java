@@ -57,8 +57,7 @@ import java.util.UUID;
 
 public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName;
-    private String nodeType;
+    private String currentNodeName;
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.NodesMap nodesMap;
     private final ObjectProtection nodesMapProt;
@@ -157,8 +156,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             AbsApiCallHandler basicallyThis = setContext(
                 ApiCallType.CREATE,
                 apiCallRc,
-                nodeNameStr,
-                nodeTypeStr
+                nodeNameStr
             )
         )
         {
@@ -246,8 +244,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             AbsApiCallHandler basicallyThis = setContext(
                 ApiCallType.MODIFY,
                 apiCallRc,
-                nodeNameStr,
-                nodeTypeStr
+                nodeNameStr
             )
         )
         {
@@ -305,8 +302,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             AbsApiCallHandler basicallythis = setContext(
                 ApiCallType.DELETE,
                 apiCallRc,
-                nodeNameStr,
-                null
+                nodeNameStr
             )
         )
         {
@@ -614,7 +610,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         throw asExc(
             null,
-            "Creation of node '" + nodeName + "' failed.",
+            "Creation of node '" + currentNodeName + "' failed.",
             "No network interfaces were given.",
             null,
             "At least one network interface has to be given and be marked to be used for " +
@@ -627,7 +623,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         throw asExc(
             null,
-            "Creation of node '" + nodeName + "' failed.",
+            "Creation of node '" + currentNodeName + "' failed.",
             "No network interfaces was specified as satellite connection.",
             null,
             "At least one network interface has to be given and be marked to be used for " +
@@ -774,7 +770,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw asSqlExc(
                 sqlExc,
                 "An SQLException occured while marking resource '" + rsc.getDefinition().getName().displayValue +
-                "' on node '" + nodeName + "' as deleted "
+                "' on node '" + currentNodeName + "' as deleted "
             );
         }
     }
@@ -838,7 +834,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "delete the node '" + nodeName + "'.",
+                "delete the node '" + currentNodeName + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -858,7 +854,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "delete the node '" + nodeName + "'.",
+                "delete the node '" + currentNodeName + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -894,9 +890,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         throw asSqlExc(
             sqlExc,
             getAction(
-                "creating node '" + nodeName + "'",
-                "deleting node '" + nodeName + "'",
-                "modifying node '" + nodeName + "'"
+                "creating node '" + currentNodeName + "'",
+                "deleting node '" + currentNodeName + "'",
+                "modifying node '" + currentNodeName + "'"
             )
         );
     }
@@ -904,8 +900,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType apiCallType,
         ApiCallRcImpl apiCallRc,
-        String nodeNameStr,
-        String nodeTypeStr
+        String nodeNameStr
     )
     {
         super.setContext(
@@ -915,8 +910,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             getObjRefs(nodeNameStr),
             getVariables(nodeNameStr)
         );
-        nodeName = nodeNameStr;
-        nodeType = nodeTypeStr;
+        currentNodeName = nodeNameStr;
         return this;
     }
 
@@ -937,13 +931,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + nodeName;
+        return "Node: " + currentNodeName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(nodeName);
+        return getObjectDescriptionInline(currentNodeName);
     }
 
     protected void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException

@@ -28,8 +28,8 @@ import java.util.UUID;
 
 class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName1;
-    private String nodeName2;
+    private String currentNodeName1;
+    private String currentNodeName2;
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
 
     @Inject
@@ -230,20 +230,20 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeName1Ref,
-        String nodeName2Ref
+        String nodeName1,
+        String nodeName2
     )
     {
         super.setContext(
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1Ref, nodeName2Ref),
-            getVariables(nodeName1Ref, nodeName2Ref)
+            getObjRefs(nodeName1, nodeName2),
+            getVariables(nodeName1, nodeName2)
         );
 
-        nodeName1 = nodeName1Ref;
-        nodeName2 = nodeName2Ref;
+        currentNodeName1 = nodeName1;
+        currentNodeName2 = nodeName2;
 
         return this;
     }
@@ -267,13 +267,13 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node connection between " + nodeName1 + " and " + nodeName2;
+        return "Node connection between " + currentNodeName1 + " and " + currentNodeName2;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(nodeName1, nodeName2);
+        return getObjectDescriptionInline(currentNodeName1, currentNodeName2);
     }
 
     private String getObjectDescriptionInline(String nodeName1Str, String nodeName2Str)
@@ -378,8 +378,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "accessing properties of node connection '" + nodeName1 + "' <-> '" +
-                    nodeName2 + "'.",
+                "accessing properties of node connection '" + currentNodeName1 + "' <-> '" +
+                    currentNodeName2 + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE_CONN
             );
         }

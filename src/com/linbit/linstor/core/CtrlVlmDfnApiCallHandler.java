@@ -51,9 +51,9 @@ import java.util.UUID;
 
 class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
-    private String rscNameStr;
-    private VlmDfnApi vlmDfnApi;
-    private Integer vlmNr;
+    private String currentRscName;
+    private VlmDfnApi currentVlmDfnApi;
+    private Integer currentVlmNr;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final String defaultStorPoolName;
@@ -147,7 +147,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApiList)
             {
                 {
-                    vlmDfnApi = vlmDfnApi;
+                    currentVlmDfnApi = vlmDfnApi;
 
                     updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, vlmDfnApi.getVolumeNr());
                     updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfnApi.getMinorNr());
@@ -161,7 +161,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     apiCtx
                 );
                 updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, volNr.value);
-                vlmNr = volNr.value; // set vlmNr for exception error reporting
+                currentVlmNr = volNr.value; // set vlmNr for exception error reporting
 
                 long size = vlmDfnApi.getSize();
 
@@ -539,8 +539,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 dataAlreadyExistsExc,
                 String.format(
                     "A volume definition with the number %d already exists in resource definition '%s'.",
-                        vlmDfnApi.getVolumeNr(),
-                    rscNameStr
+                        currentVlmDfnApi.getVolumeNr(),
+                    currentRscName
                 ),
                 ApiConsts.FAIL_EXISTS_VLM_DFN
             );
@@ -759,23 +759,23 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         AccessContext accCtx,
         ApiCallType apiCallType,
         ApiCallRcImpl apiCallRc,
-        String rscNameRef,
-        Integer vlmNrRef
+        String rscNameStr,
+        Integer vlmNr
     )
     {
         super.setContext(
             apiCallType,
             apiCallRc,
             true, // autoClose
-            getObjRefs(rscNameRef, vlmNrRef),
-            getVariables(rscNameRef, vlmNrRef)
+            getObjRefs(rscNameStr, vlmNr),
+            getVariables(rscNameStr, vlmNr)
         );
 
         ensureRscMapProtAccess(accCtx);
 
-        rscNameStr = rscNameRef;
-        vlmDfnApi = null;
-        vlmNr = vlmNrRef;
+        currentRscName = rscNameStr;
+        currentVlmDfnApi = null;
+        currentVlmNr = vlmNr;
 
         return this;
     }
@@ -805,13 +805,13 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Resource definition: " + rscNameStr + ", Volume number: " + vlmNr;
+        return "Resource definition: " + currentRscName + ", Volume number: " + currentVlmNr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(rscNameStr, vlmNr);
+        return getObjectDescriptionInline(currentRscName, currentVlmNr);
     }
 
     public static String getObjectDescriptionInline(String rscName, Integer vlmNr)

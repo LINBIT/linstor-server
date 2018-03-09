@@ -342,13 +342,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param crtAction
      * @param modAction
      * @param delAction
-     * @param apiCallType
+     * @param apiCallTypeRef
      * @return
      */
-    protected final String getAction(String crtAction, String modAction, String delAction, ApiCallType apiCallType)
+    protected final String getAction(String crtAction, String modAction, String delAction, ApiCallType apiCallTypeRef)
     {
         String retStr;
-        switch (apiCallType)
+        switch (apiCallTypeRef)
         {
             case CREATE:
                 retStr = crtAction;
@@ -361,7 +361,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 break;
             default:
                 throw new ImplementationError(
-                    "Unknown api call type: " + apiCallType,
+                    "Unknown api call type: " + apiCallTypeRef,
                     null
                 );
         }
@@ -899,17 +899,17 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param exc
      * @param type
      * @param objDescr
-     * @param objRefs
-     * @param variables
-     * @param apiCallRc
+     * @param objRefsRef
+     * @param variablesRef
+     * @param apiCallRcRef
      */
     protected void reportStatic(
         Throwable exc,
         ApiCallType type,
         String objDescr,
-        Map<String, String> objRefs,
-        Map<String, String> variables,
-        ApiCallRcImpl apiCallRc
+        Map<String, String> objRefsRef,
+        Map<String, String> variablesRef,
+        ApiCallRcImpl apiCallRcRef
     )
     {
         String errorType;
@@ -930,9 +930,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
             getAction("Creation", "Modification", "Deletion", type) + " of " + objDescr + " failed due to an " +
             errorType + ".",
             retCode,
-            objRefs,
-            variables,
-            apiCallRc,
+            objRefsRef,
+            variablesRef,
+            apiCallRcRef,
             errorReporter,
             peerAccCtx,
             peer
@@ -1379,10 +1379,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 .build();
             for (Node nodeToContact : nodesToContact.values())
             {
-                Peer peer = nodeToContact.getPeer(apiCtx);
-                if (peer.isConnected() && !fullSyncFailed(peer))
+                Peer satellitePeer = nodeToContact.getPeer(apiCtx);
+                if (satellitePeer.isConnected() && !fullSyncFailed(satellitePeer))
                 {
-                    peer.sendMessage(changedMessage);
+                    satellitePeer.sendMessage(changedMessage);
                 }
             }
         }

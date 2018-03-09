@@ -45,8 +45,8 @@ import java.util.UUID;
 
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeNameStr;
-    private String storPoolNameStr;
+    private String currentNodeNameStr;
+    private String currentStorPoolNameStr;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
@@ -397,7 +397,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
             for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
             {
-                storPoolNameStr = freeSpacePojo.getStorPoolName();
+                currentStorPoolNameStr = freeSpacePojo.getStorPoolName();
 
                 StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
                 if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
@@ -441,19 +441,19 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeNameRef,
-        String storPoolNameRef
+        String nodeNameStr,
+        String storPoolNameStr
     )
     {
         super.setContext(
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameRef, storPoolNameRef),
-            getVariables(nodeNameRef, storPoolNameRef)
+            getObjRefs(nodeNameStr, storPoolNameStr),
+            getVariables(nodeNameStr, storPoolNameStr)
         );
-        nodeNameStr = nodeNameRef;
-        storPoolNameStr = storPoolNameRef;
+        currentNodeNameStr = nodeNameStr;
+        currentStorPoolNameStr = storPoolNameStr;
 
         return this;
     }
@@ -590,13 +590,13 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + nodeNameStr + ", Storage pool name: " + storPoolNameStr;
+        return "Node: " + currentNodeNameStr + ", Storage pool name: " + currentStorPoolNameStr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(nodeNameStr, storPoolNameStr);
+        return getObjectDescriptionInline(currentNodeNameStr, currentStorPoolNameStr);
     }
 
     public static String getObjectDescriptionInline(StorPool storPool)

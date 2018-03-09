@@ -30,10 +30,10 @@ import java.util.UUID;
 
 class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName1;
-    private String nodeName2;
-    private String rscName;
-    private Integer vlmNr;
+    private String currentNodeName1;
+    private String currentNodeName2;
+    private String currentRscName;
+    private Integer currentVlmNr;
     private final VolumeConnectionDataFactory volumeConnectionDataFactory;
 
     @Inject
@@ -236,24 +236,24 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeName1Ref,
-        String nodeName2Ref,
+        String nodeName1,
+        String nodeName2,
         String rscNameStr,
-        Integer vlmNrRef
+        Integer vlmNr
     )
     {
         super.setContext(
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1Ref, nodeName2Ref, rscNameStr, vlmNrRef),
-            getVariables(nodeName1Ref, nodeName2Ref, rscNameStr, vlmNrRef)
+            getObjRefs(nodeName1, nodeName2, rscNameStr, vlmNr),
+            getVariables(nodeName1, nodeName2, rscNameStr, vlmNr)
         );
 
-        nodeName1 = nodeName1Ref;
-        nodeName2 = nodeName2Ref;
-        rscName = rscNameStr;
-        vlmNr = vlmNrRef;
+        currentNodeName1 = nodeName1;
+        currentNodeName2 = nodeName2;
+        currentRscName = rscNameStr;
+        currentVlmNr = vlmNr;
 
         return this;
     }
@@ -297,19 +297,19 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Volume connection between nodes " + nodeName1 + " and " +
-            nodeName2 + " on resource " + rscName + " on volume number " +
-            vlmNr;
+        return "Volume connection between nodes " + currentNodeName1 + " and " +
+            currentNodeName2 + " on resource " + currentRscName + " on volume number " +
+            currentVlmNr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
         return getObjectDescriptionInline(
-            nodeName1,
-            nodeName2,
-            rscName,
-            vlmNr
+            currentNodeName1,
+            currentNodeName2,
+            currentRscName,
+            currentVlmNr
         );
     }
 

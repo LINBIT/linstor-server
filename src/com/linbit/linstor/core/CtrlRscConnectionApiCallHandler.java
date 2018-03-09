@@ -30,9 +30,9 @@ import java.util.UUID;
 
 class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName1;
-    private String nodeName2;
-    private String rscName;
+    private String currentNodeName1;
+    private String currentNodeName2;
+    private String currentRscName;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
 
     @Inject
@@ -219,8 +219,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeName1Ref,
-        String nodeName2Ref,
+        String nodeName1,
+        String nodeName2,
         String rscNameStr
     )
     {
@@ -228,13 +228,13 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1Ref, nodeName2Ref, rscNameStr),
-            getVariables(nodeName1Ref, nodeName2Ref, rscNameStr)
+            getObjRefs(nodeName1, nodeName2, rscNameStr),
+            getVariables(nodeName1, nodeName2, rscNameStr)
         );
 
-        nodeName1 = nodeName1Ref;
-        nodeName2 = nodeName2Ref;
-        rscName = rscNameStr;
+        currentNodeName1 = nodeName1;
+        currentNodeName2 = nodeName2;
+        currentRscName = rscNameStr;
 
         return this;
     }
@@ -242,17 +242,17 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Resource connection between nodes " + nodeName1 + " and " +
-            nodeName2 + " for resource " + rscName;
+        return "Resource connection between nodes " + currentNodeName1 + " and " +
+            currentNodeName2 + " for resource " + currentRscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
         return getObjectDescriptionInline(
-            nodeName1,
-            nodeName2,
-            rscName
+            currentNodeName1,
+            currentNodeName2,
+            currentRscName
         );
     }
 

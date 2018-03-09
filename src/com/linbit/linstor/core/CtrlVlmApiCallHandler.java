@@ -28,9 +28,9 @@ import java.util.UUID;
 
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName;
-    private String rscName;
-    private Integer vlmNr;
+    private String currentNodeName;
+    private String currentRscName;
+    private Integer currentVlmNr;
 
     @Inject
     protected CtrlVlmApiCallHandler(
@@ -136,19 +136,19 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc,
         String nodeNameStr,
         String rscNameStr,
-        Integer vlmNrRef
+        Integer vlmNr
     )
     {
         super.setContext(
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr, rscNameStr, vlmNrRef),
-            getVariables(nodeNameStr, rscNameStr, vlmNrRef)
+            getObjRefs(nodeNameStr, rscNameStr, vlmNr),
+            getVariables(nodeNameStr, rscNameStr, vlmNr)
         );
-        nodeName = nodeNameStr;
-        rscName = rscNameStr;
-        vlmNr = vlmNrRef;
+        currentNodeName = nodeNameStr;
+        currentRscName = rscNameStr;
+        currentVlmNr = vlmNr;
 
         return this;
     }
@@ -156,14 +156,14 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + nodeName + ", Resource: " + rscName +
-            " Volume number: " + vlmNr;
+        return "Node: " + currentNodeName + ", Resource: " + currentRscName +
+            " Volume number: " + currentVlmNr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(nodeName, rscName, vlmNr);
+        return getObjectDescriptionInline(currentNodeName, currentRscName, currentVlmNr);
     }
 
     private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)

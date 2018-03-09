@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 
 public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
-    private String rscName;
+    private String currentRscName;
 
     private final ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
@@ -391,7 +391,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             getObjRefs(rscNameStr),
             getVariables(rscNameStr)
         );
-        rscName = rscNameStr;
+        currentRscName = rscNameStr;
         return this;
     }
 
@@ -412,13 +412,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Auto-placing resource: " + rscName;
+        return "Auto-placing resource: " + currentRscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(rscName);
+        return getObjectDescriptionInline(currentRscName);
     }
 
     private String getObjectDescriptionInline(String rscNameStr)

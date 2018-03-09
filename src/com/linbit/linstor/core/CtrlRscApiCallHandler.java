@@ -73,8 +73,8 @@ import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 public class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
-    private String nodeName;
-    private String rscName;
+    private String currentNodeName;
+    private String currentRscName   ;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -805,21 +805,21 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             getObjRefs(nodeNameStr, rscNameStr),
             getVariables(nodeNameStr, rscNameStr)
         );
-        nodeName = nodeNameStr;
-        rscName = rscNameStr;
+        currentNodeName = nodeNameStr;
+        currentRscName = rscNameStr;
         return this;
     }
 
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + nodeName + ", Resource: " + rscName;
+        return "Node: " + currentNodeName + ", Resource: " + currentRscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(nodeName, rscName);
+        return getObjectDescriptionInline(currentNodeName, currentRscName);
     }
 
     private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr)

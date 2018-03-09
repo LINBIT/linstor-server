@@ -75,10 +75,10 @@ public class CtrlConfApiCallHandler
             switch (fullKey)
             {
                 case ApiConsts.KEY_TCP_PORT_RANGE:
-                    setTcpPort(accCtx, key, namespace, value, apiCallRc);
+                    setTcpPort(key, namespace, value, apiCallRc);
                     break;
                 case ApiConsts.KEY_MINOR_NR_RANGE:
-                    setMinorNr(accCtx, key, namespace, value, apiCallRc);
+                    setMinorNr(key, namespace, value, apiCallRc);
                     break;
                 // TODO: check for other properties
                 default:
@@ -240,7 +240,6 @@ public class CtrlConfApiCallHandler
     }
 
     private void setTcpPort(
-        AccessContext accCtx,
         String key,
         String namespace,
         String value,
@@ -324,7 +323,6 @@ public class CtrlConfApiCallHandler
 
 
     private void setMinorNr(
-        AccessContext accCtx,
         String key,
         String namespace,
         String value,

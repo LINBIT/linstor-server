@@ -58,7 +58,7 @@ import java.util.UUID;
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
-    private String rscNameStr;
+    private String currentRscName;
     private final short defaultPeerCount;
     private final int defaultAlStripes;
     private final long defaultAlSize;
@@ -513,18 +513,18 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String rscNameRef
+        String rscNameStr
     )
     {
         super.setContext(
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(rscNameRef),
-            getVariables(rscNameRef)
+            getObjRefs(rscNameStr),
+            getVariables(rscNameStr)
         );
 
-        rscNameStr = rscNameRef;
+        currentRscName = rscNameStr;
 
         return this;
     }
@@ -862,13 +862,13 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Resource definition: " + rscNameStr;
+        return "Resource definition: " + currentRscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(rscNameStr);
+        return getObjectDescriptionInline(currentRscName);
     }
 
     static String getObjectDescriptionInline(String rscName)

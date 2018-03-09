@@ -38,7 +38,7 @@ import java.util.UUID;
 
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
-    private String storPoolNameStr;
+    private String currentStorPoolNameStr;
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
@@ -321,30 +321,30 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     protected AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String storPoolNameRef
+        String storPoolNameStr
     )
     {
         super.setContext(
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(storPoolNameRef),
-            getVariables(storPoolNameRef)
+            getObjRefs(storPoolNameStr),
+            getVariables(storPoolNameStr)
         );
 
-        storPoolNameStr = storPoolNameRef;
+        currentStorPoolNameStr = storPoolNameStr;
 
         return this;
     }
 
-    private StorPoolDefinitionData createStorPool(String storPoolNameStr)
+    private StorPoolDefinitionData createStorPool(String storPoolNameStrRef)
     {
         StorPoolDefinitionData storPoolDfn;
         try
         {
             storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 peerAccCtx,
-                asStorPoolName(storPoolNameStr),
+                asStorPoolName(storPoolNameStrRef),
                 true, // persist this entry
                 true // fail if already exists
             );
@@ -410,13 +410,13 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Storage pool definition: " + storPoolNameStr;
+        return "Storage pool definition: " + currentStorPoolNameStr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(storPoolNameStr);
+        return getObjectDescriptionInline(currentStorPoolNameStr);
     }
 
 
