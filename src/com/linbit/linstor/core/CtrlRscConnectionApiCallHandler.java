@@ -8,6 +8,7 @@ import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceConnectionDataFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -29,9 +30,9 @@ import java.util.UUID;
 
 class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
-    private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
-    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private String nodeName1;
+    private String nodeName2;
+    private String rscName;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
 
     @Inject
@@ -41,7 +42,9 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -50,19 +53,14 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_RSC_CONN,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentNodeName1,
-            currentNodeName2,
-            currentRscName
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
     }
 
     public ApiCallRc createResourceConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
@@ -73,8 +71,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 nodeName1Str,
@@ -102,9 +98,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr),
                 getVariables(nodeName1Str, nodeName2Str, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -112,8 +106,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc modifyRscConnection(
-        AccessContext accCtx,
-        Peer client,
         UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
@@ -126,8 +118,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 nodeName1,
@@ -174,9 +164,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeName1, nodeName2, rscNameStr),
                 getObjRefs(nodeName1, nodeName2, rscNameStr),
                 getVariables(nodeName1, nodeName2, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -184,8 +172,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc deleteResourceConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr
@@ -195,8 +181,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 nodeName1Str,
@@ -226,37 +210,31 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr),
                 getVariables(nodeName1Str, nodeName2Str, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
         return apiCallRc;
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeName1,
-        String nodeName2,
+        String nodeName1Ref,
+        String nodeName2Ref,
         String rscNameStr
     )
     {
         super.setContext(
-            accCtx,
-            client,
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1, nodeName2, rscNameStr),
-            getVariables(nodeName1, nodeName2, rscNameStr)
+            getObjRefs(nodeName1Ref, nodeName2Ref, rscNameStr),
+            getVariables(nodeName1Ref, nodeName2Ref, rscNameStr)
         );
 
-        currentNodeName1.set(nodeName1);
-        currentNodeName2.set(nodeName2);
-        currentRscName.set(rscNameStr);
+        nodeName1 = nodeName1Ref;
+        nodeName2 = nodeName2Ref;
+        rscName = rscNameStr;
 
         return this;
     }
@@ -264,17 +242,17 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Resource connection between nodes " + currentNodeName1.get() + " and " +
-            currentNodeName2.get() + " for resource " + currentRscName.get();
+        return "Resource connection between nodes " + nodeName1 + " and " +
+            nodeName2 + " for resource " + rscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
         return getObjectDescriptionInline(
-            currentNodeName1.get(),
-            currentNodeName2.get(),
-            currentRscName.get()
+            nodeName1,
+            nodeName2,
+            rscName
         );
     }
 
@@ -320,7 +298,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             rscConn = resourceConnectionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rsc1,
                 rsc2,
                 true,
@@ -371,7 +349,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             rscConn = resourceConnectionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rsc1,
                 rsc2,
                 false,
@@ -406,7 +384,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             rsc = node.getResource(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rscName
             );
         }
@@ -426,7 +404,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = rscConn.getProps(currentAccCtx.get());
+            props = rscConn.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -456,7 +434,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscConn.delete(currentAccCtx.get());
+            rscConn.delete(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -14,6 +14,7 @@ import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -44,8 +45,8 @@ import java.util.UUID;
 
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeNameStr = new ThreadLocal<>();
-    private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
+    private String nodeNameStr;
+    private String storPoolNameStr;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
@@ -65,7 +66,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -74,11 +77,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_STOR_POOL,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentNodeNameStr,
-            currentStorPoolNameStr
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
 
         nodesMapProt = nodesMapProtRef;
@@ -91,8 +92,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc createStorPool(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String storPoolNameStr,
         String driver,
@@ -103,8 +102,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 nodeNameStr,
@@ -139,9 +136,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
                 getVariables(nodeNameStr, storPoolNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -149,8 +144,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc modifyStorPool(
-        AccessContext accCtx,
-        Peer client,
         UUID storPoolUuid,
         String nodeNameStr,
         String storPoolNameStr,
@@ -161,8 +154,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 nodeNameStr,
@@ -208,9 +199,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
                 getVariables(nodeNameStr, storPoolNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -218,8 +207,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc deleteStorPool(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String storPoolNameStr
     )
@@ -228,8 +215,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 nodeNameStr,
@@ -302,28 +287,26 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
                 getVariables(nodeNameStr, storPoolNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
         return apiCallRc;
     }
 
-    public void respondStorPool(int msgId, Peer satellitePeer, UUID storPoolUuid, String storPoolNameStr)
+    public void respondStorPool(int msgId, UUID storPoolUuid, String storPoolNameStr)
     {
         try
         {
             StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
 
-            StorPool storPool = satellitePeer.getNode().getStorPool(apiCtx, storPoolName);
+            StorPool storPool = peer.getNode().getStorPool(apiCtx, storPoolName);
             // TODO: check if the storPool has the same uuid as storPoolUuid
             if (storPool != null)
             {
-                long fullSyncTimestamp = satellitePeer.getFullSyncId();
-                long updateId = satellitePeer.getNextSerializerId();
-                satellitePeer.sendMessage(
+                long fullSyncTimestamp = peer.getFullSyncId();
+                long updateId = peer.getNextSerializerId();
+                peer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
                         .storPoolData(storPool, fullSyncTimestamp, updateId)
@@ -332,7 +315,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                satellitePeer.sendMessage(
+                peer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED, msgId)
                         .deletedStorPoolData(storPoolNameStr)
@@ -360,24 +343,24 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    byte[] listStorPools(int msgId, AccessContext accCtx)
+    byte[] listStorPools(int msgId)
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
         try
         {
-            nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-            storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
             {
                 try
                 {
-                    Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(accCtx);
+                    Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(peerAccCtx);
                     while (storPoolIterator.hasNext())
                     {
                         StorPool storPool = storPoolIterator.next();
                         if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
                         {
-                            storPools.add(storPool.getApiData(accCtx, null, null));
+                            storPools.add(storPool.getApiData(peerAccCtx, null, null));
                         }
                         // fullSyncId and updateId null, as they are not going to be serialized anyways
                     }
@@ -403,8 +386,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                apiCtx,
-                peer,
                 ApiCallType.MODIFY,
                 null, // apiCallRc
                 peer.getNode().getName().displayValue,
@@ -416,7 +397,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
             for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
             {
-                currentStorPoolNameStr.set(freeSpacePojo.getStorPoolName());
+                storPoolNameStr = freeSpacePojo.getStorPoolName();
 
                 StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
                 if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
@@ -445,7 +426,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPool.setRealFreeSpace(currentAccCtx.get(), freeSpace);
+            storPool.setRealFreeSpace(peerAccCtx, freeSpace);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -458,25 +439,21 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeNameStr,
-        String storPoolNameStr
+        String nodeNameRef,
+        String storPoolNameRef
     )
     {
         super.setContext(
-            accCtx,
-            peer,
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr, storPoolNameStr),
-            getVariables(nodeNameStr, storPoolNameStr)
+            getObjRefs(nodeNameRef, storPoolNameRef),
+            getVariables(nodeNameRef, storPoolNameRef)
         );
-        currentNodeNameStr.set(nodeNameStr);
-        currentStorPoolNameStr.set(storPoolNameStr);
+        nodeNameStr = nodeNameRef;
+        storPoolNameStr = storPoolNameRef;
 
         return this;
     }
@@ -486,7 +463,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         try
         {
             storPoolDfnMapProt.requireAccess(
-                currentAccCtx.get(),
+                peerAccCtx,
                 AccessType.CHANGE
             );
         }
@@ -512,7 +489,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             {
                 // implicitly create storage pool definition if it doesn't exist
                 storPoolDef = storPoolDefinitionDataFactory.getInstance(
-                    currentAccCtx.get(),
+                    peerAccCtx,
                     asStorPoolName(storPoolNameStr),
                     true,  // create and persist if not exists
                     false  // do not throw exception if exists
@@ -520,7 +497,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
 
             storPool = storPoolDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 node,
                 storPoolDef,
                 driver,
@@ -574,7 +551,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Collection<Volume> volumes;
         try
         {
-            volumes = storPool.getVolumes(currentAccCtx.get());
+            volumes = storPool.getVolumes(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -591,7 +568,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPool.delete(currentAccCtx.get());
+            storPool.delete(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -613,13 +590,13 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + currentNodeNameStr.get() + ", Storage pool name: " + currentStorPoolNameStr.get();
+        return "Node: " + nodeNameStr + ", Storage pool name: " + storPoolNameStr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentNodeNameStr.get(), currentStorPoolNameStr.get());
+        return getObjectDescriptionInline(nodeNameStr, storPoolNameStr);
     }
 
     public static String getObjectDescriptionInline(StorPool storPool)
@@ -665,7 +642,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = storPool.getProps(currentAccCtx.get());
+            props = storPool.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

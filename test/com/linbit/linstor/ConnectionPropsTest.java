@@ -9,7 +9,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -61,11 +60,10 @@ public class ConnectionPropsTest extends DerbyBase
     private PriorityProps conProps;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
     @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
 
         nodeName1 = new NodeName("Node1");
         nodeName2 = new NodeName("Node2");

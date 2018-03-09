@@ -10,6 +10,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -52,10 +53,10 @@ public class ResouceDataDerbyTest extends DerbyBase
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             TBL_RESOURCES + " table's column count has changed. Update tests accordingly!",
             5,

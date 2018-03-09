@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -45,10 +46,10 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             TBL_NODE_NET_INTERFACES + " table's column count has changed. Update tests accordingly!",
             5,

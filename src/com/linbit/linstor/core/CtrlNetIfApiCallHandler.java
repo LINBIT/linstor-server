@@ -13,6 +13,7 @@ import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.SatelliteConnectionDataFactory;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -32,8 +33,8 @@ import java.util.UUID;
 
 class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
-    private final ThreadLocal<String> currentNetIfName = new ThreadLocal<>();
+    private String nodeName;
+    private String netIfName;
     private final SatelliteConnector satelliteConnector;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
@@ -47,7 +48,9 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -56,11 +59,9 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_NET_IF,
             serializerRef,
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentNodeName,
-            currentNetIfName
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
         satelliteConnector = satelliteConnectorRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
@@ -68,8 +69,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc createNetIf(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String netIfNameStr,
         String address,
@@ -80,8 +79,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 nodeNameStr,
@@ -123,17 +120,13 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, netIfNameStr),
                 getObjRefs(nodeNameStr),
                 getVariables(nodeNameStr, netIfNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
         return apiCallRc;
     }
 
     public ApiCallRc modifyNetIf(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String netIfNameStr,
         String addressStr,
@@ -145,8 +138,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 nodeNameStr,
@@ -199,9 +190,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, netIfNameStr),
                 getObjRefs(nodeNameStr),
                 getVariables(nodeNameStr, netIfNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -209,8 +198,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc deleteNetIf(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String netIfNameStr
     )
@@ -218,8 +205,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 nodeNameStr,
@@ -276,9 +261,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, netIfNameStr),
                 getObjRefs(nodeNameStr),
                 getVariables(nodeNameStr, netIfNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -295,7 +278,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         try
         {
             netIf = netInterfaceDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 node,
                 netIfName,
                 asLsIpAddress(address),
@@ -339,7 +322,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         try
         {
             satelliteConnectionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 node,
                 netIf,
                 asTcpPortNumber(stltPort),
@@ -385,7 +368,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         try
         {
             netIf = node.getNetInterface(
-                currentAccCtx.get(),
+                peerAccCtx,
                 asNetInterfaceName(netIfNameStr)
             );
 
@@ -413,7 +396,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            netIf.setAddress(currentAccCtx.get(), asLsIpAddress(addressStr));
+            netIf.setAddress(peerAccCtx, asLsIpAddress(addressStr));
         }
         catch (AccessDeniedException exc)
         {
@@ -437,7 +420,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         boolean ret;
         try
         {
-            ret = !netIf.getAddress(currentAccCtx.get()).getAddress().equals(addressStr);
+            ret = !netIf.getAddress(peerAccCtx).getAddress().equals(addressStr);
         }
         catch (AccessDeniedException exc)
         {
@@ -455,7 +438,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         boolean changed = stltConn.getPort().value != stltPort;
         try
         {
-            stltConn.setPort(currentAccCtx.get(), asTcpPortNumber(stltPort));
+            stltConn.setPort(peerAccCtx, asTcpPortNumber(stltPort));
         }
         catch (AccessDeniedException exc)
         {
@@ -481,7 +464,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         try
         {
             stltConn.setEncryptionType(
-                currentAccCtx.get(),
+                peerAccCtx,
                 EncryptionType.valueOf(
                     stltEncrType.toUpperCase()
                 )
@@ -509,7 +492,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            netIf.delete(currentAccCtx.get());
+            netIf.delete(peerAccCtx);
         }
         catch (AccessDeniedException exc)
         {
@@ -529,8 +512,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
         String nodeNameStr,
@@ -538,16 +519,14 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     )
     {
         super.setContext(
-            accCtx,
-            client,
             type,
             apiCallRc,
             true, // autoClose
             getObjRefs(nodeNameStr),
             getVariables(nodeNameStr, netIfNameStr)
         );
-        currentNodeName.set(nodeNameStr);
-        currentNetIfName.set(netIfNameStr);
+        nodeName = nodeNameStr;
+        netIfName = netIfNameStr;
 
         return this;
     }
@@ -570,7 +549,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return getObjectDescription(currentNodeName.get(), currentNetIfName.get());
+        return getObjectDescription(nodeName, netIfName);
     }
 
     public static String getObjectDescription(String nodeName, String netIfName)
@@ -581,7 +560,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentNodeName.get(), currentNetIfName.get());
+        return getObjectDescriptionInline(nodeName, netIfName);
     }
 
     public static String getObjectDescriptionInline(String nodeName, String netIfName)

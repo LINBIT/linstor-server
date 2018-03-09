@@ -9,6 +9,7 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -37,7 +38,7 @@ import java.util.UUID;
 
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
+    private String storPoolNameStr;
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
@@ -53,7 +54,9 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         CtrlObjectFactories objectFactories,
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -62,9 +65,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_STOR_POOL_DFN,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
-        super.setNullOnAutoClose(currentStorPoolNameStr);
         clientComSerializer = clientComSerializerRef;
         storPoolDfnMap = storPoolDfnMapRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
@@ -72,8 +76,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc createStorPoolDfn(
-        AccessContext accCtx,
-        Peer client,
         String storPoolNameStr,
         Map<String, String> storPoolDfnProps
     )
@@ -82,8 +84,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 storPoolNameStr
@@ -111,9 +111,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(storPoolNameStr),
                 getObjRefs(storPoolNameStr),
                 getVariables(storPoolNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -121,8 +119,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc modifyStorPoolDfn(
-        AccessContext accCtx,
-        Peer client,
         UUID storPoolDfnUuid,
         String storPoolNameStr,
         Map<String, String> overrideProps,
@@ -133,8 +129,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 storPoolNameStr
@@ -180,23 +174,19 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(storPoolNameStr),
                 getObjRefs(storPoolNameStr),
                 getVariables(storPoolNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
         return apiCallRc;
     }
 
-    public ApiCallRc deleteStorPoolDfn(AccessContext accCtx, Peer client, String storPoolNameStr)
+    public ApiCallRc deleteStorPoolDfn(String storPoolNameStr)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 storPoolNameStr
@@ -252,9 +242,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(storPoolNameStr),
                 getObjRefs(storPoolNameStr),
                 getVariables(storPoolNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -265,7 +253,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPoolDfn.delete(currentAccCtx.get());
+            storPoolDfn.delete(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -298,19 +286,19 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         return iterator;
     }
 
-    byte[] listStorPoolDefinitions(int msgId, AccessContext accCtx)
+    byte[] listStorPoolDefinitions(int msgId)
     {
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
         {
-            storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
             {
                 try
                 {
                     if (!storPoolDfn.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
                     {
-                        storPoolDfns.add(storPoolDfn.getApiData(accCtx));
+                        storPoolDfns.add(storPoolDfn.getApiData(peerAccCtx));
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)
@@ -331,24 +319,20 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     }
 
     protected AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String storPoolNameStr
+        String storPoolNameRef
     )
     {
         super.setContext(
-            accCtx,
-            peer,
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(storPoolNameStr),
-            getVariables(storPoolNameStr)
+            getObjRefs(storPoolNameRef),
+            getVariables(storPoolNameRef)
         );
 
-        currentStorPoolNameStr.set(storPoolNameStr);
+        storPoolNameStr = storPoolNameRef;
 
         return this;
     }
@@ -359,7 +343,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             storPoolDfn = storPoolDefinitionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 asStorPoolName(storPoolNameStr),
                 true, // persist this entry
                 true // fail if already exists
@@ -410,7 +394,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             storPoolDfnMapProt.requireAccess(
-                currentAccCtx.get(),
+                peerAccCtx,
                 AccessType.CHANGE
             );
         }
@@ -426,13 +410,13 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Storage pool definition: " + currentStorPoolNameStr.get();
+        return "Storage pool definition: " + storPoolNameStr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentStorPoolNameStr.get());
+        return getObjectDescriptionInline(storPoolNameStr);
     }
 
 
@@ -446,7 +430,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = storPoolDfn.getProps(currentAccCtx.get());
+            props = storPoolDfn.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

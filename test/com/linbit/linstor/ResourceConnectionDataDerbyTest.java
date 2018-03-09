@@ -7,6 +7,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -56,10 +57,10 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             TBL_RESOURCE_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
             4,

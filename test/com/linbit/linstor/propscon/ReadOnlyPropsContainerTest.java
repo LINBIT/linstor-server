@@ -54,7 +54,7 @@ public class ReadOnlyPropsContainerTest extends DerbyPropsConBase
     @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         Map<NodeName, Node> nodesMap = new HashMap<>();
         Map<ResourceName, ResourceDefinition> resDfnMap = new HashMap<>();
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();

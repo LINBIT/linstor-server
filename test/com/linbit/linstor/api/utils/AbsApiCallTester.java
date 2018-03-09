@@ -1,32 +1,23 @@
 package com.linbit.linstor.api.utils;
 
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiRcUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.api.ApiRcUtils;
-
 public abstract class AbsApiCallTester
 {
-    public AccessContext accCtx;
-    public Peer peer;
     public List<Long> retCodes;
     public List<StltConnectingAttempt> expectedConnectingAttempts;
 
     public AbsApiCallTester(
-        AccessContext accCtxRef,
-        Peer peerRef,
         long objMask,
         long opMask,
         long... expectedRetCodes
     )
     {
-        this.accCtx = accCtxRef;
-        this.peer = peerRef;
-
         retCodes = new ArrayList<>();
         for (long expectedRetCode : expectedRetCodes)
         {
@@ -43,18 +34,6 @@ public abstract class AbsApiCallTester
         }
 
         expectedConnectingAttempts = new ArrayList<>();
-    }
-
-    public AbsApiCallTester accCtx(AccessContext accCtxRef)
-    {
-        this.accCtx = accCtxRef;
-        return this;
-    }
-
-    public AbsApiCallTester peer(Peer peerRef)
-    {
-        this.peer = peerRef;
-        return this;
     }
 
     public AbsApiCallTester retCode(int index, long retCode)

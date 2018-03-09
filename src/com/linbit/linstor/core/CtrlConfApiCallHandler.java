@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -33,6 +34,7 @@ public class CtrlConfApiCallHandler
     private final Props ctrlConf;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
+    private final AccessContext accCtx;
 
     @Inject
     public CtrlConfApiCallHandler(
@@ -41,7 +43,8 @@ public class CtrlConfApiCallHandler
         @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
-        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef
+        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
+        @PeerContext AccessContext accCtxRef
     )
     {
         errorReporter = errorReporterRef;
@@ -50,9 +53,10 @@ public class CtrlConfApiCallHandler
         ctrlConf = ctrlConfRef;
         tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
+        accCtx = accCtxRef;
     }
 
-    public ApiCallRc setProp(AccessContext accCtx, String key, String namespace, String value)
+    public ApiCallRc setProp(String key, String namespace, String value)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
@@ -138,7 +142,7 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listProps(AccessContext accCtx, int msgId)
+    public byte[] listProps(int msgId)
     {
         byte[] data = null;
         try
@@ -156,7 +160,7 @@ public class CtrlConfApiCallHandler
         return data;
     }
 
-    public ApiCallRc deleteProp(AccessContext accCtx, String key, String namespace)
+    public ApiCallRc deleteProp(String key, String namespace)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
@@ -250,8 +254,8 @@ public class CtrlConfApiCallHandler
         if (matcher.find())
         {
             if (
-                isValidTcpPort(accCtx, matcher.group("min"), apiCallRc) &&
-                isValidTcpPort(accCtx, matcher.group("max"), apiCallRc)
+                isValidTcpPort(matcher.group("min"), apiCallRc) &&
+                isValidTcpPort(matcher.group("max"), apiCallRc)
             )
             {
                 ctrlCfg.setProp(key, value, namespace);
@@ -274,7 +278,7 @@ public class CtrlConfApiCallHandler
         }
     }
 
-    private boolean isValidTcpPort(AccessContext accCtx, String strTcpPort, ApiCallRcImpl apiCallRc)
+    private boolean isValidTcpPort(String strTcpPort, ApiCallRcImpl apiCallRc)
     {
         boolean validTcpPortNr = false;
         try
@@ -334,8 +338,8 @@ public class CtrlConfApiCallHandler
         if (matcher.find())
         {
             if (
-                isValidMinorNr(accCtx, matcher.group("min"), apiCallRc) &&
-                isValidMinorNr(accCtx, matcher.group("max"), apiCallRc)
+                isValidMinorNr(matcher.group("min"), apiCallRc) &&
+                isValidMinorNr(matcher.group("max"), apiCallRc)
             )
             {
                 ctrlCfg.setProp(key, value, namespace);
@@ -358,7 +362,7 @@ public class CtrlConfApiCallHandler
         }
     }
 
-    private boolean isValidMinorNr(AccessContext accCtx, String strMinorNr, ApiCallRcImpl apiCallRc)
+    private boolean isValidMinorNr(String strMinorNr, ApiCallRcImpl apiCallRc)
     {
         boolean isValid = false;
         try

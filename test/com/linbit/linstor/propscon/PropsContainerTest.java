@@ -1,5 +1,18 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.security.DerbyBase;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_KEY;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.SECOND_AMOUNT;
@@ -21,20 +34,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.linbit.linstor.security.DerbyBase;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.junit.Before;
-import org.junit.Test;
-
 public class PropsContainerTest extends DerbyBase
 {
     private static final String TEST_INSTANCE_NAME = "testInstanceName";
@@ -45,11 +44,10 @@ public class PropsContainerTest extends DerbyBase
     private Set<Entry<String, String>> rootEntrySet;
     private Collection<String> rootValues;
 
-    @Override
     @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
 //        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), transMgrProvider);
         root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
 

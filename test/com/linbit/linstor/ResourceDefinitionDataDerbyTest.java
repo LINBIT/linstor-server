@@ -10,6 +10,7 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -60,10 +61,10 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!",
             7,

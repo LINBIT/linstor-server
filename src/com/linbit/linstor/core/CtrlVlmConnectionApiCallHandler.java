@@ -8,6 +8,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -29,10 +30,10 @@ import java.util.UUID;
 
 class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
-    private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
-    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
-    private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
+    private String nodeName1;
+    private String nodeName2;
+    private String rscName;
+    private Integer vlmNr;
     private final VolumeConnectionDataFactory volumeConnectionDataFactory;
 
     @Inject
@@ -42,7 +43,9 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -51,14 +54,14 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_VLM_CONN,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
         volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
     }
 
     public ApiCallRc createVolumeConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
@@ -70,8 +73,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 nodeName1Str,
@@ -101,9 +102,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getVariables(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -111,8 +110,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc modifyVolumeConnection(
-        AccessContext accCtx,
-        Peer client,
         UUID rscConnUuid,
         String nodeName1Str,
         String nodeName2Str,
@@ -126,8 +123,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 nodeName1Str,
@@ -175,9 +170,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getVariables(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -185,8 +178,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc deleteVolumeConnection(
-        AccessContext accCtx,
-        Peer client,
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
@@ -197,8 +188,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 nodeName1Str,
@@ -237,9 +226,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getVariables(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -247,30 +234,26 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String nodeName1,
-        String nodeName2,
+        String nodeName1Ref,
+        String nodeName2Ref,
         String rscNameStr,
-        Integer vlmNr
+        Integer vlmNrRef
     )
     {
         super.setContext(
-            accCtx,
-            client,
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1, nodeName2, rscNameStr, vlmNr),
-            getVariables(nodeName1, nodeName2, rscNameStr, vlmNr)
+            getObjRefs(nodeName1Ref, nodeName2Ref, rscNameStr, vlmNrRef),
+            getVariables(nodeName1Ref, nodeName2Ref, rscNameStr, vlmNrRef)
         );
 
-        currentNodeName1.set(nodeName1);
-        currentNodeName2.set(nodeName2);
-        currentRscName.set(rscNameStr);
-        currentVlmNr.set(vlmNr);
+        nodeName1 = nodeName1Ref;
+        nodeName2 = nodeName2Ref;
+        rscName = rscNameStr;
+        vlmNr = vlmNrRef;
 
         return this;
     }
@@ -314,19 +297,19 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Volume connection between nodes " + currentNodeName1.get() + " and " +
-            currentNodeName2.get() + " on resource " + currentRscName.get() + " on volume number " +
-            currentVlmNr.get();
+        return "Volume connection between nodes " + nodeName1 + " and " +
+            nodeName2 + " on resource " + rscName + " on volume number " +
+            vlmNr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
         return getObjectDescriptionInline(
-            currentNodeName1.get(),
-            currentNodeName2.get(),
-            currentRscName.get(),
-            currentVlmNr.get()
+            nodeName1,
+            nodeName2,
+            rscName,
+            vlmNr
         );
     }
 
@@ -362,7 +345,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             vlmConn = volumeConnectionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 sourceVolume,
                 targetVolume,
                 true,
@@ -416,7 +399,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             vlmConn = volumeConnectionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 vlm1,
                 vlm2,
                 false,
@@ -450,7 +433,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Resource rsc;
         try
         {
-            rsc = node.getResource(currentAccCtx.get(), asRscName(rscNameStr));
+            rsc = node.getResource(peerAccCtx, asRscName(rscNameStr));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -473,7 +456,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = vlmConn.getProps(currentAccCtx.get());
+            props = vlmConn.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -490,7 +473,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            vlmConn.delete(currentAccCtx.get());
+            vlmConn.delete(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

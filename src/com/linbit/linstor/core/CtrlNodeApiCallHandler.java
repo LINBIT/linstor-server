@@ -24,6 +24,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -56,8 +57,8 @@ import java.util.UUID;
 
 public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
-    private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
+    private String nodeName;
+    private String nodeType;
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.NodesMap nodesMap;
     private final ObjectProtection nodesMapProt;
@@ -79,7 +80,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -88,11 +91,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_NODE,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentNodeName,
-            currentNodeType
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
         clientComSerializer = clientComSerializerRef;
         nodesMap = nodesMapRef;
@@ -143,8 +144,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
      * @return
      */
     public ApiCallRc createNode(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
@@ -156,8 +155,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 nodeNameStr,
@@ -214,7 +211,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                 if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                 {
-                    satelliteConnector.startConnecting(node, accCtx);
+                    satelliteConnector.startConnecting(node, peerAccCtx);
                 }
             }
         }
@@ -230,17 +227,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
                 getVariables(nodeNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
         return apiCallRc;
     }
 
     public ApiCallRc modifyNode(
-        AccessContext accCtx,
-        Peer client,
         UUID nodeUuid,
         String nodeNameStr,
         String nodeTypeStr,
@@ -251,8 +244,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 nodeNameStr,
@@ -299,23 +290,19 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
                 getVariables(nodeNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
         return apiCallRc;
     }
 
-    ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeNameStr)
+    ApiCallRc deleteNode(String nodeNameStr)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
             AbsApiCallHandler basicallythis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 nodeNameStr,
@@ -329,8 +316,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             if (nodeData == null)
             {
                 addAnswer(
-                    "Deletion of node '" + currentNodeName.get() + "' had no effect.",
-                    "Node '" + currentNodeName.get() + "' does not exist.",
+                    "Deletion of node '" + nodeName + "' had no effect.",
+                    "Node '" + nodeName + "' does not exist.",
                     null,
                     null,
                     ApiConsts.WARN_NOT_FOUND
@@ -426,26 +413,24 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
                 getVariables(nodeNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
         return apiCallRc;
     }
 
-    byte[] listNodes(int msgId, AccessContext accCtx)
+    byte[] listNodes(int msgId)
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
         {
-            nodesMapProt.requireAccess(accCtx, AccessType.VIEW); // accDeniedExc1
+            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW); // accDeniedExc1
             for (Node node : nodesMap.values())
             {
                 try
                 {
-                    nodes.add(node.getApiData(accCtx, null, null));
+                    nodes.add(node.getApiData(peerAccCtx, null, null));
                     // fullSyncId and updateId null, as they are not going to be serialized by
                     // .nodeList anyways
                 }
@@ -463,7 +448,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return clientComSerializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
     }
 
-    void respondNode(int msgId, Peer satellite, UUID nodeUuid, String nodeNameStr)
+    void respondNode(int msgId, UUID nodeUuid, String nodeNameStr)
     {
         try
         {
@@ -478,7 +463,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     // otherNodes can be filled with all nodes (except the current 'node')
                     // related to the satellite. The serializer only needs the other nodes for
                     // the nodeConnections.
-                    Iterator<Resource> rscIterator = satellite.getNode().iterateResources(apiCtx);
+                    Iterator<Resource> rscIterator = peer.getNode().iterateResources(apiCtx);
                     while (rscIterator.hasNext())
                     {
                         Resource rsc = rscIterator.next();
@@ -492,9 +477,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             }
                         }
                     }
-                    long fullSyncTimestamp = satellite.getFullSyncId();
-                    long serializerId = satellite.getNextSerializerId();
-                    satellite.sendMessage(
+                    long fullSyncTimestamp = peer.getFullSyncId();
+                    long serializerId = peer.getNextSerializerId();
+                    peer.sendMessage(
                         internalComSerializer
                             .builder(InternalApiConsts.API_APPLY_NODE, msgId)
                             .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
@@ -505,7 +490,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 {
                     errorReporter.reportError(
                         new ImplementationError(
-                            "Satellite '" + satellite.getId() + "' requested a node with an outdated " +
+                            "Satellite '" + peer.getId() + "' requested a node with an outdated " +
                             "UUID. Current UUID: " + node.getUuid() + ", satellites outdated UUID: " +
                             nodeUuid,
                             null
@@ -515,7 +500,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                satellite.sendMessage(
+                peer.sendMessage(
                     internalComSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
                         .deletedNodeData(nodeNameStr)
                         .build()
@@ -562,7 +547,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             node = nodeDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 nodeName,
                 type,
                 new NodeFlag[0],
@@ -573,7 +558,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             // accDeniedExc during creation means that an objectProtection already exists
-            // and gives no permission to the currentAccCtx to access it.
+            // and gives no permission to the accCtx to access it.
             // This means we have an existing objProt without corresponding Node --> exception
             throw asExc(
                 new LinStorException(
@@ -629,7 +614,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         throw asExc(
             null,
-            "Creation of node '" + currentNodeName.get() + "' failed.",
+            "Creation of node '" + nodeName + "' failed.",
             "No network interfaces were given.",
             null,
             "At least one network interface has to be given and be marked to be used for " +
@@ -642,7 +627,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         throw asExc(
             null,
-            "Creation of node '" + currentNodeName.get() + "' failed.",
+            "Creation of node '" + nodeName + "' failed.",
             "No network interfaces was specified as satellite connection.",
             null,
             "At least one network interface has to be given and be marked to be used for " +
@@ -662,7 +647,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             netIf = netInterfaceDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 node,
                 netName,
                 addr,
@@ -711,7 +696,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
 
             satelliteConnectionDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 node,
                 netIf,
                 stltNetIfPort,
@@ -747,7 +732,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NetInterface netInterface;
         try
         {
-            netInterface = node.getNetInterface(currentAccCtx.get(), niName);
+            netInterface = node.getNetInterface(peerAccCtx, niName);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -789,7 +774,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw asSqlExc(
                 sqlExc,
                 "An SQLException occured while marking resource '" + rsc.getDefinition().getName().displayValue +
-                "' on node '" + currentNodeName.get() + "' as deleted "
+                "' on node '" + nodeName + "' as deleted "
             );
         }
     }
@@ -847,13 +832,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            node.markDeleted(currentAccCtx.get());
+            node.markDeleted(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "delete the node '" + currentNodeName.get() + "'.",
+                "delete the node '" + nodeName + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -867,13 +852,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            node.delete(currentAccCtx.get());
+            node.delete(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "delete the node '" + currentNodeName.get() + "'.",
+                "delete the node '" + nodeName + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -888,7 +873,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NodeType nodeType = asNodeType(nodeTypeStr);
         try
         {
-            node.setNodeType(currentAccCtx.get(), nodeType);
+            node.setNodeType(peerAccCtx, nodeType);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -909,16 +894,14 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         throw asSqlExc(
             sqlExc,
             getAction(
-                "creating node '" + currentNodeName.get() + "'",
-                "deleting node '" + currentNodeName.get() + "'",
-                "modifying node '" + currentNodeName.get() + "'"
+                "creating node '" + nodeName + "'",
+                "deleting node '" + nodeName + "'",
+                "modifying node '" + nodeName + "'"
             )
         );
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer client,
         ApiCallType apiCallType,
         ApiCallRcImpl apiCallRc,
         String nodeNameStr,
@@ -926,16 +909,14 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     )
     {
         super.setContext(
-            accCtx,
-            client,
             apiCallType,
             apiCallRc,
             true, // autoClose
             getObjRefs(nodeNameStr),
             getVariables(nodeNameStr)
         );
-        currentNodeName.set(nodeNameStr);
-        currentNodeType.set(nodeTypeStr);
+        nodeName = nodeNameStr;
+        nodeType = nodeTypeStr;
         return this;
     }
 
@@ -956,13 +937,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + currentNodeName.get();
+        return "Node: " + nodeName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentNodeName.get());
+        return getObjectDescriptionInline(nodeName);
     }
 
     protected void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException
@@ -970,7 +951,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             nodesMapProt.requireAccess(
-                currentAccCtx.get(),
+                peerAccCtx,
                 AccessType.CHANGE
             );
         }

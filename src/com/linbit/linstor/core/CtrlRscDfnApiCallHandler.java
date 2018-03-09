@@ -23,6 +23,7 @@ import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -57,7 +58,7 @@ import java.util.UUID;
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
-    private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
+    private String rscNameStr;
     private final short defaultPeerCount;
     private final int defaultAlStripes;
     private final long defaultAlSize;
@@ -82,7 +83,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -91,9 +94,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_RSC_DFN,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
-        super.setNullOnAutoClose(currentRscNameStr);
         clientComSerializer = clientComSerializerRef;
 
         defaultPeerCount = defaultPeerCountRef;
@@ -107,8 +111,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc createResourceDefinition(
-        AccessContext accCtx,
-        Peer client,
         String rscNameStr,
         Integer portInt,
         String secret,
@@ -126,8 +128,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         VolumeNumber volNr;
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 rscNameStr
@@ -143,7 +143,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             for (VolumeDefinition.VlmDfnApi vlmDfnApi : volDescrMap)
             {
-                // currentVlmDfnApi = vlmDfnApi;
+                // vlmDfnApi = vlmDfnApi;
 
                 volNr = getVlmNr(vlmDfnApi, rscDfn, apiCtx);
 
@@ -204,9 +204,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
                 getVariables(rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -214,8 +212,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc modifyRscDfn(
-        AccessContext accCtx,
-        Peer client,
         UUID rscDfnUuid,
         String rscNameStr,
         Integer portInt,
@@ -226,9 +222,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
-                ApiCallType.MODIFY,
+            ApiCallType.MODIFY,
                 apiCallRc,
                 rscNameStr
             )
@@ -252,7 +246,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             if (portInt != null)
             {
                 TcpPortNumber port = asTcpPortNumber(portInt);
-                rscDfn.setPort(accCtx, port);
+                rscDfn.setPort(peerAccCtx, port);
             }
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
@@ -281,9 +275,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
                 getVariables(rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -291,8 +283,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc deleteResourceDefinition(
-        AccessContext accCtx,
-        Peer client,
         String rscNameStr
     )
     {
@@ -300,8 +290,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 rscNameStr
@@ -368,9 +356,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
                 getVariables(rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -378,8 +364,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     }
 
     void handlePrimaryResourceRequest(
-        AccessContext accCtx,
-        Peer satellite,
         int msgId,
         String rscNameStr,
         UUID rscUuid
@@ -387,8 +371,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                satellite,
                 ApiCallType.MODIFY,
                 null, // apiCallRc
                 rscNameStr
@@ -396,7 +378,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         )
         {
             Resource res = loadRsc(
-                satellite.getNode().getName().displayValue,
+                peer.getNode().getName().displayValue,
                 rscNameStr,
                 true
             );
@@ -413,12 +395,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 commit();
 
                 errorReporter.logTrace(
-                    "Primary set for " + satellite.getNode().getName().getDisplayName()
+                    "Primary set for " + peer.getNode().getName().getDisplayName()
                 );
 
                 updateSatellites(resDfn);
 
-                satellite.sendMessage(
+                peer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
                         .primaryRequest(rscNameStr, res.getUuid().toString())
@@ -438,24 +420,24 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
             errorReporter.reportError(
                 sqlExc,
-                accCtx,
-                satellite,
+                peerAccCtx,
+                peer,
                 errorMessage
             );
         }
     }
 
-    byte[] listResourceDefinitions(int msgId, AccessContext accCtx)
+    byte[] listResourceDefinitions(int msgId)
     {
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
         {
-            rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             for (ResourceDefinition rscdfn : rscDfnMap.values())
             {
                 try
                 {
-                    rscdfns.add(rscdfn.getApiData(accCtx));
+                    rscdfns.add(rscdfn.getApiData(peerAccCtx));
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
@@ -529,24 +511,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        String rscNameStr
+        String rscNameRef
     )
     {
         super.setContext(
-            accCtx,
-            peer,
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(rscNameStr),
-            getVariables(rscNameStr)
+            getObjRefs(rscNameRef),
+            getVariables(rscNameRef)
         );
 
-        currentRscNameStr.set(rscNameStr);
+        rscNameStr = rscNameRef;
 
         return this;
     }
@@ -556,7 +534,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             rscDfnMapProt.requireAccess(
-                currentAccCtx.get(),
+                peerAccCtx,
                 AccessType.CHANGE
             );
         }
@@ -603,7 +581,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             rscDfn = resourceDefinitionDataFactory.create(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rscName,
                 portInt,
                 null, // RscDfnFlags
@@ -691,7 +669,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             vlmDfn = volumeDefinitionDataFactory.create(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rscDfn,
                 volNr,
                 minorNr,
@@ -760,7 +738,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscDfn.delete(currentAccCtx.get());
+            rscDfn.delete(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -783,7 +761,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscDfn.markDeleted(currentAccCtx.get());
+            rscDfn.markDeleted(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -884,13 +862,13 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Resource definition: " + currentRscNameStr.get();
+        return "Resource definition: " + rscNameStr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentRscNameStr.get());
+        return getObjectDescriptionInline(rscNameStr);
     }
 
     static String getObjectDescriptionInline(String rscName)

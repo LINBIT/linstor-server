@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.google.inject.Inject;
-
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Resource.RscFlags;
@@ -16,6 +15,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.storage.StorageDriver;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -71,10 +71,10 @@ public class NodeDataDerbyTest extends DerbyBase
 
     @SuppressWarnings("checkstyle:magicnumber")
 
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             "NODES table's column count has changed. Update tests accordingly!",
             5,

@@ -1,11 +1,6 @@
 package com.linbit.linstor.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.google.inject.Inject;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -24,6 +19,11 @@ import com.linbit.linstor.core.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.storage.LvmDriver;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,11 +33,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-
-import com.google.inject.Inject;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class RscAutoPlaceApiTest extends ApiTestBase
 {
@@ -52,11 +51,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private static final int MINOR_NR_MIN = 1000;
     private static final AtomicInteger MINOR_GEN = new AtomicInteger(MINOR_NR_MIN);
 
-    @Inject private CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandler;
-    @Inject private CtrlRscApiCallHandler rscApiCallHandler;
+    @Inject private Provider<CtrlRscAutoPlaceApiCallHandler> rscAutoPlaceApiCallHandlerProvider;
+    @Inject private Provider<CtrlRscApiCallHandler> rscApiCallHandlerProvider;
 
     @Mock
-    protected Peer mockPeer;
+    protected Peer mockSatellite;
 
     @Before
     @Override
@@ -417,8 +416,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         )
         {
             super(
-                BOB_ACC_CTX,
-                mockPeer,
                 ApiConsts.MASK_RSC,
                 ApiConsts.MASK_CRT,
                 expectedRetCodes
@@ -448,9 +445,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return rscAutoPlaceApiCallHandler.autoPlace(
-                BOB_ACC_CTX,
-                mockPeer,
+            return rscAutoPlaceApiCallHandlerProvider.get().autoPlace(
                 rscNameStr,
                 placeCount,
                 forceStorPool,
@@ -470,7 +465,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 true
             );
 
-            stlt.setPeer(SYS_CTX, mockPeer);
+            stlt.setPeer(SYS_CTX, mockSatellite);
             nodesMap.put(stlt.getName(), stlt);
 
             return new SatelliteBuilder(this, stlt);
@@ -506,9 +501,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, storPool);
             for (String stltNameStr : stltNameStrs)
             {
-                rscApiCallHandler.createResource(
-                    BOB_ACC_CTX,
-                    mockPeer,
+                rscApiCallHandlerProvider.get().createResource(
                     stltNameStr,
                     rscNameStrRef,
                     Collections.emptyList(),

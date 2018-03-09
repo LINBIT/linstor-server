@@ -6,16 +6,16 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.inject.Inject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -44,10 +44,10 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Inject private VolumeDefinitionDataDerbyDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(TBL_VOLUME_DEFINITIONS + " table's column count has changed. Update tests accordingly!",
             6,
             TBL_COL_COUNT_VOLUME_DEFINITIONS

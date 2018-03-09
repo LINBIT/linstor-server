@@ -9,6 +9,7 @@ import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -83,11 +84,11 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         volMetaDiskPathDst = "/dev/dst/vol/meta";
     }
 
-    @Override
+    @Before
     @SuppressWarnings("checkstyle:magicnumber")
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             TBL_VOLUME_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
             5,

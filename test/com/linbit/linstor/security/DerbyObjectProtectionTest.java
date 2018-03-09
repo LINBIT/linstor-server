@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -34,6 +35,12 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
     private static final String ROLES_INSERT =
         "INSERT INTO " + TBL_SEC_ROLES + " VALUES (?, ?, ?, ?, ?)";
+
+    @Before
+    public void setUp() throws Exception
+    {
+        super.setUpAndEnterScope();
+    }
 
     @Test
     public void testCreateSimpleObjProt() throws SQLException, AccessDeniedException

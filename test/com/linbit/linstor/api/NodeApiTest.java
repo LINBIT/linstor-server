@@ -1,19 +1,25 @@
 package com.linbit.linstor.api;
 
+import com.google.inject.Key;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.DoNotSeedDefaultPeer;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,18 +27,16 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import javax.inject.Inject;
-
 public class NodeApiTest extends ApiTestBase
 {
-    @Inject private CtrlNodeApiCallHandler nodeApiCallHandler;
+    @Inject private Provider<CtrlNodeApiCallHandler> nodeApiCallHandlerProvider;
 
     private NodeName testNodeName;
     private NodeType testNodeType;
     private NodeData testNode;
 
     @Mock
-    protected Peer mockPeer;
+    protected Peer mockSatellite;
 
     public NodeApiTest() throws Exception
     {
@@ -54,7 +58,7 @@ public class NodeApiTest extends ApiTestBase
             true,
             true
         );
-        testNode.setPeer(SYS_CTX, mockPeer);
+        testNode.setPeer(SYS_CTX, mockSatellite);
         nodesMap.put(testNodeName, testNode);
         commit();
     }
@@ -83,10 +87,14 @@ public class NodeApiTest extends ApiTestBase
     }
 
     @Test
+    @DoNotSeedDefaultPeer
     public void crtFailNodesMapViewAccDenied() throws Exception
     {
         nodesMapProt.delAclEntry(SYS_CTX, PUBLIC_CTX.subjectRole);
         nodesMapProt.addAclEntry(SYS_CTX, PUBLIC_CTX.subjectRole, AccessType.VIEW);
+
+        testScope.seed(Key.get(AccessContext.class, PeerContext.class), PUBLIC_CTX);
+        testScope.seed(Peer.class, mockPeer);
 
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
@@ -174,11 +182,14 @@ public class NodeApiTest extends ApiTestBase
     }
 
     @Test
+    @DoNotSeedDefaultPeer
     public void modDifferentUserAccDenied() throws Exception
     {
+        testScope.seed(Key.get(AccessContext.class, PeerContext.class), ALICE_ACC_CTX);
+        testScope.seed(Peer.class, mockPeer);
+
         evaluateTest(
             new ModifyNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
-                .accCtx(ALICE_ACC_CTX)
         );
     }
 
@@ -193,8 +204,7 @@ public class NodeApiTest extends ApiTestBase
         public CreateNodeCall(long expectedRc)
         {
             super(
-                PUBLIC_CTX,
-                null, // peer
+                // peer
                 ApiConsts.MASK_NODE,
                 ApiConsts.MASK_CRT,
                 expectedRc
@@ -216,9 +226,7 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return nodeApiCallHandler.createNode(
-                accCtx,
-                peer,
+            return nodeApiCallHandlerProvider.get().createNode(
                 nodeName,
                 nodeType,
                 netIfApis,
@@ -288,8 +296,7 @@ public class NodeApiTest extends ApiTestBase
         public ModifyNodeCall(long retCode)
         {
             super(
-                BOB_ACC_CTX,
-                null, // peer
+                // peer
                 ApiConsts.MASK_NODE,
                 ApiConsts.MASK_MOD,
                 retCode
@@ -335,9 +342,7 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return nodeApiCallHandler.modifyNode(
-                accCtx,
-                peer,
+            return nodeApiCallHandlerProvider.get().modifyNode(
                 nodeUuid,
                 nodeName,
                 nodeType,

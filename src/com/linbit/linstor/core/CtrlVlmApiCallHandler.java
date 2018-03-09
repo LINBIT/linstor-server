@@ -8,6 +8,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -27,16 +28,18 @@ import java.util.UUID;
 
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
-    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
-    private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
+    private String nodeName;
+    private String rscName;
+    private Integer vlmNr;
 
     @Inject
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -45,18 +48,13 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_VLM,
             null, // interComSerializer
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentNodeName,
-            currentRscName,
-            currentVlmNr
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
     }
 
     ApiCallRc volumeDeleted(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String rscNameStr,
         int volumeNr
@@ -65,8 +63,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 nodeNameStr,
@@ -128,9 +124,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
                 getObjRefs(nodeNameStr, rscNameStr, volumeNr),
                 getVariables(nodeNameStr, rscNameStr, volumeNr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -138,27 +132,23 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
         String nodeNameStr,
         String rscNameStr,
-        Integer vlmNr
+        Integer vlmNrRef
     )
     {
         super.setContext(
-            accCtx,
-            client,
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr, rscNameStr, vlmNr),
-            getVariables(nodeNameStr, rscNameStr, vlmNr)
+            getObjRefs(nodeNameStr, rscNameStr, vlmNrRef),
+            getVariables(nodeNameStr, rscNameStr, vlmNrRef)
         );
-        currentNodeName.set(nodeNameStr);
-        currentRscName.set(rscNameStr);
-        currentVlmNr.set(vlmNr);
+        nodeName = nodeNameStr;
+        rscName = rscNameStr;
+        vlmNr = vlmNrRef;
 
         return this;
     }
@@ -166,14 +156,14 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + currentNodeName.get() + ", Resource: " + currentRscName.get() +
-            " Volume number: " + currentVlmNr.get();
+        return "Node: " + nodeName + ", Resource: " + rscName +
+            " Volume number: " + vlmNr;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentNodeName.get(), currentRscName.get(), currentVlmNr.get());
+        return getObjectDescriptionInline(nodeName, rscName, vlmNr);
     }
 
     private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)

@@ -34,6 +34,7 @@ import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -72,8 +73,8 @@ import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 public class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
-    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private String nodeName;
+    private String rscName;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -99,7 +100,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -108,11 +111,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_RSC,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentNodeName,
-            currentRscName
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
         clientComSerializer = clientComSerializerRef;
         rscDfnMapProt = rscDfnMapProtRef;
@@ -126,8 +127,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc createResource(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String rscNameStr,
         List<String> flagList,
@@ -136,8 +135,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     )
     {
         return createResource(
-            accCtx,
-            client,
             nodeNameStr,
             rscNameStr,
             flagList,
@@ -149,8 +146,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc createResource(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String rscNameStr,
         List<String> flagList,
@@ -168,8 +163,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 autoCloseCurrentTransMgr,
@@ -205,7 +198,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 StorPoolData storPool;
                 if (isRscDiskless)
                 {
-                    storPool = (StorPoolData) node.getDisklessStorPool(accCtx);
+                    storPool = (StorPoolData) node.getDisklessStorPool(peerAccCtx);
                 }
                 else
                 {
@@ -242,8 +235,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             {
                 VolumeDefinition vlmDfn = iterateVolumeDfn.next();
 
-                currentObjRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-                currentVariables.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                variables.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
                 // first check if we probably just deployed a vlm for this vlmDfn
                 if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
@@ -334,9 +327,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     "Volume UUID is: " + entry.getValue().getUuid().toString()
                 );
                 vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
-                vlmCreatedRcEntry.putAllObjRef(currentObjRefs.get());
+                vlmCreatedRcEntry.putAllObjRef(objRefs);
                 vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
-                vlmCreatedRcEntry.putAllVariables(currentVariables.get());
+                vlmCreatedRcEntry.putAllVariables(variables);
                 vlmCreatedRcEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
 
                 apiCallRc.addEntry(vlmCreatedRcEntry);
@@ -373,9 +366,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     getObjectDescriptionInline(nodeNameStr, rscNameStr),
                     getObjRefs(nodeNameStr, rscNameStr),
                     getVariables(nodeNameStr, rscNameStr),
-                    apiCallRc,
-                    accCtx,
-                    client
+                    apiCallRc
                 );
             }
         }
@@ -402,7 +393,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         NodeId freeNodeId;
         try
         {
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(currentAccCtx.get());
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
             int[] occupiedIds = new int[rscDfn.getResourceCount()];
             int idx = 0;
             while (rscIterator.hasNext())
@@ -434,8 +425,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc modifyResource(
-        AccessContext accCtx,
-        Peer client,
         UUID rscUuid,
         String nodeNameStr,
         String rscNameStr,
@@ -446,8 +435,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.MODIFY,
                 apiCallRc,
                 true, // autoClose
@@ -494,9 +481,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
                 getVariables(nodeNameStr, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -504,8 +489,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc deleteResource(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String rscNameStr
     )
@@ -514,8 +497,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 true, // autoClose
@@ -564,9 +545,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
                 getVariables(nodeNameStr, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
@@ -587,8 +566,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
      * @return
      */
     public ApiCallRc resourceDeleted(
-        AccessContext accCtx,
-        Peer client,
         String nodeNameStr,
         String rscNameStr
     )
@@ -597,8 +574,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.DELETE,
                 apiCallRc,
                 true, // autoClose
@@ -677,32 +652,30 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
                 getVariables(nodeNameStr, rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
 
         return apiCallRc;
     }
 
-    byte[] listResources(int msgId, AccessContext accCtx)
+    byte[] listResources(int msgId)
     {
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
         List<ResourceState> rscStates = new ArrayList<>();
         try
         {
-            rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-            nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             for (ResourceDefinition rscDfn : rscDfnMap.values())
             {
                 try
                 {
-                    Iterator<Resource> itResources = rscDfn.iterateResource(accCtx);
+                    Iterator<Resource> itResources = rscDfn.iterateResource(peerAccCtx);
                     while (itResources.hasNext())
                     {
                         Resource rsc = itResources.next();
-                        rscs.add(rsc.getApiData(accCtx, null, null));
+                        rscs.add(rsc.getApiData(peerAccCtx, null, null));
                         // fullSyncId and updateId null, as they are not going to be serialized anyways
 
                     }
@@ -716,7 +689,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             // get resource states of all nodes
             for (final Node node : nodesMap.values())
             {
-                final Peer peer = node.getPeer(accCtx);
+                final Peer peer = node.getPeer(peerAccCtx);
                 if (peer != null)
                 {
                     final Map<ResourceName, ResourceState> resourceStateMap = peer.getResourceStates();
@@ -747,7 +720,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     public void respondResource(
         int msgId,
-        Peer satellitePeer,
         String nodeNameStr,
         UUID rscUuid,
         String rscNameStr
@@ -766,10 +738,10 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    long fullSyncTimestamp = satellitePeer.getFullSyncId();
-                    long updateId = satellitePeer.getNextSerializerId();
+                    long fullSyncTimestamp = peer.getFullSyncId();
+                    long updateId = peer.getNextSerializerId();
 
-                    satellitePeer.sendMessage(
+                    peer.sendMessage(
                         internalComSerializer
                             .builder(InternalApiConsts.API_APPLY_RSC, msgId)
                             .resourceData(rsc, fullSyncTimestamp, updateId)
@@ -778,7 +750,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 }
                 else
                 {
-                    satellitePeer.sendMessage(
+                    peer.sendMessage(
                         internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_RSC_DELETED, msgId)
                         .deletedResourceData(rscNameStr)
@@ -795,7 +767,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                         null
                     )
                 );
-                satellitePeer.closeConnection();
+                peer.closeConnection();
             }
         }
         catch (InvalidNameException invalidNameExc)
@@ -819,8 +791,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
         boolean autoCloseCurrentTransMgr,
@@ -829,29 +799,27 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     )
     {
         super.setContext(
-            accCtx,
-            peer,
             type,
             apiCallRc,
             autoCloseCurrentTransMgr,
             getObjRefs(nodeNameStr, rscNameStr),
             getVariables(nodeNameStr, rscNameStr)
         );
-        currentNodeName.set(nodeNameStr);
-        currentRscName.set(rscNameStr);
+        nodeName = nodeNameStr;
+        rscName = rscNameStr;
         return this;
     }
 
     @Override
     protected String getObjectDescription()
     {
-        return "Node: " + currentNodeName.get() + ", Resource: " + currentRscName.get();
+        return "Node: " + nodeName + ", Resource: " + rscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentNodeName.get(), currentRscName.get());
+        return getObjectDescriptionInline(nodeName, rscName);
     }
 
     private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr)
@@ -892,7 +860,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         try
         {
             rsc = resourceDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rscDfn,
                 node,
                 nodeId,
@@ -941,7 +909,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
 
             vlm = volumeDataFactory.getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rsc,
                 vlmDfn,
                 storPool,
@@ -999,7 +967,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         try
         {
             vlmDfn = volumeDefinitionDataFactory.load(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rscDfn,
                 vlmNr
             );
@@ -1058,7 +1026,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = rsc.getProps(currentAccCtx.get());
+            props = rsc.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1077,7 +1045,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = vlm.getProps(currentAccCtx.get());
+            props = vlm.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1096,12 +1064,12 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscData.markDeleted(currentAccCtx.get());
+            rscData.markDeleted(peerAccCtx);
             Iterator<Volume> volumesIterator = rscData.iterateVolumes();
             while (volumesIterator.hasNext())
             {
                 Volume vlm = volumesIterator.next();
-                vlm.markDeleted(currentAccCtx.get());
+                vlm.markDeleted(peerAccCtx);
             }
         }
         catch (AccessDeniedException accDeniedExc)
@@ -1125,7 +1093,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscData.delete(currentAccCtx.get()); // also deletes all of its volumes
+            rscData.delete(peerAccCtx); // also deletes all of its volumes
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1223,7 +1191,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         entry.putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString());
         entry.putVariable(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
 
-        currentApiCallRc.get().addEntry(entry);
+        apiCallRc.addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
     }
 
@@ -1239,7 +1207,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         entry.putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString());
         entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeName.displayValue);
 
-        currentApiCallRc.get().addEntry(entry);
+        apiCallRc.addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
     }
 }

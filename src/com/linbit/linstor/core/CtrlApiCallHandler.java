@@ -5,16 +5,13 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +43,6 @@ public class CtrlApiCallHandler
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
 
-    private final AccessContext accCtx;
     private final Peer peer;
     private final int msgId;
 
@@ -70,7 +66,6 @@ public class CtrlApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
-        @PeerContext AccessContext accCtxRef,
         Peer clientRef,
         @Named(ApiModule.MSG_ID) int msgIdRef
     )
@@ -93,7 +88,6 @@ public class CtrlApiCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
-        accCtx = accCtxRef;
         peer = clientRef;
         msgId = msgIdRef;
     }
@@ -148,8 +142,6 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.createNode(
-                accCtx,
-                peer,
                 nodeNameStr,
                 nodeTypeStr,
                 netIfs,
@@ -188,8 +180,6 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.modifyNode(
-                accCtx,
-                peer,
                 nodeUuid,
                 nodeName,
                 nodeType,
@@ -219,7 +209,7 @@ public class CtrlApiCallHandler
         try
         {
             nodesMapLock.writeLock().lock();
-            apiCallRc = nodeApiCallHandler.deleteNode(accCtx, peer, nodeName);
+            apiCallRc = nodeApiCallHandler.deleteNode(nodeName);
         }
         finally
         {
@@ -235,7 +225,7 @@ public class CtrlApiCallHandler
         try
         {
             nodesMapLock.readLock().lock();
-            listNodes = nodeApiCallHandler.listNodes(msgId, accCtx);
+            listNodes = nodeApiCallHandler.listNodes(msgId);
         }
         finally
         {
@@ -283,8 +273,6 @@ public class CtrlApiCallHandler
         {
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
-                accCtx,
-                peer,
                 resourceName,
                 port,
                 secret,
@@ -325,8 +313,6 @@ public class CtrlApiCallHandler
         {
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
-                accCtx,
-                peer,
                 rscDfnUuid,
                 rscName,
                 port,
@@ -359,8 +345,6 @@ public class CtrlApiCallHandler
         {
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(
-                accCtx,
-                peer,
                 resourceName
             );
         }
@@ -377,7 +361,7 @@ public class CtrlApiCallHandler
         try
         {
             rscDfnMapLock.readLock().lock();
-            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId, accCtx);
+            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId);
         }
         finally
         {
@@ -408,8 +392,6 @@ public class CtrlApiCallHandler
         {
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
-                accCtx,
-                peer,
                 rscName,
                 vlmDfnApiList
             );
@@ -460,8 +442,6 @@ public class CtrlApiCallHandler
         {
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.modifyVlmDfn(
-                accCtx,
-                peer,
                 vlmDfnUuid,
                 rscName,
                 vlmNr,
@@ -495,8 +475,6 @@ public class CtrlApiCallHandler
         {
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.deleteVolumeDefinition(
-                accCtx,
-                peer,
                 rscName,
                 volumeNr
             );
@@ -542,8 +520,6 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
 
             apiCallRc = rscApiCallHandler.createResource(
-                accCtx,
-                peer,
                 nodeName,
                 rscName,
                 flagList,
@@ -594,8 +570,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscApiCallHandler.modifyResource(
-                accCtx,
-                peer,
                 rscUuid,
                 nodeName,
                 rscName,
@@ -633,8 +607,6 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
 
             apiCallRc = rscApiCallHandler.deleteResource(
-                accCtx,
-                peer,
                 nodeName,
                 rscName
             );
@@ -655,7 +627,7 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.readLock().lock();
             rscDfnMapLock.readLock().lock();
-            listResources = rscApiCallHandler.listResources(msgId, accCtx);
+            listResources = rscApiCallHandler.listResources(msgId);
         }
         finally
         {
@@ -687,8 +659,6 @@ public class CtrlApiCallHandler
             rscDfnMapLock.writeLock().lock();
 
             apiCallRc = rscApiCallHandler.resourceDeleted(
-                accCtx,
-                peer,
                 nodeName,
                 rscName
             );
@@ -725,8 +695,6 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
 
             apiCallRc = vlmApiCallHandler.volumeDeleted(
-                accCtx,
-                peer,
                 nodeName,
                 rscName,
                 volumeNr
@@ -764,8 +732,6 @@ public class CtrlApiCallHandler
         {
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
-                accCtx,
-                peer,
                 storPoolName,
                 storPoolDfnProps
             );
@@ -809,8 +775,6 @@ public class CtrlApiCallHandler
         {
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
-                accCtx,
-                peer,
                 storPoolDfnUuid,
                 storPoolName,
                 overrideProps,
@@ -842,8 +806,6 @@ public class CtrlApiCallHandler
         {
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
-                accCtx,
-                peer,
                 storPoolName
             );
         }
@@ -860,7 +822,7 @@ public class CtrlApiCallHandler
         try
         {
             storPoolDfnMapLock.readLock().lock();
-            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId, accCtx);
+            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId);
         }
         finally
         {
@@ -875,7 +837,7 @@ public class CtrlApiCallHandler
         try
         {
             storPoolDfnMapLock.readLock().lock();
-            listStorPools = storPoolApiCallHandler.listStorPools(msgId, accCtx);
+            listStorPools = storPoolApiCallHandler.listStorPools(msgId);
         }
         finally
         {
@@ -912,8 +874,6 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
 
             apiCallRc = storPoolApiCallHandler.createStorPool(
-                accCtx,
-                peer,
                 nodeName,
                 storPoolName,
                 driver,
@@ -964,8 +924,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolApiCallHandler.modifyStorPool(
-                accCtx,
-                peer,
                 storPoolUuid,
                 nodeName,
                 storPoolName,
@@ -1003,8 +961,6 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.writeLock().lock();
 
             apiCallRc = storPoolApiCallHandler.deleteStorPool(
-                accCtx,
-                peer,
                 nodeName,
                 storPoolName
             );
@@ -1042,8 +998,6 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.createNodeConnection(
-                accCtx,
-                peer,
                 nodeName1,
                 nodeName2,
                 nodeConnProps
@@ -1089,8 +1043,6 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.modifyNodeConnection(
-                accCtx,
-                peer,
                 nodeConnUuid,
                 nodeName1,
                 nodeName2,
@@ -1122,8 +1074,6 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
-                accCtx,
-                peer,
                 nodeName1,
                 nodeName2
             );
@@ -1162,8 +1112,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.createResourceConnection(
-                accCtx,
-                peer,
                 nodeName1,
                 nodeName2,
                 rscName,
@@ -1214,8 +1162,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.modifyRscConnection(
-                accCtx,
-                peer,
                 rscConnUuid,
                 nodeName1,
                 nodeName2,
@@ -1252,8 +1198,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
-                accCtx,
-                peer,
                 nodeName1,
                 nodeName2,
                 rscName
@@ -1296,8 +1240,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.createVolumeConnection(
-                accCtx,
-                peer,
                 nodeName1,
                 nodeName2,
                 rscName,
@@ -1351,8 +1293,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.modifyVolumeConnection(
-                accCtx,
-                peer,
                 vlmConnUuid,
                 nodeName1,
                 nodeName2,
@@ -1392,8 +1332,6 @@ public class CtrlApiCallHandler
             nodesMapLock.writeLock().lock();
             rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.deleteVolumeConnection(
-                accCtx,
-                peer,
                 nodeName1,
                 nodeName2,
                 rscName,
@@ -1429,7 +1367,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.readLock().lock();
             storPoolDfnMapLock.readLock().lock();
 
-            rscApiCallHandler.respondResource(msgId, peer, nodeName, rscUuid, rscName);
+            rscApiCallHandler.respondResource(msgId, nodeName, rscUuid, rscName);
         }
         finally
         {
@@ -1460,7 +1398,6 @@ public class CtrlApiCallHandler
 
             storPoolApiCallHandler.respondStorPool(
                 msgId,
-                peer,
                 storPoolUuid,
                 storPoolNameStr
             );
@@ -1483,7 +1420,6 @@ public class CtrlApiCallHandler
 
             nodeApiCallHandler.respondNode(
                 msgId,
-                peer,
                 nodeUuid,
                 nodeNameStr
             );
@@ -1502,7 +1438,7 @@ public class CtrlApiCallHandler
         try
         {
             rscDfnMapLock.writeLock().lock();
-            rscDfnApiCallHandler.handlePrimaryResourceRequest(accCtx, peer, msgId, rscName, rscUuid);
+            rscDfnApiCallHandler.handlePrimaryResourceRequest(msgId, rscName, rscUuid);
         }
         finally
         {
@@ -1516,7 +1452,7 @@ public class CtrlApiCallHandler
         try
         {
             ctrlConfigLock.writeLock().lock();
-            apiCallRc  = ctrlConfApiCallHandler.setProp(accCtx, key, namespace, value);
+            apiCallRc  = ctrlConfApiCallHandler.setProp(key, namespace, value);
         }
         finally
         {
@@ -1531,7 +1467,7 @@ public class CtrlApiCallHandler
         try
         {
             ctrlConfigLock.readLock().lock();
-            data  = ctrlConfApiCallHandler.listProps(accCtx, msgId);
+            data  = ctrlConfApiCallHandler.listProps(msgId);
         }
         finally
         {
@@ -1546,7 +1482,7 @@ public class CtrlApiCallHandler
         try
         {
             ctrlConfigLock.writeLock().lock();
-            apiCallRc  = ctrlConfApiCallHandler.deleteProp(accCtx, key, namespace);
+            apiCallRc  = ctrlConfApiCallHandler.deleteProp(key, namespace);
         }
         finally
         {
@@ -1572,8 +1508,6 @@ public class CtrlApiCallHandler
             nodeReadLock.lock();
 
             apiCallRc = netIfApiCallHandler.createNetIf(
-                accCtx,
-                peer,
                 nodeName,
                 netIfName,
                 address,
@@ -1606,8 +1540,6 @@ public class CtrlApiCallHandler
             nodeReadLock.lock();
 
             apiCallRc = netIfApiCallHandler.modifyNetIf(
-                accCtx,
-                peer,
                 nodeName,
                 netIfName,
                 address,
@@ -1636,7 +1568,7 @@ public class CtrlApiCallHandler
             ctrlReadLock.lock();
             nodeReadLock.lock();
 
-            apiCallRc = netIfApiCallHandler.deleteNetIf(accCtx, peer, nodeName, netIfName);
+            apiCallRc = netIfApiCallHandler.deleteNetIf(nodeName, netIfName);
         }
         finally
         {
@@ -1686,8 +1618,6 @@ public class CtrlApiCallHandler
             locks.forEach(Lock::lock);
 
             apiCallRc = rscAutoPlaceApiCallHandler.autoPlace(
-                accCtx,
-                peer,
                 rscName,
                 placeCount,
                 storPoolName,

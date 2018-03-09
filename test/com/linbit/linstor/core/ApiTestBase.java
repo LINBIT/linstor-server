@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.google.inject.Inject;
+import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
@@ -8,6 +9,7 @@ import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
@@ -17,6 +19,7 @@ import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
 import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.netcom.NetComContainer;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -33,6 +36,7 @@ import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
@@ -52,6 +56,12 @@ public abstract class ApiTestBase extends DerbyBase
         ALICE_ACC_CTX = TestAccessContextProvider.ALICE_ACC_CTX;
         BOB_ACC_CTX = TestAccessContextProvider.BOB_ACC_CTX;
     }
+
+    @Rule
+    public final SeedDefaultPeerRule seedDefaultPeerRule = new SeedDefaultPeerRule();
+
+    @Mock
+    protected Peer mockPeer;
 
     @Mock
     protected TcpConnector tcpConnectorMock;
@@ -80,11 +90,10 @@ public abstract class ApiTestBase extends DerbyBase
     @Inject Provider<TransactionMgr> transMgrProvider;
 
     @Before
-    @Override
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void setUp() throws Exception
     {
-        super.setUp(Modules.combine(
+        super.setUpWithoutEnteringScope(Modules.combine(
             new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule(),
             new ControllerSecurityModule(),
@@ -92,9 +101,6 @@ public abstract class ApiTestBase extends DerbyBase
             new ConfigModule()
         ));
 
-        TransactionMgr superTransMgr = transMgrProvider.get();
-
-        testScope.exit();
         testScope.enter();
 
         TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
@@ -111,12 +117,16 @@ public abstract class ApiTestBase extends DerbyBase
         dbConnPool.returnConnection(transMgr);
 
         testScope.exit();
-        testScope.enter();
-
-        testScope.seed(TransactionMgr.class, superTransMgr);
 
         Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class)))
             .thenReturn(tcpConnectorMock);
+
+        enterScope();
+        if (seedDefaultPeerRule.shouldSeedDefaultPeer())
+        {
+            testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
+            testScope.seed(Peer.class, mockPeer);
+        }
     }
 
     private void create(TransactionMgr transMgr, AccessContext accCtx) throws AccessDeniedException, SQLException

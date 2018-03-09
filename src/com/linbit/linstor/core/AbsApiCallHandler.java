@@ -61,14 +61,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     private final long objMask;
 
-    protected final ThreadLocal<AccessContext> currentAccCtx = new ThreadLocal<>();
-    protected final ThreadLocal<Peer> currentClient = new ThreadLocal<>();
-    protected final ThreadLocal<ApiCallType> currentApiCallType = new ThreadLocal<>();
-    protected final ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
-    private final ThreadLocal<Boolean> currentTransMgrAutoClose = new ThreadLocal<>();
-    protected final ThreadLocal<Map<String, String>> currentObjRefs = new ThreadLocal<>();
-    protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
-
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
     protected final CtrlStltSerializer internalComSerializer;
@@ -76,8 +68,14 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     private final Provider<TransactionMgr> transMgrProvider;
 
-    private ThreadLocal<?>[] customThreadLocals;
+    protected final AccessContext peerAccCtx;
+    protected final Peer peer;
 
+    protected ApiCallType apiCallType;
+    protected ApiCallRcImpl apiCallRc;
+    private Boolean transMgrAutoClose;
+    protected Map<String, String> objRefs;
+    protected Map<String, String> variables;
 
     protected AbsApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -85,7 +83,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         long objMaskRef,
         CtrlStltSerializer serializerRef,
         CtrlObjectFactories objectFactoriesRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -94,57 +94,33 @@ abstract class AbsApiCallHandler implements AutoCloseable
         internalComSerializer = serializerRef;
         objectFactories = objectFactoriesRef;
         transMgrProvider = transMgrProviderRef;
-    }
-
-    public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocalsRef)
-    {
-        customThreadLocals = customThreadLocalsRef;
+        peerAccCtx = peerAccCtxRef;
+        peer = peerRef;
     }
 
     protected AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer client,
         ApiCallType type,
-        ApiCallRcImpl apiCallRc,
+        ApiCallRcImpl apiCallRcRef,
         boolean autoCloseTransMgr,
-        Map<String, String> objRefs,
+        Map<String, String> objRefsRef,
         Map<String, String> vars
     )
     {
-        currentAccCtx.set(accCtx);
-        currentClient.set(client);
-        currentApiCallType.set(type);
-        currentApiCallRc.set(apiCallRc);
-        currentTransMgrAutoClose.set(autoCloseTransMgr);
-        currentObjRefs.set(objRefs);
-        currentVariables.set(vars);
+        apiCallType = type;
+        apiCallRc = apiCallRcRef;
+        transMgrAutoClose = autoCloseTransMgr;
+        objRefs = objRefsRef;
+        variables = vars;
         return this;
     }
 
     @Override
     public void close()
     {
-        boolean autoCloseTransMgr = currentTransMgrAutoClose.get();
-        if (autoCloseTransMgr)
+        if (transMgrAutoClose)
         {
             rollbackIfDirty(); // also returns the transMgr to dbConnPool
             // (i.e. closes the db connection)
-        }
-
-        currentAccCtx.set(null);
-        currentClient.set(null);
-        currentApiCallType.set(null);
-        currentApiCallRc.set(null);
-        currentObjRefs.set(null);
-        currentTransMgrAutoClose.set(true);
-        currentVariables.set(null);
-
-        if (customThreadLocals != null)
-        {
-            for (ThreadLocal<?> customThreadLocal : customThreadLocals)
-            {
-                customThreadLocal.set(null);
-            }
         }
     }
 
@@ -355,7 +331,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final String getAction(String crtAction, String modAction, String delAction)
     {
-        return getAction(crtAction, modAction, delAction, currentApiCallType.get());
+        return getAction(crtAction, modAction, delAction, apiCallType);
     }
 
     /**
@@ -403,7 +379,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             node = objectFactories.getNodeDataFactory().getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 nodeName,
                 null,
                 null,
@@ -496,7 +472,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             rscData = objectFactories.getResourceDataFactory().getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 rscDfn,
                 node,
                 null,
@@ -558,7 +534,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             storPoolDfn = objectFactories.getStorPoolDefinitionDataFactory().getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 storPoolName,
                 false,
                 false
@@ -614,7 +590,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             storPool = objectFactories.getStorPoolDataFactory().getInstance(
-                currentAccCtx.get(),
+                peerAccCtx,
                 node,
                 storPoolDfn,
                 null, // storDriverSimpleClassName
@@ -667,7 +643,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Props props;
         try
         {
-            props = node.getProps(currentAccCtx.get());
+            props = node.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -685,7 +661,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Props props;
         try
         {
-            props = rscDfn.getProps(currentAccCtx.get());
+            props = rscDfn.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -703,7 +679,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Props props;
         try
         {
-            props = vlmDfn.getProps(currentAccCtx.get());
+            props = vlmDfn.getProps(peerAccCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -845,8 +821,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
         errorReporter.reportError(
             throwable,
-            currentAccCtx.get(),
-            currentClient.get(),
+            peerAccCtx,
+            peer,
             errorMsg
         );
         addAnswer(errorMsg, causeMsg, detailsMsg, correctionMsg, retCode);
@@ -879,11 +855,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
         long retCode
     )
     {
-        ApiCallRcImpl apiCallRc = currentApiCallRc.get();
         if (apiCallRc != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(retCode | currentApiCallType.get().opMask | objMask);
+            entry.setReturnCodeBit(retCode | apiCallType.opMask | objMask);
             entry.setMessageFormat(msg);
             entry.setCauseFormat(cause);
 
@@ -902,12 +877,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
             entry.setDetailsFormat(details);
             entry.setCorrectionFormat(correction);
 
-            Map<String, String> objsRef = currentObjRefs.get();
+            Map<String, String> objsRef = objRefs;
             if (objsRef != null)
             {
                 entry.putAllObjRef(objsRef);
             }
-            Map<String, String> variables = currentVariables.get();
             if (variables != null)
             {
                 entry.putAllVariables(variables);
@@ -928,8 +902,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param objRefs
      * @param variables
      * @param apiCallRc
-     * @param accCtx
-     * @param peer
      */
     protected void reportStatic(
         Throwable exc,
@@ -937,9 +909,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         String objDescr,
         Map<String, String> objRefs,
         Map<String, String> variables,
-        ApiCallRcImpl apiCallRc,
-        AccessContext accCtx,
-        Peer peer
+        ApiCallRcImpl apiCallRc
     )
     {
         String errorType;
@@ -964,7 +934,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             variables,
             apiCallRc,
             errorReporter,
-            accCtx,
+            peerAccCtx,
             peer
         );
     }
@@ -1141,9 +1111,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void reportSuccess(UUID uuid)
     {
-        currentObjRefs.get().put(ApiConsts.KEY_UUID, uuid.toString());
+        objRefs.put(ApiConsts.KEY_UUID, uuid.toString());
 
-        switch (currentApiCallType.get())
+        switch (apiCallType)
         {
             case CREATE:
                 reportSuccess(
@@ -1165,7 +1135,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 break;
             default:
                 throw new ImplementationError(
-                    "Unknown api call type: " + currentApiCallType.get(),
+                    "Unknown api call type: " + apiCallType,
                     null
                 );
         }
@@ -1191,7 +1161,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final void reportSuccess(String msg, String details)
     {
         long baseRetCode;
-        switch (currentApiCallType.get())
+        switch (apiCallType)
         {
             case CREATE:
                 baseRetCode = ApiConsts.MASK_CRT | ApiConsts.CREATED;
@@ -1204,7 +1174,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 break;
             default:
                 throw new ImplementationError(
-                    "Unknown api call type: " + currentApiCallType.get(),
+                    "Unknown api call type: " + apiCallType,
                     null
                 );
         }
@@ -1214,7 +1184,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected void reportSuccess(String msg, String details, long retCode)
     {
-        ApiCallRcImpl apiCallRc = currentApiCallRc.get();
         if (apiCallRc != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -1223,12 +1192,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
             entry.setMessageFormat(msg);
             entry.setDetailsFormat(details);
 
-            Map<String, String> objsRef = currentObjRefs.get();
+            Map<String, String> objsRef = objRefs;
             if (objsRef != null)
             {
                 entry.putAllObjRef(objsRef);
             }
-            Map<String, String> variables = currentVariables.get();
             if (variables != null)
             {
                 entry.putAllVariables(variables);
@@ -1253,10 +1221,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         long retCode
     )
     {
-        AccessContext accCtx = currentAccCtx.get();
         return asExc(
             accDeniedExc,
-            getAccDeniedMsg(accCtx, action),
+            getAccDeniedMsg(peerAccCtx, action),
             retCode
         );
     }
@@ -1456,14 +1423,14 @@ abstract class AbsApiCallHandler implements AutoCloseable
             while (rscIterator.hasNext())
             {
                 Resource currentRsc = rscIterator.next();
-                Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
+                Peer currentPeer = currentRsc.getAssignedNode().getPeer(apiCtx);
 
-                boolean connected = peer.isConnected();
+                boolean connected = currentPeer.isConnected();
                 if (connected)
                 {
-                    if (!fullSyncFailed(peer))
+                    if (!fullSyncFailed(currentPeer))
                     {
-                        connected = peer.sendMessage(
+                        connected = currentPeer.sendMessage(
                             internalComSerializer
                             .builder(InternalApiConsts.API_CHANGED_RSC, 0)
                             .changedResource(

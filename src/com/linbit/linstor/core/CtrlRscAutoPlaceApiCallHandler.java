@@ -10,6 +10,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -44,7 +45,7 @@ import java.util.stream.Stream;
 
 public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
-    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private String rscName;
 
     private final ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
@@ -60,7 +61,9 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlObjectFactories objectFactories,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @PeerContext AccessContext peerAccCtxRef,
+        Peer peerRef
     )
     {
         super(
@@ -69,10 +72,9 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_RSC,
             interComSerializer,
             objectFactories,
-            transMgrProviderRef
-        );
-        super.setNullOnAutoClose(
-            currentRscName
+            transMgrProviderRef,
+            peerAccCtxRef,
+            peerRef
         );
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -80,8 +82,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     }
 
     public ApiCallRc autoPlace(
-        AccessContext accCtx,
-        Peer client,
         String rscNameStr,
         int placeCount,
         String storPoolNameStr,
@@ -112,8 +112,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
-                accCtx,
-                client,
                 ApiCallType.CREATE,
                 apiCallRc,
                 rscNameStr
@@ -126,11 +124,11 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             // build a map of storage pools the user has access to and have enough free space
             // and are not diskless
             Map<StorPoolName, List<StorPool>> storPools = storPoolDfnMap.values().stream()
-                .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(accCtx).hasAccess(AccessType.USE))
+                .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
                 .map(this::getStorPoolIterator)
                 .flatMap(StreamUtils::toStream)
                 .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
-                .filter(storPool -> storPool.getNode().getObjProt().queryAccess(accCtx).hasAccess(AccessType.USE))
+                .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
                 .filter(storPool -> getFreeSpace(storPool) >= rscSize)
                 .collect(
                     Collectors.groupingBy(StorPool::getName)
@@ -203,8 +201,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 for (Node node : candidate.nodes)
                 {
                     rscApiCallHandler.createResource(
-                        accCtx,
-                        client,
                         node.getName().displayValue,
                         rscNameStr,
                         Collections.emptyList(),
@@ -236,9 +232,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
                 getVariables(rscNameStr),
-                apiCallRc,
-                accCtx,
-                client
+                apiCallRc
             );
         }
         return apiCallRc;
@@ -290,10 +284,10 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         try
         {
             cmp = Long.compare(
-                cand2.nodes.get(0).getStorPool(currentAccCtx.get(), cand2.storPoolName)
-                    .getFreeSpace(currentAccCtx.get()),
-                cand1.nodes.get(0).getStorPool(currentAccCtx.get(), cand1.storPoolName)
-                    .getFreeSpace(currentAccCtx.get())
+                cand2.nodes.get(0).getStorPool(peerAccCtx, cand2.storPoolName)
+                    .getFreeSpace(peerAccCtx),
+                cand1.nodes.get(0).getStorPool(peerAccCtx, cand1.storPoolName)
+                    .getFreeSpace(peerAccCtx)
             );
             // compare(cand2, cand1) so that the candidate with more free space comes before the other
         }
@@ -311,11 +305,11 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         try
         {
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
-            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(currentAccCtx.get());
+            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(peerAccCtx);
             while (vlmDfnIt.hasNext())
             {
                 VolumeDefinition vlmDfn = vlmDfnIt.next();
-                size += vlmDfn.getVolumeSize(currentAccCtx.get());
+                size += vlmDfn.getVolumeSize(peerAccCtx);
             }
         }
         catch (AccessDeniedException accDeniedExc)
@@ -334,7 +328,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         Iterator<StorPool> iterator;
         try
         {
-            iterator = storPoolDfn.iterateStorPools(currentAccCtx.get());
+            iterator = storPoolDfn.iterateStorPools(peerAccCtx);
         }
         catch (AccessDeniedException exc)
         {
@@ -352,7 +346,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         long freeSpace;
         try
         {
-            freeSpace = storPool.getFreeSpace(currentAccCtx.get());
+            freeSpace = storPool.getFreeSpace(peerAccCtx);
         }
         catch (AccessDeniedException exc)
         {
@@ -371,7 +365,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         try
         {
             Stream<Resource> deployedRscStream = StreamUtils.toStream(
-                node.iterateResources(currentAccCtx.get())
+                node.iterateResources(peerAccCtx)
             );
             hasNoResourceOf = deployedRscStream
                 .map(rsc -> rsc.getDefinition().getName().value)
@@ -385,23 +379,19 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     }
 
     private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        Peer peer,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
         String rscNameStr
     )
     {
         super.setContext(
-            accCtx,
-            peer,
             type,
             apiCallRc,
             true,
             getObjRefs(rscNameStr),
             getVariables(rscNameStr)
         );
-        currentRscName.set(rscNameStr);
+        rscName = rscNameStr;
         return this;
     }
 
@@ -422,13 +412,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Auto-placing resource: " + currentRscName.get();
+        return "Auto-placing resource: " + rscName;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentRscName.get());
+        return getObjectDescriptionInline(rscName);
     }
 
     private String getObjectDescriptionInline(String rscNameStr)

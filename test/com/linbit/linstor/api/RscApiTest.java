@@ -1,7 +1,7 @@
 package com.linbit.linstor.api;
 
 import com.google.inject.Inject;
-
+import com.google.inject.Provider;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
@@ -27,7 +27,7 @@ import java.util.TreeMap;
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
 {
-    @Inject private CtrlRscApiCallHandler rscApiCallHandler;
+    @Inject private Provider<CtrlRscApiCallHandler> rscApiCallHandlerProvider;
 
     private NodeName testControllerName;
     private NodeType testControllerType;
@@ -119,8 +119,7 @@ public class RscApiTest extends ApiTestBase
         CrtRscCall(long... expectedRc)
         {
             super(
-                BOB_ACC_CTX,
-                null, // peer
+                // peer
                 ApiConsts.MASK_RSC,
                 ApiConsts.MASK_CRT,
                 expectedRc
@@ -136,9 +135,7 @@ public class RscApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return rscApiCallHandler.createResource(
-                accCtx,
-                peer,
+            return rscApiCallHandlerProvider.get().createResource(
                 nodeName,
                 rscName,
                 flags,

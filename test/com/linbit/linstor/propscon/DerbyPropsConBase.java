@@ -1,7 +1,7 @@
 package com.linbit.linstor.propscon;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.linbit.linstor.security.DerbyBase;
+import org.junit.Before;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,7 +12,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.linbit.linstor.security.DerbyBase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DerbyPropsConBase extends DerbyBase
 {
@@ -29,10 +30,10 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected PropsConDerbyDriver dbDriver;
 
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         dbDriver = new PropsConDerbyDriver(errorReporter, transMgrProvider);
     }
 

@@ -1,11 +1,11 @@
 package com.linbit.linstor;
 
 import com.google.inject.Inject;
-
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -35,10 +35,10 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Inject private StorPoolDefinitionDataDerbyDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(
             TBL_STOR_POOL_DEFINITIONS + " table's column count has changed. Update tests accordingly!",
             3,

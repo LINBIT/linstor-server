@@ -8,6 +8,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
@@ -56,10 +57,10 @@ public class VolumeDataDerbyTest extends DerbyBase
 
     @Inject private VolumeDataDerbyDriver driver;
 
-    @Override
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
+        super.setUpAndEnterScope();
         assertEquals(TBL_VOLUMES + " table's column count has changed. Update tests accordingly!",
             8,
             TBL_COL_COUNT_VOLUMES

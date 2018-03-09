@@ -7,7 +7,6 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
-
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
@@ -28,11 +27,11 @@ import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
@@ -52,7 +51,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.UuidUtils;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
@@ -62,7 +60,6 @@ import org.mockito.MockitoAnnotations;
 
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -168,13 +165,13 @@ public abstract class DerbyBase implements DerbyTestConstants
         }
     }
 
-    @Before
-    public void setUp() throws Exception
+    protected void setUpAndEnterScope() throws Exception
     {
-        setUp(new TestCoreModule());
+        setUpWithoutEnteringScope(new TestCoreModule());
+        enterScope();
     }
 
-    public void setUp(Module additionalModule) throws Exception
+    protected void setUpWithoutEnteringScope(Module additionalModule) throws Exception
     {
         con = getNewConnection();
 
@@ -200,7 +197,6 @@ public abstract class DerbyBase implements DerbyTestConstants
         );
         injector.injectMembers(this);
 
-
         TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
         testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
@@ -213,8 +209,11 @@ public abstract class DerbyBase implements DerbyTestConstants
         dbConnPool.returnConnection(transMgr);
 
         clearCaches();
+    }
 
-        transMgr = new ControllerTransactionMgr(dbConnPool);
+    protected void enterScope() throws Exception
+    {
+        TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
         testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
     }
@@ -224,12 +223,6 @@ public abstract class DerbyBase implements DerbyTestConstants
         nodesMap.clear();
         rscDfnMap.clear();
         storPoolDfnMap.clear();
-    }
-
-    protected void satelliteMode()
-    {
-        // TODO
-        // CoreUtils.satelliteMode(SYS_CTX, nodesMap, rscDfnMap, storPoolDfnMap);
     }
 
     @After
