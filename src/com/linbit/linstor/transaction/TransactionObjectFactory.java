@@ -12,8 +12,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 
 @Singleton
 public class TransactionObjectFactory

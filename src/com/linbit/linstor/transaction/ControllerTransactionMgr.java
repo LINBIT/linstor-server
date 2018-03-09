@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbcp.DbConnectionPool;

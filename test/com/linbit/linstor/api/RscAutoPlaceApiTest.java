@@ -1,6 +1,6 @@
 package com.linbit.linstor.api;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;

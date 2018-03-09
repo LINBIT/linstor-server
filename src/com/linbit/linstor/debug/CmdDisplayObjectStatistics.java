@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.StringTokenizer;

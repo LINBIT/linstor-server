@@ -1,6 +1,6 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;

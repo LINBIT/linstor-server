@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;

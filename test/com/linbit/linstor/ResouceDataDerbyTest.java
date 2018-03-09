@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;

@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Resource.RscFlags;

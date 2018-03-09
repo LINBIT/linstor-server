@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.ControllerCoreModule;

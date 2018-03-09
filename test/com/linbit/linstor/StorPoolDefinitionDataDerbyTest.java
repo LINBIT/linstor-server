@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;

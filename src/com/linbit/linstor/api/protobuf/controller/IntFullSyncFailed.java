@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;

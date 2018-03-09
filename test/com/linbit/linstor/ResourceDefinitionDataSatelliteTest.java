@@ -1,7 +1,7 @@
 package com.linbit.linstor;
 
 import com.google.inject.Guice;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;

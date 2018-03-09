@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf.controller;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;

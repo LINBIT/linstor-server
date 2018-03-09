@@ -1,6 +1,6 @@
 package com.linbit.linstor.debug;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.AccessContext;
 

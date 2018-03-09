@@ -1,7 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.google.inject.Guice;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.linbit.ControllerLinstorModule;

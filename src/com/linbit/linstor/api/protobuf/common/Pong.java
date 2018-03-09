@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.protobuf.common;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.netcom.Peer;

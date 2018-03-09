@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.api.ApiCall;

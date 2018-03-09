@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.ProtocolStringList;
 
 import com.linbit.linstor.api.ApiCall;
