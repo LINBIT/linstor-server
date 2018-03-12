@@ -56,7 +56,8 @@ public class CmdDisplayApis extends BaseDebugCmd
             }
             AutoIndent.printWithIndent(
                 debugOut, 4,
-                "Provider: " + apiObj.getClazz().getCanonicalName()
+                "Provider: " + apiObj.getClazz().getCanonicalName() + "\n" +
+                "Call policy: " + (apiObj.requiresAuth() ? "Authenticated identity" : "Anonymous/PUBLIC")
             );
             ++count;
         }
