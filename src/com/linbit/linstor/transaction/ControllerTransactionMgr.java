@@ -13,26 +13,24 @@ import com.linbit.linstor.dbcp.DbConnectionPool;
 public class ControllerTransactionMgr implements TransactionMgr
 {
     private final boolean isSatellite;
-    public final Connection dbCon;
+    private final DbConnectionPool dbConnectionPool;
+    private final Connection dbCon;
     private Set<TransactionObject> transObjects;
 
     @Inject
     public ControllerTransactionMgr(DbConnectionPool dbConnPool) throws SQLException
     {
-        this(dbConnPool.getConnection());
-    }
-
-    public ControllerTransactionMgr(Connection con) throws SQLException
-    {
         isSatellite = false;
-        con.setAutoCommit(false);
-        dbCon = con;
+        dbConnectionPool = dbConnPool;
+        dbCon = dbConnPool.getConnection();
+        dbCon.setAutoCommit(false);
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
 
     ControllerTransactionMgr()
     {
         isSatellite = true;
+        dbConnectionPool = null;
         dbCon = null;
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
@@ -133,5 +131,15 @@ public class ControllerTransactionMgr implements TransactionMgr
     public Connection getConnection()
     {
         return dbCon;
+    }
+
+    @Override
+    public void returnConnection()
+    {
+        if (dbConnectionPool != null)
+        {
+            dbConnectionPool.returnConnection(dbCon);
+        }
+        clearTransactionObjects();
     }
 }

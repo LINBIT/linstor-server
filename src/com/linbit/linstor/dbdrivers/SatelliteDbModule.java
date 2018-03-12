@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.ControllerDatabase;
+import com.google.inject.AbstractModule;
 import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -32,8 +32,6 @@ import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.EmptySecurityDbDriver;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 
-import com.google.inject.AbstractModule;
-
 public class SatelliteDbModule extends AbstractModule
 {
     @Override
@@ -58,7 +56,5 @@ public class SatelliteDbModule extends AbstractModule
         bind(NodeConnectionDataDatabaseDriver.class).to(SatelliteNodeConDfnDriver.class);
         bind(ResourceConnectionDataDatabaseDriver.class).to(SatelliteResConDfnDriver.class);
         bind(VolumeConnectionDataDatabaseDriver.class).to(SatelliteVolConDfnDriver.class);
-
-        bind(ControllerDatabase.class).to(EmptyControllerDatabase.class);
     }
 }

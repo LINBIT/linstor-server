@@ -114,7 +114,7 @@ public abstract class ApiTestBase extends DerbyBase
         create(transMgr, BOB_ACC_CTX);
 
         transMgr.commit();
-        dbConnPool.returnConnection(transMgr);
+        transMgr.returnConnection();
 
         testScope.exit();
 

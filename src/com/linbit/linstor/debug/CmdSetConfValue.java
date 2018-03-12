@@ -174,7 +174,7 @@ public class CmdSetConfValue extends BaseDebugCmd
 
             if (transMgr != null)
             {
-                dbConnectionPool.returnConnection(transMgr);
+                transMgr.returnConnection();
             }
             if (conf != null)
             {

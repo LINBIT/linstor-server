@@ -206,7 +206,7 @@ public abstract class DerbyBase implements DerbyTestConstants
 
         transMgr.commit();
         testScope.exit();
-        dbConnPool.returnConnection(transMgr);
+        transMgr.returnConnection();
 
         clearCaches();
     }

@@ -214,7 +214,7 @@ public class ControllerSecurityModule extends AbstractModule
         {
             if (transMgr != null)
             {
-                dbConnPool.returnConnection(transMgr);
+                transMgr.returnConnection();
             }
             initScope.exit();
         }

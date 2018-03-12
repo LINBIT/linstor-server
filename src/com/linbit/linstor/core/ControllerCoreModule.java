@@ -72,7 +72,7 @@ public class ControllerCoreModule extends AbstractModule
         {
             if (transMgr != null)
             {
-                dbConnPool.returnConnection(transMgr);
+                transMgr.returnConnection();
             }
         }
         return propsContainer;
@@ -170,7 +170,7 @@ public class ControllerCoreModule extends AbstractModule
                 catch (Exception ignored)
                 {
                 }
-                dbConnPool.returnConnection(transMgr);
+                transMgr.returnConnection();
             }
         }
 

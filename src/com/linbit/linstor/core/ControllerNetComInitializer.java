@@ -324,7 +324,7 @@ public final class ControllerNetComInitializer
                                     "An SQL exception was thrown while trying to rollback a transaction"
                                 );
                             }
-                            dbConnPool.returnConnection(transMgr);
+                            transMgr.returnConnection();
                         }
                     }
                 }
@@ -401,7 +401,7 @@ public final class ControllerNetComInitializer
                                         "An SQL exception was thrown while trying to rollback a transaction"
                                     );
                                 }
-                                dbConnPool.returnConnection(transMgr);
+                                transMgr.returnConnection();
                             }
                         }
 

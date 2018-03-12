@@ -29,15 +29,6 @@ public interface ControllerDatabase extends SystemService
     // Must be able to handle dbConn == null as a valid input
     void returnConnection(Connection dbConn);
 
-    default void returnConnection(TransactionMgr transMgr)
-    {
-        if (transMgr != null)
-        {
-            returnConnection(((ControllerTransactionMgr) transMgr).dbCon);
-            transMgr.clearTransactionObjects();
-        }
-    }
-
     @Override
     void shutdown();
 }

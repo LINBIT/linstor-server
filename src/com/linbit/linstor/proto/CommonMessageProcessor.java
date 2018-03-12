@@ -3,7 +3,6 @@ package com.linbit.linstor.proto;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.PeerContext;
@@ -60,8 +59,6 @@ public class CommonMessageProcessor implements MessageProcessor
     private final Map<String, ApiCallDescriptor> apiCallDescriptors;
     private final Provider<TransactionMgr> transactionProvider;
 
-    private final ControllerDatabase dbConnPool;
-
     @Inject
     public CommonMessageProcessor(
         ErrorReporter errorLogRef,
@@ -69,8 +66,7 @@ public class CommonMessageProcessor implements MessageProcessor
         LinStorScope apiCallScopeRef,
         Map<String, Provider<ApiCall>> apiCallProvidersRef,
         Map<String, ApiCallDescriptor> apiCallDescriptorsRef,
-        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> transactionProviderRef,
-        ControllerDatabase dbConnPoolRef
+        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> transactionProviderRef
     )
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
@@ -81,8 +77,6 @@ public class CommonMessageProcessor implements MessageProcessor
         apiCallProviders = apiCallProvidersRef;
         apiCallDescriptors = apiCallDescriptorsRef;
         transactionProvider = transactionProviderRef;
-
-        dbConnPool = dbConnPoolRef;
     }
 
     public Map<String, ApiCallDescriptor> getApiCallDescriptors()
@@ -331,7 +325,7 @@ public class CommonMessageProcessor implements MessageProcessor
             {
                 if (transMgr != null)
                 {
-                    dbConnPool.returnConnection(transMgr);
+                    transMgr.returnConnection();
                 }
                 apiCallScope.exit();
             }

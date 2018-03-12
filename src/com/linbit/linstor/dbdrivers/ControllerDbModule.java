@@ -119,7 +119,7 @@ public class ControllerDbModule extends AbstractModule
             initScopeScope.exit();
 
             storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
-            dbConnPool.returnConnection(transMgr);
+            transMgr.returnConnection();
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {

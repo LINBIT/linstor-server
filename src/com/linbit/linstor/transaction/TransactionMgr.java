@@ -18,6 +18,8 @@ public interface TransactionMgr
 
     Connection getConnection();
 
+    void returnConnection();
+
     static boolean isCalledFromTransactionMgr(String methodName)
     {
         StackTraceElement[] stack = new Throwable().getStackTrace();
