@@ -14,8 +14,6 @@ public interface TransactionMgr
     boolean isDirty();
     int sizeObjects();
 
-    boolean isRegistered(TransactionObject to);
-
     Connection getConnection();
 
     void returnConnection();

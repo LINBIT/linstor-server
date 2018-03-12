@@ -1,68 +1,38 @@
 package com.linbit.linstor.transaction;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import com.linbit.linstor.dbcp.DbConnectionPool;
 
 import javax.inject.Inject;
-
-import com.linbit.ImplementationError;
-import com.linbit.linstor.dbcp.DbConnectionPool;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class ControllerTransactionMgr implements TransactionMgr
 {
-    private final boolean isSatellite;
     private final DbConnectionPool dbConnectionPool;
     private final Connection dbCon;
-    private Set<TransactionObject> transObjects;
+    private final TransactionObjectCollection transactionObjectCollection;
 
     @Inject
     public ControllerTransactionMgr(DbConnectionPool dbConnPool) throws SQLException
     {
-        isSatellite = false;
         dbConnectionPool = dbConnPool;
         dbCon = dbConnPool.getConnection();
         dbCon.setAutoCommit(false);
-        transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
-    }
-
-    ControllerTransactionMgr()
-    {
-        isSatellite = true;
-        dbConnectionPool = null;
-        dbCon = null;
-        transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
+        transactionObjectCollection = new TransactionObjectCollection();
     }
 
     @Override
     public void register(TransactionObject transObj)
     {
-        if (transObj.isDirtyWithoutTransMgr() && !transObjects.contains(transObj))
-        {
-            throw new ImplementationError(
-                "Connection set after TransactionObject modified " + transObj,
-                null
-            );
-        }
-        transObjects.add(transObj);
+        transactionObjectCollection.register(transObj);
     }
 
     @Override
     public void commit() throws SQLException
     {
-        if (!isSatellite)
-        {
-            dbCon.commit();
-        }
-        for (TransactionObject transObj : transObjects)
-        {
-            // checking if isDirty to prevent endless indirect recursion
-            if (transObj.isDirty())
-            {
-                transObj.commit();
-            }
-        }
+        dbCon.commit();
+
+        transactionObjectCollection.commitAll();
 
         clearTransactionObjects();
     }
@@ -71,18 +41,9 @@ public class ControllerTransactionMgr implements TransactionMgr
     @Override
     public void rollback() throws SQLException
     {
-        for (TransactionObject transObj : transObjects)
-        {
-            // checking if isDirty to prevent endless indirect recursion
-            if (transObj.isDirty())
-            {
-                transObj.rollback();
-            }
-        }
-        if (!isSatellite)
-        {
-            dbCon.rollback();
-        }
+        transactionObjectCollection.rollbackAll();
+
+        dbCon.rollback();
 
         clearTransactionObjects();
     }
@@ -90,41 +51,19 @@ public class ControllerTransactionMgr implements TransactionMgr
     @Override
     public void clearTransactionObjects()
     {
-        // if no SQLException happened so far
-        for (TransactionObject transObj : transObjects)
-        {
-            // remove the active connection to force the next transaction to be explicit
-            transObj.setConnection(null);
-        }
-
-        transObjects.clear();
+        transactionObjectCollection.clearAll();
     }
 
     @Override
     public boolean isDirty()
     {
-        boolean dirty = false;
-        for (TransactionObject transObj : transObjects)
-        {
-            if (transObj.isDirty())
-            {
-                dirty = true;
-                break;
-            }
-        }
-        return dirty;
+        return transactionObjectCollection.areAnyDirty();
     }
 
     @Override
     public int sizeObjects()
     {
-        return transObjects.size();
-    }
-
-    @Override
-    public boolean isRegistered(TransactionObject to)
-    {
-        return transObjects.contains(to);
+        return transactionObjectCollection.sizeObjects();
     }
 
     @Override
@@ -136,10 +75,8 @@ public class ControllerTransactionMgr implements TransactionMgr
     @Override
     public void returnConnection()
     {
-        if (dbConnectionPool != null)
-        {
-            dbConnectionPool.returnConnection(dbCon);
-        }
+        dbConnectionPool.returnConnection(dbCon);
+
         clearTransactionObjects();
     }
 }
