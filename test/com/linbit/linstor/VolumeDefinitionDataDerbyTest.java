@@ -118,7 +118,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.create(
                 SYS_CTX,
                 new ResourceName("TestResource2"),
-                resPort,
+                resPort + 1, // prevent tcp-port-conflict
                 null,
                 "secret",
                 TransportType.IP

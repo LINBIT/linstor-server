@@ -448,7 +448,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName2,
-            port,
+            port + 1, // prevent tcp-port-conflict
             null,
             "secret",
             transportType

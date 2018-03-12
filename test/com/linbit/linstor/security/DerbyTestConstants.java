@@ -167,8 +167,8 @@ public interface DerbyTestConstants
         "    IDENTITY_DSP_NAME VARCHAR(24) NOT NULL, \n" +
         "    PASS_SALT CHAR(16) FOR BIT DATA, \n" +
         "    PASS_HASH CHAR(64) FOR BIT DATA, \n" +
-        "    ID_ENABLED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
-        "    ID_LOCKED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
+        "    ID_ENABLED BOOLEAN DEFAULT TRUE NOT NULL, \n" +
+        "    ID_LOCKED BOOLEAN DEFAULT TRUE NOT NULL, \n" +
         "    CONSTRAINT PK_SI PRIMARY KEY (IDENTITY_NAME), \n" +
         "    CONSTRAINT CHK_SI_NAME CHECK (UPPER(IDENTITY_NAME) = IDENTITY_NAME AND LENGTH(IDENTITY_NAME) >= 3), \n" +
         "    CONSTRAINT CHK_SI_DSP_NAME CHECK (UPPER(IDENTITY_DSP_NAME) = IDENTITY_NAME) \n" +
@@ -178,7 +178,7 @@ public interface DerbyTestConstants
         "( \n" +
         "    TYPE_NAME VARCHAR(24) NOT NULL, \n" +
         "    TYPE_DSP_NAME VARCHAR(24) NOT NULL, \n" +
-        "    TYPE_ENABLED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
+        "    TYPE_ENABLED BOOLEAN DEFAULT TRUE NOT NULL, \n" +
         "    CONSTRAINT PK_ST PRIMARY KEY (TYPE_NAME), \n" +
         "    CONSTRAINT CHK_ST_NAME CHECK (UPPER(TYPE_NAME) = TYPE_NAME AND LENGTH(TYPE_NAME) >= 3), \n" +
         "    CONSTRAINT CHK_ST_DSPNAME CHECK (UPPER(TYPE_DSP_NAME) = TYPE_NAME) \n" +
@@ -189,8 +189,8 @@ public interface DerbyTestConstants
         "    ROLE_NAME VARCHAR(24) NOT NULL, \n" +
         "    ROLE_DSP_NAME VARCHAR(24) NOT NULL, \n" +
         "    DOMAIN_NAME VARCHAR(24) NOT NULL, \n" +
-        "    ROLE_ENABLED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
-        "    ROLE_PRIVILEGES BIGINT NOT NULL DEFAULT 0, \n" +
+        "    ROLE_ENABLED BOOLEAN DEFAULT TRUE NOT NULL, \n" +
+        "    ROLE_PRIVILEGES BIGINT DEFAULT 0 NOT NULL, \n" +
         "    CONSTRAINT PK_SR PRIMARY KEY (ROLE_NAME), \n" +
         "    CONSTRAINT FK_SR_SEC_TYPE FOREIGN KEY (DOMAIN_NAME) REFERENCES SEC_TYPES(TYPE_NAME), \n" +
         "    CONSTRAINT CHK_SR_ROLE_NAME CHECK (UPPER(ROLE_NAME) = ROLE_NAME AND LENGTH(ROLE_NAME) >= 3), \n" +
@@ -317,6 +317,7 @@ public interface DerbyTestConstants
         "    TRANSPORT_TYPE VARCHAR(40) NOT NULL, \n" +
         "    CONSTRAINT PK_RD PRIMARY KEY (RESOURCE_NAME), \n" +
         "    CONSTRAINT UNQ_RD_UUID UNIQUE (UUID), \n" +
+        "    CONSTRAINT UNQ_TCP_PORT UNIQUE (TCP_PORT), \n" +
         "    CONSTRAINT CHK_RD_NAME CHECK (UPPER(RESOURCE_NAME) = RESOURCE_NAME AND LENGTH(RESOURCE_NAME) >= 3), \n" +
         "    CONSTRAINT CHK_RD_DSP_NAME CHECK (UPPER(RESOURCE_DSP_NAME) = RESOURCE_NAME), \n" +
         "    CONSTRAINT CHK_RD_PORT_RANGE CHECK (TCP_PORT > 0 AND TCP_PORT < 65536), \n" +
@@ -641,12 +642,21 @@ public interface DerbyTestConstants
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/type', 'ssl')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/bindaddress', '::0')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/port', '3377')",
-        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyPasswd', 'dmngdemo')",
-        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyStorePasswd', 'dmngdemo')",
-        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/trustStorePasswd', 'dmngdemo')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyPasswd', 'linstor')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyStorePasswd', 'linstor')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/trustStorePasswd', 'linstor')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/trustStore', 'ssl/certificates.jks')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/sslProtocol', 'TLSv1')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyStore', 'ssl/keystore.jks')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/type', 'ssl')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/bindaddress', '::0')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/port', '3373')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/keyPasswd', 'linstor')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/keyStorePasswd', 'linstor')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/trustStorePasswd', 'linstor')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/trustStore', 'ssl/certificates.jks')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/sslProtocol', 'TLSv1')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/keyStore', 'ssl/keystore.jks')",
         "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
         "    VALUES ('/sys/controller/nodesMap', 'SYSTEM', 'SYSADM', 'SHARED')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
