@@ -1,53 +1,48 @@
 package com.linbit.linstor.proto;
 
-import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.linbit.WorkQueue;
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorModule;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.MessageProcessor;
-import com.linbit.linstor.netcom.MessageTypes;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
-import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import javax.inject.Singleton;
+import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.MessageTypes;
+import com.linbit.linstor.security.AccessContext;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Iterator;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.event.Level;
-
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 
 /**
  * Dispatcher for received messages
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-@Singleton
 public class CommonMessageProcessor implements MessageProcessor
 {
     private final ReadWriteLock apiLock;
@@ -55,28 +50,58 @@ public class CommonMessageProcessor implements MessageProcessor
     private final ErrorReporter errorLog;
     private final WorkQueue workQ;
     private final LinStorScope apiCallScope;
-    private final Map<String, Provider<ApiCall>> apiCallProviders;
-    private final Map<String, ApiCallDescriptor> apiCallDescriptors;
-    private final Provider<TransactionMgr> transactionProvider;
+    private final Provider<TransactionMgr> trnActProvider;
+    private final Map<String, ApiEntry> apiCallMap;
 
     @Inject
     public CommonMessageProcessor(
         ErrorReporter errorLogRef,
         @Named(LinStorModule.MAIN_WORKER_POOL_NAME) WorkQueue workQRef,
         LinStorScope apiCallScopeRef,
-        Map<String, Provider<ApiCall>> apiCallProvidersRef,
-        Map<String, ApiCallDescriptor> apiCallDescriptorsRef,
-        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> transactionProviderRef
+        Map<String, Provider<ApiCall>> apiCallProviders,
+        Map<String, ApiCallDescriptor> apiCallDescriptors,
+        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef
     )
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
-        apiLock     = new ReentrantReadWriteLock();
-        errorLog    = errorLogRef;
-        workQ       = workQRef;
-        apiCallScope = apiCallScopeRef;
-        apiCallProviders = apiCallProvidersRef;
-        apiCallDescriptors = apiCallDescriptorsRef;
-        transactionProvider = transactionProviderRef;
+        apiLock         = new ReentrantReadWriteLock();
+        errorLog        = errorLogRef;
+        workQ           = workQRef;
+        apiCallScope    = apiCallScopeRef;
+        trnActProvider  = trnActProviderRef;
+        apiCallMap      = new TreeMap<>();
+
+        Iterator<Map.Entry<String, Provider<ApiCall>>> providerIter = apiCallProviders.entrySet().iterator();
+        while (providerIter.hasNext())
+        {
+            Map.Entry<String, Provider<ApiCall>> providerEntry = providerIter.next();
+            String apiName = providerEntry.getKey();
+            Provider<ApiCall> apiProv = providerEntry.getValue();
+            ApiCallDescriptor apiDscr = apiCallDescriptors.get(apiName);
+            if (apiDscr != null)
+            {
+                apiCallMap.put(
+                    apiName,
+                    new ApiEntry(
+                        apiProv, apiDscr,
+                        // TODO: Prepared for future feature: Mandatory authentication
+                        //       Load value from ApiCall object
+                        false
+                    )
+                );
+            }
+            else
+            {
+                errorLog.reportError(
+                    Level.ERROR,
+                    new ImplementationError(
+                        ApiCallDescriptor.class.getSimpleName() + " entry is missing for API call object '" +
+                        apiName + "'",
+                        null
+                    )
+                );
+            }
+        }
     }
 
     public Map<String, ApiCallDescriptor> getApiCallDescriptors()
@@ -87,7 +112,13 @@ public class CommonMessageProcessor implements MessageProcessor
         try
         {
             readLock.lock();
-            objMap = new TreeMap<>(apiCallDescriptors);
+            objMap = new TreeMap<>();
+            Iterator<Map.Entry<String, ApiEntry>> apiIter = apiCallMap.entrySet().iterator();
+            while (apiIter.hasNext())
+            {
+                Map.Entry<String, ApiEntry> entry = apiIter.next();
+                objMap.put(entry.getKey(), entry.getValue().descriptor);
+            }
         }
         finally
         {
@@ -97,7 +128,12 @@ public class CommonMessageProcessor implements MessageProcessor
     }
 
     @Override
-    public void processMessage(Message msg, TcpConnector connector, Peer client)
+    public void processMessage(final Message msg, final TcpConnector connector, final Peer client)
+    {
+        workQ.submit(new MessageProcessorInvocation(this, msg, connector, client));
+    }
+
+    private void processMessageImpl(Message msg, TcpConnector connector, Peer client)
     {
         try
         {
@@ -154,7 +190,11 @@ public class CommonMessageProcessor implements MessageProcessor
         }
     }
 
-    private void handleDataMessage(Message msg, TcpConnector connector, Peer client)
+    private void handleDataMessage(
+        final Message msg,
+        final TcpConnector connector,
+        final Peer client
+    )
         throws IllegalMessageStateException
     {
         try
@@ -162,40 +202,61 @@ public class CommonMessageProcessor implements MessageProcessor
             byte[] msgData = msg.getData();
             ByteArrayInputStream msgDataIn = new ByteArrayInputStream(msgData);
 
-            MsgHeader header = MsgHeader.parseDelimitedFrom(msgDataIn);
+            MsgHeaderOuterClass.MsgHeader header = MsgHeaderOuterClass.MsgHeader.parseDelimitedFrom(msgDataIn);
             if (header != null)
             {
                 int msgId = header.getMsgId();
                 String apiCallName = header.getApiCall();
 
                 Lock readLock = apiLock.readLock();
-                Provider<ApiCall> apiCallProvider;
-                ApiCallDescriptor apiCallDescriptor;
+                ApiEntry apiMapEntry;
                 try
                 {
                     readLock.lock();
-                    apiCallProvider = apiCallProviders.get(apiCallName);
-                    apiCallDescriptor = apiCallDescriptors.get(apiCallName);
+                    apiMapEntry = apiCallMap.get(apiCallName);
                 }
                 finally
                 {
                     readLock.unlock();
                 }
-                if (apiCallProvider != null && apiCallDescriptor != null)
+                if (apiMapEntry != null)
                 {
-                    ApiCallInvocation apiCallInv = new ApiCallInvocation(
-                        apiCallProvider,
-                        apiCallDescriptor,
-                        client.getAccessContext(),
-                        errorLog,
-                        msg, msgId, msgDataIn,
-                        client
-                    );
-                    workQ.submit(apiCallInv);
+                    AccessContext clientAccCtx = client.getAccessContext();
+                    TransactionMgr transMgr = trnActProvider.get();
+                    apiCallScope.enter();
+                    try
+                    {
+                        apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), clientAccCtx);
+                        apiCallScope.seed(Peer.class, client);
+                        apiCallScope.seed(Message.class, msg);
+                        apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
+                        apiCallScope.seed(TransactionMgr.class, transMgr);
+                        ApiCall apiObj = apiMapEntry.provider.get();
+                        apiObj.execute(msgDataIn);
+                    }
+                    catch (Exception | ImplementationError exc)
+                    {
+                        errorLog.reportError(
+                            Level.ERROR,
+                            exc,
+                            client.getAccessContext(),
+                            client,
+                            "Execution of the '" + apiCallName + "' API failed due to an unhandled exception"
+                        );
+                    }
+                    finally
+                    {
+                        if (transMgr != null)
+                        {
+                            transMgr.returnConnection();
+                        }
+                        apiCallScope.exit();
+                    }
                 }
                 else
                 {
-                    if (client.getNode() == null) // client, no satellite or controller
+                    // Send error reports to clients only (not to Satellites)
+                    if (client.getNode() == null)
                     {
                         errorLog.reportError(
                             Level.TRACE,
@@ -213,15 +274,14 @@ public class CommonMessageProcessor implements MessageProcessor
                             "The request was received on connector service '" + connector.getInstanceName() + "' " +
                                 "of type '" + connector.getServiceName() + "'"
                         );
-                        // answer the client
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        MsgHeader.newBuilder()
+                        MsgHeaderOuterClass.MsgHeader.newBuilder()
                             .setApiCall(ApiConsts.API_REPLY)
                             .setMsgId(msgId)
                             .build()
                             .writeDelimitedTo(baos);
 
-                        MsgApiCallResponse.newBuilder()
+                        MsgApiCallResponseOuterClass.MsgApiCallResponse.newBuilder()
                             .setMessageFormat("The requested function call cannot be executed.")
                             .setCauseFormat(
                                 "Common causes of this error are:\n" +
@@ -263,72 +323,49 @@ public class CommonMessageProcessor implements MessageProcessor
         }
     }
 
-
-    class ApiCallInvocation implements Runnable
+    private static class ApiEntry
     {
-        private final Provider<ApiCall> apiCallProvider;
-        private final ApiCallDescriptor apiCallDescriptor;
-        private final AccessContext   accCtx;
-        private final ErrorReporter   errLog;
-        private final Message         msg;
-        private final int             msgId;
-        private final InputStream     msgDataIn;
-        private final Peer            client;
+        final Provider<ApiCall> provider;
+        final ApiCallDescriptor descriptor;
+        final boolean           reqAuth;
 
-        ApiCallInvocation(
-            Provider<ApiCall> apiCallProviderRef,
-            ApiCallDescriptor apiCallDescriptorRef, AccessContext accCtxRef,
-            ErrorReporter errLogRef,
-            Message msgRef,
-            int msgIdRef,
-            InputStream msgDataInRef,
-            Peer clientRef
+        ApiEntry(
+            final Provider<ApiCall> providerRef,
+            final ApiCallDescriptor descriptorRef,
+            final boolean           reqAuthFlag
         )
         {
-            apiCallProvider   = apiCallProviderRef;
-            apiCallDescriptor = apiCallDescriptorRef;
-            accCtx       = accCtxRef;
-            errLog       = errLogRef;
-            msg          = msgRef;
-            msgId        = msgIdRef;
-            msgDataIn    = msgDataInRef;
-            client       = clientRef;
+            provider    = providerRef;
+            descriptor  = descriptorRef;
+            reqAuth     = reqAuthFlag;
+        }
+    }
+
+    private static class MessageProcessorInvocation implements Runnable
+    {
+        private final CommonMessageProcessor proc;
+
+        private final Message       msg;
+        private final TcpConnector  connector;
+        private final Peer          client;
+
+        MessageProcessorInvocation(
+            final CommonMessageProcessor procRef,
+            final Message msgRef,
+            final TcpConnector connectorRef,
+            final Peer clientRef
+        )
+        {
+            proc        = procRef;
+            msg         = msgRef;
+            connector   = connectorRef;
+            client      = clientRef;
         }
 
         @Override
         public void run()
         {
-            TransactionMgr transMgr = null;
-            transMgr = transactionProvider.get();
-            apiCallScope.enter();
-            try
-            {
-                apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
-                apiCallScope.seed(Peer.class, client);
-                apiCallScope.seed(Message.class, msg);
-                apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
-                apiCallScope.seed(TransactionMgr.class, transMgr);
-                ApiCall apiCall = apiCallProvider.get();
-                apiCall.execute(msgDataIn);
-            }
-            catch (Exception | ImplementationError exc)
-            {
-                errLog.reportError(
-                    Level.ERROR,
-                    exc,
-                    accCtx,
-                    client,
-                    "Error occurred while executing the '" + apiCallDescriptor.getName() + "' API."
-                );
-            }
-            finally
-            {
-                if (transMgr != null)
-                {
-                    transMgr.returnConnection();
-                }
-                apiCallScope.exit();
-            }
+            proc.processMessageImpl(msg, connector, client);
         }
     }
 }
