@@ -119,8 +119,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     {
         if (transMgrAutoClose)
         {
-            rollbackIfDirty(); // also returns the transMgr to dbConnPool
-            // (i.e. closes the db connection)
+            rollbackIfDirty();
         }
     }
 
