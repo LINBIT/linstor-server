@@ -18,7 +18,6 @@ public class ControllerDebugModule extends AbstractModule
         Multibinder<CommonDebugCmd> commandsBinder =
             Multibinder.newSetBinder(binder(), CommonDebugCmd.class);
 
-        commandsBinder.addBinding().to(CmdSetSecLevel.class);
         commandsBinder.addBinding().to(CmdDisplayConfValue.class);
         commandsBinder.addBinding().to(CmdSetConfValue.class);
         commandsBinder.addBinding().to(CmdDeleteConfValue.class);

@@ -14,7 +14,6 @@ public class DebugModule extends AbstractModule
         commandsBinder.addBinding().to(CmdDisplayThreads.class);
         commandsBinder.addBinding().to(CmdDisplayContextInfo.class);
         commandsBinder.addBinding().to(CmdDisplayServices.class);
-        commandsBinder.addBinding().to(CmdDisplaySecLevel.class);
         commandsBinder.addBinding().to(CmdDisplayModuleInfo.class);
         commandsBinder.addBinding().to(CmdDisplayVersion.class);
         commandsBinder.addBinding().to(CmdStartService.class);
@@ -31,6 +30,10 @@ public class DebugModule extends AbstractModule
         commandsBinder.addBinding().to(CmdDisplayLockStatus.class);
         commandsBinder.addBinding().to(CmdDisplayTraceMode.class);
         commandsBinder.addBinding().to(CmdSetTraceMode.class);
+        commandsBinder.addBinding().to(CmdDisplaySecLevel.class);
+        commandsBinder.addBinding().to(CmdSetSecLevel.class);
+        commandsBinder.addBinding().to(CmdDisplayAuthPolicy.class);
+        commandsBinder.addBinding().to(CmdSetAuthPolicy.class);
         commandsBinder.addBinding().to(CmdDisplayReport.class);
         commandsBinder.addBinding().to(CmdDisplayReportList.class);
         commandsBinder.addBinding().to(CmdDisplayObjProt.class);
