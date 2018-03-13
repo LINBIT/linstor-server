@@ -96,9 +96,14 @@ public class CmdDisplayContextInfo extends BaseDebugCmd
 
         if (detail == DetailLevel.DEFAULT || detail == DetailLevel.FULL)
         {
-            debugOut.printf("%-24s: %s\n", "Identity", accCtx.getIdentity());
-            debugOut.printf("%-24s: %s\n", "Role", accCtx.getRole());
-            debugOut.printf("%-24s: %s\n", "Domain", accCtx.getDomain());
+            debugOut.printf(
+                "Identity:        %s\n" +
+                "Role:            %s\n" +
+                "Security domain: %s\n",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue,
+                accCtx.subjectDomain.name.displayValue
+            );
         }
         if (detail == DetailLevel.FULL)
         {
