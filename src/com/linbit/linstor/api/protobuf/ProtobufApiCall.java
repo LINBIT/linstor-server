@@ -23,4 +23,12 @@ public @interface ProtobufApiCall
      * @return Description of the API call's function
      */
     String description();
+
+    /**
+     * Indicates whether the API requires an authenticated peer
+     *
+     * @return True if the API may only be called by authenticated peers, false if the API can be called
+     *         by the PUBLIC identity
+     */
+    boolean requiresAuth() default true;
 }

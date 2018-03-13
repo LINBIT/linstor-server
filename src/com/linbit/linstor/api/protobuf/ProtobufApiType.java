@@ -29,4 +29,10 @@ public class ProtobufApiType implements ApiType
     {
         return apiCall.getAnnotation(ProtobufApiCall.class).description();
     }
+
+    @Override
+    public boolean requiresAuth(Class<?> apiCall)
+    {
+        return apiCall.getAnnotation(ProtobufApiCall.class).requiresAuth();
+    }
 }

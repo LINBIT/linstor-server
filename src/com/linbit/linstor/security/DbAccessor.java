@@ -33,6 +33,6 @@ public interface DbAccessor
         throws SQLException;
     void setSecurityLevel(Connection dbConn, SecurityLevel newLevel)
         throws SQLException;
-    void setAuthRequired(Connection dbConn, boolean requiredFlag)
+    void setAuthRequired(Connection dbConn, boolean newPolicy)
         throws SQLException;
 }

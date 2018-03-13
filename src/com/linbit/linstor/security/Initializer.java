@@ -16,6 +16,7 @@ public final class Initializer
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
         SecurityLevel.load(ctrlDb, driver);
+        Authentication.load(ctrlDb, driver);
         Identity.load(ctrlDb, driver);
         SecurityType.load(ctrlDb, driver);
         Role.load(ctrlDb, driver);

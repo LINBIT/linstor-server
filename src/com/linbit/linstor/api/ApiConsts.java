@@ -195,7 +195,8 @@ public class ApiConsts
     /*
      * Special codes
      */
-    public static final long UNKNOWN_API_CALL = 0x0FFFFFFFFFFFFFFFL | MASK_ERROR;
+    public static final long UNKNOWN_API_CALL   = 0x0FFFFFFFFFFFFFFFL | MASK_ERROR;
+    public static final long API_CALL_AUTH_REQ  = 0x0FFFFFFFFFFFFFFEL | MASK_ERROR;
 
     /*
      * SignIn codes

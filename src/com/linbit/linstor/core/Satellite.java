@@ -27,6 +27,7 @@ import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;

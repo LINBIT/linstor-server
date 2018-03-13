@@ -1,6 +1,7 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.LinStor;
@@ -13,6 +14,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.event.Level;
 
 /**
@@ -25,6 +27,9 @@ public final class Authentication
     public static final String HASH_ALGORITHM = "SHA-512";
     public static final int HASH_SIZE = 64;
     public static final int SALT_SIZE = 16;
+
+    private static final AtomicBoolean GLOBAL_AUTH_REQUIRED =
+        new AtomicBoolean(true);
 
     private MessageDigest hashAlgo;
 
@@ -50,6 +55,45 @@ public final class Authentication
         ctrlDb = ctrlDbRef;
         dbDriver = dbDriverRef;
         errorLog = errorLogRef;
+    }
+
+    public static boolean isRequired()
+    {
+        return GLOBAL_AUTH_REQUIRED.get();
+    }
+
+    public static void setRequired(
+        AccessContext accCtx,
+        boolean newPolicy,
+        ControllerDatabase ctrlDb,
+        DbAccessor secDb
+    )
+        throws AccessDeniedException, SQLException
+    {
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        // Always commit if the change is non-persistent / temporary
+        boolean committed = ctrlDb == null || secDb == null;
+
+        if (ctrlDb != null && secDb != null)
+        {
+            Connection dbConn = null;
+            try
+            {
+                dbConn = ctrlDb.getConnection();
+                secDb.setAuthRequired(dbConn, newPolicy);
+                committed = true;
+            }
+            finally
+            {
+                ctrlDb.returnConnection(dbConn);
+            }
+        }
+        
+        if (committed)
+        {
+            GLOBAL_AUTH_REQUIRED.set(newPolicy);
+        }
     }
 
     public AccessContext signIn(IdentityName idName, byte[] password)
@@ -461,5 +505,51 @@ public final class Authentication
             // No error details
             null
         );
+    }
+
+    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
+        throws SQLException
+    {
+        Connection dbConn = null;
+        GLOBAL_AUTH_REQUIRED.set(true);
+        try
+        {
+            dbConn = ctrlDb.getConnection();
+            if (dbConn == null)
+            {
+                throw new SQLException(
+                    "The controller database connection pool failed to provide a database connection"
+                );
+            }
+
+            ResultSet rslt = secDb.loadAuthRequired(dbConn);
+            if (rslt.next())
+            {
+                String authPlcKey = rslt.getString(1);
+                String authPlcVal = rslt.getString(2);
+
+                if (!authPlcKey.equals(SecurityDbConsts.KEY_AUTH_REQ))
+                {
+                    throw new ImplementationError(
+                        "Security level database query returned incorrect key '" + authPlcKey + "'\n" +
+                        "instead of expected key '" + SecurityDbConsts.KEY_AUTH_REQ + "'",
+                        null
+                    );
+                }
+
+                if (Boolean.toString(false).equalsIgnoreCase(authPlcVal))
+                {
+                    GLOBAL_AUTH_REQUIRED.set(false);
+                }
+                else
+                {
+                    // TODO: A warning should be logged when an unknown value is encountered
+                }
+            }
+        }
+        finally
+        {
+            ctrlDb.returnConnection(dbConn);
+        }
     }
 }

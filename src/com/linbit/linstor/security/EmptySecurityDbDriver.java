@@ -85,7 +85,7 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public void setAuthRequired(Connection dbConn, boolean requiredFlag) throws SQLException
+    public void setAuthRequired(Connection dbConn, boolean newPolicy) throws SQLException
     {
         // no-op
     }

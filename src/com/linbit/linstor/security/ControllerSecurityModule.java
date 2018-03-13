@@ -49,6 +49,25 @@ public class ControllerSecurityModule extends AbstractModule
     }
 
     @Provides
+    public MandatoryAuthSetter mandatoryAuthSetter(
+        final DbConnectionPool dbConnectionPool,
+        final DbAccessor securityDbDriver
+    )
+    {
+        return new MandatoryAuthSetter()
+        {
+            @Override
+            public void setAuthRequired(AccessContext accCtx, boolean newPolicy)
+                throws AccessDeniedException, SQLException
+            {
+                Authentication.setRequired(
+                    accCtx, newPolicy, dbConnectionPool, securityDbDriver
+                );
+            }
+        };
+    }
+
+    @Provides
     @Singleton
     public Authentication initializeAuthentication(
         @SystemContext AccessContext initCtx,

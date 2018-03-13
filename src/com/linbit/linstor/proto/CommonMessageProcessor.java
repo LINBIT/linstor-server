@@ -29,7 +29,11 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.MessageTypes;
+import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
+import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.Authentication;
+import com.linbit.linstor.security.Identity;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -78,15 +82,7 @@ public class CommonMessageProcessor implements MessageProcessor
             ApiCallDescriptor apiDscr = apiCallDescriptors.get(apiName);
             if (apiDscr != null)
             {
-                apiCallMap.put(
-                    apiName,
-                    new ApiEntry(
-                        apiProv, apiDscr,
-                        // TODO: Prepared for future feature: Mandatory authentication
-                        //       Load value from ApiCall object
-                        false
-                    )
-                );
+                apiCallMap.put(apiName, new ApiEntry(apiProv, apiDscr, apiDscr.requiresAuth()));
             }
             else
             {
@@ -218,35 +214,71 @@ public class CommonMessageProcessor implements MessageProcessor
                 if (apiMapEntry != null)
                 {
                     AccessContext clientAccCtx = client.getAccessContext();
-                    TransactionMgr transMgr = trnActProvider.get();
-                    apiCallScope.enter();
-                    try
+                    // API will execute
+                    // - if no authentication is required for that specific API
+                    // - if authentication is turned off globally by the security subsystem
+                    // - if the client's access context has non-public (= authenticated) identity
+                    if (!(apiMapEntry.reqAuth && Authentication.isRequired()) ||
+                        clientAccCtx.subjectId != Identity.PUBLIC_ID)
                     {
-                        apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), clientAccCtx);
-                        apiCallScope.seed(Peer.class, client);
-                        apiCallScope.seed(Message.class, msg);
-                        apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
-                        apiCallScope.seed(TransactionMgr.class, transMgr);
-                        ApiCall apiObj = apiMapEntry.provider.get();
-                        apiObj.execute(msgDataIn);
-                    }
-                    catch (Exception | ImplementationError exc)
-                    {
-                        errorLog.reportError(
-                            Level.ERROR,
-                            exc,
-                            client.getAccessContext(),
-                            client,
-                            "Execution of the '" + apiCallName + "' API failed due to an unhandled exception"
-                        );
-                    }
-                    finally
-                    {
-                        if (transMgr != null)
+                        TransactionMgr transMgr = trnActProvider.get();
+                        apiCallScope.enter();
+                        try
                         {
-                            transMgr.returnConnection();
+                            apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), clientAccCtx);
+                            apiCallScope.seed(Peer.class, client);
+                            apiCallScope.seed(Message.class, msg);
+                            apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
+                            apiCallScope.seed(TransactionMgr.class, transMgr);
+                            ApiCall apiObj = apiMapEntry.provider.get();
+                            apiObj.execute(msgDataIn);
                         }
-                        apiCallScope.exit();
+                        catch (Exception | ImplementationError exc)
+                        {
+                            errorLog.reportError(
+                                Level.ERROR,
+                                exc,
+                                client.getAccessContext(),
+                                client,
+                                "Execution of the '" + apiCallName + "' API failed due to an unhandled exception"
+                            );
+                        }
+                        finally
+                        {
+                            if (transMgr != null)
+                            {
+                                transMgr.returnConnection();
+                            }
+                            apiCallScope.exit();
+                        }
+                    }
+                    else
+                    if (client.getNode() == null)
+                    {
+                        // Inform the client that the API requires authentication
+                        // (Connected satellites are not notified)
+                        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+                        MsgHeader.newBuilder()
+                            .setApiCall(ApiConsts.API_REPLY)
+                            .setMsgId(msgId)
+                            .build()
+                            .writeDelimitedTo(outStream);
+
+                        MsgApiCallResponse.newBuilder()
+                            .setMessageFormat("The client is not authorized to execute the requested function call")
+                            .setCauseFormat(
+                                "The requested function call can only be executed by an authenticated identity"
+                            )
+                            .setCauseFormat(
+                                "An identity must be authenticated by signing in to the system before executing\n" +
+                                "the requested function call.\n"
+                            )
+                            .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                            .setRetCode(ApiConsts.API_CALL_AUTH_REQ)
+                            .build()
+                            .writeDelimitedTo(outStream);
+
+                        client.sendMessage(outStream.toByteArray());
                     }
                 }
                 else
@@ -270,12 +302,12 @@ public class CommonMessageProcessor implements MessageProcessor
                             "The request was received on connector service '" + connector.getInstanceName() + "' " +
                                 "of type '" + connector.getServiceName() + "'"
                         );
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
                         MsgHeaderOuterClass.MsgHeader.newBuilder()
                             .setApiCall(ApiConsts.API_REPLY)
                             .setMsgId(msgId)
                             .build()
-                            .writeDelimitedTo(baos);
+                            .writeDelimitedTo(outStream);
 
                         MsgApiCallResponseOuterClass.MsgApiCallResponse.newBuilder()
                             .setMessageFormat("The requested function call cannot be executed.")
@@ -289,9 +321,9 @@ public class CommonMessageProcessor implements MessageProcessor
                             .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
                             .setRetCode(ApiConsts.UNKNOWN_API_CALL)
                             .build()
-                            .writeDelimitedTo(baos);
+                            .writeDelimitedTo(outStream);
 
-                        client.sendMessage(baos.toByteArray());
+                        client.sendMessage(outStream.toByteArray());
                     }
                     else
                     {
@@ -304,11 +336,9 @@ public class CommonMessageProcessor implements MessageProcessor
         }
         catch (IOException ioExc)
         {
-            // TODO: - Send an error report to the peer that sent the faulty message
-            //       - Probably only from the controller to a satellite or client,
-            //         and from the satellite to a client; otherwise, this can create
-            //         a loop if error reports are created due to receiving a
-            //         malformed error report
+            // No error messages are sent to a caller of an invalid API call to avoid causing a feedback loop,
+            // where each peer sends out error messages because it does not understand the other peer's API
+            // call for transferring an error message
             errorLog.reportError(
                 Level.DEBUG,
                 ioExc,

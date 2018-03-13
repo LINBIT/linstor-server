@@ -192,23 +192,21 @@ public class DbDerbyPersistence implements DbAccessor
     }
 
     @Override
-    public void setAuthRequired(Connection dbConn, boolean requiredFlag) throws SQLException
+    public void setAuthRequired(Connection dbConn, boolean newPolicy) throws SQLException
     {
         try
+        (
+            Statement delStmt = dbConn.createStatement();
+            PreparedStatement insStmt = dbConn.prepareStatement(INS_AUTH_REQUIRED);
+        )
         {
             // Delete any existing authentication requirement entry
-            try (Statement delStmt = dbConn.createStatement())
-            {
-                delStmt.execute(DEL_AUTH_REQUIRED);
-            }
+            delStmt.execute(DEL_AUTH_REQUIRED);
 
             // Insert the new authentication requirement
-            try (PreparedStatement insStmt = dbConn.prepareStatement(INS_AUTH_REQUIRED))
-            {
-
-                String dbValue = requiredFlag ? Boolean.toString(true) : Boolean.toString(false);
-                insStmt.setString(1, dbValue);
-            }
+            String dbValue = Boolean.toString(newPolicy);
+            insStmt.setString(1, dbValue);
+            insStmt.executeUpdate();
 
             dbConn.commit();
         }
@@ -218,7 +216,6 @@ public class DbDerbyPersistence implements DbAccessor
             throw sqlExc;
         }
     }
-
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException
     {

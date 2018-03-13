@@ -20,7 +20,8 @@ import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_AUTH,
-    description = "Called by the controller to authenticate the controller to the satellite"
+    description = "Called by the controller to authenticate the controller to the satellite",
+    requiresAuth = false
 )
 public class CtrlAuth implements ApiCall
 {

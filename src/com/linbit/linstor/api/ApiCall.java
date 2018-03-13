@@ -3,10 +3,6 @@ package com.linbit.linstor.api;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-
 /**
  * Controller / Satellite API call
  *

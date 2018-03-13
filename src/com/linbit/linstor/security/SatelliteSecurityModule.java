@@ -36,6 +36,22 @@ public class SatelliteSecurityModule extends AbstractModule
     }
 
     @Provides
+    public MandatoryAuthSetter mandatoryAuthSetter()
+    {
+        return new MandatoryAuthSetter()
+        {
+            @Override
+            public void setAuthRequired(AccessContext accCtx, boolean newPolicy)
+                throws AccessDeniedException, SQLException
+            {
+                Authentication.setRequired(
+                    accCtx, newPolicy, null, null
+                );
+            }
+        };
+    }
+
+    @Provides
     @Singleton
     @Named(SecurityModule.SHUTDOWN_PROT)
     public ObjectProtection shutdownProt(

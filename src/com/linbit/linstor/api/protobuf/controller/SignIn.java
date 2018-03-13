@@ -26,7 +26,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = "SignIn",
-    description = "Performs a sign-in with the specified credentials"
+    description = "Performs a sign-in with the specified credentials",
+    requiresAuth = false
 )
 public class SignIn implements ApiCall
 {

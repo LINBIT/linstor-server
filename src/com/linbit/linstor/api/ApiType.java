@@ -11,4 +11,6 @@ public interface ApiType
     String getName(Class<?> apiCall);
 
     String getDescription(Class<?> apiCall);
+
+    boolean requiresAuth(Class<?> apiCall);
 }
