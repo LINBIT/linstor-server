@@ -59,6 +59,8 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import static java.util.stream.Collectors.toList;
+
 @Singleton
 public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 {
@@ -452,10 +454,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         private Iterable<? extends NetIf> getNetIfs(Node node) throws AccessDeniedException
         {
             ArrayList<NetIf> netIfs = new ArrayList<>();
-            Iterator<NetInterface> iterateNetInterfaces = node.iterateNetInterfaces(serializerCtx);
-            while (iterateNetInterfaces.hasNext())
+            for(NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
             {
-                NetInterface netIf = iterateNetInterfaces.next();
                 netIfs.add(
                     NetIf.newBuilder()
                         .setNetIfUuid(netIf.getUuid().toString())
@@ -677,11 +677,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         {
             List<NetInterfaceOuterClass.NetInterface> protoNetIfs = new ArrayList<>();
 
-            Iterator<NetInterface> netIfs = node.iterateNetInterfaces(serializerCtx);
-            while (netIfs.hasNext())
+            for (NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
             {
-                NetInterface netIf = netIfs.next();
-
                 protoNetIfs.add(
                     NetInterfaceOuterClass.NetInterface.newBuilder()
                         .setUuid(netIf.getUuid().toString())

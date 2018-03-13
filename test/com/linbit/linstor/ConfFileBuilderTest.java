@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.linbit.linstor.testutils.VarArgEq.varArgEq;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -181,8 +182,8 @@ public class ConfFileBuilderTest
             .thenReturn(new LsIpAddress(ipAddr));
 
         when(assignedNode.getName()).thenReturn(new NodeName("testNode"));
-        when(assignedNode.iterateNetInterfaces(any(AccessContext.class)))
-            .thenAnswer(makeIteratorAnswer(netInterface));
+        when(assignedNode.streamNetInterfaces(any(AccessContext.class)))
+            .thenAnswer(makeStreamAnswer(netInterface));
 
         when(stateFlags.isUnset(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DELETE})))
             .thenReturn(!resourceDeleted);
@@ -226,6 +227,19 @@ public class ConfFileBuilderTest
             public Iterator<T> answer(final InvocationOnMock invocation)
             {
                 return Arrays.asList(ts).iterator();
+            }
+        };
+    }
+
+    @SafeVarargs
+    private final <T> Answer<Stream<T>> makeStreamAnswer(final T... ts)
+    {
+        return new Answer<Stream<T>>()
+        {
+            @Override
+            public Stream<T> answer(InvocationOnMock invocation) throws Throwable
+            {
+                return Arrays.asList(ts).stream();
             }
         };
     }

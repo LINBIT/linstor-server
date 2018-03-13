@@ -30,8 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import javax.inject.Provider;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -317,6 +321,16 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public Stream<NetInterface> streamNetInterfaces(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return netInterfaceMap.values().stream();
+    }
+
+    @Override
     public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException
     {
@@ -512,12 +526,11 @@ public class NodeData extends BaseTransactionObject implements Node
         throws AccessDeniedException
     {
         List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
-        Iterator<NetInterface> itNetInterfaces = iterateNetInterfaces(accCtx);
-        while (itNetInterfaces.hasNext())
+        for(NetInterface ni : streamNetInterfaces(accCtx).collect(toList()))
         {
-            NetInterface ni = itNetInterfaces.next();
             netInterfaces.add(ni.getApiData(accCtx));
         }
+
         List<NodeConnPojo> nodeConns = new ArrayList<>();
         for (NodeConnection nodeConn : nodeConnections.values())
         {

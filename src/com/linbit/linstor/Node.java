@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  *
@@ -33,6 +34,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         throws AccessDeniedException;
 
     Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    Stream<NetInterface> streamNetInterfaces(AccessContext accCtx)
         throws AccessDeniedException;
 
     Resource getResource(AccessContext accCtx, ResourceName resName)

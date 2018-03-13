@@ -251,11 +251,7 @@ public class ConfFileBuilder
                 // list of network interfaces
                 if (preferredNetIf == null)
                 {
-                    Iterator<NetInterface> netIfIter = assgNode.iterateNetInterfaces(accCtx);
-                    if (netIfIter.hasNext())
-                    {
-                        preferredNetIf = netIfIter.next();
-                    }
+                    preferredNetIf = assgNode.streamNetInterfaces(accCtx).findFirst().orElse(null);
                 }
             }
         }

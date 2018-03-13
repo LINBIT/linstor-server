@@ -149,12 +149,8 @@ public class CmdDisplayNodes extends BaseDebugCmd
                         objProt.getCreator().name.displayValue, objProt.getOwner().name.displayValue)
                     .leaf("Security type: %-24s", objProt.getSecurityType().name.displayValue);
 
-                Iterator<NetInterface> netIfIter = nodeRef.iterateNetInterfaces(accCtx);
-
                 treeBuilder.branchHideEmpty("Network interfaces:");
-                while (netIfIter.hasNext())
-                {
-                    NetInterface netIf = netIfIter.next();
+                nodeRef.streamNetInterfaces(accCtx).forEach(netIf -> {
                     String address = "<No authorized>";
                     try
                     {
@@ -180,7 +176,8 @@ public class CmdDisplayNodes extends BaseDebugCmd
                         )
                         .leaf("Address: %s", address)
                         .endBranch();
-                }
+                });
+
                 treeBuilder.endBranch();
 
                 treeBuilder.print(output);
