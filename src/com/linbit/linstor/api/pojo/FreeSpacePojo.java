@@ -7,10 +7,10 @@ public class FreeSpacePojo
     private final UUID storPoolUuid;
     private final String storPoolName;
     private final long freeSpace;
-    
+
     public FreeSpacePojo(
-        UUID storPoolUuidRef, 
-        String storPoolNameRef, 
+        UUID storPoolUuidRef,
+        String storPoolNameRef,
         long freeSpaceRef
     )
     {
@@ -18,7 +18,7 @@ public class FreeSpacePojo
         storPoolName = storPoolNameRef;
         freeSpace = freeSpaceRef;
     }
-    
+
     public UUID getStorPoolUuid()
     {
         return storPoolUuid;

@@ -89,7 +89,7 @@ public final class Authentication
                 ctrlDb.returnConnection(dbConn);
             }
         }
-        
+
         if (committed)
         {
             GLOBAL_AUTH_REQUIRED.set(newPolicy);

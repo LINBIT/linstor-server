@@ -79,7 +79,7 @@ public class ApiCallLoader
 
     /**
      * Loads implementations of the {@link ApiCall}.
-     * 
+     *
      * The packages to search are determined by appending each of the given suffixes onto the base package name
      * given by the {@link ApiType}.
      */
