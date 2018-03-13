@@ -17,6 +17,9 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.Identity;
+import com.linbit.linstor.security.Role;
+import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -30,6 +33,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import org.slf4j.event.Level;
 
 @Singleton
 public class StltApiCallHandler
@@ -167,6 +171,25 @@ public class StltApiCallHandler
                 disklessStorPoolDfnUuid,
                 disklessStorPoolUuid
             );
+            AccessContext curCtx = controllerPeer.getAccessContext();
+            try
+            {
+                AccessContext newCtx = apiCtx.impersonate(
+                    apiCtx.subjectId, curCtx.subjectRole, curCtx.subjectDomain
+                );
+                controllerPeer.setAccessContext(apiCtx, newCtx);
+            }
+            catch (AccessDeniedException accExc)
+            {
+                errorReporter.reportError(
+                    Level.ERROR,
+                    new ImplementationError(
+                        "Creation of an access context for a Controller by the " +
+                        apiCtx.subjectRole.name.displayValue + " role failed",
+                        accExc
+                    )
+                );
+            }
             errorReporter.logInfo("Controller connected and authenticated");
         }
 
