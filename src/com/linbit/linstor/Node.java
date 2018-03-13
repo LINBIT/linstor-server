@@ -76,6 +76,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
+    Stream<StorPool> streamStorPools(AccessContext accCtx)
+        throws AccessDeniedException;
+
     Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 

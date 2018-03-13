@@ -16,7 +16,9 @@ import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 class CtrlFullSyncApiCallHandler
@@ -64,11 +66,7 @@ class CtrlFullSyncApiCallHandler
             }
             // some storPools might have been created on the satellite, but are not used by resources / volumes
             // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
-            Iterator<StorPool> storPoolIterator = localNode.iterateStorPools(apiCtx);
-            while (storPoolIterator.hasNext())
-            {
-                storPools.add(storPoolIterator.next());
-            }
+            storPools.addAll(localNode.streamStorPools(apiCtx).collect(toList()));
 
             satellite.setFullSyncId(expectedFullSyncId);
 

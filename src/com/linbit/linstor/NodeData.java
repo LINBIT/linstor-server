@@ -399,6 +399,16 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public Stream<StorPool> streamStorPools(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return storPoolMap.values().stream();
+    }
+
+    @Override
     public void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
         throws AccessDeniedException
     {

@@ -20,6 +20,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import static java.util.stream.Collectors.toList;
+
 public class StltApiCallHandlerUtils
 {
     private final ErrorReporter errorReporter;
@@ -63,10 +65,8 @@ public class StltApiCallHandlerUtils
             nodesMapReadLock.lock();
             storPoolDfnMapReadLock.lock();
 
-            Iterator<StorPool> iterateStorPools = controllerPeerConnector.getLocalNode().iterateStorPools(apiCtx);
-            while (iterateStorPools.hasNext())
+            for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
-                StorPool storPool = iterateStorPools.next();
                 StorageDriver storageDriver = storPool.getDriver(apiCtx, errorReporter, fileSystemWatch, timer);
                 if (storageDriver != null)
                 {

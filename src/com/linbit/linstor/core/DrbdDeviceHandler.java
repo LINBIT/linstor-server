@@ -1379,17 +1379,14 @@ class DrbdDeviceHandler implements DeviceHandler
                     }
                 }
 
-                Iterator<StorPool> storPoolIter = localNode.iterateStorPools(wrkCtx);
-                while (storPoolIter.hasNext())
-                {
-                    StorPool curStorPool = storPoolIter.next();
+                localNode.streamStorPools(wrkCtx).forEach(curStorPool -> {
                     String driverClassName = curStorPool.getDriverName();
                     System.out.printf(
                         "Storage pool %-24s Driver %s\n",
                         curStorPool.getName().displayValue,
                         driverClassName
                     );
-                }
+                });
             }
             catch (AccessDeniedException ignored)
             {
