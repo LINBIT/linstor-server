@@ -288,7 +288,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
             .addVlmDfn("avoid1", 0, 2 * TB)
                 .addRsc("avoid1", "slow1", "stlt1", "stlt2")
-            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 1)
+            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 2)
             .addVlmDfn("avoid2", 0, 2 * TB)
                 .addRsc("avoid2", "slow2", "stlt1", "stlt2")
         );
@@ -334,7 +334,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
             .addVlmDfn("avoid1", 0, 2 * TB)
                 .addRsc("avoid1", "slow1", "stlt1", "stlt2")
-            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 1)
+            .addRscDfn("avoid2", TEST_TCP_PORT_NR + 2)
             .addVlmDfn("avoid2", 0, 2 * TB)
                 .addRsc("avoid2", "slow2", "stlt1", "stlt2")
         );
