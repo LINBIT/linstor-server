@@ -281,6 +281,16 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public Stream<Resource> streamResources(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return resourceMap.values().stream();
+    }
+
+    @Override
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
         checkDeleted();

@@ -65,6 +65,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import static java.util.stream.Collectors.toList;
+
 /* TODO
  *
  * createResource() -- handling of resources known to LINSTOR vs. rogue resources not known to LINSTOR
@@ -1352,10 +1354,8 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             try
             {
-                Iterator<Resource> rscIter = localNode.iterateResources(wrkCtx);
-                while (rscIter.hasNext())
+                for (Resource curRsc : localNode.streamResources(wrkCtx).collect(toList()))
                 {
-                    Resource curRsc = rscIter.next();
                     System.out.printf(
                         "Assigned resource %-24s:\n",
                         curRsc.getDefinition().getName().displayValue

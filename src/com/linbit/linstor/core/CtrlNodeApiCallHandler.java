@@ -54,6 +54,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
@@ -325,11 +328,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 boolean success = true;
                 boolean hasRsc = false;
 
-                Iterator<Resource> rscIterator = getRscIterator(nodeData);
-                while (rscIterator.hasNext())
+                for (Resource rsc : getRscStream(nodeData).collect(toList()))
                 {
                     hasRsc = true;
-                    Resource rsc = rscIterator.next();
                     markDeleted(rsc);
                 }
                 if (!hasRsc)
@@ -459,10 +460,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     // otherNodes can be filled with all nodes (except the current 'node')
                     // related to the satellite. The serializer only needs the other nodes for
                     // the nodeConnections.
-                    Iterator<Resource> rscIterator = peer.getNode().iterateResources(apiCtx);
-                    while (rscIterator.hasNext())
+                    for (Resource rsc : peer.getNode().streamResources(apiCtx).collect(toList()))
                     {
-                        Resource rsc = rscIterator.next();
                         Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
                         while (otherRscIterator.hasNext())
                         {
@@ -741,18 +740,18 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return netInterface;
     }
 
-    private Iterator<Resource> getRscIterator(NodeData nodeData) throws ApiCallHandlerFailedException
+    private Stream<Resource> getRscStream(NodeData nodeData) throws ApiCallHandlerFailedException
     {
-        Iterator<Resource> iterator;
+        Stream<Resource> stream;
         try
         {
-            iterator = nodeData.iterateResources(apiCtx);
+            stream = nodeData.streamResources(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
         }
-        return iterator;
+        return stream;
     }
 
     private void markDeleted(Resource rsc) throws ApiCallHandlerFailedException

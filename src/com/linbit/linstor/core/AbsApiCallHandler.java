@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static java.util.stream.Collectors.toList;
+
 abstract class AbsApiCallHandler implements AutoCloseable
 {
     protected enum ApiCallType
@@ -1354,12 +1356,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
         try
         {
-            Iterator<Resource> iterateRscs = node.iterateResources(apiCtx);
             Map<NodeName, Node> nodesToContact = new TreeMap<>();
             nodesToContact.put(node.getName(), node);
-            while (iterateRscs.hasNext())
+            for (Resource rsc : node.streamResources(apiCtx).collect(toList()))
             {
-                Resource rsc = iterateRscs.next();
                 ResourceDefinition rscDfn = rsc.getDefinition();
                 Iterator<Resource> allRscsIterator = rscDfn.iterateResource(apiCtx);
                 while (allRscsIterator.hasNext())

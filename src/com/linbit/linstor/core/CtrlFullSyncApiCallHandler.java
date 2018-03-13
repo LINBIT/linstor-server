@@ -17,6 +17,8 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static java.util.stream.Collectors.toList;
+
 class CtrlFullSyncApiCallHandler
 {
     private final ErrorReporter errorReporter;
@@ -47,10 +49,8 @@ class CtrlFullSyncApiCallHandler
 
             nodes.add(localNode); // always add the localNode
 
-            Iterator<Resource> rscIterator = localNode.iterateResources(apiCtx);
-            while (rscIterator.hasNext())
+            for (Resource rsc : localNode.streamResources(apiCtx).collect(toList()))
             {
-                Resource rsc = rscIterator.next();
                 rscs.add(rsc);
                 Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
                 while (otherRscIterator.hasNext())

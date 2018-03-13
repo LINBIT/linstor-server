@@ -364,10 +364,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         boolean hasNoResourceOf = false;
         try
         {
-            Stream<Resource> deployedRscStream = StreamUtils.toStream(
-                node.iterateResources(peerAccCtx)
-            );
-            hasNoResourceOf = deployedRscStream
+            hasNoResourceOf = node.streamResources(peerAccCtx)
                 .map(rsc -> rsc.getDefinition().getName().value)
                 .noneMatch(notPlaceWithRscList::contains);
         }
