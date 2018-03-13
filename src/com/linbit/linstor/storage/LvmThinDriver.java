@@ -11,6 +11,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -44,7 +45,7 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public void startVolume(final String identifier) throws StorageException
+    public void startVolume(final String identifier, PriorityProps props) throws StorageException
     {
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
@@ -74,11 +75,14 @@ public class LvmThinDriver extends LvmDriver
                 exc
             );
         }
+        super.startVolume(identifier, props); // call to possibly open dm-crypt
     }
 
     @Override
     public void stopVolume(final String identifier) throws StorageException
     {
+        super.stopVolume(identifier); // call to possibly close dm-crypt
+
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
         {
@@ -151,6 +155,12 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
+    protected String getSnapshotIdentifier(String identifier, String snapshotName)
+    {
+        return identifier + ID_SNAP_DELIMITER + snapshotName;
+    }
+
+    @Override
     protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
     {
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
@@ -158,7 +168,7 @@ public class LvmThinDriver extends LvmDriver
         {
             lvmCreateCommand,
             "--snapshot",           // -s
-            "--name", identifier + ID_SNAP_DELIMITER + snapshotName, // -n
+            "--name", getSnapshotIdentifier(identifier, snapshotName), // -n
             qualifiedIdentifier
         };
         return command;
@@ -172,7 +182,7 @@ public class LvmThinDriver extends LvmDriver
             lvmCreateCommand,
             "--snapshot",           // -s
             "--name", targetIdentifier, // -n
-            volumeGroup + File.separator + sourceIdentifier + ID_SNAP_DELIMITER + snapshotName
+            volumeGroup + File.separator + getSnapshotIdentifier(sourceIdentifier, snapshotName)
         };
         return command;
     }
@@ -180,26 +190,31 @@ public class LvmThinDriver extends LvmDriver
     @Override
     protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
-        return getDeleteCommand(identifier + ID_SNAP_DELIMITER + snapshotName);
+        return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName));
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName) throws StorageException
+    public void createSnapshot(
+        String identifier,
+        String snapshotName,
+        PriorityProps props
+    )
+        throws StorageException
     {
-        super.createSnapshot(identifier, snapshotName);
-        startVolume(identifier + ID_SNAP_DELIMITER + snapshotName);
+        super.createSnapshot(identifier, snapshotName, props);
     }
 
     @Override
     public void restoreSnapshot(
         String sourceIdentifier,
         String snapshotName,
-        String targetIdentifier
+        String targetIdentifier,
+        PriorityProps props
     )
         throws StorageException
     {
-        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier);
-        startVolume(targetIdentifier);
+        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier, props);
+        startVolume(targetIdentifier, props);
     }
 
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException

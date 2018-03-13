@@ -350,6 +350,7 @@ public class ApiConsts
     public static final String KEY_STOR_POOL_THIN_POOL = "ThinPool";
     public static final String KEY_STOR_POOL_ZPOOL = "ZPool";
     public static final String KEY_STOR_POOL_PREF_NIC = "PrefNic";
+    public static final String KEY_STOR_POOL_CRYPT_PASSWD = "CryptPasswd";
 
     /*
      * Storage pool traits keys
@@ -426,6 +427,7 @@ public class ApiConsts
     public static final String FLAG_DELETE = "DELETE";
     public static final String FLAG_DISKLESS = "DISKLESS";
     public static final String FLAG_QIGNORE = "QIGNORE";
+    public static final String FLAG_ENCRYPTED = "ENCRYPTED";
 
     private ApiConsts()
     {

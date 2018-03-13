@@ -29,6 +29,7 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.PriorityProps;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
@@ -147,14 +148,14 @@ public class LvmDriverTest extends StorageTestUtils
     public void testStartVolume() throws StorageException
     {
         final String identifier = "identifier";
-        driver.startVolume(identifier); // should not trigger anything
+        driver.startVolume(identifier, new PriorityProps()); // should not trigger anything
     }
 
     @Test
     public void testStartUnknownVolume() throws StorageException
     {
         final String unknownIdentifier = "unknown";
-        driver.startVolume(unknownIdentifier); // should not trigger anything
+        driver.startVolume(unknownIdentifier, new PriorityProps()); // should not trigger anything
     }
 
     @Test
@@ -210,7 +211,7 @@ public class LvmDriverTest extends StorageTestUtils
             }
         );
         thread.start();
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
     @Test
@@ -235,7 +236,7 @@ public class LvmDriverTest extends StorageTestUtils
             emptyFileObserver);
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
     @Test(expected = StorageException.class)
@@ -254,7 +255,7 @@ public class LvmDriverTest extends StorageTestUtils
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
 
@@ -267,7 +268,7 @@ public class LvmDriverTest extends StorageTestUtils
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, volumeName, LVM_VOLUME_GROUP_DEFAULT, true);
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
 
-        driver.createVolume(volumeName, volumeSize);
+        driver.createVolume(volumeName, volumeSize, new PriorityProps());
     }
 
 

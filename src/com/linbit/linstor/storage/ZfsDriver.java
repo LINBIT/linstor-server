@@ -11,6 +11,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -219,9 +220,10 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName) throws StorageException
+    public void createSnapshot(String identifier, String snapshotName, PriorityProps props)
+        throws StorageException
     {
-        super.createSnapshot(identifier, snapshotName);
+        super.createSnapshot(identifier, snapshotName, props);
     }
 
     @Override
@@ -334,7 +336,13 @@ public class ZfsDriver extends AbsStorageDriver
 
     private String getQualifiedSnapshotPath(String identifier, String snapshotName)
     {
-        return pool + File.separator + identifier + "@" + snapshotName;
+        return pool + File.separator + getSnapshotIdentifier(identifier, snapshotName);
+    }
+
+    @Override
+    protected String getSnapshotIdentifier(String identifier, String snapshotName)
+    {
+        return identifier + "@" + snapshotName;
     }
 
     @Override

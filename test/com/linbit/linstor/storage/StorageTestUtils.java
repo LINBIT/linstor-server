@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -72,7 +71,11 @@ public class StorageTestUtils
         ErrorReporter errRep = new EmptyErrorReporter();
         CoreTimer timer = new CoreTimerImpl();
 
-        driver = driverKind.makeStorageDriver(errRep, Mockito.mock(FileSystemWatch.class), timer);
+        driver = driverKind.makeStorageDriver(
+            errRep,
+            Mockito.mock(FileSystemWatch.class),
+            timer
+        );
     }
 
     @After

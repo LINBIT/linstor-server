@@ -1,5 +1,7 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.linstor.PriorityProps;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -19,7 +21,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier)
+    public void startVolume(String identifier, PriorityProps props)
     {
         // no-op
     }
@@ -31,7 +33,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public String createVolume(String identifier, long size)
+    public String createVolume(String identifier, long size, PriorityProps props)
     {
         return "none";
     }
@@ -79,13 +81,18 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName)
+    public void createSnapshot(String identifier, String snapshotName, PriorityProps props)
     {
         // no-op
     }
 
     @Override
-    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier)
+    public void restoreSnapshot(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier,
+        PriorityProps props
+    )
     {
         // no-op
     }

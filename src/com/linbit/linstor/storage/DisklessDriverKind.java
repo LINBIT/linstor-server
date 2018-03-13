@@ -18,7 +18,9 @@ public class DisklessDriverKind implements StorageDriverKind
 
     @Override
     public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter, FileSystemWatch fileSystemWatch, CoreTimer timer
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
     )
     {
         return new DisklessDriver(this);

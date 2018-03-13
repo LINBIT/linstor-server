@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
-
 import javax.inject.Provider;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
@@ -155,7 +154,11 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             node.getObjProt().requireAccess(accCtx, AccessType.USE);
             if (storageDriver == null)
             {
-                storageDriver = storageDriverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
+                storageDriver = storageDriverKind.makeStorageDriver(
+                    errorReporter,
+                    fileSystemWatch,
+                    timer
+                );
             }
         }
         return storageDriver;

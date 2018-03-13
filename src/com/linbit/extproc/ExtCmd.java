@@ -3,6 +3,7 @@ package com.linbit.extproc;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -60,7 +61,7 @@ public class ExtCmd extends ChildProcessHandler
         return syncProcess();
     }
 
-    private void exec(ProcessBuilder.Redirect stdinRedirect, String... command)
+    public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException
     {
         logCommandExecution(command);
@@ -76,6 +77,8 @@ public class ExtCmd extends ChildProcessHandler
         errReceiver = new OutputReceiver(child.getErrorStream(), errLog);
         new Thread(outReceiver).start();
         new Thread(errReceiver).start();
+
+        return child.getOutputStream();
     }
 
     private void logCommandExecution(String... command)

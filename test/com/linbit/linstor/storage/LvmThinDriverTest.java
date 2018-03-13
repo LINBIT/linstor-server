@@ -18,6 +18,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
+import com.linbit.linstor.PriorityProps;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
@@ -37,7 +38,7 @@ public class LvmThinDriverTest extends LvmDriverTest
     {
         final String identifier = "identifier";
         expectStartVolumeCommand(LVM_CHANGE_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, true);
-        driver.startVolume(identifier);
+        driver.startVolume(identifier, new PriorityProps());
     }
 
     @Override
@@ -46,7 +47,7 @@ public class LvmThinDriverTest extends LvmDriverTest
     {
         final String unknownIdentifier = "unknown";
         expectStartVolumeCommand(LVM_CHANGE_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, unknownIdentifier, false);
-        driver.startVolume(unknownIdentifier);
+        driver.startVolume(unknownIdentifier, new PriorityProps());
     }
 
     @Override
@@ -98,6 +99,7 @@ public class LvmThinDriverTest extends LvmDriverTest
         assertEquals("4096", size);
     }
 
+    @Override
     @Test
     public void testStaticTraits()
     {

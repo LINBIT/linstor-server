@@ -19,7 +19,9 @@ public class LvmDriverKind implements StorageDriverKind
 
     @Override
     public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter, FileSystemWatch fileSystemWatch, CoreTimer timer
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
     )
     {
         return new LvmDriver(errorReporter, fileSystemWatch, timer, this);

@@ -16,6 +16,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -290,7 +291,7 @@ public abstract class NoSimDriverTest
 
             String restName = getUnusedIdentifier("", "_rest");
             log("   restoring [%s] from volume [%s] to [%s]", snapName, identifier, restName);
-            driver.restoreSnapshot(identifier, snapName, restName);
+            driver.restoreSnapshot(identifier, snapName, restName, new PriorityProps());
             log(" done%n");
 
             // file status orig:
@@ -552,7 +553,7 @@ public abstract class NoSimDriverTest
     private void createVolume(String identifier, long size, String format) throws MaxSizeException, MinSizeException, StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier, size);
-        driver.createVolume(identifier, size);
+        driver.createVolume(identifier, size, new PriorityProps());
         failIf(!volumeExists(identifier), "Failed to create volume [%s]", identifier);
         log(" done %n");
     }
@@ -592,7 +593,7 @@ public abstract class NoSimDriverTest
     private void startVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.startVolume(identifier);
+        driver.startVolume(identifier, new PriorityProps());
         failIf(!isVolumeStartedImpl(identifier), "volume [%s] failed to start", identifier);
         log(" done %n");
     }
@@ -667,7 +668,7 @@ public abstract class NoSimDriverTest
     private void createSnapshot(String identifier, String snapshotName, String format) throws StorageException
     {
         log(format, snapshotName, identifier);
-        driver.createSnapshot(identifier, snapshotName);
+        driver.createSnapshot(identifier, snapshotName, new PriorityProps());
         log(" done%n");
     }
 

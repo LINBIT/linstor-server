@@ -707,7 +707,13 @@ class DrbdDeviceHandler implements DeviceHandler
                 vlmState.setGrossSize(drbdMd.getGrossSize(
                     vlmState.getNetSize(), FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
                 ));
-                vlmState.getDriver().createVolume(vlmState.getStorVlmName(), vlmState.getGrossSize());
+                vlmState.getDriver().createVolume(
+                    vlmState.getStorVlmName(),
+                    vlmState.getGrossSize(),
+                    new PriorityProps(
+                        rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getProps(wrkCtx)
+                    )
+                );
             }
             catch (StorageException storExc)
             {
@@ -721,6 +727,10 @@ class DrbdDeviceHandler implements DeviceHandler
                     null,
                     storExc
                 );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
             }
         }
         else
@@ -1023,7 +1033,7 @@ class DrbdDeviceHandler implements DeviceHandler
             catch (ExtCmdFailedException cmdExc)
             {
                 throw new ResourceException(
-                    "Adjusting the DRBD state of resource '" + rscName.displayValue + " failed",
+                    "Adjusting the DRBD state of resource '" + rscName.displayValue + "' failed",
                     getAbortMsg(rscName),
                     "The external command for adjusting the DRBD state of the resource failed",
                     "- Check whether the required software is installed\n" +

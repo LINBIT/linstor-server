@@ -31,6 +31,7 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.PriorityProps;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
@@ -139,14 +140,14 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testStartVolume() throws StorageException
     {
         String identifier = "identifier";
-        driver.startVolume(identifier); // should not trigger anything
+        driver.startVolume(identifier, new PriorityProps()); // should not trigger anything
     }
 
     @Test
     public void testStartUnknownVolume() throws StorageException
     {
         String unknownIdentifier = "unknown";
-        driver.startVolume(unknownIdentifier); // should not trigger anything
+        driver.startVolume(unknownIdentifier, new PriorityProps()); // should not trigger anything
     }
 
     @Test
@@ -205,7 +206,7 @@ public class ZfsDriverTest extends StorageTestUtils
             }
         );
         thread.start();
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
     @Test
@@ -230,7 +231,7 @@ public class ZfsDriverTest extends StorageTestUtils
             emptyFileObserver);
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
     @Test(expected = StorageException.class)
@@ -249,7 +250,7 @@ public class ZfsDriverTest extends StorageTestUtils
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event --> timeout
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
 
@@ -261,7 +262,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier, true);
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
     @Test
@@ -289,7 +290,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         testFileEntryGroup.fileEvent(testEntry);
 
-        driver.createVolume(identifier, volumeSize);
+        driver.createVolume(identifier, volumeSize, new PriorityProps());
     }
 
     @Test

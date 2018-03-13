@@ -2,11 +2,14 @@ package com.linbit.linstor.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
@@ -22,7 +25,10 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -34,10 +40,15 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
+    private static final String CRYPT_PREFIX = "Linstor-Crypt-";
+
     protected final ErrorReporter errorReporter;
     protected final FileSystemWatch fileSystemWatch;
     protected final CoreTimer timer;
     protected final StorageDriverKind storageDriverKind;
+
+    protected final Set<String> encryptedIdenfitiers;
+
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
@@ -53,6 +64,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         fileSystemWatch = fileSystemWatchRef;
         timer = timerRef;
         storageDriverKind = storageDriverKindRef;
+        encryptedIdenfitiers = new HashSet<>();
     }
 
     @Override
@@ -62,21 +74,89 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier) throws StorageException
+    public void startVolume(String identifier, PriorityProps props) throws StorageException
     {
-        // do nothing unless overridden
-    }
+        String cryptPasswd;
+        try
+        {
+            cryptPasswd = props.getProp(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+        }
+        catch (InvalidKeyException implExc)
+        {
+            throw new ImplementationError(implExc);
+        }
 
+        if (cryptPasswd != null)
+        {
+            try
+            {
+                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+
+                final VolumeInfo info = getVolumeInfo(identifier);
+                String volumePath = info.getPath();
+
+                // open cryptsetup
+                OutputStream outputStream = extCommand.exec(
+                    ProcessBuilder.Redirect.PIPE,
+                    "cryptsetup", "luksOpen", volumePath, CRYPT_PREFIX + identifier
+                );
+                outputStream.write((cryptPasswd + "\n").getBytes());
+                outputStream.flush();
+
+                extCommand.syncProcess();
+                outputStream.close(); // just to be sure and get rid of the java warning
+                encryptedIdenfitiers.add(identifier);
+            }
+            catch (IOException ioExc)
+            {
+                throw new StorageException(
+                    "Failed to initialize dm-crypt",
+                    ioExc
+                );
+            }
+            catch (ChildProcessTimeoutException exc)
+            {
+                throw new StorageException(
+                    "Initializing dm-crypt device timed out",
+                    exc
+                );
+            }
+        }
+    }
 
     @Override
     public void stopVolume(String identifier) throws StorageException
     {
-        // do nothing unless overridden
+        if (encryptedIdenfitiers.contains(identifier))
+        {
+            try
+            {
+                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+
+                // close cryptsetup
+                extCommand.exec("cryptsetup", "close", CRYPT_PREFIX + identifier);
+
+                encryptedIdenfitiers.remove(identifier);
+            }
+            catch (IOException ioExc)
+            {
+                throw new StorageException(
+                    "Failed to initialize dm-crypt",
+                    ioExc
+                );
+            }
+            catch (ChildProcessTimeoutException exc)
+            {
+                throw new StorageException(
+                    "Initializing dm-crypt device timed out",
+                    exc
+                );
+            }
+        }
     }
 
-
     @Override
-    public String createVolume(final String identifier, long size)
+    public String createVolume(final String identifier, long size, PriorityProps props)
         throws StorageException, MaxSizeException, MinSizeException
     {
         final long extent = getExtentSize();
@@ -105,7 +185,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-            final OutputData output;
+            OutputData output;
             try
             {
                 output = extCommand.exec(command);
@@ -126,14 +206,62 @@ public abstract class AbsStorageDriver implements StorageDriver
 
             checkExitCode(output, command);
 
-            FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
-            groupBuilder.newEntry(getExpectedVolumePath(identifier), Event.CREATE);
-            FileEntryGroup entryGroup = groupBuilder.create(null);
-            fileSystemWatch.addFileEntryList(entryGroup.getEntryList());
-            entryGroup.waitGroup(fileEventTimeout);
+            waitFor(identifier, Event.CREATE);
 
             final VolumeInfo info = getVolumeInfo(identifier);
             volumePath = info.getPath();
+
+            String cryptPasswd;
+            try
+            {
+                cryptPasswd = props.getProp(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+            }
+            catch (InvalidKeyException exc1)
+            {
+                throw new ImplementationError(exc1);
+            }
+            if (cryptPasswd != null)
+            {
+                try
+                {
+                    // init
+                    command = new String[] {
+                        "cryptsetup",
+                        "-q",
+                        "luksFormat",
+                        volumePath
+                    };
+                    OutputStream outputStream = extCommand.exec(
+                        ProcessBuilder.Redirect.PIPE,
+                        command
+                    );
+                    Thread.sleep(1000);
+                    outputStream.write((cryptPasswd + "\n").getBytes());
+                    outputStream.flush();
+
+                    output = extCommand.syncProcess();
+                    outputStream.close(); // just to be sure and get rid of the java warning
+
+                    checkExitCode(output, command);
+
+                    volumePath = getCryptVolumePath(identifier);
+                }
+                catch (IOException ioExc)
+                {
+                    throw new StorageException(
+                        "Failed to initialize crypt device",
+                        ioExc
+                    );
+                }
+                catch (ChildProcessTimeoutException exc)
+                {
+                    throw new StorageException(
+                        "Initializing dm-crypt device timed out",
+                        exc
+                    );
+                }
+            }
+            startVolume(identifier, props);
         }
         catch (NegativeTimeException negTimeExc)
         {
@@ -199,6 +327,15 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void deleteVolume(final String identifier) throws StorageException
     {
+        try
+        {
+            stopVolume(identifier);
+        }
+        catch (StorageException ignored)
+        {
+            // probably the volume was not started anyways. at least we tried
+        }
+
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
         final String[] command = getDeleteCommand(identifier);
         try
@@ -242,11 +379,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 }
             }
 
-            FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
-            groupBuilder.newEntry(getExpectedVolumePath(identifier), Event.DELETE);
-            FileEntryGroup entryGroup = groupBuilder.create(null);
-            fileSystemWatch.addFileEntryList(entryGroup.getEntryList());
-            entryGroup.waitGroup(fileEventTimeout);
+            waitFor(identifier, Event.DELETE);
         }
         catch (NoSuchFileException noSuchFileExc)
         {
@@ -384,8 +517,17 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public String getVolumePath(String identifier) throws StorageException
     {
-        VolumeInfo info = getVolumeInfo(identifier);
-        return info.getPath();
+        String volumePath;
+        if (encryptedIdenfitiers.contains(identifier))
+        {
+            volumePath = getCryptVolumePath(identifier);
+        }
+        else
+        {
+            VolumeInfo info = getVolumeInfo(identifier);
+            volumePath = info.getPath();
+        }
+        return volumePath;
     }
 
     @Override
@@ -405,7 +547,12 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName) throws StorageException
+    public void createSnapshot(
+        String identifier,
+        String snapshotName,
+        PriorityProps props
+    )
+        throws StorageException
     {
         if (!storageDriverKind.isSnapshotSupported())
         {
@@ -421,6 +568,8 @@ public abstract class AbsStorageDriver implements StorageDriver
                 outputData, command,
                 "Failed to create snapshot [%s] for volume [%s]", snapshotName, identifier
             );
+
+            startVolume(getSnapshotIdentifier(identifier, snapshotName), props);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -438,7 +587,12 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier)
+    public void restoreSnapshot(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier,
+        PriorityProps props
+    )
         throws StorageException
     {
         if (!storageDriverKind.isSnapshotSupported())
@@ -459,6 +613,8 @@ public abstract class AbsStorageDriver implements StorageDriver
                 sourceIdentifier,
                 targetIdentifier
             );
+
+            startVolume(getSnapshotIdentifier(targetIdentifier, snapshotName), props);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -492,6 +648,8 @@ public abstract class AbsStorageDriver implements StorageDriver
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            stopVolume(getSnapshotIdentifier(identifier, snapshotName));
+
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(
                 outputData, command,
@@ -843,6 +1001,22 @@ public abstract class AbsStorageDriver implements StorageDriver
         return getVolumeInfo(identifier, true);
     }
 
+    private void waitFor(final String identifier, final Event event)
+        throws IOException, NegativeTimeException, ValueOutOfRangeException,
+        FsWatchTimeoutException, InterruptedException
+    {
+        FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
+        groupBuilder.newEntry(getExpectedVolumePath(identifier), event);
+        FileEntryGroup entryGroup = groupBuilder.create(null);
+        fileSystemWatch.addFileEntryList(entryGroup.getEntryList());
+        entryGroup.waitGroup(fileEventTimeout);
+    }
+
+    protected String getCryptVolumePath(String identifier)
+    {
+        return "/dev/mapper/" + CRYPT_PREFIX + identifier;
+    }
+
     protected abstract String getExpectedVolumePath(String identifier);
 
     protected abstract VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException;
@@ -856,6 +1030,8 @@ public abstract class AbsStorageDriver implements StorageDriver
     protected abstract String[] getCreateCommand(String identifier, long size);
 
     protected abstract String[] getDeleteCommand(String identifier);
+
+    protected abstract String getSnapshotIdentifier(String identifier, String snapshotName);
 
     protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
 

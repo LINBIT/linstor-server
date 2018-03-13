@@ -165,7 +165,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
                 long size = vlmDfnApi.getSize();
 
-                VlmDfnFlags[] vlmDfnInitFlags = null;
+                VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
 
                 VolumeDefinitionData vlmDfn = createVlmDfnData(
                     peerAccCtx,
@@ -175,7 +175,16 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     size,
                     vlmDfnInitFlags
                 );
-                getVlmDfnProps(vlmDfn).map().putAll(vlmDfnApi.getProps());
+                Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
+                propsMap.putAll(vlmDfnApi.getProps());
+
+                if (isFlagSet(vlmDfn, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
+                {
+                    propsMap.put(
+                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                        SharedSecretGenerator.generateSharedSecret()
+                    );
+                }
 
                 updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfn.getMinorNr(peerAccCtx).value);
 
@@ -604,6 +613,26 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
         }
         return props;
+    }
+
+    private boolean isFlagSet(VolumeDefinitionData vlmDfn, VlmDfnFlags flag)
+    {
+        boolean isSet;
+
+        try
+        {
+            isSet = vlmDfn.getFlags().isSet(peerAccCtx, flag);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "access volume definitions flags",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+
+        return isSet;
     }
 
     private void adjustRscVolumes(Resource rsc)

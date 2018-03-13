@@ -43,18 +43,6 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public void startVolume(final String identifier) throws StorageException
-    {
-        // ignored in thick mode
-    }
-
-    @Override
-    public void stopVolume(final String identifier) throws StorageException
-    {
-        // ignored in thick mode
-    }
-
-    @Override
     public Map<String, String> getTraits() throws StorageException
     {
         long extentSize = getExtentSize();
@@ -285,6 +273,12 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
+    protected String getSnapshotIdentifier(String identifier, String snapshotName)
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+    }
+
+    @Override
     protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
@@ -390,7 +384,16 @@ public class LvmDriver extends AbsStorageDriver
     @Override
     public String getVolumePath(String identifier) throws StorageException
     {
-        return "/dev/" + volumeGroup + "/" + identifier;
+        String volumePath;
+        if (encryptedIdenfitiers.contains(identifier))
+        {
+            volumePath = getCryptVolumePath(identifier);
+        }
+        else
+        {
+            volumePath = "/dev/" + volumeGroup + "/" + identifier;
+        }
+        return volumePath;
     }
 
     @Override

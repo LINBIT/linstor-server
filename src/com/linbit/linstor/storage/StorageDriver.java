@@ -2,6 +2,8 @@ package com.linbit.linstor.storage;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.ApiConsts;
 
 import java.util.Map;
 
@@ -23,9 +25,11 @@ public interface StorageDriver
      * Makes a volume ready for access
      *
      * @param identifier Unique name of the volume
+     * @param props a (list of) property key-value pairs which might contain
+     * {@link ApiConsts#KEY_STOR_POOL_CRYPT_PASSWD}.
      * @throws StorageException If an operation on the storage fails
      */
-    void startVolume(String identifier) throws StorageException;
+    void startVolume(String identifier, PriorityProps props) throws StorageException;
 
     /**
      * Shuts down a volume
@@ -40,10 +44,12 @@ public interface StorageDriver
      *
      * @param identifier Unique name of the volume
      * @param size Size of the volume in kiB
+     * @param props a (list of) property key-value pairs which might contain
+     * {@link ApiConsts#KEY_STOR_POOL_CRYPT_PASSWD}.
      * @return Path of the volume's block device file
      * @throws StorageException If an operation on the storage fails
      */
-    String createVolume(String identifier, long size)
+    String createVolume(String identifier, long size, PriorityProps props)
         throws StorageException, MaxSizeException, MinSizeException;
 
     /**
@@ -123,7 +129,8 @@ public interface StorageDriver
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void createSnapshot(String identifier, String snapshotName) throws StorageException;
+    void createSnapshot(String identifier, String snapshotName, PriorityProps props)
+        throws StorageException;
 
     /**
      * Clones a given snapshot (@code{identifier} which is the volume name and {@code snapshotName})
@@ -134,7 +141,13 @@ public interface StorageDriver
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException;
+    void restoreSnapshot(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier,
+        PriorityProps props
+    )
+        throws StorageException;
 
     /**
      * Deletes the given snapshot

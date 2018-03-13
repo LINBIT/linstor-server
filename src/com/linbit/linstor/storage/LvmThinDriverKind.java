@@ -19,7 +19,9 @@ public class LvmThinDriverKind implements StorageDriverKind
 
     @Override
     public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter, FileSystemWatch fileSystemWatch, CoreTimer timer
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
     )
     {
         return new LvmThinDriver(errorReporter, fileSystemWatch, timer, this);

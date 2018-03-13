@@ -19,7 +19,9 @@ public class ZfsDriverKind implements StorageDriverKind
 
     @Override
     public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter, FileSystemWatch fileSystemWatch, CoreTimer timer
+        ErrorReporter errorReporter,
+        FileSystemWatch fileSystemWatch,
+        CoreTimer timer
     )
     {
         return new ZfsDriver(errorReporter, fileSystemWatch, timer, this);

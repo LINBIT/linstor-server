@@ -1,6 +1,8 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -10,6 +12,8 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.linstor.stateflags.FlagsHelper;
+
 import java.util.ArrayList;
 
 public class VlmDfnApiData implements VlmDfnApi
@@ -69,7 +73,10 @@ public class VlmDfnApiData implements VlmDfnApi
     @Override
     public long getFlags()
     {
-        return Volume.VlmFlags.fromStringList(vlmDfn.getVlmFlagsList());
+        return FlagsHelper.fromStringList(
+            VolumeDefinition.VlmDfnFlags.class,
+            vlmDfn.getVlmFlagsList()
+        );
     }
 
     public static VlmDfn fromVlmDfnApi(final VlmDfnApi vlmDfnApi)
