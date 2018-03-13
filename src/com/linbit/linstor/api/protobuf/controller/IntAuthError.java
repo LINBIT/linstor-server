@@ -17,7 +17,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = InternalApiConsts.API_AUTH_ERROR,
-    description = "Called by the satellite to indicate that controller authentication failed"
+    description = "Called by the satellite to indicate that controller authentication failed",
+    requiresAuth = false
 )
 public class IntAuthError implements ApiCall
 {
