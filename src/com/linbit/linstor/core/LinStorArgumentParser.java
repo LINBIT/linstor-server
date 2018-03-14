@@ -56,7 +56,19 @@ public class LinStorArgumentParser
 
         if (linArgParser.memoryDB != null)
         {
-            cArgs.setMemoryDatabaseInitScript(linArgParser.memoryDB);
+            String[] memopts = linArgParser.memoryDB.split(";");
+            if (memopts.length > 0)
+            {
+                cArgs.setInMemoryDbType(memopts[0]);
+            }
+            if (memopts.length > 1)
+            {
+                cArgs.setInMemoryDbPort(Integer.parseInt(memopts[1]));
+            }
+            if (memopts.length > 2)
+            {
+                cArgs.setInMemoryDbAddress(memopts[2]);
+            }
         }
 
         if (linArgParser.debugConsole)

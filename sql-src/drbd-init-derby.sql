@@ -1,6 +1,3 @@
--- linstor security subsystem tables
-SET ISOLATION SERIALIZABLE;
-
 -- Database schema for linstor
 CREATE SCHEMA LINSTOR;
 SET SCHEMA LINSTOR;

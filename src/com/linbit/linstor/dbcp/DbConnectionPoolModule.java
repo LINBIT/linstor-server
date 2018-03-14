@@ -6,6 +6,8 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.RecreateDb;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
@@ -14,9 +16,13 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
 
@@ -66,7 +72,7 @@ public class DbConnectionPoolModule extends AbstractModule
 
         DbConnectionPool dbConnPool = new DbConnectionPool();
 
-        if (args.getMemoryDatabaseInitScript() == null)
+        if (args.getInMemoryDbType() == null)
         {
             final Properties dbProps = loadDatabaseConfiguration(args);
 
@@ -98,20 +104,50 @@ public class DbConnectionPoolModule extends AbstractModule
              * even the tables or views and throws an SQLException.
              */
             props.setProperty("user", "LINSTOR");
+
+            DatabaseDriverInfo dbInfo = DatabaseDriverInfo.CreateDriverInfo(args.getInMemoryDbType());
             dbConnPool.initializeDataSource(
-                "jdbc:derby:memory:testDb;create=True",
+                dbInfo.jdbcInMemoryUrl(),
                 props
             );
 
-            Connection conn = null;
+            Connection con = null;
             try
             {
-                String initSqlPath = args.getMemoryDatabaseInitScript();
-                BufferedReader br = new BufferedReader(new FileReader(initSqlPath));
-                conn = dbConnPool.getConnection();
-                RecreateDb.runSql(conn, initSqlPath, br, false);
-                br.close();
-                errorLogRef.logInfo("Using in memory database with init script: " + initSqlPath);
+                con = dbConnPool.getConnection();
+                InputStream is = DbConnectionPoolModule.class.getResourceAsStream("/resource/drbd-init-derby.sql");
+                if (is == null)
+                {
+                    is = Files.newInputStream(Paths.get("./sql-src/drbd-init-derby.sql"));
+                }
+
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(is)))
+                {
+                    DerbyDriver.executeStatement(con, dbInfo.isolationStatement());
+                    DerbyDriver.runSql(
+                        con,
+                        dbInfo.prepareInit(br.lines().collect(Collectors.joining("\n")))
+                    );
+                }
+
+                if (args.getInMemoryDbPort() > 0)
+                {
+                    DerbyDriver.executeStatement(con,
+                        String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' "
+                            + "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'",
+                            args.getInMemoryDbPort()));
+                }
+                if (args.getInMemoryDbAddress() != null)
+                {
+                    DerbyDriver.executeStatement(con,
+                        String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' "
+                                + "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'",
+                            args.getInMemoryDbAddress()));
+                }
+                con.commit();
+                errorLogRef.logInfo(
+                    String.format("Using %s in memory database with init script: ", args.getInMemoryDbType())
+                );
             }
             catch (IOException ioerr)
             {
@@ -119,9 +155,9 @@ public class DbConnectionPoolModule extends AbstractModule
             }
             finally
             {
-                if (conn != null)
+                if (con != null)
                 {
-                    dbConnPool.returnConnection(conn);
+                    dbConnPool.returnConnection(con);
                 }
             }
         }

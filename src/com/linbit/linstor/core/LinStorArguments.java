@@ -6,12 +6,16 @@ public class LinStorArguments
 
     private boolean startDebugConsole;
 
-    private String memoryDatabaseInit;
+    private String inMemoryDbType;
+    private int inMemoryDbPort;
+    private String inMemoryDbAddress;
 
     public LinStorArguments()
     {
         workingDirectory = "";
-        memoryDatabaseInit = null;
+        inMemoryDbType = null;
+        inMemoryDbAddress = null;
+        inMemoryDbPort = 0;
     }
 
     public void setWorkingDirectory(final String workingDirectoryRef)
@@ -34,10 +38,22 @@ public class LinStorArguments
         return startDebugConsole;
     }
 
-    public void setMemoryDatabaseInitScript(final String memoryDatabaseInitScript )
+    public void setInMemoryDbType(final String inMemoryDbType )
     {
-        this.memoryDatabaseInit = memoryDatabaseInitScript;
+        this.inMemoryDbType = inMemoryDbType;
     }
 
-    public String getMemoryDatabaseInitScript() { return memoryDatabaseInit; }
+    public void setInMemoryDbPort(final int inMemoryDbPort)
+    {
+        this.inMemoryDbPort = inMemoryDbPort;
+    }
+
+    public void setInMemoryDbAddress(final String inMemoryDbAddress)
+    {
+        this.inMemoryDbAddress = inMemoryDbAddress;
+    }
+
+    public String getInMemoryDbType() { return inMemoryDbType; }
+    public int getInMemoryDbPort() { return inMemoryDbPort; }
+    public String getInMemoryDbAddress() { return inMemoryDbAddress; }
 }

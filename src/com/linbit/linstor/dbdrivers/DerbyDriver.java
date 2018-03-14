@@ -25,9 +25,14 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -133,5 +138,67 @@ public class DerbyDriver implements DatabaseDriver
             "Database's access context has insufficient permissions",
             accDeniedExc
         );
+    }
+
+    public static void runSql(final Connection con, final String script)
+        throws SQLException
+    {
+        StringBuilder cmdBuilder = new StringBuilder();
+        Scanner scanner = new Scanner(script);
+        while (scanner.hasNextLine())
+        {
+            String trimmedLine = scanner.nextLine().trim();
+            if (!trimmedLine.startsWith("--"))
+            {
+                cmdBuilder.append("\n").append(trimmedLine);
+                if (trimmedLine.endsWith(";"))
+                {
+                    cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
+                    String cmd = cmdBuilder.toString();
+                    cmdBuilder.setLength(0);
+                    executeStatement(con, cmd);
+                }
+            }
+        }
+        con.commit();
+        scanner.close();
+    }
+
+    public static void runSql(Connection con, BufferedReader br)
+        throws IOException, SQLException
+    {
+        StringBuilder cmdBuilder = new StringBuilder();
+        for (String line = br.readLine(); line != null; line = br.readLine())
+        {
+            String trimmedLine = line.trim();
+            if (!trimmedLine.startsWith("--"))
+            {
+                cmdBuilder.append("\n").append(trimmedLine);
+                if (trimmedLine.endsWith(";"))
+                {
+                    cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
+                    String cmd = cmdBuilder.toString();
+                    cmdBuilder.setLength(0);
+                    executeStatement(con, cmd);
+                }
+            }
+        }
+        con.commit();
+    }
+
+    public static int executeStatement(final Connection con, final String statement)
+        throws SQLException
+    {
+        int ret = 0;
+        try (PreparedStatement stmt = con.prepareStatement(statement))
+        {
+            ret = stmt.executeUpdate();
+        }
+        catch (SQLException throwable)
+        {
+            System.err.println("Error: " + statement);
+            throw throwable;
+        }
+        return ret;
     }
 }
