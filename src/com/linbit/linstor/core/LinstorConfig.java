@@ -38,6 +38,8 @@ public class LinstorConfig
     private static final String dbUser = "linstor";
     private static final String dbPassword = "linstor";
 
+    static private List<String> supportedDbs = Arrays.asList("h2", "derby");
+
     @CommandLine.Command(name = "linstor-config", subcommands = {
         CmdCreateDb.class,
         CmdSetPlainPort.class,
@@ -60,7 +62,7 @@ public class LinstorConfig
     )
     private static class CmdCreateDbXMLConfig implements Callable
     {
-        @CommandLine.Option(names = {"--dbtype"}, description = "Specify the database type. ['h2','hsqldb','derby']")
+        @CommandLine.Option(names = {"--dbtype"}, description = "Specify the database type. ['h2', 'derby']")
         private String dbtype = "h2";
 
         @CommandLine.Parameters(description = "Path to the database")
@@ -75,17 +77,31 @@ public class LinstorConfig
                 + "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n"
                 + "<properties>\n"
                 + "  <comment>LinStor database configuration</comment>\n"
-	            + "  <entry key=\"user\">%s</entry>\n"
+                + "  <entry key=\"user\">%s</entry>\n"
                 + "  <entry key=\"password\">%s</entry>\n"
                 + "  <entry key=\"connection-url\">%s</entry>\n"
                 + "</properties>\n";
 
-            os.write(String.format(
-                dbCfg,
-                dbUser,
-                dbPassword,
-                DatabaseDriverInfo.CreateDriverInfo(dbtype).jdbcUrl(dbpath.getAbsolutePath())).getBytes()
-            );
+            DatabaseDriverInfo dbInfo = DatabaseDriverInfo.CreateDriverInfo(dbtype);
+
+            if (dbInfo != null)
+            {
+                os.write(String.format(
+                    dbCfg,
+                    dbUser,
+                    dbPassword,
+                    dbInfo.jdbcUrl(dbpath.getAbsolutePath())).getBytes()
+                );
+            }
+            else
+            {
+                System.err.println(
+                    String.format(
+                        "Database type '%s' not supported. Use one of: '%s'",
+                        dbtype,
+                        String.join("', '", supportedDbs))
+                );
+            }
             return null;
         }
     }
@@ -93,12 +109,10 @@ public class LinstorConfig
     @CommandLine.Command(name = "create-db", description = "Creates a database.")
     private static class CmdCreateDb implements Callable
     {
-        static private List<String> supportedDbs = Arrays.asList("h2", "hsqldb", "derby");
-
         @CommandLine.Option(names = {"--recreate"}, description = "Delete an already existing database")
         private boolean recreate = false;
 
-        @CommandLine.Option(names = {"--dbtype"}, description = "Specify the database type. ['h2','hsqldb','derby']")
+        @CommandLine.Option(names = {"--dbtype"}, description = "Specify the database type. ['h2', 'derby']")
         private String dbtype = "h2";
 
         @CommandLine.Option(names = {"--initsql"}, description = "Specifiy init sql script")
