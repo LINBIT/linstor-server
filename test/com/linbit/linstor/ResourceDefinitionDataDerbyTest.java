@@ -119,7 +119,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resourceDefinition", resultSet.next());
-        assertEquals(resDfnUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(resDfnUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(port, resultSet.getInt(TCP_PORT));

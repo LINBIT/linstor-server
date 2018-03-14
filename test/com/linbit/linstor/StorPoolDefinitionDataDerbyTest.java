@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,8 +22,8 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     private static final String SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT =
         " SELECT " + UUID + ", " + POOL_NAME + ", " + POOL_DSP_NAME +
         " FROM " + TBL_STOR_POOL_DEFINITIONS +
-        " WHERE " + UUID + " <> x'f51611c6528f4793a87a866d09e6733a' AND " + // default storage pool
-                    UUID + " <> x'622807ebc8c444f0b03da08173c8fa1b'"; // default diskless storage pool
+        " WHERE " + UUID + " <> 'f51611c6-528f-4793-a87a-866d09e6733a' AND " + // default storage pool
+                    UUID + " <> '622807eb-c8c4-44f0-b03d-a08173c8fa1b'"; // default diskless storage pool
 
     private StorPoolName spName;
     private java.util.UUID uuid;
@@ -69,7 +68,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
         assertEquals(spName.displayValue, resultSet.getString(POOL_DSP_NAME));
         assertFalse(resultSet.next());
@@ -93,7 +92,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(spd.getUuid(), UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(spd.getUuid(), java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
         assertEquals(spName.displayValue, resultSet.getString(POOL_DSP_NAME));
         assertFalse(resultSet.next());

@@ -7,6 +7,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.utils.Base64;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -114,9 +115,18 @@ public final class Authentication
                 final String storedDfltTypeStr = signInEntry.getString(DerbyConstants.DOMAIN_NAME);
                 final Long storedDfltRolePrivs = signInEntry.getLong(DerbyConstants.ROLE_PRIVILEGES);
 
-                byte[] storedSalt = signInEntry.getBytes(DerbyConstants.PASS_SALT);
-                byte[] storedHash = signInEntry.getBytes(DerbyConstants.PASS_HASH);
-
+                byte[] storedSalt;
+                byte[] storedHash;
+                try
+                {
+                    storedSalt = Base64.decode(signInEntry.getString(DerbyConstants.PASS_SALT));
+                    storedHash = Base64.decode(signInEntry.getString(DerbyConstants.PASS_HASH));
+                }
+                catch (IllegalArgumentException exc)
+                {
+                    signInEntry.close();
+                    throw new SignInException("Invalid password salt or hash value in database", exc);
+                }
                 if (storedIdStr == null)
                 {
                     String reportId = errorLog.reportError(

@@ -12,8 +12,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.UuidUtils;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -148,7 +146,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             LsIpAddress inetAddress = getAddress(netInterfaceData);
 
-            stmt.setBytes(1, UuidUtils.asByteArray(netInterfaceData.getUuid()));
+            stmt.setString(1, netInterfaceData.getUuid().toString());
             stmt.setString(2, netInterfaceData.getNode().getName().value);
             stmt.setString(3, netInterfaceData.getName().value);
             stmt.setString(4, netInterfaceData.getName().displayValue);
@@ -263,7 +261,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         NetInterfaceData ret = cacheGet(node, netName);
         if (ret == null)
         {
-            UUID uuid = UuidUtils.asUuid(resultSet.getBytes(NET_UUID));
+            UUID uuid = UUID.fromString(resultSet.getString(NET_UUID));
             LsIpAddress addr;
 
             try

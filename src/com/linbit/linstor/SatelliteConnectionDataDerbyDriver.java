@@ -89,7 +89,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
         errorReporter.logTrace("Creating SatelliteConnection %s", getId(satelliteConnectionData));
         try (PreparedStatement stmt = getConnection().prepareStatement(SC_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(satelliteConnectionData.getUuid()));
+            stmt.setString(1, satelliteConnectionData.getUuid().toString());
             stmt.setString(2, satelliteConnectionData.getNode().getName().value);
             stmt.setString(3, satelliteConnectionData.getNetInterface().getName().value);
             stmt.setInt(4, satelliteConnectionData.getPort().value);
@@ -119,7 +119,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                     {
                         if (resultSet.next())
                         {
-                            UUID uuid = UuidUtils.asUuid(resultSet.getBytes(SC_UUID));
+                            UUID uuid = java.util.UUID.fromString(resultSet.getString(SC_UUID));
                             TcpPortNumber port;
                             try
                             {

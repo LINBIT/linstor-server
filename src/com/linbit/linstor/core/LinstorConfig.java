@@ -37,8 +37,8 @@ public class LinstorConfig
 
     private static final String CFG_KEY_JDBC = "connection-url";
 
-    private static final String dbUser = "linstor";
-    private static final String dbPassword = "linstor";
+    private static final String DB_USER = "linstor";
+    private static final String DB_PASSWORD = "linstor";
 
     private static List<String> supportedDbs = Arrays.asList("h2", "derby", "postgresql");
 
@@ -62,7 +62,7 @@ public class LinstorConfig
         name = "create-db-file",
         description = "Write a database xml configuration file to standard out."
     )
-    private static class CmdCreateDbXMLConfig implements Callable
+    private static class CmdCreateDbXMLConfig implements Callable<Object>
     {
         @CommandLine.Option(names = {"--dbtype"}, description = "Specify the database type. ['h2', 'derby']")
         private String dbtype = "h2";
@@ -90,8 +90,8 @@ public class LinstorConfig
             {
                 os.write(String.format(
                     dbCfg,
-                    dbUser,
-                    dbPassword,
+                    DB_USER,
+                    DB_PASSWORD,
                     dbInfo.jdbcUrl(dbpath)).getBytes()
                 );
             }
@@ -176,17 +176,19 @@ public class LinstorConfig
                                                 .sorted(Comparator.reverseOrder())
                                                 .map(Path::toFile)
                                                 .forEach(File::delete);
-                                        } catch (IOException io)
+                                        }
+                                        catch (IOException io)
                                         {
                                             System.err.println(io.toString());
                                         }
-                                    });
+                                    }
+                                );
                             }
                         }
 
                         try (PoolingDataSource<PoolableConnection> dataSource =
                                  initConnectionProvider(
-                                     dbdriver.jdbcUrl(dbpath), dbUser, dbPassword);
+                                     dbdriver.jdbcUrl(dbpath), DB_USER, DB_PASSWORD);
                              Connection con = dataSource.getConnection())
                         {
                             con.setAutoCommit(false);
@@ -219,7 +221,7 @@ public class LinstorConfig
     }
 
     @CommandLine.Command(name = "set-plain-port", description = "Set the controller plain tcp port.")
-    private static class CmdSetPlainPort implements Callable
+    private static class CmdSetPlainPort implements Callable<Object>
     {
         @CommandLine.Parameters(index = "0", description = "Database configuration file.")
         private File dbCfgFile = new File("./database.cfg");
@@ -245,7 +247,7 @@ public class LinstorConfig
     }
 
     @CommandLine.Command(name = "set-plain-listen", description = "Set the controller plain listen/bind address.")
-    private static class CmdSetPlainListen implements Callable
+    private static class CmdSetPlainListen implements Callable<Object>
     {
         @CommandLine.Parameters(index = "0", description = "Database configuration file.")
         private File dbCfgFile = new File("./database.cfg");

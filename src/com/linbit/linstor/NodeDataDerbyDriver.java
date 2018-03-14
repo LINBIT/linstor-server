@@ -144,7 +144,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         errorReporter.logTrace("Creating Node %s", getId(node));
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(node.getUuid()));
+            stmt.setString(1, node.getUuid().toString());
             stmt.setString(2, node.getName().value);
             stmt.setString(3, node.getName().displayValue);
             stmt.setLong(4, node.getFlags().getFlagsBits(dbCtx));
@@ -241,7 +241,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             {
                 node = new NodeData(
                     dbCtx,
-                    UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
+                    java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
                     objProt,
                     nodeName,
                     Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),

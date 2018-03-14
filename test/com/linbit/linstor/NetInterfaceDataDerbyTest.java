@@ -84,7 +84,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(niUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(niUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(niName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(niName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));

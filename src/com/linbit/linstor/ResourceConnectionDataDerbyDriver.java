@@ -198,7 +198,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             try
             {
                 resConData = new ResourceConnectionData(
-                    UuidUtils.asUuid(resultSet.getBytes(UUID)),
+                    java.util.UUID.fromString(resultSet.getString(UUID)),
                     dbCtx,
                     sourceResource,
                     targetResource,
@@ -266,7 +266,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getAssignedNode().getName();
             ResourceName resName = conDfnData.getSourceResource(dbCtx).getDefinition().getName();
 
-            stmt.setBytes(1, UuidUtils.asByteArray(conDfnData.getUuid()));
+            stmt.setString(1, conDfnData.getUuid().toString());
             stmt.setString(2, resName.value);
             stmt.setString(3, sourceNodeName.value);
             stmt.setString(4, targetNodeName.value);

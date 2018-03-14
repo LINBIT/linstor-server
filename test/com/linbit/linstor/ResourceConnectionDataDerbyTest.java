@@ -202,7 +202,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         if (checkUuid)
         {
-            assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+            assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         }
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(sourceName.value, resultSet.getString(NODE_NAME_SRC));

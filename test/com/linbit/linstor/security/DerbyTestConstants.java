@@ -165,8 +165,8 @@ public interface DerbyTestConstants
         "( \n" +
         "    IDENTITY_NAME VARCHAR(24) NOT NULL, \n" +
         "    IDENTITY_DSP_NAME VARCHAR(24) NOT NULL, \n" +
-        "    PASS_SALT CHAR(16) FOR BIT DATA, \n" +
-        "    PASS_HASH CHAR(64) FOR BIT DATA, \n" +
+        "    PASS_SALT CHAR(32), \n" +
+        "    PASS_HASH CHAR(128), \n" +
         "    ID_ENABLED BOOLEAN DEFAULT TRUE NOT NULL, \n" +
         "    ID_LOCKED BOOLEAN DEFAULT TRUE NOT NULL, \n" +
         "    CONSTRAINT PK_SI PRIMARY KEY (IDENTITY_NAME), \n" +
@@ -268,7 +268,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_NODES =
         "CREATE TABLE NODES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_DSP_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_FLAGS BIGINT NOT NULL, \n" +
@@ -281,7 +281,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_NODE_NET_INTERFACES =
         "CREATE TABLE NODE_NET_INTERFACES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_DSP_NAME VARCHAR(255) NOT NULL, \n" +
@@ -293,7 +293,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_SATELLITE_CONNECTIONS =
         "CREATE TABLE SATELLITE_CONNECTIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
         "    TCP_PORT SMALLINT NOT NULL, \n" +
@@ -308,7 +308,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_RESOURCE_DEFINITIONS =
         "CREATE TABLE RESOURCE_DEFINITIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    RESOURCE_DSP_NAME VARCHAR(48) NOT NULL, \n" +
         "    TCP_PORT INTEGER NOT NULL, \n" +
@@ -327,7 +327,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_RESOURCES =
         "CREATE TABLE RESOURCES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    NODE_ID INT NOT NULL, \n" +
@@ -341,7 +341,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_STOR_POOL_DEFINITIONS =
         "CREATE TABLE STOR_POOL_DEFINITIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    POOL_NAME VARCHAR(32) NOT NULL, \n" +
         "    POOL_DSP_NAME VARCHAR(32) NOT NULL, \n" +
         "    CONSTRAINT PK_SPD PRIMARY KEY (POOL_NAME), \n" +
@@ -352,7 +352,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_NODE_STOR_POOL =
         "CREATE TABLE NODE_STOR_POOL \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    POOL_NAME VARCHAR(32) NOT NULL, \n" +
         "    DRIVER_NAME VARCHAR(256) NOT NULL, \n" +
@@ -365,7 +365,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_VOLUME_DEFINITIONS =
         "CREATE TABLE VOLUME_DEFINITIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    VLM_NR INT NOT NULL, \n" +
         "    VLM_SIZE BIGINT NOT NULL, \n" +
@@ -380,7 +380,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_VOLUMES =
         "CREATE TABLE VOLUMES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    VLM_NR INT NOT NULL, \n" +
@@ -400,7 +400,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_NODE_CONNECTIONS =
         "CREATE TABLE NODE_CONNECTIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" +
         "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" +
         "    CONSTRAINT PK_NC PRIMARY KEY (NODE_NAME_SRC, NODE_NAME_DST), \n" +
@@ -411,7 +411,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_RESOURCE_CONNECTIONS =
         "CREATE TABLE RESOURCE_CONNECTIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" +
         "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
@@ -425,7 +425,7 @@ public interface DerbyTestConstants
     public static final String CREATE_TABLE_VOLUME_CONNECTIONS =
         "CREATE TABLE VOLUME_CONNECTIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    UUID CHAR(36) NOT NULL, \n" +
         "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" +
         "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
@@ -558,6 +558,8 @@ public interface DerbyTestConstants
     {
         "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
         "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')",
+        "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
+        "    VALUES ('AUTHREQUIRED', 'AuthRequired', 'false')",
         "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
         "    VALUES ('CONTROL', 15)",
         "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
@@ -683,14 +685,14 @@ public interface DerbyTestConstants
         "    VALUES ('/sys/controller/shutdown', 'SYSTEM', 'SYSADM', 'SYSTEM')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('/sys/controller/shutdown', 'SYSTEM', 15)",
-        "INSERT INTO STOR_POOL_DEFINITIONS VALUES (x'f51611c6528f4793a87a866d09e6733a', 'DFLTSTORPOOL', 'DfltStorPool')",
+        "INSERT INTO STOR_POOL_DEFINITIONS VALUES ('f51611c6-528f-4793-a87a-866d09e6733a', 'DFLTSTORPOOL', 'DfltStorPool')",
         "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
         "    VALUES ('/storpooldefinitions/DFLTSTORPOOL', 'SYSTEM', 'SYSADM', 'SHARED')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('/storpooldefinitions/DFLTSTORPOOL', 'PUBLIC', 7)",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('/storpooldefinitions/DFLTSTORPOOL', 'USER', 7)",
-        "INSERT INTO STOR_POOL_DEFINITIONS VALUES (x'622807ebc8c444f0b03da08173c8fa1b', 'DFLTDISKLESSSTORPOOL', 'DfltDisklessStorPool')",
+        "INSERT INTO STOR_POOL_DEFINITIONS VALUES ('622807eb-c8c4-44f0-b03d-a08173c8fa1b', 'DFLTDISKLESSSTORPOOL', 'DfltDisklessStorPool')",
         "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
         "    VALUES ('/storpooldefinitions/DFLTDISKLESSSTORPOOL', 'SYSTEM', 'SYSADM', 'SHARED')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +

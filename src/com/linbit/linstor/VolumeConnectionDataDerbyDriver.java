@@ -311,7 +311,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             );
             if (ret == null)
             {
-                UUID uuid = UuidUtils.asUuid(resultSet.getBytes(UUID));
+                UUID uuid = java.util.UUID.fromString(resultSet.getString(UUID));
 
                 ret = new VolumeConnectionData(
                     uuid,
@@ -343,7 +343,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             Volume sourceVolume = conDfnData.getSourceVolume(dbCtx);
             Volume targetVolume = conDfnData.getTargetVolume(dbCtx);
 
-            stmt.setBytes(1, UuidUtils.asByteArray(conDfnData.getUuid()));
+            stmt.setString(1, conDfnData.getUuid().toString());
             stmt.setString(2, sourceVolume.getResource().getAssignedNode().getName().value);
             stmt.setString(3, targetVolume.getResource().getAssignedNode().getName().value);
             stmt.setString(4, sourceVolume.getResourceDefinition().getName().value);

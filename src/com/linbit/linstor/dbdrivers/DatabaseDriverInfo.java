@@ -25,6 +25,9 @@ public interface DatabaseDriverInfo
             case "derby":
                 dbdriver = new DerbyDatabaseInfo();
                 break;
+            case "postgresql":
+                dbdriver = new PostgresqlDatabaseInfo();
+                break;
             default:
                 break;
         }

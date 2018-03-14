@@ -93,7 +93,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));

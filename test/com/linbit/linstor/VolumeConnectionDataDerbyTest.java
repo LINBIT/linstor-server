@@ -291,7 +291,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         if (checkUuid)
         {
-            assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+            assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         }
         assertEquals(sourceName.value, resultSet.getString(NODE_NAME_SRC));
         assertEquals(targetName.value, resultSet.getString(NODE_NAME_DST));

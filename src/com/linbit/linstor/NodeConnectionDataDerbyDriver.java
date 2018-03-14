@@ -195,7 +195,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
             try
             {
                 nodeConData = new NodeConnectionData(
-                    UuidUtils.asUuid(resultSet.getBytes(UUID)),
+                    java.util.UUID.fromString(resultSet.getString(UUID)),
                     dbCtx,
                     sourceNode,
                     targetNode,
@@ -229,7 +229,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
             NodeName sourceNodeName = nodeConDfnData.getSourceNode(dbCtx).getName();
             NodeName targetNodeName = nodeConDfnData.getTargetNode(dbCtx).getName();
 
-            stmt.setBytes(1, UuidUtils.asByteArray(nodeConDfnData.getUuid()));
+            stmt.setString(1, nodeConDfnData.getUuid().toString());
             stmt.setString(2, sourceNodeName.value);
             stmt.setString(3, targetNodeName.value);
 

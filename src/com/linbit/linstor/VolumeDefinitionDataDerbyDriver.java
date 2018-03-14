@@ -121,7 +121,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         {
             errorReporter.logTrace("Creating VolumeDefinition %s", getId(volumeDefinition));
 
-            stmt.setBytes(1, UuidUtils.asByteArray(volumeDefinition.getUuid()));
+            stmt.setString(1, volumeDefinition.getUuid().toString());
             stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
             stmt.setLong(4, volumeDefinition.getVolumeSize(dbCtx));
@@ -198,7 +198,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             if (ret == null)
             {
                 ret = new VolumeDefinitionData(
-                    UuidUtils.asUuid(resultSet.getBytes(VD_UUID)),
+                    java.util.UUID.fromString(resultSet.getString(VD_UUID)),
                     accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
                     resDfn,
                     volNr,

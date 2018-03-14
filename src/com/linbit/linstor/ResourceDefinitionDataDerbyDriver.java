@@ -141,7 +141,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         errorReporter.logTrace("Creating ResourceDfinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
+            stmt.setString(1, resourceDefinition.getUuid().toString());
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
             stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
@@ -268,7 +268,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 ObjectProtection objProt = getObjectProtection(resourceName);
 
                 resDfn = new ResourceDefinitionData(
-                    UuidUtils.asUuid(resultSet.getBytes(RD_UUID)),
+                    java.util.UUID.fromString(resultSet.getString(RD_UUID)),
                     objProt,
                     resourceName,
                     port,

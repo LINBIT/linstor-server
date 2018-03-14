@@ -137,7 +137,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         errorReporter.logTrace("Creating Resource %s", getId(res));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(res.getUuid()));
+            stmt.setString(1, res.getUuid().toString());
             stmt.setString(2, res.getAssignedNode().getName().value);
             stmt.setString(3, res.getDefinition().getName().value);
             stmt.setInt(4, res.getNodeId().value);
@@ -339,7 +339,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         }
 
                         resData = new ResourceData(
-                            UuidUtils.asUuid(resultSet.getBytes(RES_UUID)),
+                            java.util.UUID.fromString(resultSet.getString(RES_UUID)),
                             accCtx,
                             objProt,
                             resDfn,

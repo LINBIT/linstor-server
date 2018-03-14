@@ -31,7 +31,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         " FROM " + TBL_PROP + "\n" +
         " WHERE " + COL_INSTANCE + " = ? AND \n" +
         "       " + COL_KEY +      " = ? \n" +
-        " FOR UPDATE OF " + COL_INSTANCE + "," + COL_KEY + ", " + COL_VALUE;
+        " FOR UPDATE";
 
     private static final String SELECT_ALL_ENTRIES_BY_INSTANCE =
         " SELECT " + COL_KEY + ", " + COL_VALUE + "\n" +

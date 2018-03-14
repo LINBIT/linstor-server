@@ -50,7 +50,6 @@ import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.UuidUtils;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -510,7 +509,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         }
 
         PreparedStatement stmt = getConnection().prepareStatement(INSERT_NODES);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, nodeName.value);
         stmt.setString(3, nodeName.displayValue);
         stmt.setLong(4, flags);
@@ -531,7 +530,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_NODE_NET_INTERFACES);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, nodeName.value);
         stmt.setString(3, netName.value);
         stmt.setString(4, netName.displayValue);
@@ -551,7 +550,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_NODE_CONNECTIONS);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
         stmt.executeUpdate();
@@ -569,7 +568,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_RESOURCE_CONNECTIONS);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
         stmt.setString(4, resName.value);
@@ -589,7 +588,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_VOLUME_CONNECTIONS);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
         stmt.setString(4, resName.value);
@@ -608,7 +607,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_RESOURCE_DEFINITIONS);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, resName.value);
         stmt.setString(3, resName.displayValue);
         stmt.setLong(4, StateFlagsBits.getMask(flags));
@@ -628,7 +627,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_RESOURCES);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, nodeName.value);
         stmt.setString(3, resName.value);
         stmt.setInt(4, nodeId.value);
@@ -650,7 +649,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_VOLUME_DEFINITIONS);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, resName.value);
         stmt.setInt(3, volId.value);
         stmt.setLong(4, volSize);
@@ -675,7 +674,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_VOLUMES);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, nodeName.value);
         stmt.setString(3, resName.value);
         stmt.setInt(4, volNr.value);
@@ -696,7 +695,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_STOR_POOL_DEFINITIONS);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, poolName.value);
         stmt.setString(3, poolName.displayValue);
         stmt.executeUpdate();
@@ -714,7 +713,7 @@ public abstract class DerbyBase implements DerbyTestConstants
         throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(INSERT_NODE_STOR_POOL);
-        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(1, uuid.toString());
         stmt.setString(2, nodeName.value);
         stmt.setString(3, poolName.value);
         stmt.setString(4, driver);

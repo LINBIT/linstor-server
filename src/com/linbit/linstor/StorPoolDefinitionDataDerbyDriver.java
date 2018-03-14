@@ -84,7 +84,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
         try (PreparedStatement stmt = getConnection().prepareStatement(SPD_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(storPoolDefinitionData.getUuid()));
+            stmt.setString(1, storPoolDefinitionData.getUuid().toString());
             stmt.setString(2, storPoolDefinitionData.getName().value);
             stmt.setString(3, storPoolDefinitionData.getName().displayValue);
             stmt.executeUpdate();
@@ -165,7 +165,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         storPoolDefinition = cacheGet(storPoolName);
         if (storPoolDefinition == null)
         {
-            UUID uuid = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
+            UUID uuid = java.util.UUID.fromString(resultSet.getString(SPD_UUID));
 
             ObjectProtection objProt = getObjectProtection(storPoolName);
 

@@ -95,7 +95,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
+            stmt.setString(1, storPoolData.getUuid().toString());
             stmt.setString(2, storPoolData.getNode().getName().value);
             stmt.setString(3, storPoolData.getName().value);
             stmt.setString(4, storPoolData.getDriverName());
@@ -235,7 +235,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 try
                 {
                     storPoolData = new StorPoolData(
-                        UuidUtils.asUuid(resultSet.getBytes(SP_UUID)),
+                        java.util.UUID.fromString(resultSet.getString(SP_UUID)),
                         dbCtx,
                         node,
                         storPoolDef,

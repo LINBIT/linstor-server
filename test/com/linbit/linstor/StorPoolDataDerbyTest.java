@@ -80,7 +80,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
-        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
         assertEquals(LvmDriver.class.getSimpleName(), resultSet.getString(DRIVER_NAME));
@@ -108,7 +108,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
-        assertEquals(pool.getUuid(), UuidUtils.asUuid(resultSet.getBytes(UUID)));
+        assertEquals(pool.getUuid(), java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(pool.getName().value, resultSet.getString(POOL_NAME));
         assertEquals(LvmDriver.class.getSimpleName(), resultSet.getString(DRIVER_NAME));

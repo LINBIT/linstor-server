@@ -343,7 +343,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 try
                 {
                     volData = new VolumeData(
-                        UuidUtils.asUuid(resultSet.getBytes(VOL_UUID)),
+                        java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
                         accCtx,
                         res,
                         volDfn,
@@ -416,7 +416,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             errorReporter.logTrace("Creating Volume %s", getId(vol));
 
-            stmt.setBytes(1, UuidUtils.asByteArray(vol.getUuid()));
+            stmt.setString(1, vol.getUuid().toString());
             stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
             stmt.setString(3, vol.getResourceDefinition().getName().value);
             stmt.setInt(4, vol.getVolumeDefinition().getVolumeNumber().value);
