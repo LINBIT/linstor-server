@@ -34,8 +34,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.slf4j.event.Level;
 
 /**
@@ -71,10 +71,8 @@ public class CommonMessageProcessor implements MessageProcessor
         trnActProvider  = trnActProviderRef;
         apiCallMap      = new TreeMap<>();
 
-        Iterator<Map.Entry<String, Provider<ApiCall>>> providerIter = apiCallProviders.entrySet().iterator();
-        while (providerIter.hasNext())
+        for (Map.Entry<String, Provider<ApiCall>> providerEntry : apiCallProviders.entrySet())
         {
-            Map.Entry<String, Provider<ApiCall>> providerEntry = providerIter.next();
             String apiName = providerEntry.getKey();
             Provider<ApiCall> apiProv = providerEntry.getValue();
             ApiCallDescriptor apiDscr = apiCallDescriptors.get(apiName);
@@ -96,7 +94,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     Level.ERROR,
                     new ImplementationError(
                         ApiCallDescriptor.class.getSimpleName() + " entry is missing for API call object '" +
-                        apiName + "'",
+                            apiName + "'",
                         null
                     )
                 );
@@ -113,10 +111,8 @@ public class CommonMessageProcessor implements MessageProcessor
         {
             readLock.lock();
             objMap = new TreeMap<>();
-            Iterator<Map.Entry<String, ApiEntry>> apiIter = apiCallMap.entrySet().iterator();
-            while (apiIter.hasNext())
+            for (Map.Entry<String, ApiEntry> entry : apiCallMap.entrySet())
             {
-                Map.Entry<String, ApiEntry> entry = apiIter.next();
                 objMap.put(entry.getKey(), entry.getValue().descriptor);
             }
         }
