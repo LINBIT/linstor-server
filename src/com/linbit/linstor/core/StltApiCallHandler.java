@@ -171,6 +171,9 @@ public class StltApiCallHandler
                 disklessStorPoolDfnUuid,
                 disklessStorPoolUuid
             );
+
+            // FIXME In the absence of any means of identification, assume the identity of the privileged API context
+            // for the peer.
             AccessContext curCtx = controllerPeer.getAccessContext();
             try
             {

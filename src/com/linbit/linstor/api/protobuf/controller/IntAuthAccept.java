@@ -61,6 +61,7 @@ public class IntAuthAccept implements ApiCall
         try
         {
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            // FIXME In the absence of any means of identification, assume the system identity for the peer.
             // Set the SYSTEM identity on the Satellite's access context
             AccessContext newCtx = privCtx.impersonate(Identity.SYSTEM_ID, curCtx.subjectRole, curCtx.subjectDomain);
             // Disable all privileges on the Satellite's access context permanently
