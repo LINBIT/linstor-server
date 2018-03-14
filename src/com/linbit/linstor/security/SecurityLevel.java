@@ -57,9 +57,6 @@ public enum SecurityLevel
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
-        // Always commit if the change is non-persistent / temporary
-        boolean committed = ctrlDb == null || secDb == null;
-
         if (ctrlDb != null && secDb != null)
         {
             Connection dbConn = null;
@@ -67,7 +64,6 @@ public enum SecurityLevel
             {
                 dbConn = ctrlDb.getConnection();
                 secDb.setSecurityLevel(dbConn, newLevel);
-                committed = true;
             }
             finally
             {
@@ -75,10 +71,7 @@ public enum SecurityLevel
             }
         }
 
-        if (committed)
-        {
-            GLOBAL_SEC_LEVEL_REF.set(newLevel);
-        }
+        GLOBAL_SEC_LEVEL_REF.set(newLevel);
     }
 
     /**

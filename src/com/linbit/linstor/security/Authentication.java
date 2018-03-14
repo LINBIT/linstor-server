@@ -72,9 +72,6 @@ public final class Authentication
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
-        // Always commit if the change is non-persistent / temporary
-        boolean committed = ctrlDb == null || secDb == null;
-
         if (ctrlDb != null && secDb != null)
         {
             Connection dbConn = null;
@@ -82,7 +79,6 @@ public final class Authentication
             {
                 dbConn = ctrlDb.getConnection();
                 secDb.setAuthRequired(dbConn, newPolicy);
-                committed = true;
             }
             finally
             {
@@ -90,10 +86,7 @@ public final class Authentication
             }
         }
 
-        if (committed)
-        {
-            GLOBAL_AUTH_REQUIRED.set(newPolicy);
-        }
+        GLOBAL_AUTH_REQUIRED.set(newPolicy);
     }
 
     public AccessContext signIn(IdentityName idName, byte[] password)
