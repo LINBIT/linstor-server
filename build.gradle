@@ -1,7 +1,3 @@
-import java.text.SimpleDateFormat
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.NoSuchFileException;
 import org.gradle.process.internal.ExecException
 
 plugins {
@@ -148,10 +144,21 @@ task RecreateDbStartup(type: CreateStartScripts) {
     }
 }
 
+task LinstorConfigStartup(type: CreateStartScripts) {
+    mainClassName = 'com.linbit.linstor.core.LinstorConfig'
+    applicationName = "linstor-config"
+    outputDir = new File(project.buildDir, 'scripts')
+    classpath = jar.outputs.files + project.configurations.runtime
+    doLast {
+        delete windowsScript
+    }
+}
+
 applicationDistribution.into("bin") {
     from(ControllerStartup)
     from(SatelliteStartup)
     from(RecreateDbStartup)
+    from(LinstorConfigStartup)
     fileMode = 0755
 }
 
