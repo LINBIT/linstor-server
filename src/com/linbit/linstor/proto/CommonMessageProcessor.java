@@ -269,10 +269,6 @@ public class CommonMessageProcessor implements MessageProcessor
                             .setCauseFormat(
                                 "The requested function call can only be executed by an authenticated identity"
                             )
-                            .setCauseFormat(
-                                "An identity must be authenticated by signing in to the system before executing\n" +
-                                "the requested function call.\n"
-                            )
                             .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
                             .setRetCode(ApiConsts.API_CALL_AUTH_REQ)
                             .build()

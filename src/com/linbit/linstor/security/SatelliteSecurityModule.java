@@ -22,33 +22,15 @@ public class SatelliteSecurityModule extends AbstractModule
     @Provides
     public SecurityLevelSetter securityLevelSetter()
     {
-        return new SecurityLevelSetter()
-        {
-            @Override
-            public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
-                throws AccessDeniedException, SQLException
-            {
-                SecurityLevel.set(
-                    accCtx, newLevel, null, null
-                );
-            }
-        };
+        return (accCtx, newLevel) ->
+            SecurityLevel.set(accCtx, newLevel, null, null);
     }
 
     @Provides
     public MandatoryAuthSetter mandatoryAuthSetter()
     {
-        return new MandatoryAuthSetter()
-        {
-            @Override
-            public void setAuthRequired(AccessContext accCtx, boolean newPolicy)
-                throws AccessDeniedException, SQLException
-            {
-                Authentication.setRequired(
-                    accCtx, newPolicy, null, null
-                );
-            }
-        };
+        return (accCtx, newPolicy) ->
+            Authentication.setRequired(accCtx, newPolicy, null, null);
     }
 
     @Provides

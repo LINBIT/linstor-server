@@ -35,17 +35,8 @@ public class ControllerSecurityModule extends AbstractModule
         final DbAccessor securityDbDriver
     )
     {
-        return new SecurityLevelSetter()
-        {
-            @Override
-            public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
-                throws AccessDeniedException, SQLException
-            {
-                SecurityLevel.set(
-                    accCtx, newLevel, dbConnectionPool, securityDbDriver
-                );
-            }
-        };
+        return (accCtx, newLevel) ->
+            SecurityLevel.set(accCtx, newLevel, dbConnectionPool, securityDbDriver);
     }
 
     @Provides
@@ -54,17 +45,8 @@ public class ControllerSecurityModule extends AbstractModule
         final DbAccessor securityDbDriver
     )
     {
-        return new MandatoryAuthSetter()
-        {
-            @Override
-            public void setAuthRequired(AccessContext accCtx, boolean newPolicy)
-                throws AccessDeniedException, SQLException
-            {
-                Authentication.setRequired(
-                    accCtx, newPolicy, dbConnectionPool, securityDbDriver
-                );
-            }
-        };
+        return (accCtx, newPolicy) ->
+            Authentication.setRequired(accCtx, newPolicy, dbConnectionPool, securityDbDriver);
     }
 
     @Provides
