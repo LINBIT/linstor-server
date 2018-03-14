@@ -103,8 +103,6 @@ public final class ObjectProtection extends BaseTransactionObject
             objProt.dbDriver = dbDriver;
 
             objProt.persisted = true;
-
-            objProt.initialized();
         }
 
         return objProt;

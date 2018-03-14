@@ -231,7 +231,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testPropsConPersist() throws Exception
     {
         driver.create(volDfn);
-        volDfn.initialized();
 
         Props props = volDfn.getProps(SYS_CTX);
         String testKey = "TestKey";
@@ -271,7 +270,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testMinorNrInstanceUpdate() throws Exception
     {
         driver.create(volDfn);
-        volDfn.initialized();
 
         MinorNumber minor2 = new MinorNumber(32);
         volDfn.setMinorNr(SYS_CTX, minor2);
@@ -293,7 +291,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testFlagsUpdateInstance() throws Exception
     {
         driver.create(volDfn);
-        volDfn.initialized();
 
         volDfn.getFlags().disableAllFlags(SYS_CTX);
 
@@ -334,8 +331,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testVolSizeUpdateInstance() throws Exception
     {
         driver.create(volDfn);
-
-        volDfn.initialized();
 
         long size = 9001;
         volDfn.setVolumeSize(SYS_CTX, size);
@@ -405,7 +400,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testDeleteDeallocateMinorNumber() throws Exception
     {
         driver.create(volDfn);
-        volDfn.initialized();
         volDfn.delete(SYS_CTX);
 
         Mockito.verify(minorNrPoolMock).deallocate(minor);
@@ -417,7 +411,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         final int newMinorNumber = 9876;
 
         driver.create(volDfn);
-        volDfn.initialized();
         volDfn.setMinorNr(SYS_CTX, new MinorNumber(newMinorNumber));
 
         Mockito.verify(minorNrPoolMock).deallocate(minor);

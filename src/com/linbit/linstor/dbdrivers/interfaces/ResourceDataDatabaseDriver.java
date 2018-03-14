@@ -7,7 +7,6 @@ import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link ResourceData}.
@@ -25,9 +24,6 @@ public interface ResourceDataDatabaseDriver
      * @param resourceName
      *  Part of the primary key specifying the database entry
      *  If true a warning is logged if the requested entry does not exist
-     * @return
-     *  A {@link ResourceConnectionData} which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

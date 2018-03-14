@@ -170,18 +170,6 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
-    public void initialized()
-    {
-        propsMap.initialized();
-    }
-
-    @Override
-    public boolean isInitialized()
-    {
-        return propsMap.isInitialized();
-    }
-
-    @Override
     public void setConnection(TransactionMgr transMgr)
     {
         // ignore - ReadOnlyProps cannot be changed

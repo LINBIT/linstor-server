@@ -30,8 +30,6 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     private final long mask;
     private final StateFlagsPersistence<PRIMARY_KEY> persistence;
 
-    private boolean initialized = false;
-
     public StateFlagsBits(
         final ObjectProtection objProtRef,
         final PRIMARY_KEY parent,
@@ -192,18 +190,6 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     }
 
     @Override
-    public void initialized()
-    {
-        initialized = true;
-    }
-
-    @Override
-    public boolean isInitialized()
-    {
-        return initialized;
-    }
-
-    @Override
     public void commitImpl()
     {
         stateFlags = changedStateFlags;
@@ -251,7 +237,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
 
     private void setFlags(final long bits) throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             activateTransMgr();
             persistence.persist(pk, bits);

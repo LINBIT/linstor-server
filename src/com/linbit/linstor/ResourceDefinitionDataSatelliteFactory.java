@@ -70,7 +70,6 @@ public class ResourceDefinitionDataSatelliteFactory
                     transMgrProvider
                 );
             }
-            rscDfn.initialized();
         }
         catch (Exception exc)
         {

@@ -263,7 +263,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistProps() throws Exception
     {
-        resDfn.initialized();
         driver.create(resDfn);
 
         Props props = resDfn.getProps(SYS_CTX);
@@ -345,7 +344,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testStateFlagPersistence() throws Exception
     {
         driver.create(resDfn);
-        resDfn.initialized();
 
         resDfn.getFlags().disableAllFlags(SYS_CTX);
 
@@ -366,7 +364,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testUpdatePort() throws Exception
     {
         driver.create(resDfn);
-        resDfn.initialized();
 
         TcpPortNumber otherPort = new TcpPortNumber(9001);
         resDfn.setPort(SYS_CTX, otherPort);
@@ -386,7 +383,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testUpdateTransportType() throws Exception
     {
         driver.create(resDfn);
-        resDfn.initialized();
 
         TransportType newTransportType = TransportType.RDMA;
         resDfn.setTransportType(SYS_CTX, newTransportType);
@@ -498,7 +494,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testDeleteDeallocateTcpPort() throws Exception
     {
         driver.create(resDfn);
-        resDfn.initialized();
         resDfn.delete(SYS_CTX);
 
         Mockito.verify(tcpPortPoolMock).deallocate(port);
@@ -510,7 +505,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         final int newTcpPort = 9876;
 
         driver.create(resDfn);
-        resDfn.initialized();
         resDfn.setPort(SYS_CTX, new TcpPortNumber(newTcpPort));
 
         Mockito.verify(tcpPortPoolMock).deallocate(port);

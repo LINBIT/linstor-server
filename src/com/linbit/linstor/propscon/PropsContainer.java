@@ -80,7 +80,6 @@ public class PropsContainer extends AbsTransactionObject implements Props
     protected Provider<TransactionMgr> transMgrProvider;
     private Map<String, String> cachedPropMap;
 
-    private boolean initialized = false;
     protected String instanceName;
 
     PropsContainer(
@@ -869,18 +868,6 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public void initialized()
-    {
-        initialized = true;
-    }
-
-    @Override
-    public boolean isInitialized()
-    {
-        return initialized;
-    }
-
-    @Override
     protected TransactionObject getObjectToRegister()
     {
         // do not register "this" as a transaction object, but our rootContainer
@@ -901,7 +888,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     private void cache(String key, String value)
     {
-        if (initialized)
+        if (isInitialized())
         {
             if (!rootContainer.cachedPropMap.containsKey(key))
             {
@@ -964,7 +951,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     private void dbPersist(String key, String value, String oldValue) throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             rootContainer.activateTransMgr();
             cache(key, oldValue);
@@ -985,7 +972,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     private void dbRemove(String key, String oldValue) throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             rootContainer.activateTransMgr();
             cache(key, oldValue);
@@ -1006,7 +993,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     private void dbRemoveAll() throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             rootContainer.activateTransMgr();
             Set<Entry<String, String>> entrySet = rootContainer.entrySet();

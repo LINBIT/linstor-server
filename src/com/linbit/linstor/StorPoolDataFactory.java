@@ -73,10 +73,6 @@ public class StorPoolDataFactory
             );
             driver.create(storPoolData);
         }
-        if (storPoolData != null)
-        {
-            storPoolData.initialized();
-        }
         return storPoolData;
     }
 
@@ -109,7 +105,6 @@ public class StorPoolDataFactory
                     transMgrProvider
                 );
             }
-            storPoolData.initialized();
         }
         catch (Exception exc)
         {

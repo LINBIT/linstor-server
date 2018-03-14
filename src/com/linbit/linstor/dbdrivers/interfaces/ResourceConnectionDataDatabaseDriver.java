@@ -7,7 +7,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link ResourceConnectionData}.
@@ -29,10 +28,6 @@ public interface ResourceConnectionDataDatabaseDriver
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      *
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
-     *
      * @throws SQLException
      */
     ResourceConnectionData load(Resource source, Resource target, boolean logWarnIfNotExists)
@@ -45,10 +40,6 @@ public interface ResourceConnectionDataDatabaseDriver
      * <br>
      * @param resource
      *  Part of the primary key specifying the database entry
-     *
-     * @return
-     *  A list of instances which contain valid references, but are not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

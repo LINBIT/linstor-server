@@ -79,8 +79,6 @@ public class PropsContainerFactory
             }
         }
 
-        container.initialized();
-
         return container;
     }
 }

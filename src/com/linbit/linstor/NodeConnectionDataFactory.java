@@ -84,10 +84,6 @@ public class NodeConnectionDataFactory
             );
             dbDriver.create(nodeConData);
         }
-        if (nodeConData != null)
-        {
-            nodeConData.initialized();
-        }
         return nodeConData;
     }
 
@@ -130,7 +126,6 @@ public class NodeConnectionDataFactory
                     transMgrProvider
                 );
             }
-            nodeConData.initialized();
         }
         catch (Exception exc)
         {

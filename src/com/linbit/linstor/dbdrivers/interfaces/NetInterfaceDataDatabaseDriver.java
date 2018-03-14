@@ -6,7 +6,6 @@ import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link NetInterfaceData}.
@@ -25,9 +24,6 @@ public interface NetInterfaceDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

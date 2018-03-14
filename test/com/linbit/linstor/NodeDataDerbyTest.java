@@ -107,7 +107,6 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testPersistSimple() throws Exception
     {
-        node.initialized();
         dbDriver.create(node);
         commit();
 

@@ -67,11 +67,6 @@ public class NetInterfaceDataFactory
             );
             driver.create(netData);
         }
-        if (netData != null)
-        {
-            netData.initialized();
-        }
-
         return netData;
     }
 
@@ -102,7 +97,6 @@ public class NetInterfaceDataFactory
                     transMgrProvider
                 );
             }
-            netData.initialized();
         }
         catch (Exception exc)
         {

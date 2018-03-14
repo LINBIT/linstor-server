@@ -100,7 +100,6 @@ public class ResourceDefinitionDataControllerFactory
         );
         driver.create(resDfn);
 
-        resDfn.initialized();
         return resDfn;
     }
 
@@ -110,10 +109,6 @@ public class ResourceDefinitionDataControllerFactory
 
         ResourceDefinitionData resDfn = driver.load(resName, false);
 
-        if (resDfn != null)
-        {
-            resDfn.initialized();
-        }
         return resDfn;
     }
 }

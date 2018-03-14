@@ -69,11 +69,6 @@ public class SatelliteConnectionDataFactory
             node.setSatelliteConnection(accCtx, stltConn);
         }
 
-        if (stltConn != null)
-        {
-            stltConn.initialized();
-        }
-
         return stltConn;
     }
 
@@ -102,7 +97,6 @@ public class SatelliteConnectionDataFactory
                     transMgrProvider
                 );
             }
-            stltConn.initialized();
         }
         catch (Exception exc)
         {

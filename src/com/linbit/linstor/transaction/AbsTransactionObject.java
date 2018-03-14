@@ -22,7 +22,7 @@ public abstract class AbsTransactionObject implements TransactionObject
 {
     private final Provider<TransactionMgr> transMgrProvider;
 
-    private boolean initialized = false;
+    private static boolean initialized = false;
     private TransactionMgr activeTransMgr = null;
     private boolean inCommit = false;
     private boolean inRollback = false;
@@ -32,14 +32,21 @@ public abstract class AbsTransactionObject implements TransactionObject
         transMgrProvider = transMgrProviderRef;
     }
 
-    @Override
-    public void initialized()
+    /**
+     * Until this method is called for the first time, all actions performed
+     * to any TransactionObject are NOT cached and NOT persisted.
+     * The first call of this method enables caching and persisting.
+     * Further calls have no effect.
+     */
+    public static void initialized()
     {
         initialized = true;
     }
 
-    @Override
-    public boolean isInitialized()
+    /**
+     * Returns true if {@link #initialized()} was called.
+     */
+    public static boolean isInitialized()
     {
         return initialized;
     }

@@ -6,7 +6,6 @@ import java.util.List;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link com.linbit.linstor.VolumeConnectionData}.
@@ -28,10 +27,6 @@ public interface VolumeConnectionDataDatabaseDriver
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      *
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
-     *
      * @throws SQLException
      */
     VolumeConnectionData load(Volume sourceVolume, Volume targetVolume, boolean logWarnIfNotExists)
@@ -44,10 +39,6 @@ public interface VolumeConnectionDataDatabaseDriver
      * <br>
      * @param volume
      *  Part of the primary key specifying the database entry
-     *
-     * @return
-     *  A list of instances which contain valid references, but are not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

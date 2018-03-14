@@ -7,7 +7,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.storage.DisklessDriver;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -85,7 +84,6 @@ public class NodeDataSatelliteFactory
                     DisklessDriver.class.getSimpleName()
                 ));
             }
-            nodeData.initialized();
         }
         catch (Exception exc)
         {

@@ -78,10 +78,6 @@ public class VolumeDataFactory
             );
             driver.create(volData);
         }
-        if (volData != null)
-        {
-            volData.initialized();
-        }
         return volData;
     }
 
@@ -117,7 +113,6 @@ public class VolumeDataFactory
                     transMgrProvider
                 );
             }
-            vlmData.initialized();
         }
         catch (Exception exc)
         {

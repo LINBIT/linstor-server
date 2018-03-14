@@ -99,10 +99,6 @@ public class NodeDataControllerFactory
                 )
             );
         }
-        if (nodeData != null)
-        {
-            nodeData.initialized();
-        }
         return nodeData;
     }
 }

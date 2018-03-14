@@ -5,19 +5,6 @@ import com.linbit.ImplementationError;
 public interface TransactionObject
 {
     /**
-     * Until this method is called for the first time, all actions performed
-     * to this object are NOT cached and NOT persisted.
-     * The first call of this method enables caching and persisting.
-     * Further calls have no effect.
-     */
-    void initialized();
-
-    /**
-     * Returns true if {@link TransactionObject#initialized()} was called
-     */
-    boolean isInitialized();
-
-    /**
      * Sets the database connection for persisting the data to the database
      *
      * If the object was manipulated prior to this method-call

@@ -91,10 +91,6 @@ public class VolumeConnectionDataFactory
 
             dbDriver.create(volConData);
         }
-        if (volConData != null)
-        {
-            volConData.initialized();
-        }
         return volConData;
     }
 
@@ -143,7 +139,6 @@ public class VolumeConnectionDataFactory
                     transMgrProvider
                 );
             }
-            volConData.initialized();
         }
         catch (Exception exc)
         {

@@ -21,8 +21,6 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
     private Map<KEY, VALUE> map;
     private Map<KEY, VALUE> oldValues;
 
-    private boolean initialized = false;
-
     public TransactionMap(
         Map<KEY, VALUE> mapRef,
         MapDatabaseDriver<KEY, VALUE> driver,
@@ -174,7 +172,7 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
 
     private void cache(KEY key, VALUE value, VALUE oldValue)
     {
-        if (initialized && !Objects.equals(value, oldValue))
+        if (isInitialized() && !Objects.equals(value, oldValue))
         {
             if (!oldValues.containsKey(key))
             {
@@ -227,11 +225,5 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
                 }
             }
         }
-    }
-
-    @Override
-    public boolean isInitialized()
-    {
-        return initialized;
     }
 }

@@ -92,11 +92,6 @@ public class ResourceDataFactory
             );
             dbDriver.create(resData);
         }
-
-        if (resData != null)
-        {
-            resData.initialized();
-        }
         return resData;
     }
 
@@ -131,7 +126,6 @@ public class ResourceDataFactory
                     transMgrProvider
                 );
             }
-            rscData.initialized();
         }
         catch (Exception exc)
         {

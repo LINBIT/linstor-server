@@ -6,7 +6,6 @@ import java.util.List;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link NodeConnectionData}.
@@ -28,10 +27,6 @@ public interface NodeConnectionDataDatabaseDriver
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      *
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
-     *
      * @throws SQLException
      */
     NodeConnectionData load(
@@ -46,10 +41,6 @@ public interface NodeConnectionDataDatabaseDriver
      * {@code node}, regardless if {@code node} is the source or the target of the
      * specific {@link com.linbit.linstor.NodeConnection}.
      * <br>
-     *
-     * @return
-     *  A list of instances which contain valid references, but are not
-     *  initialized yet in regards of {@link com.linbit.linstor.transaction.BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

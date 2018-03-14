@@ -378,7 +378,6 @@ public class VolumeDataDerbyTest extends DerbyBase
         );
         driver.create(vol);
         commit();
-        vol.initialized();
 
         String testKey = "TestKey";
         String testValue = "TestValue";
@@ -459,8 +458,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             transMgrProvider
         );
         driver.create(vol);
-
-        vol.initialized();
 
         vol.getFlags().disableAllFlags(SYS_CTX);
 

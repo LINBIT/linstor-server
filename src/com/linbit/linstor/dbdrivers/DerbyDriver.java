@@ -6,22 +6,19 @@ import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataDerbyDriver;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDataDerbyDriver;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataDerbyDriver;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDataDerbyDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataDerbyDriver;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeDataDerbyDriver;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.AbsTransactionObject;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -31,7 +28,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -123,6 +119,7 @@ public class DerbyDriver implements DatabaseDriver
         {
             rscDfnMap.put(curRscDfn.getName(), curRscDfn);
         }
+        AbsTransactionObject.initialized();
     }
 
     @Override

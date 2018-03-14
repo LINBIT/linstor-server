@@ -77,7 +77,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testPersistSimple() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
         commit();
 
@@ -99,7 +98,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testPersistDuplicate() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
         try
         {
@@ -142,7 +140,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testLoadSimple() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
 
         NetInterfaceData netData = dbDriver.load(node, niName, true);
@@ -158,7 +155,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testLoadRestore() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
 
         NetInterfaceData netData = dbDriver.load(node, niName, true);
@@ -174,7 +170,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstanceTwice() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
 
         NetInterfaceData netData1 = netInterfaceDataFactory.getInstance(
@@ -207,7 +202,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
 
         List<NetInterfaceData> niList = dbDriver.loadNetInterfaceData(node);
@@ -241,7 +235,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testDeleteSimple() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
         commit();
 
@@ -264,7 +257,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         assertFalse(stmt.executeQuery().next());
 
-        niData.initialized();
         dbDriver.ensureEntryExists(niData);
         commit();
 
@@ -280,7 +272,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testAddrUpdateInstance() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
 
         String addrStr = "::1";
@@ -303,7 +294,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testAddrUpdateDriver() throws Exception
     {
-        niData.initialized();
         dbDriver.create(niData);
         commit();
 

@@ -8,7 +8,6 @@ import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnectionData;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 public interface SatelliteConnectionDataDatabaseDriver
 {
@@ -19,10 +18,6 @@ public interface SatelliteConnectionDataDatabaseDriver
      *  The primary key specifying the database entry
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     *
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

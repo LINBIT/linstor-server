@@ -4,7 +4,6 @@ import java.sql.SQLException;
 
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 
 /**
  * Database driver for {@link com.linbit.linstor.StorPoolDefinitionData}.
@@ -20,10 +19,6 @@ public interface StorPoolDefinitionDataDatabaseDriver
      *  The primaryKey identifying the row to load
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
-     *
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */

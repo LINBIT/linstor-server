@@ -14,19 +14,6 @@ public abstract class BaseTransactionObject extends AbsTransactionObject
     }
 
     @Override
-    public void initialized()
-    {
-        if (!isInitialized())
-        {
-            super.initialized();
-            for (TransactionObject transObj : transObjs)
-            {
-                transObj.initialized();
-            }
-        }
-    }
-
-    @Override
     public void commitImpl()
     {
         for (TransactionObject transObj : transObjs)

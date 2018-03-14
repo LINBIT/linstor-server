@@ -93,7 +93,6 @@ public class VolumeDefinitionDataControllerFactory
         );
         driver.create(volDfnData);
 
-        volDfnData.initialized();
         return volDfnData;
     }
 
@@ -107,11 +106,6 @@ public class VolumeDefinitionDataControllerFactory
         resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false);
-
-        if (volDfnData != null)
-        {
-            volDfnData.initialized();
-        }
         return volDfnData;
     }
 }

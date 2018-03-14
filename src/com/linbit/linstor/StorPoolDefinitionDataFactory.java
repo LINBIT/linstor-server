@@ -76,11 +76,6 @@ public class StorPoolDefinitionDataFactory
             dbDriver.create(storPoolDfn);
         }
 
-        if (storPoolDfn != null)
-        {
-            storPoolDfn.initialized();
-        }
-
         return storPoolDfn;
     }
 
@@ -112,7 +107,6 @@ public class StorPoolDefinitionDataFactory
                     transMgrProvider
                 );
             }
-            storPoolDfn.initialized();
         }
         catch (Exception exc)
         {

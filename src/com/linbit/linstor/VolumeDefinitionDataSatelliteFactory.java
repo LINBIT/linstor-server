@@ -66,7 +66,6 @@ public class VolumeDefinitionDataSatelliteFactory
                     transMgrProvider
                 );
             }
-            vlmDfnData.initialized();
         }
         catch (Exception exc)
         {

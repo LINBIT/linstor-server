@@ -88,10 +88,6 @@ public class ResourceConnectionDataFactory
             );
             dbDriver.create(rscConData);
         }
-        if (rscConData != null)
-        {
-            rscConData.initialized();
-        }
         return rscConData;
     }
 
@@ -138,7 +134,6 @@ public class ResourceConnectionDataFactory
                     transMgrProvider
                 );
             }
-            rscConData.initialized();
         }
         catch (Exception exc)
         {
