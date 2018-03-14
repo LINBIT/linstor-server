@@ -48,7 +48,7 @@ dependencies
     compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.2.0'
     compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
     compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    compile 'info.picocli:picocli:2.3.0'
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     compile group: 'org.apache.derby', name: 'derby',       version: '10.14.1.0'

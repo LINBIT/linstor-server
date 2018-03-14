@@ -1,67 +1,67 @@
 package com.linbit.linstor.core;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
 import java.io.File;
+
+import picocli.CommandLine;
 
 public class LinStorArgumentParser
 {
-    private static final String CONTROLLER_DIRECTORY = "controller_directory";
-    private static final String DEBUG_CONSOLE = "debug_console";
-    private static final String MEMORY_DB = "memory_database";
+    @CommandLine.Option(names = {"-c", "--controller-directory"}, description = "Working directory for the controller")
+    private String controllerDirectory = null;
+    @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
+    private boolean debugConsole = false;
+    @CommandLine.Option(
+        names = {"--memory-database"},
+        description = "Use a in memory database for testing. [format=dbtype;port;listenaddr]"
+    )
+    private String memoryDB = null;
+
+    @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
+    private boolean usageHelpRequested;
 
     static LinStorArguments parseCommandLine(String[] args)
     {
-        Options opts = new Options();
-        opts.addOption(Option.builder("h").longOpt("help").required(false).build());
-        opts.addOption(Option.builder("c").longOpt(CONTROLLER_DIRECTORY).hasArg().required(false).build());
-        opts.addOption(Option.builder("d").longOpt(DEBUG_CONSOLE).required(false).build());
-        opts.addOption(Option.builder().longOpt(MEMORY_DB).hasArg().required(false).build());
+        LinStorArgumentParser linArgParser = new LinStorArgumentParser();
+        CommandLine cmd = new CommandLine(linArgParser);
+        cmd.setCommandName("Controller");
 
-        CommandLineParser parser = new DefaultParser();
-        LinStorArguments cArgs = new LinStorArguments();
         try
         {
-            CommandLine cmd = parser.parse(opts, args);
+            cmd.parse(args);
+        }
+        catch (Exception e)
+        {
+            System.err.println(e.getMessage());
+            cmd.usage(System.err);
+            System.exit(2);
+        }
 
-            if (cmd.hasOption("help"))
-            {
-                HelpFormatter helpFrmt = new HelpFormatter();
-                helpFrmt.printHelp("Controller", opts);
-                System.exit(0);
-            }
+        if (cmd.isUsageHelpRequested())
+        {
+            cmd.usage(System.out);
+            System.exit(0);
+        }
 
-            if (cmd.hasOption(CONTROLLER_DIRECTORY))
-            {
-                cArgs.setWorkingDirectory(cmd.getOptionValue(CONTROLLER_DIRECTORY) + "/");
+        LinStorArguments cArgs = new LinStorArguments();
+        if (linArgParser.controllerDirectory != null)
+        {
+                cArgs.setWorkingDirectory(linArgParser.controllerDirectory + "/");
                 File workingDir = new File(cArgs.getWorkingDirectory());
                 if (!workingDir.exists() || !workingDir.isDirectory())
                 {
                     System.err.println("Error: Given controller runtime directory does not exist or is no directory");
                     System.exit(2);
                 }
-            }
-
-            if (cmd.hasOption(MEMORY_DB))
-            {
-                cArgs.setMemoryDatabaseInitScript(cmd.getOptionValue(MEMORY_DB));
-            }
-
-            if (cmd.hasOption(DEBUG_CONSOLE))
-            {
-                cArgs.setStartDebugConsole(true);
-            }
         }
-        catch (ParseException pExc)
+
+        if (linArgParser.memoryDB != null)
         {
-            System.err.println("Command line parse error: " + pExc.getMessage());
-            System.exit(1);
+            cArgs.setMemoryDatabaseInitScript(linArgParser.memoryDB);
+        }
+
+        if (linArgParser.debugConsole)
+        {
+            cArgs.setStartDebugConsole(true);
         }
 
         return cArgs;
