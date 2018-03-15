@@ -28,6 +28,6 @@ public class H2DatabaseInfo implements DatabaseDriverInfo
     @Override
     public String prepareInit(String initSQL)
     {
-        return initSQL.replace("CHAR(16) FOR BIT DATA", "UUID");
+        return initSQL.replace("UUID CHAR(16) FOR BIT DATA", "UUID UUID");
     }
 }
