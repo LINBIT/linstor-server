@@ -959,7 +959,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 try
                 {
-                    dbDriver.persist(instanceName, key, value);
+                    dbDriver.persist(rootContainer.instanceName, key, value);
                 }
                 catch (SQLException sqlExc)
                 {
@@ -980,7 +980,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 try
                 {
-                    dbDriver.remove(instanceName, key);
+                    dbDriver.remove(rootContainer.instanceName, key);
                 }
                 catch (SQLException sqlExc)
                 {
@@ -1006,7 +1006,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 try
                 {
-                    dbDriver.removeAll(instanceName);
+                    dbDriver.removeAll(rootContainer.instanceName);
                 }
                 catch (SQLException sqlExc)
                 {

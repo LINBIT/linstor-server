@@ -8,7 +8,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -286,7 +285,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                         Role role = Role.get(new RoleName(currentRoleName));
                         AccessType type = AccessType.get(aclResultSet.getInt(2));
 
-                        objProt.addAclEntry(dbCtx, role, type);
+                        objProt.restoreAclEntry(role, type);
                     }
                 }
                 catch (InvalidNameException invalidNameExc)
@@ -301,10 +300,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                         ),
                         invalidNameExc
                     );
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    DerbyDriver.handleAccessDeniedException(accDeniedExc);
                 }
             }
             errorReporter.logTrace("AccessControl entries restored %s", getObjProtId(objPath));

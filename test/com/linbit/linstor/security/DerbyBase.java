@@ -45,6 +45,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.testutils.TestCoreModule;
+import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -60,6 +61,8 @@ import org.mockito.MockitoAnnotations;
 
 import javax.inject.Named;
 import javax.inject.Provider;
+
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -114,6 +117,7 @@ public abstract class DerbyBase implements DerbyTestConstants
 
     @Inject private DbAccessor secureDbDriver;
     @Inject private DatabaseDriver persistenceDbDriver;
+    @Inject private SecurityTestUtils securityTestUtils;
     @Inject protected CoreModule.NodesMap nodesMap;
     @Inject protected CoreModule.ResourceDefinitionMap rscDfnMap;
     @Inject protected CoreModule.StorPoolDefinitionMap storPoolDfnMap;
@@ -159,6 +163,7 @@ public abstract class DerbyBase implements DerbyTestConstants
 
             DbDerbyPersistence initializationSecureDbDriver = new DbDerbyPersistence();
 
+            SecurityLevel.load(dbConnPool, initializationSecureDbDriver);
             Identity.load(dbConnPool, initializationSecureDbDriver);
             SecurityType.load(dbConnPool, initializationSecureDbDriver);
             Role.load(dbConnPool, initializationSecureDbDriver);
@@ -249,6 +254,14 @@ public abstract class DerbyBase implements DerbyTestConstants
         {
             testScope.exit();
         }
+
+        { // FIXME this is just a quick and dirty bugfix
+            // find a better way to fix the static initialized-problem for these tests
+            Field initializedField = AbsTransactionObject.class.getDeclaredField("initialized");
+            initializedField.setAccessible(true);
+            initializedField.set(null, false);
+            initializedField.setAccessible(false);
+        }
     }
 
     protected Connection getConnection()
@@ -311,6 +324,7 @@ public abstract class DerbyBase implements DerbyTestConstants
             stmt.executeUpdate();
             stmt.close();
         }
+        con.commit();
     }
 
     private static void createTable(Connection connection, boolean dropIfExists, int idx) throws SQLException
@@ -722,6 +736,14 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.setString(3, value);
         stmt.executeUpdate();
         stmt.close();
+    }
+
+    protected ObjectProtection createTestObjectProtection(
+        AccessContext accCtx,
+        String objPath
+    )
+    {
+        return securityTestUtils.createObjectProtection(accCtx, objPath);
     }
 
     private class SharedDbConnectionPoolModule extends AbstractModule

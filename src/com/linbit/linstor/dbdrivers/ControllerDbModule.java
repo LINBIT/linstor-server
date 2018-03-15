@@ -5,6 +5,7 @@ import com.google.inject.Provides;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.NetInterfaceDataDerbyDriver;
 import com.linbit.linstor.NodeConnectionDataDerbyDriver;
 import com.linbit.linstor.NodeDataDerbyDriver;
@@ -128,6 +129,7 @@ public class ControllerDbModule extends AbstractModule
         catch (SQLException sqlExc)
         {
             errorLogRef.reportError(sqlExc);
+            throw new LinStorRuntimeException(sqlExc.getMessage(), sqlExc);
         }
         catch (InvalidNameException invalidNameExc)
         {

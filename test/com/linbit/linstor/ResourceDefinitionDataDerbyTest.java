@@ -9,6 +9,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +51,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
     private ResourceDefinitionData resDfn;
     @Inject private ResourceDefinitionDataDerbyDriver driver;
+    @Inject private ObjectProtectionDatabaseDriver objProtDriver;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public ResourceDefinitionDataDerbyTest() throws InvalidNameException
@@ -73,10 +76,9 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         resDfnUuid = randomUUID();
 
-        resDfnObjProt = objectProtectionFactory.getInstance(
+        resDfnObjProt = createTestObjectProtection(
             SYS_CTX,
-            ObjectProtection.buildPath(resName),
-            true
+            ObjectProtection.buildPath(resName)
         );
 
         node1Id = new NodeId(1);
@@ -103,6 +105,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             transObjFactory,
             transMgrProvider
         );
+
+        AbsTransactionObject.initialized();
     }
 
     @Test
@@ -315,6 +319,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testLoadVolumeDefinitions() throws Exception
     {
         driver.create(resDfn);
+        objProtDriver.insertOp(resDfnObjProt);
 
         VolumeNumber volNr = new VolumeNumber(13);
         int minor = 42;
@@ -410,6 +415,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testHalfValidName() throws Exception
     {
         driver.create(resDfn);
+        objProtDriver.insertOp(resDfnObjProt);
 
         ResourceName halfValidResName = new ResourceName(resDfn.getName().value);
 
@@ -449,6 +455,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             "secret",
             transportType
         );
+        objProtDriver.insertOp(resDfnObjProt);
 
         clearCaches();
 
@@ -465,6 +472,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(resDfn);
+        objProtDriver.insertOp(resDfnObjProt);
 
         resourceDefinitionDataFactory.create(
             SYS_CTX, resName, port, null, "secret", transportType

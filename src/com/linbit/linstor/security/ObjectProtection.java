@@ -92,7 +92,7 @@ public final class ObjectProtection extends BaseTransactionObject
             // as we just created a new ObjProt, we have to set the permissions
             // use the *Impl to skip the access checks as there are no rules yet and would cause
             // an exception
-            objProt.addAclEntryImpl(accCtx.subjectRole, AccessType.CONTROL);
+            objProt.addAclEntryImpl(accCtx.subjectRole, AccessType.CONTROL, true);
         }
 
         if (objProt != null)
@@ -280,13 +280,18 @@ public final class ObjectProtection extends BaseTransactionObject
                 );
             }
         }
-        addAclEntryImpl(entryRole, grantedAccess);
+        addAclEntryImpl(entryRole, grantedAccess, true);
     }
 
-    private void addAclEntryImpl(Role entryRole, AccessType grantedAccess) throws SQLException
+    /* package */ void restoreAclEntry(Role entryRole, AccessType grantedAccess) throws SQLException
+    {
+        addAclEntryImpl(entryRole, grantedAccess, false);
+    }
+
+    private void addAclEntryImpl(Role entryRole, AccessType grantedAccess, boolean persist) throws SQLException
     {
         AccessControlEntry oldValue = objectAcl.addEntry(entryRole, grantedAccess);
-        setAcl(entryRole, grantedAccess, oldValue);
+        setAcl(entryRole, grantedAccess, oldValue, persist);
     }
 
     public void delAclEntry(AccessContext context, Role entryRole)
@@ -372,9 +377,15 @@ public final class ObjectProtection extends BaseTransactionObject
         persisted = persistedRef;
     }
 
-    private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
+    private void setAcl(
+        Role entryRole,
+        AccessType grantedAccess,
+        AccessControlEntry oldEntry,
+        boolean persist
+    )
+        throws SQLException
     {
-        if (isInitialized())
+        if (isInitialized() && persist)
         {
             ensureObjProtIsPersisted();
 

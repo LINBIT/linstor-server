@@ -1,8 +1,6 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.security.DerbyBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,13 +34,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PropsContainerTest
+public class PropsContainerTest extends DerbyBase
 {
     private static final String TEST_INSTANCE_NAME = "testInstanceName";
 
-    private TransactionMgr transactionMgr;
-
-    private PropsContainerFactory propsContainerFactory;
     private PropsContainer root;
     private Map<String, String> rootMap;
     private Set<String> rootKeySet;
@@ -52,9 +47,8 @@ public class PropsContainerTest
     @Before
     public void setUp() throws Exception
     {
-        transactionMgr = new SatelliteTransactionMgr();
+        super.setUpAndEnterScope();
 
-        propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), () -> transactionMgr);
         root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -295,6 +289,24 @@ public class PropsContainerTest
         }
     }
 
+    @Test(expected = InvalidKeyException.class)
+    public void testSetAllPropsNullKey() throws Throwable
+    {
+        final Map<String, String> map = new HashMap<>();
+        map.put(null, "value");
+
+        root.setAllProps(map, null);
+    }
+
+    @Test(expected = InvalidValueException.class)
+    public void testSetAllPropsNullValue() throws Throwable
+    {
+        final Map<String, String> map = new HashMap<>();
+        map.put("key", null);
+
+        root.setAllProps(map, null);
+    }
+
     @Test
     public void testSetAllRollback() throws Throwable
     {
@@ -306,7 +318,7 @@ public class PropsContainerTest
         map.put("", "root");
         root.setAllProps(map, null);
 
-        transactionMgr.commit();
+        transMgrProvider.get().commit();
 
         final Map<String, String> overrideMap = new HashMap<>();
         overrideMap.put("a", "overriddenA");
@@ -332,24 +344,6 @@ public class PropsContainerTest
             assertEquals("Unexpected value found for key: " + key, expectedValue, entry.getValue());
         }
         assertTrue("Missing expected entries", map.isEmpty());
-    }
-
-    @Test(expected = InvalidKeyException.class)
-    public void testSetAllPropsNullKey() throws Throwable
-    {
-        final Map<String, String> map = new HashMap<>();
-        map.put(null, "value");
-
-        root.setAllProps(map, null);
-    }
-
-    @Test(expected = InvalidValueException.class)
-    public void testSetAllPropsNullValue() throws Throwable
-    {
-        final Map<String, String> map = new HashMap<>();
-        map.put("key", null);
-
-        root.setAllProps(map, null);
     }
 
     @Test

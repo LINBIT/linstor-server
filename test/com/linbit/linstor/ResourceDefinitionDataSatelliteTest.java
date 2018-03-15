@@ -29,10 +29,6 @@ import java.util.UUID;
 
 import javax.inject.Provider;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 public class ResourceDefinitionDataSatelliteTest
 {
     private static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
@@ -131,33 +127,6 @@ public class ResourceDefinitionDataSatelliteTest
 
         SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
         rscDfn.setConnection(transMgrOther); // throws ImplementationError
-    }
-
-    @Test
-    /**
-     * This test checks that a new transaction can be set after a commit.
-     */
-    public void testNewTransaction() throws Exception
-    {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
-            SYS_CTX,
-            resDfnUuid,
-            resName,
-            port,
-            null,
-            "notTellingYou",
-            transportType
-        );
-        transMgrProvider.get().commit();
-
-        assertEquals(0, transMgrProvider.get().sizeObjects());
-        assertFalse(rscDfn.hasTransMgr());
-
-        SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
-        rscDfn.setConnection(transMgrOther);
-        rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
-        assertTrue(rscDfn.hasTransMgr());
-        assertTrue(rscDfn.isDirty());
     }
 
     @Test (expected = ImplementationError.class)
