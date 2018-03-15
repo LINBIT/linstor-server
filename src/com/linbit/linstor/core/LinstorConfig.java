@@ -35,10 +35,12 @@ public class LinstorConfig
 {
     private static CommandLine commandLine;
 
+    private static final String CFG_KEY_JDBC = "connection-url";
+
     private static final String dbUser = "linstor";
     private static final String dbPassword = "linstor";
 
-    static private List<String> supportedDbs = Arrays.asList("h2", "derby");
+    private static List<String> supportedDbs = Arrays.asList("h2", "derby", "postgresql");
 
     @CommandLine.Command(name = "linstor-config", subcommands = {
         CmdCreateDb.class,
@@ -46,10 +48,10 @@ public class LinstorConfig
         CmdSetPlainListen.class,
         CmdCreateDbXMLConfig.class
     })
-    private static class LinstorConfigCmd implements Callable
+    private static class LinstorConfigCmd implements Callable<Object>
     {
         @Override
-        public Object call() throws Exception
+        public Object call()
         {
             commandLine.usage(System.err);
             return null;
@@ -66,21 +68,21 @@ public class LinstorConfig
         private String dbtype = "h2";
 
         @CommandLine.Parameters(description = "Path to the database")
-        private File dbpath;
+        private String dbpath;
 
         @Override
         public Object call() throws Exception
         {
             OutputStream os = System.out;
 
-            final String dbCfg = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-                + "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n"
-                + "<properties>\n"
-                + "  <comment>LinStor database configuration</comment>\n"
-                + "  <entry key=\"user\">%s</entry>\n"
-                + "  <entry key=\"password\">%s</entry>\n"
-                + "  <entry key=\"connection-url\">%s</entry>\n"
-                + "</properties>\n";
+            final String dbCfg = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n" +
+                "<properties>\n" +
+                "  <comment>LinStor database configuration</comment>\n" +
+                "  <entry key=\"user\">%s</entry>\n" +
+                "  <entry key=\"password\">%s</entry>\n" +
+                "  <entry key=\"connection-url\">%s</entry>\n" +
+                "</properties>\n";
 
             DatabaseDriverInfo dbInfo = DatabaseDriverInfo.CreateDriverInfo(dbtype);
 
@@ -90,7 +92,7 @@ public class LinstorConfig
                     dbCfg,
                     dbUser,
                     dbPassword,
-                    dbInfo.jdbcUrl(dbpath.getAbsolutePath())).getBytes()
+                    dbInfo.jdbcUrl(dbpath)).getBytes()
                 );
             }
             else
@@ -107,26 +109,42 @@ public class LinstorConfig
     }
 
     @CommandLine.Command(name = "create-db", description = "Creates a database.")
-    private static class CmdCreateDb implements Callable
+    private static class CmdCreateDb implements Callable<Object>
     {
         @CommandLine.Option(names = {"--recreate"}, description = "Delete an already existing database")
         private boolean recreate = false;
 
-        @CommandLine.Option(names = {"--dbtype"}, description = "Specify the database type. ['h2', 'derby']")
-        private String dbtype = "h2";
-
         @CommandLine.Option(names = {"--initsql"}, description = "Specifiy init sql script")
-        private File initSQL;
+        private File initSQL = null;
 
-        @CommandLine.Parameters(description = "Path to the database")
-        private Path dbpath;
+        @CommandLine.Parameters(description = "path to database config file. default: './database.cfg'")
+        private Path dbConfigFile = Paths.get("./database.cfg");
 
         @Override
         public Object call() throws Exception
         {
+            Properties props = new Properties();
+            props.loadFromXML(Files.newInputStream(dbConfigFile));
+
+            String jdbcString = props.getProperty(CFG_KEY_JDBC);
+            String[] jdbcParts = jdbcString.split(":");
+            /*
+             *  should result in:
+             *
+             *  jdbcParts[0] == always "jdbc"
+             *  jdbcParts[1] == "derby" | "h2" | "postgresql"
+             *  jdbcParts[2] == path to database and other configurations
+             *
+             */
+
+            String dbtype = jdbcParts[1];
+            String dbpath = jdbcParts[2];
+            String[] dbparams = dbpath.split(";");
+            dbpath = dbparams[0];
+
             if (supportedDbs.contains(dbtype))
             {
-                InputStream is = RecreateDb.class.getResourceAsStream("/resource/drbd-init-derby.sql");
+                InputStream is = LinstorConfig.class.getResourceAsStream("/resource/drbd-init-derby.sql");
                 if (initSQL != null)
                 {
                     is = new FileInputStream(initSQL);
@@ -139,30 +157,39 @@ public class LinstorConfig
                         DatabaseDriverInfo dbdriver = DatabaseDriverInfo.CreateDriverInfo(dbtype);
 
                         // if recreate delete old database
-                        if (recreate && Files.exists(dbpath))
+                        if (recreate && (dbtype.equals("h2") || dbtype.equals("derby")))
                         {
-                            Path rootPath = Paths.get(dbpath.getParent().toString(), dbpath.getFileName().toString());
-                            Files.list(dbpath.getParent())
-                                .filter(file -> file.startsWith(rootPath))
-                                .forEach(p ->
-                                {
-                                    try {
-                                        Files.walk(p, FileVisitOption.FOLLOW_LINKS)
-                                            .sorted(Comparator.reverseOrder())
-                                            .map(Path::toFile)
-                                            .forEach(File::delete);
-                                    }
-                                    catch(IOException io) {
-                                        System.err.println(io.toString());
-                                    }
-                                });
+                            Path localPath = Paths.get(dbpath);
+
+                            if (Files.exists(localPath) ||
+                                Files.exists(Paths.get(localPath.getParent().toString(),
+                                    localPath.getFileName().toString() + ".mv.db")))
+                            {
+                                Files.list(localPath.getParent())
+                                    .filter(file -> file.getFileName().toString().startsWith(
+                                        localPath.getFileName().toString()))
+                                    .forEach(p ->
+                                    {
+                                        try
+                                        {
+                                            Files.walk(p, FileVisitOption.FOLLOW_LINKS)
+                                                .sorted(Comparator.reverseOrder())
+                                                .map(Path::toFile)
+                                                .forEach(File::delete);
+                                        } catch (IOException io)
+                                        {
+                                            System.err.println(io.toString());
+                                        }
+                                    });
+                            }
                         }
 
                         try (PoolingDataSource<PoolableConnection> dataSource =
                                  initConnectionProvider(
-                                     dbdriver.jdbcUrl(dbpath.toAbsolutePath().toString()), "linstor", "linstor");
+                                     dbdriver.jdbcUrl(dbpath), dbUser, dbPassword);
                              Connection con = dataSource.getConnection())
                         {
+                            con.setAutoCommit(false);
                             DerbyDriver.executeStatement(con, dbdriver.isolationStatement());
                             DerbyDriver.runSql(
                                 con,
@@ -207,8 +234,8 @@ public class LinstorConfig
                      initConnectionProviderFromCfg(dbCfgFile);
                  Connection con = dataSource.getConnection())
             {
-                final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' "
-                    + "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
+                final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
+                    "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
                 DerbyDriver.executeStatement(con, String.format(stmt, controllerPort));
                 con.commit();
             }
@@ -233,8 +260,8 @@ public class LinstorConfig
                      initConnectionProviderFromCfg(dbCfgFile);
                  Connection con = dataSource.getConnection())
             {
-                final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' "
-                    + "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
+                final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
+                    "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
                 DerbyDriver.executeStatement(con, String.format(stmt, listenAddress));
                 con.commit();
             }

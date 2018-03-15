@@ -135,16 +135,6 @@ task SatelliteStartup(type: CreateStartScripts) {
     }
 }
 
-task RecreateDbStartup(type: CreateStartScripts) {
-    mainClassName = 'com.linbit.linstor.core.RecreateDb'
-    applicationName = "RecreateDb"
-    outputDir = new File(project.buildDir, 'scripts')
-    classpath = jar.outputs.files + project.configurations.runtime
-    doLast {
-        delete windowsScript
-    }
-}
-
 task LinstorConfigStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.LinstorConfig'
     applicationName = "linstor-config"
@@ -158,7 +148,6 @@ task LinstorConfigStartup(type: CreateStartScripts) {
 applicationDistribution.into("bin") {
     from(ControllerStartup)
     from(SatelliteStartup)
-    from(RecreateDbStartup)
     from(LinstorConfigStartup)
     fileMode = 0755
 }
@@ -245,7 +234,7 @@ ospackage {
         into 'bin'
         fileMode 0550
     }
-    from(RecreateDbStartup) {
+    from(LinstorConfigStartup) {
         into 'bin'
         fileMode 0550
     }
