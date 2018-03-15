@@ -71,7 +71,6 @@ public class NodeDataControllerFactory
         if (nodeData == null && createIfNotExists)
         {
             nodeData = new NodeData(
-                accCtx,
                 UUID.randomUUID(),
                 objectProtectionFactory.getInstance(
                     accCtx,

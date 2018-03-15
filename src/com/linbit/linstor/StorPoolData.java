@@ -284,6 +284,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private Map<String, String> getTraits(AccessContext accCtx)
         throws AccessDeniedException
     {
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         Map<String, String> traits = new HashMap<>(storageDriverKind.getStaticTraits());
 
         traits.put(

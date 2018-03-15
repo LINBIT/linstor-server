@@ -91,7 +91,6 @@ public class NodeData extends BaseTransactionObject implements Node
     private transient StorPoolData disklessStorPool;
 
     NodeData(
-        AccessContext accCtx,
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nameRef,

@@ -60,7 +60,6 @@ public class NodeDataSatelliteFactory
             if (nodeData == null)
             {
                 nodeData = new NodeData(
-                    accCtx,
                     uuid,
                     objectProtectionFactory.getInstance(
                         accCtx,

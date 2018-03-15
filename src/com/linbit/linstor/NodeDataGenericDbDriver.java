@@ -238,7 +238,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             try
             {
                 node = new NodeData(
-                    dbCtx,
                     java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
                     objProt,
                     nodeName,

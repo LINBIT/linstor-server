@@ -94,7 +94,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
         node = new NodeData(
-            SYS_CTX,
             uuid,
             objProt,
             nodeName,
