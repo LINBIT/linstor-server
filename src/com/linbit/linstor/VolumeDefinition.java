@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  *
@@ -47,6 +48,9 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
     StateFlags<VlmDfnFlags> getFlags();
 
     Iterator<Volume> iterateVolumes(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    Stream<Volume> streamVolumes(AccessContext accCtx)
         throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;

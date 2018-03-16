@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.inject.Provider;
 
@@ -266,6 +267,13 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumes.values().iterator();
+    }
+
+    @Override
+    public Stream<Volume> streamVolumes(AccessContext accCtx) throws AccessDeniedException
+    {
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return volumes.values().stream();
     }
 
     private String getResourceId(Resource rsc)
