@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  *
@@ -42,6 +43,9 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
         throws AccessDeniedException;
 
     Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    Stream<VolumeDefinition> streamVolumeDfn(AccessContext accCtx)
         throws AccessDeniedException;
 
     int getResourceCount();

@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.inject.Provider;
 
@@ -204,6 +205,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return volumeMap.values().iterator();
+    }
+
+    @Override
+    public Stream<VolumeDefinition> streamVolumeDfn(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return volumeMap.values().stream();
     }
 
     @Override
