@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static java.util.stream.Collectors.toList;
+
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
     private String currentNodeNameStr;
@@ -354,10 +356,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             {
                 try
                 {
-                    Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(peerAccCtx);
-                    while (storPoolIterator.hasNext())
+                    for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx).collect(toList()))
                     {
-                        StorPool storPool = storPoolIterator.next();
                         if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
                         {
                             storPools.add(storPool.getApiData(peerAccCtx, null, null));

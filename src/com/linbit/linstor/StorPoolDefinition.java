@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Definition of a storage pool
@@ -28,6 +29,9 @@ public interface StorPoolDefinition extends TransactionObject, DbgInstanceUuid
         throws AccessDeniedException;
 
     Iterator<StorPool> iterateStorPools(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    Stream<StorPool> streamStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
     Props getProps(AccessContext accCtx)

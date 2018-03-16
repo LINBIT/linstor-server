@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.inject.Provider;
 
@@ -109,6 +110,14 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return storPools.values().iterator();
+    }
+
+    @Override
+    public Stream<StorPool> streamStorPools(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return storPools.values().stream();
     }
 
     void addStorPool(AccessContext accCtx, StorPoolData storPoolData) throws AccessDeniedException

@@ -1,8 +1,23 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
@@ -25,23 +40,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.utils.StreamUtils;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
@@ -125,8 +123,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             // and are not diskless
             Map<StorPoolName, List<StorPool>> storPools = storPoolDfnMap.values().stream()
                 .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
-                .map(this::getStorPoolIterator)
-                .flatMap(StreamUtils::toStream)
+                .flatMap(this::getStorPoolStream)
                 .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
                 .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
                 .filter(storPool -> getFreeSpace(storPool) >= rscSize)
@@ -323,22 +320,23 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         return size;
     }
 
-    private Iterator<StorPool> getStorPoolIterator(StorPoolDefinition storPoolDfn)
+    private Stream<StorPool> getStorPoolStream(StorPoolDefinition storPoolDefinition)
     {
-        Iterator<StorPool> iterator;
+        Stream<StorPool> stream;
         try
         {
-            iterator = storPoolDfn.iterateStorPools(peerAccCtx);
+            stream = storPoolDefinition.streamStorPools(peerAccCtx);
         }
         catch (AccessDeniedException exc)
         {
             throw asAccDeniedExc(
                 exc,
-                "iterate storage pools of storage pool definition '" + storPoolDfn.getName().displayValue + "'.",
+                "stream storage pools of storage pool definition '" +
+                    storPoolDefinition.getName().displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
-        return iterator;
+        return stream;
     }
 
     private long getFreeSpace(StorPool storPool)
