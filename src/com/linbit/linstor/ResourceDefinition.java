@@ -53,6 +53,9 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
     Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException;
 
+    Stream<Resource> streamResource(AccessContext accCtx)
+        throws AccessDeniedException;
+
     void copyResourceMap(
         AccessContext accCtx, Map<? super NodeName, ? super Resource> dstMap
     )

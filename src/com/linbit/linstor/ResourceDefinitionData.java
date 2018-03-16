@@ -232,6 +232,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public Stream<Resource> streamResource(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return resourceMap.values().stream();
+    }
+
+    @Override
     public void copyResourceMap(
         AccessContext accCtx, Map<? super NodeName, ? super Resource> dstMap
     )
