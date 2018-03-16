@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.inject.Provider;
 
@@ -351,6 +352,13 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         checkDeleted();
         return Collections.unmodifiableCollection(volumeMap.values()).iterator();
+    }
+
+    @Override
+    public Stream<Volume> streamVolumes()
+    {
+        checkDeleted();
+        return Collections.unmodifiableCollection(volumeMap.values()).stream();
     }
 
     @Override

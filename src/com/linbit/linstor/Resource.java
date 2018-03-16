@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  *
@@ -32,6 +33,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
     Volume getVolume(VolumeNumber volNr);
 
     Iterator<Volume> iterateVolumes();
+
+    Stream<Volume> streamVolumes();
 
     Node getAssignedNode();
 
