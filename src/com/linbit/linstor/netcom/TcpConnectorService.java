@@ -208,6 +208,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 socketChannel = SocketChannel.open();
                 socketChannel.configureBlocking(false);
+                socketChannel.socket().setTcpNoDelay(true);
                 String peerId = address.getAddress().getHostAddress() + ":" + address.getPort();
                 SelectionKey connKey;
                 synchronized (syncObj)
@@ -740,6 +741,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 try
                 {
                     newSocket.configureBlocking(false);
+                    newSocket.socket().setTcpNoDelay(true);
 
                     // Generate the id for the peer object from the remote address of the connection
                     SocketAddress sockAddr = newSocket.getRemoteAddress();
