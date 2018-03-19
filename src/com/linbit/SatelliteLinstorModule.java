@@ -1,9 +1,7 @@
 package com.linbit;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Key;
 import com.google.inject.Provides;
-import com.google.inject.name.Names;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -37,7 +35,7 @@ public class SatelliteLinstorModule extends AbstractModule
     @Named(STLT_WORKER_POOL_NAME)
     public WorkQueue initializeStltWorkerThreadPool(ErrorReporter errorLog)
     {
-        return WorkerPoolInitializer.createDefaultWorkerThreadPool(
+        return WorkerPoolInitializer.createDevMgrWorkerThreadPool(
             errorLog,
             null,
             "StltWorkerPool"
