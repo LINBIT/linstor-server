@@ -37,6 +37,12 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
+    public boolean volumesExists(String identifier)
+    {
+        return true;
+    }
+
+    @Override
     public void deleteVolume(String identifier)
     {
         // no-op

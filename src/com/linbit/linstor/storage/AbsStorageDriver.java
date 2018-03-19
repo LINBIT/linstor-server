@@ -230,10 +230,15 @@ public abstract class AbsStorageDriver implements StorageDriver
                 // we will just verify if the volume is still available.
                 // if it is, we shout, if not, we say everything is fine
 
-                VolumeInfo volumeInfo = getVolumeInfo(identifier, false);
-                if (volumeInfo != null)
+                if (volumesExists(identifier))
                 {
-                    checkExitCode(output, command); // will throw the usual message
+                    throw new StorageException(
+                        String.format("Volume [%s] still exists.", identifier),
+                        String.format("Failed to delete volume [%s].", identifier),
+                        null,
+                        String.format("Manual deletion of volume [%s] may be necessary.", identifier),
+                        null
+                    );
                 }
             }
 

@@ -55,6 +55,14 @@ public interface StorageDriver
     void deleteVolume(String identifier) throws StorageException;
 
     /**
+     * Checks wheter a volume exists.
+     *
+     * @param identifier Unique name of the volume
+     * @return true if exists, otherwise false
+     */
+    boolean volumesExists(String identifier) throws StorageException;
+
+    /**
      * Checks whether a volume exists and has the appropriate size
      *
      * @param identifier Unique name of the volume

@@ -53,6 +53,54 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
+    public boolean volumesExists(String identifier) throws StorageException
+    {
+        boolean exists;
+
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+        final String[] command = new String[]
+            {
+                zfsCommand,
+                "list",
+                "-Hp",
+                "-t", "volume", // only volume types
+                pool + File.separator + identifier
+            };
+
+        try
+        {
+            OutputData outputData = extCommand.exec(command);
+
+            exists = outputData.exitCode == 0;
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to check if volume exists",
+                String.format("Failed to check if volume '%s' exists.", identifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format(
+                    "External command: %s",
+                    glue(
+                        ZfsVolumeInfo.getZfsVolumeInfoCommand(
+                            zfsCommand,
+                            pool,
+                            identifier
+                        ),
+                        " "
+                    )
+                ),
+                exc
+            );
+        }
+
+        return exists;
+    }
+
+    @Override
     protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);

@@ -338,7 +338,7 @@ public class ZfsDriverTest extends StorageTestUtils
         String identifier = "testVolume";
 
         expectZfsDeleteVolumeBehavior(ZFS_COMMAND_DEFAULT, identifier, ZFS_POOL_DEFAULT, false);
-        expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, 0, false);
+        expectZfsVolumeExistsBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier);
 
         driver.deleteVolume(identifier);
     }
@@ -512,6 +512,24 @@ public class ZfsDriverTest extends StorageTestUtils
     )
     {
         expectZfsVolumeInfoBehavior(zfsCommand, pool, identifier, size, true);
+    }
+
+    protected  void expectZfsVolumeExistsBehavior(
+        String zfsCommand,
+        String pool,
+        String identifier
+    )
+    {
+        Command command = new Command(
+            zfsCommand,
+            "list",
+            "-Hp", // no headers, parsable
+            "-t", "volume", // type volume
+            pool+"/"+identifier // the specified volume
+        );
+
+        OutputData outData = new TestOutputData("", "", 0);
+        ec.setExpectedBehavior(command, outData);
     }
 
     protected void expectZfsVolumeInfoBehavior(

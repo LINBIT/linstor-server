@@ -218,6 +218,40 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
+    public boolean volumesExists(String identifier) throws StorageException
+    {
+        boolean exists;
+
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            Map<String, LvsInfo> infoMap = LvsInfo.getAllInfo(extCommand, lvmLvsCommand, volumeGroup);
+
+            exists = infoMap.containsKey(identifier);
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to check volume exists",
+                null,
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format(
+                    "External command: %s",
+                    glue(
+                        LvsInfo.getCommand(lvmLvsCommand, volumeGroup),
+                        " "
+                    )
+                ),
+                exc
+            );
+        }
+        return exists;
+    }
+
+    @Override
     protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
         return getLvsInfoByIdentifier(identifier, failIfNull);
