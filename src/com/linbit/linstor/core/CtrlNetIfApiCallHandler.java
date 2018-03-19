@@ -50,7 +50,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

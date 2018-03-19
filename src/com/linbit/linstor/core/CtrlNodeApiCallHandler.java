@@ -84,7 +84,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(
@@ -449,6 +449,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         try
         {
+            Peer currentPeer = peer.get();
             NodeName nodeName = new NodeName(nodeNameStr);
 
             Node node = nodesMap.get(nodeName);
@@ -460,7 +461,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     // otherNodes can be filled with all nodes (except the current 'node')
                     // related to the satellite. The serializer only needs the other nodes for
                     // the nodeConnections.
-                    for (Resource rsc : peer.getNode().streamResources(apiCtx).collect(toList()))
+                    for (Resource rsc : currentPeer.getNode().streamResources(apiCtx).collect(toList()))
                     {
                         Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
                         while (otherRscIterator.hasNext())
@@ -472,9 +473,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             }
                         }
                     }
-                    long fullSyncTimestamp = peer.getFullSyncId();
-                    long serializerId = peer.getNextSerializerId();
-                    peer.sendMessage(
+                    long fullSyncTimestamp = currentPeer.getFullSyncId();
+                    long serializerId = currentPeer.getNextSerializerId();
+                    currentPeer.sendMessage(
                         internalComSerializer
                             .builder(InternalApiConsts.API_APPLY_NODE, msgId)
                             .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
@@ -485,7 +486,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 {
                     errorReporter.reportError(
                         new ImplementationError(
-                            "Satellite '" + peer.getId() + "' requested a node with an outdated " +
+                            "Satellite '" + currentPeer.getId() + "' requested a node with an outdated " +
                             "UUID. Current UUID: " + node.getUuid() + ", satellites outdated UUID: " +
                             nodeUuid,
                             null
@@ -495,7 +496,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                peer.sendMessage(
+                currentPeer.sendMessage(
                     internalComSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
                         .deletedNodeData(nodeNameStr)
                         .build()

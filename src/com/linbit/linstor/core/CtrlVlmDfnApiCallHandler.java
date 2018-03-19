@@ -71,7 +71,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

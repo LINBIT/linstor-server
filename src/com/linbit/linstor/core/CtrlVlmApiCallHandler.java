@@ -39,7 +39,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

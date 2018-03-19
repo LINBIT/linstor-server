@@ -44,7 +44,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

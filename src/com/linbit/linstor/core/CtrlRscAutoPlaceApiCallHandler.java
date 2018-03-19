@@ -61,7 +61,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         CtrlRscApiCallHandler rscApiCallHandlerRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

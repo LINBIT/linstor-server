@@ -70,7 +70,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         StorPoolDataFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(
@@ -302,13 +302,14 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         {
             StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
 
-            StorPool storPool = peer.getNode().getStorPool(apiCtx, storPoolName);
+            Peer currentPeer = peer.get();
+            StorPool storPool = currentPeer.getNode().getStorPool(apiCtx, storPoolName);
             // TODO: check if the storPool has the same uuid as storPoolUuid
             if (storPool != null)
             {
-                long fullSyncTimestamp = peer.getFullSyncId();
-                long updateId = peer.getNextSerializerId();
-                peer.sendMessage(
+                long fullSyncTimestamp = currentPeer.getFullSyncId();
+                long updateId = currentPeer.getNextSerializerId();
+                currentPeer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
                         .storPoolData(storPool, fullSyncTimestamp, updateId)
@@ -317,7 +318,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                peer.sendMessage(
+                currentPeer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED, msgId)
                         .deletedStorPoolData(storPoolNameStr)

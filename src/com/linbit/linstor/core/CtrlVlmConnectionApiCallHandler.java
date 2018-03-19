@@ -45,7 +45,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

@@ -102,7 +102,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(
@@ -738,10 +738,10 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    long fullSyncTimestamp = peer.getFullSyncId();
-                    long updateId = peer.getNextSerializerId();
+                    long fullSyncTimestamp = peer.get().getFullSyncId();
+                    long updateId = peer.get().getNextSerializerId();
 
-                    peer.sendMessage(
+                    peer.get().sendMessage(
                         internalComSerializer
                             .builder(InternalApiConsts.API_APPLY_RSC, msgId)
                             .resourceData(rsc, fullSyncTimestamp, updateId)
@@ -750,7 +750,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 }
                 else
                 {
-                    peer.sendMessage(
+                    peer.get().sendMessage(
                         internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_RSC_DELETED, msgId)
                         .deletedResourceData(rscNameStr)
@@ -767,7 +767,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                         null
                     )
                 );
-                peer.closeConnection();
+                peer.get().closeConnection();
             }
         }
         catch (InvalidNameException invalidNameExc)

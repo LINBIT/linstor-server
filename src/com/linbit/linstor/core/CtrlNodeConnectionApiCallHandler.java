@@ -41,7 +41,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

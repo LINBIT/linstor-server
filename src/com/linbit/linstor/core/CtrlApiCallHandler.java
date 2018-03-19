@@ -46,7 +46,7 @@ public class CtrlApiCallHandler
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
 
-    private final Peer peer;
+    private final Provider<Peer> peer;
     private final Provider<Integer> msgId;
 
     @Inject
@@ -69,7 +69,7 @@ public class CtrlApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
-        Peer clientRef,
+        Provider<Peer> clientRef,
         @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef
     )
     {
@@ -103,13 +103,13 @@ public class CtrlApiCallHandler
             rscDfnMapLock.readLock().lock();
             storPoolDfnMapLock.readLock().lock();
 
-            peer.getSerializerLock().writeLock().lock();
+            peer.get().getSerializerLock().writeLock().lock();
 
-            fullSyncApiCallHandler.sendFullSync(peer, expectedFullSyncId);
+            fullSyncApiCallHandler.sendFullSync(peer.get(), expectedFullSyncId);
         }
         finally
         {
-            peer.getSerializerLock().writeLock().unlock();
+            peer.get().getSerializerLock().writeLock().unlock();
 
             storPoolDfnMapLock.readLock().unlock();
             rscDfnMapLock.readLock().unlock();

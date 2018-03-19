@@ -56,7 +56,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(

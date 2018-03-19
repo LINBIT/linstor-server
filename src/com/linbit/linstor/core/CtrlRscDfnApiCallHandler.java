@@ -85,7 +85,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         super(
@@ -369,6 +369,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         UUID rscUuid
     )
     {
+        Peer currentPeer = peer.get();
         try (
             AbsApiCallHandler basicallyThis = setContext(
                 ApiCallType.MODIFY,
@@ -378,7 +379,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         )
         {
             Resource res = loadRsc(
-                peer.getNode().getName().displayValue,
+                currentPeer.getNode().getName().displayValue,
                 rscNameStr,
                 true
             );
@@ -395,12 +396,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 commit();
 
                 errorReporter.logTrace(
-                    "Primary set for " + peer.getNode().getName().getDisplayName()
+                    "Primary set for " + currentPeer.getNode().getName().getDisplayName()
                 );
 
                 updateSatellites(resDfn);
 
-                peer.sendMessage(
+                currentPeer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
                         .primaryRequest(rscNameStr, res.getUuid().toString())
@@ -421,7 +422,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             errorReporter.reportError(
                 sqlExc,
                 peerAccCtx,
-                peer,
+                currentPeer,
                 errorMessage
             );
         }

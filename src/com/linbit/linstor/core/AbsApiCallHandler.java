@@ -71,7 +71,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     private final Provider<TransactionMgr> transMgrProvider;
 
     protected final AccessContext peerAccCtx;
-    protected final Peer peer;
+    protected final Provider<Peer> peer;
 
     protected ApiCallType apiCallType;
     protected ApiCallRcImpl apiCallRc;
@@ -87,7 +87,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         CtrlObjectFactories objectFactoriesRef,
         Provider<TransactionMgr> transMgrProviderRef,
         AccessContext peerAccCtxRef,
-        Peer peerRef
+        Provider<Peer> peerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -823,7 +823,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         errorReporter.reportError(
             throwable,
             peerAccCtx,
-            peer,
+            peer.get(),
             errorMsg
         );
         addAnswer(errorMsg, causeMsg, detailsMsg, correctionMsg, retCode);
@@ -936,7 +936,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             apiCallRcRef,
             errorReporter,
             peerAccCtx,
-            peer
+            peer.get()
         );
     }
 
