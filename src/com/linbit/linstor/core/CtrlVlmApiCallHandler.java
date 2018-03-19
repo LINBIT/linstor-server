@@ -102,6 +102,9 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             commit();
 
             reportSuccess(vlmUuid);
+            errorReporter.logDebug(
+                String.format("Volume with number '%d' deleted on node '%s'.", volumeNr, nodeNameStr)
+            );
             if (vlmDfnDeleted)
             {
                 reportSuccess(
