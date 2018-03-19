@@ -23,8 +23,6 @@ public class ZfsVolumeInfo extends VolumeInfo
     )
         throws ChildProcessTimeoutException, IOException, StorageException
     {
-        // TODO call the command
-        // zfs list -o used -Hp linstorpool/identifier
 
         final String[] command = getZfsVolumeInfoCommand(zfsCommand, pool, identifier);
 
