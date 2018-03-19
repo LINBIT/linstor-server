@@ -12,6 +12,8 @@ import com.linbit.linstor.netcom.Peer;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+@Singleton
 public class CtrlApiCallHandler
 {
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
@@ -44,7 +47,7 @@ public class CtrlApiCallHandler
     private final ReadWriteLock ctrlConfigLock;
 
     private final Peer peer;
-    private final int msgId;
+    private final Provider<Integer> msgId;
 
     @Inject
     CtrlApiCallHandler(
@@ -67,7 +70,7 @@ public class CtrlApiCallHandler
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
         Peer clientRef,
-        @Named(ApiModule.MSG_ID) int msgIdRef
+        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
@@ -225,7 +228,7 @@ public class CtrlApiCallHandler
         try
         {
             nodesMapLock.readLock().lock();
-            listNodes = nodeApiCallHandler.listNodes(msgId);
+            listNodes = nodeApiCallHandler.listNodes(msgId.get());
         }
         finally
         {
@@ -361,7 +364,7 @@ public class CtrlApiCallHandler
         try
         {
             rscDfnMapLock.readLock().lock();
-            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId);
+            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId.get());
         }
         finally
         {
@@ -627,7 +630,7 @@ public class CtrlApiCallHandler
         {
             nodesMapLock.readLock().lock();
             rscDfnMapLock.readLock().lock();
-            listResources = rscApiCallHandler.listResources(msgId);
+            listResources = rscApiCallHandler.listResources(msgId.get());
         }
         finally
         {
@@ -822,7 +825,7 @@ public class CtrlApiCallHandler
         try
         {
             storPoolDfnMapLock.readLock().lock();
-            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId);
+            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId.get());
         }
         finally
         {
@@ -837,7 +840,7 @@ public class CtrlApiCallHandler
         try
         {
             storPoolDfnMapLock.readLock().lock();
-            listStorPools = storPoolApiCallHandler.listStorPools(msgId);
+            listStorPools = storPoolApiCallHandler.listStorPools(msgId.get());
         }
         finally
         {
@@ -1367,7 +1370,7 @@ public class CtrlApiCallHandler
             rscDfnMapLock.readLock().lock();
             storPoolDfnMapLock.readLock().lock();
 
-            rscApiCallHandler.respondResource(msgId, nodeName, rscUuid, rscName);
+            rscApiCallHandler.respondResource(msgId.get(), nodeName, rscUuid, rscName);
         }
         finally
         {
@@ -1397,7 +1400,7 @@ public class CtrlApiCallHandler
             storPoolDfnMapLock.readLock().lock();
 
             storPoolApiCallHandler.respondStorPool(
-                msgId,
+                msgId.get(),
                 storPoolUuid,
                 storPoolNameStr
             );
@@ -1419,7 +1422,7 @@ public class CtrlApiCallHandler
             nodesMapLock.readLock().lock();
 
             nodeApiCallHandler.respondNode(
-                msgId,
+                msgId.get(),
                 nodeUuid,
                 nodeNameStr
             );
@@ -1438,7 +1441,7 @@ public class CtrlApiCallHandler
         try
         {
             rscDfnMapLock.writeLock().lock();
-            rscDfnApiCallHandler.handlePrimaryResourceRequest(msgId, rscName, rscUuid);
+            rscDfnApiCallHandler.handlePrimaryResourceRequest(msgId.get(), rscName, rscUuid);
         }
         finally
         {
@@ -1467,7 +1470,7 @@ public class CtrlApiCallHandler
         try
         {
             ctrlConfigLock.readLock().lock();
-            data  = ctrlConfApiCallHandler.listProps(msgId);
+            data  = ctrlConfApiCallHandler.listProps(msgId.get());
         }
         finally
         {
