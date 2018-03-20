@@ -67,8 +67,8 @@ public class DrbdAdm
     {
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv", "adjust"));
-        command.add("-c");
-        command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
+        // command.add("-c"); // Using -c disables /etc/drbd.d/global_common.conf
+        // command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
 
         if (discard)
         {
