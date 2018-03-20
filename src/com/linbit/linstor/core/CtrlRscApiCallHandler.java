@@ -559,11 +559,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
      * This is called if a satellite has deleted its resource to notify the controller
      * that it can delete the resource.
      *
-     * @param accCtx
-     * @param client
-     * @param nodeNameStr
-     * @param rscNameStr
-     * @return
+     * @param nodeNameStr Node name where the resource was deleted.
+     * @param rscNameStr Resource name of the deleted resource.
+     * @return Apicall response for the call.er
      */
     public ApiCallRc resourceDeleted(
         String nodeNameStr,
@@ -603,12 +601,21 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             ResourceName deletedRscDfnName = null;
             UUID nodeUuid = null;
             NodeName deletedNodeName = null;
+
             // cleanup resource definition if empty and marked for deletion
-            if (rscDfn.getResourceCount() == 0 && isMarkedForDeletion(rscDfn))
-            {
-                deletedRscDfnName = rscDfn.getName();
-                rscDfnUuid = rscDfn.getUuid();
-                delete(rscDfn);
+            if (rscDfn.getResourceCount() == 0) {
+                // remove primary flag
+                errorReporter.logDebug(
+                    String.format("Resource definition '%s' empty, deleting primary flag.", rscNameStr)
+                );
+                rscDfn.getProps(apiCtx).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+
+                if (isMarkedForDeletion(rscDfn))
+                {
+                    deletedRscDfnName = rscDfn.getName();
+                    rscDfnUuid = rscDfn.getUuid();
+                    delete(rscDfn);
+                }
             }
 
             // cleanup node if empty and marked for deletion
