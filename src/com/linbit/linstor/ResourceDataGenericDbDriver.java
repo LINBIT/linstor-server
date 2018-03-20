@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.Resource.InitMaps;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
@@ -19,6 +20,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.Tuple;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -28,9 +30,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
@@ -43,22 +44,14 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     private static final String RES_NODE_ID = DbConstants.NODE_ID;
     private static final String RES_FLAGS = DbConstants.RESOURCE_FLAGS;
 
+    private static final String RES_SELECT_ALL =
+        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
+                     RES_NODE_ID + ", " + RES_FLAGS +
+        " FROM " + TBL_RES;
     private static final String RES_SELECT =
-        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
-                     RES_NODE_ID + ", " + RES_FLAGS +
-        " FROM " + TBL_RES +
+        RES_SELECT_ALL +
         " WHERE " + RES_NODE_NAME + " = ? AND " +
-        RES_NAME      + " = ?";
-    private static final String RES_SELECT_BY_NODE =
-        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
-                     RES_NODE_ID + ", " + RES_FLAGS +
-        " FROM " + TBL_RES +
-        " WHERE " + RES_NODE_NAME + " = ?";
-    private static final String RES_SELECT_BY_RES_DFN =
-        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
-                     RES_NODE_ID + ", " + RES_FLAGS +
-        " FROM " + TBL_RES +
-        " WHERE " + RES_NAME + " = ?";
+            RES_NAME      + " = ?";
 
     private static final String RES_INSERT =
         " INSERT INTO " + TBL_RES +
@@ -80,27 +73,17 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     private final ErrorReporter errorReporter;
     private final FlagDriver flagDriver;
 
-    private final Provider<VolumeDataGenericDbDriver> volumeDriverProvider;
-    private final Provider<ResourceConnectionDataGenericDbDriver> resourceConnectionDriverProvider;
-    private final Provider<NodeDataGenericDbDriver> nodeDataDatabaseDriverProvider;
-    private final Provider<ResourceDefinitionDataGenericDbDriver> resDfnDriverProvider;
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
-    private HashMap<ResPrimaryKey, ResourceData> resCache;
-    private boolean cacheCleared = false;
 
     @Inject
     public ResourceDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        Provider<VolumeDataGenericDbDriver> volumeDriverProviderRef,
-        Provider<ResourceConnectionDataGenericDbDriver> resourceConnectionDriverProviderRef,
-        Provider<NodeDataGenericDbDriver> nodeDataDatabaseDriverProviderRef,
-        Provider<ResourceDefinitionDataGenericDbDriver> resDfnDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
@@ -110,10 +93,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
-        volumeDriverProvider = volumeDriverProviderRef;
-        resourceConnectionDriverProvider = resourceConnectionDriverProviderRef;
-        nodeDataDatabaseDriverProvider = nodeDataDatabaseDriverProviderRef;
-        resDfnDriverProvider = resDfnDriverProviderRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
@@ -121,7 +100,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         transMgrProvider = transMgrProviderRef;
 
         flagDriver = new FlagDriver();
-        resCache = new HashMap<>();
     }
 
     @Override
@@ -169,236 +147,145 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         }
     }
 
-    @Override
-    public ResourceData load(Node node, ResourceName resourceName, boolean logWarnIfNotExists)
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading Resource %s", getId(node, resourceName));
-        ResourceData ret = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
-        {
-            stmt.setString(1, node.getName().value);
-            stmt.setString(2, resourceName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                List<ResourceData> list = load(resultSet, dbCtx, node);
 
-                if (!list.isEmpty())
-                {
-                    ret = list.get(0);
-                    // logDebug about "Resource loaded" was printed in the load method above
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning("Resource could not be found %s", getId(node, resourceName));
-                }
-            }
-        }
-        return ret;
-    }
-
-    public List<ResourceData> loadResourceDataByResourceDefinition(
-        ResourceDefinitionData resDfn,
-        AccessContext accCtx
+    public Map<ResourceData, Resource.InitMaps> loadAll(
+        Map<NodeName, ? extends Node> nodesMap,
+        Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading all Resources by ResourceDefinition %s", getTraceResDfnId(resDfn));
-        List<ResourceData> resList;
-        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT_BY_RES_DFN))
+        errorReporter.logTrace("Loading all Resources");
+        Map<ResourceData, Resource.InitMaps> loadedResources = new TreeMap<>();
+        String nodeNameStr;
+        String rscNameStr;
+        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT_ALL))
         {
-            stmt.setString(1, resDfn.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                resList = load(resultSet, accCtx, null);
-            }
-        }
-        errorReporter.logTrace(
-            "Loaded %d Resources for ResourceDefinition %s",
-            resList.size(),
-            getTraceResDfnId(resDfn)
-        );
-        return resList;
-    }
-
-    public List<ResourceData> loadResourceData(AccessContext accCtx, NodeData node)
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading all Resources by Node %s", getTraceNodeId(node));
-        List<ResourceData> ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT_BY_NODE))
-        {
-            stmt.setString(1, node.getName().value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = load(resultSet, accCtx, node);
-            }
-        }
-        errorReporter.logTrace(
-            "Loaded %d Resources for Node %s",
-            ret.size(),
-            getTraceNodeId(node)
-        );
-        return ret;
-    }
-
-    private List<ResourceData> load(ResultSet resultSet, AccessContext accCtx, Node globalNode)
-        throws SQLException
-    {
-        List<ResourceData> resList = new ArrayList<>();
-        while (resultSet.next())
-        {
-            Node node = null;
-            ResourceName resName = null;
-            try
-            {
-                if (globalNode != null)
-                {
-                    node = globalNode;
-                }
-                else
+                while (resultSet.next())
                 {
                     try
                     {
-                        node = nodeDataDatabaseDriverProvider.get().load(
-                            new NodeName(resultSet.getString(RES_NODE_NAME)),
-                            true
+                        nodeNameStr = resultSet.getString(RES_NODE_NAME);
+                        NodeName nodeName = new NodeName(nodeNameStr);
+                        rscNameStr = resultSet.getString(RES_NAME);
+                        ResourceName rscName = new ResourceName(rscNameStr);
+
+                        Tuple<ResourceData, Resource.InitMaps> tuple = restoreRsc(
+                            resultSet,
+                            nodesMap.get(nodeName),
+                            rscDfnMap.get(rscName)
+                        );
+                        loadedResources.put(
+                            tuple.objA,
+                            tuple.objB
                         );
                     }
-                    catch (InvalidNameException invalidNameExc)
+                    catch (InvalidNameException exc)
                     {
-                        throw new LinStorSqlRuntimeException(
-                            String.format(
-                                "A NodeName of a stored Resource in the table %s could not be restored. " +
-                                    "(invalid NodeName=%s, ResName=%s)",
-                                TBL_RES,
-                                resultSet.getString(RES_NODE_NAME),
-                                resultSet.getString(RES_NAME)
-                            ),
-                            invalidNameExc
+                        throw new ImplementationError(
+                            "Invalid name restored from database: " + exc.invalidName,
+                            exc
                         );
                     }
                 }
-                try
-                {
-                    resName = new ResourceName(resultSet.getString(RES_NAME));
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    throw new LinStorSqlRuntimeException(
-                        String.format(
-                            "A ResourceName of a stored Resource in the table %s could not be restored. " +
-                                "(NodeName=%s, invalid ResName=%s)",
-                            TBL_RES,
-                            resultSet.getString(RES_NODE_NAME),
-                            resultSet.getString(RES_NAME)
-                        ),
-                        invalidNameExc
-                    );
-                }
-
-                ResourceData resData = cacheGet(node, resName);
-                if (resData == null)
-                {
-                    ResourceDefinition resDfn = resDfnDriverProvider.get().load(resName, true);
-
-                    Resource loadedRes = resDfn.getResource(accCtx, node.getName());
-                    // although we just asked the cache, we also just loaded the resDfn.
-                    // which loads all its resources.
-                    if (loadedRes == null && !cacheCleared)
-                    {
-                        // additionally we have to as our own cache in order to prevent
-                        // endless recursion with loadResourceConnection -> loadResource -> ...
-                        loadedRes = resCache.get(new ResPrimaryKey(node, resDfn));
-                    }
-                    if (loadedRes == null)
-                    {
-                        // here we are currently loading our own resDfn, and it is loading us
-                        ObjectProtection objProt = getObjectProection(node, resName);
-
-                        NodeId nodeId;
-                        try
-                        {
-                            nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
-                        }
-                        catch (ValueOutOfRangeException valueOutOfRangeExc)
-                        {
-                            throw new LinStorSqlRuntimeException(
-                                String.format(
-                                    "A NodeId of a stored Resource in the table %s could not be restored. " +
-                                        "(NodeName=%s, ResName=%s, invalid NodeId=%d)",
-                                    TBL_RES,
-                                    node.getName().displayValue,
-                                    resName.displayValue,
-                                    resultSet.getInt(RES_NODE_ID)
-                                ),
-                                valueOutOfRangeExc
-                            );
-                        }
-
-                        resData = new ResourceData(
-                            java.util.UUID.fromString(resultSet.getString(RES_UUID)),
-                            accCtx,
-                            objProt,
-                            resDfn,
-                            node,
-                            nodeId,
-                            resultSet.getLong(RES_FLAGS),
-                            this,
-                            propsContainerFactory,
-                            volumeDataFactory,
-                            transObjFactory,
-                            transMgrProvider
-                        );
-
-                        if (!cacheCleared)
-                        {
-                            resCache.put(new ResPrimaryKey(node, resDfn), resData);
-                        }
-
-                        errorReporter.logTrace("Resource instance created %s", getId(resData));
-
-                        // restore ResourceConnection
-                        List<ResourceConnectionData> cons = resourceConnectionDriverProvider.get()
-                            .loadAllByResource(resData);
-                        for (ResourceConnection conDfn : cons)
-                        {
-                            resData.setResourceConnection(accCtx, conDfn);
-                        }
-                        errorReporter.logTrace(
-                            "Restored Resource's ConnectionDefinitions %s",
-                            getId(resData)
-                        );
-
-                        // restore volumes
-                        List<VolumeData> volList = volumeDriverProvider.get()
-                            .loadAllVolumesByResource(resData);
-                        for (VolumeData volData : volList)
-                        {
-                            resData.putVolume(accCtx, volData);
-                        }
-                        errorReporter.logTrace("Resource's Volumes restored %s", getId(resData));
-                        errorReporter.logTrace("Resource loaded from DB %s", getId(resData));
-                    }
-                    else
-                    {
-                        resData = (ResourceData) loadedRes;
-                    }
-                }
-                else
-                {
-                    errorReporter.logTrace("Resource loaded from cache %s", getId(resData));
-                }
-                resList.add(resData);
-            }
-            catch (AccessDeniedException accessDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
-        return resList;
+        errorReporter.logTrace("Loaded %d Resources", loadedResources.size());
+        return loadedResources;
     }
+
+    @Override
+    public ResourceData load(Node node, ResourceDefinition rscDfn, boolean logWarnIfNotExists)
+        throws SQLException
+    {
+        ResourceName rscName = rscDfn.getName();
+        errorReporter.logTrace("Loading Resource %s", getId(node, rscName));
+
+        ResourceData ret = cacheGet(node, rscName);
+        if (ret == null)
+        {
+            try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
+            {
+                stmt.setString(1, node.getName().value);
+                stmt.setString(2, rscName.value);
+                try (ResultSet resultSet = stmt.executeQuery())
+                {
+                    if (resultSet.next())
+                    {
+                        ret = restoreRsc(resultSet, node, rscDfn).objA;
+                        if (ret != null)
+                        {
+                            errorReporter.logTrace("Resource %s loaded from Database", getId(node, rscName));
+
+                        }
+                    }
+                    if (ret == null && logWarnIfNotExists)
+                    {
+                        errorReporter.logWarning("Resource could not be found %s", getId(node, rscName));
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    private Tuple<ResourceData, InitMaps> restoreRsc(
+        ResultSet resultSet,
+        Node node,
+        ResourceDefinition rscDfn
+    )
+        throws SQLException
+    {
+        NodeId nodeId = getNodeId(resultSet, node, rscDfn);
+
+        Map<Resource, ResourceConnection> rscConnMap = new TreeMap<>();
+        Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
+        ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
+
+        ResourceData rscData = new ResourceData(
+            java.util.UUID.fromString(resultSet.getString(RES_UUID)),
+            getObjectProection(node, rscDfn.getName()),
+            rscDfn,
+            node,
+            nodeId,
+            resultSet.getLong(RES_FLAGS),
+            this,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider,
+            rscConnMap,
+            vlmMap
+        );
+        return new Tuple<ResourceData, Resource.InitMaps>(rscData, initMaps);
+    }
+
+    private NodeId getNodeId(ResultSet resultSet, Node node, ResourceDefinition rscDfn)
+        throws SQLException
+    {
+        NodeId nodeId;
+        try
+        {
+            nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
+        }
+        catch (ValueOutOfRangeException valueOutOfRangeExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "A NodeId of a stored Resource in the table %s could not be restored. " +
+                        "(NodeName=%s, ResName=%s, invalid NodeId=%d)",
+                    TBL_RES,
+                    node.getName().displayValue,
+                    rscDfn.getName().displayValue,
+                    resultSet.getInt(RES_NODE_ID)
+                ),
+                valueOutOfRangeExc
+            );
+        }
+        return nodeId;
+    }
+
 
     private ObjectProtection getObjectProection(Node node, ResourceName resName)
         throws SQLException
@@ -472,16 +359,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         return "(NodeName=" + nodeName + " ResName=" + resName + ")";
     }
 
-    private String getTraceResDfnId(ResourceDefinitionData resDfn)
-    {
-        return "(ResName=" + resDfn.getName().value + ")";
-    }
-
-    private String getTraceNodeId(NodeData node)
-    {
-        return "(NodeName=" + node.getName().value + ")";
-    }
-
     private class FlagDriver implements StateFlagsPersistence<ResourceData>
     {
         @Override
@@ -533,85 +410,36 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         }
     }
 
-    public void clearCache()
-    {
-        cacheCleared = true;
-        resCache.clear();
-    }
-
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
     }
 
-    private static class ResPrimaryKey
+    private class ResourceInitMaps implements Resource.InitMaps
     {
-        private Node node;
-        private ResourceDefinition resDfn;
+        private final Map<Resource, ResourceConnection> rscConnMap;
+        private final Map<VolumeNumber, Volume> vlmMap;
 
-        ResPrimaryKey(Node nodeRef, ResourceDefinition resDfnRef)
+        ResourceInitMaps(
+            Map<Resource, ResourceConnection> rscConnMapRef,
+            Map<VolumeNumber, Volume> vlmMapRef
+        )
         {
-            node = nodeRef;
-            resDfn = resDfnRef;
+            rscConnMap = rscConnMapRef;
+            vlmMap = vlmMapRef;
         }
 
         @Override
-        public int hashCode()
+        public Map<Resource, ResourceConnection> getRscConnMap()
         {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((node == null) ? 0 : node.hashCode());
-            result = prime * result + ((resDfn == null) ? 0 : resDfn.hashCode());
-            return result;
+            return rscConnMap;
         }
 
         @Override
-        // Single exit point exception: Automatically generated code
-        @SuppressWarnings("DescendantToken")
-        public boolean equals(Object obj)
+        public Map<VolumeNumber, Volume> getVlmMap()
         {
-            if (this == obj)
-            {
-                return true;
-            }
-            if (obj == null)
-            {
-                return false;
-            }
-            if (getClass() != obj.getClass())
-            {
-                return false;
-            }
-            ResPrimaryKey other = (ResPrimaryKey) obj;
-            if (node == null)
-            {
-                if (other.node != null)
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (!node.equals(other.node))
-                {
-                    return false;
-                }
-            }
-            if (resDfn == null)
-            {
-                if (other.resDfn != null)
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (!resDfn.equals(other.resDfn))
-                {
-                    return false;
-                }
-            }
-            return true;
+            return vlmMap;
         }
+
     }
 }

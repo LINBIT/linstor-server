@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import java.sql.SQLException;
 
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -21,12 +22,18 @@ public interface VolumeDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param volumeDefinition
      *  Part of the primary key specifying the database entry
+     * @param storPool
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      *
      * @throws SQLException
      */
-    VolumeData load(Resource resource, VolumeDefinition volumeDefinition, boolean logWarnIfNotExists)
+    VolumeData load(
+        Resource resource,
+        VolumeDefinition volumeDefinition,
+        StorPool storPool,
+        boolean logWarnIfNotExists
+    )
         throws SQLException;
 
     /**

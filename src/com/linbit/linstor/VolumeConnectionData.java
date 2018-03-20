@@ -44,7 +44,6 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 
     VolumeConnectionData(
         UUID uuid,
-        AccessContext accCtx,
         Volume sourceVolumeRef,
         Volume targetVolumeRef,
         VolumeConnectionDataDatabaseDriver dbDriverRef,
@@ -52,7 +51,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProviderRef);
 
@@ -109,10 +108,6 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             props,
             deleted
         );
-
-        sourceVolume.setVolumeConnection(accCtx, this);
-        targetVolume.setVolumeConnection(accCtx, this);
-        activateTransMgr();
     }
 
     @Override

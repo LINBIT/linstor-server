@@ -883,12 +883,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     private void cache(String key, String value)
     {
-        if (isInitialized())
+        if (!rootContainer.cachedPropMap.containsKey(key))
         {
-            if (!rootContainer.cachedPropMap.containsKey(key))
-            {
-                rootContainer.cachedPropMap.put(key, value);
-            }
+            rootContainer.cachedPropMap.put(key, value);
         }
     }
 
@@ -946,68 +943,59 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     private void dbPersist(String key, String value, String oldValue) throws SQLException
     {
-        if (isInitialized())
+        rootContainer.activateTransMgr();
+        cache(key, oldValue);
+        if (dbDriver != null)
         {
-            rootContainer.activateTransMgr();
-            cache(key, oldValue);
-            if (dbDriver != null)
+            try
             {
-                try
-                {
-                    dbDriver.persist(rootContainer.instanceName, key, value);
-                }
-                catch (SQLException sqlExc)
-                {
-                    rollback();
-                    throw sqlExc;
-                }
+                dbDriver.persist(rootContainer.instanceName, key, value);
+            }
+            catch (SQLException sqlExc)
+            {
+                rollback();
+                throw sqlExc;
             }
         }
     }
 
     private void dbRemove(String key, String oldValue) throws SQLException
     {
-        if (isInitialized())
+        rootContainer.activateTransMgr();
+        cache(key, oldValue);
+        if (dbDriver != null)
         {
-            rootContainer.activateTransMgr();
-            cache(key, oldValue);
-            if (dbDriver != null)
+            try
             {
-                try
-                {
-                    dbDriver.remove(rootContainer.instanceName, key);
-                }
-                catch (SQLException sqlExc)
-                {
-                    rollback();
-                    throw sqlExc;
-                }
+                dbDriver.remove(rootContainer.instanceName, key);
+            }
+            catch (SQLException sqlExc)
+            {
+                rollback();
+                throw sqlExc;
             }
         }
     }
 
     private void dbRemoveAll() throws SQLException
     {
-        if (isInitialized())
+        rootContainer.activateTransMgr();
+        Set<Entry<String, String>> entrySet = rootContainer.entrySet();
+        for (Entry<String, String> entry : entrySet)
         {
-            rootContainer.activateTransMgr();
-            Set<Entry<String, String>> entrySet = rootContainer.entrySet();
-            for (Entry<String, String> entry : entrySet)
-            {
-                cache(entry.getKey(), entry.getValue());
-            }
+            cache(entry.getKey(), entry.getValue());
+        }
 
-            if (dbDriver != null)
+        if (dbDriver != null)
+        {
+            try
             {
-                try
-                {
-                    dbDriver.removeAll(rootContainer.instanceName);
-                }
-                catch (SQLException sqlExc)
-                {
-                    rollback();
-                    throw sqlExc;
-                }
+                dbDriver.removeAll(rootContainer.instanceName);
+            }
+            catch (SQLException sqlExc)
+            {
+                rollback();
+                throw sqlExc;
             }
         }
     }

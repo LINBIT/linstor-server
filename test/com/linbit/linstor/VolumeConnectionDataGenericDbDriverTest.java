@@ -1,25 +1,29 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.linstor.transaction.TransactionMgr;
-import org.junit.Before;
-import org.junit.Test;
+import com.linbit.utils.Tripple;
+
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 {
@@ -42,8 +46,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     private final String volMetaDiskPathSrc;
     private final String volBlockDevDst;
     private final String volMetaDiskPathDst;
-
-    private TransactionMgr transMgr;
 
     private java.util.UUID uuid;
 
@@ -136,7 +138,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeConnectionData volCon = new VolumeConnectionData(
             uuid,
-            SYS_CTX,
             volSrc,
             volDst,
             driver,
@@ -164,7 +165,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeConnectionData volCon = new VolumeConnectionData(
             uuid,
-            SYS_CTX,
             volSrc,
             volDst,
             driver,
@@ -184,7 +184,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeConnectionData volCon = new VolumeConnectionData(
             uuid,
-            SYS_CTX,
             volSrc,
             volDst,
             driver,
@@ -194,7 +193,10 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         );
         driver.create(volCon);
 
-        List<VolumeConnectionData> cons = driver.loadAllByVolume(volSrc);
+        Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap = new HashMap<>();
+        addToMap(vlmMap, volSrc);
+        addToMap(vlmMap, volDst);
+        List<VolumeConnectionData> cons = driver.loadAll(vlmMap);
 
         assertNotNull(cons);
 
@@ -206,12 +208,25 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         checkLoadedConDfn(loadedConDfn, true);
     }
 
+    private void addToMap(
+        Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap,
+        VolumeData vol
+    )
+    {
+        vlmMap.put(new Tripple<NodeName, ResourceName, VolumeNumber>(
+                vol.getResource().getAssignedNode().getName(),
+                vol.getResourceDefinition().getName(),
+                vol.getVolumeDefinition().getVolumeNumber()
+            ),
+            vol
+        );
+    }
+
     @Test
     public void testLoadGetInstance() throws Exception
     {
         VolumeConnectionData volCon = new VolumeConnectionData(
             uuid,
-            SYS_CTX,
             volSrc,
             volDst,
             driver,
@@ -253,7 +268,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeConnectionData volCon = new VolumeConnectionData(
             uuid,
-            SYS_CTX,
             volSrc,
             volDst,
             driver,
@@ -324,7 +338,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeConnectionData volCon = new VolumeConnectionData(
             uuid,
-            SYS_CTX,
             volSrc,
             volDst,
             driver,

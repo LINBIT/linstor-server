@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -15,6 +16,10 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,11 +27,8 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 
 @Singleton
 public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabaseDriver
@@ -42,24 +44,15 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     private static final String STLT_CONN_PORT = DbConstants.STLT_CONN_PORT;
     private static final String STLT_CONN_ENCR_TYPE = DbConstants.STLT_CONN_ENCR_TYPE;
 
-    private static final String NNI_SELECT_BY_NODE =
+    private static final String NNI_SELECT_ALL =
         " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
                       INET_ADDRESS + ", " + STLT_CONN_PORT + ", " + STLT_CONN_ENCR_TYPE +
-        " FROM " + TBL_NODE_NET +
-        " WHERE " + NODE_NAME + " = ?";
+        " FROM " + TBL_NODE_NET;
     private static final String NNI_SELECT_BY_NODE_AND_NET =
-        " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-                      INET_ADDRESS + ", " + STLT_CONN_PORT + ", " + STLT_CONN_ENCR_TYPE +
-        " FROM " + TBL_NODE_NET +
+        NNI_SELECT_ALL +
         " WHERE " + NODE_NAME + " = ? AND " +
                     NET_NAME  + " = ?";
 
-    private static final String NNI_INSERT =
-        " INSERT INTO " + TBL_NODE_NET +
-        " (" +
-            NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-            INET_ADDRESS +
-        ") VALUES (?, ?, ?, ?, ?)";
     private static final String NNI_INSERT_WITH_STLT_CONN =
         " INSERT INTO " + TBL_NODE_NET +
         " (" +
@@ -113,6 +106,37 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         netIfStltConnEncrTypeDriver = new StltConnEncrTypeDriver();
     }
 
+    public List<NetInterfaceData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap) throws SQLException
+    {
+        errorReporter.logTrace("Loading all NetworkInterfaces");
+        List<NetInterfaceData> netIfs = new ArrayList<>();
+        String nodeNameStr = null;
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_ALL))
+        {
+            ResultSet resultSet = stmt.executeQuery();
+            while (resultSet.next())
+            {
+                nodeNameStr = resultSet.getString(NODE_NAME);
+                NodeName nodeName = new NodeName(nodeNameStr);
+
+                netIfs.add(
+                    load(tmpNodesMap.get(nodeName), resultSet)
+                );
+            }
+            resultSet.close();
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(
+                TBL_NODE_NET + " contains invalid node name: '" + nodeNameStr + "'",
+                exc
+            );
+        }
+        errorReporter.logTrace("Loaded %d NetworkInterfaces", netIfs.size());
+        return netIfs;
+    }
+
+
     @Override
     public NetInterfaceData load(
         Node node,
@@ -129,29 +153,11 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         {
             stmt.setString(1, node.getName().value);
             stmt.setString(2, niName.value);
-            NetInterfaceName loadedNiName;
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 if (resultSet.next())
                 {
-                    try
-                    {
-                        loadedNiName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        throw new LinStorSqlRuntimeException(
-                            String.format(
-                                "The display name of a stored NetInterface could not be restored " +
-                                    "(NodeName=%s, invalid NetInterfaceName=%s)",
-                                node.getName().displayValue,
-                                resultSet.getString(NET_DSP_NAME)
-                            ),
-                            invalidNameExc
-                        );
-                    }
-                    netIfData = restoreInstance(node, loadedNiName, resultSet);
-                    // ("loaded from [DB|cache]...") msg gets logged in restoreInstance method
+                    netIfData = load(node, resultSet);
                 }
                 else
                 if (logWarnIfNotExists)
@@ -160,6 +166,39 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                 }
             }
         }
+        return netIfData;
+    }
+
+    private NetInterfaceData load(Node node, ResultSet resultSet) throws SQLException
+    {
+        NetInterfaceName loadedNiName;
+        try
+        {
+            loadedNiName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "The display name of a stored NetInterface could not be restored " +
+                        "(NodeName=%s, invalid NetInterfaceName=%s)",
+                    node.getName().displayValue,
+                    resultSet.getString(NET_DSP_NAME)
+                ),
+                invalidNameExc
+            );
+        }
+
+        NetInterfaceData netIfData = cacheGet(node, loadedNiName);
+        if (netIfData == null)
+        {
+            netIfData = restoreInstance(node, loadedNiName, resultSet);
+        }
+        else
+        {
+
+        }
+        // ("loaded from [DB|cache]...") msg gets logged in restoreInstance method
         return netIfData;
     }
 
@@ -247,48 +286,6 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         return netIfStltConnPortDriver;
     }
 
-    public List<NetInterfaceData> loadNetInterfaceData(Node node)
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading all NetInterfaces by node %s", getId(node));
-        List<NetInterfaceData> netIfDataList;
-        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE))
-        {
-            stmt.setString(1, node.getName().value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                netIfDataList = new ArrayList<>();
-                while (resultSet.next())
-                {
-                    NetInterfaceName netName;
-                    try
-                    {
-                        netName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        throw new LinStorSqlRuntimeException(
-                            String.format(
-                                "The display name of a stored NetInterface could not be restored " +
-                                    "(NodeName=%s, invalid NetInterfaceName=%s)",
-                                node.getName().displayValue,
-                                resultSet.getString(NET_DSP_NAME)
-                            ),
-                            invalidNameExc
-                        );
-                    }
-                    netIfDataList.add(restoreInstance(node, netName, resultSet));
-                }
-            }
-        }
-        errorReporter.logTrace(
-            "Loaded %d NetInterfaces for node %s",
-            netIfDataList.size(),
-            getId(node)
-        );
-        return netIfDataList;
-    }
-
     private LsIpAddress getAddress(NetInterface value)
     {
         LsIpAddress ip = null;
@@ -310,76 +307,84 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     )
         throws SQLException
     {
-        NetInterfaceData ret = cacheGet(node, netName);
-        if (ret == null)
+        UUID uuid = UUID.fromString(resultSet.getString(NET_UUID));
+        LsIpAddress addr;
+        TcpPortNumber stltPort = null;
+        EncryptionType stltEncrType = null;
+
+        Integer tmpPort = null;
+        String tmpEncrType = null;
+        try
         {
-            UUID uuid = UUID.fromString(resultSet.getString(NET_UUID));
-            LsIpAddress addr;
-            TcpPortNumber port = null;
-            EncryptionType encrType = null;
-
-            try
+            addr = new LsIpAddress(resultSet.getString(INET_ADDRESS));
+            tmpPort = resultSet.getInt(STLT_CONN_PORT);
+            if (resultSet.wasNull())
             {
-                addr = new LsIpAddress(resultSet.getString(INET_ADDRESS));
+                tmpPort = null;
             }
-            catch (InvalidIpAddressException invalidIpAddressExc)
+            tmpEncrType = resultSet.getString(STLT_CONN_ENCR_TYPE);
+            if (resultSet.wasNull())
             {
-                throw new LinStorSqlRuntimeException(
-                    String.format(
-                        "The ip address of a stored NetInterface could not be restored " +
-                            "(NodeName=%s, NetInterfaceName=%s, invalid address=%s)",
-                        node.getName().displayValue,
-                        netName.displayValue,
-                        resultSet.getString(INET_ADDRESS)
-                    ),
-                    invalidIpAddressExc
-                );
+                tmpEncrType = null;
             }
 
-            String encrTypeStr = resultSet.getString(STLT_CONN_ENCR_TYPE);
-            Integer portInt = resultSet.getInt(STLT_CONN_PORT);
-            if (!resultSet.wasNull())
+            if (tmpPort != null && tmpEncrType != null)
             {
-                try
-                {
-                    port = new TcpPortNumber(portInt);
-                }
-                catch (ValueOutOfRangeException valueOutOfRangeExc)
-                {
-                    throw new LinStorSqlRuntimeException(
-                        String.format(
-                            "The satellite connection port of a stored NetInterface could not be restored " +
-                                "(NodeName=%s, NetInterfaceName=%s, invalid stlt conn port=%s)",
-                            node.getName().displayValue,
-                            netName.displayValue,
-                            portInt
-                        ),
-                        valueOutOfRangeExc
-                    );
-                }
-                encrType = EncryptionType.valueOfIgnoreCase(encrTypeStr);
-            }
-
-            try
-            {
-                ret = new NetInterfaceData(
-                    uuid,
-                    dbCtx,
-                    netName,
-                    node,
-                    addr,
-                    port,
-                    encrType,
-                    this,
-                    transObjFactory,
-                    transMgrProvider
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                stltPort = new TcpPortNumber(tmpPort);
+                stltEncrType = EncryptionType.valueOfIgnoreCase(tmpEncrType);
             }
         }
+        catch (InvalidIpAddressException invalidIpAddressExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "The ip address of a stored NetInterface could not be restored " +
+                        "(NodeName=%s, NetInterfaceName=%s, invalid address=%s)",
+                    node.getName().displayValue,
+                    netName.displayValue,
+                    resultSet.getString(INET_ADDRESS)
+                ),
+                invalidIpAddressExc
+            );
+        }
+        catch (ValueOutOfRangeException valOutOfRangeExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "The satellite port of a stored NetInterface could not be restored " +
+                        "(NodeName=%s, NetInterfaceName=%s, invalid satellite port=%d)",
+                    node.getName().displayValue,
+                    netName.displayValue,
+                    tmpPort
+                ),
+                valOutOfRangeExc
+            );
+        }
+        catch (IllegalArgumentException illegalArgExc)
+        {
+            // exc from EncryptionType.valueOfIgnoreCase(...)
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "The satellite encryption type of a stored NetInterface could not be restored " +
+                        "(NodeName=%s, NetInterfaceName=%s, invalid satellite encryption type=%s)",
+                    node.getName().displayValue,
+                    netName.displayValue,
+                    tmpEncrType
+                ),
+                illegalArgExc
+            );
+        }
+        NetInterfaceData ret = new NetInterfaceData(
+            uuid,
+            netName,
+            node,
+            addr,
+            stltPort,
+            stltEncrType,
+            this,
+            transObjFactory,
+            transMgrProvider
+        );
 
         return ret;
     }
@@ -422,16 +427,6 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     private String getId(String nodeName, String niName)
     {
         return "(NodeName=" + nodeName + " NetInterfaceName=" + niName + ")";
-    }
-
-    private String getId(Node node)
-    {
-        return getNodeId(node.getName().displayValue);
-    }
-
-    private String getNodeId(String nodeName)
-    {
-        return "(NodeName=" + nodeName + ")";
     }
 
     private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>

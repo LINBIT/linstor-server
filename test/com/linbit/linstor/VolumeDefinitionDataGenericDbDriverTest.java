@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.VolumeDefinition.InitMaps;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -13,8 +14,8 @@ import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -64,7 +65,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         volSize = 5_000_000;
         volDfn = new VolumeDefinitionData(
             uuid,
-            SYS_CTX,
             resDfn,
             volNr,
             new MinorNumber(minor),
@@ -74,7 +74,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
     }
 
@@ -185,15 +186,13 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testLoadAll() throws Exception
     {
         driver.create(volDfn);
+        rscDfnMap.put(resName, resDfn);
 
-        List<VolumeDefinition> volDfnList = driver.loadAllVolumeDefinitionsByResourceDefinition(
-            resDfn,
-            SYS_CTX
-        );
+        Map<VolumeDefinitionData, InitMaps> volDfnList = driver.loadAll(rscDfnMap);
 
         assertNotNull(volDfnList);
         assertEquals(1, volDfnList.size());
-        VolumeDefinition loadedVd = volDfnList.get(0);
+        VolumeDefinition loadedVd = volDfnList.keySet().iterator().next();
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());

@@ -1,8 +1,11 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.VolumeDefinition.InitMaps;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
@@ -19,6 +22,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.Tuple;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -29,8 +33,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionDataDatabaseDriver
@@ -44,16 +48,15 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     private static final String VD_MINOR_NR = DbConstants.VLM_MINOR_NR;
     private static final String VD_FLAGS = DbConstants.VLM_FLAGS;
 
+    private static final String VD_SELECT_ALL =
+        " SELECT " + VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " + VD_SIZE + ", " +
+                     VD_MINOR_NR + ", " + VD_FLAGS +
+        " FROM " + TBL_VOL_DFN;
     private static final String VD_SELECT =
-        " SELECT " + VD_UUID + ", " + VD_SIZE + ", " + VD_MINOR_NR + ", " + VD_FLAGS +
-        " FROM " + TBL_VOL_DFN +
+        VD_SELECT_ALL +
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
-    private static final String VD_SELECT_BY_RES_DFN =
-        " SELECT " +  VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " +
-                      VD_SIZE + ", " + VD_MINOR_NR + ", " + VD_FLAGS +
-        " FROM " + TBL_VOL_DFN +
-        " WHERE " + VD_RES_NAME  + " = ?";
+
     private static final String VD_INSERT =
         " INSERT INTO " + TBL_VOL_DFN +
         " (" +
@@ -161,9 +164,8 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                         ret = restoreVolumeDefinition(
                             resultSet,
                             resourceDefinition,
-                            volumeNumber,
-                            dbCtx
-                        );
+                            volumeNumber
+                        ).objA;
                         errorReporter.logTrace("VolumeDefinition loaded %s", getId(resourceDefinition, volumeNumber));
                     }
                     else
@@ -180,25 +182,26 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         return ret;
     }
 
-    private VolumeDefinitionData restoreVolumeDefinition(
+    private Tuple<VolumeDefinitionData, VolumeDefinition.InitMaps> restoreVolumeDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
-        VolumeNumber volNr,
-        AccessContext accCtx
+        VolumeNumber volNr
     )
         throws SQLException
     {
         errorReporter.logTrace("Restoring VolumeDefinition %s", getId(resDfn, volNr));
-        VolumeDefinitionData ret = null;
+        VolumeDefinitionData vlmDfn = null;
+        Tuple<VolumeDefinitionData, InitMaps> retTuple;
         try
         {
-            ret = cacheGet(resDfn, volNr);
+            vlmDfn = cacheGet(resDfn, volNr);
 
-            if (ret == null)
+            if (vlmDfn == null)
             {
-                ret = new VolumeDefinitionData(
+                Map<String, Volume> vlmMap = new TreeMap<>();
+
+                vlmDfn = new VolumeDefinitionData(
                     java.util.UUID.fromString(resultSet.getString(VD_UUID)),
-                    accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
                     resDfn,
                     volNr,
                     new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
@@ -208,19 +211,19 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                     this,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    vlmMap
                 );
-                errorReporter.logTrace("VolumeDefinition %s created during restore", getId(ret));
+                retTuple = new Tuple<>(vlmDfn, new VolumeDefinitionInitMaps(vlmMap));
+
+                errorReporter.logTrace("VolumeDefinition %s created during restore", getId(vlmDfn));
                 // restore references
             }
             else
             {
-                errorReporter.logTrace("VolumeDefinition %s restored from cache", getId(ret));
+                retTuple = new Tuple<>(vlmDfn, null);
+                errorReporter.logTrace("VolumeDefinition %s restored from cache", getId(vlmDfn));
             }
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
         }
         catch (MdException mdExc)
         {
@@ -250,32 +253,36 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                 valueOutOfRangeExc
             );
         }
-        return ret;
+        return retTuple;
     }
 
 
-    public List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
-            ResourceDefinition resDfn,
-            AccessContext accCtx
+    public Map<VolumeDefinitionData, VolumeDefinition.InitMaps> loadAll(
+        Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
         throws SQLException
     {
-        errorReporter.logTrace(
-            "Loading list of VolumeDefinitions by ResourceDefinition (ResName=%s)",
-            resDfn.getName().value
-        );
-        List<VolumeDefinition> ret = new ArrayList<>();
-        try (PreparedStatement stmt = getConnection().prepareStatement(VD_SELECT_BY_RES_DFN))
+        errorReporter.logTrace("Loading all VolumeDefinitions");
+        Map<VolumeDefinitionData, VolumeDefinition.InitMaps> ret = new TreeMap<>();
+        try (PreparedStatement stmt = getConnection().prepareStatement(VD_SELECT_ALL))
         {
-            stmt.setString(1, resDfn.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
+                    ResourceName rscName;
                     VolumeNumber volNr;
                     try
                     {
+                        rscName = new ResourceName(resultSet.getString(VD_RES_NAME));
                         volNr = new VolumeNumber(resultSet.getInt(VD_ID));
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(
+                            TBL_VOL_DFN + " contained invalid resource name: " + exc.invalidName,
+                            exc
+                        );
                     }
                     catch (ValueOutOfRangeException valueOutOfRangeExc)
                     {
@@ -284,22 +291,22 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                                 "A VolumeNumber of a stored VolumeDefinition in table %s could not be restored. " +
                                     "(ResourceName=%s, invalid VolumeNumber=%d)",
                                 TBL_VOL_DFN,
-                                resDfn.getName().value,
+                                resultSet.getString(VD_RES_NAME),
                                 resultSet.getLong(VD_ID)
                             ),
                             valueOutOfRangeExc
                         );
                     }
 
-                    VolumeDefinitionData volDfn = restoreVolumeDefinition(
+                    Tuple<VolumeDefinitionData, VolumeDefinition.InitMaps> tuple = restoreVolumeDefinition(
                         resultSet,
-                        resDfn,
-                        volNr,
-                        accCtx
+                        rscDfnMap.get(rscName),
+                        volNr
                     );
-                    errorReporter.logTrace("VolumeDefinition created %s", getId(volDfn));
 
-                    ret.add(volDfn);
+                    ret.put(tuple.objA, tuple.objB);
+
+                    errorReporter.logTrace("VolumeDefinition created %s", getId(tuple.objA));
                 }
             }
         }
@@ -493,6 +500,22 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
             {
                 GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
             }
+        }
+    }
+
+    private class VolumeDefinitionInitMaps implements VolumeDefinition.InitMaps
+    {
+        private final Map<String, Volume> vlmMap;
+
+        VolumeDefinitionInitMaps(Map<String, Volume> vlmMapRef)
+        {
+            vlmMap = vlmMapRef;
+        }
+
+        @Override
+        public Map<String, Volume> getVlmMap()
+        {
+            return vlmMap;
         }
     }
 }

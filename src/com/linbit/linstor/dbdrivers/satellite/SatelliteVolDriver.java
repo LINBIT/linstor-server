@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
@@ -27,6 +28,7 @@ public class SatelliteVolDriver implements VolumeDataDatabaseDriver
     public VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefinition,
+        StorPool storPool,
         boolean logWarnIfNotExists
     )
     {

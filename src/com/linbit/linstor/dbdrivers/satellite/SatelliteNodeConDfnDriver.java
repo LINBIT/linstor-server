@@ -7,8 +7,6 @@ import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
 
 public class SatelliteNodeConDfnDriver implements NodeConnectionDataDatabaseDriver
 {
@@ -38,12 +36,6 @@ public class SatelliteNodeConDfnDriver implements NodeConnectionDataDatabaseDriv
             SatelliteDbDriverExceptionHandler.handleAccessDeniedException(accDeniedExc);
         }
         return nodeConnection;
-    }
-
-    @Override
-    public List<NodeConnectionData> loadAllByNode(Node node)
-    {
-        return Collections.emptyList();
     }
 
     @Override

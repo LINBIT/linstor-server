@@ -1,22 +1,23 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.security.GenericDbBase;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
 
 public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
 {
@@ -81,7 +82,6 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         // not persisted
         niData = new NetInterfaceData(
             niUuid,
-            SYS_CTX,
             niName,
             node,
             niAddr,
@@ -192,6 +192,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstanceTwice() throws Exception
     {
         dbDriver.create(niData);
+        ((NodeData) node).addNetInterface(SYS_CTX, niData);
 
         NetInterfaceData netData1 = netInterfaceDataFactory.getInstance(
             SYS_CTX,
@@ -228,8 +229,9 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testLoadAll() throws Exception
     {
         dbDriver.create(niData);
+        nodesMap.put(nodeName, node);
 
-        List<NetInterfaceData> niList = dbDriver.loadNetInterfaceData(node);
+        List<NetInterfaceData> niList = dbDriver.loadAll(nodesMap);
         assertEquals(1, niList.size());
         NetInterfaceData netData = niList.get(0);
 

@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -20,13 +20,14 @@ public interface ResourceDataDatabaseDriver
      *
      * @param node
      *  Part of the primary key specifying the database entry
-     * @param resourceName
+     * @param rscDfn
      *  Part of the primary key specifying the database entry
+     * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      *
      * @throws SQLException
      */
-    ResourceData load(Node node, ResourceName resourceName, boolean logWarnIfNotExists)
+    ResourceData load(Node node, ResourceDefinition rscDfn, boolean logWarnIfNotExists)
         throws SQLException;
 
     /**
@@ -57,4 +58,5 @@ public interface ResourceDataDatabaseDriver
      * A special sub-driver to update the persisted flags.
      */
     StateFlagsPersistence<ResourceData> getStateFlagPersistence();
+
 }

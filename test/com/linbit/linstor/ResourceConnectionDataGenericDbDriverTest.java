@@ -1,17 +1,21 @@
 package com.linbit.linstor;
 
 import javax.inject.Inject;
+
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.utils.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -82,7 +86,6 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
         resCon = new ResourceConnectionData(
             uuid,
-            SYS_CTX,
             resSrc,
             resDst,
             driver,
@@ -125,7 +128,10 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(resCon);
 
-        List<ResourceConnectionData> cons = driver.loadAllByResource(resSrc);
+        Map<Tuple<NodeName, ResourceName>, ResourceData> rscmap = new HashMap<>();
+        rscmap.put(new Tuple<NodeName, ResourceName>(sourceName, resName), resSrc);
+        rscmap.put(new Tuple<NodeName, ResourceName>(targetName, resName), resDst);
+        List<ResourceConnectionData> cons = driver.loadAll(rscmap);
 
         assertNotNull(cons);
 

@@ -7,14 +7,11 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -25,9 +22,9 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.Tuple;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -35,10 +32,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
@@ -77,9 +72,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         " WHERE " + NODE_NAME + " = ?";
 
 
-    private final Map<NodeName, Node> nodeCache;
-    private boolean cacheCleared = false;
-
     private final CoreModule.NodesMap nodesMap;
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -87,14 +79,8 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private final StateFlagsPersistence<NodeData> flagDriver;
     private final SingleColumnDatabaseDriver<NodeData, NodeType> typeDriver;
 
-    private final Provider<NetInterfaceDataGenericDbDriver> netInterfaceDriverProvider;
-    private final Provider<ResourceDataGenericDbDriver> resourceDataDriverProvider;
-    private final Provider<StorPoolDataGenericDbDriver> storPoolDriverProvider;
-    private final Provider<NodeConnectionDataGenericDbDriver> nodeConnectionDriverProvider;
-
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
-    private final StorPoolDefinition disklessStorPoolDfn;
 
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -104,13 +90,8 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
         @Uninitialized CoreModule.NodesMap nodesMapRef,
-        Provider<NetInterfaceDataGenericDbDriver> netInterfaceDriverProviderRef,
-        Provider<ResourceDataGenericDbDriver> resourceDataDriverProviderRef,
-        Provider<StorPoolDataGenericDbDriver> storPoolDriverProviderRef,
-        Provider<NodeConnectionDataGenericDbDriver> nodeConnectionDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN) StorPoolDefinition disklessStorPoolDfnRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -118,17 +99,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
         nodesMap = nodesMapRef;
-        netInterfaceDriverProvider = netInterfaceDriverProviderRef;
-        resourceDataDriverProvider = resourceDataDriverProviderRef;
-        storPoolDriverProvider = storPoolDriverProviderRef;
-        nodeConnectionDriverProvider = nodeConnectionDriverProviderRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
-        disklessStorPoolDfn = disklessStorPoolDfnRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
-
-        nodeCache = new HashMap<>();
 
         flagDriver = new NodeFlagPersistence();
         typeDriver = new NodeTypeDriver();
@@ -157,24 +131,26 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         }
     }
 
-    public List<NodeData> loadAll() throws SQLException
+    public Map<NodeData, Node.InitMaps> loadAll() throws SQLException
     {
         errorReporter.logTrace("Loading all Nodes");
-        List<NodeData> list = new ArrayList<>();
+        Map<NodeData, Node.InitMaps> loadedNodesMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    list.add(
-                        load(resultSet)
+                    Tuple<NodeData, Node.InitMaps> tuple = load(resultSet);
+                    loadedNodesMap.put(
+                        tuple.objA,
+                        tuple.objB
                     );
                 }
             }
         }
-        errorReporter.logTrace("Loaded %d Nodes", list.size());
-        return list;
+        errorReporter.logTrace("Loaded %d Nodes", loadedNodesMap.size());
+        return loadedNodesMap;
     }
 
     @Override
@@ -190,7 +166,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             {
                 if (resultSet.next())
                 {
-                    node = load(resultSet);
+                    node = load(resultSet).objA;
                 }
                 else
                 if (logWarnIfNotExists)
@@ -205,9 +181,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         return node;
     }
 
-    private NodeData load(ResultSet resultSet)
+    private Tuple<NodeData, Node.InitMaps> load(ResultSet resultSet)
         throws SQLException, ImplementationError
     {
+        Tuple<NodeData, Node.InitMaps> retTuple = new Tuple<>();
         NodeData node;
         NodeName nodeName = null;
         try
@@ -229,125 +206,45 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         node = (NodeData) nodesMap.get(nodeName);
         if (node == null)
         {
-            node = (NodeData) nodeCache.get(nodeName);
-        }
-        if (node == null)
-        {
             ObjectProtection objProt = getObjectProtection(nodeName);
 
-            try
-            {
-                node = new NodeData(
-                    java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
-                    objProt,
-                    nodeName,
-                    Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
-                    resultSet.getLong(NODE_FLAGS),
-                    this,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider
-                );
+            final Map<ResourceName, Resource> rscMap = new TreeMap<>();
+            final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
+            final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
+            final Map<Node, NodeConnection> nodeConnMap = new TreeMap<>();
 
-                errorReporter.logTrace("Node instance created %s", getId(node));
+            node = new NodeData(
+                java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
+                objProt,
+                nodeName,
+                Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
+                resultSet.getLong(NODE_FLAGS),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                rscMap,
+                netIfMap,
+                storPoolMap,
+                nodeConnMap
+            );
 
-                // (-> == loads)
-                // node -> resource
-                // resource -> resourceDefinition
-                // resourceDefinition -> resource (other than before)
-                // resource -> node (containing "our" node, but also other nodes)
-                if (!cacheCleared)
-                {
-                    nodeCache.put(nodeName, node);
-                }
-                List<NetInterfaceData> netIfaces = netInterfaceDriverProvider.get().loadNetInterfaceData(node);
-                for (NetInterfaceData netIf : netIfaces)
-                {
-                    node.addNetInterface(dbCtx, netIf);
-                }
-                errorReporter.logTrace(
-                    "Node's NetInterfaces restored %s Count: %d",
-                    getId(node),
-                    netIfaces.size()
-                );
+            retTuple.objA = node;
+            retTuple.objB = new NodeInitMaps(
+                rscMap,
+                netIfMap,
+                storPoolMap,
+                nodeConnMap
+            );
 
-                String curStltConnName = node.getProps(dbCtx).getProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
-                if (curStltConnName != null)
-                {
-                    node.setSatelliteConnection(
-                        dbCtx,
-                        node.getNetInterface(dbCtx, new NetInterfaceName(curStltConnName))
-                    );
-                    errorReporter.logTrace(
-                        "Node's SatelliteConnection restored %s",
-                        getId(node)
-                    );
-                }
-
-                List<ResourceData> resList =
-                    resourceDataDriverProvider.get().loadResourceData(dbCtx, node);
-                for (ResourceData res : resList)
-                {
-                    node.addResource(dbCtx, res);
-                }
-                errorReporter.logTrace(
-                    "Node's Resources restored %s Count: %d",
-                    getId(node),
-                    resList.size()
-                );
-
-                List<StorPoolData> storPoolList = storPoolDriverProvider.get().loadStorPools(node);
-                for (StorPoolData storPool : storPoolList)
-                {
-                    node.addStorPool(dbCtx, storPool);
-                }
-                errorReporter.logTrace(
-                    "Node's StorPools restored %s Count: %d",
-                    getId(node),
-                    storPoolList.size()
-                );
-
-                List<NodeConnectionData> nodeConDfnList =
-                    nodeConnectionDriverProvider.get().loadAllByNode(node);
-                for (NodeConnectionData nodeConDfn : nodeConDfnList)
-                {
-                    node.setNodeConnection(dbCtx, nodeConDfn);
-                }
-                errorReporter.logTrace(
-                    "Node's ConnectionDefinitions restored %s Count: %d",
-                    getId(node),
-                    nodeConDfnList.size()
-                );
-
-                node.setDisklessStorPool(
-                    storPoolDriverProvider.get().load(
-                        node,
-                        disklessStorPoolDfn,
-                        true
-                    )
-                );
-                errorReporter.logTrace("Node's diskless storPool restored %s", getId(node));
-
-                errorReporter.logTrace("Node loaded from DB %s", getId(node));
-            }
-            catch (AccessDeniedException accessDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
-            }
-            catch (InvalidKeyException invldKeyExc)
-            {
-                throw new ImplementationError("Hardcoded invalid key exception", invldKeyExc);
-            }
-            catch (InvalidNameException invldNameExc)
-            {
-                throw new ImplementationError("Invalid stored named exception", invldNameExc);
-            }
+            errorReporter.logTrace("Node loaded from DB %s", getId(node));
         }
         else
         {
+            retTuple.objA = node;
             errorReporter.logTrace("Node loaded from cache %s", getId(node));
         }
-        return node;
+        return retTuple;
     }
 
     private ObjectProtection getObjectProtection(NodeName nodeName) throws SQLException
@@ -377,12 +274,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             stmt.executeUpdate();
         }
         errorReporter.logTrace("Node deleted %s", getId(node));
-    }
-
-    public void clearCache()
-    {
-        cacheCleared = true;
-        nodeCache.clear();
     }
 
     private Connection getConnection()
@@ -493,6 +384,51 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             {
                 GenericDbDriver.handleAccessDeniedException(accDeniedExc);
             }
+        }
+    }
+
+    private class NodeInitMaps implements Node.InitMaps
+    {
+        private final Map<ResourceName, Resource> rscMap;
+        private final Map<NetInterfaceName, NetInterface> netIfMap;
+        private final Map<StorPoolName, StorPool> storPoolMap;
+        private final Map<Node, NodeConnection> nodeConnMap;
+
+        NodeInitMaps(
+            Map<ResourceName, Resource> rscMapRef,
+            Map<NetInterfaceName, NetInterface> netIfMapRef,
+            Map<StorPoolName, StorPool> storPoolMapRef,
+            Map<Node, NodeConnection> nodeConnMapRef
+        )
+        {
+            rscMap = rscMapRef;
+            netIfMap = netIfMapRef;
+            storPoolMap = storPoolMapRef;
+            nodeConnMap = nodeConnMapRef;
+        }
+
+        @Override
+        public Map<ResourceName, Resource> getRscMap()
+        {
+            return rscMap;
+        }
+
+        @Override
+        public Map<NetInterfaceName, NetInterface> getNetIfMap()
+        {
+            return netIfMap;
+        }
+
+        @Override
+        public Map<StorPoolName, StorPool> getStorPoolMap()
+        {
+            return storPoolMap;
+        }
+
+        @Override
+        public Map<Node, NodeConnection> getNodeConnMap()
+        {
+            return nodeConnMap;
         }
     }
 }

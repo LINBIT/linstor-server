@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class VolumeDataFactory
@@ -53,7 +54,7 @@ public class VolumeDataFactory
         resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         VolumeData volData = null;
 
-        volData = driver.load(resRef, volDfn, false);
+        volData = driver.load(resRef, volDfn, storPool, false);
 
         if (failIfExists && volData != null)
         {
@@ -64,7 +65,6 @@ public class VolumeDataFactory
         {
             volData = new VolumeData(
                 UUID.randomUUID(),
-                accCtx,
                 resRef,
                 volDfn,
                 storPool,
@@ -74,9 +74,13 @@ public class VolumeDataFactory
                 driver,
                 propsContainerFactory,
                 transObjFactory,
-                transMgrProvider
+                transMgrProvider,
+                new TreeMap<>()
             );
             driver.create(volData);
+            ((ResourceData) resRef).putVolume(accCtx, volData);
+            ((StorPoolData) storPool).putVolume(accCtx, volData);
+            ((VolumeDefinitionData) volDfn).putVolume(accCtx, volData);
         }
         return volData;
     }
@@ -95,12 +99,11 @@ public class VolumeDataFactory
         VolumeData vlmData;
         try
         {
-            vlmData = driver.load(rscRef, vlmDfn, false);
+            vlmData = driver.load(rscRef, vlmDfn, storPoolRef, false);
             if (vlmData == null)
             {
                 vlmData = new VolumeData(
                     vlmUuid,
-                    accCtx,
                     rscRef,
                     vlmDfn,
                     storPoolRef,
@@ -110,8 +113,12 @@ public class VolumeDataFactory
                     driver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>()
                 );
+                ((ResourceData) rscRef).putVolume(accCtx, vlmData);
+                ((StorPoolData) storPoolRef).putVolume(accCtx, vlmData);
+                ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
             }
         }
         catch (Exception exc)

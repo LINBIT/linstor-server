@@ -126,27 +126,6 @@ public class ResourceDefinitionDataSatelliteTest
         // do not commit
 
         SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
-        rscDfn.setConnection(transMgrOther); // throws ImplementationError
-    }
-
-    @Test (expected = ImplementationError.class)
-    /**
-     * This test should fail because the resourcedef properties are changed without an active transaction.
-     */
-    public void testDirtyObject() throws Exception
-    {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
-            SYS_CTX,
-            resDfnUuid,
-            resName,
-            port,
-            null,
-            "notTellingYou",
-            transportType
-        );
-
-        rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
-        SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
-        rscDfn.setConnection(transMgrOther); // throws ImplementationError
+        rscDfn.getProps(SYS_CTX).setConnection(transMgrOther); // throws ImplementationError
     }
 }

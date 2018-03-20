@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Provider;
@@ -66,7 +66,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     VolumeData(
         UUID uuid,
-        AccessContext accCtx,
         Resource resRef,
         VolumeDefinition volDfnRef,
         StorPool storPoolRef,
@@ -76,9 +75,10 @@ public class VolumeData extends BaseTransactionObject implements Volume
         VolumeDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<Volume, VolumeConnection> vlmConnsMapRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProviderRef);
 
@@ -100,7 +100,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             initFlags
         );
 
-        volumeConnections = transObjFactory.createTransactionMap(new HashMap<Volume, VolumeConnection>(), null);
+        volumeConnections = transObjFactory.createTransactionMap(vlmConnsMapRef, null);
         volumeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
@@ -119,11 +119,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
             flags,
             deleted
         );
-
-        ((ResourceData) resRef).putVolume(accCtx, this);
-        ((StorPoolData) storPoolRef).putVolume(accCtx, this);
-        ((VolumeDefinitionData) volDfnRef).putVolume(accCtx, this);
-        activateTransMgr();
     }
 
     @Override

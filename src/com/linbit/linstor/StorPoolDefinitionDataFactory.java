@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class StorPoolDefinitionDataFactory
@@ -70,7 +71,8 @@ public class StorPoolDefinitionDataFactory
                 dbDriver,
                 propsContainerFactory,
                 transObjFactory,
-                transMgrProvider
+                transMgrProvider,
+                new TreeMap<>()
             );
 
             dbDriver.create(storPoolDfn);
@@ -104,7 +106,8 @@ public class StorPoolDefinitionDataFactory
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>()
                 );
             }
         }

@@ -45,7 +45,6 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
     ResourceConnectionData(
         UUID uuid,
-        AccessContext accCtx,
         Resource sourceResourceRef,
         Resource targetResourceRef,
         ResourceConnectionDataDatabaseDriver dbDriverRef,
@@ -53,7 +52,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProviderRef);
         dbDriver = dbDriverRef;
@@ -106,10 +105,6 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             props,
             deleted
         );
-
-        sourceResource.setResourceConnection(accCtx, this);
-        targetResource.setResourceConnection(accCtx, this);
-        activateTransMgr();
     }
 
     @Override

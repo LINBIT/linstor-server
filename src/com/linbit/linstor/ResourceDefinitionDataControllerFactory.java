@@ -20,6 +20,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class ResourceDefinitionDataControllerFactory
@@ -96,7 +97,9 @@ public class ResourceDefinitionDataControllerFactory
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(resDfn);
 

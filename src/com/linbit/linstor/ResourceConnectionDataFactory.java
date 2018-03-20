@@ -78,7 +78,6 @@ public class ResourceConnectionDataFactory
         {
             rscConData = new ResourceConnectionData(
                 UUID.randomUUID(),
-                accCtx,
                 source,
                 target,
                 dbDriver,
@@ -87,6 +86,9 @@ public class ResourceConnectionDataFactory
                 transMgrProvider
             );
             dbDriver.create(rscConData);
+
+            sourceResource.setResourceConnection(accCtx, rscConData);
+            targetResource.setResourceConnection(accCtx, rscConData);
         }
         return rscConData;
     }
@@ -125,7 +127,6 @@ public class ResourceConnectionDataFactory
             {
                 rscConData = new ResourceConnectionData(
                     uuid,
-                    accCtx,
                     source,
                     target,
                     dbDriver,
@@ -133,6 +134,8 @@ public class ResourceConnectionDataFactory
                     transObjFactory,
                     transMgrProvider
                 );
+                sourceResource.setResourceConnection(accCtx, rscConData);
+                targetResource.setResourceConnection(accCtx, rscConData);
             }
         }
         catch (Exception exc)

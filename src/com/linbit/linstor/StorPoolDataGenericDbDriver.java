@@ -2,7 +2,9 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -12,6 +14,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.Tuple;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
@@ -36,12 +40,16 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private static final String SP_POOL = DbConstants.POOL_NAME;
     private static final String SP_DRIVER = DbConstants.DRIVER_NAME;
 
-    private static final String SP_SELECT_BY_NODE =
+    private static final String SELECT_ALL =
         " SElECT " + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER +
-        " FROM " + TBL_NSP +
+        " FROM " + TBL_NSP;
+    private static final String SP_SELECT_BY_NODE =
+        SELECT_ALL +
         " WHERE " + SP_NODE + " = ?";
-    private static final String SP_SELECT_BY_NODE_AND_SP = SP_SELECT_BY_NODE +
+    private static final String SP_SELECT_BY_NODE_AND_SP =
+        SP_SELECT_BY_NODE +
         " AND "  + SP_POOL + " = ?";
+
     private static final String SP_INSERT =
         " INSERT INTO " + TBL_NSP +
         " (" + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ")" +
@@ -58,7 +66,6 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
 
     private boolean cacheCleared = false;
 
-    private final Provider<VolumeDataGenericDbDriver> volumeDriverProvider;
     private final Provider<NodeDataGenericDbDriver> nodeDriverProvider;
     private final Provider<StorPoolDefinitionDataGenericDbDriver> storPoolDefDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
@@ -69,7 +76,6 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     public StorPoolDataGenericDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        Provider<VolumeDataGenericDbDriver> volumeDriverProviderRef,
         Provider<NodeDataGenericDbDriver> nodeDriverProviderRef,
         Provider<StorPoolDefinitionDataGenericDbDriver> storPoolDefDriverProviderRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -79,7 +85,6 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     {
         dbCtx = dbCtxRef;
         errorReporter = errorReporterRef;
-        volumeDriverProvider = volumeDriverProviderRef;
         nodeDriverProvider = nodeDriverProviderRef;
         storPoolDefDriverProvider = storPoolDefDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
@@ -146,6 +151,77 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             errorReporter.logTrace("StorPool loaded from cache %s", getId(sp));
         }
         return sp;
+    }
+
+    public Map<StorPoolData, InitMaps> loadAll(
+        Map<NodeName, NodeData> nodesMap,
+        Map<StorPoolName, StorPoolDefinitionData> storPoolDfnMap
+    )
+        throws SQLException
+    {
+        Map<StorPoolData, StorPool.InitMaps> storPools = new TreeMap<>();
+        errorReporter.logTrace("Loading all Storage Pool");
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    try
+                    {
+                        NodeName nodeName = new NodeName(resultSet.getString(SP_NODE));
+                        StorPoolName storPoolName = new StorPoolName(resultSet.getString(SP_POOL));
+
+                        Tuple<StorPoolData, StorPool.InitMaps> tuple = restoreStorPool(
+                            resultSet,
+                            nodesMap.get(nodeName),
+                            storPoolDfnMap.get(storPoolName)
+                        );
+                        storPools.put(
+                            tuple.objA,
+                            tuple.objB
+                        );
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(
+                            "Invalid name restored from database: " + exc.invalidName,
+                            exc
+                        );
+                    }
+                }
+            }
+        }
+        errorReporter.logTrace("Loaded %d Storage Pools", storPools.size());
+        return storPools;
+    }
+
+    private Tuple<StorPoolData, InitMaps> restoreStorPool(
+        ResultSet resultSet,
+        Node node,
+        StorPoolDefinition storPoolDfn
+    )
+        throws SQLException
+    {
+        Map<String, Volume> vlmMap = new TreeMap<>();
+        StorPoolData storPool = new StorPoolData(
+            java.util.UUID.fromString(resultSet.getString(SP_UUID)),
+            node,
+            storPoolDfn,
+            resultSet.getString(SP_DRIVER),
+            false,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            vlmMap
+        );
+        if (storPool.getName().displayValue.equals(LinStor.DISKLESS_STOR_POOL_NAME) &&
+            node instanceof NodeData)
+        {
+            ((NodeData) node).setDisklessStorPool(storPool);
+        }
+        return new Tuple<>(storPool, new StorPoolInitMaps(vlmMap));
     }
 
     public List<StorPoolData> loadStorPools(NodeData node)
@@ -230,59 +306,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                     storPoolName,
                     true
                 );
-
-                try
-                {
-                    storPoolData = new StorPoolData(
-                        java.util.UUID.fromString(resultSet.getString(SP_UUID)),
-                        dbCtx,
-                        node,
-                        storPoolDef,
-                        resultSet.getString(SP_DRIVER),
-                        // controller should not have an instance of storage driver.
-                        false,
-                        this,
-                        propsContainerFactory,
-                        transObjFactory,
-                        transMgrProvider
-                    );
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-                }
-
-                if (!cacheCleared)
-                {
-                    storPoolCache.put(
-                        getId(
-                            node.getName().value,
-                            storPoolName.value
-                        ),
-                        storPoolData
-                    );
-                }
-
-                // restore volumes
-                List<VolumeData> volumes = volumeDriverProvider.get().getVolumesByStorPool(
-                    storPoolData
-                );
-                try
-                {
-                    for (VolumeData vol : volumes)
-                    {
-                        storPoolData.putVolume(dbCtx, vol);
-                    }
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-                }
-                errorReporter.logTrace("%d Volumes restored for StorPool %s",
-                    volumes.size(),
-                    getId(storPoolData)
-                );
-
+                storPoolData = restoreStorPool(resultSet, node, storPoolDef).objA;
                 errorReporter.logTrace("Loaded StorPool from DB %s", getId(storPoolData));
             }
             else
@@ -407,5 +431,21 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     {
         cacheCleared = true;
         storPoolCache.clear();
+    }
+
+    private class StorPoolInitMaps implements StorPool.InitMaps
+    {
+        private final Map<String, Volume> vlmMap;
+
+        StorPoolInitMaps(Map<String, Volume> vlmMapRef)
+        {
+            vlmMap = vlmMapRef;
+        }
+
+        @Override
+        public Map<String, Volume> getVolumeMap()
+        {
+            return vlmMap;
+        }
     }
 }

@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface StorPool extends TransactionObject, DbgInstanceUuid
+public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable<StorPool>
 {
     /**
      * Returns the {@link UUID} of this object.
@@ -108,7 +108,18 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
 
     Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
 
-    interface StorPoolApi
+    @Override
+    default int compareTo(StorPool otherStorPool)
+    {
+        int eq = getNode().compareTo(otherStorPool.getNode());
+        if (eq == 0)
+        {
+            eq = getName().compareTo(otherStorPool.getName());
+        }
+        return eq;
+    }
+
+    public interface StorPoolApi
     {
         UUID getStorPoolUuid();
         String getStorPoolName();
@@ -123,4 +134,8 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
         Map<String, String> getStorPoolStaticTraits();
     }
 
+    public interface InitMaps
+    {
+        Map<String, Volume> getVolumeMap();
+    }
 }

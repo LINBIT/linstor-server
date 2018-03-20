@@ -45,7 +45,6 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.testutils.TestCoreModule;
-import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -53,7 +52,9 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.rules.DisableOnDebug;
 import org.junit.rules.TestName;
+import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -61,7 +62,6 @@ import org.mockito.MockitoAnnotations;
 import javax.inject.Named;
 import javax.inject.Provider;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -81,7 +81,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     public TestName testMethodName = new TestName();
 
     @Rule
-    public Timeout globalTimeout = Timeout.seconds(10); // 10 seconds max per method tested
+    // 10 seconds max per method tested
+    public TestRule globalTimeout = new DisableOnDebug(Timeout.seconds(10));
 
     private static final String SELECT_PROPS_BY_INSTANCE =
         " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
@@ -247,14 +248,6 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         finally
         {
             testScope.exit();
-        }
-
-        { // FIXME this is just a quick and dirty bugfix
-            // find a better way to fix the static initialized-problem for these tests
-            Field initializedField = AbsTransactionObject.class.getDeclaredField("initialized");
-            initializedField.setAccessible(true);
-            initializedField.set(null, false);
-            initializedField.setAccessible(false);
         }
     }
 

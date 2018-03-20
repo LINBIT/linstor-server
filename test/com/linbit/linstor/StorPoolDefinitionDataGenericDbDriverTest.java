@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import javax.inject.Inject;
+
+import com.linbit.linstor.StorPoolDefinition.InitMaps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -9,7 +11,8 @@ import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,7 +57,8 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
     }
 
@@ -187,16 +191,16 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     private StorPoolDefinitionData findStorPoolDefinitionDatabyName(
-        List<StorPoolDefinitionData> listStorPoolDefs,
+        Map<StorPoolDefinitionData, InitMaps> storPoolDfnMap,
         StorPoolName spNameRef
     )
     {
         StorPoolDefinitionData data = null;
-        for (StorPoolDefinitionData storPoolDfn : listStorPoolDefs)
+        for (StorPoolDefinitionData spddRef : storPoolDfnMap.keySet())
         {
-            if (storPoolDfn.getName().equals(spNameRef))
+            if (spddRef.getName().equals(spNameRef))
             {
-                data = storPoolDfn;
+                data = spddRef;
                 break;
             }
         }
@@ -210,14 +214,10 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         StorPoolName spName2 = new StorPoolName("StorPoolName2");
         storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName2, true, false);
 
-        List<StorPoolDefinitionData> storpools = driver.loadAll();
+        Map<StorPoolDefinitionData, InitMaps> storpools = driver.loadAll();
 
-        assertNotNull(
-            findStorPoolDefinitionDatabyName(
-                storpools,
-                new StorPoolName(ConfigModule.DEFAULT_STOR_POOL_NAME)
-            )
-        );
+        StorPoolName dfltStorPoolName = new StorPoolName(ConfigModule.DEFAULT_STOR_POOL_NAME);
+        assertNotNull(findStorPoolDefinitionDatabyName(storpools, dfltStorPoolName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
         assertNotEquals(

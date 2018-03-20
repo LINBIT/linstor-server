@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -49,7 +49,8 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         StorPoolDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<NodeName, StorPool> storPoolsMapRef
     )
         throws SQLException
     {
@@ -60,7 +61,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         objProt = objProtRef;
         name = nameRef;
         dbDriver = dbDriverRef;
-        storPools = transObjFactory.createTransactionMap(new TreeMap<NodeName, StorPool>(), null);
+        storPools = transObjFactory.createTransactionMap(storPoolsMapRef, null);
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef)

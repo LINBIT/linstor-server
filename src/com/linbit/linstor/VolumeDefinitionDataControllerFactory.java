@@ -20,6 +20,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class VolumeDefinitionDataControllerFactory
@@ -82,7 +83,6 @@ public class VolumeDefinitionDataControllerFactory
 
         volDfnData = new VolumeDefinitionData(
             UUID.randomUUID(),
-            accCtx,
             resDfn,
             volNr,
             chosenMinorNr,
@@ -92,10 +92,12 @@ public class VolumeDefinitionDataControllerFactory
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
 
         driver.create(volDfnData);
+        ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfnData);
 
         return volDfnData;
     }

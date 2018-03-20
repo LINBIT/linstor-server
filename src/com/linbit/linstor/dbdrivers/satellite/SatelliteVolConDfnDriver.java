@@ -7,8 +7,6 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDrive
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
 
 public class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDriver
 {
@@ -37,12 +35,6 @@ public class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDri
             SatelliteDbDriverExceptionHandler.handleAccessDeniedException(accDeniedExc);
         }
         return volumeConnection;
-    }
-
-    @Override
-    public List<VolumeConnectionData> loadAllByVolume(Volume volume)
-    {
-        return Collections.emptyList();
     }
 
     @Override

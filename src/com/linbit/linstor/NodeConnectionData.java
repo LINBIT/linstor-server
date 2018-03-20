@@ -43,7 +43,6 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
 
     NodeConnectionData(
         UUID uuid,
-        AccessContext accCtx,
         Node node1,
         Node node2,
         NodeConnectionDataDatabaseDriver dbDriverRef,
@@ -51,7 +50,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProviderRef);
 
@@ -84,9 +83,6 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             props,
             deleted
         );
-        sourceNode.setNodeConnection(accCtx, this);
-        targetNode.setNodeConnection(accCtx, this);
-        activateTransMgr();
     }
 
     @Override

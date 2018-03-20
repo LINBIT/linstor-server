@@ -235,4 +235,12 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         List<NetInterface.NetInterfaceApi> getNetInterfaces();
         UUID getDisklessStorPoolUuid();
     }
+
+    public interface InitMaps
+    {
+        Map<ResourceName, Resource> getRscMap();
+        Map<NetInterfaceName, NetInterface> getNetIfMap();
+        Map<StorPoolName, StorPool> getStorPoolMap();
+        Map<Node, NodeConnection> getNodeConnMap();
+    }
 }

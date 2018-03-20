@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
@@ -12,12 +13,11 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
-
+import com.linbit.utils.Tuple;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -27,8 +27,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
@@ -44,22 +45,19 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     private static final String VOL_META_DISK = DbConstants.META_DISK_PATH;
     private static final String VOL_FLAGS = DbConstants.VLM_FLAGS;
 
-    private static final String SELECT_BY_RES =
+    private static final String SELECT_ALL =
         " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
-                     VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
-                     VOL_META_DISK + ", " + VOL_FLAGS +
-        " FROM " + TBL_VOL +
+            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
+            VOL_META_DISK + ", " + VOL_FLAGS +
+        " FROM " + TBL_VOL;
+    private static final String SELECT_BY_RES =
+        SELECT_ALL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ?";
-    private static final String SELECT =  SELECT_BY_RES +
+    private static final String SELECT =
+        SELECT_BY_RES +
         " AND " +   VOL_ID +        " = ?";
-    private static final String SELECT_BY_STOR_POOL =
-        " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
-                     VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
-                     VOL_META_DISK + ", " + VOL_FLAGS +
-        " FROM " + TBL_VOL +
-        " WHERE " + VOL_NODE_NAME + " = ? AND " +
-                    VOL_STOR_POOL + " = ?";
+
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
         " (" +
@@ -84,29 +82,14 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
     private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
 
-    private final Provider<NodeDataGenericDbDriver> nodeDriverProvider;
-    private final Provider<ResourceDataGenericDbDriver> resourceDriverProvider;
-    private final Provider<VolumeConnectionDataGenericDbDriver> volumeConnectionDriverProvider;
-    private final Provider<VolumeDefinitionDataGenericDbDriver> volDfnDriverProvider;
-    private final Provider<StorPoolDefinitionDataGenericDbDriver> storPoolDfnDriverProvider;
-    private final Provider<StorPoolDataGenericDbDriver> storPoolDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-
-    private HashMap<VolPrimaryKey, VolumeData> volCache;
-    private boolean cacheCleared = false;
 
     @Inject
     public VolumeDataGenericDbDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Provider<NodeDataGenericDbDriver> nodeDriverProviderRef,
-        Provider<ResourceDataGenericDbDriver> resourceDriverProviderRef,
-        Provider<VolumeConnectionDataGenericDbDriver> volumeConnectionDriverProviderRef,
-        Provider<VolumeDefinitionDataGenericDbDriver> volDfnDriverProviderRef,
-        Provider<StorPoolDefinitionDataGenericDbDriver> storPoolDfnDriverProviderRef,
-        Provider<StorPoolDataGenericDbDriver> storPoolDriverProviderRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -114,19 +97,11 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-        nodeDriverProvider = nodeDriverProviderRef;
-        resourceDriverProvider = resourceDriverProviderRef;
-        volumeConnectionDriverProvider = volumeConnectionDriverProviderRef;
-        volDfnDriverProvider = volDfnDriverProviderRef;
-        storPoolDfnDriverProvider = storPoolDfnDriverProviderRef;
-        storPoolDriverProvider = storPoolDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
         flagPersistenceDriver = new VolFlagsPersistence();
-
-        volCache = new HashMap<>();
     }
 
     @Override
@@ -134,6 +109,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     public VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefintion,
+        StorPool storPool,
         boolean logWarnIfNotExists
     )
         throws SQLException
@@ -153,9 +129,10 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 List<VolumeData> volList = load(
-                    dbCtx,
+                    resultSet,
                     resource,
-                    resultSet
+                    volumeDefintion,
+                    storPool
                 );
 
                 if (!volList.isEmpty())
@@ -179,223 +156,112 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         return ret;
     }
 
-    public List<VolumeData> loadAllVolumesByResource(Resource resRef) throws SQLException
-    {
-        List<VolumeData> ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_RES))
-        {
-            errorReporter.logTrace(
-                "Loading all Volumes by resource %s",
-                getId(resRef)
-            );
-            stmt.setString(1, resRef.getAssignedNode().getName().value);
-            stmt.setString(2, resRef.getDefinition().getName().value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = load(dbCtx, resRef, resultSet);
-            }
-        }
-        errorReporter.logTrace("%d volumes loaded for resource %s", ret.size(), getId(resRef));
-        return ret;
-    }
-
-    public List<VolumeData> getVolumesByStorPool(StorPoolData storPoolData)
+    public Map<VolumeData, Volume.InitMaps> loadAll(
+        Map<Tuple<NodeName, ResourceName>, ResourceData> rscMap,
+        Map<Tuple<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap,
+        Map<Tuple<NodeName, StorPoolName>, StorPoolData> storPoolMap
+    )
         throws SQLException
     {
-        List<VolumeData> ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_STOR_POOL))
+        Map<VolumeData, Volume.InitMaps> vlmMap = new TreeMap<>();
+        errorReporter.logTrace("Loading all Volumes");
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
-            errorReporter.logTrace(
-                "Loading all Volumes by StorPool %s",
-                getId(storPoolData)
-            );
-            stmt.setString(1, storPoolData.getNode().getName().value);
-            stmt.setString(2, getStorPoolDfn(storPoolData).getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(dbCtx, null, resultSet);
+                while (resultSet.next())
+                {
+                    try
+                    {
+                        NodeName nodeName = new NodeName(resultSet.getString(VOL_NODE_NAME));
+                        ResourceName rscName = new ResourceName(resultSet.getString(VOL_RES_NAME));
+                        StorPoolName storPoolName = new StorPoolName(resultSet.getString(VOL_STOR_POOL));
+                        VolumeNumber vlmNr = new VolumeNumber(resultSet.getInt(VOL_ID));
+
+                        Tuple<VolumeData, Volume.InitMaps> tuple = restoreVlm(
+                            resultSet,
+                            rscMap.get(new Tuple<>(nodeName, rscName)),
+                            vlmDfnMap.get(new Tuple<>(rscName, vlmNr)),
+                            storPoolMap.get(new Tuple<>(nodeName, storPoolName))
+                        );
+                        vlmMap.put(
+                            tuple.objA,
+                            tuple.objB
+                        );
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(
+                            "Invalid name restored from database: " + exc.invalidName,
+                            exc
+                        );
+                    }
+                    catch (ValueOutOfRangeException exc)
+                    {
+                        throw new ImplementationError(
+                            "Invalid volume number restored from database: "  + resultSet.getInt(VOL_ID),
+                            exc
+                        );
+                    }
+                }
             }
         }
-        errorReporter.logTrace("%d volumes loaded for StorPool %s", ret.size(), getId(storPoolData));
-        return ret;
+        errorReporter.logTrace("Loaded %d Volumes", vlmMap.size());
+        return vlmMap;
     }
 
-    private List<VolumeData> load(AccessContext accCtx, Resource resRef, ResultSet resultSet)
+    private Tuple<VolumeData, Volume.InitMaps> restoreVlm(
+        ResultSet resultSet,
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        StorPool storPool
+    )
+        throws SQLException
+    {
+        Map<Volume, VolumeConnection> vlmConnsMap = new TreeMap<>();
+        VolumeData vlm = new VolumeData(
+            java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
+            rsc,
+            vlmDfn,
+            storPool,
+            resultSet.getString(VOL_BLOCK_DEVICE),
+            resultSet.getString(VOL_META_DISK),
+            resultSet.getLong(VOL_FLAGS),
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            vlmConnsMap
+        );
+
+        return new Tuple<>(
+            vlm,
+            new VolumeInitMaps(
+                vlmConnsMap
+            )
+        );
+    }
+
+    private List<VolumeData> load(
+        ResultSet resultSet,
+        Resource res,
+        VolumeDefinition vlmDfn,
+        StorPool storPool
+    )
         throws SQLException
     {
         List<VolumeData> volList = new ArrayList<>();
         while (resultSet.next())
         {
-            VolumeDefinition volDfn = null;
-            VolumeNumber volNr;
-            StorPoolName storPoolName;
-
-            Resource res;
-            if (resRef != null)
-            {
-                res = resRef;
-            }
-            else
-            {
-                NodeName nodeName = null;
-                ResourceName resName;
-                try
-                {
-                    nodeName = new NodeName(resultSet.getString(VOL_NODE_NAME));
-                    resName = new ResourceName(resultSet.getString(VOL_RES_NAME));
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    if (nodeName == null)
-                    {
-                        throw new LinStorSqlRuntimeException(
-                            String.format(
-                                "A NodeName of a stored Volume in table %s could not be restored. " +
-                                    "(invalid NodeName=%s, ResName=%s, VolumeNumber=%d)",
-                                TBL_VOL,
-                                resultSet.getString(VOL_NODE_NAME),
-                                resultSet.getString(VOL_RES_NAME),
-                                resultSet.getInt(VOL_ID)
-                            ),
-                            invalidNameExc
-                        );
-                    }
-                    else
-                    {
-                        throw new LinStorSqlRuntimeException(
-                            String.format(
-                                "A ResourceName of a stored Volume in table %s could not be restored. " +
-                                    "(NodeName=%s, invalid ResName=%s, VolumeNumber=%d)",
-                                TBL_VOL,
-                                resultSet.getString(VOL_NODE_NAME),
-                                resultSet.getString(VOL_RES_NAME),
-                                resultSet.getInt(VOL_ID)
-                            ),
-                            invalidNameExc
-                        );
-                    }
-                }
-                Node node = nodeDriverProvider.get().load(nodeName, true);
-                res = resourceDriverProvider.get().load(node, resName, true);
-            }
-
-            try
-            {
-                volNr = new VolumeNumber(resultSet.getInt(VOL_ID));
-                storPoolName = new StorPoolName(resultSet.getString(VOL_STOR_POOL));
-            }
-            catch (ValueOutOfRangeException valueOutOfRangeExc)
-            {
-                throw new LinStorSqlRuntimeException(
-                    String.format(
-                        "A VolumeNumber of a stored Volume in table %s could not be restored. " +
-                            "(NodeName=%s, ResName=%s, invalid VolumeNumber=%d)",
-                        TBL_VOL,
-                        res.getAssignedNode().getName().value,
-                        res.getDefinition().getName().value,
-                        resultSet.getInt(VOL_ID)
-                    ),
-                    valueOutOfRangeExc
-                );
-            }
-            catch (InvalidNameException invalidNameExc)
-            {
-                throw new LinStorSqlRuntimeException(
-                    String.format(
-                        "A StorPoolName of a stored Volume in table %s could not be restored. " +
-                            "(NodeName=%s, ResName=%s, VolumeNumber=%d, invalid StorPoolName=%s)",
-                        TBL_VOL,
-                        res.getAssignedNode().getName().value,
-                        res.getDefinition().getName().value,
-                        resultSet.getInt(VOL_ID),
-                        resultSet.getString(VOL_STOR_POOL)
-                    ),
-                    invalidNameExc
-                );
-            }
-            volDfn = volDfnDriverProvider.get().load(
-                res.getDefinition(),
-                volNr,
-                true
-            );
-
-            StorPoolDefinitionData storPoolDfn = storPoolDfnDriverProvider.get().load(
-                storPoolName,
-                true
-            );
-
-            StorPoolData storPool = storPoolDriverProvider.get().load(
+            VolumeData volData = cacheGet(
                 res.getAssignedNode(),
-                storPoolDfn,
-                true
+                res.getDefinition(),
+                vlmDfn.getVolumeNumber()
             );
-
-            VolumeData volData = cacheGet(res.getAssignedNode(), res.getDefinition(), volNr);
-            VolPrimaryKey primaryKey = null;
-            if (volData == null && !cacheCleared)
-            {
-                primaryKey = new VolPrimaryKey(res, volDfn);
-                volData = volCache.get(primaryKey);
-            }
             if (volData == null)
             {
-                try
-                {
-                    volData = new VolumeData(
-                        java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
-                        accCtx,
-                        res,
-                        volDfn,
-                        storPool,
-                        resultSet.getString(VOL_BLOCK_DEVICE),
-                        resultSet.getString(VOL_META_DISK),
-                        resultSet.getLong(VOL_FLAGS),
-                        this,
-                        propsContainerFactory,
-                        transObjFactory,
-                        transMgrProvider
-                    );
-                    errorReporter.logTrace("Volume created %s", getId(volData));
-                    if (!cacheCleared)
-                    {
-                        volCache.put(primaryKey, volData);
-                    }
-
-                    // restore flags
-                    StateFlags<VlmFlags> flags = volData.getFlags();
-                    long lFlags = resultSet.getLong(VOL_FLAGS);
-                    for (VlmFlags flag : VlmFlags.values())
-                    {
-                        if ((lFlags & flag.flagValue) == flag.flagValue)
-                        {
-                            flags.enableFlags(accCtx, flag);
-                        }
-                    }
-                    errorReporter.logTrace(
-                        "Volume's flags restored to %d %s",
-                        lFlags,
-                        getId(volData)
-                    );
-
-                    // restore volCon
-                    List<VolumeConnectionData> volConDfnList =
-                        volumeConnectionDriverProvider.get().loadAllByVolume(volData);
-                    for (VolumeConnectionData volConDfn : volConDfnList)
-                    {
-                        volData.setVolumeConnection(dbCtx, volConDfn);
-                    }
-                    errorReporter.logTrace(
-                        "%d VolumeConnections restored %s",
-                        volConDfnList.size(),
-                        getId(volData)
-                    );
-
-                    errorReporter.logTrace("Volume restored %s", getId(volData));
-                }
-                catch (AccessDeniedException accessDeniedExc)
-                {
-                    GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
-                }
+                volData = restoreVlm(resultSet, res, vlmDfn, storPool).objA;
+                errorReporter.logTrace("Volume created %s", getId(volData));
             }
             else
             {
@@ -511,38 +377,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     private String getResId(String nodeName, String resName)
     {
         return "(NodeName=" + nodeName + " ResName=" + resName + ")";
-    }
-
-    private String getId(StorPoolData storPool)
-    {
-        return getStorPoolId(
-            getStorPoolDfn(storPool).getName().displayValue
-        );
-    }
-
-    private String getStorPoolId(String name)
-    {
-        return "(StorPoolName=" + name + ")";
-    }
-
-    private StorPoolDefinitionData getStorPoolDfn(StorPoolData storPool)
-    {
-        StorPoolDefinitionData ret = null;
-        try
-        {
-            ret = (StorPoolDefinitionData) storPool.getDefinition(dbCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
-    }
-
-    public void clearCache()
-    {
-        cacheCleared = true;
-        volCache.clear();
     }
 
     private Connection getConnection()
@@ -669,6 +503,22 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
                 }
             }
             return true;
+        }
+    }
+
+    private class VolumeInitMaps implements Volume.InitMaps
+    {
+        private final Map<Volume, VolumeConnection> vlmConnMap;
+
+        VolumeInitMaps(Map<Volume, VolumeConnection> vlmConnMapRef)
+        {
+            vlmConnMap = vlmConnMapRef;
+        }
+
+        @Override
+        public Map<Volume, VolumeConnection> getVolumeConnections()
+        {
+            return vlmConnMap;
         }
     }
 }

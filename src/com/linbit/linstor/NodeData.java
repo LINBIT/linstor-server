@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
@@ -25,10 +27,11 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +39,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import javax.inject.Provider;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -103,6 +102,41 @@ public class NodeData extends BaseTransactionObject implements Node
     )
         throws SQLException
     {
+        this(
+            uuidRef,
+            objProtRef,
+            nameRef,
+            type,
+            initialFlags,
+            dbDriverRef,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>(),
+            new TreeMap<>(),
+            new TreeMap<>()
+        );
+
+    }
+
+    NodeData(
+        UUID uuidRef,
+        ObjectProtection objProtRef,
+        NodeName nameRef,
+        NodeType type,
+        long initialFlags,
+        NodeDataDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProvider,
+        Map<ResourceName, Resource> rscMapRef,
+        Map<NetInterfaceName, NetInterface> netIfMapRef,
+        Map<StorPoolName, StorPool> storPoolMapRef,
+        Map<Node, NodeConnection> nodeConnMapRef
+    )
+        throws SQLException
+    {
         super(transMgrProvider);
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
 
@@ -112,15 +146,15 @@ public class NodeData extends BaseTransactionObject implements Node
         clNodeName = nameRef;
         dbDriver = dbDriverRef;
 
-        resourceMap = transObjFactory.createTransactionMap(new TreeMap<ResourceName, Resource>(), null);
-        netInterfaceMap = transObjFactory.createTransactionMap(new TreeMap<NetInterfaceName, NetInterface>(), null);
-        storPoolMap = transObjFactory.createTransactionMap(new TreeMap<StorPoolName, StorPool>(), null);
+        resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
+        netInterfaceMap = transObjFactory.createTransactionMap(netIfMapRef, null);
+        storPoolMap = transObjFactory.createTransactionMap(storPoolMapRef, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         nodeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef)
         );
-        nodeConnections = transObjFactory.createTransactionMap(new HashMap<Node, NodeConnection>(), null);
+        nodeConnections = transObjFactory.createTransactionMap(nodeConnMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -137,7 +171,6 @@ public class NodeData extends BaseTransactionObject implements Node
         );
 
         currentStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
-
         transObjs = Arrays.<TransactionObject>asList(
             flags,
             nodeType,
@@ -150,7 +183,6 @@ public class NodeData extends BaseTransactionObject implements Node
             deleted,
             currentStltConn
         );
-        activateTransMgr();
     }
 
     @Override

@@ -22,7 +22,7 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Resource extends TransactionObject, DbgInstanceUuid
+public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable<Resource>
 {
     UUID getUuid();
 
@@ -70,6 +70,23 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
         throws AccessDeniedException;
 
     boolean isCreatePrimary();
+
+    @Override
+    default int compareTo(Resource otherRsc)
+    {
+        int eq = getAssignedNode().compareTo(otherRsc.getAssignedNode());
+        if (eq == 0)
+        {
+            eq = getDefinition().compareTo(otherRsc.getDefinition());
+        }
+        return eq;
+    }
+
+    static String getStringId(Resource rsc)
+    {
+        return rsc.getAssignedNode().getName().value + "/" +
+               rsc.getDefinition().getName().value;
+    }
 
     enum RscFlags implements Flags
     {
@@ -124,5 +141,11 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
         Map<String, String> getProps();
         long getFlags();
         List<? extends Volume.VlmApi> getVlmList();
+    }
+
+    public interface InitMaps
+    {
+        Map<Resource, ResourceConnection> getRscConnMap();
+        Map<VolumeNumber, Volume> getVlmMap();
     }
 }

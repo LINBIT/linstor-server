@@ -39,17 +39,10 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
 
     public ELEMENT set(ELEMENT obj) throws SQLException
     {
-        if (isInitialized())
+        if (!Objects.equals(obj, cachedObject))
         {
-            if (!Objects.equals(obj, cachedObject))
-            {
-                activateTransMgr();
-                dbDriver.update(parent, obj);
-            }
-        }
-        else
-        {
-            cachedObject = obj;
+            activateTransMgr();
+            dbDriver.update(parent, obj);
         }
         ELEMENT oldObj = object;
         object = obj;

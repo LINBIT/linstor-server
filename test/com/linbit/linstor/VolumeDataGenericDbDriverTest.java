@@ -1,12 +1,14 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.Volume.InitMaps;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
+import com.linbit.utils.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,8 +16,8 @@ import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,7 +50,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     private VolumeNumber volNr;
     private Integer minor;
     private long volSize;
-    private VolumeDefinition volDfn;
+    private VolumeDefinitionData volDfn;
 
     private java.util.UUID uuid;
     private String blockDevicePath;
@@ -137,7 +139,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -147,7 +148,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -219,7 +221,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -229,11 +230,12 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
 
-        VolumeData loadedVol = driver.load(res, volDfn, true);
+        VolumeData loadedVol = driver.load(res, volDfn, storPool, true);
 
         checkLoaded(loadedVol, uuid);
     }
@@ -243,7 +245,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -253,17 +254,24 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
 
-        List<VolumeData> volList = driver.loadAllVolumesByResource(
-            res
-        );
+        Map<Tuple<NodeName, ResourceName>, ResourceData> rscMap = new HashMap<>();
+        Map<Tuple<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap = new HashMap<>();
+        Map<Tuple<NodeName, StorPoolName>, StorPoolData> storPoolMap = new HashMap<>();
 
-        assertEquals(1, volList.size());
+        rscMap.put(new Tuple<>(nodeName, resName), res);
+        vlmDfnMap.put(new Tuple<>(resName, volNr), volDfn);
+        storPoolMap.put(new Tuple<>(nodeName, storPoolName), storPool);
 
-        VolumeData loadedVol = volList.get(0);
+        Map<VolumeData, InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap, storPoolMap);
+
+        assertEquals(1, vlmMap.size());
+
+        VolumeData loadedVol = vlmMap.keySet().iterator().next();
         checkLoaded(loadedVol, uuid);
     }
 
@@ -272,7 +280,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -282,7 +289,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
 
@@ -317,7 +325,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(res, volDfn, true));
+        assertEquals(storedInstance, driver.load(res, volDfn, storPool, true));
     }
 
     @Test
@@ -325,7 +333,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -335,7 +342,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -364,7 +372,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -374,7 +381,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -394,7 +402,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -404,7 +411,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -427,7 +435,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
          */
         res.removeVolume(SYS_CTX, vol);
 
-        VolumeData loadedVol = driver.load(res, volDfn, true);
+        VolumeData loadedVol = driver.load(res, volDfn, storPool, true);
 
         /*
          *  NOTE: as the "driver.load(...)" has to create a new instance of VolumeData,
@@ -445,7 +453,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -455,7 +462,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
 
@@ -503,7 +511,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -513,7 +520,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(vol);
 

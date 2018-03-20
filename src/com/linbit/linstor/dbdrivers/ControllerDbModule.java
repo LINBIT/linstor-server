@@ -1,10 +1,5 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
@@ -16,16 +11,12 @@ import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -41,8 +32,6 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
@@ -52,8 +41,12 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class ControllerDbModule extends AbstractModule
 {
@@ -87,14 +80,12 @@ public class ControllerDbModule extends AbstractModule
     @Named(DISKLESS_STOR_POOL_DFN)
     public StorPoolDefinition initializeDisklessStorPoolDfn(
         ErrorReporter errorLogRef,
-        @SystemContext AccessContext initCtx,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactory,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
         DbConnectionPool dbConnPool,
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap,
-        LinStorScope initScopeScope
+        LinStorScope initScopeScope,
+        StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver
     )
-        throws AccessDeniedException
     {
         StorPoolDefinitionData disklessStorPoolDfn = null;
 
@@ -106,12 +97,7 @@ public class ControllerDbModule extends AbstractModule
             initScopeScope.enter();
             initScopeScope.seed(TransactionMgr.class, transMgr);
 
-            disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstance(
-                initCtx,
-                new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
-                true,
-                false
-            );
+            disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
 
             transMgr.commit();
             initScopeScope.exit();
@@ -119,21 +105,10 @@ public class ControllerDbModule extends AbstractModule
             storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
             transMgr.returnConnection();
         }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(dataAlreadyExistsExc);
-        }
         catch (SQLException sqlExc)
         {
             errorLogRef.reportError(sqlExc);
             throw new LinStorRuntimeException(sqlExc.getMessage(), sqlExc);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ImplementationError(
-                "Invalid name for default diskless stor pool: " + invalidNameExc.invalidName,
-                invalidNameExc
-            );
         }
         finally
         {

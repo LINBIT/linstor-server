@@ -18,7 +18,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Volume extends TransactionObject, DbgInstanceUuid
+public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<Volume>
 {
     UUID getUuid();
 
@@ -54,6 +54,27 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
     void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
+    @Override
+    default int compareTo(Volume otherVlm)
+    {
+        int eq = getResource().getAssignedNode().compareTo(
+            otherVlm.getResource().getAssignedNode()
+        );
+        if (eq == 0)
+        {
+            eq = getVolumeDefinition().compareTo(otherVlm.getVolumeDefinition()); // also contains rscName comparison
+        }
+        return eq;
+    }
+
+    static String getVolumeKey(Volume volume)
+    {
+        NodeName nodeName = volume.getResource().getAssignedNode().getName();
+        ResourceName rscName = volume.getResourceDefinition().getName();
+        VolumeNumber volNr = volume.getVolumeDefinition().getVolumeNumber();
+        return nodeName.value + "/" + rscName.value + "/" + volNr.value;
+    }
 
     /**
      * Flags lifecycle:
@@ -130,4 +151,10 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
         Map<String, String> getStorPoolDfnProps();
         Map<String, String> getStorPoolProps();
     }
+
+    public interface InitMaps
+    {
+        Map<Volume, VolumeConnection> getVolumeConnections();
+    }
+
 }

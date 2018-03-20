@@ -22,7 +22,7 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
+public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Comparable<VolumeDefinition>
 {
     UUID getUuid();
 
@@ -64,6 +64,16 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
 
     String getKey(AccessContext accCtx) throws AccessDeniedException;
 
+    @Override
+    default int compareTo(VolumeDefinition otherVlmDfn)
+    {
+        int eq = getResourceDefinition().compareTo(otherVlmDfn.getResourceDefinition());
+        if (eq == 0)
+        {
+            eq = getVolumeNumber().compareTo(otherVlmDfn.getVolumeNumber());
+        }
+        return eq;
+    }
 
     enum VlmDfnFlags implements Flags
     {
@@ -198,5 +208,10 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
         {
             return Objects.hash(rscName, vlmNr);
         }
+    }
+
+    public interface InitMaps
+    {
+        Map<String, Volume> getVlmMap();
     }
 }

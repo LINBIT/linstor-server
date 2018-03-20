@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.propscon.Props;
@@ -10,7 +11,6 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.transaction.AbsTransactionObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -18,8 +18,8 @@ import org.mockito.Mockito;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -102,10 +102,10 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
-
-        AbsTransactionObject.initialized();
     }
 
     @Test
@@ -281,7 +281,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    @SuppressWarnings({"checkstyle:variabledeclarationusagedistance", "checkstyle:magicnumber"})
+    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:variabledeclarationusagedistance"})
     public void testLoadResources() throws Exception
     {
         driver.create(resDfn);
@@ -319,6 +319,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testLoadVolumeDefinitions() throws Exception
     {
         driver.create(resDfn);
+        rscDfnMap.put(resName, resDfn);
         objProtDriver.insertOp(resDfnObjProt);
 
         VolumeNumber volNr = new VolumeNumber(13);
@@ -427,11 +428,11 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     private ResourceDefinitionData findResourceDefinitionDatabyName(
-            List<ResourceDefinitionData> listResourceDefData,
-            ResourceName spName)
+        Map<ResourceDefinitionData, InitMaps> resourceDefDataMap,
+        ResourceName spName)
     {
         ResourceDefinitionData rscDfnData = null;
-        for (ResourceDefinitionData rdd : listResourceDefData)
+        for (ResourceDefinitionData rdd : resourceDefDataMap.keySet())
         {
             if (rdd.getName().equals(spName))
             {
@@ -459,7 +460,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         clearCaches();
 
-        List<ResourceDefinitionData> resourceDefDataList = driver.loadAll();
+        Map<ResourceDefinitionData, InitMaps> resourceDefDataList = driver.loadAll();
 
         ResourceDefinitionData res1 = findResourceDefinitionDatabyName(resourceDefDataList, resName);
         ResourceDefinitionData res2 = findResourceDefinitionDatabyName(resourceDefDataList, resName2);

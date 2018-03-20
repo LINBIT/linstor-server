@@ -16,6 +16,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class ResourceDataFactory
@@ -60,7 +61,7 @@ public class ResourceDataFactory
         ResourceData resData = null;
 
 
-        resData = dbDriver.load(node, resDfn.getName(), false);
+        resData = dbDriver.load(node, resDfn, false);
 
         if (failIfExists && resData != null)
         {
@@ -71,7 +72,6 @@ public class ResourceDataFactory
         {
             resData = new ResourceData(
                 UUID.randomUUID(),
-                accCtx,
                 objectProtectionFactory.getInstance(
                     accCtx,
                     ObjectProtection.buildPath(
@@ -88,9 +88,13 @@ public class ResourceDataFactory
                 propsContainerFactory,
                 volumeDataFactory,
                 transObjFactory,
-                transMgrProvider
+                transMgrProvider,
+                new TreeMap<>(),
+                new TreeMap<>()
             );
             dbDriver.create(resData);
+            ((NodeData) node).addResource(accCtx, resData);
+            ((ResourceDefinitionData) resDfn).addResource(accCtx, resData);
         }
         return resData;
     }
@@ -108,12 +112,11 @@ public class ResourceDataFactory
         ResourceData rscData;
         try
         {
-            rscData = dbDriver.load(node, rscDfn.getName(), false);
+            rscData = dbDriver.load(node, rscDfn, false);
             if (rscData == null)
             {
                 rscData = new ResourceData(
                     uuid,
-                    accCtx,
                     objectProtectionFactory.getInstance(accCtx, "", false),
                     rscDfn,
                     node,
@@ -123,8 +126,12 @@ public class ResourceDataFactory
                     propsContainerFactory,
                     volumeDataFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>(),
+                    new TreeMap<>()
                 );
+                ((NodeData) node).addResource(accCtx, rscData);
+                ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
             }
         }
         catch (Exception exc)

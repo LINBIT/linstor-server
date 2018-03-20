@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class StorPoolDataFactory
@@ -61,7 +62,6 @@ public class StorPoolDataFactory
         {
             storPoolData = new StorPoolData(
                 UUID.randomUUID(),
-                accCtx,
                 nodeRef,
                 storPoolDefRef,
                 storDriverSimpleClassNameRef,
@@ -69,9 +69,12 @@ public class StorPoolDataFactory
                 driver,
                 propsContainerFactory,
                 transObjFactory,
-                transMgrProvider
+                transMgrProvider,
+                new TreeMap<>()
             );
             driver.create(storPoolData);
+            ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
+            ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, storPoolData);
         }
         return storPoolData;
     }
@@ -94,7 +97,6 @@ public class StorPoolDataFactory
             {
                 storPoolData = new StorPoolData(
                     uuid,
-                    accCtx,
                     nodeRef,
                     storPoolDefRef,
                     storDriverSimpleClassNameRef,
@@ -102,8 +104,11 @@ public class StorPoolDataFactory
                     driver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>()
                 );
+                ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
+                ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, storPoolData);
             }
         }
         catch (Exception exc)

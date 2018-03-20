@@ -12,6 +12,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class ResourceDefinitionDataSatelliteFactory
@@ -67,7 +68,9 @@ public class ResourceDefinitionDataSatelliteFactory
                     driver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>(),
+                    new TreeMap<>()
                 );
             }
         }

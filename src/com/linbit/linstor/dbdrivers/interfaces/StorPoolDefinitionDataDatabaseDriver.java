@@ -44,4 +44,6 @@ public interface StorPoolDefinitionDataDatabaseDriver
      * @throws SQLException
      */
     void delete(StorPoolDefinitionData storPoolDefinition) throws SQLException;
+
+    StorPoolDefinitionData createDefaultDisklessStorPool() throws SQLException;
 }

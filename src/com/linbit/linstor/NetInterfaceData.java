@@ -43,7 +43,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     NetInterfaceData(
         UUID uuid,
-        AccessContext accCtx,
         NetInterfaceName netName,
         Node node,
         LsIpAddress addr,
@@ -53,7 +52,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
-        throws AccessDeniedException
     {
         super(transMgrProviderRef);
 
@@ -86,8 +84,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             niAddress,
             deleted
         );
-        ((NodeData) node).addNetInterface(accCtx, this);
-        activateTransMgr();
     }
 
     @Override

@@ -1,11 +1,8 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
-import java.util.List;
-
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
 
 /**
@@ -32,18 +29,6 @@ public interface ResourceConnectionDataDatabaseDriver
      */
     ResourceConnectionData load(Resource source, Resource target, boolean logWarnIfNotExists)
         throws SQLException;
-
-    /**
-     * Loads all {@link ResourceConnectionData} specified by the parameter
-     * {@code resource}, regardless if the {@code resource} is the source of the target of the
-     * specific {@link ResourceConnection}.
-     * <br>
-     * @param resource
-     *  Part of the primary key specifying the database entry
-     *
-     * @throws SQLException
-     */
-    List<ResourceConnectionData> loadAllByResource(Resource resource) throws SQLException;
 
     /**
      * Persists the given {@link ResourceConnectionData} into the database.

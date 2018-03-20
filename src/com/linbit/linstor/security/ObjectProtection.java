@@ -384,7 +384,7 @@ public final class ObjectProtection extends BaseTransactionObject
     )
         throws SQLException
     {
-        if (isInitialized() && persist)
+        if (persist)
         {
             ensureObjProtIsPersisted();
 
@@ -407,17 +407,14 @@ public final class ObjectProtection extends BaseTransactionObject
 
     private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws SQLException
     {
-        if (isInitialized())
+        ensureObjProtIsPersisted();
+
+        activateTransMgr();
+        dbDriver.deleteAcl(this, entryRole);
+
+        if (!cachedAcl.containsKey(entryRole))
         {
-            ensureObjProtIsPersisted();
-
-            activateTransMgr();
-            dbDriver.deleteAcl(this, entryRole);
-
-            if (!cachedAcl.containsKey(entryRole))
-            {
-                cachedAcl.put(entryRole, oldEntry);
-            }
+            cachedAcl.put(entryRole, oldEntry);
         }
     }
 

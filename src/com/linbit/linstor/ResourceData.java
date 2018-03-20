@@ -28,10 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -86,7 +85,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     ResourceData(
         UUID objIdRef,
-        AccessContext accCtx,
         ObjectProtection objProtRef,
         ResourceDefinition resDfnRef,
         Node nodeRef,
@@ -96,9 +94,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         PropsContainerFactory propsContainerFactory,
         VolumeDataFactory volumeDataFactoryRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<Resource, ResourceConnection> rscConnMapRef,
+        Map<VolumeNumber, Volume> vlmMapRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProviderRef);
         dbDriver = dbDriverRef;
@@ -112,8 +112,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
         objId = objIdRef;
         dbgInstanceId = UUID.randomUUID();
 
-        resourceConnections = transObjFactory.createTransactionMap(new HashMap<Resource, ResourceConnection>(), null);
-        volumeMap = transObjFactory.createTransactionMap(new TreeMap<VolumeNumber, Volume>(), null);
+        resourceConnections = transObjFactory.createTransactionMap(rscConnMapRef, null);
+        volumeMap = transObjFactory.createTransactionMap(vlmMapRef, null);
         resourceProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 nodeRef.getName(),
@@ -141,10 +141,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resourceProps,
             deleted
         );
-
-        ((NodeData) nodeRef).addResource(accCtx, this);
-        ((ResourceDefinitionData) resDfnRef).addResource(accCtx, this);
-        activateTransMgr();
     }
 
     @Override

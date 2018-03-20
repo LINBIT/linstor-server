@@ -7,8 +7,6 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDri
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
 
 public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseDriver
 {
@@ -33,12 +31,6 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
             SatelliteDbDriverExceptionHandler.handleAccessDeniedException(accDeniedExc);
         }
         return resourceConnection;
-    }
-
-    @Override
-    public List<ResourceConnectionData> loadAllByResource(Resource resource)
-    {
-        return Collections.emptyList();
     }
 
     @Override

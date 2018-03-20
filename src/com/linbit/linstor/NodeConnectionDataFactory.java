@@ -74,7 +74,6 @@ public class NodeConnectionDataFactory
         {
             nodeConData = new NodeConnectionData(
                 UUID.randomUUID(),
-                accCtx,
                 source,
                 target,
                 dbDriver,
@@ -83,6 +82,9 @@ public class NodeConnectionDataFactory
                 transMgrProvider
             );
             dbDriver.create(nodeConData);
+
+            source.setNodeConnection(accCtx, nodeConData);
+            target.setNodeConnection(accCtx, nodeConData);
         }
         return nodeConData;
     }
@@ -117,7 +119,6 @@ public class NodeConnectionDataFactory
             {
                 nodeConData = new NodeConnectionData(
                     uuid,
-                    accCtx,
                     source,
                     target,
                     dbDriver,
@@ -125,6 +126,9 @@ public class NodeConnectionDataFactory
                     transObjFactory,
                     transMgrProvider
                 );
+
+                source.setNodeConnection(accCtx, nodeConData);
+                target.setNodeConnection(accCtx, nodeConData);
             }
         }
         catch (Exception exc)

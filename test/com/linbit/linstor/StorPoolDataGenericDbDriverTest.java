@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -34,6 +35,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 
     private StorPoolDefinitionData spdd;
     @Inject private StorPoolDataGenericDbDriver driver;
+    @Inject private StorPoolDataFactory storPoolFactory;
 
     public StorPoolDataGenericDbDriverTest() throws InvalidNameException
     {
@@ -63,7 +65,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     {
         StorPoolData storPool = new StorPoolData(
             uuid,
-            SYS_CTX,
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
@@ -71,7 +72,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(storPool);
         commit();
@@ -125,7 +127,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 
         StorPoolData storPool = new StorPoolData(
             uuid,
-            SYS_CTX,
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
@@ -133,9 +134,12 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(storPool);
+        node.addStorPool(SYS_CTX, storPool);
+        spdd.addStorPool(SYS_CTX, storPool);
 
         loadedStorPool = driver.load(node, spdd, true);
         assertEquals(uuid, loadedStorPool.getUuid());
@@ -151,7 +155,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     {
         StorPoolData storPool = new StorPoolData(
             uuid,
-            SYS_CTX,
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
@@ -159,7 +162,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(storPool);
 
@@ -214,7 +218,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 
         StorPoolData storPool = new StorPoolData(
             uuid,
-            SYS_CTX,
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
@@ -222,9 +225,13 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(storPool);
+        node.addStorPool(SYS_CTX, storPool);
+        spdd.addStorPool(SYS_CTX, storPool);
+
         loadedStorPool = storPoolDataFactory.getInstance(
             SYS_CTX,
             node,
@@ -277,7 +284,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     {
         StorPoolData storPool = new StorPoolData(
             uuid,
-            SYS_CTX,
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
@@ -285,7 +291,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOLS);
@@ -314,7 +321,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     {
         StorPoolData storPool = new StorPoolData(
             uuid,
-            SYS_CTX,
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
@@ -322,7 +328,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
         driver.create(storPool);
 

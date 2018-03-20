@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -87,7 +86,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
+        Map<NodeName, Resource> rscMapRef
     )
         throws SQLException
     {
@@ -108,8 +109,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             portRef,
             this.dbDriver.getPortDriver()
         );
-        volumeMap = transObjFactory.createTransactionMap(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
-        resourceMap = transObjFactory.createTransactionMap(new TreeMap<NodeName, Resource>(), null);
+        volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
+        resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         rscDfnProps = propsContainerFactory.getInstance(
@@ -139,7 +140,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             transportType,
             deleted
         );
-        activateTransMgr();
     }
 
     @Override

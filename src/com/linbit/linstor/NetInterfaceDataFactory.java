@@ -60,7 +60,6 @@ public class NetInterfaceDataFactory
         {
             netData = new NetInterfaceData(
                 UUID.randomUUID(),
-                accCtx,
                 name,
                 node,
                 addr,
@@ -71,6 +70,7 @@ public class NetInterfaceDataFactory
                 transMgrProvider
             );
             driver.create(netData);
+            ((NodeData) node).addNetInterface(accCtx, netData);
         }
         return netData;
     }
@@ -99,7 +99,6 @@ public class NetInterfaceDataFactory
 
                 netData = new NetInterfaceData(
                     uuid,
-                    accCtx,
                     netName,
                     node,
                     addr,
@@ -109,6 +108,7 @@ public class NetInterfaceDataFactory
                     transObjFactory,
                     transMgrProvider
                 );
+                ((NodeData) node).addNetInterface(accCtx, netData);
             }
         }
         catch (Exception exc)

@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.annotation.SystemContext;
@@ -25,6 +26,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.Tuple;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -35,10 +37,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinitionDataDatabaseDriver
@@ -89,14 +90,11 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private final CoreModule.ResourceDefinitionMap resDfnMap;
 
     private final Map<ResourceName, ResourceDefinitionData> rscDfnCache;
-    private boolean cacheCleared = false;
 
     private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
     private final SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> portDriver;
     private final SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> transTypeDriver;
 
-    private final Provider<ResourceDataGenericDbDriver> resourceDriverProvider;
-    private final Provider<VolumeDefinitionDataGenericDbDriver> volumeDefinitionDriverProvider;
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final DynamicNumberPool tcpPortPool;
@@ -108,8 +106,6 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         @Uninitialized CoreModule.ResourceDefinitionMap resDfnMapRef,
-        Provider<ResourceDataGenericDbDriver> resourceDriverProviderRef,
-        Provider<VolumeDefinitionDataGenericDbDriver> volumeDefinitionDriverProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
@@ -119,8 +115,6 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
-        resourceDriverProvider = resourceDriverProviderRef;
-        volumeDefinitionDriverProvider = volumeDefinitionDriverProviderRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         tcpPortPool = tcpPortPoolRef;
@@ -177,48 +171,51 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         throws SQLException
     {
         errorReporter.logTrace("Loading ResourceDefinition %s", getId(resourceName));
-        ResourceDefinitionData resDfn = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT))
+        ResourceDefinitionData resDfn = rscDfnCache.get(resourceName);
+        if (resDfn == null)
         {
-            stmt.setString(1, resourceName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
+            try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT))
             {
-                if (resultSet.next())
+                stmt.setString(1, resourceName.value);
+                try (ResultSet resultSet = stmt.executeQuery())
                 {
-                    resDfn = load(resultSet);
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning("ResourceDefinition not found in the DB %s", getId(resourceName));
+                    if (resultSet.next())
+                    {
+                        resDfn = load(resultSet).objA;
+                    }
+                    else
+                    if (logWarnIfNotExists)
+                    {
+                        errorReporter.logWarning("ResourceDefinition not found in the DB %s", getId(resourceName));
+                    }
                 }
             }
         }
         return resDfn;
     }
 
-    public List<ResourceDefinitionData> loadAll() throws SQLException
+    public Map<ResourceDefinitionData, InitMaps> loadAll() throws SQLException
     {
         errorReporter.logTrace("Loading all ResourceDefinitions");
-        List<ResourceDefinitionData> list = new ArrayList<>();
+        Map<ResourceDefinitionData, InitMaps> rscDfnMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    list.add(
-                        load(resultSet)
-                    );
+                    Tuple<ResourceDefinitionData, InitMaps> tuple = load(resultSet);
+                    rscDfnMap.put(tuple.objA, tuple.objB);
                 }
             }
         }
-        errorReporter.logTrace("Loaded %d ResourceDefinitions", list.size());
-        return list;
+        errorReporter.logTrace("Loaded %d ResourceDefinitions", rscDfnMap.size());
+        return rscDfnMap;
     }
 
-    private ResourceDefinitionData load(ResultSet resultSet) throws SQLException
+    private Tuple<ResourceDefinitionData, InitMaps> load(ResultSet resultSet) throws SQLException
     {
+        Tuple<ResourceDefinitionData, InitMaps> retTuple = new Tuple<>();
         ResourceDefinitionData resDfn;
         ResourceName resourceName;
         TcpPortNumber port;
@@ -258,74 +255,39 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         resDfn = (ResourceDefinitionData) resDfnMap.get(resourceName);
         if (resDfn == null)
         {
-            resDfn = rscDfnCache.get(resourceName);
-        }
-        if (resDfn == null)
-        {
-            try
-            {
-                ObjectProtection objProt = getObjectProtection(resourceName);
+            ObjectProtection objProt = getObjectProtection(resourceName);
 
-                resDfn = new ResourceDefinitionData(
-                    java.util.UUID.fromString(resultSet.getString(RD_UUID)),
-                    objProt,
-                    resourceName,
-                    port,
-                    tcpPortPool,
-                    resultSet.getLong(RD_FLAGS),
-                    resultSet.getString(RD_SECRET),
-                    TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),
-                    this,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider
-                );
-                // cache the resDfn BEFORE we load the conDfns
-                if (!cacheCleared)
-                {
-                    rscDfnCache.put(resourceName, resDfn);
-                }
+            Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
+            Map<NodeName, Resource> rscMap = new TreeMap<>();
 
-                errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
+            resDfn = new ResourceDefinitionData(
+                java.util.UUID.fromString(resultSet.getString(RD_UUID)),
+                objProt,
+                resourceName,
+                port,
+                tcpPortPool,
+                resultSet.getLong(RD_FLAGS),
+                resultSet.getString(RD_SECRET),
+                TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                vlmDfnMap,
+                rscMap
+            );
 
-                // restore volumeDefinitions
-                List<VolumeDefinition> volDfns =
-                    volumeDefinitionDriverProvider.get().loadAllVolumeDefinitionsByResourceDefinition(
-                    resDfn,
-                    dbCtx
-                );
-                for (VolumeDefinition volDfn : volDfns)
-                {
-                    resDfn.putVolumeDefinition(dbCtx, volDfn);
-                }
-                errorReporter.logTrace(
-                    "Restored ResourceDefinition's VolumeDefinitions %s",
-                    getId(resDfn)
-                );
+            retTuple.objA = resDfn;
+            retTuple.objB = new RscDfnInitMaps(vlmDfnMap, rscMap);
 
-                // restore resources
-                List<ResourceData> resList = resourceDriverProvider.get().loadResourceDataByResourceDefinition(
-                    resDfn,
-                    dbCtx
-                );
-                for (ResourceData res : resList)
-                {
-                    resDfn.addResource(dbCtx, res);
-                }
-
-                errorReporter.logTrace("Restored ResourceDefinition's Resources %s", getId(resDfn));
-            }
-            catch (AccessDeniedException accessDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
-            }
-
+            errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
         }
         else
         {
+            retTuple.objA = resDfn;
             errorReporter.logTrace("ResourceDefinition loaded from cache %s", getId(resDfn));
         }
-        return resDfn;
+        return retTuple;
     }
 
     private ObjectProtection getObjectProtection(ResourceName resourceName)
@@ -343,12 +305,6 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             );
         }
         return objProt;
-    }
-
-    public void clearCache()
-    {
-        cacheCleared = true;
-        rscDfnCache.clear();
     }
 
     @Override
@@ -521,6 +477,33 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             {
                 GenericDbDriver.handleAccessDeniedException(accDeniedExc);
             }
+        }
+    }
+
+    private class RscDfnInitMaps implements ResourceDefinition.InitMaps
+    {
+        private final Map<VolumeNumber, VolumeDefinition> vlmDfnMap;
+        private final Map<NodeName, Resource> rscMap;
+
+        RscDfnInitMaps(
+            Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
+            Map<NodeName, Resource> rscMapRef
+        )
+        {
+            this.vlmDfnMap = vlmDfnMapRef;
+            this.rscMap = rscMapRef;
+        }
+
+        @Override
+        public Map<NodeName, Resource> getRscMap()
+        {
+            return rscMap;
+        }
+
+        @Override
+        public Map<VolumeNumber, VolumeDefinition> getVlmDfnMap()
+        {
+            return vlmDfnMap;
         }
 
     }

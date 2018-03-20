@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -79,7 +79,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     VolumeDefinitionData(
         UUID uuid,
-        AccessContext accCtx,
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
         MinorNumber minor,
@@ -89,17 +88,15 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<String, Volume> vlmMapRef
     )
-        throws MdException, AccessDeniedException, SQLException
+        throws MdException, SQLException
     {
         super(transMgrProviderRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
-
-        // Creating a new volume definition requires CHANGE access to the resource definition
-        resDfnRef.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         try
         {
@@ -144,7 +141,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr)
         );
 
-        volumes = transObjFactory.createTransactionMap(new TreeMap<String, Volume>(), null);
+        volumes = transObjFactory.createTransactionMap(vlmMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             resDfnRef.getObjProt(),
@@ -153,7 +150,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             this.dbDriver.getStateFlagsPersistence(),
             initFlags
         );
-
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
         cryptKey = transObjFactory.createTransactionSimpleObject(this, null, null);
@@ -167,9 +163,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             deleted,
             cryptKey
         );
-
-        ((ResourceDefinitionData) resourceDfn).putVolumeDefinition(accCtx, this);
-        activateTransMgr();
     }
 
     @Override
@@ -258,13 +251,13 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public void putVolume(AccessContext accCtx, VolumeData volumeData) throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumes.put(getResourceId(volumeData.getResource()), volumeData);
+        volumes.put(Resource.getStringId(volumeData.getResource()), volumeData);
     }
 
     public void removeVolume(AccessContext accCtx, VolumeData volumeData) throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumes.remove(getResourceId(volumeData.getResource()));
+        volumes.remove(Resource.getStringId(volumeData.getResource()));
     }
 
     @Override
@@ -279,12 +272,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumes.values().stream();
-    }
-
-    private String getResourceId(Resource rsc)
-    {
-        return rsc.getAssignedNode().getName().value + "/" +
-            rsc.getDefinition().getName().value;
     }
 
     @Override

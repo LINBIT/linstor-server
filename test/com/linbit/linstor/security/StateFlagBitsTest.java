@@ -14,13 +14,18 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.testutils.SimpleIterator;
 import java.sql.SQLException;
 
+import javax.inject.Provider;
+
 @SuppressWarnings("checkstyle:magicnumber")
 public class StateFlagBitsTest
 {
+    private Provider<TransactionMgr> testTransMgrProvider;
     private AccessContext sysCtx;
     private AccessContext rootCtx;
     private PrivilegeSet privSysAll;
@@ -34,6 +39,7 @@ public class StateFlagBitsTest
     private SecurityType userSecDomain;
     private SecurityType someOtherUserSecDomain;
     private TransactionObjectFactory transObjFactory;
+    private ObjectProtectionDatabaseDriver objProtDbDriver;
 
     @Before
     public void setUp() throws InvalidNameException, AccessDeniedException, SQLException
@@ -57,7 +63,14 @@ public class StateFlagBitsTest
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
         someOtherUserSecDomain = new SecurityType(new SecTypeName("SomeOtherUserSecType"));
 
-        transObjFactory = new TransactionObjectFactory(() -> null);
+        TransactionMgr transMgr = new SatelliteTransactionMgr();
+        testTransMgrProvider = () -> transMgr;
+        transObjFactory = new TransactionObjectFactory(testTransMgrProvider);
+        objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
+            sysCtx,
+            testTransMgrProvider,
+            transObjFactory
+        );
 
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
@@ -682,7 +695,13 @@ public class StateFlagBitsTest
         throws AccessDeniedException, SQLException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(objCtx, null, null, transObjFactory, null);
+        ObjectProtection objProt = new ObjectProtection(
+            objCtx,
+            null,
+            objProtDbDriver,
+            transObjFactory,
+            testTransMgrProvider
+        );
         for (AccessType grantedAt : grantedAccess)
         {
             if (grantedAt != null)
@@ -753,7 +772,13 @@ public class StateFlagBitsTest
     {
         StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
-            super(objProtRef, new Object(), validFlagsMask, (objProt, flags) -> {}, null);
+            super(
+                objProtRef,
+                new Object(),
+                validFlagsMask,
+                ((objProt, flags) -> {}),
+                testTransMgrProvider
+            );
             // as this test should not test persistence, this should be no problem.
         }
     }

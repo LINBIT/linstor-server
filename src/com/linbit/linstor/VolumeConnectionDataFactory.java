@@ -80,7 +80,6 @@ public class VolumeConnectionDataFactory
         {
             volConData = new VolumeConnectionData(
                 UUID.randomUUID(),
-                accCtx,
                 source,
                 target,
                 dbDriver,
@@ -90,6 +89,8 @@ public class VolumeConnectionDataFactory
             );
 
             dbDriver.create(volConData);
+            sourceVolume.setVolumeConnection(accCtx, volConData);
+            targetVolume.setVolumeConnection(accCtx, volConData);
         }
         return volConData;
     }
@@ -130,7 +131,6 @@ public class VolumeConnectionDataFactory
             {
                 volConData = new VolumeConnectionData(
                     uuid,
-                    accCtx,
                     source,
                     target,
                     dbDriver,
@@ -138,6 +138,8 @@ public class VolumeConnectionDataFactory
                     transObjFactory,
                     transMgrProvider
                 );
+                sourceVolume.setVolumeConnection(accCtx, volConData);
+                targetVolume.setVolumeConnection(accCtx, volConData);
             }
         }
         catch (Exception exc)

@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.Tripple;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -24,7 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 @Singleton
 public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionDataDatabaseDriver
@@ -37,22 +38,14 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     private static final String RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String VOL_NR = DbConstants.VLM_NR;
 
-    private static final String SELECT =
+    private static final String SELECT_ALL =
         " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST + ", " +
-                     RES_NAME + ", " + VOL_NR +
-        " FROM "  + TBL_VOL_CON_DFN +
+            RES_NAME + ", " + VOL_NR +
+        " FROM "  + TBL_VOL_CON_DFN;
+    private static final String SELECT =
+        SELECT_ALL +
         " WHERE " + NODE_SRC + " = ? AND " +
                     NODE_DST + " = ? AND " +
-                    RES_NAME + " = ? AND " +
-                    VOL_NR + " = ?";
-    private static final String SELECT_BY_VOL_SRC_OR_DST =
-        " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST + ", " +
-                     RES_NAME + ", " + VOL_NR +
-        " FROM "  + TBL_VOL_CON_DFN +
-        " WHERE (" +
-                        NODE_SRC + " = ? OR " +
-                        NODE_DST + " = ? " +
-               ") AND " +
                     RES_NAME + " = ? AND " +
                     VOL_NR + " = ?";
 
@@ -73,11 +66,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private final Provider<NodeDataGenericDbDriver> nodeDataDbDriverProvider;
-    private final Provider<ResourceDefinitionDataGenericDbDriver> resourceDefinitionDataDbDriverProvider;
-    private final Provider<ResourceDataGenericDbDriver> resourceDataDbDriverProvider;
-    private final Provider<VolumeDefinitionDataGenericDbDriver> volumeDefinitionDataDbDriverProvider;
-    private final Provider<VolumeDataGenericDbDriver> volumeDataDbDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -86,11 +74,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     public VolumeConnectionDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        Provider<NodeDataGenericDbDriver> nodeDataDbDriverProviderRef,
-        Provider<ResourceDefinitionDataGenericDbDriver> resourceDefinitionDataDbDriverProviderRef,
-        Provider<ResourceDataGenericDbDriver> resourceDataDbDriverProviderRef,
-        Provider<VolumeDefinitionDataGenericDbDriver> volumeDefinitionDataDbDriverProviderRef,
-        Provider<VolumeDataGenericDbDriver> volumeDataDbDriverProviderRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -98,11 +81,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
-        nodeDataDbDriverProvider = nodeDataDbDriverProviderRef;
-        resourceDefinitionDataDbDriverProvider = resourceDefinitionDataDbDriverProviderRef;
-        resourceDataDbDriverProvider = resourceDataDbDriverProviderRef;
-        volumeDefinitionDataDbDriverProvider = volumeDefinitionDataDbDriverProviderRef;
-        volumeDataDbDriverProvider = volumeDataDbDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -160,7 +138,11 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
                 {
                     if (resultSet.next())
                     {
-                        ret = restoreVolumeConnectionData(resultSet);
+                        ret = restoreVolumeConnectionData(
+                            resultSet,
+                            sourceVolume,
+                            targetVolume
+                        );
                         errorReporter.logTrace(
                             "VolumeConnection loaded %s",
                             getId(ret)
@@ -180,155 +162,66 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         return ret;
     }
 
-    @Override
-    @SuppressWarnings("checkstyle:magicnumber")
-    public List<VolumeConnectionData> loadAllByVolume(Volume volume)
+    public List<VolumeConnectionData> loadAll(
+        Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap
+    )
         throws SQLException
     {
-        errorReporter.logTrace(
-            "Loading all VolumeConnections for Volume %s",
-            getVolumeTraceId(volume)
-        );
-
-        List<VolumeConnectionData> connections = new ArrayList<>();
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_VOL_SRC_OR_DST))
+        errorReporter.logTrace("Loading all VolumeConnections");
+        List<VolumeConnectionData> vlmConns = new ArrayList<>();
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
-            NodeName nodeName = volume.getResource().getAssignedNode().getName();
-            stmt.setString(1, nodeName.value);
-            stmt.setString(2, nodeName.value);
-            stmt.setString(3, volume.getResourceDefinition().getName().value);
-            stmt.setInt(4, volume.getVolumeDefinition().getVolumeNumber().value);
-
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    VolumeConnectionData conDfn = restoreVolumeConnectionData(resultSet);
-                    connections.add(conDfn);
+                    NodeName nodeNameSrc = new NodeName(resultSet.getString(NODE_SRC));
+                    NodeName nodeNameDst = new NodeName(resultSet.getString(NODE_DST));
+                    ResourceName rscName = new ResourceName(resultSet.getString(RES_NAME));
+                    VolumeNumber vlmNr = new VolumeNumber(resultSet.getInt(VOL_NR));
+
+                    VolumeConnectionData vlmConn = restoreVolumeConnectionData(
+                        resultSet,
+                        vlmMap.get(new Tripple<>(nodeNameSrc, rscName, vlmNr)),
+                        vlmMap.get(new Tripple<>(nodeNameDst, rscName, vlmNr))
+                    );
+                    vlmConns.add(vlmConn);
                 }
             }
         }
-
-        errorReporter.logTrace(
-            "%d VolumeConnections loaded for Resource %s",
-            connections.size(),
-            getVolumeDebugId(volume)
-        );
-        return connections;
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(
+                TBL_VOL_CON_DFN + " contains invalid name: " + exc.invalidName,
+                exc
+            );
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(
+                TBL_VOL_CON_DFN + " contains invalid volume number",
+                exc
+            );
+        }
+        return vlmConns;
     }
 
-    private VolumeConnectionData restoreVolumeConnectionData(ResultSet resultSet)
+    private VolumeConnectionData restoreVolumeConnectionData(
+        ResultSet resultSet,
+        Volume sourceVolume,
+        Volume targetVolume
+    )
         throws SQLException
     {
-        NodeName sourceNodeName = null;
-        NodeName targetNodeName = null;
-        ResourceName resourceName = null;
-        VolumeNumber volNr = null;
-        try
-        {
-            sourceNodeName = new NodeName(resultSet.getString(NODE_SRC));
-            targetNodeName = new NodeName(resultSet.getString(NODE_DST));
-            resourceName = new ResourceName(resultSet.getString(RES_NAME));
-            volNr = new VolumeNumber(resultSet.getInt(VOL_NR));
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            String col;
-            String format = "A %s of a stored VolumeConnection in table %s could not be restored. ";
-            if (sourceNodeName == null)
-            {
-                format += "(invalid SourceNodeName=%s, TargetNodeName=%s, ResName=%s)";
-                col = "SourceNodeName";
-            }
-            else
-            if (targetNodeName == null)
-            {
-                format += "(SourceNodeName=%s, invalid TargetNodeName=%s, ResName=%s)";
-                col = "TargetNodeName";
-            }
-            else
-            {
-                format += "(SourceNodeName=%s, TargetNodeName=%s, invalid ResName=%s)";
-                col = "ResName";
-            }
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    format,
-                    col,
-                    TBL_VOL_CON_DFN,
-                    resultSet.getString(NODE_SRC),
-                    resultSet.getString(NODE_DST),
-                    resultSet.getString(RES_NAME),
-                    resultSet.getInt(VOL_NR)
-                ),
-                invalidNameExc
-            );
-        }
-        catch (ValueOutOfRangeException invalidNameExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "A VolumeNumber of a stored VolumeConnection in table %s could not be restored. " +
-                        "(SourceNodeName=%s, TargetNodeName=%s, ResName=%s, invalid VolNr=%d)",
-                    TBL_VOL_CON_DFN,
-                    resultSet.getString(NODE_SRC),
-                    resultSet.getString(NODE_DST),
-                    resultSet.getString(RES_NAME),
-                    resultSet.getInt(VOL_NR)
-                ),
-                invalidNameExc
-            );
-        }
-
-        NodeDataGenericDbDriver nodeDataDbDriver = nodeDataDbDriverProvider.get();
-        Node sourceNode = nodeDataDbDriver.load(sourceNodeName, true);
-        Node targetNode = nodeDataDbDriver.load(targetNodeName, true);
-
-        ResourceDefinition resourceDefinition = resourceDefinitionDataDbDriverProvider.get().load(
-            resourceName,
-            true
+        return new VolumeConnectionData(
+            java.util.UUID.fromString(resultSet.getString(UUID)),
+            sourceVolume,
+            targetVolume,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
         );
-        VolumeDefinition volumeDfn = volumeDefinitionDataDbDriverProvider.get()
-            .load(resourceDefinition, volNr, true);
-
-        ResourceDataGenericDbDriver resourceDataDbDriver = resourceDataDbDriverProvider.get();
-        Resource sourceResource = resourceDataDbDriver.load(sourceNode, resourceName, true);
-        Resource targetResource = resourceDataDbDriver.load(targetNode, resourceName, true);
-
-        VolumeDataGenericDbDriver volumeDataDbDriver = volumeDataDbDriverProvider.get();
-        Volume sourceVolume = volumeDataDbDriver.load(sourceResource, volumeDfn, true);
-        Volume targetVolume = volumeDataDbDriver.load(targetResource, volumeDfn, true);
-
-        VolumeConnectionData ret = null;
-        try
-        {
-            ret = cacheGet(
-                sourceNode,
-                targetNode,
-                sourceVolume.getResourceDefinition(),
-                sourceVolume.getVolumeDefinition()
-            );
-            if (ret == null)
-            {
-                UUID uuid = java.util.UUID.fromString(resultSet.getString(UUID));
-
-                ret = new VolumeConnectionData(
-                    uuid,
-                    dbCtx,
-                    sourceVolume,
-                    targetVolume,
-                    this,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider
-                );
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
     }
 
     @Override
@@ -468,15 +361,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         return getVolumeId(
             volume.getResource().getAssignedNode().getName().value,
             volume.getResourceDefinition().getName().value,
-            volume.getVolumeDefinition().getVolumeNumber().value
-        );
-    }
-
-    private String getVolumeDebugId(Volume volume)
-    {
-        return getVolumeId(
-            volume.getResource().getAssignedNode().getName().displayValue,
-            volume.getResourceDefinition().getName().displayValue,
             volume.getVolumeDefinition().getVolumeNumber().value
         );
     }

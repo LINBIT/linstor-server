@@ -172,7 +172,7 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
 
     private void cache(KEY key, VALUE value, VALUE oldValue)
     {
-        if (isInitialized() && !Objects.equals(value, oldValue))
+        if (!Objects.equals(value, oldValue))
         {
             if (!oldValues.containsKey(key))
             {

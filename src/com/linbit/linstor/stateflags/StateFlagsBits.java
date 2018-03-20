@@ -237,17 +237,9 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
 
     private void setFlags(final long bits) throws SQLException
     {
-        if (isInitialized())
-        {
-            activateTransMgr();
-            persistence.persist(pk, bits);
-            changedStateFlags = bits;
-        }
-        else
-        {
-            changedStateFlags = bits;
-            commitImpl();
-        }
+        activateTransMgr();
+        persistence.persist(pk, bits);
+        changedStateFlags = bits;
     }
 
     public static <E extends Flags> Set<E> restoreFlags(E[] values, long mask)

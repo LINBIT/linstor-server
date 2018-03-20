@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.Tuple;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -23,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class ResourceConnectionDataGenericDbDriver implements ResourceConnectionDataDatabaseDriver
@@ -34,18 +36,13 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
     private static final String RES_NAME = DbConstants.RESOURCE_NAME;
 
-    private static final String SELECT =
+    private static final String SELECT_ALL =
         " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  +
-        " FROM " + TBL_RES_CON_DFN +
+        " FROM " + TBL_RES_CON_DFN;
+    private static final String SELECT =
+        SELECT_ALL +
         " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ? AND " +
-                   RES_NAME + " = ?";
-    private static final String SELECT_BY_RES_SRC_OR_DST =
-        " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  +
-        " FROM " + TBL_RES_CON_DFN +
-        " WHERE ( " + NODE_SRC + " = ? OR " +
-                      NODE_DST + " = ?" +
-                   " ) AND " +
                    RES_NAME + " = ?";
 
     private static final String INSERT =
@@ -61,8 +58,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private final Provider<NodeDataGenericDbDriver> nodeDataDbDriverProvider;
-    private final Provider<ResourceDataGenericDbDriver> resourceDataDbDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -71,8 +66,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     public ResourceConnectionDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        Provider<NodeDataGenericDbDriver> nodeDataDbDriverProviderRef,
-        Provider<ResourceDataGenericDbDriver> resourceDataDbDriverProviderRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -80,11 +73,49 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
-        nodeDataDbDriverProvider = nodeDataDbDriverProviderRef;
-        resourceDataDbDriverProvider = resourceDataDbDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+    }
+
+    public List<ResourceConnectionData> loadAll(Map<Tuple<NodeName, ResourceName>, ResourceData> tmpRscMap)
+        throws SQLException
+    {
+        errorReporter.logTrace("Loading all ResourceConnections");
+        List<ResourceConnectionData> rscConnections = new ArrayList<>();
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    NodeName sourceNodeName = null;
+                    NodeName targetNodeName = null;
+                    ResourceName rscName = null;
+
+                    try
+                    {
+                        sourceNodeName = new NodeName(resultSet.getString(NODE_SRC));
+                        targetNodeName = new NodeName(resultSet.getString(NODE_DST));
+                        rscName = new ResourceName(resultSet.getString(RES_NAME));
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new ImplementationError(invalidNameExc);
+                    }
+
+                    ResourceConnectionData conDfn = restoreResourceConnection(
+                        resultSet,
+                        tmpRscMap.get(new Tuple<>(sourceNodeName, rscName)),
+                        tmpRscMap.get(new Tuple<>(targetNodeName, rscName))
+                    );
+                    rscConnections.add(conDfn);
+                }
+            }
+        }
+        errorReporter.logTrace("Loaded %d ResourceConnections", rscConnections.size());
+
+        return rscConnections;
     }
 
     @Override
@@ -122,7 +153,11 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             {
                 if (resultSet.next())
                 {
-                    ret = restoreResourceConnection(resultSet);
+                    ret = restoreResourceConnection(
+                        resultSet,
+                        sourceResource,
+                        targetResource
+                    );
                     // traceLog about loaded from DB|cache in restoreConDfn method
                 }
                 else
@@ -138,79 +173,26 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return ret;
     }
 
-    private ResourceConnectionData restoreResourceConnection(ResultSet resultSet) throws SQLException
+    private ResourceConnectionData restoreResourceConnection(
+        ResultSet resultSet,
+        Resource sourceResource,
+        Resource targetResource
+    )
+        throws SQLException
     {
-        NodeName sourceNodeName = null;
-        NodeName targetNodeName = null;
-        ResourceName resourceName = null;
-        try
-        {
-            sourceNodeName = new NodeName(resultSet.getString(NODE_SRC));
-            targetNodeName = new NodeName(resultSet.getString(NODE_DST));
-            resourceName = new ResourceName(resultSet.getString(RES_NAME));
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            String col;
-            String format = "The stored %s in table %s could not be restored. ";
-            if (sourceNodeName == null)
-            {
-                col = "SourceNodeName";
-                format += "(invalid SourceNodeName=%s, TargetNodeName=%s, ResourceName=%s)";
-            }
-            else
-            if (targetNodeName == null)
-            {
-                col = "TargetNodeName";
-                format += "(SourceNodeName=%s, invalid TargetNodeName=%s, ResourceName=%s)";
-            }
-            else
-            {
-                col = "ResourceName";
-                format += "(SourceNodeName=%s, TargetNodeName=%s, invalid ResourceName=%s)";
-            }
-
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    format,
-                    col,
-                    TBL_RES_CON_DFN,
-                    resultSet.getString(NODE_SRC),
-                    resultSet.getString(NODE_DST),
-                    resultSet.getString(RES_NAME)
-                ),
-                invalidNameExc
-            );
-        }
-
-        NodeDataGenericDbDriver nodeDataDbDriver = nodeDataDbDriverProvider.get();
-        Node sourceNode = nodeDataDbDriver.load(sourceNodeName, true);
-        Node targetNode = nodeDataDbDriver.load(targetNodeName, true);
-
-        ResourceDataGenericDbDriver resourceDataDbDriver = resourceDataDbDriverProvider.get();
-        Resource sourceResource = resourceDataDbDriver.load(sourceNode, resourceName, true);
-        Resource targetResource = resourceDataDbDriver.load(targetNode, resourceName, true);
 
         ResourceConnectionData resConData = cacheGet(sourceResource, targetResource);
         if (resConData == null)
         {
-            try
-            {
-                resConData = new ResourceConnectionData(
-                    java.util.UUID.fromString(resultSet.getString(UUID)),
-                    dbCtx,
-                    sourceResource,
-                    targetResource,
-                    this,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-            }
+            resConData = new ResourceConnectionData(
+                java.util.UUID.fromString(resultSet.getString(UUID)),
+                sourceResource,
+                targetResource,
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
+            );
             errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
         }
         else
@@ -219,39 +201,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         }
 
         return resConData;
-    }
-
-    @Override
-    @SuppressWarnings("checkstyle:magicnumber")
-    public List<ResourceConnectionData> loadAllByResource(Resource resource) throws SQLException
-    {
-        errorReporter.logTrace(
-            "Loading all ResourceConnections for Resource %s",
-            getResourceTraceId(resource)
-        );
-
-        List<ResourceConnectionData> connections = new ArrayList<>();
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_RES_SRC_OR_DST))
-        {
-            NodeName nodeName = resource.getAssignedNode().getName();
-            stmt.setString(1, nodeName.value);
-            stmt.setString(2, nodeName.value);
-            stmt.setString(3, resource.getDefinition().getName().value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                while (resultSet.next())
-                {
-                    connections.add(restoreResourceConnection(resultSet));
-                }
-            }
-        }
-
-        errorReporter.logTrace(
-            "%d ResourceConnections loaded for Resource %s",
-            connections.size(),
-            getResourceDebugId(resource)
-        );
-        return connections;
     }
 
     @Override
@@ -363,14 +312,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return getResourceId(
             resource.getAssignedNode().getName().value,
             resource.getDefinition().getName().value
-        );
-    }
-
-    private String getResourceDebugId(Resource resource)
-    {
-        return getResourceId(
-            resource.getAssignedNode().getName().displayValue,
-            resource.getDefinition().getName().displayValue
         );
     }
 

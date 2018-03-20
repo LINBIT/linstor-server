@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface StorPoolDefinition extends TransactionObject, DbgInstanceUuid
+public interface StorPoolDefinition extends TransactionObject, DbgInstanceUuid, Comparable<StorPoolDefinition>
 {
     UUID getUuid();
 
@@ -42,10 +42,21 @@ public interface StorPoolDefinition extends TransactionObject, DbgInstanceUuid
 
     StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
+    @Override
+    default int compareTo(StorPoolDefinition otherStorPool)
+    {
+        return getName().compareTo(otherStorPool.getName());
+    }
+
     public interface StorPoolDfnApi
     {
         UUID getUuid();
         String getName();
         Map<String, String> getProps();
+    }
+
+    public interface InitMaps
+    {
+        Map<NodeName, StorPool> getStorPoolMap();
     }
 }

@@ -17,7 +17,11 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
+import javax.inject.Provider;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +42,8 @@ public class ObjectProtectionTest
     private SecurityType userSecDomain;
     private SecurityType someOtherUserSecDomain;
     private TransactionObjectFactory transObjFactory;
+    private Provider<TransactionMgr> transMgrProvider;
+    private ObjectProtectionDatabaseDriver objProtDbDriver;
 
     @Before
     public void setUp() throws Exception
@@ -61,7 +67,14 @@ public class ObjectProtectionTest
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
         someOtherUserSecDomain = new SecurityType(new SecTypeName("SomeOtherUserSecType"));
 
-        transObjFactory = new TransactionObjectFactory(() -> null);
+        TransactionMgr transMgr = new SatelliteTransactionMgr();
+        transMgrProvider = () -> transMgr;
+        transObjFactory = new TransactionObjectFactory(transMgrProvider);
+        objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
+            sysCtx,
+            transMgrProvider,
+            transObjFactory
+        );
 
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
@@ -426,7 +439,13 @@ public class ObjectProtectionTest
             AccessContext objCtx = new AccessContext(someOtherUserId, subjRole, someOtherUserSecDomain, privSysAll);
             objCtx.privEffective.enablePrivileges(PRIVILEGE_LIST);
 
-            ObjectProtection objProt = new ObjectProtection(objCtx, null, null, transObjFactory, null);
+            ObjectProtection objProt = new ObjectProtection(
+                objCtx,
+                null,
+                objProtDbDriver,
+                transObjFactory,
+                transMgrProvider
+            );
 
 
             if (aclEntry != null)

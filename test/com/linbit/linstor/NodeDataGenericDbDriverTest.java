@@ -1,8 +1,13 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.linbit.linstor.NetInterface.EncryptionType;
+import com.linbit.linstor.Node.InitMaps;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Resource.RscFlags;
@@ -18,18 +23,16 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.storage.StorageDriver;
-import org.junit.Before;
-import org.junit.Test;
+
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class NodeDataGenericDbDriverTest extends GenericDbBase
 {
@@ -244,8 +247,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(0, loadedNode.getProps(SYS_CTX).size()); // serial number
     }
 
-    @SuppressWarnings({"checkstyle:variabledeclarationusagedistance", "checkstyle:magicnumber"})
     @Test
+    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:variabledeclarationusagedistance"})
     public void testLoadGetInstanceComplete() throws Exception
     {
         // node1
@@ -676,8 +679,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             {
                 StorageDriver storageDriver = storPool.getDriver(SYS_CTX, null, null, null);
                 assertNull(storageDriver);
-                // in controller storDriver HAS to be null (as we are testing database,
-                // we have to be testing the controller)
+                // in controller storDriver HAS to be null (as we are testing database, we
+                // have to be testing the controller)
             }
             assertEquals(storPoolDriver2, storPool.getDriverName());
             assertEquals(poolName, storPool.getName());
@@ -755,22 +758,32 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         );
         nodesMap.put(nodeName, node);
         nodesMap.put(nodeName2, node2);
-        List<NodeData> allNodes = dbDriver.loadAll();
+        Map<NodeData, InitMaps> allNodes = dbDriver.loadAll();
         assertEquals(2, allNodes.size());
 
         clearCaches();
         allNodes = dbDriver.loadAll();
         assertEquals(2, allNodes.size());
 
-        assertEquals(node.getName().value, allNodes.get(0).getName().value);
-        assertEquals(node.getName().displayValue, allNodes.get(0).getName().displayValue);
-        assertEquals(node.getNodeType(SYS_CTX), allNodes.get(0).getNodeType(SYS_CTX));
-        assertEquals(node.getUuid(), allNodes.get(0).getUuid());
+        Iterator<NodeData> loadedNodesIterator = allNodes.keySet().iterator();
+        Node loadedNode0 = loadedNodesIterator.next();
+        Node loadedNode1 = loadedNodesIterator.next();
 
-        assertEquals(node2.getName().value, allNodes.get(1).getName().value);
-        assertEquals(node2.getName().displayValue, allNodes.get(1).getName().displayValue);
-        assertEquals(node2.getNodeType(SYS_CTX), allNodes.get(1).getNodeType(SYS_CTX));
-        assertEquals(node2.getUuid(), allNodes.get(1).getUuid());
+        if (!loadedNode0.getName().equals(node.getName()))
+        {
+            Node tmp = loadedNode0;
+            loadedNode0 = loadedNode1;
+            loadedNode1 = tmp;
+        }
+        assertEquals(node.getName().value, loadedNode0.getName().value);
+        assertEquals(node.getName().displayValue, loadedNode0.getName().displayValue);
+        assertEquals(node.getNodeType(SYS_CTX), loadedNode0.getNodeType(SYS_CTX));
+        assertEquals(node.getUuid(), loadedNode0.getUuid());
+
+        assertEquals(node2.getName().value, loadedNode1.getName().value);
+        assertEquals(node2.getName().displayValue, loadedNode1.getName().displayValue);
+        assertEquals(node2.getNodeType(SYS_CTX), loadedNode1.getNodeType(SYS_CTX));
+        assertEquals(node2.getUuid(), loadedNode1.getUuid());
     }
 
     @Test (expected = LinStorDataAlreadyExistsException.class)

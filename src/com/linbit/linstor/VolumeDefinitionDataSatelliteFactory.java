@@ -12,6 +12,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class VolumeDefinitionDataSatelliteFactory
@@ -57,7 +58,6 @@ public class VolumeDefinitionDataSatelliteFactory
             {
                 vlmDfnData = new VolumeDefinitionData(
                     vlmDfnUuid,
-                    accCtx,
                     rscDfn,
                     vlmNr,
                     minorNumber,
@@ -67,8 +67,10 @@ public class VolumeDefinitionDataSatelliteFactory
                     driver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>()
                 );
+                ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
             }
         }
         catch (Exception exc)

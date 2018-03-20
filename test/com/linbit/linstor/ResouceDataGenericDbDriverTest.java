@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.Resource.InitMaps;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.GenericDbBase;
@@ -14,7 +15,8 @@ import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -78,7 +80,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     {
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -88,7 +89,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
         commit();
@@ -143,7 +146,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     {
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -153,11 +155,13 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
 
-        ResourceData loadedRes = driver.load(node, resName, true);
+        ResourceData loadedRes = driver.load(node, resDfn, true);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -185,7 +189,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
 
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -195,7 +198,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
 
@@ -224,7 +229,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     {
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -234,15 +238,22 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
 
-        List<ResourceData> resList = driver.loadResourceData(SYS_CTX, node);
+        nodesMap.put(nodeName, node);
+        rscDfnMap.put(resName, resDfn);
+
+        Map<ResourceData, InitMaps> resList = driver.loadAll(nodesMap, rscDfnMap);
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
-        ResourceData resData = resList.get(0);
+
+        ResourceData resData = resList.keySet().iterator().next();
+
         assertNotNull(resData);
         assertEquals(resUuid, resData.getUuid());
         assertNotNull(resData.getAssignedNode());
@@ -268,7 +279,7 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(node, resName, true));
+        assertEquals(storedInstance, driver.load(node, resDfn, true));
     }
 
     @Test
@@ -276,7 +287,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     {
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -286,7 +296,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
         commit();
@@ -307,7 +319,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     {
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -317,7 +328,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
         commit();
@@ -348,7 +361,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
 
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -358,7 +370,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.ensureResExists(SYS_CTX, res);
         commit();
@@ -385,7 +399,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     {
         ResourceData res = new ResourceData(
             resUuid,
-            SYS_CTX,
             objProt,
             resDfn,
             node,
@@ -395,7 +408,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             volumeDataFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
         );
         driver.create(res);
 

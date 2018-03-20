@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
@@ -22,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataDatabaseDriver
@@ -32,15 +34,12 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     private static final String NODE_SRC = DbConstants.NODE_NAME_SRC;
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
 
+    private static final String SELECT_ALL =
+        " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
+        " FROM " + TBL_NODE_CON_DFN;
     private static final String SELECT =
-        " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
-        " FROM " + TBL_NODE_CON_DFN +
+        SELECT_ALL +
         " WHERE " + NODE_SRC + " = ? AND " +
-                   NODE_DST + " = ?";
-    private static final String SELECT_BY_NODE_SRC_OR_DST =
-        " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
-        " FROM  " + TBL_NODE_CON_DFN +
-        " WHERE " + NODE_SRC + " = ? OR " +
                     NODE_DST + " = ?";
 
     private static final String INSERT =
@@ -55,7 +54,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final Provider<NodeDataGenericDbDriver> nodeDriverProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -64,7 +62,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     public NodeConnectionDataGenericDbDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Provider<NodeDataGenericDbDriver> nodeDriverProviderRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -72,7 +69,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-        nodeDriverProvider = nodeDriverProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -88,134 +84,105 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     {
         errorReporter.logTrace("Loading NodeConnection %s", getId(sourceNode, targetNode));
 
-        NodeConnectionData ret = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
-        {
-            stmt.setString(1, sourceNode.getName().value);
-            stmt.setString(2, targetNode.getName().value);
+        NodeConnectionData ret = cacheGet(sourceNode, targetNode);
 
-            try (ResultSet resultSet = stmt.executeQuery())
+        if (ret == null)
+        {
+            try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
             {
-                if (resultSet.next())
+                stmt.setString(1, sourceNode.getName().value);
+                stmt.setString(2, targetNode.getName().value);
+
+                try (ResultSet resultSet = stmt.executeQuery())
                 {
-                    ret = restoreNodeConnection(resultSet);
-                    // traceLog about loaded from DB|cache in restoreConDfn method
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning(
-                        "NodeConnection not found in DB %s",
-                        getId(sourceNode, targetNode)
-                    );
+                    if (resultSet.next())
+                    {
+                        ret = new NodeConnectionData(
+                            java.util.UUID.fromString(resultSet.getString(UUID)),
+                            sourceNode,
+                            targetNode,
+                            this,
+                            propsContainerFactory,
+                            transObjFactory,
+                            transMgrProvider
+                        );
+                        errorReporter.logTrace("NodeConnection %s loaded from database",
+                            getId(sourceNode, targetNode)
+                        );
+                    }
+                    else
+                    if (logWarnIfNotExists)
+                    {
+                        errorReporter.logWarning(
+                            "NodeConnection not found in DB %s",
+                            getId(sourceNode, targetNode)
+                        );
+                    }
                 }
             }
+        }
+        else
+        {
+            errorReporter.logTrace("NodeConnection %s loaded from cache",
+                getId(sourceNode, targetNode)
+            );
         }
         return ret;
     }
 
-    @Override
-    public List<NodeConnectionData> loadAllByNode(Node node) throws SQLException
+    public List<NodeConnectionData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap)
+        throws SQLException
     {
-        errorReporter.logTrace(
-            "Loading all NodeConnections for Node %s",
-            getNodeTraceId(node)
-        );
-
+        errorReporter.logTrace("Loading all NodeConnections");
         List<NodeConnectionData> nodeConnections = new ArrayList<>();
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_BY_NODE_SRC_OR_DST))
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
-            NodeName nodeName = node.getName();
-            stmt.setString(1, nodeName.value);
-            stmt.setString(2, nodeName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    NodeConnectionData conDfn = restoreNodeConnection(resultSet);
+                    NodeName sourceNodeName = null;
+                    NodeName targetNodeName = null;
+
+                    try
+                    {
+                        sourceNodeName = new NodeName(resultSet.getString(NODE_SRC));
+                        targetNodeName = new NodeName(resultSet.getString(NODE_DST));
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new ImplementationError(invalidNameExc);
+                    }
+
+                    NodeConnectionData conDfn = restoreNodeConnection(
+                        resultSet,
+                        tmpNodesMap.get(sourceNodeName),
+                        tmpNodesMap.get(targetNodeName)
+                    );
                     nodeConnections.add(conDfn);
                 }
             }
         }
 
-        errorReporter.logTrace(
-            "%d NodeConnections loaded for Node %s",
-            nodeConnections.size(),
-            getNodeDebugId(node)
-        );
         return nodeConnections;
     }
 
-    private NodeConnectionData restoreNodeConnection(ResultSet resultSet)
+    private NodeConnectionData restoreNodeConnection(
+        ResultSet resultSet,
+        Node sourceNode,
+        Node targetNode
+    )
         throws SQLException
     {
-
-        NodeName sourceNodeName = null;
-        NodeName targetNodeName = null;
-        try
-        {
-            sourceNodeName = new NodeName(resultSet.getString(NODE_SRC));
-            targetNodeName = new NodeName(resultSet.getString(NODE_DST));
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            String col;
-            String format = "The stored %s in table %s could not be restored. ";
-            if (sourceNodeName == null)
-            {
-                col = "SourceNodeName";
-                format += "(invalid SourceNodeName=%s, TargetNodeName=%s)";
-            }
-            else
-            {
-                col = "TargetNodeName";
-                format += "(SourceNodeName=%s, invalid TargetNodeName=%s)";
-            }
-
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    format,
-                    col,
-                    TBL_NODE_CON_DFN,
-                    resultSet.getString(NODE_SRC),
-                    resultSet.getString(NODE_DST)
-                ),
-                invalidNameExc
-            );
-        }
-
-        NodeDataGenericDbDriver nodeDriver = nodeDriverProvider.get();
-        Node sourceNode = nodeDriver.load(sourceNodeName, true);
-        Node targetNode = nodeDriver.load(targetNodeName, true);
-
-        NodeConnectionData nodeConData = cacheGet(sourceNode, targetNode);
-        if (nodeConData == null)
-        {
-            try
-            {
-                nodeConData = new NodeConnectionData(
-                    java.util.UUID.fromString(resultSet.getString(UUID)),
-                    dbCtx,
-                    sourceNode,
-                    targetNode,
-                    this,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-            }
-            errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(nodeConData));
-        }
-        else
-        {
-            errorReporter.logTrace("ResourceConnection loaded from cache %s", getId(nodeConData));
-        }
-
-        return nodeConData;
+        return new NodeConnectionData(
+            java.util.UUID.fromString(resultSet.getString(UUID)),
+            sourceNode,
+            targetNode,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
     }
 
     @Override
@@ -316,20 +283,5 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     private String getId(String sourceName, String targetName)
     {
         return "(SourceNode=" + sourceName + " TargetNode=" + targetName + ")";
-    }
-
-    private String getNodeTraceId(Node node)
-    {
-        return getNodeId(node.getName().value);
-    }
-
-    private String getNodeDebugId(Node node)
-    {
-        return getNodeId(node.getName().displayValue);
-    }
-
-    private String getNodeId(String name)
-    {
-        return "(NodeName=" + name + ")";
     }
 }

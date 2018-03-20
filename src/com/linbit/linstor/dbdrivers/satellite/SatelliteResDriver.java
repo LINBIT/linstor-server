@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -35,13 +35,13 @@ public class SatelliteResDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public ResourceData load(Node node, ResourceName resourceName, boolean logWarnIfNotExists)
+    public ResourceData load(Node node, ResourceDefinition rscDfn, boolean logWarnIfNotExists)
 
     {
         ResourceData resource = null;
         try
         {
-            resource = (ResourceData) node.getResource(dbCtx, resourceName);
+            resource = (ResourceData) node.getResource(dbCtx, rscDfn.getName());
         }
         catch (AccessDeniedException accDeniedExc)
         {

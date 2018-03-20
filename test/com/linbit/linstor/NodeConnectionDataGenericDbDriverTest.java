@@ -58,7 +58,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         nodeCon = new NodeConnectionData(
-            uuid, SYS_CTX, nodeSrc, nodeDst, driver, propsContainerFactory, transObjFactory, transMgrProvider
+            uuid, nodeSrc, nodeDst, driver, propsContainerFactory, transObjFactory, transMgrProvider
         );
     }
 
@@ -95,7 +95,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(nodeCon);
 
-        List<NodeConnectionData> cons = driver.loadAllByNode(nodeSrc);
+        List<NodeConnectionData> cons = driver.loadAll(nodesMap);
 
         assertNotNull(cons);
 

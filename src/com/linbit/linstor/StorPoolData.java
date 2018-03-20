@@ -1,5 +1,8 @@
 package com.linbit.linstor;
 
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
+import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
+
 import com.linbit.ImplementationError;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
@@ -24,6 +27,8 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,12 +36,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.UUID;
-import javax.inject.Provider;
-
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
-import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {
@@ -62,7 +62,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     StorPoolData(
         UUID id,
-        AccessContext accCtx,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         String storageDriverName,
@@ -70,9 +69,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<String, Volume> volumeMapRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProviderRef);
         uuid = id;
@@ -82,7 +82,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
-        volumeMap = transObjFactory.createTransactionMap(new TreeMap<String, Volume>(), null);
+        volumeMap = transObjFactory.createTransactionMap(volumeMapRef, null);
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
@@ -97,9 +97,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             deleted,
             freeSpace
         );
-
-        ((NodeData) nodeRef).addStorPool(accCtx, this);
-        ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, this);
         activateTransMgr();
     }
 
@@ -210,7 +207,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        volumeMap.put(getVolumeKey(volume), volume);
+        volumeMap.put(Volume.getVolumeKey(volume), volume);
     }
 
     @Override
@@ -219,7 +216,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        volumeMap.remove(getVolumeKey(volume));
+        volumeMap.remove(Volume.getVolumeKey(volume));
     }
 
     @Override
@@ -229,14 +226,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         return volumeMap.values();
-    }
-
-    private String getVolumeKey(Volume volume)
-    {
-        NodeName nodeName = volume.getResource().getAssignedNode().getName();
-        ResourceName rscName = volume.getResourceDefinition().getName();
-        VolumeNumber volNr = volume.getVolumeDefinition().getVolumeNumber();
-        return nodeName.value + "/" + rscName.value + "/" + volNr.value;
     }
 
     public void setRealFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException, SQLException
