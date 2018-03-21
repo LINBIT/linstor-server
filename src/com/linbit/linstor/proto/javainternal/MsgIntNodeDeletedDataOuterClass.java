@@ -35,6 +35,24 @@ public final class MsgIntNodeDeletedDataOuterClass {
      */
     com.google.protobuf.ByteString
         getNodeNameBytes();
+
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 2;</code>
+     */
+    long getFullSyncId();
+
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 3;</code>
+     */
+    long getUpdateId();
   }
   /**
    * <pre>
@@ -54,6 +72,8 @@ public final class MsgIntNodeDeletedDataOuterClass {
     }
     private MsgIntNodeDeletedData() {
       nodeName_ = "";
+      fullSyncId_ = 0L;
+      updateId_ = 0L;
     }
 
     @java.lang.Override
@@ -85,6 +105,16 @@ public final class MsgIntNodeDeletedDataOuterClass {
               java.lang.String s = input.readStringRequireUtf8();
 
               nodeName_ = s;
+              break;
+            }
+            case 16: {
+
+              fullSyncId_ = input.readSInt64();
+              break;
+            }
+            case 24: {
+
+              updateId_ = input.readSInt64();
               break;
             }
           }
@@ -152,6 +182,32 @@ public final class MsgIntNodeDeletedDataOuterClass {
       }
     }
 
+    public static final int FULL_SYNC_ID_FIELD_NUMBER = 2;
+    private long fullSyncId_;
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 2;</code>
+     */
+    public long getFullSyncId() {
+      return fullSyncId_;
+    }
+
+    public static final int UPDATE_ID_FIELD_NUMBER = 3;
+    private long updateId_;
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 3;</code>
+     */
+    public long getUpdateId() {
+      return updateId_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -167,6 +223,12 @@ public final class MsgIntNodeDeletedDataOuterClass {
       if (!getNodeNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName_);
       }
+      if (fullSyncId_ != 0L) {
+        output.writeSInt64(2, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        output.writeSInt64(3, updateId_);
+      }
     }
 
     public int getSerializedSize() {
@@ -176,6 +238,14 @@ public final class MsgIntNodeDeletedDataOuterClass {
       size = 0;
       if (!getNodeNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName_);
+      }
+      if (fullSyncId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(2, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(3, updateId_);
       }
       memoizedSize = size;
       return size;
@@ -195,6 +265,10 @@ public final class MsgIntNodeDeletedDataOuterClass {
       boolean result = true;
       result = result && getNodeName()
           .equals(other.getNodeName());
+      result = result && (getFullSyncId()
+          == other.getFullSyncId());
+      result = result && (getUpdateId()
+          == other.getUpdateId());
       return result;
     }
 
@@ -207,6 +281,12 @@ public final class MsgIntNodeDeletedDataOuterClass {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
       hash = (53 * hash) + getNodeName().hashCode();
+      hash = (37 * hash) + FULL_SYNC_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getFullSyncId());
+      hash = (37 * hash) + UPDATE_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getUpdateId());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -332,6 +412,10 @@ public final class MsgIntNodeDeletedDataOuterClass {
         super.clear();
         nodeName_ = "";
 
+        fullSyncId_ = 0L;
+
+        updateId_ = 0L;
+
         return this;
       }
 
@@ -355,6 +439,8 @@ public final class MsgIntNodeDeletedDataOuterClass {
       public com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData buildPartial() {
         com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData result = new com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData(this);
         result.nodeName_ = nodeName_;
+        result.fullSyncId_ = fullSyncId_;
+        result.updateId_ = updateId_;
         onBuilt();
         return result;
       }
@@ -399,6 +485,12 @@ public final class MsgIntNodeDeletedDataOuterClass {
         if (!other.getNodeName().isEmpty()) {
           nodeName_ = other.nodeName_;
           onChanged();
+        }
+        if (other.getFullSyncId() != 0L) {
+          setFullSyncId(other.getFullSyncId());
+        }
+        if (other.getUpdateId() != 0L) {
+          setUpdateId(other.getUpdateId());
         }
         onChanged();
         return this;
@@ -514,6 +606,82 @@ public final class MsgIntNodeDeletedDataOuterClass {
         onChanged();
         return this;
       }
+
+      private long fullSyncId_ ;
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 2;</code>
+       */
+      public long getFullSyncId() {
+        return fullSyncId_;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 2;</code>
+       */
+      public Builder setFullSyncId(long value) {
+        
+        fullSyncId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 2;</code>
+       */
+      public Builder clearFullSyncId() {
+        
+        fullSyncId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long updateId_ ;
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 3;</code>
+       */
+      public long getUpdateId() {
+        return updateId_;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 3;</code>
+       */
+      public Builder setUpdateId(long value) {
+        
+        updateId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 3;</code>
+       */
+      public Builder clearUpdateId() {
+        
+        updateId_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -579,8 +747,9 @@ public final class MsgIntNodeDeletedDataOuterClass {
     java.lang.String[] descriptorData = {
       "\n6linstor/proto/javainternal/MsgIntNodeD" +
       "eletedData.proto\022%com.linbit.linstor.pro" +
-      "to.javainternal\"*\n\025MsgIntNodeDeletedData" +
-      "\022\021\n\tnode_name\030\001 \001(\tb\006proto3"
+      "to.javainternal\"S\n\025MsgIntNodeDeletedData" +
+      "\022\021\n\tnode_name\030\001 \001(\t\022\024\n\014full_sync_id\030\002 \001(" +
+      "\022\022\021\n\tupdate_id\030\003 \001(\022b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -599,7 +768,7 @@ public final class MsgIntNodeDeletedDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntNodeDeletedData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntNodeDeletedData_descriptor,
-        new java.lang.String[] { "NodeName", });
+        new java.lang.String[] { "NodeName", "FullSyncId", "UpdateId", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

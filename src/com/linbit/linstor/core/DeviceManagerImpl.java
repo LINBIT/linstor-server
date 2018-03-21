@@ -411,6 +411,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             if (pendNodeSet != null)
             {
                 Set<NodeName> updNodeSet = entry.getValue();
+                assert(!updNodeSet.isEmpty());
                 for (NodeName nodeName : updNodeSet)
                 {
                     pendNodeSet.remove(nodeName);

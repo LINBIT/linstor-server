@@ -36,11 +36,11 @@ public interface CtrlStltSerializer
         Builder changedStorPool(UUID storPoolUuid, String storPoolName);
 
         Builder nodeData(Node node, Collection<Node> relatedNodes, long fullSyncTimestamp, long updateId);
-        Builder deletedNodeData(String nodeNameStr);
+        Builder deletedNodeData(String nodeNameStr, long fullSyncTimestamp, long updateId);
         Builder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
-        Builder deletedResourceData(String rscNameStr);
+        Builder deletedResourceData(String rscNameStr, long fullSyncTimestamp, long updateId);
         Builder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
-        Builder deletedStorPoolData(String storPoolName);
+        Builder deletedStorPoolData(String storPoolName, long fullSyncTimestamp, long updateId);
         Builder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,

@@ -35,6 +35,24 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
      */
     com.google.protobuf.ByteString
         getStorPoolNameBytes();
+
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 2;</code>
+     */
+    long getFullSyncId();
+
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 3;</code>
+     */
+    long getUpdateId();
   }
   /**
    * <pre>
@@ -54,6 +72,8 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
     }
     private MsgIntStorPoolDeletedData() {
       storPoolName_ = "";
+      fullSyncId_ = 0L;
+      updateId_ = 0L;
     }
 
     @java.lang.Override
@@ -85,6 +105,16 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
               java.lang.String s = input.readStringRequireUtf8();
 
               storPoolName_ = s;
+              break;
+            }
+            case 16: {
+
+              fullSyncId_ = input.readSInt64();
+              break;
+            }
+            case 24: {
+
+              updateId_ = input.readSInt64();
               break;
             }
           }
@@ -152,6 +182,32 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
       }
     }
 
+    public static final int FULL_SYNC_ID_FIELD_NUMBER = 2;
+    private long fullSyncId_;
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 2;</code>
+     */
+    public long getFullSyncId() {
+      return fullSyncId_;
+    }
+
+    public static final int UPDATE_ID_FIELD_NUMBER = 3;
+    private long updateId_;
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 3;</code>
+     */
+    public long getUpdateId() {
+      return updateId_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -167,6 +223,12 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
       if (!getStorPoolNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, storPoolName_);
       }
+      if (fullSyncId_ != 0L) {
+        output.writeSInt64(2, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        output.writeSInt64(3, updateId_);
+      }
     }
 
     public int getSerializedSize() {
@@ -176,6 +238,14 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
       size = 0;
       if (!getStorPoolNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, storPoolName_);
+      }
+      if (fullSyncId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(2, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(3, updateId_);
       }
       memoizedSize = size;
       return size;
@@ -195,6 +265,10 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
       boolean result = true;
       result = result && getStorPoolName()
           .equals(other.getStorPoolName());
+      result = result && (getFullSyncId()
+          == other.getFullSyncId());
+      result = result && (getUpdateId()
+          == other.getUpdateId());
       return result;
     }
 
@@ -207,6 +281,12 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + STOR_POOL_NAME_FIELD_NUMBER;
       hash = (53 * hash) + getStorPoolName().hashCode();
+      hash = (37 * hash) + FULL_SYNC_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getFullSyncId());
+      hash = (37 * hash) + UPDATE_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getUpdateId());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -332,6 +412,10 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
         super.clear();
         storPoolName_ = "";
 
+        fullSyncId_ = 0L;
+
+        updateId_ = 0L;
+
         return this;
       }
 
@@ -355,6 +439,8 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
       public com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData buildPartial() {
         com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData result = new com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData(this);
         result.storPoolName_ = storPoolName_;
+        result.fullSyncId_ = fullSyncId_;
+        result.updateId_ = updateId_;
         onBuilt();
         return result;
       }
@@ -399,6 +485,12 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
         if (!other.getStorPoolName().isEmpty()) {
           storPoolName_ = other.storPoolName_;
           onChanged();
+        }
+        if (other.getFullSyncId() != 0L) {
+          setFullSyncId(other.getFullSyncId());
+        }
+        if (other.getUpdateId() != 0L) {
+          setUpdateId(other.getUpdateId());
         }
         onChanged();
         return this;
@@ -514,6 +606,82 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
         onChanged();
         return this;
       }
+
+      private long fullSyncId_ ;
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 2;</code>
+       */
+      public long getFullSyncId() {
+        return fullSyncId_;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 2;</code>
+       */
+      public Builder setFullSyncId(long value) {
+        
+        fullSyncId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 2;</code>
+       */
+      public Builder clearFullSyncId() {
+        
+        fullSyncId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long updateId_ ;
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 3;</code>
+       */
+      public long getUpdateId() {
+        return updateId_;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 3;</code>
+       */
+      public Builder setUpdateId(long value) {
+        
+        updateId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 3;</code>
+       */
+      public Builder clearUpdateId() {
+        
+        updateId_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -579,8 +747,10 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
     java.lang.String[] descriptorData = {
       "\n:linstor/proto/javainternal/MsgIntStorP" +
       "oolDeletedData.proto\022%com.linbit.linstor" +
-      ".proto.javainternal\"3\n\031MsgIntStorPoolDel" +
-      "etedData\022\026\n\016stor_pool_name\030\001 \001(\tb\006proto3"
+      ".proto.javainternal\"\\\n\031MsgIntStorPoolDel" +
+      "etedData\022\026\n\016stor_pool_name\030\001 \001(\t\022\024\n\014full" +
+      "_sync_id\030\002 \001(\022\022\021\n\tupdate_id\030\003 \001(\022b\006proto" +
+      "3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -599,7 +769,7 @@ public final class MsgIntStorPoolDeletedDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntStorPoolDeletedData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntStorPoolDeletedData_descriptor,
-        new java.lang.String[] { "StorPoolName", });
+        new java.lang.String[] { "StorPoolName", "FullSyncId", "UpdateId", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

@@ -30,7 +30,9 @@ public class ApplyDeletedNode implements ApiCall
     {
         MsgIntNodeDeletedData nodeDeletedData = MsgIntNodeDeletedData.parseDelimitedFrom(msgDataIn);
         apiCallHandler.applyDeletedNodeChange(
-            nodeDeletedData.getNodeName()
+            nodeDeletedData.getNodeName(),
+            nodeDeletedData.getFullSyncId(),
+            nodeDeletedData.getUpdateId()
         );
     }
 }

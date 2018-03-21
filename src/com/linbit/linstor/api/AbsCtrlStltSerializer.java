@@ -190,11 +190,15 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder deletedNodeData(String nodeNameStr)
+        public Builder deletedNodeData(
+            String nodeNameStr,
+            long fullSyncTimestamp,
+            long updateId
+        )
         {
             try
             {
-                writeDeletedNodeData(nodeNameStr, baos);
+                writeDeletedNodeData(nodeNameStr, fullSyncTimestamp, updateId, baos);
             }
             catch (IOException ioExc)
             {
@@ -234,11 +238,11 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder deletedResourceData(String rscNameStr)
+        public Builder deletedResourceData(String rscNameStr, long fullSyncTimestamp, long updateId)
         {
             try
             {
-                writeDeletedResourceData(rscNameStr, baos);
+                writeDeletedResourceData(rscNameStr, fullSyncTimestamp, updateId, baos);
             }
             catch (IOException ioExc)
             {
@@ -278,11 +282,15 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder deletedStorPoolData(String storPoolNameStr)
+        public Builder deletedStorPoolData(
+            String storPoolNameStr,
+            long fullSyncTimestamp,
+            long updateId
+        )
         {
             try
             {
-                writeDeletedStorPoolData(storPoolNameStr, baos);
+                writeDeletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId, baos);
             }
             catch (IOException ioExc)
             {
@@ -521,7 +529,12 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     )
         throws IOException, AccessDeniedException, InvalidNameException;
 
-    public abstract void writeDeletedNodeData(String nodeNameStr, ByteArrayOutputStream baos)
+    public abstract void writeDeletedNodeData(
+        String nodeNameStr,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException;
 
     public abstract void writeResourceData(
@@ -532,7 +545,12 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     )
         throws IOException, AccessDeniedException;
 
-    public abstract void writeDeletedResourceData(String rscNameStr, ByteArrayOutputStream baos)
+    public abstract void writeDeletedResourceData(
+        String rscNameStr,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException;
 
     public abstract void writeStorPoolData(
@@ -543,7 +561,12 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     )
         throws IOException, AccessDeniedException;
 
-    public abstract void writeDeletedStorPoolData(String storPoolNameStr, ByteArrayOutputStream baos)
+    public abstract void writeDeletedStorPoolData(
+        String storPoolNameStr,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException;
 
     public abstract void writeFullSync(

@@ -496,9 +496,11 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             }
             else
             {
+                long fullSyncTimestamp = currentPeer.getFullSyncId();
+                long serializerId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
                     internalComSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
-                        .deletedNodeData(nodeNameStr)
+                        .deletedNodeData(nodeNameStr, fullSyncTimestamp, serializerId)
                         .build()
                 );
             }

@@ -148,10 +148,18 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
-    public void writeDeletedNodeData(String nodeNameStr, ByteArrayOutputStream baos) throws IOException
+    public void writeDeletedNodeData(
+        String nodeNameStr,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
+        throws IOException
     {
         MsgIntNodeDeletedData.newBuilder()
             .setNodeName(nodeNameStr)
+            .setFullSyncId(fullSyncTimestamp)
+            .setUpdateId(updateId)
             .build()
             .writeDelimitedTo(baos);
     }
@@ -171,10 +179,18 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
-    public void writeDeletedResourceData(String rscNameStr, ByteArrayOutputStream baos) throws IOException
+    public void writeDeletedResourceData(
+        String rscNameStr,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
+        throws IOException
     {
         MsgIntRscDeletedData.newBuilder()
             .setRscName(rscNameStr)
+            .setFullSyncId(fullSyncTimestamp)
+            .setUpdateId(updateId)
             .build()
             .writeDelimitedTo(baos);
     }
@@ -193,10 +209,18 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
-    public void writeDeletedStorPoolData(String storPoolNameStr, ByteArrayOutputStream baos) throws IOException
+    public void writeDeletedStorPoolData(
+        String storPoolNameStr,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
+        throws IOException
     {
         MsgIntStorPoolDeletedData.newBuilder()
             .setStorPoolName(storPoolNameStr)
+            .setFullSyncId(fullSyncTimestamp)
+            .setUpdateId(updateId)
             .build()
             .writeDelimitedTo(baos);
     }

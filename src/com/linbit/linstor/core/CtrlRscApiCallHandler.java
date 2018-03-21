@@ -742,12 +742,12 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
                 Resource rsc = node.getResource(apiCtx, rscName);
+
+                long fullSyncTimestamp = peer.get().getFullSyncId();
+                long updateId = peer.get().getNextSerializerId();
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    long fullSyncTimestamp = peer.get().getFullSyncId();
-                    long updateId = peer.get().getNextSerializerId();
-
                     peer.get().sendMessage(
                         internalComSerializer
                             .builder(InternalApiConsts.API_APPLY_RSC, msgId)
@@ -760,7 +760,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     peer.get().sendMessage(
                         internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_RSC_DELETED, msgId)
-                        .deletedResourceData(rscNameStr)
+                        .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
                         .build()
                     );
                 }

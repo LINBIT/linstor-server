@@ -333,9 +333,13 @@ public class StltApiCallHandler
         applyChangedData(new ApplyNodeData(nodePojo));
     }
 
-    public void applyDeletedNodeChange(String nodeName)
+    public void applyDeletedNodeChange(
+        String nodeName,
+        long fullSyncId,
+        long updateId
+    )
     {
-        applyChangedData(new ApplyNodeData(nodeName));
+        applyChangedData(new ApplyNodeData(nodeName, fullSyncId, updateId));
     }
 
     public void applyResourceChanges(RscPojo rscRawData)
@@ -343,9 +347,13 @@ public class StltApiCallHandler
         applyChangedData(new ApplyRscData(rscRawData));
     }
 
-    public void applyDeletedResourceChange(String rscNameStr)
+    public void applyDeletedResourceChange(
+        String rscNameStr,
+        long fullSyncId,
+        long updateId
+    )
     {
-        applyChangedData(new ApplyRscData(rscNameStr));
+        applyChangedData(new ApplyRscData(rscNameStr, fullSyncId, updateId));
     }
 
     public void applyStorPoolChanges(StorPoolPojo storPoolRaw)
@@ -353,9 +361,13 @@ public class StltApiCallHandler
         applyChangedData(new ApplyStorPoolData(storPoolRaw));
     }
 
-    public void applyDeletedStorPoolChange(String storPoolNameStr)
+    public void applyDeletedStorPoolChange(
+        String storPoolNameStr,
+        long fullSyncId,
+        long updateId
+    )
     {
-        applyChangedData(new ApplyStorPoolData(storPoolNameStr));
+        applyChangedData(new ApplyStorPoolData(storPoolNameStr, fullSyncId, updateId));
     }
 
     private void applyChangedData(ApplyData data)
@@ -454,29 +466,35 @@ public class StltApiCallHandler
     {
         private NodePojo nodePojo;
         private String deletedNodeName;
+        private long fullSyncId;
+        private long updateId;
 
         ApplyNodeData(NodePojo nodePojoRef)
         {
             nodePojo = nodePojoRef;
             deletedNodeName = null;
+            this.fullSyncId = nodePojoRef.getFullSyncId();
+            this.updateId = nodePojoRef.getUpdateId();
         }
 
-        ApplyNodeData(String nodeNameRef)
+        ApplyNodeData(String nodeNameRef, long fullSyncIdRef, long updateIdRef)
         {
             nodePojo = null;
             deletedNodeName = nodeNameRef;
+            fullSyncId = fullSyncIdRef;
+            updateId = updateIdRef;
         }
 
         @Override
         public long getFullSyncId()
         {
-            return nodePojo.getFullSyncId();
+            return fullSyncId;
         }
 
         @Override
         public long getUpdateId()
         {
-            return nodePojo.getUpdateId();
+            return updateId;
         }
 
         @Override
@@ -506,27 +524,37 @@ public class StltApiCallHandler
     {
         private RscPojo rscPojo;
         private String deletedRscName;
+        private long fullSyncId;
+        private long updateId;
 
         ApplyRscData(RscPojo rscPojoRef)
         {
             rscPojo = rscPojoRef;
+            fullSyncId = rscPojo.getFullSyncId();
+            updateId = rscPojo.getUpdateId();
         }
 
-        ApplyRscData(String rscNameRef)
+        ApplyRscData(
+            String rscNameRef,
+            long fullSyncIdRef,
+            long updateIdRef
+        )
         {
             deletedRscName = rscNameRef;
+            this.fullSyncId = fullSyncIdRef;
+            this.updateId = updateIdRef;
         }
 
         @Override
         public long getFullSyncId()
         {
-            return rscPojo.getFullSyncId();
+            return fullSyncId;
         }
 
         @Override
         public long getUpdateId()
         {
-            return rscPojo.getUpdateId();
+            return updateId;
         }
 
         @Override
@@ -558,27 +586,33 @@ public class StltApiCallHandler
     {
         private StorPoolPojo storPoolPojo;
         private String deletedStorPoolName;
+        private long fullSyncId;
+        private long updateId;
 
         ApplyStorPoolData(StorPoolPojo storPoolPojoRef)
         {
             storPoolPojo = storPoolPojoRef;
+            fullSyncId = storPoolPojo.getFullSyncId();
+            updateId = storPoolPojo.getUpdateId();
         }
 
-        ApplyStorPoolData(String storPoolNameRef)
+        ApplyStorPoolData(String storPoolNameRef, long fullSyncIdRef, long updateIdRef)
         {
             deletedStorPoolName = storPoolNameRef;
+            fullSyncId = fullSyncIdRef;
+            updateId = updateIdRef;
         }
 
         @Override
         public long getFullSyncId()
         {
-            return storPoolPojo.getFullSyncId();
+            return fullSyncId;
         }
 
         @Override
         public long getUpdateId()
         {
-            return storPoolPojo.getUpdateId();
+            return updateId;
         }
 
         @Override

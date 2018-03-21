@@ -29,7 +29,9 @@ public class ApplyDeletedRsc implements ApiCall
     {
         MsgIntRscDeletedData rscDeletedData = MsgIntRscDeletedData.parseDelimitedFrom(msgDataIn);
         apiCallHandler.applyDeletedResourceChange(
-            rscDeletedData.getRscName()
+            rscDeletedData.getRscName(),
+            rscDeletedData.getFullSyncId(),
+            rscDeletedData.getUpdateId()
         );
     }
 }

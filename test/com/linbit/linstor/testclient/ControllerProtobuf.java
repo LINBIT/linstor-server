@@ -157,7 +157,9 @@ public class ControllerProtobuf extends ProtobufIO
     }
 
     public void sendDeletedNodeData(
-        final String nodeNameStr
+        final String nodeNameStr,
+        final long fullSyncId,
+        final long updateId
     )
         throws IOException
     {
@@ -166,7 +168,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_NODE_DELETED,
                 getNextMsgId()
             )
-            .deletedNodeData(nodeNameStr)
+            .deletedNodeData(nodeNameStr, fullSyncId, updateId)
             .build()
         );
     }
@@ -193,7 +195,9 @@ public class ControllerProtobuf extends ProtobufIO
     }
 
     public void sendDeletedResourceData(
-        final String rscNameStr
+        final String rscNameStr,
+        long fullSyncTimestamp,
+        long updateId
     )
         throws IOException
     {
@@ -202,7 +206,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_RSC_DELETED,
                 getNextMsgId()
             )
-            .deletedResourceData(rscNameStr)
+            .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
             .build()
         );
     }
@@ -229,7 +233,9 @@ public class ControllerProtobuf extends ProtobufIO
     }
 
     public void sendDeletedStorPoolData(
-        final String nodeNameStr
+        final String nodeNameStr,
+        final long fullSyncId,
+        final long updateId
     )
         throws IOException
     {
@@ -238,7 +244,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_STOR_POOL_DELETED,
                 getNextMsgId()
             )
-            .deletedStorPoolData(nodeNameStr)
+            .deletedStorPoolData(nodeNameStr, fullSyncId, updateId)
             .build()
         );
     }

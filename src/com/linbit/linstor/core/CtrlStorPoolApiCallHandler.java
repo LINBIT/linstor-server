@@ -318,10 +318,12 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
             else
             {
+                long fullSyncTimestamp = currentPeer.getFullSyncId();
+                long updateId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
                     internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED, msgId)
-                        .deletedStorPoolData(storPoolNameStr)
+                        .deletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId)
                         .build()
                 );
             }

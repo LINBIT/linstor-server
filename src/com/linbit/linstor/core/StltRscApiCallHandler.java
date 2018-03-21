@@ -149,7 +149,9 @@ class StltRscApiCallHandler
                 "' and the corresponding resource" + " removed by Controller.");
 
             Map<ResourceName, Set<NodeName>> updatedRscs = new TreeMap<>();
-            updatedRscs.put(rscName, new TreeSet<NodeName>());
+            TreeSet<NodeName> nodes = new TreeSet<NodeName>();
+            nodes.add(controllerPeerConnector.getLocalNode().getName());
+            updatedRscs.put(rscName, nodes);
             deviceManager.rscUpdateApplied(updatedRscs);
 
             Set<ResourceName> rscDfnSet = new TreeSet<>();
