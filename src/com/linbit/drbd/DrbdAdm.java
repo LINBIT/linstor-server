@@ -67,7 +67,9 @@ public class DrbdAdm
     {
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv", "adjust"));
-        // command.add("-c"); // Using -c disables /etc/drbd.d/global_common.conf
+
+        // Using -c disables /etc/drbd.d/global_common.conf
+        // command.add("-c");
         // command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
 
         if (discard)
@@ -112,7 +114,8 @@ public class DrbdAdm
             command.add("--assume-clean");
         }
         String resName = resourceName.value;
-        command.addAll(asConfigParameter(resName));
+        // Using -c disables /etc/drbd.d/global_common.conf
+        // command.addAll(asConfigParameter(resName)); // basically just adds the -c <rscName.conf> as parameter
         command.add("resize");
         command.add(resName + "/" + volNum.value);
         execute(command);
@@ -322,7 +325,9 @@ public class DrbdAdm
             "sh-nop"
         );
 
-        execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
+        // Using -c disables /etc/drbd.d/global_common.conf
+        // execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
+        execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
     }
 
     private void simpleSetupCommand(ResourceName rscName, String subcommand) throws ExtCmdFailedException
@@ -362,8 +367,11 @@ public class DrbdAdm
         List<String> command = new ArrayList<>();
         command.add(DRBDADM_UTIL);
         command.add("-vvv");
-        command.add("-c");
-        command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
+
+        // Using -c disables /etc/drbd.d/global_common.conf
+        // command.add("-c");
+        // command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
+
         // command.addAll(asConfigParameter(resourceName.value));
         command.addAll(Arrays.asList(subCommands));
         String resName = resourceName.displayValue;
@@ -386,24 +394,25 @@ public class DrbdAdm
         execute(DRBDSETUP_UTIL, commandRef, "--wait-after-sb=yes", "--wfc-timeout=" + timeout, resourceName.value);
     }
 
-    private List<String> asConfigParameter(String resourceName)
-    {
-        String[] ret;
-        if (!resourceName.toLowerCase().equals(ALL_KEYWORD) &&
-            !resourceName.equals(DRBDCTRL_RES_NAME))
-        {
-            String resourcePath = configPath.resolve("linstor_" + resourceName + ".res").toString();
-            ret = new String[]
-            {
-                "-c", resourcePath
-            };
-        }
-        else
-        {
-            ret = new String[0];
-        }
-        return Arrays.asList(ret);
-    }
+    // Using -c disables /etc/drbd.d/global_common.conf
+    // private List<String> asConfigParameter(String resourceName)
+    // {
+    //    String[] ret;
+    //    if (!resourceName.toLowerCase().equals(ALL_KEYWORD) &&
+    //        !resourceName.equals(DRBDCTRL_RES_NAME))
+    //    {
+    //       String resourcePath = configPath.resolve("linstor_" + resourceName + ".res").toString();
+    //       ret = new String[]
+    //       {
+    //           "-c", resourcePath
+    //       };
+    //    }
+    //    else
+    //    {
+    //       ret = new String[0];
+    //    }
+    //    return Arrays.asList(ret);
+    // }
 
     private void execute(String... command) throws ExtCmdFailedException
     {
