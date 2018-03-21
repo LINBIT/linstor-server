@@ -1094,7 +1094,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         try (
             FileOutputStream resFileOut = new FileOutputStream(
-                SatelliteCoreModule.FIXME_CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
+                SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
             )
         )
         {
@@ -1267,7 +1267,7 @@ class DrbdDeviceHandler implements DeviceHandler
         try
         {
             FileSystem dfltFs = FileSystems.getDefault();
-            Path cfgFilePath = dfltFs.getPath(SatelliteCoreModule.FIXME_CONFIG_PATH, rscName.displayValue + DRBD_CONFIG_SUFFIX);
+            Path cfgFilePath = dfltFs.getPath(SatelliteCoreModule.CONFIG_PATH, rscName.displayValue + DRBD_CONFIG_SUFFIX);
             Files.delete(cfgFilePath);
 
             // Double-check whether the file exists

@@ -37,7 +37,7 @@ public class SatelliteCoreModule extends AbstractModule
 
     // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
     // a value configurable in the cluster configuration
-    public static final String FIXME_CONFIG_PATH = "/etc/drbd.d";
+    public static final String CONFIG_PATH = "/var/lib/drbd.d";
 
     @Override
     protected void configure()
@@ -61,7 +61,7 @@ public class SatelliteCoreModule extends AbstractModule
         bind(DeviceManager.class).to(DeviceManagerImpl.class);
 
         bind(Path.class).annotatedWith(Names.named(DRBD_CONFIG_PATH)).toInstance(
-            FileSystems.getDefault().getPath(FIXME_CONFIG_PATH)
+            FileSystems.getDefault().getPath(CONFIG_PATH)
         );
     }
 
