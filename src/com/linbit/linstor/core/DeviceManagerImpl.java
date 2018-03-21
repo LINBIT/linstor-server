@@ -428,7 +428,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void run()
     {
-        errLog.logTrace("DeviceManager service started");
+        errLog.logDebug("DeviceManager service started");
         try
         {
             devMgrLoop();
@@ -436,7 +436,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         finally
         {
             runningFlag.set(false);
-            errLog.logTrace("DeviceManager service stopped");
+            errLog.logDebug("DeviceManager service stopped");
         }
     }
 
@@ -450,7 +450,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
         while (!shutdownFlag.get())
         {
-            errLog.logTrace("Begin DeviceManager cycle %d", cycleNr);
+            errLog.logDebug("Begin DeviceManager cycle %d", cycleNr);
 
             try
             {
@@ -554,7 +554,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             }
             finally
             {
-                errLog.logTrace("End DeviceManager cycle %d", cycleNr);
+                errLog.logDebug("End DeviceManager cycle %d", cycleNr);
                 ++cycleNr;
             }
         }

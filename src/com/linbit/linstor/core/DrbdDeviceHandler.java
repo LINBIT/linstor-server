@@ -220,9 +220,6 @@ class DrbdDeviceHandler implements DeviceHandler
             rscStates.put(rscName.getDisplayName(), rscState);
             updateAllResourceStatesOnController(localNode.getPeer(wrkCtx), rscStates);
 
-            // debug print state
-            System.out.println(rscState.toString());
-
             try
             {
                 if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
@@ -849,7 +846,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Check DRBD meta data
                         if (!vlmState.hasDisk())
                         {
-                            System.out.println(
+                            errLog.logTrace(
+                                "%s",
                                 "Resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
                                 " has no backend storage => hasMetaData = false, checkMetaData = false"
                             );
@@ -863,17 +861,14 @@ class DrbdDeviceHandler implements DeviceHandler
                             // Check for the existence of meta data
                             try
                             {
-                                System.out.println(
-                                    "Checking resource " + rscName.displayValue + " Volume " +
-                                    vlmState.getVlmNr().value + " meta data"
-                                );
                                 vlmState.setHasMetaData(drbdUtils.hasMetaData(
                                     vlmState.getDriver().getVolumePath(vlmState.getStorVlmName()),
                                     vlmState.getMinorNr().value, "internal"
                                 ));
-                                System.out.println(
+                                errLog.logTrace(
+                                    "%s",
                                     "Resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
-                                    " hasMetaData = " + vlmState.hasMetaData()
+                                    " meta data check result: hasMetaData = " + vlmState.hasMetaData()
                                 );
                             }
                             catch (ExtCmdFailedException cmdExc)
@@ -957,7 +952,8 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         // Create DRBD resource configuration file
-        System.out.println(
+        errLog.logTrace(
+            "%s",
             "Creating resource " + rscName.displayValue + " configuration file"
         );
         createResourceConfiguration(rsc, rscDfn);
@@ -974,7 +970,8 @@ class DrbdDeviceHandler implements DeviceHandler
                     {
                         if (vlmState.hasDisk() && !vlmState.hasMetaData())
                         {
-                            System.out.println(
+                            errLog.logTrace(
+                                "%s",
                                 "Creating resource " + rscName.displayValue + " Volume " +
                                 vlmState.getVlmNr().value + " meta data"
                             );
@@ -1009,7 +1006,10 @@ class DrbdDeviceHandler implements DeviceHandler
         // Create the DRBD resource
         if (rscState.requiresAdjust())
         {
-            System.out.println("Adjusting resource " + rscName.displayValue);
+            errLog.logTrace(
+                "%s",
+                "Adjusting resource " + rscName.displayValue
+            );
             try
             {
                 drbdUtils.adjust(rscName, false, false, false, null);
