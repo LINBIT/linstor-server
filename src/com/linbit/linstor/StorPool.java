@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.linbit.fsevent.FileSystemWatch;
@@ -107,7 +108,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
 
     long getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
 
-    public interface StorPoolApi
+    interface StorPoolApi
     {
         UUID getStorPoolUuid();
         String getStorPoolName();
@@ -115,6 +116,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
         String getNodeName();
         UUID getNodeUuid();
         String getDriver();
+        Optional<Long> getFreeSpace();
 
         Map<String, String> getStorPoolProps();
         List<Volume.VlmApi> getVlmList();

@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.UUID;
 
 @ProtobufApiCall(
@@ -137,7 +138,8 @@ public class ApplyStorPool implements ApiCall
             null,
             Collections.<String, String>emptyMap(),
             storPoolData.getFullSyncId(),
-            storPoolData.getUpdateId()
+            storPoolData.getUpdateId(),
+            null
         );
         return storPoolRaw;
     }

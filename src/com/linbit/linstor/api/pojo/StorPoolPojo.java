@@ -5,6 +5,7 @@ import com.linbit.linstor.Volume;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPoolApi
@@ -21,6 +22,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final Map<String, String> storPoolStaticTraits;
     private final Long fullSyncId;
     private final Long updateId;
+    private final Optional<Long> freeSpace;
 
     public StorPoolPojo(
         final UUID storPoolUuidRef,
@@ -34,7 +36,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final List<Volume.VlmApi> vlmsRef,
         final Map<String, String> storPoolStaticTraitsRef,
         final Long fullSyncIdRef,
-        final Long updateIdRef
+        final Long updateIdRef,
+        final Long freeSpaceRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -49,6 +52,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         storPoolStaticTraits = storPoolStaticTraitsRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
+        freeSpace = Optional.ofNullable(freeSpaceRef);
     }
 
     @Override
@@ -85,6 +89,12 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     public String getDriver()
     {
         return driver;
+    }
+
+    @Override
+    public Optional<Long> getFreeSpace()
+    {
+        return freeSpace;
     }
 
     @Override

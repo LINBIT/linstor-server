@@ -1,14 +1,17 @@
 package com.linbit.linstor.proto.apidata;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
+import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.StorPoolOuterClass;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  *
@@ -75,6 +78,17 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     }
 
     @Override
+    public Optional<Long> getFreeSpace()
+    {
+        Long size = null;
+        if (storPool.hasFreeSpace())
+        {
+            size = storPool.getFreeSpace().getFreeSpace();
+        }
+        return Optional.ofNullable(size);
+    }
+
+    @Override
     public Map<String, String> getStorPoolProps()
     {
         Map<String, String> ret = new HashMap<>();
@@ -109,6 +123,14 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         storPoolBld.addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()));
         storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));
         storPoolBld.addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()));
+        if (apiStorPool.getFreeSpace().isPresent())
+        {
+            StorPoolFreeSpace.Builder storPoolFreeSpcBld = StorPoolFreeSpace.newBuilder();
+            storPoolFreeSpcBld.setStorPoolName(apiStorPool.getStorPoolName())
+                .setStorPoolUuid(apiStorPool.getStorPoolUuid().toString())
+                .setFreeSpace(apiStorPool.getFreeSpace().get());
+            storPoolBld.setFreeSpace(storPoolFreeSpcBld.build());
+        }
 
         return storPoolBld.build();
     }

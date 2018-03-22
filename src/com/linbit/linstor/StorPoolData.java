@@ -326,7 +326,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             vlms,
             getTraits(accCtx),
             fullSyncId,
-            updateId
+            updateId,
+            getFreeSpace(accCtx)
         );
     }
 }
