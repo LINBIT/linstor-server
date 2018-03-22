@@ -42,19 +42,9 @@ public class AutoPlaceResource implements ApiCall
             msgAutoPlace.getRscName(),
             msgAutoPlace.getPlaceCount(),
             msgAutoPlace.hasStoragePool() ? msgAutoPlace.getStoragePool() : null,
-            asList(msgAutoPlace.getNotPlaceWithRscList()),
+            msgAutoPlace.getNotPlaceWithRscList(),
             msgAutoPlace.hasNotPlaceWithRscRegex() ? msgAutoPlace.getNotPlaceWithRscRegex() : null
         );
         apiCallAnswerer.answerApiCallRc(rc);
-    }
-
-    private List<String> asList(ProtocolStringList notPlaceWithRscList)
-    {
-        List<String> list = new ArrayList<>();
-        for (String notPlaceWithRsc : notPlaceWithRscList)
-        {
-            list.add(notPlaceWithRsc);
-        }
-        return list;
     }
 }
