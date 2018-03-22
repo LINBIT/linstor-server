@@ -9,18 +9,17 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.utils.LockSupport;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 public class CtrlApiCallHandler
@@ -96,23 +95,16 @@ public class CtrlApiCallHandler
 
     public void sendFullSync(long expectedFullSyncId)
     {
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.readLock(),
+                storPoolDfnMapLock.readLock(),
+                peer.get().getSerializerLock().writeLock()
+            )
+        )
         {
-            nodesMapLock.readLock().lock();
-            rscDfnMapLock.readLock().lock();
-            storPoolDfnMapLock.readLock().lock();
-
-            peer.get().getSerializerLock().writeLock().lock();
-
             fullSyncApiCallHandler.sendFullSync(peer.get(), expectedFullSyncId);
-        }
-        finally
-        {
-            peer.get().getSerializerLock().writeLock().unlock();
-
-            storPoolDfnMapLock.readLock().unlock();
-            rscDfnMapLock.readLock().unlock();
-            nodesMapLock.readLock().unlock();
         }
     }
 
@@ -140,9 +132,8 @@ public class CtrlApiCallHandler
         {
             props = Collections.emptyMap();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
         {
-            nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.createNode(
                 nodeNameStr,
                 nodeTypeStr,
@@ -150,10 +141,6 @@ public class CtrlApiCallHandler
                 satelliteConnectionApis,
                 props
             );
-        }
-        finally
-        {
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -178,9 +165,8 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
         {
-            nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.modifyNode(
                 nodeUuid,
                 nodeName,
@@ -188,10 +174,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -208,15 +190,9 @@ public class CtrlApiCallHandler
     public ApiCallRc deleteNode(String nodeName)
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport lock = LockSupport.lock(nodesMapLock.writeLock()))
         {
-            nodesMapLock.writeLock().lock();
             apiCallRc = nodeApiCallHandler.deleteNode(nodeName);
-        }
-        finally
-        {
-            nodesMapLock.writeLock().unlock();
-
         }
         return apiCallRc;
     }
@@ -224,14 +200,9 @@ public class CtrlApiCallHandler
     public byte[] listNode()
     {
         byte[] listNodes;
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock()))
         {
-            nodesMapLock.readLock().lock();
             listNodes = nodeApiCallHandler.listNodes(msgId.get());
-        }
-        finally
-        {
-            nodesMapLock.readLock().unlock();
         }
         return listNodes;
     }
@@ -271,9 +242,8 @@ public class CtrlApiCallHandler
         {
             vlmDescrMap = Collections.emptyList();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
                 resourceName,
                 port,
@@ -282,10 +252,6 @@ public class CtrlApiCallHandler
                 props,
                 vlmDescrMapRef
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -311,9 +277,8 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
                 rscDfnUuid,
                 rscName,
@@ -321,10 +286,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -343,16 +304,9 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
-            apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(
-                resourceName
-            );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
+            apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(resourceName);
         }
         return apiCallRc;
     }
@@ -360,14 +314,9 @@ public class CtrlApiCallHandler
     public byte[] listResourceDefinition()
     {
         byte[] listResourceDefinitions;
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.readLock()))
         {
-            rscDfnMapLock.readLock().lock();
             listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId.get());
-        }
-        finally
-        {
-            rscDfnMapLock.readLock().unlock();
         }
         return listResourceDefinitions;
     }
@@ -390,17 +339,12 @@ public class CtrlApiCallHandler
         {
             vlmDfnApiList = Collections.emptyList();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
                 rscName,
                 vlmDfnApiList
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -429,7 +373,6 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
 
-
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
@@ -440,9 +383,8 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.modifyVlmDfn(
                 vlmDfnUuid,
                 rscName,
@@ -452,10 +394,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -473,17 +411,12 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmDfnApiCallHandler.deleteVolumeDefinition(
                 rscName,
                 volumeNr
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -516,11 +449,13 @@ public class CtrlApiCallHandler
         {
             vlmApiDataList = Collections.emptyList();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-
             apiCallRc = rscApiCallHandler.createResource(
                 nodeName,
                 rscName,
@@ -528,11 +463,6 @@ public class CtrlApiCallHandler
                 rscPropsMap,
                 vlmApiDataList
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
 
         return apiCallRc;
@@ -567,10 +497,13 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = rscApiCallHandler.modifyResource(
                 rscUuid,
                 nodeName,
@@ -578,11 +511,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -603,20 +531,17 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-
             apiCallRc = rscApiCallHandler.deleteResource(
                 nodeName,
                 rscName
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
 
         return apiCallRc;
@@ -625,20 +550,18 @@ public class CtrlApiCallHandler
     public byte[] listResource(List<String> filterNodes, List<String> filterResources)
     {
         byte[] listResources;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.readLock()
+            )
+        )
         {
-            nodesMapLock.readLock().lock();
-            rscDfnMapLock.readLock().lock();
             listResources = rscApiCallHandler.listResources(
                 msgId.get(),
                 filterNodes,
                 filterResources
             );
-        }
-        finally
-        {
-            rscDfnMapLock.readLock().unlock();
-            nodesMapLock.readLock().unlock();
         }
         return listResources;
     }
@@ -681,20 +604,17 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-
             apiCallRc = rscApiCallHandler.resourceDeleted(
                 nodeName,
                 rscName
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
 
         return apiCallRc;
@@ -716,25 +636,20 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
-
             apiCallRc = vlmApiCallHandler.volumeDeleted(
                 nodeName,
                 rscName,
                 volumeNr
             );
         }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
-        }
-
         return apiCallRc;
     }
 
@@ -756,17 +671,12 @@ public class CtrlApiCallHandler
         {
             storPoolDfnProps = Collections.emptyMap();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.writeLock()))
         {
-            storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
                 storPoolName,
                 storPoolDfnProps
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -799,19 +709,14 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.writeLock()))
         {
-            storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
                 storPoolDfnUuid,
                 storPoolName,
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -825,21 +730,14 @@ public class CtrlApiCallHandler
      * @param storPoolName required
      * @return
      */
-    public ApiCallRc deleteStoragePoolDefinition(
-        String storPoolName
-    )
+    public ApiCallRc deleteStoragePoolDefinition(String storPoolName)
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.writeLock()))
         {
-            storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
                 storPoolName
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -847,14 +745,9 @@ public class CtrlApiCallHandler
     public byte[] listStorPoolDefinition()
     {
         byte[] listStorPoolDefinitions;
-        try
+        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.readLock()))
         {
-            storPoolDfnMapLock.readLock().lock();
             listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId.get());
-        }
-        finally
-        {
-            storPoolDfnMapLock.readLock().unlock();
         }
         return listStorPoolDefinitions;
     }
@@ -862,18 +755,13 @@ public class CtrlApiCallHandler
     public byte[] listStorPool(List<String> filterNodes, List<String> filterStorPools)
     {
         byte[] listStorPools;
-        try
+        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.readLock()))
         {
-            storPoolDfnMapLock.readLock().lock();
             listStorPools = storPoolApiCallHandler.listStorPools(
                 msgId.get(),
                 filterNodes,
                 filterStorPools
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.readLock().unlock();
         }
         return listStorPools;
     }
@@ -900,22 +788,19 @@ public class CtrlApiCallHandler
         {
             storPoolProps = Collections.emptyMap();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
-
             apiCallRc = storPoolApiCallHandler.createStorPool(
                 nodeName,
                 storPoolName,
                 driver,
                 storPoolProps
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
 
         return apiCallRc;
@@ -951,10 +836,13 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
             apiCallRc = storPoolApiCallHandler.modifyStorPool(
                 storPoolUuid,
                 nodeName,
@@ -962,11 +850,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -987,20 +870,17 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
-
             apiCallRc = storPoolApiCallHandler.deleteStorPool(
                 nodeName,
                 storPoolName
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
 
         return apiCallRc;
@@ -1026,18 +906,13 @@ public class CtrlApiCallHandler
         {
             nodeConnProps = Collections.emptyMap();
         }
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
         {
-            nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.createNodeConnection(
                 nodeName1,
                 nodeName2,
                 nodeConnProps
             );
-        }
-        finally
-        {
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1071,9 +946,8 @@ public class CtrlApiCallHandler
             deletePropKeys = Collections.emptySet();
         }
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
         {
-            nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.modifyNodeConnection(
                 nodeConnUuid,
                 nodeName1,
@@ -1081,10 +955,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1102,17 +972,12 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
         {
-            nodesMapLock.writeLock().lock();
             apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
                 nodeName1,
                 nodeName2
             );
-        }
-        finally
-        {
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1139,21 +1004,19 @@ public class CtrlApiCallHandler
         {
             rscConnProps = Collections.emptyMap();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.createResourceConnection(
                 nodeName1,
                 nodeName2,
                 rscName,
                 rscConnProps
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1189,10 +1052,13 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.modifyRscConnection(
                 rscConnUuid,
                 nodeName1,
@@ -1201,11 +1067,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1225,20 +1086,18 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
                 nodeName1,
                 nodeName2,
                 rscName
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1267,10 +1126,13 @@ public class CtrlApiCallHandler
         {
             vlmConnProps = Collections.emptyMap();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.createVolumeConnection(
                 nodeName1,
                 nodeName2,
@@ -1278,11 +1140,6 @@ public class CtrlApiCallHandler
                 vlmNr,
                 vlmConnProps
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1320,10 +1177,13 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.modifyVolumeConnection(
                 vlmConnUuid,
                 nodeName1,
@@ -1333,11 +1193,6 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1359,21 +1214,19 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
         {
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
             apiCallRc = vlmConnApiCallHandler.deleteVolumeConnection(
                 nodeName1,
                 nodeName2,
                 rscName,
                 vlmNr
             );
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1393,19 +1246,15 @@ public class CtrlApiCallHandler
         String rscName
     )
     {
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.readLock(),
+                storPoolDfnMapLock.readLock()
+            )
+        )
         {
-            nodesMapLock.readLock().lock();
-            rscDfnMapLock.readLock().lock();
-            storPoolDfnMapLock.readLock().lock();
-
             rscApiCallHandler.respondResource(msgId.get(), nodeName, rscUuid, rscName);
-        }
-        finally
-        {
-            storPoolDfnMapLock.readLock().unlock();
-            rscDfnMapLock.readLock().unlock();
-            nodesMapLock.readLock().unlock();
         }
     }
 
@@ -1423,21 +1272,18 @@ public class CtrlApiCallHandler
         String storPoolNameStr
     )
     {
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                storPoolDfnMapLock.readLock()
+            )
+        )
         {
-            nodesMapLock.readLock().lock();
-            storPoolDfnMapLock.readLock().lock();
-
             storPoolApiCallHandler.respondStorPool(
                 msgId.get(),
                 storPoolUuid,
                 storPoolNameStr
             );
-        }
-        finally
-        {
-            storPoolDfnMapLock.readLock().unlock();
-            nodesMapLock.readLock().unlock();
         }
     }
 
@@ -1446,19 +1292,13 @@ public class CtrlApiCallHandler
         String nodeNameStr
     )
     {
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock()))
         {
-            nodesMapLock.readLock().lock();
-
             nodeApiCallHandler.respondNode(
                 msgId.get(),
                 nodeUuid,
                 nodeNameStr
             );
-        }
-        finally
-        {
-            nodesMapLock.readLock().unlock();
         }
     }
 
@@ -1467,28 +1307,18 @@ public class CtrlApiCallHandler
         UUID rscUuid
     )
     {
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             rscDfnApiCallHandler.handlePrimaryResourceRequest(msgId.get(), rscName, rscUuid);
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
     }
 
     public ApiCallRc setCtrlCfgProp(String key, String namespace, String value)
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
         {
-            ctrlConfigLock.writeLock().lock();
             apiCallRc  = ctrlConfApiCallHandler.setProp(key, namespace, value);
-        }
-        finally
-        {
-            ctrlConfigLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1496,14 +1326,9 @@ public class CtrlApiCallHandler
     public byte[] listCtrlCfg()
     {
         byte[] data;
-        try
+        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.readLock()))
         {
-            ctrlConfigLock.readLock().lock();
             data  = ctrlConfApiCallHandler.listProps(msgId.get());
-        }
-        finally
-        {
-            ctrlConfigLock.readLock().unlock();
         }
         return data;
     }
@@ -1511,14 +1336,9 @@ public class CtrlApiCallHandler
     public ApiCallRc deleteCtrlCfgProp(String key, String namespace)
     {
         ApiCallRc apiCallRc;
-        try
+        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
         {
-            ctrlConfigLock.writeLock().lock();
             apiCallRc  = ctrlConfApiCallHandler.deleteProp(key, namespace);
-        }
-        finally
-        {
-            ctrlConfigLock.writeLock().unlock();
         }
         return apiCallRc;
     }
@@ -1532,13 +1352,14 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        Lock ctrlReadLock = ctrlConfigLock.readLock();
-        Lock nodeReadLock = nodesMapLock.readLock();
-        try
-        {
-            ctrlReadLock.lock();
-            nodeReadLock.lock();
 
+        try (
+            LockSupport ls = LockSupport.lock(
+                ctrlConfigLock.readLock(),
+                nodesMapLock.readLock()
+            )
+        )
+        {
             apiCallRc = netIfApiCallHandler.createNetIf(
                 nodeName,
                 netIfName,
@@ -1546,11 +1367,6 @@ public class CtrlApiCallHandler
                 stltPort,
                 stltEncrType
             );
-        }
-        finally
-        {
-            nodeReadLock.unlock();
-            ctrlReadLock.unlock();
         }
         return apiCallRc;
     }
@@ -1564,13 +1380,14 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        Lock ctrlReadLock = ctrlConfigLock.readLock();
-        Lock nodeReadLock = nodesMapLock.readLock();
-        try
-        {
-            ctrlReadLock.lock();
-            nodeReadLock.lock();
 
+        try (
+            LockSupport ls = LockSupport.lock(
+                ctrlConfigLock.readLock(),
+                nodesMapLock.readLock()
+            )
+        )
+        {
             apiCallRc = netIfApiCallHandler.modifyNetIf(
                 nodeName,
                 netIfName,
@@ -1578,11 +1395,6 @@ public class CtrlApiCallHandler
                 stltPort,
                 stltEncrType
             );
-        }
-        finally
-        {
-            nodeReadLock.unlock();
-            ctrlReadLock.unlock();
         }
         return apiCallRc;
     }
@@ -1593,38 +1405,24 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        Lock ctrlReadLock = ctrlConfigLock.readLock();
-        Lock nodeReadLock = nodesMapLock.readLock();
-        try
-        {
-            ctrlReadLock.lock();
-            nodeReadLock.lock();
 
-            apiCallRc = netIfApiCallHandler.deleteNetIf(nodeName, netIfName);
-        }
-        finally
+        try (
+            LockSupport ls = LockSupport.lock(
+                ctrlConfigLock.readLock(),
+                nodesMapLock.readLock()
+            )
+        )
         {
-            nodeReadLock.unlock();
-            ctrlReadLock.unlock();
+            apiCallRc = netIfApiCallHandler.deleteNetIf(nodeName, netIfName);
         }
         return apiCallRc;
     }
 
     public void updateRealFreeSpace(Peer satellitePeer, FreeSpacePojo... freeSpacePojos)
     {
-        Lock nodeWriteLock = nodesMapLock.writeLock();
-        Lock storPoolWriteLock = storPoolDfnMapLock.writeLock();
-        try
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
         {
-            nodeWriteLock.lock();
-            storPoolWriteLock.lock();
-
             storPoolApiCallHandler.updateRealFreeSpace(satellitePeer, freeSpacePojos);
-        }
-        finally
-        {
-            storPoolWriteLock.unlock();
-            nodeWriteLock.unlock();
         }
     }
 
@@ -1638,17 +1436,15 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
 
-        List<Lock> locks = Arrays.asList(
-            ctrlConfigLock.readLock(),
-            nodesMapLock.writeLock(),
-            rscDfnMapLock.writeLock(),
-            storPoolDfnMapLock.writeLock()
-        );
-
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                ctrlConfigLock.writeLock(),
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
         {
-            locks.forEach(Lock::lock);
-
             apiCallRc = rscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
                 placeCount,
@@ -1657,12 +1453,8 @@ public class CtrlApiCallHandler
                 notPlaceWithRscRegex
             );
         }
-        finally
-        {
-            Collections.reverse(locks);
-            locks.forEach(Lock::unlock);
-        }
-
         return apiCallRc;
     }
+
+
 }

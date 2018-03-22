@@ -17,11 +17,9 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.Identity;
-import com.linbit.linstor.security.Role;
-import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.utils.LockSupport;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -206,13 +204,15 @@ public class StltApiCallHandler
         long fullSyncId
     )
     {
-        try
+        try (
+            LockSupport ls = LockSupport.lock(
+                reconfigurationLock.writeLock(),
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            );
+        )
         {
-            reconfigurationLock.writeLock().lock();
-            nodesMapLock.writeLock().lock();
-            rscDfnMapLock.writeLock().lock();
-            storPoolDfnMapLock.writeLock().lock();
-
             if (updateMonitor.getCurrentFullSyncId() == fullSyncId)
             {
                 // only apply this fullSync if it is newer than the last one
@@ -319,13 +319,6 @@ public class StltApiCallHandler
             updateMonitor.getNextFullSyncId();
 
         }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-            rscDfnMapLock.writeLock().unlock();
-            nodesMapLock.writeLock().unlock();
-            reconfigurationLock.writeLock().unlock();
-        }
     }
 
     public void applyNodeChanges(NodePojo nodePojo)
@@ -374,9 +367,12 @@ public class StltApiCallHandler
     {
         synchronized (dataToApply)
         {
-            try
+            try (
+                LockSupport ls = LockSupport.lock(
+                    reconfigurationLock.readLock()
+                )
+            )
             {
-                reconfigurationLock.readLock().lock();
                 if (data.getFullSyncId() == updateMonitor.getCurrentFullSyncId())
                 {
                     try
@@ -430,10 +426,6 @@ public class StltApiCallHandler
                     errorReporter.logWarning("Ignoring received outdated update. ");
                 }
             }
-            finally
-            {
-                reconfigurationLock.readLock().unlock();
-            }
         }
     }
 
@@ -442,14 +434,9 @@ public class StltApiCallHandler
         UUID rscUuid
     )
     {
-        try
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
         {
-            rscDfnMapLock.writeLock().lock();
             rscDfnHandler.primaryResource(rscNameStr, rscUuid);
-        }
-        finally
-        {
-            rscDfnMapLock.writeLock().unlock();
         }
 
     }
@@ -500,10 +487,8 @@ public class StltApiCallHandler
         @Override
         public void applyChange()
         {
-            try
+            try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
             {
-                nodesMapLock.writeLock().lock();
-
                 if (nodePojo != null)
                 {
                     nodeHandler.applyChanges(nodePojo);
@@ -512,10 +497,6 @@ public class StltApiCallHandler
                 {
                     nodeHandler.applyDeletedNode(deletedNodeName);
                 }
-            }
-            finally
-            {
-                nodesMapLock.writeLock().unlock();
             }
         }
     }
@@ -560,11 +541,13 @@ public class StltApiCallHandler
         @Override
         public void applyChange()
         {
-            try
+            try (
+                LockSupport ls = LockSupport.lock(
+                    nodesMapLock.writeLock(),
+                    rscDfnMapLock.writeLock()
+                )
+            )
             {
-                nodesMapLock.writeLock().lock();
-                rscDfnMapLock.writeLock().lock();
-
                 if (rscPojo != null)
                 {
                     rscHandler.applyChanges(rscPojo);
@@ -573,11 +556,6 @@ public class StltApiCallHandler
                 {
                     rscHandler.applyDeletedRsc(deletedRscName);
                 }
-            }
-            finally
-            {
-                rscDfnMapLock.writeLock().unlock();
-                nodesMapLock.writeLock().unlock();
             }
         }
     }
@@ -618,11 +596,13 @@ public class StltApiCallHandler
         @Override
         public void applyChange()
         {
-            try
+            try (
+                LockSupport ls = LockSupport.lock(
+                    nodesMapLock.writeLock(),
+                    storPoolDfnMapLock.writeLock()
+                )
+            )
             {
-                nodesMapLock.writeLock().lock();
-                storPoolDfnMapLock.writeLock().lock();
-
                 if (storPoolPojo != null)
                 {
                     storPoolHandler.applyChanges(storPoolPojo);
@@ -631,11 +611,6 @@ public class StltApiCallHandler
                 {
                     storPoolHandler.applyDeletedStorPool(deletedStorPoolName);
                 }
-            }
-            finally
-            {
-                nodesMapLock.writeLock().unlock();
-                storPoolDfnMapLock.writeLock().unlock();
             }
         }
     }
