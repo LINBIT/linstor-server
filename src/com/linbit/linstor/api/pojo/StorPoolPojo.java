@@ -37,7 +37,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final Map<String, String> storPoolStaticTraitsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
-        final Long freeSpaceRef
+        final Optional<Long> freeSpaceRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -52,7 +52,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         storPoolStaticTraits = storPoolStaticTraitsRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
-        freeSpace = Optional.ofNullable(freeSpaceRef);
+        freeSpace = freeSpaceRef;
     }
 
     @Override

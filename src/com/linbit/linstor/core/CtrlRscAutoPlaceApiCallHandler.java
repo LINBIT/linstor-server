@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -126,7 +127,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 .flatMap(this::getStorPoolStream)
                 .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
                 .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
-                .filter(storPool -> getFreeSpace(storPool) >= rscSize)
+                .filter(storPool -> getFreeSpace(storPool).orElse(0L) >= rscSize)
                 .collect(
                     Collectors.groupingBy(StorPool::getName)
                 );
@@ -259,7 +260,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         for (Entry<StorPoolName, List<StorPool>> entry: storPools.entrySet())
         {
             List<Node> nodeCandidates = entry.getValue().stream()
-                .sorted(Comparator.comparingLong(this::getFreeSpace))
+                .sorted((sp1, sp2) -> getFreeSpace(sp1).orElse(0L).compareTo(getFreeSpace(sp2).orElse(0L)))
                 .map(StorPool::getNode)
                 .filter(node -> hasNoResourceOf(node, notPlaceWithRscList))
                 .limit(placeCount)
@@ -282,9 +283,9 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         {
             cmp = Long.compare(
                 cand2.nodes.get(0).getStorPool(peerAccCtx, cand2.storPoolName)
-                    .getFreeSpace(peerAccCtx),
+                    .getFreeSpace(peerAccCtx).orElse(0L),
                 cand1.nodes.get(0).getStorPool(peerAccCtx, cand1.storPoolName)
-                    .getFreeSpace(peerAccCtx)
+                    .getFreeSpace(peerAccCtx).orElse(0L)
             );
             // compare(cand2, cand1) so that the candidate with more free space comes before the other
         }
@@ -339,9 +340,9 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         return stream;
     }
 
-    private long getFreeSpace(StorPool storPool)
+    private Optional<Long> getFreeSpace(StorPool storPool)
     {
-        long freeSpace;
+        Optional<Long> freeSpace;
         try
         {
             freeSpace = storPool.getFreeSpace(peerAccCtx);

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -90,7 +91,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
-        freeSpace = transObjFactory.createTransactionSimpleObject(this, 0L, null);
+        freeSpace = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
@@ -250,10 +251,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public long getFreeSpace(AccessContext accCtx) throws AccessDeniedException
+    public Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return freeSpace.get();
+        return Optional.ofNullable(freeSpace.get());
     }
 
     @Override

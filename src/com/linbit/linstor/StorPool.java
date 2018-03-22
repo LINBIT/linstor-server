@@ -106,7 +106,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
     StorPoolApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
-    long getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
+    Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
 
     interface StorPoolApi
     {
