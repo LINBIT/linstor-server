@@ -1,7 +1,21 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ImplementationError;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
@@ -12,30 +26,41 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
+import static com.linbit.linstor.api.ApiConsts.API_LST_VLM;
+import static java.util.stream.Collectors.toList;
 
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
     private String currentNodeName;
     private String currentRscName;
     private Integer currentVlmNr;
+    private final CtrlClientSerializer clientComSerializer;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ObjectProtection nodesMapProt;
+    private final CoreModule.NodesMap nodesMap;
 
     @Inject
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
+        CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
+        CoreModule.NodesMap nodesMapRef,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
@@ -52,6 +77,11 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             peerAccCtxRef,
             peerRef
         );
+        clientComSerializer = clientComSerializerRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        rscDfnMap = rscDfnMapRef;
+        nodesMapProt = nodesMapProtRef;
+        nodesMap = nodesMapRef;
     }
 
     ApiCallRc volumeDeleted(
@@ -132,6 +162,100 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    byte[] listVolumes(
+        int msgId,
+        List<String> filterNodes,
+        List<String> filterStorPools,
+        List<String> filterResources
+    )
+    {
+        ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
+        List<ResourceState> rscStates = new ArrayList<>();
+        try
+        {
+            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+
+            rscDfnMap.values().stream()
+                .filter(rscDfn -> filterResources.isEmpty() || filterResources.contains(rscDfn.getName()))
+                .forEach(rscDfn ->
+                {
+                    try
+                    {
+                        for (Resource rsc : rscDfn.streamResource(peerAccCtx)
+                            .filter(rsc -> filterNodes.isEmpty() ||
+                                filterNodes.contains(rsc.getAssignedNode().getName()))
+                            .collect(toList()))
+                        {
+                            // create our api object our self to filter the volumes by storage pools
+
+                            // build volume list filtered by storage pools (if provided)
+                            List<Volume.VlmApi> volumes = new ArrayList<>();
+                            Iterator<Volume> itVolumes = rsc.iterateVolumes();
+                            while (itVolumes.hasNext())
+                            {
+                                Volume vlm = itVolumes.next();
+                                if (filterStorPools.isEmpty() ||
+                                    filterStorPools.contains(vlm.getStorPool(peerAccCtx).getName()))
+                                {
+                                    volumes.add(vlm.getApiData(peerAccCtx));
+                                }
+                            }
+
+                            RscPojo filteredRscVlms = new RscPojo(
+                                rscDfn.getName().getDisplayName(),
+                                rsc.getAssignedNode().getName().getDisplayName(),
+                                rsc.getAssignedNode().getUuid(),
+                                rscDfn.getApiData(peerAccCtx),
+                                rsc.getUuid(),
+                                rsc.getStateFlags().getFlagsBits(peerAccCtx),
+                                rsc.getNodeId().value,
+                                rsc.getProps(peerAccCtx).map(),
+                                volumes,
+                                null,
+                                null,
+                                null);
+                            rscs.add(filteredRscVlms);
+                        }
+                    }
+                    catch (AccessDeniedException accDeniedExc)
+                    {
+                        // don't add rsc without access
+                    }
+                });
+
+            // get resource states of all nodes
+            for (final Node node : nodesMap.values())
+            {
+                final Peer peer = node.getPeer(peerAccCtx);
+                if (peer != null)
+                {
+                    final Map<ResourceName, ResourceState> resourceStateMap = peer.getResourceStates();
+
+                    if (resourceStateMap != null)
+                    {
+                        ArrayList<ResourceState> stateCopy = new ArrayList<>(resourceStateMap.values());
+                        for (ResourceState rscState : stateCopy)
+                        {
+                            rscState.setNodeName(node.getName().getDisplayName());
+                            rscStates.add(rscState);
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            // for now return an empty list.
+            errorReporter.reportError(accDeniedExc);
+        }
+
+        return clientComSerializer
+            .builder(API_LST_VLM, msgId)
+            .resourceList(rscs, rscStates)
+            .build();
     }
 
     private AbsApiCallHandler setContext(

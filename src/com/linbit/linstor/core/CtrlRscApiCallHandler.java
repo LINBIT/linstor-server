@@ -66,10 +66,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
+import static java.util.stream.Collectors.toList;
 
 public class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
@@ -666,7 +668,11 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    byte[] listResources(int msgId)
+    byte[] listResources(
+        int msgId,
+        List<String> filterNodes,
+        List<String> filterResources
+    )
     {
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
         List<ResourceState> rscStates = new ArrayList<>();
@@ -674,24 +680,27 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         {
             rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
-            for (ResourceDefinition rscDfn : rscDfnMap.values())
-            {
-                try
-                {
-                    Iterator<Resource> itResources = rscDfn.iterateResource(peerAccCtx);
-                    while (itResources.hasNext())
-                    {
-                        Resource rsc = itResources.next();
-                        rscs.add(rsc.getApiData(peerAccCtx, null, null));
-                        // fullSyncId and updateId null, as they are not going to be serialized anyways
 
-                    }
-                }
-                catch (AccessDeniedException accDeniedExc)
+            rscDfnMap.values().stream()
+                .filter(rscDfn -> filterResources.isEmpty() || filterResources.contains(rscDfn.getName()))
+                .forEach(rscDfn ->
                 {
-                    // don't add storpooldfn without access
-                }
-            }
+                    try
+                    {
+                        for (Resource rsc : rscDfn.streamResource(peerAccCtx)
+                            .filter(rsc -> filterNodes.isEmpty() ||
+                                filterNodes.contains(rsc.getAssignedNode().getName()))
+                            .collect(toList()))
+                        {
+                            rscs.add(rsc.getApiData(peerAccCtx, null, null));
+                            // fullSyncId and updateId null, as they are not going to be serialized anyways
+                        }
+                    }
+                    catch (AccessDeniedException accDeniedExc)
+                    {
+                        // don't add storpooldfn without access
+                    }
+                });
 
             // get resource states of all nodes
             for (final Node node : nodesMap.values())

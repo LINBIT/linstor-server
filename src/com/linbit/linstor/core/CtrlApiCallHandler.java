@@ -623,14 +623,18 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResource()
+    public byte[] listResource(List<String> filterNodes, List<String> filterStorPools, List<String> filterResources)
     {
         byte[] listResources;
         try
         {
             nodesMapLock.readLock().lock();
             rscDfnMapLock.readLock().lock();
-            listResources = rscApiCallHandler.listResources(msgId.get());
+            listResources = rscApiCallHandler.listResources(
+                msgId.get(),
+                filterNodes,
+                filterResources
+            );
         }
         finally
         {
@@ -638,6 +642,28 @@ public class CtrlApiCallHandler
             nodesMapLock.readLock().unlock();
         }
         return listResources;
+    }
+
+    public byte[] listVolumes(List<String> filterNodes, List<String> filterStorPools, List<String> filterResources)
+    {
+        byte[] listVolumes;
+        try
+        {
+            nodesMapLock.readLock().lock();
+            rscDfnMapLock.readLock().lock();
+            listVolumes = vlmApiCallHandler.listVolumes(
+                msgId.get(),
+                filterNodes,
+                filterStorPools,
+                filterResources
+            );
+        }
+        finally
+        {
+            rscDfnMapLock.readLock().unlock();
+            nodesMapLock.readLock().unlock();
+        }
+        return listVolumes;
     }
 
     /**
@@ -834,13 +860,17 @@ public class CtrlApiCallHandler
         return listStorPoolDefinitions;
     }
 
-    public byte[] listStorPool()
+    public byte[] listStorPool(List<String> filterNodes, List<String> filterStorPools)
     {
         byte[] listStorPools;
         try
         {
             storPoolDfnMapLock.readLock().lock();
-            listStorPools = storPoolApiCallHandler.listStorPools(msgId.get());
+            listStorPools = storPoolApiCallHandler.listStorPools(
+                msgId.get(),
+                filterNodes,
+                filterStorPools
+            );
         }
         finally
         {

@@ -38,6 +38,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -348,31 +349,35 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    byte[] listStorPools(int msgId)
+    byte[] listStorPools(int msgId, List<String> filterNodes, List<String> filterStorPools)
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
         try
         {
             nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
-            for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
-            {
-                try
-                {
-                    for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx).collect(toList()))
+            storPoolDfnMap.values().stream()
+                .filter(storPoolDfn -> filterStorPools.isEmpty() || filterStorPools.contains(storPoolDfn.getName()))
+                .forEach(storPoolDfn -> {
+                    try
                     {
-                        if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
+                        for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx)
+                                .filter(storPool -> filterNodes.isEmpty() ||
+                                    filterNodes.contains(storPool.getNode().getName()))
+                                .collect(toList()))
                         {
-                            storPools.add(storPool.getApiData(peerAccCtx, null, null));
+                            if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
+                            {
+                                storPools.add(storPool.getApiData(peerAccCtx, null, null));
+                            }
+                            // fullSyncId and updateId null, as they are not going to be serialized anyways
                         }
-                        // fullSyncId and updateId null, as they are not going to be serialized anyways
                     }
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    // don't add storpooldfn without access
-                }
-            }
+                    catch (AccessDeniedException accDeniedExc)
+                    {
+                        // don't add storpooldfn without access
+                    }
+                });
         }
         catch (AccessDeniedException accDeniedExc)
         {
