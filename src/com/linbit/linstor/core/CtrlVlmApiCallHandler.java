@@ -204,20 +204,23 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                                 }
                             }
 
-                            RscPojo filteredRscVlms = new RscPojo(
-                                rscDfn.getName().getDisplayName(),
-                                rsc.getAssignedNode().getName().getDisplayName(),
-                                rsc.getAssignedNode().getUuid(),
-                                rscDfn.getApiData(peerAccCtx),
-                                rsc.getUuid(),
-                                rsc.getStateFlags().getFlagsBits(peerAccCtx),
-                                rsc.getNodeId().value,
-                                rsc.getProps(peerAccCtx).map(),
-                                volumes,
-                                null,
-                                null,
-                                null);
-                            rscs.add(filteredRscVlms);
+                            if (!volumes.isEmpty())
+                            {
+                                RscPojo filteredRscVlms = new RscPojo(
+                                    rscDfn.getName().getDisplayName(),
+                                    rsc.getAssignedNode().getName().getDisplayName(),
+                                    rsc.getAssignedNode().getUuid(),
+                                    rscDfn.getApiData(peerAccCtx),
+                                    rsc.getUuid(),
+                                    rsc.getStateFlags().getFlagsBits(peerAccCtx),
+                                    rsc.getNodeId().value,
+                                    rsc.getProps(peerAccCtx).map(),
+                                    volumes,
+                                    null,
+                                    null,
+                                    null);
+                                rscs.add(filteredRscVlms);
+                            }
                         }
                     }
                     catch (AccessDeniedException accDeniedExc)
