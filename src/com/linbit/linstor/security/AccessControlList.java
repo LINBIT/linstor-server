@@ -181,23 +181,37 @@ public final class AccessControlList
         PrivilegeSet privileges = context.privEffective;
 
         boolean allowFlag = false;
-        // Higher-level access privileges include the lower-level access privileges,
-        // therefore, no extra check is required
-        // E.g., if an OBJ_CHANGE privilege is present, the check for OBJ_VIEW
-        // yields true
         switch (requested)
         {
             case VIEW:
-                allowFlag |= privileges.hasPrivileges(Privilege.PRIV_OBJ_VIEW);
+                allowFlag |= privileges.hasSomePrivilege(
+                    Privilege.PRIV_OBJ_VIEW,
+                    Privilege.PRIV_OBJ_USE,
+                    Privilege.PRIV_OBJ_CHANGE,
+                    Privilege.PRIV_OBJ_CONTROL,
+                    Privilege.PRIV_OBJ_OWNER
+                );
                 break;
             case USE:
-                allowFlag |= privileges.hasPrivileges(Privilege.PRIV_OBJ_USE);
+                allowFlag |= privileges.hasSomePrivilege(
+                    Privilege.PRIV_OBJ_USE,
+                    Privilege.PRIV_OBJ_CHANGE,
+                    Privilege.PRIV_OBJ_CONTROL,
+                    Privilege.PRIV_OBJ_OWNER
+                );
                 break;
             case CHANGE:
-                allowFlag |= privileges.hasPrivileges(Privilege.PRIV_OBJ_CHANGE);
+                allowFlag |= privileges.hasSomePrivilege(
+                    Privilege.PRIV_OBJ_CHANGE,
+                    Privilege.PRIV_OBJ_CONTROL,
+                    Privilege.PRIV_OBJ_OWNER
+                );
                 break;
             case CONTROL:
-                allowFlag |= privileges.hasPrivileges(Privilege.PRIV_OBJ_CONTROL);
+                allowFlag |= privileges.hasSomePrivilege(
+                    Privilege.PRIV_OBJ_CONTROL,
+                    Privilege.PRIV_OBJ_OWNER
+                );
                 break;
             default:
                 throw new ImplementationError(

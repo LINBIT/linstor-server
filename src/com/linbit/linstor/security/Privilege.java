@@ -18,19 +18,19 @@ public final class Privilege
 
     // Allows changing the object of any owner if the
     // access is allowed by mandatory access controls
-    public static final Privilege PRIV_OBJ_OWNER = new Privilege(0x1F, "PRIV_OBJ_OWNER");
+    public static final Privilege PRIV_OBJ_OWNER = new Privilege(0x10, "PRIV_OBJ_OWNER");
 
     // Overrides object ownership rules to allow modification
     // of any object's access control list
-    public static final Privilege PRIV_OBJ_CONTROL = new Privilege(0xF, "PRIV_OBJ_CONTROL");
+    public static final Privilege PRIV_OBJ_CONTROL = new Privilege(0x8, "PRIV_OBJ_CONTROL");
 
     // Overrides any object access control list at the
     // CHANGE level of access
-    public static final Privilege PRIV_OBJ_CHANGE = new Privilege(0x7, "PRIV_OBJ_CHANGE");
+    public static final Privilege PRIV_OBJ_CHANGE = new Privilege(0x4, "PRIV_OBJ_CHANGE");
 
     // Overrides any object access control list at the
     // USE level of access
-    public static final Privilege PRIV_OBJ_USE = new Privilege(0x3, "PRIV_OBJ_USE");
+    public static final Privilege PRIV_OBJ_USE = new Privilege(0x2, "PRIV_OBJ_USE");
 
     // Overrides any object access control list at the
     // VIEW level of access

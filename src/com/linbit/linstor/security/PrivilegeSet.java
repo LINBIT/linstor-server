@@ -260,7 +260,8 @@ public final class PrivilegeSet implements Cloneable
         AccessType result = null;
         long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
         long privs = privileges & limitMask;
-        if ((privs & Privilege.PRIV_OBJ_CONTROL.id) == Privilege.PRIV_OBJ_CONTROL.id)
+        if ((privs & Privilege.PRIV_OBJ_CONTROL.id) == Privilege.PRIV_OBJ_CONTROL.id ||
+            (privs & Privilege.PRIV_OBJ_OWNER.id) == Privilege.PRIV_OBJ_OWNER.id)
         {
             result = AccessType.CONTROL;
         }
