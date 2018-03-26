@@ -38,9 +38,12 @@ public class InternalApiConsts
     public static final String API_APPLY_STOR_POOL_DELETED = "ApplyDeletedStorPool";
     public static final String API_APPLY_STOR_POOL_SUCCESS = "ApplyStorPoolSuccess";
 
+    public static final String API_CRYPT_KEY = "cryptKey";
+
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
+
 
     private InternalApiConsts()
     {

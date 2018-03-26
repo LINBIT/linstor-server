@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -14,7 +15,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -29,6 +29,7 @@ public class VolumeDefinitionDataControllerFactory
     private final DynamicNumberPool minorNrPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private CtrlSecurityObjects secObjs;
 
     @Inject
     public VolumeDefinitionDataControllerFactory(
@@ -36,7 +37,8 @@ public class VolumeDefinitionDataControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlSecurityObjects secObjsRef
     )
     {
         driver = driverRef;
@@ -44,6 +46,7 @@ public class VolumeDefinitionDataControllerFactory
         minorNrPool = minorNrPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        secObjs = secObjsRef;
     }
 
     public VolumeDefinitionData create(
@@ -91,6 +94,7 @@ public class VolumeDefinitionDataControllerFactory
             transObjFactory,
             transMgrProvider
         );
+
         driver.create(volDfnData);
 
         return volDfnData;

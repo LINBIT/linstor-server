@@ -76,7 +76,7 @@ import static java.util.stream.Collectors.toList;
 public class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
     private String currentNodeName;
-    private String currentRscName   ;
+    private String currentRscName;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -237,8 +237,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             {
                 VolumeDefinition vlmDfn = iterateVolumeDfn.next();
 
-                objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-                variables.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                objRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                variables.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
                 // first check if we probably just deployed a vlm for this vlmDfn
                 if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
@@ -329,9 +329,9 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     "Volume UUID is: " + entry.getValue().getUuid().toString()
                 );
                 vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
-                vlmCreatedRcEntry.putAllObjRef(objRefs);
+                vlmCreatedRcEntry.putAllObjRef(objRefs.get());
                 vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
-                vlmCreatedRcEntry.putAllVariables(variables);
+                vlmCreatedRcEntry.putAllVariables(variables.get());
                 vlmCreatedRcEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
 
                 apiCallRc.addEntry(vlmCreatedRcEntry);
@@ -605,7 +605,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             NodeName deletedNodeName = null;
 
             // cleanup resource definition if empty and marked for deletion
-            if (rscDfn.getResourceCount() == 0) {
+            if (rscDfn.getResourceCount() == 0)
+            {
                 // remove primary flag
                 errorReporter.logDebug(
                     String.format("Resource definition '%s' empty, deleting primary flag.", rscNameStr)
@@ -1207,7 +1208,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         entry.putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString());
         entry.putVariable(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
 
-        apiCallRc.addEntry(entry);
+        apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
     }
 
@@ -1223,7 +1224,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         entry.putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString());
         entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeName.displayValue);
 
-        apiCallRc.addEntry(entry);
+        apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
     }
 }

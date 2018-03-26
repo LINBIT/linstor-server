@@ -7,10 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
@@ -25,10 +22,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -47,8 +41,6 @@ public abstract class AbsStorageDriver implements StorageDriver
     protected final CoreTimer timer;
     protected final StorageDriverKind storageDriverKind;
 
-    protected final Set<String> encryptedIdenfitiers;
-
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
@@ -64,7 +56,6 @@ public abstract class AbsStorageDriver implements StorageDriver
         fileSystemWatch = fileSystemWatchRef;
         timer = timerRef;
         storageDriverKind = storageDriverKindRef;
-        encryptedIdenfitiers = new HashSet<>();
     }
 
     @Override
@@ -74,19 +65,9 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier, PriorityProps props) throws StorageException
+    public void startVolume(String identifier, String cryptKey) throws StorageException
     {
-        String cryptPasswd;
-        try
-        {
-            cryptPasswd = props.getProp(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-        }
-        catch (InvalidKeyException implExc)
-        {
-            throw new ImplementationError(implExc);
-        }
-
-        if (cryptPasswd != null)
+        if (cryptKey != null)
         {
             try
             {
@@ -100,12 +81,11 @@ public abstract class AbsStorageDriver implements StorageDriver
                     ProcessBuilder.Redirect.PIPE,
                     "cryptsetup", "luksOpen", volumePath, CRYPT_PREFIX + identifier
                 );
-                outputStream.write((cryptPasswd + "\n").getBytes());
+                outputStream.write((cryptKey + "\n").getBytes());
                 outputStream.flush();
 
                 extCommand.syncProcess();
                 outputStream.close(); // just to be sure and get rid of the java warning
-                encryptedIdenfitiers.add(identifier);
             }
             catch (IOException ioExc)
             {
@@ -125,9 +105,9 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void stopVolume(String identifier) throws StorageException
+    public void stopVolume(String identifier, boolean isEncrypted) throws StorageException
     {
-        if (encryptedIdenfitiers.contains(identifier))
+        if (isEncrypted)
         {
             try
             {
@@ -135,8 +115,6 @@ public abstract class AbsStorageDriver implements StorageDriver
 
                 // close cryptsetup
                 extCommand.exec("cryptsetup", "close", CRYPT_PREFIX + identifier);
-
-                encryptedIdenfitiers.remove(identifier);
             }
             catch (IOException ioExc)
             {
@@ -156,7 +134,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public String createVolume(final String identifier, long size, PriorityProps props)
+    public String createVolume(final String identifier, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException
     {
         final long extent = getExtentSize();
@@ -211,16 +189,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             final VolumeInfo info = getVolumeInfo(identifier);
             volumePath = info.getPath();
 
-            String cryptPasswd;
-            try
-            {
-                cryptPasswd = props.getProp(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-            }
-            catch (InvalidKeyException exc1)
-            {
-                throw new ImplementationError(exc1);
-            }
-            if (cryptPasswd != null)
+            if (cryptKey != null)
             {
                 try
                 {
@@ -235,14 +204,16 @@ public abstract class AbsStorageDriver implements StorageDriver
                         ProcessBuilder.Redirect.PIPE,
                         command
                     );
-                    Thread.sleep(1000);
-                    outputStream.write((cryptPasswd + "\n").getBytes());
+                    Thread.sleep(1000); // TODO: check if this is really needed (could be
+                    // a left over from a debugging session)
+                    outputStream.write((cryptKey + "\n").getBytes());
                     outputStream.flush();
 
                     output = extCommand.syncProcess();
                     outputStream.close(); // just to be sure and get rid of the java warning
 
                     checkExitCode(output, command);
+
 
                     volumePath = getCryptVolumePath(identifier);
                 }
@@ -261,7 +232,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                     );
                 }
             }
-            startVolume(identifier, props);
+            startVolume(identifier, cryptKey);
         }
         catch (NegativeTimeException negTimeExc)
         {
@@ -325,11 +296,11 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void deleteVolume(final String identifier) throws StorageException
+    public void deleteVolume(final String identifier, boolean isEncrypted) throws StorageException
     {
         try
         {
-            stopVolume(identifier);
+            stopVolume(identifier, isEncrypted);
         }
         catch (StorageException ignored)
         {
@@ -515,10 +486,10 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public String getVolumePath(String identifier) throws StorageException
+    public String getVolumePath(String identifier, boolean isEncrypted) throws StorageException
     {
         String volumePath;
-        if (encryptedIdenfitiers.contains(identifier))
+        if (isEncrypted)
         {
             volumePath = getCryptVolumePath(identifier);
         }
@@ -550,7 +521,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public void createSnapshot(
         String identifier,
         String snapshotName,
-        PriorityProps props
+        String cryptKey
     )
         throws StorageException
     {
@@ -560,7 +531,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
 
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-        final String[] command = getCreateSnapshotCommand(identifier, snapshotName);
+        final String[] command = getCreateSnapshotCommand(identifier, snapshotName, cryptKey != null);
         try
         {
             final OutputData outputData = extCommand.exec(command);
@@ -569,7 +540,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 "Failed to create snapshot [%s] for volume [%s]", snapshotName, identifier
             );
 
-            startVolume(getSnapshotIdentifier(identifier, snapshotName), props);
+            startVolume(getSnapshotIdentifier(identifier, snapshotName, cryptKey != null), cryptKey);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -591,7 +562,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        PriorityProps props
+        String cryptKey
     )
         throws StorageException
     {
@@ -599,7 +570,12 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
-        final String[] command = getRestoreSnapshotCommand(sourceIdentifier, snapshotName, targetIdentifier);
+        final String[] command = getRestoreSnapshotCommand(
+            sourceIdentifier,
+            snapshotName,
+            targetIdentifier,
+            cryptKey != null
+        );
 
         try
         {
@@ -614,7 +590,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 targetIdentifier
             );
 
-            startVolume(getSnapshotIdentifier(targetIdentifier, snapshotName), props);
+            startVolume(getSnapshotIdentifier(targetIdentifier, snapshotName, cryptKey != null), cryptKey);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -637,18 +613,19 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void deleteSnapshot(String identifier, String snapshotName) throws StorageException
+    public void deleteSnapshot(String identifier, String snapshotName, boolean isEncrypted)
+        throws StorageException
     {
         if (!storageDriverKind.isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
-        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
+        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName, isEncrypted);
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-            stopVolume(getSnapshotIdentifier(identifier, snapshotName));
+            stopVolume(getSnapshotIdentifier(identifier, snapshotName, isEncrypted), isEncrypted);
 
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(
@@ -1031,16 +1008,17 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getDeleteCommand(String identifier);
 
-    protected abstract String getSnapshotIdentifier(String identifier, String snapshotName);
+    protected abstract String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted);
 
-    protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
+    protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted);
 
     protected abstract String[] getRestoreSnapshotCommand(
         String sourceIdentifier,
         String snapshotName,
-        String identifier
+        String identifier,
+        boolean isEncrypted
     )
         throws StorageException;
 
-    protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);
+    protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted);
 }

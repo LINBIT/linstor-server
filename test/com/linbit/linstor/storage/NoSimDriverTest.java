@@ -16,7 +16,6 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -291,7 +290,7 @@ public abstract class NoSimDriverTest
 
             String restName = getUnusedIdentifier("", "_rest");
             log("   restoring [%s] from volume [%s] to [%s]", snapName, identifier, restName);
-            driver.restoreSnapshot(identifier, snapName, restName, new PriorityProps());
+            driver.restoreSnapshot(identifier, snapName, restName, null); // null == not encrypted
             log(" done%n");
 
             // file status orig:
@@ -553,7 +552,7 @@ public abstract class NoSimDriverTest
     private void createVolume(String identifier, long size, String format) throws MaxSizeException, MinSizeException, StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier, size);
-        driver.createVolume(identifier, size, new PriorityProps());
+        driver.createVolume(identifier, size, null); // null == not encrypted
         failIf(!volumeExists(identifier), "Failed to create volume [%s]", identifier);
         log(" done %n");
     }
@@ -576,7 +575,7 @@ public abstract class NoSimDriverTest
     private void checkPath(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        String volumePath = driver.getVolumePath(identifier);
+        String volumePath = driver.getVolumePath(identifier, false);
         String expectedVolumePath = getVolumePathImpl(identifier);
         failIf(!expectedVolumePath.equals(volumePath), "unexpected volume path: [%s], expected: [%s]", volumePath, expectedVolumePath);
         log(" done %n");
@@ -585,7 +584,7 @@ public abstract class NoSimDriverTest
     private void stopVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.stopVolume(identifier);
+        driver.stopVolume(identifier, false);
         failIf(isVolumeStartedImpl(identifier), "volume [%s] failed to stop", identifier);
         log(" done %n");
     }
@@ -593,7 +592,7 @@ public abstract class NoSimDriverTest
     private void startVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.startVolume(identifier, new PriorityProps());
+        driver.startVolume(identifier, null); // null == not encrypted
         failIf(!isVolumeStartedImpl(identifier), "volume [%s] failed to start", identifier);
         log(" done %n");
     }
@@ -601,7 +600,7 @@ public abstract class NoSimDriverTest
     private void deleteVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.deleteVolume(identifier);
+        driver.deleteVolume(identifier, false);
         failIf(volumeExists(identifier), "Failed to delete volume [%s]", identifier);
         log(" done %n");
     }
@@ -639,7 +638,7 @@ public abstract class NoSimDriverTest
     private void deleteSnapshot(String identifier, String snapshotName, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.deleteSnapshot(identifier, snapshotName);
+        driver.deleteSnapshot(identifier, snapshotName, false);
         failIf(volumeExists(identifier, snapshotName), "Failed to delete snapshot [%s]", identifier);
         log (" done%n");
     }
@@ -668,7 +667,7 @@ public abstract class NoSimDriverTest
     private void createSnapshot(String identifier, String snapshotName, String format) throws StorageException
     {
         log(format, snapshotName, identifier);
-        driver.createSnapshot(identifier, snapshotName, new PriorityProps());
+        driver.createSnapshot(identifier, snapshotName, null); // null == not encrypted
         log(" done%n");
     }
 

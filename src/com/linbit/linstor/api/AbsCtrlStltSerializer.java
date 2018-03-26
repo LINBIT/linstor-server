@@ -493,6 +493,21 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
             return this;
         }
 
+        @Override
+        public Builder cryptKey(byte[] masterKey, long timestamp, long updateId)
+        {
+            try
+            {
+                writeCryptKey(masterKey, timestamp, updateId, baos);
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
+                exceptionOccured = true;
+            }
+            return this;
+        }
+
     }
 
     public abstract void writeHeader(String apiCall, int msgId, ByteArrayOutputStream baos)
@@ -638,4 +653,8 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         ByteArrayOutputStream baos
     )
         throws IOException;
+
+    public abstract void writeCryptKey(byte[] masterKey, long timestamp, long updateId, ByteArrayOutputStream baos)
+        throws IOException;
+
 }

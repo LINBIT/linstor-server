@@ -56,6 +56,7 @@ public class ApiConsts
     public static final long MASK_NET_IF = 0x00000000001C0000L;
     public static final long MASK_STOR_POOL_DFN = 0x0000000000180000L;
     public static final long MASK_STOR_POOL = 0x0000000000140000L;
+    public static final long MASK_CTRL_CONF = 0x0000000000100000L;
 
     /*
      * Codes 1-9: success
@@ -63,6 +64,7 @@ public class ApiConsts
     public static final long CREATED = 1 | MASK_SUCCESS;
     public static final long DELETED = 2 | MASK_SUCCESS;
     public static final long MODIFIED = 3 | MASK_SUCCESS;
+    public static final long PASSPHRASE_ACCEPTED = 4 | MASK_SUCCESS;
 
     /*
      * Codes 100 - 999: failures
@@ -93,6 +95,7 @@ public class ApiConsts
     public static final long FAIL_INVLD_PROP = 213 | MASK_ERROR;
     public static final long FAIL_INVLD_TRANSPORT_TYPE = 214 | MASK_ERROR;
     public static final long FAIL_INVLD_TCP_PORT = 215 | MASK_ERROR;
+    public static final long FAIL_INVLD_CRYPT_PASSPHRASE = 216 | MASK_ERROR;
 
     /*
      * Codes 300-399: dependency not found failures
@@ -109,6 +112,7 @@ public class ApiConsts
     public static final long FAIL_NOT_FOUND_STOR_POOL_DFN = 309 | MASK_ERROR;
     public static final long FAIL_NOT_FOUND_STOR_POOL = 310 | MASK_ERROR;
     public static final long FAIL_NOT_FOUND_DFLT_STOR_POOL = 311 | MASK_ERROR;
+    public static final long FAIL_NOT_FOUND_CRYPT_KEY = 312 | MASK_ERROR;
 
     /*
      * Codes 400-499: access denied failures
@@ -142,6 +146,7 @@ public class ApiConsts
     public static final long FAIL_EXISTS_STOR_POOL_DFN = 509 | MASK_ERROR;
     public static final long FAIL_EXISTS_STOR_POOL = 510 | MASK_ERROR;
     public static final long FAIL_EXISTS_STLT_CONN = 511 | MASK_ERROR;
+    public static final long FAIL_EXISTS_CRYPT_PASSPHRASE = 512 | MASK_ERROR;
 
     /*
      * Codes 600-699: data missing failures
@@ -195,8 +200,8 @@ public class ApiConsts
     /*
      * Special codes
      */
-    public static final long UNKNOWN_API_CALL   = 0x0FFFFFFFFFFFFFFFL | MASK_ERROR;
-    public static final long API_CALL_AUTH_REQ  = 0x0FFFFFFFFFFFFFFEL | MASK_ERROR;
+    public static final long UNKNOWN_API_CALL = 0x0FFFFFFFFFFFFFFFL | MASK_ERROR;
+    public static final long API_CALL_AUTH_REQ = 0x0FFFFFFFFFFFFFFEL | MASK_ERROR;
 
     /*
      * SignIn codes
@@ -220,6 +225,7 @@ public class ApiConsts
     public static final String API_CRT_RSC_CONN = "CrtRscConn";
     public static final String API_CRT_VLM_CONN = "CrtVlmConn";
     public static final String API_AUTO_PLACE_RSC = "AutoPlaceRsc";
+    public static final String API_CRT_CRYPT_PASS = "CrtCryptPass";
 
     /*
      * Modify object APIs
@@ -236,6 +242,7 @@ public class ApiConsts
     public static final String API_MOD_VLM = "ModVlm";
     public static final String API_MOD_VLM_CONN = "ModVlmConn";
     public static final String API_MOD_SNPSHT = "ModSnpsht";
+    public static final String API_MOD_CRYPT_PASS = "ModCryptPass";
 
     /*
      * Delete object APIs
@@ -251,6 +258,7 @@ public class ApiConsts
     public static final String API_DEL_RSC_CONN = "DelRscConn";
     public static final String API_DEL_VLM_CONN = "DelVlmConn";
     public static final String API_DEL_SNPSHT = "DelSnpsht";
+    public static final String API_DEL_CRYPT_PASS = "DelCryptPass";
     public static final String API_RST_SNPSHT = "RstSnpsht";
     public static final String API_AUTO_DPLY_RSC = "AutoDplyRsc";
     public static final String API_LOST_NODE = "LostNode";
@@ -300,6 +308,15 @@ public class ApiConsts
     public static final String API_SET_CFG_VAL = "SetCfgVal";
     public static final String API_DEL_CFG_VAL = "DelCfgVal";
     public static final String API_LST_CFG_VAL = "LstCfgVal";
+
+    /*
+     * Encryption APIs
+     */
+    public static final String API_ENTER_CRYPT_PASS = "EnterCryptPass";
+
+    /*
+     * Control APIs
+     */
     public static final String API_SHTDWN = "Shtdwn";
 
     /*

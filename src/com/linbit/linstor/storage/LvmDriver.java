@@ -273,26 +273,31 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    protected String getSnapshotIdentifier(String identifier, String snapshotName)
+    protected String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
     @Override
-    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
     @Override
-    protected String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String identifier)
+    protected String[] getRestoreSnapshotCommand(
+        String sourceIdentifier,
+        String snapshotName,
+        String identifier,
+        boolean isEncrypted
+    )
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
@@ -382,10 +387,10 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public String getVolumePath(String identifier) throws StorageException
+    public String getVolumePath(String identifier, boolean isEncrypted) throws StorageException
     {
         String volumePath;
-        if (encryptedIdenfitiers.contains(identifier))
+        if (isEncrypted)
         {
             volumePath = getCryptVolumePath(identifier);
         }

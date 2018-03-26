@@ -2,9 +2,6 @@ package com.linbit.linstor.storage;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.api.ApiConsts;
-
 import java.util.Map;
 
 /**
@@ -25,40 +22,46 @@ public interface StorageDriver
      * Makes a volume ready for access
      *
      * @param identifier Unique name of the volume
-     * @param props a (list of) property key-value pairs which might contain
-     * {@link ApiConsts#KEY_STOR_POOL_CRYPT_PASSWD}.
+     * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
+     *  be encrypted)
+     *
      * @throws StorageException If an operation on the storage fails
      */
-    void startVolume(String identifier, PriorityProps props) throws StorageException;
+    void startVolume(String identifier, String cryptKey) throws StorageException;
 
     /**
      * Shuts down a volume
      *
      * @param identifier Unique name of the volume
+     * @param isEncrypted
+     *
      * @throws StorageException If an operation on the storage fails
      */
-    void stopVolume(String identifier) throws StorageException;
+    void stopVolume(String identifier, boolean isEncrypted) throws StorageException;
 
     /**
      * Creates a new volume
      *
      * @param identifier Unique name of the volume
      * @param size Size of the volume in kiB
-     * @param props a (list of) property key-value pairs which might contain
-     * {@link ApiConsts#KEY_STOR_POOL_CRYPT_PASSWD}.
+     * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
+     *  be encrypted)
+     *
      * @return Path of the volume's block device file
      * @throws StorageException If an operation on the storage fails
      */
-    String createVolume(String identifier, long size, PriorityProps props)
+    String createVolume(String identifier, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException;
 
     /**
      * Deletes a volume
      *
      * @param identifier Unique name of the volume
+     * @param isEncrypted
+     *
      * @throws StorageException If an operation on the storage fails
      */
-    void deleteVolume(String identifier) throws StorageException;
+    void deleteVolume(String identifier, boolean isEncrypted) throws StorageException;
 
     /**
      * Checks wheter a volume exists.
@@ -81,11 +84,13 @@ public interface StorageDriver
      * Returns the path of the volume's block device file
      *
      * @param identifier Unique name of the volume
+     * @param isEncrypted
+     *
      * @return Path of the volume's block device file
      * @throws StorageException If determining the path of the volume's
      *     block device files fails
      */
-    String getVolumePath(String identifier) throws StorageException;
+    String getVolumePath(String identifier, boolean isEncrypted) throws StorageException;
 
     /**
      * Returns the size of a volume
@@ -126,10 +131,13 @@ public interface StorageDriver
      *
      * @param identifier
      * @param snapshotName
+     * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
+     *  be encrypted)
+     *
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void createSnapshot(String identifier, String snapshotName, PriorityProps props)
+    void createSnapshot(String identifier, String snapshotName, String cryptKey)
         throws StorageException;
 
     /**
@@ -138,6 +146,9 @@ public interface StorageDriver
      *
      * @param snapshotName
      * @param targetIdentifier
+     * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
+     *  be encrypted)
+     *
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
@@ -145,7 +156,7 @@ public interface StorageDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        PriorityProps props
+        String cryptKey
     )
         throws StorageException;
 
@@ -153,8 +164,10 @@ public interface StorageDriver
      * Deletes the given snapshot
      * @param identifier
      * @param snapshotName
+     * @param isEncrypted
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void deleteSnapshot(String identifier, String snapshotName) throws StorageException;
+    void deleteSnapshot(String identifier, String snapshotName, boolean isEncrypted)
+        throws StorageException;
 }

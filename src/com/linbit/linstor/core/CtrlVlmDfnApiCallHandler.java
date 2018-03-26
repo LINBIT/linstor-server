@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -36,12 +37,14 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +54,7 @@ import java.util.UUID;
 
 class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
+    private static final int SECRET_KEY_BYTES = 20;
     private String currentRscName;
     private VlmDfnApi currentVlmDfnApi;
     private Integer currentVlmNr;
@@ -58,6 +62,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection rscDfnMapProt;
     private final String defaultStorPoolName;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private final CtrlSecurityObjects secObjs;
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -71,7 +76,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        CtrlSecurityObjects secObjsRef
     )
     {
         super(
@@ -89,19 +95,21 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         rscDfnMapProt = rscDfnMapProtRef;
         defaultStorPoolName = defaultStorPoolNameRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        secObjs = secObjsRef;
     }
 
     private void updateCurrentKeyNumber(final String key, Integer number)
     {
         String intStringOrNull = null;
+        Map<String, String> localVariables = variables.get();
         if (number != null)
         {
             intStringOrNull = number.toString();
-            variables.put(key, intStringOrNull);
+            localVariables.put(key, intStringOrNull);
         }
         else
         {
-            variables.remove(key);
+            localVariables.remove(key);
         }
     }
 
@@ -143,56 +151,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 rscList.add(iterateResource.next());
             }
 
-            List<VolumeDefinition> vlmDfnsCreated = new ArrayList<>();
-            for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApiList)
-            {
-                {
-                    currentVlmDfnApi = vlmDfnApi;
+            List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnApiList);
 
-                    updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, vlmDfnApi.getVolumeNr());
-                    updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfnApi.getMinorNr());
-                }
-                VolumeNumber volNr = null;
-                MinorNumber minorNr = null;
-
-                volNr = getOrGenerateVlmNr(
-                    vlmDfnApi,
-                    rscDfn,
-                    apiCtx
-                );
-                updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, volNr.value);
-                currentVlmNr = volNr.value; // set vlmNr for exception error reporting
-
-                long size = vlmDfnApi.getSize();
-
-                VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
-
-                VolumeDefinitionData vlmDfn = createVlmDfnData(
-                    peerAccCtx,
-                    rscDfn,
-                    volNr,
-                    vlmDfnApi.getMinorNr(),
-                    size,
-                    vlmDfnInitFlags
-                );
-                Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
-                propsMap.putAll(vlmDfnApi.getProps());
-
-                if (isFlagSet(vlmDfn, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
-                {
-                    propsMap.put(
-                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
-                        SharedSecretGenerator.generateSharedSecret()
-                    );
-                }
-
-                updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfn.getMinorNr(peerAccCtx).value);
-
-                vlmDfnsCreated.add(vlmDfn);
-            }
-            objRefs.remove(ApiConsts.KEY_VLM_NR);
-            variables.remove(ApiConsts.KEY_VLM_NR);
-            variables.remove(ApiConsts.KEY_MINOR_NR);
+            objRefs.get().remove(ApiConsts.KEY_VLM_NR);
+            variables.get().remove(ApiConsts.KEY_VLM_NR);
+            variables.get().remove(ApiConsts.KEY_MINOR_NR);
 
             for (Resource rsc : rscList)
             {
@@ -226,6 +189,88 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    List<VolumeDefinitionData> createVlmDfns(
+        ResourceDefinition rscDfn,
+        List<VlmDfnApi> vlmDfnApis
+    )
+    {
+        List<VolumeDefinitionData> createVlmDfns = new ArrayList<>();
+
+        try
+        {
+            for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApis)
+            {
+                {
+                    currentVlmDfnApi = vlmDfnApi;
+
+                    updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, vlmDfnApi.getVolumeNr());
+                    updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfnApi.getMinorNr());
+                }
+                VolumeNumber volNr = null;
+
+                volNr = getOrGenerateVlmNr(
+                    vlmDfnApi,
+                    rscDfn,
+                    apiCtx
+                );
+                updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, volNr.value);
+                currentVlmNr = volNr.value; // set vlmNr for exception error reporting
+
+                long size = vlmDfnApi.getSize();
+
+                VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
+
+                VolumeDefinitionData vlmDfn = createVlmDfnData(
+                    peerAccCtx,
+                    rscDfn,
+                    volNr,
+                    vlmDfnApi.getMinorNr(),
+                    size,
+                    vlmDfnInitFlags
+                );
+                Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
+                propsMap.putAll(vlmDfnApi.getProps());
+
+                if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
+                {
+                    byte[] masterKey = secObjs.getCryptKey();
+                    if (masterKey == null || masterKey.length == 0)
+                    {
+                        throw asExc(
+                            null,
+                            "Unable to create an encrypted volume definition without having a master key",
+                            "The masterkey was not initialized yet",
+                            null, // details
+                            "Create or enter the master passphrase",
+                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY
+                        );
+                    }
+
+                    String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
+                    SymmetricKeyCipher cipher;
+                    cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+
+                    byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
+
+                    propsMap.put(
+                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                        Base64.encode(encryptedVlmDfnKey)
+                    );
+                }
+
+                updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfn.getMinorNr(peerAccCtx).value);
+
+                createVlmDfns.add(vlmDfn);
+            }
+        }
+        catch (LinStorException exc)
+        {
+            throw asExc(exc, "Unknown exception", ApiConsts.FAIL_UNKNOWN_ERROR);
+        }
+
+        return createVlmDfns;
     }
 
     ApiCallRc modifyVlmDfn(

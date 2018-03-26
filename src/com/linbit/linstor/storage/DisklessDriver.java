@@ -1,7 +1,5 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.linstor.PriorityProps;
-
 import java.util.Collections;
 import java.util.Map;
 
@@ -21,19 +19,19 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier, PriorityProps props)
+    public void startVolume(String identifier, String cryptKey)
     {
         // no-op
     }
 
     @Override
-    public void stopVolume(String identifier)
+    public void stopVolume(String identifier, boolean isEncrypted)
     {
         // no-op
     }
 
     @Override
-    public String createVolume(String identifier, long size, PriorityProps props)
+    public String createVolume(String identifier, long size, String cryptKey)
     {
         return "none";
     }
@@ -45,7 +43,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void deleteVolume(String identifier)
+    public void deleteVolume(String identifier, boolean isEncrypted)
     {
         // no-op
     }
@@ -57,7 +55,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public String getVolumePath(String identifier)
+    public String getVolumePath(String identifier, boolean isEncrypted)
     {
         return "none";
     }
@@ -81,7 +79,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName, PriorityProps props)
+    public void createSnapshot(String identifier, String snapshotName, String cryptKey)
     {
         // no-op
     }
@@ -91,14 +89,14 @@ public class DisklessDriver implements StorageDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        PriorityProps props
+        String cryptKey
     )
     {
         // no-op
     }
 
     @Override
-    public void deleteSnapshot(String identifier, String snapshotName)
+    public void deleteSnapshot(String identifier, String snapshotName, boolean isEncrypted)
     {
         // no-op
     }

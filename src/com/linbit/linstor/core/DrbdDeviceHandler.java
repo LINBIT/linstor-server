@@ -23,6 +23,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -710,9 +711,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 vlmState.getDriver().createVolume(
                     vlmState.getStorVlmName(),
                     vlmState.getGrossSize(),
-                    new PriorityProps(
-                        rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getProps(wrkCtx)
-                    )
+                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
                 );
             }
             catch (StorageException storExc)
@@ -762,7 +761,9 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             try
             {
-                vlmState.getDriver().deleteVolume(vlmState.getStorVlmName());
+                boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
+                    .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+                vlmState.getDriver().deleteVolume(vlmState.getStorVlmName(), isEncrypted);
 
                 // Notify the controller of successful deletion of the resource
                 deviceManagerProvider.get().notifyVolumeDeleted(
@@ -877,8 +878,11 @@ class DrbdDeviceHandler implements DeviceHandler
                             // Check for the existence of meta data
                             try
                             {
+                                boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
+                                    .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+
                                 vlmState.setHasMetaData(drbdUtils.hasMetaData(
-                                    vlmState.getDriver().getVolumePath(vlmState.getStorVlmName()),
+                                    vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted),
                                     vlmState.getMinorNr().value, "internal"
                                 ));
                                 errLog.logTrace(
@@ -907,7 +911,11 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Set block device paths
                         if (vlmState.hasDisk())
                         {
-                            String bdPath = vlmState.getDriver().getVolumePath(vlmState.getStorVlmName());
+
+                            boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
+                                .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+
+                            String bdPath = vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted);
                             vlm.setBlockDevicePath(wrkCtx, bdPath);
                             vlm.setMetaDiskPath(wrkCtx, "internal");
                         }

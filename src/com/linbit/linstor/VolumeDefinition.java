@@ -60,6 +60,11 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
 
     VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
+    void setKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException;
+
+    String getKey(AccessContext accCtx) throws AccessDeniedException;
+
+
     enum VlmDfnFlags implements Flags
     {
         DELETE(1L), ENCRYPTED(2L);

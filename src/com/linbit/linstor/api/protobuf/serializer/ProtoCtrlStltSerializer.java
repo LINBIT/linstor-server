@@ -27,6 +27,7 @@ import com.linbit.linstor.api.AbsCtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
@@ -38,6 +39,7 @@ import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.MsgIntDelRscOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
@@ -55,6 +57,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -66,11 +69,17 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
 {
     private final ResourceSerializerHelper rscSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
+    private final CtrlSecurityObjects secObjs;
 
     @Inject
-    public ProtoCtrlStltSerializer(ErrorReporter errReporter, @ApiContext AccessContext serializerCtx)
+    public ProtoCtrlStltSerializer(
+        ErrorReporter errReporter,
+        @ApiContext AccessContext serializerCtx,
+        CtrlSecurityObjects secObjsRef
+    )
     {
         super(errReporter, serializerCtx);
+        secObjs = secObjsRef;
 
         rscSerializerHelper = new ResourceSerializerHelper();
         nodeSerializerHelper = new NodeSerializerHelper();
@@ -278,11 +287,18 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             }
         }
 
+        String encodedMasterKey = "";
+        byte[] cryptKey = secObjs.getCryptKey();
+        if (cryptKey != null)
+        {
+            encodedMasterKey = Base64.encode(cryptKey);
+        }
         MsgIntFullSync.newBuilder()
             .addAllNodes(serializedNodes)
             .addAllStorPools(serializedStorPools)
             .addAllRscs(serializedRscs)
             .setFullSyncTimestamp(fullSyncTimestamp)
+            .setMasterKey(encodedMasterKey)
             .build()
             .writeDelimitedTo(baos);
     }
@@ -404,6 +420,23 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         appendObjectId(storPoolUuid, storPoolName, baos);
     }
 
+    @Override
+    public void writeCryptKey(
+        byte[] cryptKey,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        MsgIntCryptKey.newBuilder()
+            .setCryptKey(ByteString.copyFrom(cryptKey))
+            .setFullSyncId(fullSyncTimestamp)
+            .setUpdateId(updateId)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
     /*
      * Helper methods
      */
@@ -478,7 +511,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         private Iterable<? extends NetIf> getNetIfs(Node node) throws AccessDeniedException
         {
             ArrayList<NetIf> netIfs = new ArrayList<>();
-            for(NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
+            for (NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
             {
                 netIfs.add(
                     NetIf.newBuilder()

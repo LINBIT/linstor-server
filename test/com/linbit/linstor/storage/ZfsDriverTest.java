@@ -31,7 +31,6 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.linstor.PriorityProps;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
@@ -40,6 +39,12 @@ import com.linbit.linstor.PriorityProps;
 })
 public class ZfsDriverTest extends StorageTestUtils
 {
+    private static final long MB = 1024;
+    private static final long TEST_SIZE_100MB = 100 * MB;
+    private static final long TEST_EXTENT_SIZE = 128;
+    private static final long TEST_TOLERANCE_FACTOR = 4;
+    private static final long CREATE_VOL_WAIT_TIME = 2000;
+
     public ZfsDriverTest() throws Exception
     {
         super(new ZfsDriverKind());
@@ -48,7 +53,7 @@ public class ZfsDriverTest extends StorageTestUtils
     @Test
     public void testConfigPool() throws StorageException
     {
-        HashMap<String,String> config = new HashMap<>();
+        HashMap<String, String> config = new HashMap<>();
 
         String poolName = "otherName";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
@@ -100,7 +105,7 @@ public class ZfsDriverTest extends StorageTestUtils
         driver.setConfiguration(createMap(CONFIG_ZFS_COMMAND_KEY, tmpFile.getAbsolutePath()));
 
         String pool = "newPool";
-        expectCheckPoolName(tmpFile.getAbsolutePath(),pool);
+        expectCheckPoolName(tmpFile.getAbsolutePath(), pool);
         driver.setConfiguration(createMap(CONFIG_ZFS_POOL_KEY, pool));
     }
 
@@ -112,18 +117,24 @@ public class ZfsDriverTest extends StorageTestUtils
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "NaN"));
 
-        driver.setConfiguration(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY,"4"));
+        driver.setConfiguration(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
 
         String identifier = "identifier";
 
-        long size = 100 * 1024; // size in KiB => 100MB
-        long zfsExtent = 128;
-        expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size + zfsExtent * 4);
+        long size = TEST_SIZE_100MB;
+        long zfsExtent = TEST_EXTENT_SIZE;
+        expectZfsVolumeInfoBehavior(
+            ZFS_COMMAND_DEFAULT,
+            ZFS_POOL_DEFAULT,
+            identifier,
+            size + zfsExtent * TEST_TOLERANCE_FACTOR
+        );
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
 
         driver.checkVolume(identifier, size);
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size + zfsExtent * 4 + 1);
+        // TODO: add comments what is going on here + replace the 4 with "TEST_TOLERANCE_FACTOR"
 
         try
         {
@@ -140,45 +151,50 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testStartVolume() throws StorageException
     {
         String identifier = "identifier";
-        driver.startVolume(identifier, new PriorityProps()); // should not trigger anything
+        driver.startVolume(identifier, null); // null == not encrypted
     }
 
     @Test
     public void testStartUnknownVolume() throws StorageException
     {
         String unknownIdentifier = "unknown";
-        driver.startVolume(unknownIdentifier, new PriorityProps()); // should not trigger anything
+        driver.startVolume(unknownIdentifier, null); // null == not encrypted
     }
 
     @Test
     public void testStopVolume() throws StorageException
     {
         String identifier = "identifier";
-        driver.stopVolume(identifier); // should not trigger anything
+        driver.stopVolume(identifier, false); // should not trigger anything
     }
 
     @Test
     public void testStopUnknownVolume() throws StorageException
     {
         String unknownIdentifier = "unknown";
-        driver.stopVolume(unknownIdentifier); // should not trigger anything
+        driver.stopVolume(unknownIdentifier, false); // should not trigger anything
     }
 
 
     @Test
+
     public void testCreateVolumeDelayed() throws Exception
     {
-        long volumeSize = 100 * 1024; // size in KiB => 100MB
+        long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, volumeSize);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier);
 
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         final FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
 
-        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(expectedFilePath, Event.CREATE, testFileEntryGroup);
+        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.CREATE,
+            testFileEntryGroup
+        );
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         final FileEntry testEntry = new FileEntry(
@@ -195,34 +211,40 @@ public class ZfsDriverTest extends StorageTestUtils
                 {
                     try
                     {
-                        Thread.sleep(2000); // give the driver some time to execute the .createVolume command
+                        Thread.sleep(CREATE_VOL_WAIT_TIME); // give the driver some time to execute the
+                        // .createVolume command
                     }
-                    catch (InterruptedException e)
+                    catch (InterruptedException exc)
                     {
-                        e.printStackTrace();
+                        exc.printStackTrace();
                     }
                     testFileEntryGroup.fileEvent(testEntry);
                 }
             }
         );
         thread.start();
-        driver.createVolume(identifier, volumeSize, new PriorityProps());
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
     @Test
+
     public void testCreateVolumeInstant() throws Exception
     {
-        long volumeSize = 100 * 1024; // size in KiB => 100MB
+        long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, volumeSize);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier);
 
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
 
-        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(expectedFilePath, Event.CREATE, testFileEntryGroup);
+        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.CREATE,
+            testFileEntryGroup
+        );
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         FileEntry testEntry = new FileEntry(
@@ -231,48 +253,55 @@ public class ZfsDriverTest extends StorageTestUtils
             emptyFileObserver);
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.createVolume(identifier, volumeSize, new PriorityProps());
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
     @Test(expected = StorageException.class)
+
     public void testCreateVolumeTimeout() throws Exception
     {
-        long volumeSize = 100 * 1024; // size in KiB => 100MB
+        long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier);
 
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
 
-        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(expectedFilePath, Event.CREATE, testFileEntryGroup);
+        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.CREATE,
+            testFileEntryGroup
+        );
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event --> timeout
-        driver.createVolume(identifier, volumeSize, new PriorityProps());
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
 
     @Test(expected = StorageException.class)
+
     public void testCreateExistingVolume() throws Exception
     {
-        long volumeSize = 100 * 1024; // size in KiB => 100MB
+        long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier, true);
-        driver.createVolume(identifier, volumeSize, new PriorityProps());
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
     @Test
+
     public void testCreateAutoCorrectSize() throws Exception
     {
-        long volumeSize = 100 * 1024 + 1; // this should be rounded up to
-        long correctedSize = 100 * 1024 + 128;
+        long volumeSize = TEST_SIZE_100MB + 1; // this should be rounded up to
+        long correctedSize = TEST_SIZE_100MB + TEST_EXTENT_SIZE;
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, correctedSize, identifier);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, correctedSize);
 
@@ -280,7 +309,11 @@ public class ZfsDriverTest extends StorageTestUtils
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
 
-        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(expectedFilePath, Event.CREATE, testFileEntryGroup);
+        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.CREATE,
+            testFileEntryGroup
+        );
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         FileEntry testEntry = new FileEntry(
@@ -290,7 +323,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         testFileEntryGroup.fileEvent(testEntry);
 
-        driver.createVolume(identifier, volumeSize, new PriorityProps());
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
     @Test
@@ -303,7 +336,11 @@ public class ZfsDriverTest extends StorageTestUtils
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
 
-        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(expectedFilePath, Event.DELETE, testFileEntryGroup);
+        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.DELETE,
+            testFileEntryGroup
+        );
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         FileEntry testEntry = new FileEntry(
@@ -313,7 +350,7 @@ public class ZfsDriverTest extends StorageTestUtils
         );
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.deleteVolume(identifier);
+        driver.deleteVolume(identifier, false);
     }
 
     @Test(expected = StorageException.class)
@@ -326,11 +363,15 @@ public class ZfsDriverTest extends StorageTestUtils
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
 
-        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(expectedFilePath, Event.DELETE, testFileEntryGroup);
+        FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.DELETE,
+            testFileEntryGroup
+        );
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event
-        driver.deleteVolume(identifier);
+        driver.deleteVolume(identifier, false);
     }
 
     @Test(expected = StorageException.class)
@@ -341,15 +382,16 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsDeleteVolumeBehavior(ZFS_COMMAND_DEFAULT, identifier, ZFS_POOL_DEFAULT, false);
         expectZfsVolumeExistsBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier);
 
-        driver.deleteVolume(identifier);
+        driver.deleteVolume(identifier, false);
     }
 
     @Test
+
     public void testCheckVolume() throws StorageException
     {
         String identifier = "testVolume";
-        long size = 100 * 1024; // size in KiB => 100MB
-        long zfsExtent = 128;
+        long size = TEST_SIZE_100MB; // size in KiB => 100MB
+        long zfsExtent = TEST_EXTENT_SIZE;
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size);
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
@@ -367,10 +409,11 @@ public class ZfsDriverTest extends StorageTestUtils
     }
 
     @Test(expected = StorageException.class)
+
     public void testCheckVolumeTooSmall() throws StorageException
     {
         String identifier = "testVolume";
-        long size = 100 * 1024; // size in KiB => 100MB
+        long size = TEST_SIZE_100MB; // size in KiB => 100MB
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size - 10);
         // user wanted at least 100 MB, but we give him a little bit less
@@ -383,11 +426,11 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testVolumePath() throws StorageException
     {
         String identifier = "testVolume";
-        long size = 100 * 1024; // size in KiB => 100MB
+        long size = TEST_SIZE_100MB; // size in KiB => 100MB
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size);
 
-        final String path = driver.getVolumePath(identifier);
+        final String path = driver.getVolumePath(identifier, false);
         assertEquals(
             "/dev/zvol/" +
             ZFS_POOL_DEFAULT + "/" +
@@ -400,18 +443,18 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testVolumePathUnknownVolume() throws StorageException
     {
         String identifier = "testVolume";
-        long size = 100 * 1024; // size in KiB => 100MB
+        long size = TEST_SIZE_100MB; // size in KiB => 100MB
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size, false);
 
-        driver.getVolumePath(identifier);
+        driver.getVolumePath(identifier, false);
     }
 
     @Test
     public void testSize() throws StorageException
     {
         String identifier = "testVolume";
-        long expectedSize = 100 * 1024; // size in KiB => 100MB
+        long expectedSize = TEST_SIZE_100MB; // size in KiB => 100MB
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, expectedSize);
 
@@ -423,7 +466,7 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testSizeUnknownVolume() throws StorageException
     {
         String identifier = "testVolume";
-        long size = 100 * 1024; // size in KiB => 100MB
+        long size = TEST_SIZE_100MB; // size in KiB => 100MB
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size, false);
 
@@ -442,7 +485,7 @@ public class ZfsDriverTest extends StorageTestUtils
     @Test
     public void testTraits() throws StorageException
     {
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         Map<String, String> traits = driver.getTraits();
 
         final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
@@ -498,7 +541,7 @@ public class ZfsDriverTest extends StorageTestUtils
         {
             outData = new TestOutputData(
                 "",
-                "cannot open '"+pool+"': dataset does not exist",
+                "cannot open '" + pool + "': dataset does not exist",
                 1
             );
         }
@@ -526,7 +569,7 @@ public class ZfsDriverTest extends StorageTestUtils
             "list",
             "-Hp", // no headers, parsable
             "-t", "volume", // type volume
-            pool+"/"+identifier // the specified volume
+            pool + "/" + identifier // the specified volume
         );
 
         OutputData outData = new TestOutputData("", "", 0);
@@ -547,13 +590,13 @@ public class ZfsDriverTest extends StorageTestUtils
             "-H", // no headers
             "-p", // parsable version, tab spaced, in bytes
             "-o", "volsize", // print specified columns only
-            pool+"/"+identifier // the specified volume
+            pool + "/" + identifier // the specified volume
         );
         OutputData outData;
         if (poolExists)
         {
             outData = new TestOutputData(
-                Long.toString(size * 1024),
+                Long.toString(size * MB),
                 "",
                 0
             );
@@ -562,7 +605,7 @@ public class ZfsDriverTest extends StorageTestUtils
         {
             outData = new TestOutputData(
                 "",
-                "cannot open '"+pool+"/"+identifier+"': dataset does not exist",
+                "cannot open '" + pool + "/" + identifier + "': dataset does not exist",
                 1
             );
         }
@@ -618,7 +661,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (poolExists)
         {
             outData = new TestOutputData(
-                Long.toString(size * 1024),
+                Long.toString(size * MB),
                 "",
                 0
             );
@@ -656,8 +699,8 @@ public class ZfsDriverTest extends StorageTestUtils
         Command command = new Command(
             zfsCommand,
             "create",
-            "-V", size+"KB",
-            pool+"/"+identifier
+            "-V", size + "KB",
+            pool + "/" + identifier
         );
         OutputData outData;
         if (!volumeExists)
@@ -699,7 +742,7 @@ public class ZfsDriverTest extends StorageTestUtils
         Command command = new Command(
             zfsCommand,
             "destroy", "-f", "-r",
-            pool+"/"+identifier
+            pool + "/" + identifier
         );
         OutputData outData;
         if (volumeExists)

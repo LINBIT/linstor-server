@@ -11,7 +11,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -220,16 +219,9 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName, PriorityProps props)
-        throws StorageException
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
     {
-        super.createSnapshot(identifier, snapshotName, props);
-    }
-
-    @Override
-    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
-    {
-        final String zfsSnapName = getQualifiedSnapshotPath(identifier, snapshotName);
+        final String zfsSnapName = getQualifiedSnapshotPath(identifier, snapshotName, isEncrypted);
         final String[] command = new String[]
         {
             zfsCommand,
@@ -243,7 +235,8 @@ public class ZfsDriver extends AbsStorageDriver
     protected String[] getRestoreSnapshotCommand(
         String sourceIdentifier,
         String snapshotName,
-        String targetIdentifier
+        String targetIdentifier,
+        boolean isEncrypted
     )
         throws StorageException
     {
@@ -251,20 +244,20 @@ public class ZfsDriver extends AbsStorageDriver
         {
             zfsCommand,
             "clone",
-            getQualifiedSnapshotPath(sourceIdentifier, snapshotName),
+            getQualifiedSnapshotPath(sourceIdentifier, snapshotName, isEncrypted),
             pool + File.separator + targetIdentifier
         };
     }
 
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
     {
         return new String[]
         {
             zfsCommand,
             "destroy",
-            getQualifiedSnapshotPath(identifier, snapshotName)
+            getQualifiedSnapshotPath(identifier, snapshotName, isEncrypted)
         };
     }
 
@@ -334,13 +327,13 @@ public class ZfsDriver extends AbsStorageDriver
         }
     }
 
-    private String getQualifiedSnapshotPath(String identifier, String snapshotName)
+    private String getQualifiedSnapshotPath(String identifier, String snapshotName, boolean isEncrypted)
     {
-        return pool + File.separator + getSnapshotIdentifier(identifier, snapshotName);
+        return pool + File.separator + getSnapshotIdentifier(identifier, snapshotName, isEncrypted);
     }
 
     @Override
-    protected String getSnapshotIdentifier(String identifier, String snapshotName)
+    protected String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted)
     {
         return identifier + "@" + snapshotName;
     }

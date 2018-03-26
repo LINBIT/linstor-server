@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -19,19 +20,22 @@ public class VolumeDefinitionDataSatelliteFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final StltSecurityObjects stltSecObjs;
 
     @Inject
     public VolumeDefinitionDataSatelliteFactory(
         VolumeDefinitionDataDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        StltSecurityObjects stltSecObjsRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        stltSecObjs = stltSecObjsRef;
     }
 
     public VolumeDefinitionData getInstanceSatellite(

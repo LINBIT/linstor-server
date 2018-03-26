@@ -18,6 +18,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -73,6 +74,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     private final VolumeDefinitionDataDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<VolumeDefinitionData, Boolean> deleted;
+
+    private transient TransactionSimpleObject<VolumeDefinitionData, String> cryptKey;
 
     VolumeDefinitionData(
         UUID uuid,
@@ -153,6 +156,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+        cryptKey = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.asList(
             vlmDfnProps,
@@ -160,7 +164,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             minorNr,
             volumeSize,
             flags,
-            deleted
+            deleted,
+            cryptKey
         );
 
         ((ResourceDefinitionData) resourceDfn).putVolumeDefinition(accCtx, this);
@@ -280,6 +285,28 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         return rsc.getAssignedNode().getName().value + "/" +
             rsc.getDefinition().getName().value;
+    }
+
+    @Override
+    public void setKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        if (!accCtx.subjectId.equals(Identity.SYSTEM_ID))
+        {
+            throw new AccessDeniedException("Only system context is allowed to set crypt key");
+        }
+        cryptKey.set(key);
+    }
+
+    @Override
+    public String getKey(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        if (!accCtx.subjectId.equals(Identity.SYSTEM_ID))
+        {
+            throw new AccessDeniedException("Only system context is allowed to get crypt key");
+        }
+        return cryptKey.get();
     }
 
     @Override

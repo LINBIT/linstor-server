@@ -22,6 +22,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNode
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.Base64;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -81,7 +82,8 @@ public class FullSync implements ApiCall
             nodes,
             storPools,
             resources,
-            fullSync.getFullSyncTimestamp()
+            fullSync.getFullSyncTimestamp(),
+            Base64.decode(fullSync.getMasterKey())
         );
 
         Map<StorPool, Long> freeSpaceMap;

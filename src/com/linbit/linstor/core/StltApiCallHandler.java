@@ -63,6 +63,8 @@ public class StltApiCallHandler
     private final TreeMap<Long, ApplyData> dataToApply;
 
     private final Provider<TransactionMgr> transMgrProvider;
+    private final StltSecurityObjects stltSecObj;
+    private final StltVlmDfnApiCallHandler vlmDfnHandler;
 
     @Inject
     public StltApiCallHandler(
@@ -85,7 +87,9 @@ public class StltApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        StltSecurityObjects stltSecObjRef,
+        StltVlmDfnApiCallHandler vlmDfnHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -108,6 +112,8 @@ public class StltApiCallHandler
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         transMgrProvider = transMgrProviderRef;
+        stltSecObj = stltSecObjRef;
+        vlmDfnHandler = vlmDfnHandlerRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -201,7 +207,8 @@ public class StltApiCallHandler
         Set<NodePojo> nodes,
         Set<StorPoolPojo> storPools,
         Set<RscPojo> resources,
-        long fullSyncId
+        long fullSyncId,
+        byte[] cryptKey
     )
     {
         try (
@@ -284,6 +291,13 @@ public class StltApiCallHandler
                     );
                 }
 
+                if (cryptKey != null && cryptKey.length > 0)
+                {
+                    stltSecObj.setCryptKey(cryptKey);
+
+                    vlmDfnHandler.decryptAllVlmDfnKeys();
+                }
+
                 updateMonitor.setFullSyncApplied();
             }
             else
@@ -362,6 +376,12 @@ public class StltApiCallHandler
     {
         applyChangedData(new ApplyStorPoolData(storPoolNameStr, fullSyncId, updateId));
     }
+
+    public void setCryptKey(byte[] key, long fullSyncId, long updateId)
+    {
+        applyChangedData(new ApplyCryptKey(key, fullSyncId, updateId));
+    }
+
 
     private void applyChangedData(ApplyData data)
     {
@@ -613,5 +633,50 @@ public class StltApiCallHandler
                 }
             }
         }
+    }
+
+    private class ApplyCryptKey implements ApplyData
+    {
+        private final byte[] cryptKey;
+        private final long fullSyncId;
+        private final long updateId;
+
+        ApplyCryptKey(byte[] cryptKeyRef, long fullSyncIdRef, long updateIdRef)
+        {
+            cryptKey = cryptKeyRef;
+            fullSyncId = fullSyncIdRef;
+            updateId = updateIdRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return fullSyncId;
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return updateId;
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (
+                LockSupport ls = LockSupport.lock(
+                    nodesMapLock.writeLock(),
+                    rscDfnMapLock.writeLock(),
+                    storPoolDfnMapLock.writeLock()
+                )
+            )
+            {
+                stltSecObj.setCryptKey(cryptKey);
+
+                vlmDfnHandler.decryptAllVlmDfnKeys();
+            }
+        }
+
+
     }
 }

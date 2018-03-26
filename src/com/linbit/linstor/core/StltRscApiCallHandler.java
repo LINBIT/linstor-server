@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterfaceDataFactory;
@@ -40,6 +41,7 @@ import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -48,6 +50,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -85,6 +88,7 @@ class StltRscApiCallHandler
     private final StorPoolDataFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final StltSecurityObjects stltSecObjs;
 
     @Inject
     StltRscApiCallHandler(
@@ -103,7 +107,8 @@ class StltRscApiCallHandler
         StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        StltSecurityObjects stltSecObjsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -122,6 +127,7 @@ class StltRscApiCallHandler
         storPoolDataFactory = storPoolDataFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        stltSecObjs = stltSecObjsRef;
     }
 
     /**
@@ -234,6 +240,7 @@ class StltRscApiCallHandler
                         );
                         checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
                         Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
+
                         vlmDfnPropsMap.clear();
                         vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
 
@@ -561,6 +568,37 @@ class StltRscApiCallHandler
             {
                 nodesMap.put(node.getName(), node);
             }
+
+
+            // decrypt all new volume definition keys
+            byte[] masterKey = stltSecObjs.getCryptKey();
+            if (masterKey != null)
+            {
+                for (ResourceDefinition tmpRscDfn : rscDfnMap.values())
+                {
+                    Iterator<VolumeDefinition> vlmDfnIt = tmpRscDfn.iterateVolumeDfn(apiCtx);
+                    while (vlmDfnIt.hasNext())
+                    {
+                        VolumeDefinition tmpVlmDfn = vlmDfnIt.next();
+
+                        if (tmpVlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
+                        {
+                            String key = tmpVlmDfn.getKey(apiCtx);
+                            if (key == null)
+                            {
+                                String encryptedKey = tmpVlmDfn.getProps(apiCtx)
+                                    .getProp(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+
+                                SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+                                String decrpytedKey = new String(cipher.decrypt(Base64.decode(encryptedKey)));
+
+                                tmpVlmDfn.setKey(apiCtx, decrpytedKey);
+                            }
+                        }
+                    }
+                }
+            }
+
 
             transMgrProvider.get().commit();
 

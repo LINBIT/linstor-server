@@ -4,8 +4,6 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbd.md.MdException;
-import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -19,7 +17,6 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
@@ -59,14 +56,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
     private String currentRscName;
-    private final short defaultPeerCount;
-    private final int defaultAlStripes;
-    private final long defaultAlSize;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
-    private final MetaDataApi metaDataApi;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
-    private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private CtrlVlmDfnApiCallHandler vlmDfnHandler;
 
     @Inject
     CtrlRscDfnApiCallHandler(
@@ -74,18 +67,14 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
-        @Named(ConfigModule.CONFIG_PEER_COUNT) short defaultPeerCountRef,
-        @Named(ConfigModule.CONFIG_AL_STRIPES) int defaultAlStripesRef,
-        @Named(ConfigModule.CONFIG_AL_SIZE) long defaultAlSizeRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        MetaDataApi metaDataApiRef,
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        CtrlVlmDfnApiCallHandler vlmDfnHandlerRef
     )
     {
         super(
@@ -100,14 +89,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         );
         clientComSerializer = clientComSerializerRef;
 
-        defaultPeerCount = defaultPeerCountRef;
-        defaultAlStripes = defaultAlStripesRef;
-        defaultAlSize = defaultAlSizeRef;
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
-        metaDataApi = metaDataApiRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
-        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        vlmDfnHandler = vlmDfnHandlerRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -121,11 +106,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, defaultPeerCount);
-        int alStripes = getAsInt(props, ApiConsts.KEY_AL_STRIPES, defaultAlStripes);
-        long alStripeSize = getAsLong(props, ApiConsts.KEY_AL_SIZE, defaultAlSize);
-
-        VolumeNumber volNr;
         try (
             AbsApiCallHandler basicallyThis = setContext(
                 ApiCallType.CREATE,
@@ -139,30 +119,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             getProps(rscDfn).map().putAll(props);
 
-            List<VolumeDefinitionData> createdVlmDfns = new ArrayList<>();
-
-            for (VolumeDefinition.VlmDfnApi vlmDfnApi : volDescrMap)
-            {
-                // vlmDfnApi = vlmDfnApi;
-
-                volNr = getVlmNr(vlmDfnApi, rscDfn, apiCtx);
-
-                long size = vlmDfnApi.getSize();
-
-                // getGrossSize performs check and throws exception when something is invalid
-                checkGrossSize(size, peerCount, alStripes, alStripeSize, volNr, rscNameStr);
-
-                VolumeDefinitionData vlmDfn = createVlmDfn(
-                    rscDfn,
-                    volNr,
-                    vlmDfnApi.getMinorNr(),
-                    size
-                );
-
-                getProps(vlmDfn).map().putAll(vlmDfnApi.getProps());
-
-                createdVlmDfns.add(vlmDfn);
-            }
+            List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
             commit();
 
@@ -457,59 +414,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             .build();
     }
 
-    private short getAsShort(Map<String, String> props, String key, short defaultValue)
-    {
-        short ret = defaultValue;
-        String value = props.get(key);
-        if (value != null)
-        {
-            try
-            {
-                ret = Short.parseShort(value);
-            }
-            catch (NumberFormatException numberFormatExc)
-            {
-                // ignore and return the default value
-            }
-        }
-        return ret;
-    }
-
-    private int getAsInt(Map<String, String> props, String key, int defaultValue)
-    {
-        int ret = defaultValue;
-        String value = props.get(key);
-        if (value != null)
-        {
-            try
-            {
-                ret = Integer.parseInt(value);
-            }
-            catch (NumberFormatException numberFormatExc)
-            {
-                // ignore and return the default value
-            }
-        }
-        return ret;
-    }
-
-    private long getAsLong(Map<String, String> props, String key, long defaultValue)
-    {
-        long ret = defaultValue;
-        String value = props.get(key);
-        if (value != null)
-        {
-            try
-            {
-                ret = Long.parseLong(value);
-            }
-            catch (NumberFormatException numberFormatExc)
-            {
-                // ignore and return the default value
-            }
-        }
-        return ret;
-    }
 
     private AbsApiCallHandler setContext(
         ApiCallType type,
@@ -635,105 +539,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return rscDfn;
     }
 
-    private void checkGrossSize(
-        long size,
-        short peerCount,
-        int alStripes,
-        long alStripeSize,
-        VolumeNumber volNr,
-        String rscName
-    )
-    {
-        try
-        {
-            metaDataApi.getGrossSize(size, peerCount, alStripes, alStripeSize);
-        }
-        catch (MdException mdExc)
-        {
-            throw asExc(
-                mdExc,
-                "Gross size check failed for volume definition with volume number '" +
-                    volNr.value + "' on resource definition '" + rscName + "'.",
-                ApiConsts.FAIL_INVLD_VLM_SIZE
-            );
-        }
-    }
-
-    private VolumeDefinitionData createVlmDfn(
-        ResourceDefinition rscDfn,
-        VolumeNumber volNr,
-        Integer minorNr,
-        long size
-    )
-    {
-        VolumeDefinitionData vlmDfn;
-        try
-        {
-            vlmDfn = volumeDefinitionDataFactory.create(
-                peerAccCtx,
-                rscDfn,
-                volNr,
-                minorNr,
-                size,
-                null // VlmDfnFlags[]
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "create volume definition with number '" + volNr.value + "' on resource definition '" +
-                    rscDfn.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException alreadyExistsExc)
-        {
-            throw asExc(
-                alreadyExistsExc,
-                "Volume definition with number '" + volNr.value + "' on resource definition '" +
-                    rscDfn.getName().displayValue + "' already exists.",
-                ApiConsts.FAIL_EXISTS_VLM_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "creating volume definition with number '" + volNr.value + "' on resource definition '" +
-                    rscDfn.getName().displayValue + "'"
-            );
-        }
-        catch (MdException mdExc)
-        {
-            throw asExc(
-                mdExc,
-                "Gross size check failed for volume definition with volume number '" +
-                    volNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "'.",
-                ApiConsts.FAIL_INVLD_VLM_SIZE
-            );
-        }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
-        {
-            throw asExc(
-                exc,
-                String.format(
-                    "The specified minor number '%d' is invalid.",
-                    minorNr
-                ),
-                ApiConsts.FAIL_INVLD_MINOR_NR
-            );
-        }
-        catch (ExhaustedPoolException exhaustedPoolExc)
-        {
-            throw asExc(
-                exhaustedPoolExc,
-                "Could not find free minor number",
-                ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR
-            );
-        }
-        return vlmDfn;
-    }
 
     private void delete(ResourceDefinitionData rscDfn)
     {

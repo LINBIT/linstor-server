@@ -11,7 +11,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -45,7 +44,7 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public void startVolume(final String identifier, PriorityProps props) throws StorageException
+    public void startVolume(final String identifier, String cryptKey) throws StorageException
     {
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
@@ -75,13 +74,13 @@ public class LvmThinDriver extends LvmDriver
                 exc
             );
         }
-        super.startVolume(identifier, props); // call to possibly open dm-crypt
+        super.startVolume(identifier, cryptKey); // call to possibly open dm-crypt
     }
 
     @Override
-    public void stopVolume(final String identifier) throws StorageException
+    public void stopVolume(final String identifier, boolean isEncrypted) throws StorageException
     {
-        super.stopVolume(identifier); // call to possibly close dm-crypt
+        super.stopVolume(identifier, isEncrypted); // call to possibly close dm-crypt
 
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
@@ -155,53 +154,56 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    protected String getSnapshotIdentifier(String identifier, String snapshotName)
+    protected String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted)
     {
-        return identifier + ID_SNAP_DELIMITER + snapshotName;
+        String path;
+        if (isEncrypted)
+        {
+            path = getCryptVolumePath(identifier + ID_SNAP_DELIMITER + snapshotName);
+        }
+        else
+        {
+            path = identifier + ID_SNAP_DELIMITER + snapshotName;
+        }
+        return path;
     }
 
     @Override
-    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
     {
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
         {
             lvmCreateCommand,
             "--snapshot",           // -s
-            "--name", getSnapshotIdentifier(identifier, snapshotName), // -n
+            "--name", getSnapshotIdentifier(identifier, snapshotName, isEncrypted), // -n
             qualifiedIdentifier
         };
         return command;
     }
 
     @Override
-    protected String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String targetIdentifier)
+    protected String[] getRestoreSnapshotCommand(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier,
+        boolean isEncrypted
+    )
     {
         final String[] command = new String[]
         {
             lvmCreateCommand,
             "--snapshot",           // -s
             "--name", targetIdentifier, // -n
-            volumeGroup + File.separator + getSnapshotIdentifier(sourceIdentifier, snapshotName)
+            volumeGroup + File.separator + getSnapshotIdentifier(sourceIdentifier, snapshotName, isEncrypted)
         };
         return command;
     }
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
     {
-        return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName));
-    }
-
-    @Override
-    public void createSnapshot(
-        String identifier,
-        String snapshotName,
-        PriorityProps props
-    )
-        throws StorageException
-    {
-        super.createSnapshot(identifier, snapshotName, props);
+        return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName, isEncrypted));
     }
 
     @Override
@@ -209,12 +211,12 @@ public class LvmThinDriver extends LvmDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        PriorityProps props
+        String cryptKey
     )
         throws StorageException
     {
-        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier, props);
-        startVolume(targetIdentifier, props);
+        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier, cryptKey);
+        startVolume(targetIdentifier, cryptKey);
     }
 
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException

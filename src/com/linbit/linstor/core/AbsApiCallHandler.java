@@ -73,11 +73,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final AccessContext peerAccCtx;
     protected final Provider<Peer> peer;
 
-    protected ApiCallType apiCallType;
-    protected ApiCallRcImpl apiCallRc;
-    private Boolean transMgrAutoClose;
-    protected Map<String, String> objRefs;
-    protected Map<String, String> variables;
+    protected static ThreadLocal<ApiCallType> apiCallType = new ThreadLocal<>();
+    protected static ThreadLocal<ApiCallRcImpl> apiCallRc = new ThreadLocal<>();
+    private static ThreadLocal<Boolean> transMgrAutoClose = new ThreadLocal<>();
+    protected static ThreadLocal<Map<String, String>> objRefs = new ThreadLocal<>();
+    protected static ThreadLocal<Map<String, String>> variables = new ThreadLocal<>();
 
     protected AbsApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -108,18 +108,18 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Map<String, String> vars
     )
     {
-        apiCallType = type;
-        apiCallRc = apiCallRcRef;
-        transMgrAutoClose = autoCloseTransMgr;
-        objRefs = objRefsRef;
-        variables = vars;
+        apiCallType.set(type);
+        apiCallRc.set(apiCallRcRef);
+        transMgrAutoClose.set(autoCloseTransMgr);
+        objRefs.set(objRefsRef);
+        variables.set(vars);
         return this;
     }
 
     @Override
     public void close()
     {
-        if (transMgrAutoClose)
+        if (transMgrAutoClose.get())
         {
             rollbackIfDirty();
         }
@@ -332,7 +332,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final String getAction(String crtAction, String modAction, String delAction)
     {
-        return getAction(crtAction, modAction, delAction, apiCallType);
+        return getAction(crtAction, modAction, delAction, apiCallType.get());
     }
 
     /**
@@ -859,7 +859,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         if (apiCallRc != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(retCode | apiCallType.opMask | objMask);
+            entry.setReturnCodeBit(retCode | apiCallType.get().opMask | objMask);
             entry.setMessageFormat(msg);
             entry.setCauseFormat(cause);
 
@@ -878,17 +878,17 @@ abstract class AbsApiCallHandler implements AutoCloseable
             entry.setDetailsFormat(details);
             entry.setCorrectionFormat(correction);
 
-            Map<String, String> objsRef = objRefs;
+            Map<String, String> objsRef = objRefs.get();
             if (objsRef != null)
             {
                 entry.putAllObjRef(objsRef);
             }
             if (variables != null)
             {
-                entry.putAllVariables(variables);
+                entry.putAllVariables(variables.get());
             }
 
-            apiCallRc.addEntry(entry);
+            apiCallRc.get().addEntry(entry);
         }
     }
 
@@ -956,7 +956,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param accCtx,
      * @param errorMsg
      * @param retCode
-     * @param variables
+     * @param variablesRef
      * @param errorReporter
      * @param peer
      */
@@ -964,9 +964,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Throwable throwableRef,
         String errorMsg,
         long retCode,
-        Map<String, String> objRefs,
-        Map<String, String> variables,
-        ApiCallRcImpl apiCallRc,
+        Map<String, String> objRefsRef,
+        Map<String, String> variablesRef,
+        ApiCallRcImpl apiCallRcRef,
         ErrorReporter errorReporter,
         AccessContext accCtx,
         Peer peer
@@ -989,9 +989,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
             null,
             null,
             retCode,
-            objRefs,
-            variables,
-            apiCallRc
+            objRefsRef,
+            variablesRef,
+            apiCallRcRef
         );
     }
 
@@ -1009,9 +1009,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param detailsMsg
      * @param correctionMsg
      * @param retCode
-     * @param objRefs
-     * @param variables
-     * @param apiCallRc
+     * @param objRefsRef
+     * @param variablesRef
+     * @param apiCallRcRef
      * @param controller
      * @param accCtx
      * @param peer
@@ -1023,9 +1023,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         String detailsMsg,
         String correctionMsg,
         long retCode,
-        Map<String, String> objRefs,
-        Map<String, String> variables,
-        ApiCallRcImpl apiCallRc,
+        Map<String, String> objRefsRef,
+        Map<String, String> variablesRef,
+        ApiCallRcImpl apiCallRcRef,
         ErrorReporter errorReporter,
         AccessContext accCtx,
         Peer peer
@@ -1048,9 +1048,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
             detailsMsg,
             correctionMsg,
             retCode,
-            objRefs,
-            variables,
-            apiCallRc
+            objRefsRef,
+            variablesRef,
+            apiCallRcRef
         );
     }
 
@@ -1071,8 +1071,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param details
      * @param correction
      * @param retCode
-     * @param objRefs
-     * @param variables
+     * @param objRefsRef
+     * @param variablesRef
      */
     protected static final void addAnswerStatic(
         String msg,
@@ -1080,9 +1080,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
         String details,
         String correction,
         long retCode,
-        Map<String, String> objRefs,
-        Map<String, String> variables,
-        ApiCallRcImpl apiCallRc
+        Map<String, String> objRefsRef,
+        Map<String, String> variablesRef,
+        ApiCallRcImpl apiCallRcRef
     )
     {
 
@@ -1093,16 +1093,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
         entry.setDetailsFormat(details);
         entry.setCorrectionFormat(correction);
 
-        if (objRefs != null)
+        if (objRefsRef != null)
         {
-            entry.putAllObjRef(objRefs);
+            entry.putAllObjRef(objRefsRef);
         }
-        if (variables != null)
+        if (variablesRef != null)
         {
-            entry.putAllVariables(variables);
+            entry.putAllVariables(variablesRef);
         }
 
-        apiCallRc.addEntry(entry);
+        apiCallRcRef.addEntry(entry);
     }
 
     /**
@@ -1112,9 +1112,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void reportSuccess(UUID uuid)
     {
-        objRefs.put(ApiConsts.KEY_UUID, uuid.toString());
+        objRefs.get().put(ApiConsts.KEY_UUID, uuid.toString());
 
-        switch (apiCallType)
+        switch (apiCallType.get())
         {
             case CREATE:
                 reportSuccess(
@@ -1136,7 +1136,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 break;
             default:
                 throw new ImplementationError(
-                    "Unknown api call type: " + apiCallType,
+                    "Unknown api call type: " + apiCallType.get(),
                     null
                 );
         }
@@ -1162,7 +1162,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final void reportSuccess(String msg, String details)
     {
         long baseRetCode;
-        switch (apiCallType)
+        switch (apiCallType.get())
         {
             case CREATE:
                 baseRetCode = ApiConsts.MASK_CRT | ApiConsts.CREATED;
@@ -1175,7 +1175,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 break;
             default:
                 throw new ImplementationError(
-                    "Unknown api call type: " + apiCallType,
+                    "Unknown api call type: " + apiCallType.get(),
                     null
                 );
         }
@@ -1185,7 +1185,29 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected void reportSuccess(String msg, String details, long retCode)
     {
-        if (apiCallRc != null)
+        reportSuccessStatic(
+            msg,
+            details,
+            retCode,
+            apiCallRc.get(),
+            objRefs.get(),
+            variables.get(),
+            errorReporter
+        );
+    }
+
+
+    public static void reportSuccessStatic(
+        String msg,
+        String details,
+        long retCode,
+        ApiCallRcImpl apiCallRcRef,
+        Map<String, String> objsRef,
+        Map<String, String> variablesRef,
+        ErrorReporter errorReporter
+    )
+    {
+        if (apiCallRcRef != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
 
@@ -1193,18 +1215,20 @@ abstract class AbsApiCallHandler implements AutoCloseable
             entry.setMessageFormat(msg);
             entry.setDetailsFormat(details);
 
-            Map<String, String> objsRef = objRefs;
             if (objsRef != null)
             {
                 entry.putAllObjRef(objsRef);
             }
-            if (variables != null)
+            if (variablesRef != null)
             {
-                entry.putAllVariables(variables);
+                entry.putAllVariables(variablesRef);
             }
-            apiCallRc.addEntry(entry);
+            apiCallRcRef.addEntry(entry);
         }
-        errorReporter.logInfo(msg);
+        if (errorReporter != null)
+        {
+            errorReporter.logInfo(msg);
+        }
     }
 
     /**

@@ -230,7 +230,7 @@ public class CtrlApiCallHandler
         String secret = secretRef;
         if (secret == null || secret.trim().isEmpty())
         {
-            secret = SharedSecretGenerator.generateSharedSecret();
+            secret = SecretGenerator.generateSecretString(SecretGenerator.DRBD_SHARED_SECRET_SIZE);
         }
         Map<String, String> props = propsRef;
         if (props == null)
@@ -1456,5 +1456,23 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    public ApiCallRc setMasterPassphrase(String newPassphrase, String oldPassphrase)
+    {
+        ApiCallRc apiCallRc;
+        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
+        {
+            apiCallRc = ctrlConfApiCallHandler.setPassphrase(newPassphrase, oldPassphrase);
+        }
+        return apiCallRc;
+    }
 
+    public ApiCallRc enterPassphrase(String passphrase)
+    {
+        ApiCallRc apiCallRc;
+        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
+        {
+            apiCallRc = ctrlConfApiCallHandler.enterPassphrase(passphrase);
+        }
+        return apiCallRc;
+    }
 }

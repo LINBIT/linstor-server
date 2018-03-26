@@ -1,113 +1,339 @@
 package com.linbit.linstor.storage;
 
-import static com.linbit.linstor.storage.LvmDriver.LVM_CHANGE_DEFAULT;
+import static com.linbit.linstor.storage.LvmDriver.LVM_CREATE_DEFAULT;
+import static com.linbit.linstor.storage.LvmDriver.LVM_LVS_DEFAULT;
 import static com.linbit.linstor.storage.LvmDriver.LVM_VGS_DEFAULT;
 import static com.linbit.linstor.storage.LvmDriver.LVM_VOLUME_GROUP_DEFAULT;
+import static com.linbit.linstor.storage.LvmDriver.LVM_CHANGE_DEFAULT;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY;
+import static com.linbit.linstor.storage.StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.HashSet;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.linbit.drbd.md.MetaData;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
-import com.linbit.linstor.PriorityProps;
+import com.linbit.fsevent.FileSystemWatch.Event;
+import com.linbit.fsevent.FileSystemWatch.FileEntry;
+import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
+import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
     LvmThinDriver.class,
     ExtCmd.class
 })
-public class LvmThinDriverTest extends LvmDriverTest
+public class LvmThinDriverTest extends StorageTestUtils
 {
+    private static final long MB = 1024;
+    private static final long TEST_SIZE_100MB = 100 * MB;
+    private static final long TEST_EXTENT_SIZE = 4096;
+    private static final long TEST_TOLERANCE_FACTOR = 4;
+    private static final long CREATE_VOL_WAIT_TIME = 2000;
+    private static final int CRT_VOL_VG_NOT_EXISTS_ERROR_CODE = 5;
+
     public LvmThinDriverTest() throws Exception
     {
         super(new LvmThinDriverKind());
     }
 
-    @Override
     @Test
-    public void testStartVolume() throws StorageException
+    public void testConfigVolumeGroup() throws StorageException
     {
-        final String identifier = "identifier";
+        final HashMap<String, String> config = new HashMap<>();
+
+        String volumeGroup = "otherName";
+        config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
+        expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup);
+        driver.setConfiguration(config);
+
+        ec.clearBehaviors();
+        volumeGroup = "_specialName";
+        config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
+        expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup);
+        driver.setConfiguration(config);
+
+        ec.clearBehaviors();
+        volumeGroup = "special-Name";
+        config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
+        expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup);
+        driver.setConfiguration(config);
+    }
+
+    @Test(expected = StorageException.class)
+    public void testConfigVolumeGroupValidNotExistent() throws StorageException
+    {
+        String volumeGroup = "valid";
+        Map<String, String> config = createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
+        expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup, false);
+        driver.setConfiguration(config);
+    }
+
+    @Test(expected = StorageException.class)
+    public void testConfigVolumeGroupEmpty() throws StorageException
+    {
+        driver.setConfiguration(createMap(CONFIG_LVM_VOLUME_GROUP_KEY, ""));
+    }
+
+    @Test(expected = StorageException.class)
+    public void testConfigVolumeGroupWhitespacesOnly() throws StorageException
+    {
+        driver.setConfiguration(createMap(CONFIG_LVM_VOLUME_GROUP_KEY, "  "));
+    }
+
+    @Test
+    public void testConfigCommand() throws StorageException, IOException
+    {
+        expectException(createMap(CONFIG_LVM_CHANGE_COMMAND_KEY, "notLvmChange"));
+        expectException(createMap(CONFIG_LVM_CREATE_COMMAND_KEY, "notLvmCreate"));
+        expectException(createMap(CONFIG_LVM_LVS_COMMAND_KEY, "notLvs"));
+        expectException(createMap(CONFIG_LVM_REMOVE_COMMAND_KEY, "notLvmRemove"));
+        expectException(createMap(CONFIG_LVM_VGS_COMMAND_KEY, "notVgs"));
+
+        String vgsCommand = "otherVgs";
+        File tmpFile = tempFolder.newFile(vgsCommand);
+        tmpFile.setExecutable(true);
+        driver.setConfiguration(createMap(CONFIG_LVM_VGS_COMMAND_KEY, tmpFile.getAbsolutePath()));
+
+        String volumeGroup = "newVolumeGroup";
+        expectCheckVolumeGroup(tmpFile.getAbsolutePath(), volumeGroup);
+        driver.setConfiguration(createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup));
+    }
+
+    @Test
+    public void testConfigToleranceFactor() throws StorageException
+    {
+        expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "2.4"));
+        expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "0"));
+        expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));
+        expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "NaN"));
+
+        driver.setConfiguration(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
+
+        final String volumeIdentifier = "identifier";
+
+        long size = TEST_SIZE_100MB;
+
+        long maxToleratedSize = size + TEST_EXTENT_SIZE * TEST_TOLERANCE_FACTOR;
+        expectLvsInfoBehavior(
+            LVM_LVS_DEFAULT,
+            LVM_VOLUME_GROUP_DEFAULT,
+            volumeIdentifier,
+            Long.toString(maxToleratedSize) + ".00k"
+        );
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, Long.toString(TEST_EXTENT_SIZE) + ".00k");
+
+        driver.checkVolume(volumeIdentifier, size);
+
+        expectLvsInfoBehavior(
+            LVM_LVS_DEFAULT,
+            LVM_VOLUME_GROUP_DEFAULT,
+            volumeIdentifier,
+            Long.toString(maxToleratedSize + 1) + ".00k"
+        );
+
+        try
+        {
+            driver.checkVolume(volumeIdentifier, size);
+            fail("volume size should be higher than tolerated");
+        }
+        catch (StorageException storExc)
+        {
+            // expected
+        }
+    }
+
+    @Test
+    public void testCreateVolumeDelayed() throws Exception
+    {
+        final long volumeSize = TEST_SIZE_100MB;
+        final String identifier = "testVolume";
+        expectLvsInfoBehavior(
+            LVM_LVS_DEFAULT,
+            LVM_VOLUME_GROUP_DEFAULT,
+            identifier,
+            Long.toString(volumeSize) + ".00k"
+        );
+        expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
         expectStartVolumeCommand(LVM_CHANGE_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, true);
-        driver.startVolume(identifier, new PriorityProps());
+
+        final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
+        final FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
+
+        final FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.CREATE,
+            testFileEntryGroup
+        );
+        PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
+
+        final FileEntry testEntry = new FileEntry(
+            Paths.get(expectedFilePath),
+            Event.CREATE,
+            emptyFileObserver);
+
+        Thread thread = new Thread(
+            new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        Thread.sleep(CREATE_VOL_WAIT_TIME); // give the driver some time to execute the
+                        // .createVolume command
+                    }
+                    catch (InterruptedException exc)
+                    {
+                        exc.printStackTrace();
+                    }
+                    testFileEntryGroup.fileEvent(testEntry);
+                }
+            }
+        );
+        thread.start();
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
-    @Override
     @Test(expected = StorageException.class)
-    public void testStartUnknownVolume() throws StorageException
+    public void testCreateVolumeTimeout() throws Exception
     {
-        final String unknownIdentifier = "unknown";
-        expectStartVolumeCommand(LVM_CHANGE_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, unknownIdentifier, false);
-        driver.startVolume(unknownIdentifier, new PriorityProps());
+        final long volumeSize = 102400;
+        final String identifier = "testVolume";
+
+        expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
+
+        final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
+        final FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
+
+        final FileEntryGroupBuilder builderMock = getTestFileEntryGroupBuilder(
+            expectedFilePath,
+            Event.CREATE,
+            testFileEntryGroup
+        );
+        PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
+
+        // do not fire file event
+        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
 
-    @Override
-    @Test
-    public void testStopVolume() throws StorageException
-    {
-        final String identifier = "identifier";
-        expectStopVolumeCommand(LVM_CHANGE_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, true);
-        driver.stopVolume(identifier);
-    }
 
-    @Override
     @Test(expected = StorageException.class)
-    public void testStopUnknownVolume() throws StorageException
+    public void testCreateExistingVolume() throws Exception
     {
-        final String unknownIdentifier = "unknown";
-        expectStopVolumeCommand(LVM_CHANGE_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, unknownIdentifier, false);
-        driver.stopVolume(unknownIdentifier);
+        final long volumeSize = 102400;
+        final String volumeName = "testVolume";
+
+        expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, volumeName, LVM_VOLUME_GROUP_DEFAULT, true);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
+
+        driver.createVolume(volumeName, volumeSize, null); // null == not encrypted
     }
 
-
-    @Override
     @Test
-    public void testConfigurationKeys()
+    public void testCheckVolume() throws StorageException
     {
-        final HashSet<String> keys = new HashSet<>(driver.getKind().getConfigurationKeys());
+        final String identifier = "testVolume";
+        final long size = 102_400;
 
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY));
-        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_THIN_POOL_KEY));
+        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, size);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
 
-        assertTrue(keys.isEmpty());
+        driver.checkVolume(identifier, size);
     }
 
-    @Override
+    @Test(expected = StorageException.class)
+    public void testCheckVolumeSizeTooLarge() throws StorageException
+    {
+        final String identifier = "testVolume";
+        final long size = MetaData.DRBD_MAX_kiB + 1;
+
+        driver.checkVolume(identifier, size);
+    }
+
+    @Test(expected = StorageException.class)
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void testCheckVolumeTooSmall() throws StorageException
+    {
+        final String identifier = "testVolume";
+        final long size = 102_400;
+
+        expectLvsInfoBehavior(
+            LVM_LVS_DEFAULT,
+            LVM_VOLUME_GROUP_DEFAULT,
+            identifier,
+            size - 10  // user wanted at least 100 MB, but we give him a little bit less
+        );
+        // should trigger exception
+
+        driver.checkVolume(identifier, size);
+    }
+
     @Test
-    public void testTraits() throws StorageException
+    public void testVolumePath() throws StorageException
     {
-        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, 4096);
-        Map<String, String> traits = driver.getTraits();
+        final String identifier = "testVolume";
 
-        final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
-        assertEquals("4096", size);
+        final String path = driver.getVolumePath(identifier, false);
+        assertEquals("/dev/" +
+            LVM_VOLUME_GROUP_DEFAULT + "/" +
+            identifier,
+            path);
     }
 
-    @Override
     @Test
-    public void testStaticTraits()
+    public void testSize() throws StorageException
     {
-        Map<String, String> traits = driver.getKind().getStaticTraits();
+        final String identifier = "testVolume";
+        final long volumeSize = 102_400;
 
-        final String traitProv = traits.get(DriverTraits.KEY_PROV);
-        assertEquals(DriverTraits.PROV_THIN, traitProv);
+        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
+
+        final long size = driver.getSize(identifier);
+        assertEquals(volumeSize, size);
     }
+
+    @Test
+    public void testFreeSize() throws StorageException
+    {
+        final long size = 1 * 1024 * 1024 * 1024;
+        expectVgsFreeSizeCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
+
+        assertEquals(size, driver.getFreeSize());
+    }
+
+    @Test(expected = StorageException.class)
+    public void testSizeUnknownVolume() throws StorageException
+    {
+        final String identifier = "testVolume";
+        final long volumeSize = 102_400;
+
+        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
+
+        driver.getSize("otherVolume");
+    }
+
 
     @Override
     protected void expectLvmCreateVolumeBehavior(
@@ -149,8 +375,9 @@ public class LvmThinDriverTest extends LvmDriverTest
         {
             outData = new TestOutputData(
                 "",
-                "Logical volume \""+identifier+"\" already exists in volume group \""+volumeGroup+"\"",
-                5);
+                "Logical volume \"" + identifier + "\" already exists in volume group \"" + volumeGroup + "\"",
+                CRT_VOL_VG_NOT_EXISTS_ERROR_CODE
+            );
         }
         else
         {

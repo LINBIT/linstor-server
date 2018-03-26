@@ -5,6 +5,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 
@@ -40,7 +41,8 @@ public class ControllerProtobuf extends ProtobufIO
         super(host, port, out, "ControllerProtobuf");
         serializer = new ProtoCtrlStltSerializer(
             new StderrErrorReporter("ControllerProtobuf"),
-            accCtx
+            accCtx,
+            new CtrlSecurityObjects()
         );
     }
 

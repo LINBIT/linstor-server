@@ -158,6 +158,24 @@ public final class MsgIntFullSyncOuterClass {
      * <code>sint64 full_sync_timestamp = 4;</code>
      */
     long getFullSyncTimestamp();
+
+    /**
+     * <pre>
+     * MasterKey (unencrypted, optional)
+     * </pre>
+     *
+     * <code>string master_key = 5;</code>
+     */
+    java.lang.String getMasterKey();
+    /**
+     * <pre>
+     * MasterKey (unencrypted, optional)
+     * </pre>
+     *
+     * <code>string master_key = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getMasterKeyBytes();
   }
   /**
    * <pre>
@@ -179,6 +197,7 @@ public final class MsgIntFullSyncOuterClass {
       storPools_ = java.util.Collections.emptyList();
       rscs_ = java.util.Collections.emptyList();
       fullSyncTimestamp_ = 0L;
+      masterKey_ = "";
     }
 
     @java.lang.Override
@@ -236,6 +255,12 @@ public final class MsgIntFullSyncOuterClass {
             case 32: {
 
               fullSyncTimestamp_ = input.readSInt64();
+              break;
+            }
+            case 42: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              masterKey_ = s;
               break;
             }
           }
@@ -449,6 +474,48 @@ public final class MsgIntFullSyncOuterClass {
       return fullSyncTimestamp_;
     }
 
+    public static final int MASTER_KEY_FIELD_NUMBER = 5;
+    private volatile java.lang.Object masterKey_;
+    /**
+     * <pre>
+     * MasterKey (unencrypted, optional)
+     * </pre>
+     *
+     * <code>string master_key = 5;</code>
+     */
+    public java.lang.String getMasterKey() {
+      java.lang.Object ref = masterKey_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        masterKey_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * MasterKey (unencrypted, optional)
+     * </pre>
+     *
+     * <code>string master_key = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getMasterKeyBytes() {
+      java.lang.Object ref = masterKey_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        masterKey_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -491,6 +558,9 @@ public final class MsgIntFullSyncOuterClass {
       if (fullSyncTimestamp_ != 0L) {
         output.writeSInt64(4, fullSyncTimestamp_);
       }
+      if (!getMasterKeyBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, masterKey_);
+      }
     }
 
     public int getSerializedSize() {
@@ -513,6 +583,9 @@ public final class MsgIntFullSyncOuterClass {
       if (fullSyncTimestamp_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt64Size(4, fullSyncTimestamp_);
+      }
+      if (!getMasterKeyBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, masterKey_);
       }
       memoizedSize = size;
       return size;
@@ -538,6 +611,8 @@ public final class MsgIntFullSyncOuterClass {
           .equals(other.getRscsList());
       result = result && (getFullSyncTimestamp()
           == other.getFullSyncTimestamp());
+      result = result && getMasterKey()
+          .equals(other.getMasterKey());
       return result;
     }
 
@@ -563,6 +638,8 @@ public final class MsgIntFullSyncOuterClass {
       hash = (37 * hash) + FULL_SYNC_TIMESTAMP_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
           getFullSyncTimestamp());
+      hash = (37 * hash) + MASTER_KEY_FIELD_NUMBER;
+      hash = (53 * hash) + getMasterKey().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -708,6 +785,8 @@ public final class MsgIntFullSyncOuterClass {
         }
         fullSyncTimestamp_ = 0L;
 
+        masterKey_ = "";
+
         return this;
       }
 
@@ -760,6 +839,7 @@ public final class MsgIntFullSyncOuterClass {
           result.rscs_ = rscsBuilder_.build();
         }
         result.fullSyncTimestamp_ = fullSyncTimestamp_;
+        result.masterKey_ = masterKey_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -882,6 +962,10 @@ public final class MsgIntFullSyncOuterClass {
         }
         if (other.getFullSyncTimestamp() != 0L) {
           setFullSyncTimestamp(other.getFullSyncTimestamp());
+        }
+        if (!other.getMasterKey().isEmpty()) {
+          masterKey_ = other.masterKey_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -1898,6 +1982,95 @@ public final class MsgIntFullSyncOuterClass {
         onChanged();
         return this;
       }
+
+      private java.lang.Object masterKey_ = "";
+      /**
+       * <pre>
+       * MasterKey (unencrypted, optional)
+       * </pre>
+       *
+       * <code>string master_key = 5;</code>
+       */
+      public java.lang.String getMasterKey() {
+        java.lang.Object ref = masterKey_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          masterKey_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * MasterKey (unencrypted, optional)
+       * </pre>
+       *
+       * <code>string master_key = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getMasterKeyBytes() {
+        java.lang.Object ref = masterKey_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          masterKey_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * MasterKey (unencrypted, optional)
+       * </pre>
+       *
+       * <code>string master_key = 5;</code>
+       */
+      public Builder setMasterKey(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        masterKey_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * MasterKey (unencrypted, optional)
+       * </pre>
+       *
+       * <code>string master_key = 5;</code>
+       */
+      public Builder clearMasterKey() {
+        
+        masterKey_ = getDefaultInstance().getMasterKey();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * MasterKey (unencrypted, optional)
+       * </pre>
+       *
+       * <code>string master_key = 5;</code>
+       */
+      public Builder setMasterKeyBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        masterKey_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -1966,14 +2139,15 @@ public final class MsgIntFullSyncOuterClass {
       "internal\032/linstor/proto/javainternal/Msg" +
       "IntNodeData.proto\0323linstor/proto/javaint" +
       "ernal/MsgIntStorPoolData.proto\032.linstor/" +
-      "proto/javainternal/MsgIntRscData.proto\"\206" +
+      "proto/javainternal/MsgIntRscData.proto\"\232" +
       "\002\n\016MsgIntFullSync\022D\n\005nodes\030\001 \003(\01325.com.l" +
       "inbit.linstor.proto.javainternal.MsgIntN" +
       "odeData\022M\n\nstor_pools\030\002 \003(\01329.com.linbit" +
       ".linstor.proto.javainternal.MsgIntStorPo",
       "olData\022B\n\004rscs\030\003 \003(\01324.com.linbit.linsto" +
       "r.proto.javainternal.MsgIntRscData\022\033\n\023fu" +
-      "ll_sync_timestamp\030\004 \001(\022P\000P\001P\002b\006proto3"
+      "ll_sync_timestamp\030\004 \001(\022\022\022\n\nmaster_key\030\005 " +
+      "\001(\tP\000P\001P\002b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1995,7 +2169,7 @@ public final class MsgIntFullSyncOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_descriptor,
-        new java.lang.String[] { "Nodes", "StorPools", "Rscs", "FullSyncTimestamp", });
+        new java.lang.String[] { "Nodes", "StorPools", "Rscs", "FullSyncTimestamp", "MasterKey", });
     com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.getDescriptor();
     com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.getDescriptor();
     com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.getDescriptor();
