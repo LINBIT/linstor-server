@@ -10,6 +10,8 @@ import com.linbit.linstor.proto.FilterOuterClass.Filter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -35,10 +37,18 @@ public class ListResource implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
+        List<String> nodeNames = new ArrayList<>();
+        List<String> resourceNames = new ArrayList<>();
+
         Filter filter = Filter.parseDelimitedFrom(msgDataIn);
+        if (filter != null)
+        {
+            nodeNames = filter.getNodeNamesList();
+            resourceNames = filter.getResourceNamesList();
+        }
         client.sendMessage(
             apiCallHandler
-                .listResource(filter.getNodeNamesList(), filter.getStorPoolNamesList(), filter.getResourceNamesList())
+                .listResource(nodeNames, resourceNames)
         );
     }
 }

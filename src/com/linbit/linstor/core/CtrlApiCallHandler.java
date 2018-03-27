@@ -623,7 +623,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResource(List<String> filterNodes, List<String> filterStorPools, List<String> filterResources)
+    public byte[] listResource(List<String> filterNodes, List<String> filterResources)
     {
         byte[] listResources;
         try

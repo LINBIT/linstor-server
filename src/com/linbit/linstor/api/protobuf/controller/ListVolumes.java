@@ -3,6 +3,8 @@ package com.linbit.linstor.api.protobuf.controller;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,10 +37,20 @@ public class ListVolumes implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
+        List<String> nodeNames = new ArrayList<>();
+        List<String> storPoolNames = new ArrayList<>();
+        List<String> resourceNames = new ArrayList<>();
+
         Filter filter = Filter.parseDelimitedFrom(msgDataIn);
+        if (filter != null)
+        {
+            nodeNames = filter.getNodeNamesList();
+            storPoolNames = filter.getStorPoolNamesList();
+            resourceNames = filter.getResourceNamesList();
+        }
         client.sendMessage(
             apiCallHandler
-                .listVolumes(filter.getNodeNamesList(), filter.getStorPoolNamesList(), filter.getResourceNamesList())
+                .listVolumes(nodeNames, storPoolNames, resourceNames)
         );
     }
 }
