@@ -361,13 +361,34 @@ public class CtrlConfApiCallHandler
         }
         catch (InvalidKeyException exc)
         {
-            // TODO report implExc
-            exc.printStackTrace();
+            AbsApiCallHandler.reportStatic(
+                new ImplementationError(
+                    "Hardcoded namespace or property key invalid",
+                    exc
+                ),
+                "Hardcoded namespace or property key invalid",
+                ApiConsts.FAIL_IMPL_ERROR,
+                null,
+                null,
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
         }
         catch (LinStorException exc)
         {
-            // TODO report implExc
-            exc.printStackTrace();
+            AbsApiCallHandler.reportStatic(
+                exc,
+                "Unknown error occured while validating the passphrase",
+                ApiConsts.FAIL_UNKNOWN_ERROR,
+                null,
+                null,
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
         }
 
         return apiCallRc;
@@ -412,8 +433,7 @@ public class CtrlConfApiCallHandler
                         "Coult not create new crypt passphrase as it already exists",
                         "A passphrase was already defined",
                         null,
-                        "Use the change crypt passphrase command instead of create crypt passphrase",
-                        // TODO once the client command names are specified, use them instead of "change master passphrase"
+                        "Use the crypt-modify-passphrase command instead of crypt-create-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
                         new HashMap<>(),
                         new HashMap<>(),
@@ -430,8 +450,7 @@ public class CtrlConfApiCallHandler
                         "Coult not modify crypt passphrase as it does not exist",
                         "No passphrase was defined yet",
                         null,
-                        "Use the create crypt passphrase command instead of change crypt passphrase",
-                        // TODO once the client command names are specified, use them instead of "change master passphrase"
+                        "Use the crypt-create-passphrase command instead of crypt-modify-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
                         new HashMap<>(),
                         new HashMap<>(),
@@ -462,25 +481,78 @@ public class CtrlConfApiCallHandler
             }
 
         }
-        catch (InvalidKeyException | AccessDeniedException exc)
+        catch (InvalidKeyException invalidNameExc)
         {
-            // TODO report to client
-            throw new ImplementationError(exc);
+            AbsApiCallHandler.reportStatic(
+                new ImplementationError(
+                    "Hardcoded namespace or property key invalid",
+                    invalidNameExc
+                ),
+                "Hardcoded namespace or property key invalid",
+                ApiConsts.FAIL_IMPL_ERROR,
+                null,
+                null,
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            AbsApiCallHandler.reportStatic(
+                accDeniedExc,
+                AbsApiCallHandler.getAccDeniedMsg(accCtx, "access the controller properties"),
+                ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
+                null, // objects
+                null, // variables
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
         }
         catch (InvalidValueException exc)
         {
-            // TODO report to client
-            throw new ImplementationError(exc);
+            AbsApiCallHandler.reportStatic(
+                new ImplementationError(exc),
+                "Generated key could not be stored as property",
+                ApiConsts.FAIL_IMPL_ERROR,
+                null,
+                null,
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
         }
         catch (SQLException exc)
         {
-            // TODO report to client
-            throw new ImplementationError(exc);
+            AbsApiCallHandler.reportStatic(
+                exc,
+                AbsApiCallHandler.getSqlMsg("storing the generated and encrypted master key"),
+                ApiConsts.FAIL_SQL,
+                null,
+                null,
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
         }
         catch (LinStorException exc)
         {
-            // TODO report to client
-            throw new ImplementationError(exc);
+            AbsApiCallHandler.reportStatic(
+                exc,
+                "An unknown exception occured while setting the passphrase",
+                ApiConsts.FAIL_UNKNOWN_ERROR,
+                null,
+                null,
+                apiCallRc,
+                errorReporter,
+                accCtx,
+                peerProvider.get()
+            );
         }
         return apiCallRc;
     }
