@@ -1,7 +1,9 @@
 package com.linbit.linstor.core;
 
+import com.linbit.AsyncOps;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.TimeoutException;
 import com.linbit.drbd.DrbdAdm;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
@@ -60,6 +62,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.utils.FileExistsCheck;
 import org.slf4j.event.Level;
 
 import javax.inject.Inject;
@@ -665,20 +668,63 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 getVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
             }
-            if (vlmState.getDriver() != null)
+
+            StorageDriver storDrv = vlmState.getDriver();
+            if (storDrv != null)
             {
+                // Calculate the backend storage volume's size
                 long netSize = vlmDfn.getVolumeSize(wrkCtx);
                 vlmState.setNetSize(netSize);
                 long expectedSize = drbdMd.getGrossSize(
                     netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
                 );
+
                 try
                 {
-                    vlmState.getDriver().checkVolume(vlmState.getStorVlmName(), expectedSize);
+                    // Check whether the backend storage device is present, and if it is not,
+                    // attempt to start the backend storage volume
+                    FileExistsCheck backendVlmChk = new FileExistsCheck(
+                        storDrv.getVolumePath(
+                            vlmState.getStorVlmName(),
+                            vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED)
+                        ),
+                        false
+                    );
+                    // Perform an asynchronous check, so that this thread can continue and
+                    // attempt to report an error in the case that the operating system
+                    // gets stuck forever on I/O, e.g. because the backend storage driver
+                    // ran into an implementation error
+                    AsyncOps.Builder chkBld = new AsyncOps.Builder();
+                    chkBld.register(backendVlmChk);
+                    AsyncOps asyncExistChk = chkBld.create();
+                    asyncExistChk.await(FileExistsCheck.DFLT_CHECK_TIMEOUT);
+
+                    if (!backendVlmChk.fileExists())
+                    {
+                        storDrv.startVolume(vlmState.getStorVlmName(), vlmDfn.getKey(wrkCtx));
+                    }
+
+                    // Check the state of the backend storage for the DRBD volume
+                    storDrv.checkVolume(vlmState.getStorVlmName(), expectedSize);
                     vlmState.setHasDisk(true);
                     errLog.logTrace(
                         "Existing storage volume found for resource '" +
                         rscDfn.getName().displayValue + "' " + "volume " + vlmState.getVlmNr().toString()
+                    );
+                }
+                catch (TimeoutException timeoutExc)
+                {
+                    throw new VolumeException(
+                        "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                        rscDfn.getName().displayValue + "' aborted due to an I/O timeout",
+                        "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                        rscDfn.getName().displayValue + " aborted",
+                        "The check for existance of the volume's backend storage timed out",
+                        "- Check whether the system's performance is within acceptable limits\n" +
+                        "- Check whether the operating system's I/O subsystems work flawlessly\n",
+                        "The filesystem path used by the check that timed out was: " +
+                        vlmState.getStorVlmName(),
+                        timeoutExc
                     );
                 }
                 catch (StorageException ignored)
