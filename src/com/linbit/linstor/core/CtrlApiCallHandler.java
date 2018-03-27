@@ -23,7 +23,6 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-@Singleton
 public class CtrlApiCallHandler
 {
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
