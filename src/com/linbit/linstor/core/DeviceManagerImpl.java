@@ -98,6 +98,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final LinStorScope deviceMgrScope;
     private final Provider<TransactionMgr> transMgrProvider;
 
+    private final StltSecurityObjects stltSecObj;
+
     private static final ServiceName DEV_MGR_NAME;
     static
     {
@@ -148,7 +150,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         DrbdDeviceHandler drbdDeviceHandlerRef,
         StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         LinStorScope deviceMgrScopeRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        StltSecurityObjects stltSecObjRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -167,6 +170,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         apiCallHandlerUtils = apiCallHandlerUtilsRef;
         deviceMgrScope = deviceMgrScopeRef;
         transMgrProvider = transMgrProviderRef;
+        stltSecObj = stltSecObjRef;
 
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
@@ -667,6 +671,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             try
             {
+                // Check whether the master key for encrypted volumes is known
+                boolean haveMasterKey = stltSecObj.getCryptKey() != null;
+
                 abortDevHndFlag = false;
                 NodeData localNode = controllerPeerConnector.getLocalNode();
                 Iterator<ResourceName> rscNameIter = dispatchRscSet.iterator();
@@ -681,7 +688,33 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
                         if (rsc != null)
                         {
-                            dispatchResource(rsc, phaseLock);
+                            boolean dispatch = true;
+                            // If the master key is not known, skip dispatching resources that
+                            // have encrypted volumes
+                            if (!haveMasterKey)
+                            {
+                                Iterator<VolumeDefinition> vlmDfnIter = rscDfn.iterateVolumeDfn(wrkCtx);
+                                while (vlmDfnIter.hasNext())
+                                {
+                                    VolumeDefinition vlmDfn = vlmDfnIter.next();
+                                    if (vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
+                                    {
+                                        dispatch = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (dispatch)
+                            {
+                                dispatchResource(rsc, phaseLock);
+                            }
+                            else
+                            {
+                                errLog.logWarning(
+                                    "Skipped actions for encrypted resource '%s' because the " +
+                                    "encryption key is not known yet"
+                                );
+                            }
                         }
                         else
                         {
