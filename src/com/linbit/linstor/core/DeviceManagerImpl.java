@@ -712,7 +712,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                             {
                                 errLog.logWarning(
                                     "Skipped actions for encrypted resource '%s' because the " +
-                                    "encryption key is not known yet"
+                                    "encryption key is not known yet",
+                                    rscDfn.getName().displayValue
                                 );
                             }
                         }
