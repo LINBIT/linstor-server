@@ -54,9 +54,18 @@ public class Control implements ApiCall
             {
                 case ApiConsts.API_CMD_SHUTDOWN:
                 {
+                    // Override MAC if the privilege is available
                     try
                     {
-                        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+                        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_MAC_OVRD);
+                    }
+                    catch (AccessDeniedException ignored)
+                    {
+                    }
+                    // Override RBAC if the privilege is available
+                    try
+                    {
+                        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_USE);
                     }
                     catch (AccessDeniedException ignored)
                     {
