@@ -1,9 +1,10 @@
 package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
-import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.h2.jdbc.JdbcSQLException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -70,7 +71,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         stmt.close();
     }
 
-    @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
+    @Test (expected = JdbcSQLException.class)
     public void testCreateUnknownIdObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -85,7 +86,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
-    @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
+    @Test (expected = JdbcSQLException.class)
     public void testCreateUnknownRoleObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -100,7 +101,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         fail("Creating an ObjectProtection with an unknown role should have failed");
     }
 
-    @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
+    @Test (expected = JdbcSQLException.class)
     public void testCreateUnknownSecTypeObjProt() throws Exception
     {
         final String objPath = "testPath";

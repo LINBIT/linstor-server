@@ -5,7 +5,7 @@ import java.util.Properties;
 
 public class TestDbConnectionPoolLoader
 {
-    private static final String DB_URL = "jdbc:derby:memory:testDB";
+    private static final String DB_URL = "jdbc:h2:mem:testDB";
     private static final String DB_USER = "linstor";
     private static final String DB_PASSWORD = "linbit";
     private static final Properties DB_PROPS = new Properties();

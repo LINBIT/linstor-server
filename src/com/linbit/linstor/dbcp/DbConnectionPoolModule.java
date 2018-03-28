@@ -32,7 +32,7 @@ public class DbConnectionPoolModule extends AbstractModule
     // Database connection URL configuration key
     private static final String DB_CONN_URL = "connection-url";
 
-    private static final String DEFAULT_DB_CONNECTION_URL = "jdbc:derby:directory:database";
+    private static final String DEFAULT_DB_CONNECTION_URL = "jdbc:h2:/tmp/linstor";
 
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
