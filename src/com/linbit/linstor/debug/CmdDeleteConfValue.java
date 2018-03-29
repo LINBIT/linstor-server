@@ -19,6 +19,7 @@ import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 public class CmdDeleteConfValue extends BaseDebugCmd
@@ -42,7 +43,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
     }
 
     private final DbConnectionPool dbConnectionPool;
-    private final ReadWriteLock confLock;
+    private final Lock confWrLock;
     private final Props conf;
     private final ObjectProtection confProt;
     private final LinStorScope debugScope;
@@ -68,7 +69,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
         );
 
         dbConnectionPool = dbConnectionPoolRef;
-        confLock = confLockRef;
+        confWrLock = confLockRef.writeLock();
         conf = confRef;
         confProt = confProtRef;
         debugScope = debugScopeRef;
@@ -84,7 +85,8 @@ public class CmdDeleteConfValue extends BaseDebugCmd
         throws Exception
     {
         TransactionMgr transMgr = null;
-        confLock.writeLock().unlock();
+
+        confWrLock.lock();
         try
         {
             String key = parameters.get(PRM_KEY);
@@ -159,18 +161,22 @@ public class CmdDeleteConfValue extends BaseDebugCmd
         }
         finally
         {
-            debugScope.exit();
-            confLock.writeLock().unlock();
-
-            if (transMgr != null)
+            confWrLock.unlock();
+            try
             {
-                transMgr.returnConnection();
+                debugScope.exit();
             }
-            if (conf != null)
+            finally
             {
-                conf.setConnection(null);
+                if (transMgr != null)
+                {
+                    transMgr.returnConnection();
+                }
+                if (conf != null)
+                {
+                    conf.setConnection(null);
+                }
             }
         }
     }
-
 }
