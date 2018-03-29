@@ -37,6 +37,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import com.google.inject.Provider;
+
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -569,7 +571,7 @@ public class CtrlConfApiCallHandler
         byte[] salt = SecretGenerator.generateSecret(MASTER_KEY_SALT_BYTES);
         SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithPassword(
             salt,
-            newPassphrase.getBytes(),
+            newPassphrase.getBytes(StandardCharsets.UTF_8),
             CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this has to be
             // also configurable
         );
@@ -614,7 +616,7 @@ public class CtrlConfApiCallHandler
 
             SymmetricKeyCipher ciper =  SymmetricKeyCipher.getInstanceWithPassword(
                 passphraseSalt,
-                oldPassphrase.getBytes(),
+                oldPassphrase.getBytes(StandardCharsets.UTF_8),
                 CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this has to be
                 // also configurable
             );
