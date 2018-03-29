@@ -28,6 +28,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
     public static final String CIPHER_SPEC  = "AES";
     public static final String MODE_SPEC    = "CFB";
     public static final String PAD_SPEC     = "NoPadding";
+    private static final String CIPHER_ALGORITHM = CIPHER_SPEC + "/" + MODE_SPEC + "/" + PAD_SPEC;
     // Length of the initialization vector for the selected algorithm
     public static final int    IV_LENGTH    = 16;
 
@@ -37,9 +38,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
     // Number of iterations for key derivation from a password
     public static final int KD_ITERATIONS = 5000;
 
-    private static final int LENGTH_128 = 16;
-    private static final int LENGTH_192 = 24;
-    private static final int LENGTH_256 = 32;
+    private static final int BITS_PER_BYTE = 8;
 
     public enum CipherStrength
     {
@@ -73,16 +72,18 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
     )
         throws LinStorException
     {
-        if (key.length != LENGTH_128 && key.length != LENGTH_192 && key.length != LENGTH_256)
+        int keyBits = key.length * BITS_PER_BYTE;
+        if (keyBits != CipherStrength.KEY_LENGTH_128.keyLength &&
+            keyBits != CipherStrength.KEY_LENGTH_192.keyLength &&
+            keyBits != CipherStrength.KEY_LENGTH_256.keyLength)
         {
             throw new LinStorException(
-                "Unsupported key length of " + key.length * 16 + " bits for algorith " + CIPHER_SPEC + "/" +
-                MODE_SPEC + "/" + PAD_SPEC,
+                "Unsupported key length of " + keyBits + " bits for algorithm " + CIPHER_ALGORITHM,
                 "The initialization of a cryptographic cipher failed",
                 "Initialization of the cipher was attempted with an unsupported key length",
                 "This problem is typically caused by an incompatible combination of encryption parameters.\n" +
                 "Please contact product support for analysis and correction of this problem.",
-                "The length of the key that caused the problem was " + key.length * 16 + " bits",
+                "The length of the key that caused the problem was " + keyBits + " bits",
                 null
             );
         }
@@ -98,7 +99,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
      * The strength of the resulting key is specified by the {@code csSpec} parameter.
      *
      * @param salt the salt value to combine with the password
-     * @param password the password to generate the encryption key from
+     * @param password the password to generate the encryption key from; this will be cleared by filling with zeros
      * @param csSpec the strength of the encryption key that will be derived from the (salted) password
      * @return new instance of the cipher utility
      * @throws LinStorException if the creation of a new instance of the cipher utility fails
@@ -112,7 +113,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
     {
         SymmetricKeyCipher instance;
 
-        // Key initialization excepts a character array, however, many algorithms will
+        // Key initialization expects a character array, however, many algorithms will
         // only use the low-order 8 bits of each character. For this reason, the password
         // is only accepted as a byte array, and is then converted to a character array internally.
         final char[] passwordChars = new char[password.length];
@@ -131,8 +132,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (NoSuchAlgorithmException algExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: The key derivation algorithm '" + KD_ALG_SPEC +
-                "' is not supported",
+                "Cipher initialization failed: The key derivation algorithm '" + KD_ALG_SPEC + "' is not supported",
                 "The initialization of a cryptographic cipher failed",
                 "The requested key derivation algorithm '" + KD_ALG_SPEC + "' is not available on this system",
                 "Installation of additional components may be necessary to add support " +
@@ -171,13 +171,12 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         encryptionKey = key;
         try
         {
-            crypto = Cipher.getInstance(CIPHER_SPEC + "/" + MODE_SPEC + "/" + PAD_SPEC);
+            crypto = Cipher.getInstance(CIPHER_ALGORITHM);
         }
         catch (NoSuchAlgorithmException algExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: The requested cipher '" + CIPHER_SPEC + "/" + MODE_SPEC + "/" +
-                PAD_SPEC + "' is not supported",
+                "Cipher initialization failed: The requested cipher '" + CIPHER_ALGORITHM + "' is not supported",
                 "The initialization of a cryptographic cipher failed",
                 "The requested cipher algorithm '" + CIPHER_SPEC + "' is not available on this system",
                 "Installation of additional components may be necessary to add support " +
@@ -191,8 +190,8 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (NoSuchPaddingException padExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: The padding scheme of the requestes cipher '" + CIPHER_SPEC + "/" +
-                MODE_SPEC + "/" + PAD_SPEC + "' is not supported",
+                "Cipher initialization failed: The padding scheme of the requestes cipher '" + CIPHER_ALGORITHM +
+                "' is not supported",
                 "The initialization of a cryptographic cipher failed",
                 "The padding scheme '" + PAD_SPEC + "' is not supported",
                 "Installation of additional components may be necessary to add support " +
@@ -226,8 +225,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (InvalidKeyException keyExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid encryption key for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid encryption key for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The encryption key is not valid for use with the selected encryption algorithm",
                 "Installation of additional components may be necessary to add support " +
@@ -242,8 +240,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (InvalidAlgorithmParameterException prmExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid initialization vector for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid initialization vector for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The initialization vector is not valid for use with the selected encryption algorithm",
                 "This problem is typically caused by an incompatible combination of encryption parameters.\n" +
@@ -256,8 +253,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (IllegalBlockSizeException blkSizeExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid block size for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid block size for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The selected encryption algorithm does not support the block size used\n" +
                 "by the cryptographic subsystem",
@@ -271,8 +267,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (BadPaddingException padExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid block padding for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid block padding for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The selected encryption algorithm does not support the selected padding mode",
                 "This problem is typically caused by an incompatible combination of encryption parameters.\n" +
@@ -312,8 +307,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (InvalidKeyException keyExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid encryption key for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid encryption key for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The encryption key is not valid for use with the selected encryption algorithm",
                 "Installation of additional components may be necessary to add support " +
@@ -328,8 +322,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (InvalidAlgorithmParameterException prmExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid initialization vector for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid initialization vector for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The initialization vector is not valid for use with the selected encryption algorithm",
                 "This problem is typically caused by an incompatible combination of encryption parameters.\n" +
@@ -342,8 +335,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (IllegalBlockSizeException blkSizeExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid block size for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid block size for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The selected encryption algorithm does not support the block size used\n" +
                 "by the cryptographic subsystem",
@@ -357,8 +349,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         catch (BadPaddingException padExc)
         {
             throw new LinStorException(
-                "Cipher initialization failed: Invalid block padding for algorithm '" + CIPHER_SPEC +
-                "/" + MODE_SPEC + "/" + PAD_SPEC + "'",
+                "Cipher initialization failed: Invalid block padding for algorithm '" + CIPHER_ALGORITHM + "'",
                 "The initialization of a cryptographic cipher failed",
                 "The selected encryption algorithm does not support the selected padding mode",
                 "This problem is typically caused by an incompatible combination of encryption parameters.\n" +
