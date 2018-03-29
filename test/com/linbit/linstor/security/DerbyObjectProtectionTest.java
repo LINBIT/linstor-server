@@ -4,8 +4,6 @@ import com.linbit.InvalidNameException;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.h2.jdbc.JdbcSQLException;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,7 +69,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         stmt.close();
     }
 
-    @Test (expected = JdbcSQLException.class)
+    @Test (expected = SQLException.class)
     public void testCreateUnknownIdObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -86,7 +84,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
-    @Test (expected = JdbcSQLException.class)
+    @Test (expected = SQLException.class)
     public void testCreateUnknownRoleObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -101,7 +99,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         fail("Creating an ObjectProtection with an unknown role should have failed");
     }
 
-    @Test (expected = JdbcSQLException.class)
+    @Test (expected = SQLException.class)
     public void testCreateUnknownSecTypeObjProt() throws Exception
     {
         final String objPath = "testPath";

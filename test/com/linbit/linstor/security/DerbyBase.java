@@ -34,6 +34,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -147,18 +148,10 @@ public abstract class DerbyBase implements DerbyTestConstants
         {
             errorReporter.logTrace("Performing DB initialization");
 
-            dbConnPool = new TestDbConnectionPoolLoader().loadDbConnectionPool();
+            TestDbConnectionPoolLoader dbConnectionPoolLoader = new TestDbConnectionPoolLoader();
+            dbConnPool = dbConnectionPoolLoader.loadDbConnectionPool();
 
-            Connection connection = dbConnPool.getConnection();
-            try
-            {
-                createTables(connection);
-                insertDefaults(connection);
-            }
-            finally
-            {
-                dbConnPool.returnConnection(connection);
-            }
+            dbConnPool.migrate(dbConnectionPoolLoader.getDbType());
 
             DbDerbyPersistence initializationSecureDbDriver = new DbDerbyPersistence();
 
@@ -286,15 +279,6 @@ public abstract class DerbyBase implements DerbyTestConstants
         statements.add(stmt);
     }
 
-    private static void createTables(Connection connection) throws SQLException
-    {
-        for (int idx = 0; idx < CREATE_TABLES.length; ++idx)
-        {
-            createTable(connection, true, idx);
-        }
-        connection.commit();
-    }
-
     private static void insertDefaults(Connection connection) throws SQLException
     {
         for (String insert : INSERT_DEFAULT_VALUES)
@@ -324,66 +308,6 @@ public abstract class DerbyBase implements DerbyTestConstants
             stmt.close();
         }
         con.commit();
-    }
-
-    private static void createTable(Connection connection, boolean dropIfExists, int idx) throws SQLException
-    {
-        try
-        {
-//            System.out.print("creating... " + CREATE_TABLES[idx]);
-            try (PreparedStatement stmt = connection.prepareStatement(CREATE_TABLES[idx]))
-            {
-                stmt.executeUpdate();
-//                System.out.println("... done");
-            }
-        }
-        catch (SQLException sqlExc)
-        {
-            String sqlState = sqlExc.getSQLState();
-            if ("X0Y32".equals(sqlState)) // table already exists
-            {
-                if (dropIfExists)
-                {
-//                    System.out.print("exists, ");
-                    dropTable(connection, DROP_TABLES.length - 1 - idx);
-                    createTable(connection, false, idx);
-                }
-                else
-                {
-                    System.out.println(CREATE_TABLES[idx]);
-                    throw sqlExc;
-                }
-            }
-            else
-            {
-                System.out.println(CREATE_TABLES[idx]);
-                throw sqlExc;
-            }
-        }
-        connection.commit();
-    }
-
-    private static void dropTable(Connection connection, int idx) throws SQLException
-    {
-        try (PreparedStatement stmt = connection.prepareStatement(DROP_TABLES[idx]))
-        {
-//            System.out.print("dropping... " + DROP_TABLES[idx]);
-            stmt.executeUpdate();
-//            System.out.println("... done");
-        }
-        catch (SQLException sqlExc)
-        {
-            if ("42Y55".equals(sqlExc.getSQLState()))
-            {
-                // table does not exists.... yay - ignore
-            }
-            else
-            {
-                System.out.println(DROP_TABLES[idx]);
-                throw sqlExc;
-            }
-        }
-        connection.commit();
     }
 
     protected String debugGetAllProsContent() throws SQLException

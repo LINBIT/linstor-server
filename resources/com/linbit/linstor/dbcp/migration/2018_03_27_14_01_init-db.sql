@@ -1,7 +1,3 @@
--- Database schema for linstor
-CREATE SCHEMA LINSTOR;
-SET SCHEMA LINSTOR;
-
 -- Security configuration
 CREATE TABLE SEC_CONFIGURATION
 (

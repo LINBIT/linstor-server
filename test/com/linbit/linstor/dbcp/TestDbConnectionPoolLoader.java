@@ -5,6 +5,7 @@ import java.util.Properties;
 
 public class TestDbConnectionPoolLoader
 {
+    private static final String DB_TYPE = "h2";
     private static final String DB_URL = "jdbc:h2:mem:testDB";
     private static final String DB_USER = "linstor";
     private static final String DB_PASSWORD = "linbit";
@@ -22,5 +23,10 @@ public class TestDbConnectionPoolLoader
         dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
 
         return dbConnPool;
+    }
+
+    public String getDbType()
+    {
+        return DB_TYPE;
     }
 }

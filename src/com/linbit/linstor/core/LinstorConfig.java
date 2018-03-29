@@ -1,23 +1,15 @@
 package com.linbit.linstor.core;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
@@ -35,15 +27,12 @@ public class LinstorConfig
 {
     private static CommandLine commandLine;
 
-    private static final String CFG_KEY_JDBC = "connection-url";
-
     private static final String DB_USER = "linstor";
     private static final String DB_PASSWORD = "linstor";
 
     private static List<String> supportedDbs = Arrays.asList("h2", "derby", "postgresql");
 
     @CommandLine.Command(name = "linstor-config", subcommands = {
-        CmdCreateDb.class,
         CmdSetPlainPort.class,
         CmdSetPlainListen.class,
         CmdCreateDbXMLConfig.class
@@ -88,124 +77,14 @@ public class LinstorConfig
 
             if (dbInfo != null)
             {
-                os.write(String.format(
-                    dbCfg,
-                    DB_USER,
-                    DB_PASSWORD,
-                    dbInfo.jdbcUrl(dbpath)).getBytes()
-                );
-            }
-            else
-            {
-                System.err.println(
+                os.write(
                     String.format(
-                        "Database type '%s' not supported. Use one of: '%s'",
-                        dbtype,
-                        String.join("', '", supportedDbs))
+                        dbCfg,
+                        DB_USER,
+                        DB_PASSWORD,
+                        dbInfo.jdbcUrl(dbpath)
+                    ).getBytes(StandardCharsets.UTF_8)
                 );
-            }
-            return null;
-        }
-    }
-
-    @CommandLine.Command(name = "create-db", description = "Creates a database.")
-    private static class CmdCreateDb implements Callable<Object>
-    {
-        @CommandLine.Option(names = {"--recreate"}, description = "Delete an already existing database")
-        private boolean recreate = false;
-
-        @CommandLine.Option(names = {"--initsql"}, description = "Specifiy init sql script")
-        private File initSQL = null;
-
-        @CommandLine.Parameters(description = "path to database config file. default: './database.cfg'")
-        private Path dbConfigFile = Paths.get("./database.cfg");
-
-        @Override
-        public Object call() throws Exception
-        {
-            Properties props = new Properties();
-            props.loadFromXML(Files.newInputStream(dbConfigFile));
-
-            String jdbcString = props.getProperty(CFG_KEY_JDBC);
-            String[] jdbcParts = jdbcString.split(":");
-            /*
-             *  should result in:
-             *
-             *  jdbcParts[0] == always "jdbc"
-             *  jdbcParts[1] == "derby" | "h2" | "postgresql"
-             *  jdbcParts[2] == path to database and other configurations
-             *
-             */
-
-            String dbtype = jdbcParts[1];
-            String dbpath = jdbcParts[2];
-            String[] dbparams = dbpath.split(";");
-            dbpath = dbparams[0];
-
-            if (supportedDbs.contains(dbtype))
-            {
-                InputStream is = LinstorConfig.class.getResourceAsStream("/resource/drbd-init-derby.sql");
-                if (initSQL != null)
-                {
-                    is = new FileInputStream(initSQL);
-                }
-
-                if (is != null)
-                {
-                    try (BufferedReader br = new BufferedReader(new InputStreamReader(is)))
-                    {
-                        DatabaseDriverInfo dbdriver = DatabaseDriverInfo.CreateDriverInfo(dbtype);
-
-                        // if recreate delete old database
-                        if (recreate && (dbtype.equals("h2") || dbtype.equals("derby")))
-                        {
-                            Path localPath = Paths.get(dbpath);
-
-                            if (Files.exists(localPath) ||
-                                Files.exists(Paths.get(localPath.getParent().toString(),
-                                    localPath.getFileName().toString() + ".mv.db")))
-                            {
-                                Files.list(localPath.getParent())
-                                    .filter(file -> file.getFileName().toString().startsWith(
-                                        localPath.getFileName().toString()))
-                                    .forEach(p ->
-                                    {
-                                        try
-                                        {
-                                            Files.walk(p, FileVisitOption.FOLLOW_LINKS)
-                                                .sorted(Comparator.reverseOrder())
-                                                .map(Path::toFile)
-                                                .forEach(File::delete);
-                                        }
-                                        catch (IOException io)
-                                        {
-                                            System.err.println(io.toString());
-                                        }
-                                    }
-                                );
-                            }
-                        }
-
-                        try (PoolingDataSource<PoolableConnection> dataSource =
-                                 initConnectionProvider(
-                                     dbdriver.jdbcUrl(dbpath), DB_USER, DB_PASSWORD);
-                             Connection con = dataSource.getConnection())
-                        {
-                            con.setAutoCommit(false);
-                            DerbyDriver.executeStatement(con, dbdriver.isolationStatement());
-                            DerbyDriver.runSql(
-                                con,
-                                dbdriver.prepareInit(br.lines().collect(Collectors.joining("\n")))
-                            );
-                        }
-
-                        System.out.println("Database created at " + dbpath);
-                    }
-                }
-                else
-                {
-                    System.err.println("No suitable db setup script could be found.");
-                }
             }
             else
             {

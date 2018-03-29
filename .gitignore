@@ -2,7 +2,7 @@
 !src/
 !linstor-common
 !test/
-!sql-src/
+!resources/
 !build.xml
 !build.gradle
 !version-info.gradle

@@ -3,8 +3,6 @@ package com.linbit.linstor;
 import java.sql.SQLException;
 import java.util.Properties;
 import com.linbit.SystemService;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.sql.Connection;
 
@@ -28,6 +26,8 @@ public interface ControllerDatabase extends SystemService
 
     // Must be able to handle dbConn == null as a valid input
     void returnConnection(Connection dbConn);
+
+    void migrate(String dbType);
 
     @Override
     void shutdown();

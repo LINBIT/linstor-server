@@ -28,7 +28,7 @@ public class PostgresqlDatabaseInfo implements DatabaseDriverInfo
     @Override
     public String prepareInit(String initSQL)
     {
-        return initSQL.replace("SET SCHEMA LINSTOR", "SET SEARCH_PATH TO LINSTOR");
+        return initSQL;
     }
 
 }

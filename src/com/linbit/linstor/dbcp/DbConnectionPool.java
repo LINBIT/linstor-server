@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp;
 
+import com.google.common.collect.ImmutableMap;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -22,6 +24,9 @@ import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.flywaydb.core.Flyway;
+
+import static com.linbit.linstor.dbcp.migration.LinstorMigration.PLACEHOLDER_KEY_DB_TYPE;
 
 /**
  * JDBC pool
@@ -32,6 +37,8 @@ public class DbConnectionPool implements ControllerDatabase
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "SQL database connection pool service";
+    private static final String DATABASE_SCHEMA_NAME = "LINSTOR";
+    private static final String SCHEMA_HISTORY_TABLE_NAME = "FLYWAY_SCHEMA_HISTORY";
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
     private int dbMaxOpen = ControllerDatabase.DEFAULT_MAX_OPEN_STMT;
@@ -130,6 +137,7 @@ public class DbConnectionPool implements ControllerDatabase
             }
             connections.add(dbConn);
             dbConn.setAutoCommit(false);
+            dbConn.setSchema(DATABASE_SCHEMA_NAME);
         }
         return dbConn;
     }
@@ -152,6 +160,24 @@ public class DbConnectionPool implements ControllerDatabase
         catch (SQLException ignored)
         {
         }
+    }
+
+    @Override
+    public void migrate(String dbType)
+    {
+        Flyway flyway = new Flyway();
+        flyway.setSchemas(DATABASE_SCHEMA_NAME);
+        flyway.setDataSource(dataSource);
+        flyway.setTable(SCHEMA_HISTORY_TABLE_NAME);
+
+        // When migrations are added in branches they can be applied in different orders
+        flyway.setOutOfOrder(true);
+
+        // Pass the DB type to the migrations
+        flyway.setPlaceholders(ImmutableMap.of(PLACEHOLDER_KEY_DB_TYPE, dbType));
+
+        flyway.setLocations(LinstorMigration.class.getPackage().getName());
+        flyway.migrate();
     }
 
     /**
