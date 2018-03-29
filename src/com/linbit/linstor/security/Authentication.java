@@ -119,8 +119,11 @@ public final class Authentication
                 byte[] storedHash;
                 try
                 {
-                    storedSalt = Base64.decode(signInEntry.getString(DerbyConstants.PASS_SALT));
-                    storedHash = Base64.decode(signInEntry.getString(DerbyConstants.PASS_HASH));
+                    String saltBase64 = signInEntry.getString(DerbyConstants.PASS_SALT);
+                    String hashBase64 = signInEntry.getString(DerbyConstants.PASS_HASH);
+
+                    storedSalt = Base64.decode(saltBase64.trim());
+                    storedHash = Base64.decode(hashBase64.trim());
                 }
                 catch (IllegalArgumentException exc)
                 {
