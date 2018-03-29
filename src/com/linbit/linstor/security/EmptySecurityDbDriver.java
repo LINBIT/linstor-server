@@ -102,7 +102,7 @@ public class EmptySecurityDbDriver implements DbAccessor
             TransactionObjectFactory transObjFactoryRef
         )
         {
-            objProt = new ObjectProtection(accCtx, null, null, transObjFactoryRef, transMgrProviderRef);
+            objProt = new ObjectProtection(accCtx, "", null, transObjFactoryRef, transMgrProviderRef);
         }
 
         @Override

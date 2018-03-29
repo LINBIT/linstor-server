@@ -89,6 +89,8 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         " FROM " +
         "     " + TBL_ACL + " AS ACL " +
         " WHERE " + ACL_OBJECT_PATH + " = ?";
+    private static final String ACL_DELETE_ALL =
+        " DELETE FROM " + TBL_ACL + " WHERE " + ACL_OBJECT_PATH + " = ?";
 
     private SingleColumnDatabaseDriver<ObjectProtection, Identity> identityDriver;
     private SingleColumnDatabaseDriver<ObjectProtection, Role> roleDriver;
@@ -142,6 +144,13 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
+        try (PreparedStatement stmt = getConnection().prepareStatement(ACL_DELETE_ALL))
+        {
+            stmt.setString(1, objectPath);
+
+            stmt.executeUpdate();
+        }
+
         errorReporter.logTrace("ObjectProtection deleted %s", getObjProtId(objectPath));
     }
 

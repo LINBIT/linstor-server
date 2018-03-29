@@ -98,7 +98,6 @@ public final class ObjectProtection extends BaseTransactionObject
         if (objProt != null)
         {
             objProt.requireAccess(accCtx, AccessType.CHANGE);
-            objProt.objPath = objPath;
             objProt.dbDriver = dbDriver;
 
             objProt.persisted = true;
