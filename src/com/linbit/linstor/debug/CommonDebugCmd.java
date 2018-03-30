@@ -25,6 +25,8 @@ public interface CommonDebugCmd
 
     boolean acceptsUndeclaredParameters();
 
+    boolean requiresScope();
+
     void execute(
         PrintStream debugOut,
         PrintStream debugErr,

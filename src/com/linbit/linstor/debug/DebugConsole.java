@@ -2,7 +2,6 @@ package com.linbit.linstor.debug;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Map;
 
 /**
  * Interface for the Controller's and Satellite's debug consoles
@@ -20,13 +19,15 @@ public interface DebugConsole
         InputStream debugIn,
         PrintStream debugOut,
         PrintStream debugErr,
-        boolean prompt
+        boolean prompt,
+        boolean setupScope
     );
 
     void processCommandLine(
         PrintStream debugOut,
         PrintStream debugErr,
-        String commandLine
+        String commandLine,
+        boolean setupScope
     );
 
     void exitConsole();

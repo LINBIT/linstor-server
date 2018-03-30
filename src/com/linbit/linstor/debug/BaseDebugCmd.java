@@ -113,6 +113,12 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         return acceptsUndeclared;
     }
 
+    @Override
+    public boolean requiresScope()
+    {
+        return false;
+    }
+
     public void printMissingParamError(
         PrintStream debugErr,
         String paramName

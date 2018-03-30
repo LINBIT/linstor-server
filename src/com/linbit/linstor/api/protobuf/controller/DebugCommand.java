@@ -75,6 +75,7 @@ public class DebugCommand implements ApiCall
                     cmdIn,
                     new PrintStream(debugOut),
                     new PrintStream(debugErr),
+                    false,
                     false
                 );
 

@@ -2,8 +2,10 @@ package com.linbit.linstor.debug;
 
 import com.linbit.AutoIndent;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,6 +20,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import javax.inject.Provider;
 
 public class DebugConsoleImpl implements DebugConsole
 {
@@ -30,6 +33,8 @@ public class DebugConsoleImpl implements DebugConsole
     private final AccessContext debugCtx;
     private final ErrorReporter errorReporter;
     private final Map<String, CommonDebugCmd> commandMap;
+    private final LinStorScope debugScope;
+    private final Provider<TransactionMgr> trnActProvider;
 
     private Map<String, String> parameters;
     private Set<String> unknownParameters;
@@ -47,11 +52,15 @@ public class DebugConsoleImpl implements DebugConsole
     public DebugConsoleImpl(
         AccessContext debugCtxRef,
         ErrorReporter errorReporterRef,
+        LinStorScope debugScopeRef,
+        Provider<TransactionMgr> trnActProviderRef,
         Set<CommonDebugCmd> debugCommands
     )
     {
         debugCtx = debugCtxRef;
         errorReporter = errorReporterRef;
+        debugScope = debugScopeRef;
+        trnActProvider = trnActProviderRef;
         commandMap = new TreeMap<>();
 
         for (CommonDebugCmd command : debugCommands)
@@ -68,23 +77,25 @@ public class DebugConsoleImpl implements DebugConsole
 
     @Override
     public void stdStreamsConsole(
-        String consolePrompt
+        final String consolePrompt
     )
     {
-        streamsConsole(consolePrompt, System.in, System.out, System.err, true);
+        streamsConsole(consolePrompt, System.in, System.out, System.err, true, true);
     }
 
     @Override
     public void streamsConsole(
-        String consolePrompt,
-        InputStream debugIn,
-        PrintStream debugOut,
-        PrintStream debugErr,
-        boolean prompt
+        final String consolePrompt,
+        final InputStream debugIn,
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final boolean prompt,
+        final boolean setupScope
     )
     {
         try
         {
+
             BufferedReader cmdIn = new BufferedReader(
                 new InputStreamReader(debugIn)
             );
@@ -103,7 +114,7 @@ public class DebugConsoleImpl implements DebugConsole
                 inputLine = cmdIn.readLine();
                 if (inputLine != null)
                 {
-                    processCommandLine(debugOut, debugErr, inputLine);
+                    processCommandLine(debugOut, debugErr, inputLine, setupScope);
                 }
                 else
                 {
@@ -163,9 +174,10 @@ public class DebugConsoleImpl implements DebugConsole
 
     @Override
     public void processCommandLine(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String inputLine
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final String inputLine,
+        final boolean setupScope
     )
     {
         String commandLine = inputLine.trim();
@@ -198,7 +210,7 @@ public class DebugConsoleImpl implements DebugConsole
                 {
                     parseCommandParameters(commandChars);
 
-                    processCommand(debugOut, debugErr, command);
+                    processCommand(debugOut, debugErr, command, setupScope);
                 }
                 catch (ParseException parseExc)
                 {
@@ -214,9 +226,10 @@ public class DebugConsoleImpl implements DebugConsole
     }
 
     private void processCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String command
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final String command,
+        final boolean setupScope
     )
     {
         String cmdName = command.toUpperCase();
@@ -262,7 +275,52 @@ public class DebugConsoleImpl implements DebugConsole
 
                 try
                 {
-                    debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
+                    boolean scopeEntered = false;
+                    if (setupScope && debugCmd.requiresScope())
+                    {
+                        try
+                        {
+                            debugScope.enter();
+                            scopeEntered = true;
+
+                            debugScope.seed(TransactionMgr.class, trnActProvider.get());
+                        }
+                        catch (Exception exc)
+                        {
+                            String reportId = errorReporter.reportError(exc);
+                            debugErr.printf(
+                                "DebugConsole: An unhandled exception was encountered when attempting to enter " +
+                                "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
+                                "Some commands may not work as a result of this problem.\n" +
+                                "The report ID of the error report is %s\n",
+                                reportId
+                            );
+                        }
+                    }
+                    try
+                    {
+                        debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
+                    }
+                    finally
+                    {
+                        if (scopeEntered)
+                        {
+                            try
+                            {
+                                debugScope.exit();
+                            }
+                            catch (Exception exc)
+                            {
+                                String reportId = errorReporter.reportError(exc);
+                                debugErr.printf(
+                                    "DebugConsole: An unhandled exception was encountered when attempting to exit " +
+                                    "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
+                                    "The report ID of the error report is %s\n",
+                                    reportId
+                                );
+                            }
+                        }
+                    }
                 }
                 catch (Exception exc)
                 {
@@ -327,9 +385,9 @@ public class DebugConsoleImpl implements DebugConsole
     }
 
     public void helpCommand(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdName
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final String cmdName
     )
     {
         debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", "Help", "Help for command usage");
@@ -384,8 +442,8 @@ public class DebugConsoleImpl implements DebugConsole
     }
 
     private void helpForHelp(
-        PrintStream debugOut,
-        PrintStream debugErr
+        final PrintStream debugOut,
+        final PrintStream debugErr
     )
     {
         debugOut.println(
@@ -401,11 +459,11 @@ public class DebugConsoleImpl implements DebugConsole
     }
 
     private void helpForCommand(
-        CommonDebugCmd debugCmd,
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdName,
-        String uCaseCmdName
+        final CommonDebugCmd debugCmd,
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final String cmdName,
+        final String uCaseCmdName
     )
     {
         // Output the name of the command for which help was requested
@@ -496,9 +554,9 @@ public class DebugConsoleImpl implements DebugConsole
     }
 
     public void findCommands(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        String cmdPattern
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final String cmdPattern
     )
     {
         try
@@ -605,7 +663,7 @@ public class DebugConsoleImpl implements DebugConsole
         exitFlag = true;
     }
 
-    private String parseCommandName(char[] commandChars)
+    private String parseCommandName(final char[] commandChars)
     {
         int commandLength = commandChars.length;
         for (int idx = 0; idx < commandChars.length; ++idx)
@@ -620,7 +678,7 @@ public class DebugConsoleImpl implements DebugConsole
         return command;
     }
 
-    private void parseCommandParameters(char[] commandChars)
+    private void parseCommandParameters(final char[] commandChars)
         throws ParseException
     {
         int keyOffset = 0;
@@ -726,7 +784,7 @@ public class DebugConsoleImpl implements DebugConsole
         }
     }
 
-    private boolean isHelpCommand(String inputLine)
+    private boolean isHelpCommand(final String inputLine)
     {
         boolean result = false;
         int matchLength = HELP_COMMAND.length();
