@@ -34,6 +34,7 @@ public class ControllerCoreModule extends AbstractModule
     public static final String SATELLITE_PROPS = "SatelliteProps";
 
     public static final String CTRL_CONF_LOCK = "ctrlConfLock";
+    public static final String CTRL_ERROR_LIST_LOCK = "ctrlErrorListLock";
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
@@ -45,6 +46,9 @@ public class ControllerCoreModule extends AbstractModule
             .toInstance(Controller.MODULE);
 
         bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_CONF_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+
+        bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_ERROR_LIST_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }
 

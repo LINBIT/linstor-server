@@ -7,6 +7,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.LockSupport;
 
@@ -14,8 +15,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -42,6 +45,7 @@ public class CtrlApiCallHandler
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
+    private final ReadWriteLock ctrlErrorListLock;
 
     private final Provider<Peer> peer;
     private final Provider<Integer> msgId;
@@ -67,6 +71,7 @@ public class CtrlApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
+        @Named(ControllerCoreModule.CTRL_ERROR_LIST_LOCK) ReadWriteLock errorListLockRef,
         Provider<Peer> clientRef,
         @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef
     )
@@ -90,6 +95,7 @@ public class CtrlApiCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
+        ctrlErrorListLock = errorListLockRef;
         peer = clientRef;
         msgId = msgIdRef;
     }
@@ -204,6 +210,44 @@ public class CtrlApiCallHandler
             listNodes = nodeApiCallHandler.listNodes(msgId.get());
         }
         return listNodes;
+    }
+
+    public void listErrorReports(
+        final Peer client,
+        final Set<String> nodes,
+        boolean withContent,
+        final Optional<Date> since,
+        final Optional<Date> to,
+        final Set<String> ids
+    )
+    {
+        try (LockSupport ls = LockSupport.lock(ctrlErrorListLock.writeLock()))
+        {
+            nodeApiCallHandler.listErrorReports(
+                client,
+                msgId.get(),
+                nodes,
+                withContent,
+                since,
+                to,
+                ids
+            );
+        }
+    }
+
+    public void appendErrorReports(
+        final Peer client,
+        Set<ErrorReport> errorReports
+    )
+    {
+        try (LockSupport ls = LockSupport.lock(ctrlErrorListLock.writeLock()))
+        {
+            nodeApiCallHandler.appendErrorReports(
+                client,
+                msgId.get(),
+                errorReports
+            );
+        }
     }
 
     /**

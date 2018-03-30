@@ -7,15 +7,25 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.event.Level;
+import java.util.stream.Collectors;
 
 /**
  * Standard error report generator
@@ -414,6 +424,86 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             {
             }
         }
+    }
+
+    public static Set<ErrorReport> listReports(
+        final String nodeName,
+        final Path logDirectory,
+        boolean withText,
+        final Optional<Date> since,
+        final Optional<Date> to,
+        final Set<String> ids)
+    {
+        TreeSet<ErrorReport> errors = new TreeSet<>();
+        final Date now = new Date(System.currentTimeMillis());
+        final List<String> fileIds = ids.stream().map(s -> "ErrorReport-" + s).collect(Collectors.toList());
+
+        if (fileIds.isEmpty())
+        {
+            // if id filter is disabled, add a match all filter.
+            fileIds.add("ErrorReport-");
+        }
+
+        try
+        {
+            Files.list(logDirectory)
+                .filter(f -> f.getFileName().toString().startsWith("ErrorReport"))
+                .filter(f -> {
+                    boolean ret = false;
+                    for (String fileId : fileIds)
+                    {
+                        if (f.getFileName().toString().startsWith(fileId))
+                        {
+                            ret = true;
+                            break;
+                        }
+                    }
+                    return ret;
+                })
+                .forEach(f -> {
+                    String fileName = f.getFileName().toString();
+
+                    try
+                    {
+                        BasicFileAttributes attr = Files.readAttributes(f, BasicFileAttributes.class);
+
+                        if (since.orElse(new Date(0)).getTime() < attr.creationTime().toMillis() &&
+                            attr.creationTime().toMillis() < to.orElse(now).getTime())
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            if (withText)
+                            {
+                                try (BufferedReader br = Files.newBufferedReader(f))
+                                {
+                                    for (String line; (line = br.readLine()) != null; )
+                                    {
+//                                    if (date == null && line.startsWith(errorTimeLabel))
+//                                    {
+//                                        String dateStr = line.substring(errorTimeLabel.length()).trim();
+//                                        date = TIMESTAMP_FORMAT.parse(dateStr);
+//                                    }
+
+                                        sb.append(line).append('\n');
+                                    }
+                                }
+                            }
+                            errors.add(new ErrorReport(
+                                nodeName,
+                                fileName,
+                                new Date(attr.creationTime().toMillis()),
+                                sb.toString())
+                            );
+                        }
+                    } catch (IOException /*| ParseException*/ ignored)
+                    {
+                    }
+                });
+        }
+        catch (IOException ignored)
+        {
+        }
+
+        return errors;
     }
 
     @Override

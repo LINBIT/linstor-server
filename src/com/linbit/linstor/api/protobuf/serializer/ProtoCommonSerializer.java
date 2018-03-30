@@ -4,17 +4,24 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.CommonSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.MsgErrorReportOuterClass;
 import com.linbit.linstor.proto.MsgEventOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
+import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Singleton
 public class ProtoCommonSerializer implements CommonSerializer, CommonSerializerBuilderImpl.CommonSerializerWriter
@@ -114,5 +121,46 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
             .setReady(resourceReady)
             .build()
             .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeRequestErrorReports(
+        Set<String> nodes,
+        boolean withContent,
+        Optional<Date> since,
+        Optional<Date> to,
+        Set<String> ids,
+        ByteArrayOutputStream baos
+    ) throws IOException
+    {
+        MsgReqErrorReport.Builder bld = MsgReqErrorReport.newBuilder();
+        if (since.isPresent())
+        {
+            bld.setSince(since.get().getTime());
+        }
+        if (to.isPresent())
+        {
+            bld.setTo(to.get().getTime());
+        }
+        bld.addAllNodeNames(nodes).setWithContent(withContent).addAllIds(ids).build().writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeErrorReports(Set<ErrorReport> errorReports, ByteArrayOutputStream baos) throws IOException
+    {
+        for(ErrorReport errReport : errorReports)
+        {
+            MsgErrorReportOuterClass.MsgErrorReport.Builder msgErrorReport =
+                MsgErrorReportOuterClass.MsgErrorReport.newBuilder();
+
+            msgErrorReport.setErrorTime(errReport.getDateTime().getTime());
+            msgErrorReport.setNodeNames(errReport.getNodeName());
+            msgErrorReport.setFilename(errReport.getFileName());
+            if (!errReport.getText().isEmpty())
+            {
+                msgErrorReport.setText(errReport.getText());
+            }
+            msgErrorReport.build().writeDelimitedTo(baos);
+        }
     }
 }

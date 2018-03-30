@@ -2,10 +2,15 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
 {
@@ -103,6 +108,41 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
         return this;
     }
 
+    @Override
+    public CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports)
+    {
+        try
+        {
+            commonSerializationWriter.writeErrorReports(errorReports, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder requestErrorReports(
+        final Set<String> nodes,
+        boolean withContent,
+        Optional<Date> since,
+        Optional<Date> to,
+        final Set<String> ids)
+    {
+        try
+        {
+            commonSerializationWriter.writeRequestErrorReports(nodes, withContent, since, to, ids, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
     public interface CommonSerializerWriter
     {
         void writeHeader(String apiCall, Integer msgId, ByteArrayOutputStream baos)
@@ -120,6 +160,22 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
             throws IOException;
 
         void writeResourceStateEvent(Boolean resourceReady, ByteArrayOutputStream baos)
+            throws IOException;
+
+        void writeRequestErrorReports(
+            Set<String> nodes,
+            boolean withContent,
+            Optional<Date> since,
+            Optional<Date> to,
+            Set<String> ids,
+            ByteArrayOutputStream baos
+        )
+            throws IOException;
+
+        void writeErrorReports(
+            Set<ErrorReport> errorReports,
+            ByteArrayOutputStream baos
+        )
             throws IOException;
     }
 }

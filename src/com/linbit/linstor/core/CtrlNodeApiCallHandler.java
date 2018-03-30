@@ -1,6 +1,27 @@
 package com.linbit.linstor.core;
 
-import static java.util.stream.Collectors.toList;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
@@ -30,10 +51,13 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -42,23 +66,9 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.utils.Pair;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.stream.Stream;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
+import static java.util.stream.Collectors.toList;
 
 public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
@@ -69,6 +79,37 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final SatelliteConnector satelliteConnector;
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
+
+    public class ErrorReportRequest
+    {
+        public int msgId;
+        public LocalDateTime requestTime;
+        public int msgReqId;
+        public TreeSet<ErrorReport> errorReports;
+        public TreeSet<String> requestNodes;
+
+        public ErrorReportRequest(int msgIdRef, int msgReqIdRef)
+        {
+            msgId = msgIdRef;
+            msgReqId = msgReqIdRef;
+            requestTime = LocalDateTime.now();
+            errorReports = new TreeSet<>();
+            requestNodes = new TreeSet<>();
+        }
+
+        public int getMsgReqId()
+        {
+            return msgReqId;
+        }
+
+        @Override
+        public String toString()
+        {
+            return requestTime.toString();
+        }
+    }
+
+    public static Map<Pair<Peer, Integer>, ErrorReportRequest> errorReportMap = new HashMap<>();
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -517,6 +558,116 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
 
         return clientComSerializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
+    }
+
+    void listErrorReports(
+        Peer client,
+        int msgId,
+        final Set<String> nodes,
+        boolean withContent,
+        final Optional<Date> since,
+        final Optional<Date> to,
+        final Set<String> ids
+    )
+    {
+        Optional<Integer> reqId = errorReportMap.values().stream()
+            .max(Comparator.comparingInt(ErrorReportRequest::getMsgReqId))
+            .map(errReq -> errReq.msgReqId);
+
+        final Pair<Peer, Integer> key = new Pair<>(client, msgId);
+        errorReportMap.put(key, new ErrorReportRequest(msgId, reqId.orElse(1)));
+        final ErrorReportRequest errReq = errorReportMap.get(key);
+        if (nodes.isEmpty() || nodes.stream().anyMatch("controller"::equalsIgnoreCase)) {
+            Set<ErrorReport> errorReports = StdErrorReporter.listReports(
+                "Controller",
+                Paths.get(StdErrorReporter.LOG_DIRECTORY),
+                withContent,
+                since,
+                to,
+                ids
+            );
+            errReq.errorReports.addAll(errorReports);
+        }
+
+        nodesMap.values().stream()
+            .filter(node -> nodes.isEmpty() ||
+                nodes.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase))
+            .forEach( node ->
+                {
+                    try
+                    {
+                        Peer peer = node.getPeer(apiCtx);
+                        if (peer != null && peer.isConnected())
+                        {
+                            String nodeName = node.getName().getDisplayName();
+                            errReq.requestNodes.add(nodeName);
+
+                            byte[] msg = clientComSerializer.builder(ApiConsts.API_REQ_ERROR_REPORTS, errReq.msgReqId)
+                                .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
+                            peer.sendMessage(msg);
+                        }
+                    }
+                    catch (AccessDeniedException ignored)
+                    {
+                    }
+                }
+            );
+
+        // no requests sent, send controller answer
+        if (errReq.requestNodes.isEmpty())
+        {
+            client.sendMessage(clientComSerializer
+                .builder(ApiConsts.API_LST_ERROR_REPORTS, errReq.msgId)
+                .errorReports(errReq.errorReports)
+                .build()
+            );
+            errorReportMap.remove(key);
+        }
+    }
+
+    /**
+     * Adds received error reports from satellites to the client request.
+     *
+     * @param nodePeer Satellite peer with error reports
+     * @param msgId
+     * @param rawErrorReports
+     */
+    void appendErrorReports(
+        final Peer nodePeer,
+        int msgId,
+        Set<ErrorReport> rawErrorReports
+    )
+    {
+        Pair<Peer, Integer> keyEntry = null;
+        for (Map.Entry<Pair<Peer, Integer>, ErrorReportRequest> entry : errorReportMap.entrySet())
+        {
+            ErrorReportRequest errorReportRequest = entry.getValue();
+            if (errorReportRequest.msgReqId == msgId)
+            {
+                errorReportRequest.errorReports.addAll(rawErrorReports);
+
+                // remove request for node
+                String nodeName = nodePeer.getNode().getName().getDisplayName();
+                errorReportRequest.requestNodes.remove(nodeName);
+
+                // if we received all error reports from requested nodes, answer our client
+                if (errorReportRequest.requestNodes.isEmpty()) {
+                    keyEntry = entry.getKey();
+                    keyEntry.objA.sendMessage(clientComSerializer
+                        .builder(ApiConsts.API_LST_ERROR_REPORTS, errorReportRequest.msgId)
+                        .errorReports(errorReportRequest.errorReports)
+                        .build()
+                    );
+                    break;
+                }
+            }
+        }
+
+        // remove fulfilled request
+        if (keyEntry != null)
+        {
+            errorReportMap.remove(keyEntry);
+        }
     }
 
     void respondNode(int msgId, UUID nodeUuid, String nodeNameStr)

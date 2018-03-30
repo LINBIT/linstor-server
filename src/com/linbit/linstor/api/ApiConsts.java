@@ -299,6 +299,8 @@ public class ApiConsts
     public static final String API_LST_SNPSHT = "LstSnpsht";
     public static final String API_LST_STOR_POOL = "LstStorPool";
     public static final String API_LST_STOR_POOL_DFN = "LstStorPoolDfn";
+    public static final String API_LST_ERROR_REPORTS = "LstErrorReports";
+    public static final String API_REQ_ERROR_REPORTS = "ReqErrorReports";
 
     /*
      * Event APIs

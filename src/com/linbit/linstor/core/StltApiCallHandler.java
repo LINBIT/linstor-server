@@ -6,9 +6,13 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -26,6 +30,8 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -36,7 +42,9 @@ import com.linbit.linstor.core.StltStorPoolApiCallHandler.ChangedData;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.Watch;
+import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -86,6 +94,8 @@ public class StltApiCallHandler
     private WhitelistPropsReconfigurator whiteListPropsReconfigurator;
     private WhitelistProps whitelistProps;
 
+    private final Provider<Integer> msgId;
+
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -113,7 +123,8 @@ public class StltApiCallHandler
         StltVlmDfnApiCallHandler vlmDfnHandlerRef,
         EventBroker eventBrokerRef,
         WhitelistProps whiteListPropsRef,
-        WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef
+        WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef,
+        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef
     )
     {
         errorReporter = errorReporterRef;
@@ -142,6 +153,7 @@ public class StltApiCallHandler
         eventBroker = eventBrokerRef;
         whitelistProps = whiteListPropsRef;
         whiteListPropsReconfigurator = whiteListPropsReconfiguratorRef;
+        msgId = msgIdRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -572,6 +584,27 @@ public class StltApiCallHandler
             rscDfnHandler.primaryResource(rscNameStr, rscUuid);
         }
 
+    }
+
+    public byte[] listErrorReports(
+        final Set<String> nodes,
+        boolean withContent,
+        final Optional<Date> since,
+        final Optional<Date> to,
+        final Set<String> ids
+    )
+    {
+        Set<ErrorReport> errorReports = StdErrorReporter.listReports(
+            controllerPeerConnector.getLocalNode().getName().getDisplayName(),
+            Paths.get(StdErrorReporter.LOG_DIRECTORY),
+            withContent,
+            since,
+            to,
+            ids
+        );
+
+        return interComSerializer.builder(ApiConsts.API_LST_ERROR_REPORTS, msgId.get())
+            .errorReports(errorReports).build();
     }
 
     private interface ApplyData

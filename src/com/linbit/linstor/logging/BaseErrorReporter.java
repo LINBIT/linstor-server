@@ -43,6 +43,8 @@ public abstract class BaseErrorReporter
         SECTION_SEPARATOR = new String(separator);
     }
 
+    public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+
     @SuppressWarnings("checkstyle:magicnumber")
     BaseErrorReporter(String moduleName, boolean printStackTracesRef)
     {
@@ -126,8 +128,6 @@ public abstract class BaseErrorReporter
 
     void reportHeader(PrintStream output, long reportNr)
     {
-        SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-
         output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
         output.println(SECTION_SEPARATOR);
         output.println();
@@ -136,7 +136,7 @@ public abstract class BaseErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Version:", LinStor.VERSION_INFO_PROVIDER.getVersion());
         output.printf(ERROR_FIELD_FORMAT, "Build ID:", LinStor.VERSION_INFO_PROVIDER.getGitCommitId());
         output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
-        output.printf(ERROR_FIELD_FORMAT, "Error time:", timestampFormat.format(new Date()));
+        output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(new Date()));
         output.println();
         output.println(SECTION_SEPARATOR);
         output.println();

@@ -50,6 +50,7 @@ import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.tasks.ErrorReportTimeOutTask;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -112,6 +113,7 @@ public final class Controller
     private final TaskScheduleService taskScheduleService;
     private final PingTask pingTask;
     private final ReconnectorTask reconnectorTask;
+    private final ErrorReportTimeOutTask errorReportTimeOutTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
     private final SatelliteConnector satelliteConnector;
@@ -130,6 +132,7 @@ public final class Controller
         CoreModule.NodesMap nodesMapRef,
         TaskScheduleService taskScheduleServiceRef, PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
+        ErrorReportTimeOutTask errorReportTimeOutTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         SatelliteConnector satelliteConnectorRef,
         ControllerNetComInitializer controllerNetComInitializerRef
@@ -147,6 +150,7 @@ public final class Controller
         taskScheduleService = taskScheduleServiceRef;
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
+        errorReportTimeOutTask = errorReportTimeOutTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
@@ -170,6 +174,7 @@ public final class Controller
 
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
+            taskScheduleService.addTask(errorReportTimeOutTask);
             taskScheduleService.addTask(new GarbageCollectorTask());
 
             controllerNetComInitializer.initNetComServices(
