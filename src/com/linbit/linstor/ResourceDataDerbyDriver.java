@@ -405,7 +405,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         throws SQLException
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
-            ObjectProtection.buildPath(resName),
+            ObjectProtection.buildPath(node.getName(), resName),
             false // no need to log a warning, as we would fail then anyways
         );
         if (objProt == null)
