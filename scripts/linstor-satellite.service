@@ -7,6 +7,8 @@ After=network-online.target
 Type=simple
 WorkingDirectory=/opt/linstor-server
 ExecStart=/opt/linstor-server/bin/Satellite
+# if killed by signal 143 -> SIGTERM, 129 -> SIGHUP
+SuccessExitStatus=0 143 129
 User=root
 PrivateTmp=yes
 
