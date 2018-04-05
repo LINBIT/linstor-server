@@ -32,8 +32,9 @@ public class AutoIndentTest
         return getString();
     }
 
-    protected String getSpaces(int count)
+    protected String getSpaces(int countRef)
     {
+        int count = countRef;
         StringBuilder sb = new StringBuilder();
         while (count > 0)
         {

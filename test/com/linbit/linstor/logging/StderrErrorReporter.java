@@ -114,7 +114,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
 
     private String reportErrorImpl(
         Level logLevel,
-        Throwable errorInfo,
+        Throwable errorInfoRef,
         AccessContext accCtx,
         Peer client,
         String contextInfo
@@ -126,6 +126,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         {
             long reportNr = errorNr.getAndIncrement();
 
+            Throwable errorInfo = errorInfoRef;
             // Generate and report a null pointer exception if this
             // method is called with a null argument
             if (errorInfo == null)

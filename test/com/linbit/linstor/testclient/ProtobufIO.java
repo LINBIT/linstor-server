@@ -180,7 +180,7 @@ public class ProtobufIO
     }
 
     public void formatMessage(
-        StringBuilder sb,
+        StringBuilder sbRef,
         int msgId,
         int responseIdx,
         long retCode,
@@ -192,9 +192,14 @@ public class ProtobufIO
         Map<String, String> variablesMap
     )
     {
-        if (sb == null)
+        StringBuilder sb;
+        if (sbRef == null)
         {
             sb = new StringBuilder();
+        }
+        else
+        {
+            sb = sbRef;
         }
         sb.append("MsgId: ")
             .append(msgId)

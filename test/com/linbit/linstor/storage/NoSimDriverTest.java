@@ -451,8 +451,16 @@ public abstract class NoSimDriverTest
         return exec;
     }
 
-    protected void checkFileExists(boolean shouldExist, String file, String logIndent, int retries, int retryDelay) throws InterruptedException
+    protected void checkFileExists(
+        boolean shouldExist,
+        String file,
+        String logIndent,
+        int retriesCount,
+        int retryDelay
+    )
+        throws InterruptedException
     {
+        int retries = retriesCount;
         try
         {
             int origRetryCount = retries;
