@@ -1,10 +1,11 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.linbit.linstor.api.ApiConsts;
 import java.util.List;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  *

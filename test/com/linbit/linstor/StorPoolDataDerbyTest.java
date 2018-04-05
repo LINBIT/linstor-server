@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 

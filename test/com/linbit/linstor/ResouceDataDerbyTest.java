@@ -9,7 +9,6 @@ import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 

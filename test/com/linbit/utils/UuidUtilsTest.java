@@ -1,8 +1,10 @@
 package com.linbit.utils;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import java.util.UUID;
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class UuidUtilsTest

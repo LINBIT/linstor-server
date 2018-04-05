@@ -5,7 +5,6 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;

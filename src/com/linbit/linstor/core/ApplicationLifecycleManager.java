@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
@@ -14,13 +13,15 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.utils.MathUtils;
-import org.slf4j.event.Level;
+
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
+
+import org.slf4j.event.Level;
 
 @Singleton
 public class ApplicationLifecycleManager

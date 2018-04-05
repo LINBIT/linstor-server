@@ -1,10 +1,10 @@
 package com.linbit;
 
+import static org.junit.Assert.fail;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 import static com.linbit.SizeConv.SizeUnit.UNIT_B;
 import static com.linbit.SizeConv.SizeUnit.UNIT_kiB;

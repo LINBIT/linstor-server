@@ -1,7 +1,5 @@
 package com.linbit.linstor.testclient;
 
-import static com.linbit.linstor.api.ApiConsts.*;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -96,110 +94,110 @@ public class ClientProtobuf implements Runnable
     static
     {
         HashMap<Long, String> tmpMap = new HashMap<>();
-        tmpMap.put(MASK_ERROR, "Error");
-        tmpMap.put(MASK_WARN, "Warn");
-        tmpMap.put(MASK_INFO, "Info");
-        tmpMap.put(MASK_SUCCESS, "Success");
+        tmpMap.put(ApiConsts.MASK_ERROR, "Error");
+        tmpMap.put(ApiConsts.MASK_WARN, "Warn");
+        tmpMap.put(ApiConsts.MASK_INFO, "Info");
+        tmpMap.put(ApiConsts.MASK_SUCCESS, "Success");
         RET_CODES_TYPE = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
-        tmpMap.put(MASK_CRT, "Create");
-        tmpMap.put(MASK_MOD, "Modify");
-        tmpMap.put(MASK_DEL, "Delete");
+        tmpMap.put(ApiConsts.MASK_CRT, "Create");
+        tmpMap.put(ApiConsts.MASK_MOD, "Modify");
+        tmpMap.put(ApiConsts.MASK_DEL, "Delete");
         RET_CODES_OP = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
-        tmpMap.put(MASK_NODE, "Node");
-        tmpMap.put(MASK_RSC_DFN, "RscDfn");
-        tmpMap.put(MASK_RSC, "Rsc");
-        tmpMap.put(MASK_VLM_DFN, "VlmDfn");
-        tmpMap.put(MASK_VLM, "Vlm");
-        tmpMap.put(MASK_STOR_POOL_DFN, "StorPoolDfn");
-        tmpMap.put(MASK_STOR_POOL, "StorPool");
-        tmpMap.put(MASK_NODE_CONN, "NodeConn");
-        tmpMap.put(MASK_RSC_CONN, "RscConn");
-        tmpMap.put(MASK_VLM_CONN, "VlmConn");
-        tmpMap.put(MASK_NET_IF, "NetIf");
+        tmpMap.put(ApiConsts.MASK_NODE, "Node");
+        tmpMap.put(ApiConsts.MASK_RSC_DFN, "RscDfn");
+        tmpMap.put(ApiConsts.MASK_RSC, "Rsc");
+        tmpMap.put(ApiConsts.MASK_VLM_DFN, "VlmDfn");
+        tmpMap.put(ApiConsts.MASK_VLM, "Vlm");
+        tmpMap.put(ApiConsts.MASK_STOR_POOL_DFN, "StorPoolDfn");
+        tmpMap.put(ApiConsts.MASK_STOR_POOL, "StorPool");
+        tmpMap.put(ApiConsts.MASK_NODE_CONN, "NodeConn");
+        tmpMap.put(ApiConsts.MASK_RSC_CONN, "RscConn");
+        tmpMap.put(ApiConsts.MASK_VLM_CONN, "VlmConn");
+        tmpMap.put(ApiConsts.MASK_NET_IF, "NetIf");
         RET_CODES_OBJ = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
-        tmpMap.put(CREATED, "Created");
-        tmpMap.put(DELETED, "Deleted");
-        tmpMap.put(MODIFIED, "Modified");
+        tmpMap.put(ApiConsts.CREATED, "Created");
+        tmpMap.put(ApiConsts.DELETED, "Deleted");
+        tmpMap.put(ApiConsts.MODIFIED, "Modified");
 
-        tmpMap.put(FAIL_SQL, "FAIL_SQL");
-        tmpMap.put(FAIL_SQL_ROLLBACK, "FAIL_SQL_ROLLBACK");
-        tmpMap.put(FAIL_INVLD_NODE_NAME, "FAIL_INVLD_NODE_NAME");
-        tmpMap.put(FAIL_INVLD_NODE_TYPE, "FAIL_INVLD_NODE_TYPE");
-        tmpMap.put(FAIL_INVLD_RSC_NAME, "FAIL_INVLD_RSC_NAME");
-        tmpMap.put(FAIL_INVLD_RSC_PORT, "FAIL_INVLD_RSC_PORT");
-        tmpMap.put(FAIL_INVLD_NODE_ID, "FAIL_INVLD_NODE_ID");
-        tmpMap.put(FAIL_INVLD_VLM_NR, "FAIL_INVLD_VLM_NR");
-        tmpMap.put(FAIL_INVLD_VLM_SIZE, "FAIL_INVLD_VLM_SIZE");
-        tmpMap.put(FAIL_INVLD_MINOR_NR, "FAIL_INVLD_MINOR_NR");
-        tmpMap.put(FAIL_INVLD_STOR_POOL_NAME, "FAIL_INVLD_STOR_POOL_NAME");
-        tmpMap.put(FAIL_INVLD_NET_NAME, "FAIL_INVLD_NET_NAME");
-        tmpMap.put(FAIL_INVLD_NET_ADDR, "FAIL_INVLD_NET_ADDR");
-        tmpMap.put(FAIL_INVLD_NET_PORT, "FAIL_INVLD_NET_PORT");
-        tmpMap.put(FAIL_INVLD_NET_TYPE, "FAIL_INVLD_NET_TYPE");
-        tmpMap.put(FAIL_INVLD_PROP, "FAIL_INVLD_PROP");
-        tmpMap.put(FAIL_NOT_FOUND_NODE, "FAIL_NOT_FOUND_NODE");
-        tmpMap.put(FAIL_NOT_FOUND_RSC_DFN, "FAIL_NOT_FOUND_RSC_DFN");
-        tmpMap.put(FAIL_NOT_FOUND_RSC, "FAIL_NOT_FOUND_RSC");
-        tmpMap.put(FAIL_NOT_FOUND_VLM_DFN, "FAIL_NOT_FOUND_VLM_DFN");
-        tmpMap.put(FAIL_NOT_FOUND_VLM, "FAIL_NOT_FOUND_VLM");
-        tmpMap.put(FAIL_NOT_FOUND_NET_IF, "FAIL_NOT_FOUND_NET_IF");
-        tmpMap.put(FAIL_NOT_FOUND_NODE_CONN, "FAIL_NOT_FOUND_NODE_CONN");
-        tmpMap.put(FAIL_NOT_FOUND_RSC_CONN, "FAIL_NOT_FOUND_RSC_CONN");
-        tmpMap.put(FAIL_NOT_FOUND_VLM_CONN, "FAIL_NOT_FOUND_VLM_CONN");
-        tmpMap.put(FAIL_NOT_FOUND_STOR_POOL_DFN, "FAIL_NOT_FOUND_STOR_POOL_DFN");
-        tmpMap.put(FAIL_NOT_FOUND_STOR_POOL, "FAIL_NOT_FOUND_STOR_POOL");
-        tmpMap.put(FAIL_NOT_FOUND_DFLT_STOR_POOL, "FAIL_NOT_FOUND_DFLT_STOR_POOL");
-        tmpMap.put(FAIL_ACC_DENIED_NODE, "FAIL_ACC_DENIED_NODE");
-        tmpMap.put(FAIL_ACC_DENIED_RSC_DFN, "FAIL_ACC_DENIED_RSC_DFN");
-        tmpMap.put(FAIL_ACC_DENIED_RSC, "FAIL_ACC_DENIED_RSC");
-        tmpMap.put(FAIL_ACC_DENIED_VLM_DFN, "FAIL_ACC_DENIED_VLM_DFN");
-        tmpMap.put(FAIL_ACC_DENIED_VLM, "FAIL_ACC_DENIED_VLM");
-        tmpMap.put(FAIL_ACC_DENIED_STOR_POOL_DFN, "FAIL_ACC_DENIED_STOR_POOL_DFN");
-        tmpMap.put(FAIL_ACC_DENIED_STOR_POOL, "FAIL_ACC_DENIED_STOR_POOL");
-        tmpMap.put(FAIL_ACC_DENIED_NODE_CONN, "FAIL_ACC_DENIED_NODE_CONN");
-        tmpMap.put(FAIL_ACC_DENIED_RSC_CONN, "FAIL_ACC_DENIED_RSC_CONN");
-        tmpMap.put(FAIL_ACC_DENIED_VLM_CONN, "FAIL_ACC_DENIED_VLM_CONN");
-        tmpMap.put(FAIL_ACC_DENIED_STLT_CONN, "FAIL_ACC_DENIED_STLT_CONN");
-        tmpMap.put(FAIL_EXISTS_NODE, "FAIL_EXISTS_NODE");
-        tmpMap.put(FAIL_EXISTS_RSC_DFN, "FAIL_EXISTS_RSC_DFN");
-        tmpMap.put(FAIL_EXISTS_RSC, "FAIL_EXISTS_RSC");
-        tmpMap.put(FAIL_EXISTS_VLM_DFN, "FAIL_EXISTS_VLM_DFN");
-        tmpMap.put(FAIL_EXISTS_VLM, "FAIL_EXISTS_VLM");
-        tmpMap.put(FAIL_EXISTS_NET_IF, "FAIL_EXISTS_NET_IF");
-        tmpMap.put(FAIL_EXISTS_NODE_CONN, "FAIL_EXISTS_NODE_CONN");
-        tmpMap.put(FAIL_EXISTS_RSC_CONN, "FAIL_EXISTS_RSC_CONN");
-        tmpMap.put(FAIL_EXISTS_VLM_CONN, "FAIL_EXISTS_VLM_CONN");
-        tmpMap.put(FAIL_EXISTS_STOR_POOL_DFN, "FAIL_EXISTS_STOR_POOL_DFN");
-        tmpMap.put(FAIL_EXISTS_STOR_POOL, "FAIL_EXISTS_STOR_POOL");
-        tmpMap.put(FAIL_MISSING_PROPS, "FAIL_MISSING_PROPS");
-        tmpMap.put(FAIL_MISSING_PROPS_NETCOM_TYPE, "FAIL_MISSING_PROPS_NETCOM_TYPE");
-        tmpMap.put(FAIL_MISSING_PROPS_NETCOM_PORT, "FAIL_MISSING_PROPS_NETCOM_PORT");
-        tmpMap.put(FAIL_MISSING_NETCOM, "FAIL_MISSING_NETCOM");
-        tmpMap.put(FAIL_MISSING_PROPS_NETIF_NAME, "FAIL_MISSING_PROPS_NETIF_NAME");
-        tmpMap.put(FAIL_MISSING_STLT_CONN, "FAIL_MISSING_STLT_CONN");
-        tmpMap.put(FAIL_UUID_NODE, "FAIL_UUID_NODE");
-        tmpMap.put(FAIL_UUID_RSC_DFN, "FAIL_UUID_RSC_DFN");
-        tmpMap.put(FAIL_UUID_RSC, "FAIL_UUID_RSC");
-        tmpMap.put(FAIL_UUID_VLM_DFN, "FAIL_UUID_VLM_DFN");
-        tmpMap.put(FAIL_UUID_VLM, "FAIL_UUID_VLM");
-        tmpMap.put(FAIL_UUID_NET_IF, "FAIL_UUID_NET_IF");
-        tmpMap.put(FAIL_UUID_NODE_CONN, "FAIL_UUID_NODE_CONN");
-        tmpMap.put(FAIL_UUID_RSC_CONN, "FAIL_UUID_RSC_CONN");
-        tmpMap.put(FAIL_UUID_VLM_CONN, "FAIL_UUID_VLM_CONN");
-        tmpMap.put(FAIL_UUID_STOR_POOL_DFN, "FAIL_UUID_STOR_POOL_DFN");
-        tmpMap.put(FAIL_UUID_STOR_POOL, "FAIL_UUID_STOR_POOL");
-        tmpMap.put(FAIL_IN_USE, "FAIL_IN_USE");
-        tmpMap.put(FAIL_UNKNOWN_ERROR, "FAIL_UNKNOWN_ERROR");
-        tmpMap.put(FAIL_IMPL_ERROR, "FAIL_IMPL_ERROR");
-        tmpMap.put(WARN_INVLD_OPT_PROP_NETCOM_ENABLED, "WARN_INVLD_OPT_PROP_NETCOM_ENABLED");
-        tmpMap.put(WARN_NOT_CONNECTED, "WARN_NOT_CONNECTED");
-        tmpMap.put(WARN_NOT_FOUND, "WARN_NOT_FOUND");
+        tmpMap.put(ApiConsts.FAIL_SQL, "FAIL_SQL");
+        tmpMap.put(ApiConsts.FAIL_SQL_ROLLBACK, "FAIL_SQL_ROLLBACK");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NODE_NAME, "FAIL_INVLD_NODE_NAME");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NODE_TYPE, "FAIL_INVLD_NODE_TYPE");
+        tmpMap.put(ApiConsts.FAIL_INVLD_RSC_NAME, "FAIL_INVLD_RSC_NAME");
+        tmpMap.put(ApiConsts.FAIL_INVLD_RSC_PORT, "FAIL_INVLD_RSC_PORT");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NODE_ID, "FAIL_INVLD_NODE_ID");
+        tmpMap.put(ApiConsts.FAIL_INVLD_VLM_NR, "FAIL_INVLD_VLM_NR");
+        tmpMap.put(ApiConsts.FAIL_INVLD_VLM_SIZE, "FAIL_INVLD_VLM_SIZE");
+        tmpMap.put(ApiConsts.FAIL_INVLD_MINOR_NR, "FAIL_INVLD_MINOR_NR");
+        tmpMap.put(ApiConsts.FAIL_INVLD_STOR_POOL_NAME, "FAIL_INVLD_STOR_POOL_NAME");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NET_NAME, "FAIL_INVLD_NET_NAME");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NET_ADDR, "FAIL_INVLD_NET_ADDR");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NET_PORT, "FAIL_INVLD_NET_PORT");
+        tmpMap.put(ApiConsts.FAIL_INVLD_NET_TYPE, "FAIL_INVLD_NET_TYPE");
+        tmpMap.put(ApiConsts.FAIL_INVLD_PROP, "FAIL_INVLD_PROP");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_NODE, "FAIL_NOT_FOUND_NODE");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "FAIL_NOT_FOUND_RSC_DFN");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_RSC, "FAIL_NOT_FOUND_RSC");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_VLM_DFN, "FAIL_NOT_FOUND_VLM_DFN");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_VLM, "FAIL_NOT_FOUND_VLM");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_NET_IF, "FAIL_NOT_FOUND_NET_IF");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_NODE_CONN, "FAIL_NOT_FOUND_NODE_CONN");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_RSC_CONN, "FAIL_NOT_FOUND_RSC_CONN");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_VLM_CONN, "FAIL_NOT_FOUND_VLM_CONN");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN, "FAIL_NOT_FOUND_STOR_POOL_DFN");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_STOR_POOL, "FAIL_NOT_FOUND_STOR_POOL");
+        tmpMap.put(ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL, "FAIL_NOT_FOUND_DFLT_STOR_POOL");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_NODE, "FAIL_ACC_DENIED_NODE");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_RSC_DFN, "FAIL_ACC_DENIED_RSC_DFN");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_RSC, "FAIL_ACC_DENIED_RSC");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_VLM_DFN, "FAIL_ACC_DENIED_VLM_DFN");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_VLM, "FAIL_ACC_DENIED_VLM");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN, "FAIL_ACC_DENIED_STOR_POOL_DFN");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_STOR_POOL, "FAIL_ACC_DENIED_STOR_POOL");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_NODE_CONN, "FAIL_ACC_DENIED_NODE_CONN");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_RSC_CONN, "FAIL_ACC_DENIED_RSC_CONN");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_VLM_CONN, "FAIL_ACC_DENIED_VLM_CONN");
+        tmpMap.put(ApiConsts.FAIL_ACC_DENIED_STLT_CONN, "FAIL_ACC_DENIED_STLT_CONN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_NODE, "FAIL_EXISTS_NODE");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_RSC_DFN, "FAIL_EXISTS_RSC_DFN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_RSC, "FAIL_EXISTS_RSC");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_VLM_DFN, "FAIL_EXISTS_VLM_DFN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_VLM, "FAIL_EXISTS_VLM");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_NET_IF, "FAIL_EXISTS_NET_IF");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_NODE_CONN, "FAIL_EXISTS_NODE_CONN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_RSC_CONN, "FAIL_EXISTS_RSC_CONN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_VLM_CONN, "FAIL_EXISTS_VLM_CONN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_STOR_POOL_DFN, "FAIL_EXISTS_STOR_POOL_DFN");
+        tmpMap.put(ApiConsts.FAIL_EXISTS_STOR_POOL, "FAIL_EXISTS_STOR_POOL");
+        tmpMap.put(ApiConsts.FAIL_MISSING_PROPS, "FAIL_MISSING_PROPS");
+        tmpMap.put(ApiConsts.FAIL_MISSING_PROPS_NETCOM_TYPE, "FAIL_MISSING_PROPS_NETCOM_TYPE");
+        tmpMap.put(ApiConsts.FAIL_MISSING_PROPS_NETCOM_PORT, "FAIL_MISSING_PROPS_NETCOM_PORT");
+        tmpMap.put(ApiConsts.FAIL_MISSING_NETCOM, "FAIL_MISSING_NETCOM");
+        tmpMap.put(ApiConsts.FAIL_MISSING_PROPS_NETIF_NAME, "FAIL_MISSING_PROPS_NETIF_NAME");
+        tmpMap.put(ApiConsts.FAIL_MISSING_STLT_CONN, "FAIL_MISSING_STLT_CONN");
+        tmpMap.put(ApiConsts.FAIL_UUID_NODE, "FAIL_UUID_NODE");
+        tmpMap.put(ApiConsts.FAIL_UUID_RSC_DFN, "FAIL_UUID_RSC_DFN");
+        tmpMap.put(ApiConsts.FAIL_UUID_RSC, "FAIL_UUID_RSC");
+        tmpMap.put(ApiConsts.FAIL_UUID_VLM_DFN, "FAIL_UUID_VLM_DFN");
+        tmpMap.put(ApiConsts.FAIL_UUID_VLM, "FAIL_UUID_VLM");
+        tmpMap.put(ApiConsts.FAIL_UUID_NET_IF, "FAIL_UUID_NET_IF");
+        tmpMap.put(ApiConsts.FAIL_UUID_NODE_CONN, "FAIL_UUID_NODE_CONN");
+        tmpMap.put(ApiConsts.FAIL_UUID_RSC_CONN, "FAIL_UUID_RSC_CONN");
+        tmpMap.put(ApiConsts.FAIL_UUID_VLM_CONN, "FAIL_UUID_VLM_CONN");
+        tmpMap.put(ApiConsts.FAIL_UUID_STOR_POOL_DFN, "FAIL_UUID_STOR_POOL_DFN");
+        tmpMap.put(ApiConsts.FAIL_UUID_STOR_POOL, "FAIL_UUID_STOR_POOL");
+        tmpMap.put(ApiConsts.FAIL_IN_USE, "FAIL_IN_USE");
+        tmpMap.put(ApiConsts.FAIL_UNKNOWN_ERROR, "FAIL_UNKNOWN_ERROR");
+        tmpMap.put(ApiConsts.FAIL_IMPL_ERROR, "FAIL_IMPL_ERROR");
+        tmpMap.put(ApiConsts.WARN_INVLD_OPT_PROP_NETCOM_ENABLED, "WARN_INVLD_OPT_PROP_NETCOM_ENABLED");
+        tmpMap.put(ApiConsts.WARN_NOT_CONNECTED, "WARN_NOT_CONNECTED");
+        tmpMap.put(ApiConsts.WARN_NOT_FOUND, "WARN_NOT_FOUND");
         RET_CODES_ACTION = Collections.unmodifiableMap(tmpMap);
     }
 
@@ -497,7 +495,7 @@ public class ClientProtobuf implements Runnable
     {
         synchronized (callbackLock)
         {
-            if ((retCode & MASK_ERROR) == MASK_ERROR)
+            if ((retCode & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
             {
                 for (MessageCallback cb : callbacks)
                 {
@@ -505,7 +503,7 @@ public class ClientProtobuf implements Runnable
                 }
             }
             else
-            if ((retCode & MASK_WARN) == MASK_WARN)
+            if ((retCode & ApiConsts.MASK_WARN) == ApiConsts.MASK_WARN)
             {
                 for (MessageCallback cb : callbacks)
                 {
@@ -513,7 +511,7 @@ public class ClientProtobuf implements Runnable
                 }
             }
             else
-            if ((retCode & MASK_INFO) == MASK_INFO)
+            if ((retCode & ApiConsts.MASK_INFO) == ApiConsts.MASK_INFO)
             {
                 for (MessageCallback cb : callbacks)
                 {
@@ -537,17 +535,17 @@ public class ClientProtobuf implements Runnable
 
     private void decodeRetValue(StringBuilder sb, long retCode)
     {
-        if ((retCode & MASK_ERROR) == MASK_ERROR)
+        if ((retCode & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
         {
             errorCount++;
         }
         else
-        if ((retCode & MASK_WARN) == MASK_WARN)
+        if ((retCode & ApiConsts.MASK_WARN) == ApiConsts.MASK_WARN)
         {
             warnCount++;
         }
         else
-        if ((retCode & MASK_INFO) == MASK_INFO)
+        if ((retCode & ApiConsts.MASK_INFO) == ApiConsts.MASK_INFO)
         {
             infoCount++;
         }
@@ -599,7 +597,7 @@ public class ClientProtobuf implements Runnable
     public int sendPing() throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        send(msgId, API_PING, null);
+        send(msgId, ApiConsts.API_PING, null);
         return msgId;
     }
 
@@ -653,7 +651,7 @@ public class ClientProtobuf implements Runnable
 
         send(
             msgId,
-            API_CRT_NODE,
+            ApiConsts.API_CRT_NODE,
             msgCrtNodeBuilder.build()
         );
         return msgId;
@@ -690,7 +688,7 @@ public class ClientProtobuf implements Runnable
 
         send(
             msgId,
-            API_MOD_NODE,
+            ApiConsts.API_MOD_NODE,
             msgBuilder.build()
         );
         return msgId;
@@ -701,7 +699,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_NODE,
+            ApiConsts.API_DEL_NODE,
             MsgDelNode.newBuilder().
                 setNodeName(nodeName).
                 build()
@@ -740,7 +738,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_CRT_RSC_DFN,
+            ApiConsts.API_CRT_RSC_DFN,
             MsgCrtRscDfn.newBuilder().setRscDfn(
                 rscDfnBuilder.build()
             ).build()
@@ -778,7 +776,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_RSC_DFN,
+            ApiConsts.API_MOD_RSC_DFN,
             msgBuilder.build()
         );
         return msgId;
@@ -789,7 +787,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_RSC_DFN,
+            ApiConsts.API_DEL_RSC_DFN,
             MsgDelRscDfn.newBuilder().
                 setRscName(resName).
                 build()
@@ -806,7 +804,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_CRT_STOR_POOL_DFN,
+            ApiConsts.API_CRT_STOR_POOL_DFN,
             MsgCrtStorPoolDfn.newBuilder()
                 .setStorPoolDfn(
                     StorPoolDfn.newBuilder()
@@ -843,7 +841,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_STOR_POOL_DFN,
+            ApiConsts.API_MOD_STOR_POOL_DFN,
             builder.build()
         );
         return msgId;
@@ -854,7 +852,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_STOR_POOL_DFN,
+            ApiConsts.API_DEL_STOR_POOL_DFN,
             MsgDelStorPoolDfn.newBuilder().
                 setStorPoolName(storPoolName).
                 build()
@@ -871,7 +869,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_CRT_STOR_POOL,
+            ApiConsts.API_CRT_STOR_POOL,
             MsgCrtStorPool.newBuilder().
                 setStorPool(
                     StorPool.newBuilder()
@@ -915,7 +913,7 @@ public class ClientProtobuf implements Runnable
 
         send(
             msgId,
-            API_MOD_STOR_POOL,
+            ApiConsts.API_MOD_STOR_POOL,
             builder.build()
         );
         return msgId;
@@ -927,7 +925,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_STOR_POOL,
+            ApiConsts.API_DEL_STOR_POOL,
             MsgDelStorPool.newBuilder().
                 setNodeName(nodeName).
                 setStorPoolName(storPoolName).
@@ -977,7 +975,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_CRT_RSC,
+            ApiConsts.API_CRT_RSC,
             MsgCrtRsc.newBuilder()
                 .setRsc(
                     rscBuilder.build()
@@ -1015,7 +1013,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_RSC,
+            ApiConsts.API_MOD_RSC,
             builder.build()
         );
         return msgId;
@@ -1026,7 +1024,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_RSC,
+            ApiConsts.API_DEL_RSC,
             MsgDelRsc.newBuilder().
                 setNodeName(nodeName).
                 setRscName(resName).
@@ -1044,7 +1042,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_CRT_VLM_DFN,
+            ApiConsts.API_CRT_VLM_DFN,
             MsgCrtVlmDfn.newBuilder()
                 .setRscName(rscName)
                 .addAllVlmDfns(vlmDfns)
@@ -1091,7 +1089,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_VLM_DFN,
+            ApiConsts.API_MOD_VLM_DFN,
             builder.build()
         );
         return msgId;
@@ -1115,7 +1113,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_DEL_VLM_DFN,
+            ApiConsts.API_DEL_VLM_DFN,
             builder.build()
         );
         return msgId;
@@ -1138,7 +1136,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_CRT_NODE_CONN,
+            ApiConsts.API_CRT_NODE_CONN,
             MsgCrtNodeConn.newBuilder()
                 .setNodeConn(
                     msgBuilder.build()
@@ -1176,7 +1174,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_NODE_CONN,
+            ApiConsts.API_MOD_NODE_CONN,
             builder.build()
         );
         return msgId;
@@ -1188,7 +1186,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_NODE_CONN,
+            ApiConsts.API_DEL_NODE_CONN,
             MsgDelNodeConn.newBuilder().
                 setNodeName1(nodeName1).
                 setNodeName2(nodeName2).
@@ -1215,7 +1213,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_CRT_RSC_CONN,
+            ApiConsts.API_CRT_RSC_CONN,
             MsgCrtRscConn.newBuilder()
                 .setRscConn(
                     msgBuilder.build()
@@ -1255,7 +1253,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_RSC_CONN,
+            ApiConsts.API_MOD_RSC_CONN,
             builder.build()
         );
         return msgId;
@@ -1267,7 +1265,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_RSC_CONN,
+            ApiConsts.API_DEL_RSC_CONN,
             MsgDelRscConn.newBuilder().
                 setNodeName1(nodeName1).
                 setNodeName2(NodeName2).
@@ -1302,7 +1300,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_CRT_VLM_CONN,
+            ApiConsts.API_CRT_VLM_CONN,
             MsgCrtVlmConn.newBuilder()
                 .setVlmConn(
                     msgBuilder.build()
@@ -1344,7 +1342,7 @@ public class ClientProtobuf implements Runnable
         }
         send(
             msgId,
-            API_MOD_VLM_CONN,
+            ApiConsts.API_MOD_VLM_CONN,
             builder.build()
         );
         return msgId;
@@ -1356,7 +1354,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
-            API_DEL_VLM_CONN,
+            ApiConsts.API_DEL_VLM_CONN,
             MsgDelVlmConn.newBuilder().
                 setNodeName1(nodeName1).
                 setNodeName2(NodeName2).

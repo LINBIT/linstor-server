@@ -1,7 +1,5 @@
 package com.linbit.utils;
 
-import java.util.Arrays;
-
 public class Base64
 {
 

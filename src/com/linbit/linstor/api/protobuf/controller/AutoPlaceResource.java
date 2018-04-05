@@ -2,11 +2,8 @@ package com.linbit.linstor.api.protobuf.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.inject.Inject;
-import com.google.protobuf.ProtocolStringList;
 
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;

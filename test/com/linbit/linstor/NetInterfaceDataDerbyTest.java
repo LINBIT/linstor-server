@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.security.DerbyBase;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 

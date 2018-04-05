@@ -1,6 +1,16 @@
 package com.linbit.linstor.netcom;
 
-import com.linbit.*;
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
+import static java.nio.channels.SelectionKey.OP_CONNECT;
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+
+import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
+import com.linbit.SystemServiceStartException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection;
@@ -29,8 +39,6 @@ import java.nio.channels.NotYetBoundException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-
-import static java.nio.channels.SelectionKey.*;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;

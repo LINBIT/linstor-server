@@ -4,8 +4,8 @@ import static com.linbit.linstor.security.AccessType.CHANGE;
 import static com.linbit.linstor.security.AccessType.CONTROL;
 import static com.linbit.linstor.security.AccessType.USE;
 import static com.linbit.linstor.security.AccessType.VIEW;
-import static com.linbit.linstor.security.Privilege.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.linbit.ImplementationError;
 
@@ -32,7 +32,7 @@ public class AccessControlListTest
             new PrivilegeSet(Privilege.PRIV_SYS_ALL)
             );
         rootCtx = sysCtx.clone();
-        rootCtx.privEffective.enablePrivileges(PRIVILEGE_LIST);
+        rootCtx.privEffective.enablePrivileges(Privilege.PRIVILEGE_LIST);
 
         userId = new Identity(new IdentityName("User"));
 
@@ -59,16 +59,16 @@ public class AccessControlListTest
             switch (requestedAt)
             {
                 case VIEW:
-                    expectException &= !accCtx.privEffective.hasPrivileges(PRIV_OBJ_VIEW);
+                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_VIEW);
                     break;
                 case USE:
-                    expectException &= !accCtx.privEffective.hasPrivileges(PRIV_OBJ_USE);
+                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_USE);
                     break;
                 case CHANGE:
-                    expectException &= !accCtx.privEffective.hasPrivileges(PRIV_OBJ_CHANGE);
+                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_CHANGE);
                     break;
                 case CONTROL:
-                    expectException &= !accCtx.privEffective.hasPrivileges(PRIV_OBJ_CONTROL);
+                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_CONTROL);
                     break;
                 default:
                     throw new ImplementationError(
@@ -164,10 +164,13 @@ public class AccessControlListTest
                     // AccessContext
                     {true, false},  // has PRIV_MAC_OVRD
                     {
-                        0L, PRIV_OBJ_VIEW.id,                   //
-                        PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id,    // privileges.... :)
-                        PRIV_OBJ_CONTROL.id, PRIV_OBJ_OWNER.id, //
-                        PRIV_SYS_ALL.id                         //
+                        0L,
+                        Privilege.PRIV_OBJ_VIEW.id,     //
+                        Privilege.PRIV_OBJ_USE.id,      //
+                        Privilege.PRIV_OBJ_CHANGE.id,   //
+                        Privilege.PRIV_OBJ_CONTROL.id,  // privileges.... :)
+                        Privilege.PRIV_OBJ_OWNER.id,    //
+                        Privilege.PRIV_SYS_ALL.id       //
                     },
                     {VIEW, USE, CHANGE, CONTROL},       // requested AccessType
                     {null, VIEW, USE, CHANGE, CONTROL}, // granted AccessContext
@@ -188,7 +191,7 @@ public class AccessControlListTest
 
             if (hasPrivMacOvrd)
             {
-                privs |= PRIV_MAC_OVRD.id;
+                privs |= Privilege.PRIV_MAC_OVRD.id;
             }
 
             PrivilegeSet privLimit = new PrivilegeSet(privs);

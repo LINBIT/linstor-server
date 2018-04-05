@@ -1,14 +1,13 @@
 package com.linbit.linstor.drbdstate;
 
+import static org.junit.Assert.fail;
+
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static com.linbit.linstor.drbdstate.StateTracker.*;
-import static org.junit.Assert.*;
 
 /**
  * Test of the DRBD resource observers
@@ -45,7 +44,7 @@ public class StateTrackerTest
     public void testObserveResCreate() throws ValueOutOfRangeException
     {
         resObs.expect(StateTracker.OBS_RES_CRT);
-        tracker.addObserver(resObs, OBS_RES_CRT);
+        tracker.addObserver(resObs, StateTracker.OBS_RES_CRT);
 
         // Should trigger the ResourceObserver
         // FIXME: dummy DrbdResource instance?
@@ -65,7 +64,7 @@ public class StateTrackerTest
     public void testObserveResDestroy()
     {
         resObs.expect(StateTracker.OBS_RES_DSTR);
-        tracker.addObserver(resObs, OBS_RES_DSTR);
+        tracker.addObserver(resObs, StateTracker.OBS_RES_DSTR);
 
         // Should not trigger the ResourceObserver
         mux.resourceCreated(null);
@@ -83,7 +82,8 @@ public class StateTrackerTest
     {
         tracker.addObserver(
             resObs,
-            OBS_VOL_CRT | OBS_VOL_DSTR | OBS_MINOR | OBS_DISK | OBS_REPL
+            StateTracker.OBS_VOL_CRT | StateTracker.OBS_VOL_DSTR |
+            StateTracker.OBS_MINOR | StateTracker.OBS_DISK | StateTracker.OBS_REPL
         );
 
         resObs.expect(StateTracker.OBS_MINOR);
@@ -111,18 +111,21 @@ public class StateTrackerTest
     @Test
     public void testObserveConnEvents()
     {
-        tracker.addObserver(resObs, OBS_CONN | OBS_CONN_CRT | OBS_CONN_DSTR);
+        tracker.addObserver(
+            resObs,
+            StateTracker.OBS_CONN | StateTracker.OBS_CONN_CRT | StateTracker.OBS_CONN_DSTR
+        );
 
         // Should not trigger the ResourceObserver
         mux.roleChanged(null, DrbdResource.Role.PRIMARY, DrbdResource.Role.SECONDARY);
 
 
-        resObs.expect(OBS_CONN_CRT);
+        resObs.expect(StateTracker.OBS_CONN_CRT);
         // Should trigger the ResourceObserver
         mux.connectionCreated(null, null);
         resObs.assertTriggered();
 
-        resObs.expect(OBS_CONN);
+        resObs.expect(StateTracker.OBS_CONN);
         // Should trigger the ResourceObserver
         mux.connectionStateChanged(
             null, null,
@@ -130,7 +133,7 @@ public class StateTrackerTest
         );
         resObs.assertTriggered();
 
-        resObs.expect(OBS_CONN_DSTR);
+        resObs.expect(StateTracker.OBS_CONN_DSTR);
         // Should trigger the ResourceObserver
         mux.connectionDestroyed(null, null);
         resObs.assertTriggered();
@@ -141,17 +144,17 @@ public class StateTrackerTest
     @Test
     public void testObserveAllEvents()
     {
-        tracker.addObserver(resObs, OBS_ALL);
+        tracker.addObserver(resObs, StateTracker.OBS_ALL);
 
-        resObs.expect(OBS_ROLE);
+        resObs.expect(StateTracker.OBS_ROLE);
         mux.roleChanged(null, DrbdResource.Role.UNKNOWN, DrbdResource.Role.PRIMARY);
         resObs.assertTriggered();
 
-        resObs.expect(OBS_PEER_ROLE);
+        resObs.expect(StateTracker.OBS_PEER_ROLE);
         mux.peerRoleChanged(null, null, DrbdResource.Role.PRIMARY, DrbdResource.Role.UNKNOWN);
         resObs.assertTriggered();
 
-        resObs.expect(OBS_RES_DSTR);
+        resObs.expect(StateTracker.OBS_RES_DSTR);
         mux.resourceDestroyed(null);
         resObs.assertTriggered();
 
@@ -189,62 +192,62 @@ public class StateTrackerTest
             String label = "<NO_EVENT>";
 
             // Using an if-chain, because switch (variable) does not support type long
-            if (eventId == OBS_RES_CRT)
+            if (eventId == StateTracker.OBS_RES_CRT)
             {
                     label = "OBS_RES_CRT";
             }
             else
-            if (eventId == OBS_RES_DSTR)
+            if (eventId == StateTracker.OBS_RES_DSTR)
             {
                     label = "OBS_RES_DSTR";
             }
             else
-            if (eventId == OBS_ROLE)
+            if (eventId == StateTracker.OBS_ROLE)
             {
                     label = "OBS_ROLE";
             }
             else
-            if (eventId == OBS_PEER_ROLE)
+            if (eventId == StateTracker.OBS_PEER_ROLE)
             {
                     label = "OBS_PEER_ROLE";
             }
             else
-            if (eventId == OBS_VOL_CRT)
+            if (eventId == StateTracker.OBS_VOL_CRT)
             {
                     label = "OBS_VOL_CRT";
             }
             else
-            if (eventId == OBS_VOL_DSTR)
+            if (eventId == StateTracker.OBS_VOL_DSTR)
             {
                     label = "OBS_VOL_DSTR";
             }
             else
-            if (eventId == OBS_MINOR)
+            if (eventId == StateTracker.OBS_MINOR)
             {
                     label = "OBS_MINOR";
             }
             else
-            if (eventId == OBS_DISK)
+            if (eventId == StateTracker.OBS_DISK)
             {
                     label = "OBS_DISK";
             }
             else
-            if (eventId == OBS_REPL)
+            if (eventId == StateTracker.OBS_REPL)
             {
                     label = "OBS_REPL";
             }
             else
-            if (eventId == OBS_CONN_CRT)
+            if (eventId == StateTracker.OBS_CONN_CRT)
             {
                     label = "OBS_CONN_CRT";
             }
             else
-            if (eventId == OBS_CONN_DSTR)
+            if (eventId == StateTracker.OBS_CONN_DSTR)
             {
                     label = "OBS_CONN_DSTR";
             }
             else
-            if (eventId == OBS_CONN)
+            if (eventId == StateTracker.OBS_CONN)
             {
                     label = "OBS_CONN";
             }

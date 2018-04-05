@@ -5,7 +5,8 @@ import static com.linbit.linstor.security.AccessType.CONTROL;
 import static com.linbit.linstor.security.AccessType.USE;
 import static com.linbit.linstor.security.AccessType.VIEW;
 import static com.linbit.linstor.security.Privilege.PRIVILEGE_LIST;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;

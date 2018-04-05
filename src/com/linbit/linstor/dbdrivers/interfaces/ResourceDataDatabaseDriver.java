@@ -3,7 +3,6 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import java.sql.SQLException;
 
 import com.linbit.linstor.Node;
-import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;

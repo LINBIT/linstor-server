@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import java.io.IOException;
-import java.util.Map;
 
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiConsts;

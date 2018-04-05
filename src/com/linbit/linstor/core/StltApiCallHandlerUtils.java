@@ -12,7 +12,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;

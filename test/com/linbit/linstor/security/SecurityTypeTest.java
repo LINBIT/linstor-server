@@ -1,11 +1,14 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.security.Privilege.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.linbit.InvalidNameException;
 import org.junit.Before;
 import org.junit.Test;
-import com.linbit.InvalidNameException;
 
 public class SecurityTypeTest
 {
@@ -29,7 +32,7 @@ public class SecurityTypeTest
             new PrivilegeSet(Privilege.PRIV_SYS_ALL)
             );
         rootCtx = sysCtx.clone();
-        rootCtx.privEffective.enablePrivileges(PRIVILEGE_LIST);
+        rootCtx.privEffective.enablePrivileges(Privilege.PRIVILEGE_LIST);
 
         userId = new Identity(new IdentityName("User"));
 
@@ -53,7 +56,7 @@ public class SecurityTypeTest
             AccessType grantedAccess = iteration.requestingAccessType;
 
             boolean expectedException = !SecurityLevel.get().equals(SecurityLevel.NO_SECURITY) &&
-                !accCtx.privEffective.hasPrivileges(PRIV_SYS_ALL);
+                !accCtx.privEffective.hasPrivileges(Privilege.PRIV_SYS_ALL);
 
             AccessType origAccessType = sourceDomain.getRule(targetDomain);
 
@@ -92,7 +95,7 @@ public class SecurityTypeTest
             sourceDomain.addRule(rootCtx, targetDomain, accessType);
 
             boolean expectedException = !SecurityLevel.get().equals(SecurityLevel.NO_SECURITY) &&
-                !accCtx.privEffective.hasPrivileges(PRIV_SYS_ALL);
+                !accCtx.privEffective.hasPrivileges(Privilege.PRIV_SYS_ALL);
 
             if (expectedException)
             {
@@ -143,7 +146,7 @@ public class SecurityTypeTest
                 (grantedAT != null && requestedAT.hasAccess(grantedAT));
 
             boolean expectException = SecurityLevel.get().equals(SecurityLevel.MAC) &&
-                !ruleGrantsAccess && !accCtx.privEffective.hasPrivileges(PRIV_MAC_OVRD);
+                !ruleGrantsAccess && !accCtx.privEffective.hasPrivileges(Privilege.PRIV_MAC_OVRD);
 
             if (expectException)
             {
@@ -244,10 +247,13 @@ public class SecurityTypeTest
             super(new Object[][]
                 {
                     {
-                        0L, PRIV_OBJ_VIEW.id,                   //
-                        PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id,    // privileges.... :)
-                        PRIV_OBJ_CONTROL.id, PRIV_OBJ_OWNER.id, //
-                        PRIV_SYS_ALL.id                         //
+                        0L,
+                        Privilege.PRIV_OBJ_VIEW.id,     //
+                        Privilege.PRIV_OBJ_USE.id,      //
+                        Privilege.PRIV_OBJ_CHANGE.id,   //
+                        Privilege.PRIV_OBJ_CONTROL.id,  // privileges.... :)
+                        Privilege.PRIV_OBJ_OWNER.id,    //
+                        Privilege.PRIV_SYS_ALL.id       //
                     },
                     {true, false},                            // has PRIV_MAC_OVRD
                     {userSecDomain, someOtherUserSecDomain},  // source domain
@@ -276,7 +282,7 @@ public class SecurityTypeTest
         protected SecTypeIteration getNext() throws Exception
         {
             long privLimit = getValue(IDX_PRIVS);
-            privLimit |= this.<Boolean>getValue(IDX_PRIV_MAC_OVRD) ? PRIV_MAC_OVRD.id : 0;
+            privLimit |= this.<Boolean>getValue(IDX_PRIV_MAC_OVRD) ? Privilege.PRIV_MAC_OVRD.id : 0;
             AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, new PrivilegeSet(privLimit));
 
             SecTypeIteration iteration = new SecTypeIteration();

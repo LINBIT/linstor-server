@@ -1,11 +1,12 @@
 package com.linbit;
 
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Number allocation algorithm tests

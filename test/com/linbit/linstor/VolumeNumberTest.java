@@ -1,10 +1,11 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.fail;
+
 import com.linbit.ValueOutOfRangeException;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;

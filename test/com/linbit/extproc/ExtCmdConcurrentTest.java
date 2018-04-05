@@ -1,5 +1,7 @@
 package com.linbit.extproc;
 
+import static org.junit.Assert.fail;
+
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -8,8 +10,6 @@ import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
 import java.io.IOException;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class ExtCmdConcurrentTest implements Runnable
 {

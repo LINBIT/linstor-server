@@ -12,7 +12,10 @@ import static com.linbit.linstor.security.Privilege.PRIV_OBJ_OWNER;
 import static com.linbit.linstor.security.Privilege.PRIV_OBJ_USE;
 import static com.linbit.linstor.security.Privilege.PRIV_OBJ_VIEW;
 import static com.linbit.linstor.security.Privilege.PRIV_SYS_ALL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
