@@ -192,11 +192,11 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     )
     {
         StorPoolDefinitionData data = null;
-        for (StorPoolDefinitionData storPoolDFn : listStorPoolDefs)
+        for (StorPoolDefinitionData storPoolDfn : listStorPoolDefs)
         {
-            if (storPoolDFn.getName().equals(spNameRef))
+            if (storPoolDfn.getName().equals(spNameRef))
             {
-                data = storPoolDFn;
+                data = storPoolDfn;
                 break;
             }
         }

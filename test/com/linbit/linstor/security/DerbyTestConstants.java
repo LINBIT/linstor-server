@@ -9,173 +9,173 @@ public interface DerbyTestConstants
     String VIEW_SEC_TYPE_RULES_LOAD = "SEC_TYPE_RULES_LOAD";
 
     // Table names
-    public static final String TBL_SEC_CONFIGURATION     = "SEC_CONFIGURATION";
-    public static final String TBL_SEC_IDENTITIES        = "SEC_IDENTITIES";
-    public static final String TBL_SEC_TYPES             = "SEC_TYPES";
-    public static final String TBL_SEC_ROLES             = "SEC_ROLES";
-    public static final String TBL_SEC_ID_ROLE_MAP       = "SEC_ID_ROLE_MAP";
-    public static final String TBL_SEC_ACCESS_TYPES      = "SEC_ACCESS_TYPES";
-    public static final String TBL_SEC_TYPE_RULES        = "SEC_TYPE_RULES";
-    public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
-    public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
-    public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
-    public static final String TBL_NODES                 = "NODES";
-    public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
-    public static final String TBL_SATELLITE_CONNECTIONS = "SATELLITE_CONNECTIONS";
-    public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
-    public static final String TBL_RESOURCES             = "RESOURCES";
-    public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
-    public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
-    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
-    public static final String TBL_VOLUMES               = "VOLUMES";
-    public static final String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
-    public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
-    public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
-    public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
+    String TBL_SEC_CONFIGURATION     = "SEC_CONFIGURATION";
+    String TBL_SEC_IDENTITIES        = "SEC_IDENTITIES";
+    String TBL_SEC_TYPES             = "SEC_TYPES";
+    String TBL_SEC_ROLES             = "SEC_ROLES";
+    String TBL_SEC_ID_ROLE_MAP       = "SEC_ID_ROLE_MAP";
+    String TBL_SEC_ACCESS_TYPES      = "SEC_ACCESS_TYPES";
+    String TBL_SEC_TYPE_RULES        = "SEC_TYPE_RULES";
+    String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
+    String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
+    String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
+    String TBL_NODES                 = "NODES";
+    String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    String TBL_SATELLITE_CONNECTIONS = "SATELLITE_CONNECTIONS";
+    String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
+    String TBL_RESOURCES             = "RESOURCES";
+    String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
+    String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    String TBL_VOLUMES               = "VOLUMES";
+    String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
+    String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
+    String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
+    String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
 
     // SEC_CONFIGURATION column names
-    public static final String ENTRY_KEY     = "ENTRY_KEY";
-    public static final String ENTRY_DSP_KEY = "ENTRY_DSP_KEY";
-    public static final String ENTRY_VALUE   = "ENTRY_VALUE";
+    String ENTRY_KEY     = "ENTRY_KEY";
+    String ENTRY_DSP_KEY = "ENTRY_DSP_KEY";
+    String ENTRY_VALUE   = "ENTRY_VALUE";
 
     // SEC_IDENTITIES column names
-    public static final String IDENTITY_NAME     = "IDENTITY_NAME";
-    public static final String IDENTITY_DSP_NAME = "IDENTITY_DSP_NAME";
-    public static final String PASS_SALT         = "PASS_SALT";
-    public static final String PASS_HASH         = "PASS_HASH";
-    public static final String ID_ENABLED        = "ID_ENABLED";
-    public static final String ID_LOCKED         = "ID_LOCKED";
+    String IDENTITY_NAME     = "IDENTITY_NAME";
+    String IDENTITY_DSP_NAME = "IDENTITY_DSP_NAME";
+    String PASS_SALT         = "PASS_SALT";
+    String PASS_HASH         = "PASS_HASH";
+    String ID_ENABLED        = "ID_ENABLED";
+    String ID_LOCKED         = "ID_LOCKED";
 
     // SEC_TYPES column names
-    public static final String TYPE_NAME     = "TYPE_NAME";
-    public static final String TYPE_DSP_NAME = "TYPE_DSP_NAME";
-    public static final String TYPE_ENABLED  = "TYPE_ENABLED";
+    String TYPE_NAME     = "TYPE_NAME";
+    String TYPE_DSP_NAME = "TYPE_DSP_NAME";
+    String TYPE_ENABLED  = "TYPE_ENABLED";
 
     // SEC_ROLES column names
-    public static final String ROLE_NAME       = "ROLE_NAME";
-    public static final String ROLE_DSP_NAME   = "ROLE_DSP_NAME";
-    public static final String DOMAIN_NAME     = "DOMAIN_NAME";
-    public static final String ROLE_ENABLED    = "ROLE_ENABLED";
-    public static final String ROLE_PRIVILEGES = "ROLE_PRIVILEGES";
+    String ROLE_NAME       = "ROLE_NAME";
+    String ROLE_DSP_NAME   = "ROLE_DSP_NAME";
+    String DOMAIN_NAME     = "DOMAIN_NAME";
+    String ROLE_ENABLED    = "ROLE_ENABLED";
+    String ROLE_PRIVILEGES = "ROLE_PRIVILEGES";
 
     // SEC_ACCESS_TYPES column names
-    public static final String ACCESS_TYPE_NAME  = "ACCESS_TYPE_NAME";
-    public static final String ACCESS_TYPE_VALUE = "ACCESS_TYPE_VALUE";
+    String ACCESS_TYPE_NAME  = "ACCESS_TYPE_NAME";
+    String ACCESS_TYPE_VALUE = "ACCESS_TYPE_VALUE";
 
     // SEC_TYPE_RULES column names
-    public static final String ACCESS_TYPE = "ACCESS_TYPE";
+    String ACCESS_TYPE = "ACCESS_TYPE";
 
     // SEC_OBJECT_PROTECTION column names
-    public static final String OBJECT_PATH           = "OBJECT_PATH";
-    public static final String CREATOR_IDENTITY_NAME = "CREATOR_IDENTITY_NAME";
-    public static final String OWNER_ROLE_NAME       = "OWNER_ROLE_NAME";
-    public static final String SECURITY_TYPE_NAME    = "SECURITY_TYPE_NAME";
+    String OBJECT_PATH           = "OBJECT_PATH";
+    String CREATOR_IDENTITY_NAME = "CREATOR_IDENTITY_NAME";
+    String OWNER_ROLE_NAME       = "OWNER_ROLE_NAME";
+    String SECURITY_TYPE_NAME    = "SECURITY_TYPE_NAME";
 
     // NODES column names
-    public static final String UUID          = "UUID";
-    public static final String NODE_NAME     = "NODE_NAME";
-    public static final String NODE_DSP_NAME = "NODE_DSP_NAME";
-    public static final String NODE_FLAGS    = "NODE_FLAGS";
-    public static final String NODE_TYPE     = "NODE_TYPE";
+    String UUID          = "UUID";
+    String NODE_NAME     = "NODE_NAME";
+    String NODE_DSP_NAME = "NODE_DSP_NAME";
+    String NODE_FLAGS    = "NODE_FLAGS";
+    String NODE_TYPE     = "NODE_TYPE";
 
     // NODE_NET_INTERFACES column names
-    public static final String NODE_NET_NAME     = "NODE_NET_NAME";
-    public static final String NODE_NET_DSP_NAME = "NODE_NET_DSP_NAME";
-    public static final String INET_ADDRESS      = "INET_ADDRESS";
+    String NODE_NET_NAME     = "NODE_NET_NAME";
+    String NODE_NET_DSP_NAME = "NODE_NET_DSP_NAME";
+    String INET_ADDRESS      = "INET_ADDRESS";
 
     // SATELLITE_CONNECTIONS column names
-    public static final String TCP_PORT      = "TCP_PORT";
-    public static final String INET_TYPE     = "INET_TYPE";
+    String TCP_PORT      = "TCP_PORT";
+    String INET_TYPE     = "INET_TYPE";
 
     // RESOURCE_DEFINITIONS column names
-    public static final String RESOURCE_NAME     = "RESOURCE_NAME";
-    public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
-    public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
-    public static final String SECRET            = "SECRET";
-    public static final String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
+    String RESOURCE_NAME     = "RESOURCE_NAME";
+    String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
+    String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
+    String SECRET            = "SECRET";
+    String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
 
     // RESOURCES column names
-    public static final String NODE_ID        = "NODE_ID";
+    String NODE_ID        = "NODE_ID";
 
     // STOR_POOL_DEFINITIONS column names
-    public static final String POOL_NAME     = "POOL_NAME";
-    public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
+    String POOL_NAME     = "POOL_NAME";
+    String POOL_DSP_NAME = "POOL_DSP_NAME";
 
     // NODE_STOR_POOL column names
-    public static final String DRIVER_NAME = "DRIVER_NAME";
+    String DRIVER_NAME = "DRIVER_NAME";
 
     // VOLUME_DEFINITIONS column names
-    public static final String VLM_NR        = "VLM_NR";
-    public static final String VLM_SIZE      = "VLM_SIZE";
-    public static final String VLM_MINOR_NR  = "VLM_MINOR_NR";
-    public static final String VLM_FLAGS     = "VLM_FLAGS";
+    String VLM_NR        = "VLM_NR";
+    String VLM_SIZE      = "VLM_SIZE";
+    String VLM_MINOR_NR  = "VLM_MINOR_NR";
+    String VLM_FLAGS     = "VLM_FLAGS";
 
     // VOLUMES column names
-    public static final String STOR_POOL_NAME    = "STOR_POOL_NAME";
-    public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
-    public static final String META_DISK_PATH    = "META_DISK_PATH";
+    String STOR_POOL_NAME    = "STOR_POOL_NAME";
+    String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
+    String META_DISK_PATH    = "META_DISK_PATH";
 
     // NODE_CONNECTIONS column names
-    public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
-    public static final String NODE_NAME_DST = "NODE_NAME_DST";
+    String NODE_NAME_SRC = "NODE_NAME_SRC";
+    String NODE_NAME_DST = "NODE_NAME_DST";
 
     // PROPS_CONTAINERS column names
-    public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
-    public static final String PROP_KEY       = "PROP_KEY";
-    public static final String PROP_VALUE     = "PROP_VALUE";
+    String PROPS_INSTANCE = "PROPS_INSTANCE";
+    String PROP_KEY       = "PROP_KEY";
+    String PROP_VALUE     = "PROP_VALUE";
 
     // table column counts
-    public static final int TBL_COL_COUNT_SEC_CONFIGURATION     = 3;
-    public static final int TBL_COL_COUNT_SEC_IDENTITIES        = 6;
-    public static final int TBL_COL_COUNT_SEC_TYPES             = 3;
-    public static final int TBL_COL_COUNT_SEC_ROLES             = 5;
-    public static final int TBL_COL_COUNT_SEC_ID_ROLE_MAP       = 2;
-    public static final int TBL_COL_COUNT_SEC_ACCESS_TYPES      = 2;
-    public static final int TBL_COL_COUNT_SEC_TYPE_RULES        = 3;
-    public static final int TBL_COL_COUNT_SEC_DFLT_ROLES        = 2;
-    public static final int TBL_COL_COUNT_SEC_OBJECT_PROTECTION = 4;
-    public static final int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
-    public static final int TBL_COL_COUNT_NODES                 = 5;
-    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 5;
-    public static final int TBL_COL_COUNT_SATELLITE_CONNECTIONS = 5;
-    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 7;
-    public static final int TBL_COL_COUNT_RESOURCES             = 5;
-    public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
-    public static final int TBL_COL_COUNT_NODE_STOR_POOL        = 4;
-    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS    = 6;
-    public static final int TBL_COL_COUNT_VOLUMES               = 8;
-    public static final int TBL_COL_COUNT_NODE_CONNECTIONS      = 3;
-    public static final int TBL_COL_COUNT_RESOURCE_CONNECTIONS  = 4;
-    public static final int TBL_COL_COUNT_VOLUME_CONNECTIONS    = 5;
-    public static final int TBL_COL_COUNT_PROPS_CONTAINERS      = 3;
+    int TBL_COL_COUNT_SEC_CONFIGURATION     = 3;
+    int TBL_COL_COUNT_SEC_IDENTITIES        = 6;
+    int TBL_COL_COUNT_SEC_TYPES             = 3;
+    int TBL_COL_COUNT_SEC_ROLES             = 5;
+    int TBL_COL_COUNT_SEC_ID_ROLE_MAP       = 2;
+    int TBL_COL_COUNT_SEC_ACCESS_TYPES      = 2;
+    int TBL_COL_COUNT_SEC_TYPE_RULES        = 3;
+    int TBL_COL_COUNT_SEC_DFLT_ROLES        = 2;
+    int TBL_COL_COUNT_SEC_OBJECT_PROTECTION = 4;
+    int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
+    int TBL_COL_COUNT_NODES                 = 5;
+    int TBL_COL_COUNT_NODE_NET_INTERFACES   = 5;
+    int TBL_COL_COUNT_SATELLITE_CONNECTIONS = 5;
+    int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 7;
+    int TBL_COL_COUNT_RESOURCES             = 5;
+    int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
+    int TBL_COL_COUNT_NODE_STOR_POOL        = 4;
+    int TBL_COL_COUNT_VOLUME_DEFINITIONS    = 6;
+    int TBL_COL_COUNT_VOLUMES               = 8;
+    int TBL_COL_COUNT_NODE_CONNECTIONS      = 3;
+    int TBL_COL_COUNT_RESOURCE_CONNECTIONS  = 4;
+    int TBL_COL_COUNT_VOLUME_CONNECTIONS    = 5;
+    int TBL_COL_COUNT_PROPS_CONTAINERS      = 3;
 
     // truncate statements
-    public static final String TRUNCATE_PROPS_CONTAINERS      = "DELETE FROM " + TBL_PROPS_CONTAINERS;
-    public static final String TRUNCATE_VOLUME_CONNECTIONS    = "DELETE FROM " + TBL_VOLUME_CONNECTIONS;
-    public static final String TRUNCATE_RESOURCE_CONNECTIONS  = "DELETE FROM " + TBL_RESOURCE_CONNECTIONS;
-    public static final String TRUNCATE_NODE_CONNECTIONS      = "DELETE FROM " + TBL_NODE_CONNECTIONS;
-    public static final String TRUNCATE_VOLUMES               = "DELETE FROM " + TBL_VOLUMES;
-    public static final String TRUNCATE_VOLUME_DEFINITIONS    = "DELETE FROM " + TBL_VOLUME_DEFINITIONS;
-    public static final String TRUNCATE_NODE_STOR_POOL        = "DELETE FROM " + TBL_NODE_STOR_POOL;
-    public static final String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
-    public static final String TRUNCATE_RESOURCES             = "DELETE FROM " + TBL_RESOURCES;
-    public static final String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
-    public static final String TRUNCATE_SATELLITE_CONNECTIONS = "DELETE FROM " + TBL_SATELLITE_CONNECTIONS;
-    public static final String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
-    public static final String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
-    public static final String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
-    public static final String TRUNCATE_SEC_OBJECT_PROTECTION = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION;
-    public static final String TRUNCATE_SEC_DFLT_ROLES        = "DELETE FROM " + TBL_SEC_DFLT_ROLES;
-    public static final String TRUNCATE_SEC_TYPE_RULES        = "DELETE FROM " + TBL_SEC_TYPE_RULES;
-    public static final String TRUNCATE_SEC_ACCESS_TYPES      = "DELETE FROM " + TBL_SEC_ACCESS_TYPES;
-    public static final String TRUNCATE_SEC_ID_ROLE_MAP       = "DELETE FROM " + TBL_SEC_ID_ROLE_MAP;
-    public static final String TRUNCATE_SEC_ROLES             = "DELETE FROM " + TBL_SEC_ROLES;
-    public static final String TRUNCATE_SEC_TYPES             = "DELETE FROM " + TBL_SEC_TYPES;
-    public static final String TRUNCATE_SEC_IDENTITIES        = "DELETE FROM " + TBL_SEC_IDENTITIES;
-    public static final String TRUNCATE_SEC_CONFIGURATION     = "DELETE FROM " + TBL_SEC_CONFIGURATION;
+    String TRUNCATE_PROPS_CONTAINERS      = "DELETE FROM " + TBL_PROPS_CONTAINERS;
+    String TRUNCATE_VOLUME_CONNECTIONS    = "DELETE FROM " + TBL_VOLUME_CONNECTIONS;
+    String TRUNCATE_RESOURCE_CONNECTIONS  = "DELETE FROM " + TBL_RESOURCE_CONNECTIONS;
+    String TRUNCATE_NODE_CONNECTIONS      = "DELETE FROM " + TBL_NODE_CONNECTIONS;
+    String TRUNCATE_VOLUMES               = "DELETE FROM " + TBL_VOLUMES;
+    String TRUNCATE_VOLUME_DEFINITIONS    = "DELETE FROM " + TBL_VOLUME_DEFINITIONS;
+    String TRUNCATE_NODE_STOR_POOL        = "DELETE FROM " + TBL_NODE_STOR_POOL;
+    String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
+    String TRUNCATE_RESOURCES             = "DELETE FROM " + TBL_RESOURCES;
+    String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
+    String TRUNCATE_SATELLITE_CONNECTIONS = "DELETE FROM " + TBL_SATELLITE_CONNECTIONS;
+    String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
+    String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
+    String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
+    String TRUNCATE_SEC_OBJECT_PROTECTION = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION;
+    String TRUNCATE_SEC_DFLT_ROLES        = "DELETE FROM " + TBL_SEC_DFLT_ROLES;
+    String TRUNCATE_SEC_TYPE_RULES        = "DELETE FROM " + TBL_SEC_TYPE_RULES;
+    String TRUNCATE_SEC_ACCESS_TYPES      = "DELETE FROM " + TBL_SEC_ACCESS_TYPES;
+    String TRUNCATE_SEC_ID_ROLE_MAP       = "DELETE FROM " + TBL_SEC_ID_ROLE_MAP;
+    String TRUNCATE_SEC_ROLES             = "DELETE FROM " + TBL_SEC_ROLES;
+    String TRUNCATE_SEC_TYPES             = "DELETE FROM " + TBL_SEC_TYPES;
+    String TRUNCATE_SEC_IDENTITIES        = "DELETE FROM " + TBL_SEC_IDENTITIES;
+    String TRUNCATE_SEC_CONFIGURATION     = "DELETE FROM " + TBL_SEC_CONFIGURATION;
 
     // insert statements (default values)
-    public static final String[] INSERT_DEFAULT_VALUES =
+    String[] INSERT_DEFAULT_VALUES =
     {
         "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
         "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')",
@@ -331,78 +331,78 @@ public interface DerbyTestConstants
     };
 
     // insert statements (parameterized)
-    public static final String INSERT_SEC_CONFIGURATION =
+    String INSERT_SEC_CONFIGURATION =
         " INSERT INTO " + TBL_SEC_CONFIGURATION +
         " VALUES (?, ?, ?)";
-    public static final String INSERT_SEC_IDENTITIES =
+    String INSERT_SEC_IDENTITIES =
         " INSERT INTO " + TBL_SEC_IDENTITIES +
         " VALUES (?, ?, ?, ?, ?, ?)";
-    public static final String INSERT_SEC_TYPES =
+    String INSERT_SEC_TYPES =
         " INSERT INTO " + TBL_SEC_TYPES +
         " VALUES (?, ?, ?)";
-    public static final String INSERT_SEC_ROLES =
+    String INSERT_SEC_ROLES =
         " INSERT INTO " + TBL_SEC_ROLES +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_SEC_ID_ROLE_MAP =
+    String INSERT_SEC_ID_ROLE_MAP =
         " INSERT INTO " + TBL_SEC_ID_ROLE_MAP +
         " VALUES (?, ?)";
-    public static final String INSERT_SEC_ACCESS_TYPES =
+    String INSERT_SEC_ACCESS_TYPES =
         " INSERT INTO " + TBL_SEC_ACCESS_TYPES +
         " VALUES (?, ?)";
-    public static final String INSERT_SEC_TYPE_RULES =
+    String INSERT_SEC_TYPE_RULES =
         " INSERT INTO " + TBL_SEC_TYPE_RULES +
         " VALUES (?, ?, ?)";
-    public static final String INSERT_SEC_DFLT_ROLES =
+    String INSERT_SEC_DFLT_ROLES =
         " INSERT INTO " + TBL_SEC_DFLT_ROLES +
         " VALUES (?, ?)";
-    public static final String INSERT_SEC_OBJECT_PROTECTION =
+    String INSERT_SEC_OBJECT_PROTECTION =
         " INSERT INTO " + TBL_SEC_OBJECT_PROTECTION +
         " VALUES (?, ?, ?, ?)";
-    public static final String INSERT_SEC_ACL_MAP =
+    String INSERT_SEC_ACL_MAP =
         " INSERT INTO " + TBL_SEC_ACL_MAP +
         " VALUES (?, ?, ?)";
-    public static final String INSERT_NODES =
+    String INSERT_NODES =
         " INSERT INTO " + TBL_NODES +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_NODE_NET_INTERFACES =
+    String INSERT_NODE_NET_INTERFACES =
         " INSERT INTO " + TBL_NODE_NET_INTERFACES +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_SATELLITE_CONNECTIONS =
+    String INSERT_SATELLITE_CONNECTIONS =
         " INSERT INTO " + TBL_SATELLITE_CONNECTIONS +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_RESOURCE_DEFINITIONS =
+    String INSERT_RESOURCE_DEFINITIONS =
         " INSERT INTO " + TBL_RESOURCE_DEFINITIONS +
         " VALUES (?, ?, ?, ?, ?, ?, ?)";
-    public static final String INSERT_RESOURCES =
+    String INSERT_RESOURCES =
         " INSERT INTO " + TBL_RESOURCES +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_STOR_POOL_DEFINITIONS =
+    String INSERT_STOR_POOL_DEFINITIONS =
         " INSERT INTO " + TBL_STOR_POOL_DEFINITIONS +
         " VALUES (?, ?, ?)";
-    public static final String INSERT_NODE_STOR_POOL =
+    String INSERT_NODE_STOR_POOL =
         " INSERT INTO " + TBL_NODE_STOR_POOL +
         " VALUES (?, ?, ?, ?)";
-    public static final String INSERT_VOLUME_DEFINITIONS =
+    String INSERT_VOLUME_DEFINITIONS =
         " INSERT INTO " + TBL_VOLUME_DEFINITIONS +
         " VALUES (?, ?, ?, ?, ?, ?)";
-    public static final String INSERT_VOLUMES =
+    String INSERT_VOLUMES =
         " INSERT INTO " + TBL_VOLUMES +
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    public static final String INSERT_NODE_CONNECTIONS =
+    String INSERT_NODE_CONNECTIONS =
         " INSERT INTO " + TBL_NODE_CONNECTIONS +
         " VALUES (?, ?, ?)";
-    public static final String INSERT_RESOURCE_CONNECTIONS =
+    String INSERT_RESOURCE_CONNECTIONS =
         " INSERT INTO " + TBL_RESOURCE_CONNECTIONS +
         " VALUES (?, ?, ?, ?)";
-    public static final String INSERT_VOLUME_CONNECTIONS =
+    String INSERT_VOLUME_CONNECTIONS =
         " INSERT INTO " + TBL_VOLUME_CONNECTIONS +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_PROPS_CONTAINERS =
+    String INSERT_PROPS_CONTAINERS =
         " INSERT INTO " + TBL_PROPS_CONTAINERS +
         " VALUES (?, ?, ?)";
 
     // truncate statement array
-    public static final String[] TRUNCATE_TABLES =
+    String[] TRUNCATE_TABLES =
     {
         TRUNCATE_PROPS_CONTAINERS,
         TRUNCATE_VOLUME_CONNECTIONS,

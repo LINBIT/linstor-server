@@ -201,7 +201,7 @@ public class NodeApiTest extends ApiTestBase
         List<SatelliteConnectionApi> stltApis;
         Map<String, String> props;
 
-        public CreateNodeCall(long expectedRc)
+        CreateNodeCall(long expectedRc)
         {
             super(
                 // peer
@@ -293,7 +293,7 @@ public class NodeApiTest extends ApiTestBase
         private Map<String, String> overrideProps;
         private Set<String> deletePropKeys;
 
-        public ModifyNodeCall(long retCode)
+        ModifyNodeCall(long retCode)
         {
             super(
                 // peer

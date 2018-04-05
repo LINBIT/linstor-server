@@ -720,13 +720,13 @@ public class StateFlagBitsTest
         return ret;
     }
 
-    private static enum FlagImpl implements Flags
+    private enum FlagImpl implements Flags
     {
         FLAG_ZERO(0L), FLAG_ONE(1L), FLAG_TWO(2L), FLAG_THREE(4L);
 
         private long value;
 
-        private FlagImpl(long valueRef)
+         FlagImpl(long valueRef)
         {
             value = valueRef;
         }

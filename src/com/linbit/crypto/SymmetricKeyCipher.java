@@ -48,7 +48,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
 
         public final int keyLength;
 
-        private CipherStrength(int length)
+        CipherStrength(int length)
         {
             keyLength = length;
         }
@@ -202,6 +202,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         }
     }
 
+    @Override
     public byte[] encrypt(final byte[] plainText)
         throws LinStorException
     {
@@ -280,6 +281,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         return cipherText;
     }
 
+    @Override
     public byte[] decrypt(final byte[] cipherText)
         throws LinStorException
     {

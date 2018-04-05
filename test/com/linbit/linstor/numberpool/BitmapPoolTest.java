@@ -310,7 +310,7 @@ public class BitmapPoolTest
         private final int rangeEnd;
         private final int offset;
 
-        public PoolConfiguration(
+        PoolConfiguration(
             final int sizeRef,
             final int rangeStartRef,
             final int rangeEndRef,

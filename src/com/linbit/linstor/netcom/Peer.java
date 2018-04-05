@@ -167,7 +167,7 @@ public interface Peer
      *
      * @return Internet address of the peer
      */
-    public InetSocketAddress localAddress();
+    InetSocketAddress localAddress();
 
     /**
      * Called when the connection is established

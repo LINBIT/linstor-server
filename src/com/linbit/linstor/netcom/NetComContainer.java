@@ -4,7 +4,7 @@ import com.linbit.ServiceName;
 
 public interface NetComContainer
 {
-    public TcpConnector getNetComConnector(ServiceName conSvcName);
+    TcpConnector getNetComConnector(ServiceName conSvcName);
 
     void removeNetComConnector(ServiceName conSvnName);
 

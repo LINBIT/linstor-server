@@ -32,15 +32,15 @@ public class ProtobufIO
 {
     public static final Object CALLBACK_LOCK = new Object();
 
-    public static interface MessageCallback
+    public interface MessageCallback
     {
-        public void error(int msgId, long retCode, String message, String cause, String correction,
+        void error(int msgId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
-        public void warn(int msgId, long retCode, String message, String cause, String correction,
+        void warn(int msgId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
-        public void info(int msgId, long retCode, String message, String cause, String correction,
+        void info(int msgId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
-        public void success(int msgId, long retCode, String message, String cause, String correction,
+        void success(int msgId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
     }
 
