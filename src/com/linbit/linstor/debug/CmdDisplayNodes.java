@@ -2,7 +2,6 @@ package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.CoreModule;
@@ -16,7 +15,6 @@ import com.linbit.utils.UuidUtils;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -150,7 +148,8 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     .leaf("Security type: %-24s", objProt.getSecurityType().name.displayValue);
 
                 treeBuilder.branchHideEmpty("Network interfaces:");
-                nodeRef.streamNetInterfaces(accCtx).forEach(netIf -> {
+                nodeRef.streamNetInterfaces(accCtx).forEach(netIf ->
+                {
                     String address = "<No authorized>";
                     try
                     {
@@ -176,7 +175,8 @@ public class CmdDisplayNodes extends BaseDebugCmd
                         )
                         .leaf("Address: %s", address)
                         .endBranch();
-                });
+                }
+                );
 
                 treeBuilder.endBranch();
 

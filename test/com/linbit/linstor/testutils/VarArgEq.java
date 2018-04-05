@@ -11,24 +11,28 @@ import static org.mockito.Matchers.argThat;
 
 public class VarArgEq<T> extends ArgumentMatcher<T[]> implements VarargMatcher
 {
-    public static <T> T[] varArgEq(T[] expected) {
+    public static <T> T[] varArgEq(T[] expected)
+    {
         argThat(new VarArgEq<>(expected));
         return null;
     }
 
     private final T[] wanted;
 
-    private VarArgEq(T[] wanted) {
+    private VarArgEq(T[] wanted)
+    {
         this.wanted = wanted;
     }
 
     @Override
-    public boolean matches(Object o) {
+    public boolean matches(Object o)
+    {
         return Equality.areEqual(wanted, o);
     }
 
     @Override
-    public void describeTo(Description description) {
+    public void describeTo(Description description)
+    {
         description.appendText(Arrays.toString(wanted));
     }
 }

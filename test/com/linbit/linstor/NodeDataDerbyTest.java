@@ -222,8 +222,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
         assertEquals(NodeFlag.QIGNORE.flagValue, loaded.getFlags().getFlagsBits(SYS_CTX));
         assertEquals(Node.NodeType.AUXILIARY, loaded.getNodeType(SYS_CTX));
-
-    };
+    }
 
     @Test
     public void testLoadGetInstance() throws Exception

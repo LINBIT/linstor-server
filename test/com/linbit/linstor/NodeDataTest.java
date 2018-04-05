@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.api.ApiConsts;
 import java.util.List;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -10,8 +11,8 @@ import org.junit.Test;
  *
  * @author rp
  */
-public class NodeDataTest {
-
+public class NodeDataTest
+{
     @Test
     public void testAllFlags()
     {

@@ -227,7 +227,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                     {
                         // don't add rsc without access
                     }
-                });
+                }
+                );
 
             // get resource states of all nodes
             for (final Node node : nodesMap.values())

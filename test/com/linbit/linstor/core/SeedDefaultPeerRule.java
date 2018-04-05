@@ -14,7 +14,8 @@ public class SeedDefaultPeerRule implements TestRule
     }
 
     @Override
-    public Statement apply(final Statement base, final Description description) {
+    public Statement apply(final Statement base, final Description description)
+    {
         if (description.getAnnotation(DoNotSeedDefaultPeer.class) != null)
         {
             shouldSeedDefaultPeer = false;

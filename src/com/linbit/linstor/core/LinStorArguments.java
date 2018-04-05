@@ -53,7 +53,18 @@ public class LinStorArguments
         this.inMemoryDbAddress = inMemoryDbAddress;
     }
 
-    public String getInMemoryDbType() { return inMemoryDbType; }
-    public int getInMemoryDbPort() { return inMemoryDbPort; }
-    public String getInMemoryDbAddress() { return inMemoryDbAddress; }
+    public String getInMemoryDbType()
+    {
+        return inMemoryDbType;
+    }
+
+    public int getInMemoryDbPort()
+    {
+        return inMemoryDbPort;
+    }
+
+    public String getInMemoryDbAddress()
+    {
+        return inMemoryDbAddress;
+    }
 }

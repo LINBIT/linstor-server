@@ -10,7 +10,8 @@ import static org.junit.Assert.*;
  *
  * @author rpeinthor
  */
-public class ResourceDataTest {
+public class ResourceDataTest
+{
     @Test
     public void testAllFlags()
     {

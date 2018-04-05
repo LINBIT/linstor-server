@@ -8,7 +8,6 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataFactory;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
@@ -37,7 +36,6 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -358,7 +356,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             storPoolDfnMap.values().stream()
                 .filter(storPoolDfn -> filterStorPools.isEmpty() || filterStorPools.contains(storPoolDfn.getName()))
-                .forEach(storPoolDfn -> {
+                .forEach(storPoolDfn ->
+                {
                     try
                     {
                         for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx)
@@ -377,7 +376,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                     {
                         // don't add storpooldfn without access
                     }
-                });
+                }
+                );
         }
         catch (AccessDeniedException accDeniedExc)
         {

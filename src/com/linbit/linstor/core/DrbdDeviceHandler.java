@@ -182,7 +182,8 @@ class DrbdDeviceHandler implements DeviceHandler
             while (itUpdRsc.hasNext())
             {
                 Resource updRsc = itUpdRsc.next();
-                if (!mapResourceStates.containsKey(updRsc.getDefinition().getName().getDisplayName())) {
+                if (!mapResourceStates.containsKey(updRsc.getDefinition().getName().getDisplayName()))
+                {
                     ResourceState updRscState = fillResourceState(updRsc);
                     evaluateDrbdResource(updRsc, updRscDfn, updRscState);
                     mapResourceStates.put(updRsc.getDefinition().getName().getDisplayName(), updRscState);
@@ -1449,14 +1450,16 @@ class DrbdDeviceHandler implements DeviceHandler
                     }
                 }
 
-                localNode.streamStorPools(wrkCtx).forEach(curStorPool -> {
+                localNode.streamStorPools(wrkCtx).forEach(curStorPool ->
+                {
                     String driverClassName = curStorPool.getDriverName();
                     System.out.printf(
                         "Storage pool %-24s Driver %s\n",
                         curStorPool.getName().displayValue,
                         driverClassName
                     );
-                });
+                }
+                );
             }
             catch (AccessDeniedException ignored)
             {

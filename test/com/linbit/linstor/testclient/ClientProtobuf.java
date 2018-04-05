@@ -764,7 +764,8 @@ public class ClientProtobuf implements Runnable
         {
             msgBuilder.setRscDfnUuid(rscDfnUuid.toString());
         }
-        if (port != null) {
+        if (port != null)
+        {
             msgBuilder.setRscDfnPort(port);
         }
         if (overrideProps != null)

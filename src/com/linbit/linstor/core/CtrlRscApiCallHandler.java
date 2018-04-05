@@ -66,7 +66,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
@@ -701,7 +700,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     {
                         // don't add storpooldfn without access
                     }
-                });
+                }
+                );
 
             // get resource states of all nodes
             for (final Node node : nodesMap.values())
