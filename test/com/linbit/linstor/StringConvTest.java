@@ -35,74 +35,76 @@ public class StringConvTest
     @Test
     public void testGetDfltBoolean() throws Exception
     {
-        if (StringConv.getDfltBoolean(Boolean.toString(true), false) != true)
-        {
-            fail("Failed to parse Boolean.toString(true) value");
-        }
 
-        if (StringConv.getDfltBoolean(Boolean.toString(false), true) != false)
-        {
-            fail("Failed to parse Boolean.toString(false) value");
-        }
+        assertTrue(
+            "Failed to parse Boolean.toString(true) value",
+            StringConv.getDfltBoolean(Boolean.toString(true), false)
+        );
 
-        if (StringConv.getDfltBoolean("TRUE", false) != true)
-        {
-            fail("Failed to parse \"TRUE\"");
-        }
+        assertFalse(
+            "Failed to parse Boolean.toString(false) value",
+            StringConv.getDfltBoolean(Boolean.toString(false), true)
+        );
 
-        if (StringConv.getDfltBoolean("FALSE", true) != false)
-        {
-            fail("Failed to parse \"FALSE\"");
-        }
+        assertTrue(
+            "Failed to parse \"TRUE\"",
+            StringConv.getDfltBoolean("TRUE", false)
+        );
 
-        if (StringConv.getDfltBoolean("true", false) != true)
-        {
-            fail("Failed to parse \"true\"");
-        }
+        assertFalse(
+            "Failed to parse \"FALSE\"",
+            StringConv.getDfltBoolean("FALSE", true)
+        );
 
-        if (StringConv.getDfltBoolean("false", true) != false)
-        {
-            fail("Failed to parse \"false\"");
-        }
+        assertTrue(
+            "Failed to parse \"true\"",
+            StringConv.getDfltBoolean("true", false)
+        );
 
-        if (StringConv.getDfltBoolean("True", false) != true)
-        {
-            fail("Failed to parse \"True\"");
-        }
+        assertFalse(
+            "Failed to parse \"false\"",
+            StringConv.getDfltBoolean("false", true)
+        );
 
-        if (StringConv.getDfltBoolean("False", true) != false)
-        {
-            fail("Failed to parse \"False\"");
-        }
+        assertTrue(
+            "Failed to parse \"True\"",
+            StringConv.getDfltBoolean("True", false)
+        );
 
-        if (StringConv.getDfltBoolean("tRuE", false) != true)
-        {
-            fail("Failed to parse \"tRuE\"");
-        }
+        assertFalse(
+            "Failed to parse \"False\"",
+            StringConv.getDfltBoolean("False", true)
+        );
 
-        if (StringConv.getDfltBoolean("FaLSe", true) != false)
-        {
-            fail("Failed to parse \"FaLSe\"");
-        }
+        assertTrue(
+            "Failed to parse \"tRuE\"",
+            StringConv.getDfltBoolean("tRuE", false)
+        );
 
-        if (StringConv.getDfltBoolean(null, true) != true)
-        {
-            fail("Failed to return true result for null input value");
-        }
-        if (StringConv.getDfltBoolean(null, false) != false)
-        {
-            fail("Failed to return false result for null input value");
-        }
+        assertFalse(
+            "Failed to parse \"FaLSe\"",
+            StringConv.getDfltBoolean("FaLSe", true)
+        );
 
-        if (StringConv.getDfltBoolean("There is an orange rubber duck in the treasure chest!!", true) != true)
-        {
-            fail("Failed to return true result for invalid input value");
-        }
+        assertTrue(
+            "Failed to return true result for null input value",
+            StringConv.getDfltBoolean(null, true)
+        );
 
-        if (StringConv.getDfltBoolean("There is an orange rubber duck in the treasure chest!!", false) != false)
-        {
-            fail("Failed to return false result for invalid input value");
-        }
+        assertFalse(
+            "Failed to return false result for null input value",
+            StringConv.getDfltBoolean(null, false)
+        );
+
+        assertTrue(
+            "Failed to return true result for invalid input value",
+            StringConv.getDfltBoolean("There is an orange rubber duck in the treasure chest!!", true)
+        );
+
+        assertFalse(
+            "Failed to return false result for invalid input value",
+            StringConv.getDfltBoolean("There is an orange rubber duck in the treasure chest!!", false)
+        );
     }
 
     /**
@@ -269,7 +271,7 @@ public class StringConvTest
             fail("Failed to parse Float.toString((float) -1.37)");
         }
 
-        if (StringConv.getDfltFloat("--1", (float) 2) != (float) 2)
+        if (StringConv.getDfltFloat("--1", 2) != 2)
         {
             fail("Failed to return default value for invalid input \"--1\"");
         }
