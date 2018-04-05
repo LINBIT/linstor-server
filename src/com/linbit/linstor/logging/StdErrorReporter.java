@@ -110,7 +110,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     )
     {
         String reportId = RPT_ID_TRACE_DISABLED;
-        if (traceEnabled || logLevel != Level.TRACE )
+        if (traceEnabled || logLevel != Level.TRACE)
         {
             reportId = reportErrorImpl(logLevel, errorInfo, accCtx, client, contextInfo);
         }

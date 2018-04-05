@@ -3,7 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.testutils.AbsIterator;
 import java.sql.SQLException;
 
-public abstract class AbsSecurityIterator <T> extends AbsIterator<T>
+public abstract class AbsSecurityIterator<T> extends AbsIterator<T>
 {
     private final AccessContext rootCtx;
 

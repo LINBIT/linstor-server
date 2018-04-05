@@ -43,8 +43,8 @@ public class MinorNumberTest
         throws ValueOutOfRangeException
     {
         refNr = new MinorNumber(450);
-        testLess = new MinorNumber (433);
-        testGreater = new MinorNumber (477);
+        testLess = new MinorNumber(433);
+        testGreater = new MinorNumber(477);
         testEqual = new MinorNumber(450);
     }
 

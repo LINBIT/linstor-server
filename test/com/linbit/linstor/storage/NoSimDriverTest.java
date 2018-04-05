@@ -256,7 +256,7 @@ public abstract class NoSimDriverTest
             checkFileExists(false, origTestFile1, "\n      ", 10, 200);
             checkFileExists(true, origTestFile2, "\n      ", 10, 200);
             checkFileExists(true, origTestFile3, "\n      ", 10, 200);
-            log (" done%n");
+            log(" done%n");
 
             log("   checking content of original files...");
             OutputData catOut = callChecked("cat", origTestFile2);
@@ -319,13 +319,13 @@ public abstract class NoSimDriverTest
             checkFileExists(false, origTestFile1, "\n      ", 10, 200);
             checkFileExists(true, origTestFile2, "\n      ", 10, 200);
             checkFileExists(true, origTestFile3, "\n      ", 10, 200);
-            log (" done%n");
+            log(" done%n");
 
             log("   checking existence of restored files...");
             checkFileExists(true, restTestFile1, "\n      ", 10, 200);
             checkFileExists(true, restTestFile2, "\n      ", 10, 200);
             checkFileExists(false, restTestFile3, "\n      ", 10, 200);
-            log (" done%n");
+            log(" done%n");
 
             log("   checking content of original files...");
             catOut = callChecked("cat", origTestFile2);
@@ -501,7 +501,7 @@ public abstract class NoSimDriverTest
                     }
                 }
             }
-            while (retries --> 0);
+            while (retries-- > 0);
             if (retries <= 0)
             {
                 fail("%sFile [%s] should exist, but it does not.", logIndent, file, origRetryCount, retryDelay);
@@ -648,7 +648,7 @@ public abstract class NoSimDriverTest
         log(format, identifier);
         driver.deleteSnapshot(identifier, snapshotName, false);
         failIf(volumeExists(identifier, snapshotName), "Failed to delete snapshot [%s]", identifier);
-        log (" done%n");
+        log(" done%n");
     }
 
     private void createMountPoint(String mountPath, String format) throws ChildProcessTimeoutException, IOException

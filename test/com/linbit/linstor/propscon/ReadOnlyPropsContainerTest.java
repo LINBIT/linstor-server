@@ -246,7 +246,7 @@ public class ReadOnlyPropsContainerTest
         // thus, we add a container which should be come before the "first" alpha-numerically entry
 
         final String insertedKey = "a/b";
-        writableProp.setProp(insertedKey , "value");
+        writableProp.setProp(insertedKey, "value");
 
         final Iterator<String> iterator = roProp.keysIterator();
 

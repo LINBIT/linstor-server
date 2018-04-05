@@ -36,8 +36,8 @@ public class TcpPortNumberTest
         throws ValueOutOfRangeException
     {
         refNr = new TcpPortNumber(6799);
-        testLess = new TcpPortNumber (230);
-        testGreater = new TcpPortNumber (9811);
+        testLess = new TcpPortNumber(230);
+        testGreater = new TcpPortNumber(9811);
         testEqual = new TcpPortNumber(6799);
     }
 

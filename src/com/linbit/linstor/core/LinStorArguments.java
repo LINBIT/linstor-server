@@ -38,7 +38,7 @@ public class LinStorArguments
         return startDebugConsole;
     }
 
-    public void setInMemoryDbType(final String inMemoryDbType )
+    public void setInMemoryDbType(final String inMemoryDbType)
     {
         this.inMemoryDbType = inMemoryDbType;
     }

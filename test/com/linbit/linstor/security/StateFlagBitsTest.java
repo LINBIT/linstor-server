@@ -745,7 +745,7 @@ public class StateFlagBitsTest
     {
         StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
-            super(objProtRef, new Object(), validFlagsMask, ((objProt, flags) -> {} ), null);
+            super(objProtRef, new Object(), validFlagsMask, (objProt, flags) -> {}, null);
             // as this test should not test persistence, this should be no problem.
         }
     }

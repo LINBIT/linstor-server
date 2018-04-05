@@ -46,7 +46,7 @@ public class ApiRcUtils
         RET_CODES_OBJ = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
-        tmpMap.put(ApiConsts.CREATED, "Created" );
+        tmpMap.put(ApiConsts.CREATED, "Created");
         tmpMap.put(ApiConsts.DELETED, "Deleted");
         tmpMap.put(ApiConsts.MODIFIED, "Modified");
 

@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -86,7 +85,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     {
         driver.create(nodeCon);
 
-        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, true);
+        NodeConnectionData loadedConDfn = driver.load(nodeSrc, nodeDst, true);
 
         checkLoadedConDfn(loadedConDfn, true);
     }

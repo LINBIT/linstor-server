@@ -165,7 +165,7 @@ public class AccessControlListTest
                     { false, true },                            // has PRIV_MAC_OVRD
                     {
                         0L, PRIV_OBJ_VIEW.id,                   //
-                        PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id ,   // privileges.... :)
+                        PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id,    // privileges.... :)
                         PRIV_OBJ_CONTROL.id, PRIV_OBJ_OWNER.id, //
                         PRIV_SYS_ALL.id                         //
                     },

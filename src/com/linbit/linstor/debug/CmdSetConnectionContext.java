@@ -151,8 +151,8 @@ public class CmdSetConnectionContext extends BaseDebugCmd
             if (idName == null && rlName == null && dmnName == null)
             {
                 throw new LinStorException(
-                    "Nothing to do, because none of the parameters " + PRM_ID + ", " + PRM_ROLE + " or "
-                    + PRM_DOMAIN + " were set",
+                    "Nothing to do, because none of the parameters " + PRM_ID + ", " + PRM_ROLE + " or " +
+                        PRM_DOMAIN + " were set",
                     "Incomplete command line, nothing to do",
                     "No modification for the access context was specified",
                     "At least one of the parameters " + PRM_ID + ", " + PRM_ROLE + " or " + PRM_DOMAIN +

@@ -122,7 +122,7 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected void checkExpectedMap(Map<String, String> expectedMap, Props props)
     {
-        assertEquals("Unexpected entries in PropsContainer", expectedMap.size() , props.size());
+        assertEquals("Unexpected entries in PropsContainer", expectedMap.size(), props.size());
 
         Set<Entry<String,String>> entrySet = expectedMap.entrySet();
         // we use this map so we do not trigger props.removeProp (which triggers a DB remove)

@@ -170,10 +170,18 @@ public class ConfFileBuilderTest
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
         when(volumeDefinition.getMinorNr(any(AccessContext.class))).thenReturn(new MinorNumber(99));
 
-        when(volumeFlags.isUnset(
-            any(AccessContext.class),
-            varArgEq(new Volume.VlmFlags[] { Volume.VlmFlags.DELETE, VlmFlags.CLEAN } )))
-            .thenReturn(!volumeDeleted);
+        when(
+            volumeFlags.isUnset(
+                any(AccessContext.class),
+                varArgEq(
+                    new Volume.VlmFlags[]
+                    {
+                        Volume.VlmFlags.DELETE,
+                        VlmFlags.CLEAN
+                    }
+                )
+            )
+        ).thenReturn(!volumeDeleted);
 
         when(volume.getFlags()).thenReturn(volumeFlags);
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);

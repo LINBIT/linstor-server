@@ -123,7 +123,7 @@ public class ClientProtobuf implements Runnable
         RET_CODES_OBJ = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
-        tmpMap.put(CREATED, "Created" );
+        tmpMap.put(CREATED, "Created");
         tmpMap.put(DELETED, "Deleted");
         tmpMap.put(MODIFIED, "Modified");
 
@@ -1012,8 +1012,7 @@ public class ClientProtobuf implements Runnable
         {
             builder.addAllDeletePropKeys(delPropKeys);
         }
-        send
-        (
+        send(
             msgId,
             API_MOD_RSC,
             builder.build()
@@ -1089,8 +1088,7 @@ public class ClientProtobuf implements Runnable
         {
             builder.addAllDeletePropKeys(delPropKeys);
         }
-        send
-        (
+        send(
             msgId,
             API_MOD_VLM_DFN,
             builder.build()
@@ -1114,8 +1112,7 @@ public class ClientProtobuf implements Runnable
         {
             builder.setVlmDfnUuid(uuid.toString());
         }
-        send
-        (
+        send(
             msgId,
             API_DEL_VLM_DFN,
             builder.build()
@@ -1176,8 +1173,7 @@ public class ClientProtobuf implements Runnable
         {
             builder.addAllDeletePropKeys(delPropKeys);
         }
-        send
-        (
+        send(
             msgId,
             API_MOD_NODE_CONN,
             builder.build()
@@ -1256,8 +1252,7 @@ public class ClientProtobuf implements Runnable
         {
             builder.addAllDeletePropKeys(delPropKeys);
         }
-        send
-        (
+        send(
             msgId,
             API_MOD_RSC_CONN,
             builder.build()
@@ -1346,8 +1341,7 @@ public class ClientProtobuf implements Runnable
         {
             builder.addAllDeletePropKeys(delPropKeys);
         }
-        send
-        (
+        send(
             msgId,
             API_MOD_VLM_CONN,
             builder.build()

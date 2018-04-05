@@ -5,7 +5,7 @@ import java.util.Iterator;
 
 import com.linbit.linstor.security.SecurityLevel;
 
-public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
+public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
 {
     private final Object[][] values;
     private final int[] currentIdx;
