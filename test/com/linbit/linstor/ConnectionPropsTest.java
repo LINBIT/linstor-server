@@ -116,6 +116,7 @@ public class ConnectionPropsTest extends DerbyBase
         conProps = new PriorityProps(SYS_CTX, nodeCon, resCon, volCon);
     }
 
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     @Test
     public void test() throws InvalidKeyException, AccessDeniedException, InvalidValueException, SQLException
     {
@@ -124,6 +125,7 @@ public class ConnectionPropsTest extends DerbyBase
         String testValue2 = "testValue2";
         String testValue3 = "testValue3";
         String testValue4 = "testValue4";
+
         assertNull(conProps.getProp(testKey));
 
         volConProps.setProp(testKey, testValue1);

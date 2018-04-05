@@ -11,7 +11,6 @@ import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.transaction.AbsTransactionObject;
-import com.linbit.utils.UuidUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -282,6 +281,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void testLoadResources() throws Exception
     {
         driver.create(resDfn);

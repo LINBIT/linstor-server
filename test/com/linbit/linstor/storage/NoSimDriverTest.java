@@ -70,6 +70,7 @@ public abstract class NoSimDriverTest
         driver = driverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
     }
 
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     protected void runTest() throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException, IOException, InterruptedException
     {
         initialize();

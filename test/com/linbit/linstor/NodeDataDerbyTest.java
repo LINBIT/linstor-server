@@ -242,6 +242,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(0, loadedNode.getProps(SYS_CTX).size()); // serial number
     }
 
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     @Test
     public void testLoadGetInstanceComplete() throws Exception
     {
