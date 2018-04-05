@@ -224,7 +224,7 @@ public class GenericTimerTest
     /**
      * Test for overflow
      */
-    @Test(expected=ValueOutOfRangeException.class)
+    @Test(expected = ValueOutOfRangeException.class)
     public void testTargetTimeOverflow() throws ValueOutOfRangeException, NegativeTimeException
     {
         // Set delay Long.MAX_VALUE
@@ -237,7 +237,7 @@ public class GenericTimerTest
     /**
      * Test for Action == null in addDelayedAction()
      */
-    @Test(expected=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void testDelayedNull() throws Exception
     {
         instance.addDelayedAction(1000L, null);
@@ -246,7 +246,7 @@ public class GenericTimerTest
     /**
      * Test for Action == null in addScheduledAction()
      */
-    @Test(expected=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void testScheduledNull()
     {
         instance.addScheduledAction(1000L, null);
@@ -280,7 +280,7 @@ public class GenericTimerTest
     /**
      * Test for delay < 0
      */
-    @Test(expected=NegativeTimeException.class)
+    @Test(expected = NegativeTimeException.class)
     public void testNegativeDelay() throws NegativeTimeException, ValueOutOfRangeException
     {
         instance.addDelayedAction(-1L, new TestAction());

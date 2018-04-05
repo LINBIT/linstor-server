@@ -98,7 +98,7 @@ public class ExtCmdPipingTest
     /**
      * Tests synchronous execution of a command that returns too much data on stdout
      */
-    @Test(expected=java.io.IOException.class)
+    @Test(expected = java.io.IOException.class)
     public void execTooMuchDataTest() throws Exception
     {
         ExtCmd ec = new ExtCmd(intrTimer, errLog);
@@ -118,7 +118,7 @@ public class ExtCmdPipingTest
     /**
      * Tests asynchronous execution of a command that returns too much data on stdout
      */
-    @Test(expected=java.io.IOException.class)
+    @Test(expected = java.io.IOException.class)
     public void asyncExecTooMuchDataTest() throws Exception
     {
         ExtCmd ec = new ExtCmd(intrTimer, errLog);
@@ -139,7 +139,7 @@ public class ExtCmdPipingTest
     /**
      * Tests synchronous execution of a command that times out
      */
-    @Test(expected=ChildProcessTimeoutException.class)
+    @Test(expected = ChildProcessTimeoutException.class)
     public void execHangingProcessTest() throws Exception
     {
         ExtCmd ec = new ExtCmd(intrTimer, errLog);
@@ -151,7 +151,7 @@ public class ExtCmdPipingTest
     /**
      * Tests asynchronous execution of a command that times out
      */
-    @Test(expected=ChildProcessTimeoutException.class)
+    @Test(expected = ChildProcessTimeoutException.class)
     public void asyncExecHangingProcessTest() throws Exception
     {
         ExtCmd ec = new ExtCmd(intrTimer, errLog);

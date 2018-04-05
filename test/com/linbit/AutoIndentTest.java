@@ -93,8 +93,8 @@ public class AutoIndentTest
     {
         for (int indent = 1; indent < 10; indent++)
         {
-            assertEquals("Failed with indent: "+indent,
-                getSpaces(indent)+"simple\n"+getSpaces(indent)+"test\n",
+            assertEquals("Failed with indent: " + indent,
+                getSpaces(indent) + "simple\n" + getSpaces(indent) + "test\n",
                 getString(indent, "simple\ntest"));
             clearBuffer();
         }

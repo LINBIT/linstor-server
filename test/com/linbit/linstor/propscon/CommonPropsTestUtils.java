@@ -146,12 +146,12 @@ public class CommonPropsTestUtils
         final int secondAmount
     )
     {
-        final ArrayList<Entry<String,String>> entries = new ArrayList<>();
+        final ArrayList<Entry<String, String>> entries = new ArrayList<>();
         entries.add(createEntry("", "")); // root.setProp("/", "");
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)
         {
             final String firstNr = Integer.toString(firstIdx);
-            entries.add(createEntry(firstPrefix+firstNr, firstNr));
+            entries.add(createEntry(firstPrefix + firstNr, firstNr));
         }
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)
         {
@@ -186,7 +186,7 @@ public class CommonPropsTestUtils
         keys.add(""); // root.setProp("/", "");
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)
         {
-            keys.add(firstPrefix+firstIdx);
+            keys.add(firstPrefix + firstIdx);
         }
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)
         {

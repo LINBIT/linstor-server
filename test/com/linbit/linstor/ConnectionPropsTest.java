@@ -77,7 +77,7 @@ public class ConnectionPropsTest extends DerbyBase
         minor = 12;
         volSize = 9001;
         blockDev1 = "/dev/vol1/block";
-        metaDisk1= "/dev/vol1/meta";
+        metaDisk1 = "/dev/vol1/meta";
         blockDev2 = "/dev/vol2/block";
         metaDisk2 = "/dev/vol2/meta";
 

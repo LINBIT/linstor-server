@@ -170,13 +170,13 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = AccessDeniedException.class)
     public void testRemove() throws Throwable
     {
-        roProp.removeProp(FIRST_KEY+"0");
+        roProp.removeProp(FIRST_KEY + "0");
     }
 
     @Test(expected = AccessDeniedException.class)
     public void testRemoveWithNamespace() throws Throwable
     {
-        roProp.removeProp(SECOND_KEY+"0", FIRST_KEY+"0");
+        roProp.removeProp(SECOND_KEY + "0", FIRST_KEY + "0");
     }
 
 
@@ -489,7 +489,7 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetRemove() throws Throwable
     {
-        Entry<String, String> entryToRemove = createEntry(FIRST_KEY+"0", "0");
+        Entry<String, String> entryToRemove = createEntry(FIRST_KEY + "0", "0");
         roEntrySet.remove(entryToRemove);
     }
 
@@ -514,7 +514,7 @@ public class ReadOnlyPropsContainerTest
     {
         final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
         entriesToAdd.add(createEntry("new key", "value"));
-        entriesToAdd.add(createEntry(FIRST_KEY+"0", "other value"));
+        entriesToAdd.add(createEntry(FIRST_KEY + "0", "other value"));
 
         roEntrySet.addAll(entriesToAdd);
     }
@@ -525,7 +525,7 @@ public class ReadOnlyPropsContainerTest
     {
         final HashSet<String> retainedKeys = new HashSet<>();
         retainedKeys.add(FIRST_KEY + "0");
-        retainedKeys.add(glue(FIRST_KEY + "1",SECOND_KEY + "2"));
+        retainedKeys.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         roEntrySet.retainAll(retainedKeys);
     }
@@ -539,7 +539,7 @@ public class ReadOnlyPropsContainerTest
 
         final HashSet<Entry<String, String>> entriesToRemove = new HashSet<>();
         entriesToRemove.add(createEntry(FIRST_KEY + "0", "0"));
-        entriesToRemove.add(createEntry(glue(FIRST_KEY + "1",SECOND_KEY + "2"), "1_2"));
+        entriesToRemove.add(createEntry(glue(FIRST_KEY + "1", SECOND_KEY + "2"), "1_2"));
 
         generatedEntries.removeAll(entriesToRemove);
         roEntrySet.removeAll(entriesToRemove);
@@ -561,7 +561,7 @@ public class ReadOnlyPropsContainerTest
         assertFalse(roEntrySet.equals(null));
         assertFalse(roEntrySet.equals(roProp));
 
-        clone.remove(createEntry(FIRST_KEY+"0","0"));
+        clone.remove(createEntry(FIRST_KEY + "0", "0"));
         assertFalse(roEntrySet.equals(clone));
     }
 
@@ -730,7 +730,7 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = UnsupportedOperationException.class)
     public void testKeySetRemove() throws Throwable
     {
-        roKeySet.remove(FIRST_KEY+"0");
+        roKeySet.remove(FIRST_KEY + "0");
     }
 
     @Test
@@ -753,7 +753,7 @@ public class ReadOnlyPropsContainerTest
     {
         final ArrayList<String> keysToAdd = new ArrayList<>();
         keysToAdd.add("new key");
-        keysToAdd.add(FIRST_KEY+"0");
+        keysToAdd.add(FIRST_KEY + "0");
 
         roKeySet.addAll(keysToAdd);
     }
@@ -763,7 +763,7 @@ public class ReadOnlyPropsContainerTest
     {
         final HashSet<String> retainedKeys = new HashSet<>();
         retainedKeys.add(FIRST_KEY + "0");
-        retainedKeys.add(glue(FIRST_KEY + "1",SECOND_KEY + "2"));
+        retainedKeys.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         roKeySet.retainAll(retainedKeys);
     }
@@ -794,7 +794,7 @@ public class ReadOnlyPropsContainerTest
         assertFalse(roKeySet.equals(null));
         assertFalse(roKeySet.equals(roProp));
 
-        clone.remove(FIRST_KEY+"0");
+        clone.remove(FIRST_KEY + "0");
         assertFalse(roKeySet.equals(clone));
     }
 
@@ -841,7 +841,7 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testMapRemoveFromProps() throws Throwable
     {
-        final String key = FIRST_KEY+"0";
+        final String key = FIRST_KEY + "0";
         assertEquals("0", roMap.get(key));
 
         writableProp.removeProp(key);
@@ -862,7 +862,7 @@ public class ReadOnlyPropsContainerTest
         writableProp.setProp(key, "other value");
         assertEquals(roProp.size(), roMap.size());
 
-        writableProp.removeProp(FIRST_KEY+"0");
+        writableProp.removeProp(FIRST_KEY + "0");
         assertEquals(roProp.size(), roMap.size());
 
         writableProp.removeProp("non existent");
@@ -899,7 +899,7 @@ public class ReadOnlyPropsContainerTest
         }
         assertFalse(roMap.containsKey("non existent"));
 
-        final String removedKey = FIRST_KEY+"0";
+        final String removedKey = FIRST_KEY + "0";
         writableProp.removeProp(removedKey);
         assertFalse(roMap.containsKey(removedKey));
     }
@@ -938,7 +938,7 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = UnsupportedOperationException.class)
     public void testMapRemove() throws Throwable
     {
-        roMap.remove(FIRST_KEY+"0");
+        roMap.remove(FIRST_KEY + "0");
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -947,8 +947,8 @@ public class ReadOnlyPropsContainerTest
         final String[][] entriesToInsert = new String[][]
         {
             {"new", "value"},
-            {glue(FIRST_KEY+"0", "other"), "value2"},
-            {glue(FIRST_KEY+"0", SECOND_KEY+"1"), "override"}
+            {glue(FIRST_KEY + "0", "other"), "value2"},
+            {glue(FIRST_KEY + "0", SECOND_KEY + "1"), "override"}
         };
 
         final HashMap<String, String> mapToInsert = new HashMap<>();

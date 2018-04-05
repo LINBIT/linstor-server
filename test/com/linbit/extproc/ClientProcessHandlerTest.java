@@ -59,7 +59,7 @@ public class ClientProcessHandlerTest
         }
     }
 
-    @Test(expected=ChildProcessTimeoutException.class)
+    @Test(expected = ChildProcessTimeoutException.class)
     public void testTimingOutProc() throws ChildProcessTimeoutException, IOException
     {
         ProcessBuilder pBuilder = new ProcessBuilder(
@@ -117,7 +117,7 @@ public class ClientProcessHandlerTest
         cph.waitForDestroy();
     }
 
-    @Test(expected=ChildProcessTimeoutException.class)
+    @Test(expected = ChildProcessTimeoutException.class)
     public void testWaitForDestroyTimeout() throws ChildProcessTimeoutException, IOException
     {
         ProcessBuilder pBuilder = new ProcessBuilder(

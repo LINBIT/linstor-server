@@ -60,43 +60,43 @@ public class ChecksTest
         Checks.nameCheck("_v-", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidNoAlphaName() throws Exception
     {
         Checks.nameCheck("_-0-3-1", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidNumberFirstCharName() throws Exception
     {
         Checks.nameCheck("0test", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testTooLongName() throws Exception
     {
         Checks.nameCheck("_tooLongName-013", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testTooShortName() throws Exception
     {
         Checks.nameCheck("z", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidInnerCharName() throws Exception
     {
         Checks.nameCheck("Black:Bear", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidFirstCharName() throws Exception
     {
         Checks.nameCheck("-goNuts", TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    @Test(expected=ImplementationError.class)
+    @Test(expected = ImplementationError.class)
     public void testNullName() throws Exception
     {
         Checks.nameCheck(null, TEST_MIN_LENGTH, TEST_MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
@@ -108,31 +108,31 @@ public class ChecksTest
         Checks.hostNameCheck("martini-0.linbit");
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testTooShortHostname() throws Exception
     {
         Checks.hostNameCheck("m");
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidFirstCharHostname() throws Exception
     {
         Checks.hostNameCheck(".martini-0.linbit");
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidLastCharHostname() throws Exception
     {
         Checks.hostNameCheck("martini-0.linbit-");
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testInvalidCharHostname() throws Exception
     {
         Checks.hostNameCheck("martini:0.linbit");
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testTooLongLabelHostname() throws Exception
     {
         Checks.hostNameCheck(
@@ -141,7 +141,7 @@ public class ChecksTest
         );
     }
 
-    @Test(expected=InvalidNameException.class)
+    @Test(expected = InvalidNameException.class)
     public void testTooLongHostname() throws Exception
     {
         Checks.hostNameCheck(
@@ -155,7 +155,7 @@ public class ChecksTest
         );
     }
 
-    @Test(expected=ImplementationError.class)
+    @Test(expected = ImplementationError.class)
     public void testNullHostname() throws Exception
     {
         Checks.hostNameCheck(null);
@@ -167,31 +167,31 @@ public class ChecksTest
         Checks.rangeCheck(0, -1, 1);
     }
 
-    @Test(expected=ValueOutOfRangeException.class)
+    @Test(expected = ValueOutOfRangeException.class)
     public void testTooHigh() throws Exception
     {
         Checks.rangeCheck(2, Long.MIN_VALUE, 1);
     }
 
-    @Test(expected=ValueOutOfRangeException.class)
+    @Test(expected = ValueOutOfRangeException.class)
     public void testTooLow() throws Exception
     {
         Checks.rangeCheck(1, 2, Long.MAX_VALUE);
     }
 
-    @Test(expected=ValueOutOfRangeException.class)
+    @Test(expected = ValueOutOfRangeException.class)
     public void testNegativeTooLow() throws Exception
     {
         Checks.rangeCheck(-2, -1, 1);
     }
 
-    @Test(expected=ValueOutOfRangeException.class)
+    @Test(expected = ValueOutOfRangeException.class)
     public void testNegativeTooHigh() throws Exception
     {
         Checks.rangeCheck(-1, Long.MIN_VALUE, -2);
     }
 
-    @Test(expected=ImplementationError.class)
+    @Test(expected = ImplementationError.class)
     public void testImpossibleRange() throws Exception
     {
         // minValue > maxValue
@@ -206,19 +206,19 @@ public class ChecksTest
         Checks.ipAddrCheck("255.255.255.255");
     }
 
-    @Test(expected=InvalidIpAddressException.class)
+    @Test(expected = InvalidIpAddressException.class)
     public void testIpV4Invalid1() throws Exception
     {
         Checks.ipAddrCheck("0.0.0.0.0");
     }
 
-    @Test(expected=InvalidIpAddressException.class)
+    @Test(expected = InvalidIpAddressException.class)
     public void testIpV4Invalid2() throws Exception
     {
         Checks.ipAddrCheck("0.0.0.a");
     }
 
-    @Test(expected=InvalidIpAddressException.class)
+    @Test(expected = InvalidIpAddressException.class)
     public void testIpV4Invalid3() throws Exception
     {
         Checks.ipAddrCheck("256.0.0.0");
@@ -250,19 +250,19 @@ public class ChecksTest
         Checks.ipAddrCheck("ABCD:ABCD:ABCD:ABCD:ABCD:ABCD:192.168.158.190");
     }
 
-    @Test(expected=InvalidIpAddressException.class)
+    @Test(expected = InvalidIpAddressException.class)
     public void testIpV6Invalid1() throws Exception
     {
         Checks.ipAddrCheck("abcde:0000:0000::0");
     }
 
-    @Test(expected=InvalidIpAddressException.class)
+    @Test(expected = InvalidIpAddressException.class)
     public void testIpV6Invalid2() throws Exception
     {
         Checks.ipAddrCheck("1234::4312::0");
     }
 
-    @Test(expected=InvalidIpAddressException.class)
+    @Test(expected = InvalidIpAddressException.class)
     public void testIpV6Invalid3() throws Exception
     {
         Checks.ipAddrCheck("1234::4312:");
