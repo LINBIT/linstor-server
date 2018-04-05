@@ -22,20 +22,20 @@ public class NumberAllocTest
         new ValueTest(new int[] {}, 11, 0),
 
         // Test start index in the middle
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 11, 7),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 10, 7),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 11, 7),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 10, 7),
 
         // Test start index 0
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, -3, 0),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, -9, 0),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, -3, 0),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, -9, 0),
 
         // Test start index before last element
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21 }, 20, 14),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21 }, 21, 14),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21}, 20, 14),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21}, 21, 14),
 
         // Test start index behind last element
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21 }, 22, 15),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21 }, 30, 15)
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21}, 22, 15),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 21}, 30, 15)
     };
 
     public static final ValueTest[] TEST_END_INDEX =
@@ -46,73 +46,73 @@ public class NumberAllocTest
         new ValueTest(new int[] {}, 11, 0),
 
         // Test end index in the middle
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 17, 12),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 6, 5),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 4, 5),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 17, 12),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 6, 5),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 4, 5),
 
         // Test end index 0
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, -4, 0),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, -5, 0),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, -4, 0),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, -5, 0),
 
         // Test end index after first element
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, -3, 1),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, -3, 1),
 
         // Test end index behind last element
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 20, 15),
-        new ValueTest(new int[] { -3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20 }, 30, 15)
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 20, 15),
+        new ValueTest(new int[] {-3, -2, 0, 3, 4, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20}, 30, 15)
     };
 
     public static final RangeTest[] TEST_FREE_NUMBER =
     {
         // Test free number at index 0
-        new RangeTest(new int[] { 31, 32, 33, 34, 35, 37, 38, 39 }, 30, 50, 30),
-        new RangeTest(new int[] { 31, 32, 33, 34, 35, 37, 38, 39 }, 20, 40, 20),
-        new RangeTest(new int[] { 31, 32, 33, 34, 35, 37, 38, 39 }, 0, 50, 0),
-        new RangeTest(new int[] { 31, 32, 33, 34, 35, 37, 38, 39 }, -5, 40, -5),
+        new RangeTest(new int[] {31, 32, 33, 34, 35, 37, 38, 39}, 30, 50, 30),
+        new RangeTest(new int[] {31, 32, 33, 34, 35, 37, 38, 39}, 20, 40, 20),
+        new RangeTest(new int[] {31, 32, 33, 34, 35, 37, 38, 39}, 0, 50, 0),
+        new RangeTest(new int[] {31, 32, 33, 34, 35, 37, 38, 39}, -5, 40, -5),
 
         // Test free number in the middle
-        new RangeTest(new int[] { 30, 31, 32, 33, 35, 37, 38, 39 }, 30, 50, 34),
-        new RangeTest(new int[] { 30, 31, 32, 33, 34, 37, 38, 39 }, 30, 40, 35),
-        new RangeTest(new int[] { 30, 31, 32, 33, 34, 35, 38, 39 }, 30, 50, 36),
+        new RangeTest(new int[] {30, 31, 32, 33, 35, 37, 38, 39}, 30, 50, 34),
+        new RangeTest(new int[] {30, 31, 32, 33, 34, 37, 38, 39}, 30, 40, 35),
+        new RangeTest(new int[] {30, 31, 32, 33, 34, 35, 38, 39}, 30, 50, 36),
 
         // Test free number behind the last element
-        new RangeTest(new int[] { 30, 31, 32, 33, 34, 35, 36, 37 }, 30, 40, 38),
+        new RangeTest(new int[] {30, 31, 32, 33, 34, 35, 36, 37}, 30, 40, 38),
 
         // Test free number after the first element
-        new RangeTest(new int[] { 30, 32, 34, 35, 36, 37, 38, 39 }, 30, 50, 31),
-        new RangeTest(new int[] { 30, 33, 34, 35, 36, 37, 38, 39 }, 30, 40, 31),
+        new RangeTest(new int[] {30, 32, 34, 35, 36, 37, 38, 39}, 30, 50, 31),
+        new RangeTest(new int[] {30, 33, 34, 35, 36, 37, 38, 39}, 30, 40, 31),
 
         // Test free number before the last element
-        new RangeTest(new int[] { 30, 31, 32, 33, 34, 35, 36, 38 }, 30, 40, 37),
+        new RangeTest(new int[] {30, 31, 32, 33, 34, 35, 36, 38}, 30, 40, 37),
 
         // Range search - Test free number at index 0
-        new RangeTest(new int[] { -20, 31, 32, 33, 34, 35, 37, 38, 39, 60, 62 }, 30, 50, 30),
-        new RangeTest(new int[] { -3, 0, 29, 31, 32, 33, 34, 35, 37, 38, 39, 54, 56 }, 30, 40, 30),
-        new RangeTest(new int[] { -2, -1, 31, 32, 33, 34, 35, 37, 38, 39, 52, 53 }, 0, 50, 0),
-        new RangeTest(new int[] { -6, 31, 32, 33, 34, 35, 37, 38, 39, 41 }, -5, 40, -5),
+        new RangeTest(new int[] {-20, 31, 32, 33, 34, 35, 37, 38, 39, 60, 62}, 30, 50, 30),
+        new RangeTest(new int[] {-3, 0, 29, 31, 32, 33, 34, 35, 37, 38, 39, 54, 56}, 30, 40, 30),
+        new RangeTest(new int[] {-2, -1, 31, 32, 33, 34, 35, 37, 38, 39, 52, 53}, 0, 50, 0),
+        new RangeTest(new int[] {-6, 31, 32, 33, 34, 35, 37, 38, 39, 41}, -5, 40, -5),
 
         // Range search - Test free number in the middle
-        new RangeTest(new int[] { 20, 25, 30, 31, 32, 33, 35, 37, 38, 39, 50, 51, 52 }, 30, 50, 34),
-        new RangeTest(new int[] { 15, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43 }, 30, 40, 35),
-        new RangeTest(new int[] { 28, 29, 30, 31, 32, 33, 34, 35, 38, 39, 75, 150 }, 30, 50, 36),
+        new RangeTest(new int[] {20, 25, 30, 31, 32, 33, 35, 37, 38, 39, 50, 51, 52}, 30, 50, 34),
+        new RangeTest(new int[] {15, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43}, 30, 40, 35),
+        new RangeTest(new int[] {28, 29, 30, 31, 32, 33, 34, 35, 38, 39, 75, 150}, 30, 50, 36),
 
         // Range search - Test free number behind the last element
-        new RangeTest(new int[] { 24, 30, 31, 32, 33, 34, 35, 36, 37, 41, 42 }, 30, 40, 38),
+        new RangeTest(new int[] {24, 30, 31, 32, 33, 34, 35, 36, 37, 41, 42}, 30, 40, 38),
 
         // Range search - Test free number after the first element
-        new RangeTest(new int[] { 2, 3, 15, 30, 32, 34, 35, 36, 37, 38, 39, 70, 80 }, 30, 50, 31),
-        new RangeTest(new int[] { 0, 1, 30, 33, 34, 35, 36, 37, 38, 39, 40, 41, 45 }, 30, 40, 31),
+        new RangeTest(new int[] {2, 3, 15, 30, 32, 34, 35, 36, 37, 38, 39, 70, 80}, 30, 50, 31),
+        new RangeTest(new int[] {0, 1, 30, 33, 34, 35, 36, 37, 38, 39, 40, 41, 45}, 30, 40, 31),
 
         // Range search - Test free number before the last element
-        new RangeTest(new int[] { 25, 26, 28, 30, 31, 32, 33, 34, 35, 36, 38, 41, 43 }, 30, 40, 37),
+        new RangeTest(new int[] {25, 26, 28, 30, 31, 32, 33, 34, 35, 36, 38, 41, 43}, 30, 40, 37),
 
         // Range search - Test all occupied elements out of range
-        new RangeTest(new int[] { 1001, 1002, 1003, 1004, 1005 }, 0, 10, 0),
-        new RangeTest(new int[] { 1001, 1002, 1003, 1004, 1005 }, 25, 75, 25),
-        new RangeTest(new int[] { 15, 16, 17, 18, 19, 20 }, 25, 75, 25),
-        new RangeTest(new int[] { 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 }, 25, 75, 25),
-        new RangeTest(new int[] { 15, 16, 17, 18, 19, 20, 1001, 1002, 1003, 1004, 1005 }, 25, 75, 25),
-        new RangeTest(new int[] { 20, 21, 22, 23, 24, 76, 77, 78, 79, 80 }, 25, 75, 25),
+        new RangeTest(new int[] {1001, 1002, 1003, 1004, 1005}, 0, 10, 0),
+        new RangeTest(new int[] {1001, 1002, 1003, 1004, 1005}, 25, 75, 25),
+        new RangeTest(new int[] {15, 16, 17, 18, 19, 20}, 25, 75, 25),
+        new RangeTest(new int[] {15, 16, 17, 18, 19, 20, 21, 22, 23, 24}, 25, 75, 25),
+        new RangeTest(new int[] {15, 16, 17, 18, 19, 20, 1001, 1002, 1003, 1004, 1005}, 25, 75, 25),
+        new RangeTest(new int[] {20, 21, 22, 23, 24, 76, 77, 78, 79, 80}, 25, 75, 25),
 
         // Range search - Test no occupied elements
         new RangeTest(new int[] {}, 0, 1000, 0),
@@ -120,25 +120,25 @@ public class NumberAllocTest
 
         // Range search - Test single element range
         new RangeTest(new int[] {}, 30, 30, 30),
-        new RangeTest(new int[] { 100, 200 }, 120, 120, 120),
-        new RangeTest(new int[] { 119, 121 }, 120, 120, 120),
+        new RangeTest(new int[] {100, 200}, 120, 120, 120),
+        new RangeTest(new int[] {119, 121}, 120, 120, 120),
     };
 
     public static final RangeTest[] TEST_EXHAUSTED_POOL =
     {
         // Test no free numbers
-        new RangeTest(new int[] { 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 }, 30, 40, 0),
+        new RangeTest(new int[] {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40}, 30, 40, 0),
 
         // Range search - Test no free numbers
-        new RangeTest(new int[] { -1, 0, 2, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 42, 43, 44 }, 30, 40, 0),
-        new RangeTest(new int[] { 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 }, 30, 40, 0),
-        new RangeTest(new int[] { 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 }, 34, 36, 0),
-        new RangeTest(new int[] { 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41 }, 34, 36, 0),
+        new RangeTest(new int[] {-1, 0, 2, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 42, 43, 44}, 30, 40, 0),
+        new RangeTest(new int[] {29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41}, 30, 40, 0),
+        new RangeTest(new int[] {29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41}, 34, 36, 0),
+        new RangeTest(new int[] {29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41}, 34, 36, 0),
 
         // Range search - Test single element range
-        new RangeTest(new int[] { 4 }, 4, 4, 0),
-        new RangeTest(new int[] { 3, 4, 5 }, 4, 4, 0),
-        new RangeTest(new int[] { 2, 4, 6}, 4, 4, 0),
+        new RangeTest(new int[] {4}, 4, 4, 0),
+        new RangeTest(new int[] {3, 4, 5}, 4, 4, 0),
+        new RangeTest(new int[] {2, 4, 6}, 4, 4, 0),
     };
 
     public NumberAllocTest()

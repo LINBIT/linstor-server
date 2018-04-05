@@ -138,7 +138,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             SYS_CTX,
             resName,
             port,
-            new RscDfnFlags[] { RscDfnFlags.DELETE },
+            new RscDfnFlags[] {RscDfnFlags.DELETE},
             secret,
             transportType
         );
@@ -296,7 +296,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resDfn,
             node,
             nodeId,
-            new RscFlags[] { RscFlags.CLEAN },
+            new RscFlags[] {RscFlags.CLEAN},
             true,
             false
         );

@@ -380,11 +380,11 @@ public class ObjectProtectionTest
                 new Object[][]
                 {
                     // object protection
-                    { null, VIEW, USE, CHANGE, CONTROL },       // objProt acl entry for user
-                    { null, VIEW, USE, CHANGE, CONTROL },       // secDomain entry for user
-                    { false, true },                            // is user owner of objProt
+                    {null, VIEW, USE, CHANGE, CONTROL},         // objProt acl entry for user
+                    {null, VIEW, USE, CHANGE, CONTROL},         // secDomain entry for user
+                    {false, true},                              // is user owner of objProt
                     // accCtx
-                    { false, true },                            // has PRIV_MAC_OVRD
+                    {false, true},                              // has PRIV_MAC_OVRD
                     {
                         0L, PRIV_OBJ_VIEW.id,                   //
                         PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id,    // privileges.... :)
@@ -392,7 +392,7 @@ public class ObjectProtectionTest
                         PRIV_SYS_ALL.id                         //
                     },
                     // wanted access
-                    { VIEW, USE, CHANGE, CONTROL }              // wantedAccessContext
+                    {VIEW, USE, CHANGE, CONTROL}                // wantedAccessContext
                 },
                 iterateSecurityLevels,
                 rootCtx,

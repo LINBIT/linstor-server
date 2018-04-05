@@ -117,7 +117,7 @@ public class ResouceDataDerbyTest extends DerbyBase
             resDfn,
             node,
             nodeId,
-            new RscFlags[] { RscFlags.DELETE },
+            new RscFlags[] {RscFlags.DELETE},
             true,
             false
         );

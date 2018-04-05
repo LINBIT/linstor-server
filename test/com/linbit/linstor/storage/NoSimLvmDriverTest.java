@@ -131,7 +131,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     @Override
     protected String[] getListVolumeNamesCommand()
     {
-        return new String[] { "lvs", "-o", "lv_name", "--noheading" };
+        return new String[] {"lvs", "-o", "lv_name", "--noheading"};
     }
 
     @Override
@@ -167,6 +167,6 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     @Override
     protected String[] getListPoolNamesCommand()
     {
-        return new String[] { "vgs", "-o", "vg_name", "--noheading" };
+        return new String[] {"vgs", "-o", "vg_name", "--noheading"};
     }
 }

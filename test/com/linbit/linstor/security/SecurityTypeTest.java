@@ -1,6 +1,5 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.security.AccessType.*;
 import static com.linbit.linstor.security.Privilege.*;
 import static org.junit.Assert.*;
 
@@ -250,11 +249,22 @@ public class SecurityTypeTest
                         PRIV_OBJ_CONTROL.id, PRIV_OBJ_OWNER.id, //
                         PRIV_SYS_ALL.id                         //
                     },
-                    { true, false },                            // has PRIV_MAC_OVRD
-                    { userSecDomain, someOtherUserSecDomain },  // source domain
-                    { userSecDomain, someOtherUserSecDomain },  // target domain
-                    { VIEW, USE, CHANGE, CONTROL },             // requested access types
-                    { null, VIEW, USE, CHANGE, CONTROL }        // granted access types
+                    {true, false},                            // has PRIV_MAC_OVRD
+                    {userSecDomain, someOtherUserSecDomain},  // source domain
+                    {userSecDomain, someOtherUserSecDomain},  // target domain
+                    {
+                        AccessType.VIEW,    //
+                        AccessType.USE,     //
+                        AccessType.CHANGE,  // requested access types
+                        AccessType.CONTROL  //
+                    },
+                    {
+                        null,
+                        AccessType.VIEW,    //
+                        AccessType.USE,     //
+                        AccessType.CHANGE,  // granted access types
+                        AccessType.CONTROL  //
+                    }
                 },
                 iterateSecLevel,
                 rootCtx,

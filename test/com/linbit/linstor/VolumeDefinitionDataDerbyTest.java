@@ -130,7 +130,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] { VlmDfnFlags.DELETE }
+            new VlmDfnFlags[] {VlmDfnFlags.DELETE}
         );
         commit();
 

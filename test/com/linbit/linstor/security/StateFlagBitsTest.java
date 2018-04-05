@@ -66,12 +66,12 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -112,12 +112,12 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -159,17 +159,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will try to enable
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -213,17 +213,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will try to disable
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -267,17 +267,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will try to enableExcept
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -322,17 +322,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will try to disableExcept
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -376,17 +376,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will call isSet with
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -428,17 +428,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will call isUnset with
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -480,17 +480,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will call isSomeSet with
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -532,17 +532,17 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
 
             // flags we will call isSomeUnset with
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)
@@ -584,12 +584,12 @@ public class StateFlagBitsTest
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
             // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },
+            {null, VIEW, USE, CHANGE, CONTROL},
 
             // preset flags for stateflags
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO },
-            { FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE },
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_ONE},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_TWO},
+            {FlagImpl.FLAG_ZERO, FlagImpl.FLAG_THREE},
         });
 
         for (Object[] iteration : iterator)

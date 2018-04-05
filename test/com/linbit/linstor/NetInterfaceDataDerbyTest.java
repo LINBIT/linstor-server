@@ -69,7 +69,9 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
 
         niUuid = java.util.UUID.randomUUID();
-        niData = new NetInterfaceData( // not persisted
+
+        // not persisted
+        niData = new NetInterfaceData(
             niUuid, SYS_CTX, niName, node, niAddr, dbDriver, transObjFactory, transMgrProvider
         );
     }

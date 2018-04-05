@@ -17,7 +17,7 @@ import org.junit.Test;
  */
 public class ChecksTest
 {
-    public static final byte[] VALID_CHARS = { '_' };
+    public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-' };
     public static final int TEST_MIN_LENGTH = 2;
     public static final int TEST_MAX_LENGTH = 15;

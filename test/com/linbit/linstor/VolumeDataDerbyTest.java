@@ -180,7 +180,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            new VlmFlags[] { VlmFlags.CLEAN },
+            new VlmFlags[] {VlmFlags.CLEAN},
             true,
             false
         );
