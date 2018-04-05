@@ -6,6 +6,9 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -167,6 +170,7 @@ public class CmdDisplayResource extends BaseDebugCmd
                             .leaf("Node UUID: %s", peerNode.getUuid().toString().toUpperCase())
                             .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(peerNode));
 
+
                         try
                         {
                             long flagsBits = rsc.getStateFlags().getFlagsBits(accCtx);
@@ -183,6 +187,29 @@ public class CmdDisplayResource extends BaseDebugCmd
                                 rscProt.getOwner().name.displayValue
                             )
                             .leaf("Security type: %s", rscProt.getSecurityType().name.displayValue);
+
+                        Iterator<Volume> vlmIter = rsc.iterateVolumes();
+                        while (vlmIter.hasNext())
+                        {
+                            Volume vlm = vlmIter.next();
+                            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                            String storPoolName = "<default>";
+                            {
+                                StorPool vlmStorPool = vlm.getStorPool(accCtx);
+                                if (vlmStorPool != null)
+                                {
+                                    storPoolName = vlmStorPool.getName().displayValue;
+                                }
+                            }
+                            treeBuilder.branch("Volume %d", vlmDfn.getVolumeNumber().value)
+                                .leaf("Volume UUID: %s", vlm.getUuid().toString().toUpperCase())
+                                .leaf("Volume definition UUID: %s", vlmDfn.getUuid().toString().toUpperCase())
+                                .leaf("Size:     %16d", vlmDfn.getVolumeSize(accCtx))
+                                .leaf("Minor Nr: %16d", vlmDfn.getMinorNr(accCtx).value)
+                                .leaf("Flags:    %016x", vlm.getFlags().getFlagsBits(accCtx))
+                                .leaf("Storage pool: %s", storPoolName)
+                                .endBranch();
+                        }
 
                         treeBuilder.endBranch();
                     }
