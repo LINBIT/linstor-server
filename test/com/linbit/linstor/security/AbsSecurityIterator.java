@@ -10,7 +10,12 @@ public abstract class AbsSecurityIterator<T> extends AbsIterator<T>
     private boolean iterateSecurityLevels;
     private SecurityLevel currentSecLevel;
 
-    public AbsSecurityIterator(Object[][] values, boolean iteraterSecurityLevels, AccessContext rootCtx, int[] skipColumns)
+    public AbsSecurityIterator(
+        Object[][] values,
+        boolean iteraterSecurityLevels,
+        AccessContext rootCtx,
+        int[] skipColumns
+    )
     {
         super(values, skipColumns);
 

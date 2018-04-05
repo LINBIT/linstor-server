@@ -77,7 +77,13 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     }
 
     @Override
-    public String reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(
+        Level logLevel,
+        Throwable errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
     {
         System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
             "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +

@@ -223,7 +223,8 @@ public class ReadOnlyPropsContainerTest
             FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
         );
 
-        generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after "first2" and before "first0/second0"
+        // insert the "a/b" key after "first2" and before "first0/second0"
+        generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue));
 
         assertIteratorEqual(iterator, generatedEntries, true);
     }

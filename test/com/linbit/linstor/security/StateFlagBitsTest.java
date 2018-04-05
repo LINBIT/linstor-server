@@ -667,12 +667,18 @@ public class StateFlagBitsTest
 
     private AccessContext createUserDefaultAccessContext() throws AccessDeniedException
     {
-        AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, new PrivilegeSet(Privilege.PRIV_MAC_OVRD));
+        AccessContext accCtx = new AccessContext(
+            userId,
+            userRole,
+            userSecDomain,
+            new PrivilegeSet(Privilege.PRIV_MAC_OVRD)
+        );
         accCtx.privEffective.enablePrivileges(Privilege.PRIV_MAC_OVRD);
         return accCtx;
     }
 
-    private ObjectProtection createObjectProtection(AccessType... grantedAccess) throws AccessDeniedException, SQLException
+    private ObjectProtection createObjectProtection(AccessType... grantedAccess)
+        throws AccessDeniedException, SQLException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
         ObjectProtection objProt = new ObjectProtection(objCtx, null, null, transObjFactory, null);

@@ -212,7 +212,12 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         List<StorPoolDefinitionData> storpools = driver.loadAll();
 
-        assertNotNull(findStorPoolDefinitionDatabyName(storpools, new StorPoolName(ConfigModule.DEFAULT_STOR_POOL_NAME)));
+        assertNotNull(
+            findStorPoolDefinitionDatabyName(
+                storpools,
+                new StorPoolName(ConfigModule.DEFAULT_STOR_POOL_NAME)
+            )
+        );
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
         assertNotEquals(

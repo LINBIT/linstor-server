@@ -71,7 +71,9 @@ public abstract class NoSimDriverTest
     }
 
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
-    protected void runTest() throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException, IOException, InterruptedException
+    protected void runTest()
+        throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException,
+        IOException, InterruptedException
     {
         initialize();
 
@@ -95,7 +97,11 @@ public abstract class NoSimDriverTest
         String identifier2 = getUnusedIdentifier();
         try
         {
-            createVolume(identifier2, 10 * getPoolSizeInKiB(), "   trying to create too large volume [%s] with size [%d]...");
+            createVolume(
+                identifier2,
+                10 * getPoolSizeInKiB(),
+                "   trying to create too large volume [%s] with size [%d]..."
+            );
             if (!isThinDriver())
             {
                 fail("      Creating too large volume should have failed");
@@ -128,7 +134,11 @@ public abstract class NoSimDriverTest
         }
 
         String identifier3 = getUnusedIdentifier();
-        createVolume(identifier3, MetaData.DRBD_MIN_NET_kiB - 1, "   trying to create volume [%s] with too small size [%d] (should be aligned up)...");
+        createVolume(
+            identifier3,
+            MetaData.DRBD_MIN_NET_kiB - 1,
+            "   trying to create volume [%s] with too small size [%d] (should be aligned up)..."
+        );
 
 
         log("testing checkVolume   %n");
@@ -557,7 +567,9 @@ public abstract class NoSimDriverTest
         return identifier;
     }
 
-    private void createVolume(String identifier, long size, String format) throws MaxSizeException, MinSizeException, StorageException, ChildProcessTimeoutException, IOException
+    private void createVolume(String identifier, long size, String format)
+        throws MaxSizeException, MinSizeException, StorageException, ChildProcessTimeoutException,
+        IOException
     {
         log(format, identifier, size);
         driver.createVolume(identifier, size, null); // null == not encrypted
@@ -572,7 +584,8 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void checkSize(String identifier, long expectedSize, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void checkSize(String identifier, long expectedSize, String format)
+        throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
         long driverSize = driver.getSize(identifier);
@@ -580,16 +593,23 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void checkPath(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void checkPath(String identifier, String format)
+        throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
         String volumePath = driver.getVolumePath(identifier, false);
         String expectedVolumePath = getVolumePathImpl(identifier);
-        failIf(!expectedVolumePath.equals(volumePath), "unexpected volume path: [%s], expected: [%s]", volumePath, expectedVolumePath);
+        failIf(
+            !expectedVolumePath.equals(volumePath),
+            "unexpected volume path: [%s], expected: [%s]",
+            volumePath,
+            expectedVolumePath
+        );
         log(" done %n");
     }
 
-    private void stopVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void stopVolume(String identifier, String format)
+        throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
         driver.stopVolume(identifier, false);
@@ -597,7 +617,8 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void startVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void startVolume(String identifier, String format)
+        throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
         driver.startVolume(identifier, null); // null == not encrypted
@@ -605,7 +626,8 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void deleteVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void deleteVolume(String identifier, String format)
+        throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
         driver.deleteVolume(identifier, false);
@@ -643,7 +665,8 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void deleteSnapshot(String identifier, String snapshotName, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void deleteSnapshot(String identifier, String snapshotName, String format)
+        throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
         driver.deleteSnapshot(identifier, snapshotName, false);
@@ -665,7 +688,8 @@ public abstract class NoSimDriverTest
         log(" done%n");
     }
 
-    private void mount(String blockDevice, String mountPath, String format) throws ChildProcessTimeoutException, IOException
+    private void mount(String blockDevice, String mountPath, String format)
+        throws ChildProcessTimeoutException, IOException
     {
         log(format, blockDevice, mountPath);
         callChecked("mount", blockDevice, mountPath);
@@ -869,7 +893,8 @@ public abstract class NoSimDriverTest
         return volumeExists(identifier, null);
     }
 
-    protected abstract boolean volumeExists(String identifier, String snapName) throws ChildProcessTimeoutException, IOException;
+    protected abstract boolean volumeExists(String identifier, String snapName)
+        throws ChildProcessTimeoutException, IOException;
 
     protected abstract String getVolumePathImpl(String identifier) throws ChildProcessTimeoutException, IOException;
 
