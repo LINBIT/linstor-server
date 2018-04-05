@@ -61,9 +61,10 @@ public class ControllerSecurityModule extends AbstractModule
     {
         errorLogRef.logInfo("Initializing authentication subsystem");
 
+        Authentication authentication;
         try
         {
-            return new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
+            authentication = new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
         }
         catch (AccessDeniedException accExc)
         {
@@ -81,6 +82,7 @@ public class ControllerSecurityModule extends AbstractModule
                 algoExc
             );
         }
+        return authentication;
     }
 
     @Provides
@@ -94,9 +96,10 @@ public class ControllerSecurityModule extends AbstractModule
     {
         errorLogRef.logInfo("Initializing authorization subsystem");
 
+        Authorization authorization;
         try
         {
-            return new Authorization(initCtx, dbConnPool, securityDbDriver);
+            authorization = new Authorization(initCtx, dbConnPool, securityDbDriver);
         }
         catch (AccessDeniedException accExc)
         {
@@ -106,6 +109,7 @@ public class ControllerSecurityModule extends AbstractModule
                 accExc
             );
         }
+        return authorization;
     }
 
     @Provides

@@ -24,12 +24,12 @@ public class DummySecurityInitializer
         try
         {
             sysCtx.privEffective.enablePrivileges(Privilege.PRIV_SYS_ALL);
-            return sysCtx;
         }
         catch (AccessDeniedException iAmNotRootExc)
         {
             throw new RuntimeException(iAmNotRootExc);
         }
+        return sysCtx;
     }
 
     public static AccessContext getPublicAccessContext()
