@@ -163,6 +163,13 @@ public interface Peer
     InetSocketAddress peerAddress();
 
     /**
+     * Returns the internet address of the local connector
+     *
+     * @return Internet address of the peer
+     */
+    public InetSocketAddress localAddress();
+
+    /**
      * Called when the connection is established
      * @throws SSLException
      */

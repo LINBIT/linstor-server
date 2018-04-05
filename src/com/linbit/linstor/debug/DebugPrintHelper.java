@@ -12,7 +12,7 @@ import java.util.TreeSet;
 
 public class DebugPrintHelper
 {
-    private static final int SPRT_TEXT_LENGTH = 78;
+    private static final int SPRT_TEXT_LENGTH = 118;
 
     private static final char SPRT_TEXT_CHAR = '\u2550';
 

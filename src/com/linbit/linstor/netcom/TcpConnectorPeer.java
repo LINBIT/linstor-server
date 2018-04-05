@@ -415,6 +415,32 @@ public class TcpConnectorPeer implements Peer
         }
         return peerAddr;
     }
+    
+    @Override
+    public InetSocketAddress localAddress()
+    {
+        InetSocketAddress localAddr = null;
+        try
+        {
+            @SuppressWarnings("resource")
+            SelectableChannel channel = selKey.channel();
+            if (channel != null && channel instanceof SocketChannel)
+            {
+                SocketChannel sockChannel = (SocketChannel) channel;
+                SocketAddress sockAddr = sockChannel.getLocalAddress();
+                if (sockAddr != null && sockAddr instanceof InetSocketAddress)
+                {
+                    localAddr = (InetSocketAddress) sockAddr;
+                }
+            }
+        }
+        catch (IOException ignored)
+        {
+            // Undeterminable address (possibly closed or otherwise invalid)
+            // No-op; method returns null
+        }
+        return localAddr;
+    }
 
     @Override
     public void sendPing()

@@ -3,6 +3,8 @@ package com.linbit.linstor.debug;
 import javax.inject.Inject;
 import com.linbit.AutoIndent;
 import com.linbit.ServiceName;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -33,6 +35,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
     private static final String PRM_DETAIL_NAME     = "DETAIL";
     private static final String PRM_DETAIL_DFLT     = "DEFAULT";
     private static final String PRM_DETAIL_ID       = "ID";
+    private static final String PRM_DETAIL_STATS    = "STATS";
     private static final String PRM_DETAIL_CONN     = "CONN";
     private static final String PRM_DETAIL_CTXT     = "CONTEXT";
     private static final String PRM_DETAIL_PRIVS    = "PRIVS";
@@ -55,6 +58,8 @@ public class CmdDisplayConnections extends BaseDebugCmd
             "        Displays the peer address along with statistics\n" +
             "    ID\n" +
             "        Displays connection IDs\n" +
+            "    STATS\n" +
+            "        Displays queueing and traffic statistics\n" +
             "    CONN\n" +
             "        Displays additional information about the connection\n" +
             "    CONTEXT\n" +
@@ -110,6 +115,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
     ) throws Exception
     {
         boolean detailId        = false;
+        boolean detailStats     = false;
         boolean detailConn      = false;
         boolean detailContext   = false;
         boolean detailPrivs     = false;
@@ -130,6 +136,9 @@ public class CmdDisplayConnections extends BaseDebugCmd
                         case PRM_DETAIL_ID:
                             detailId = true;
                             break;
+                        case PRM_DETAIL_STATS:
+                            detailStats = true;
+                            break;
                         case PRM_DETAIL_CONN:
                             detailConn = true;
                             break;
@@ -141,6 +150,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                             break;
                         case PRM_DETAIL_FULL:
                             detailId = true;
+                            detailStats = true;
                             detailConn = true;
                             detailContext = true;
                             detailPrivs = true;
@@ -172,11 +182,9 @@ public class CmdDisplayConnections extends BaseDebugCmd
             if (peerList.size() > 0)
             {
                 debugOut.printf(
-                    "%-46s %5s %8s %8s\n",
-                    "Endpoint address",
-                    "OutQ",
-                    "MsgRecv",
-                    "MsgSent"
+                    "%-46s \u2194 %-46s\n",
+                    "Local address",
+                    "Remote address"
                 );
                 printSectionSeparator(debugOut);
 
@@ -184,14 +192,28 @@ public class CmdDisplayConnections extends BaseDebugCmd
                 for (Peer curPeer : peerList.values())
                 {
                     String connId = curPeer.getId();
-                    String address = "<unknown>";
-                    InetSocketAddress peerAddr = curPeer.peerAddress();
-                    if (peerAddr != null)
+                    String localAddress = "<unknown>";
                     {
-                        InetAddress inetAddr = peerAddr.getAddress();
-                        if (inetAddr != null)
+                        InetSocketAddress sockAddr = curPeer.localAddress();
+                        if (sockAddr != null)
                         {
-                            address = inetAddr.getHostAddress() + ":" + peerAddr.getPort();
+                            InetAddress inetAddr = sockAddr.getAddress();
+                            if (inetAddr != null)
+                            {
+                                localAddress = inetAddr.getHostAddress() + ":" + sockAddr.getPort();
+                            }
+                        }
+                    }
+                    String peerAddress = "<unknown>";
+                    {
+                        InetSocketAddress sockAddr = curPeer.peerAddress();
+                        if (sockAddr != null)
+                        {
+                            InetAddress inetAddr = sockAddr.getAddress();
+                            if (inetAddr != null)
+                            {
+                                peerAddress = inetAddr.getHostAddress() + ":" + sockAddr.getPort();
+                            }
                         }
                     }
                     String connector = "<unknown>";
@@ -205,7 +227,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
 
                     boolean selected = (
                         match(connSvcMatch, connector) &&
-                        match(addrMatch, address) &&
+                        match(addrMatch, peerAddress) &&
                         match(connIdMatch, connId)
                     );
 
@@ -213,24 +235,39 @@ public class CmdDisplayConnections extends BaseDebugCmd
                     {
                         AccessContext peerAccCtx = curPeer.getAccessContext();
                         debugOut.printf(
-                            "%-46s %5d %8d %8d\n",
-                            address,
-                            curPeer.outQueueCount(),
-                            curPeer.msgRecvCount(),
-                            curPeer.msgSentCount()
+                            "%-46s \u2194 %-46s\n",
+                            localAddress,
+                            peerAddress
                         );
+                        if (detailStats)
+                        {
+                            debugOut.printf(
+                                "    MsgRecv: %8d   MsgSent: %8d   OutQ: %5d  QCap: %5d\n",
+                                curPeer.msgRecvCount(), curPeer.msgSentCount(),
+                                curPeer.outQueueCount(), curPeer.outQueueCapacity()
+                            );
+                        }
                         if (detailId)
                         {
                             debugOut.printf(
-                                "    Id:        %-64s\n",
+                                "    Id:         %-64s\n",
                                 curPeer.getId()
                             );
+                            Node peerNode = curPeer.getNode();
+                            if (peerNode != null)
+                            {
+                                NodeName peerNodeName = peerNode.getName();
+                                debugOut.printf(
+                                    "    Peer:       Satellite on %s\n",
+                                    peerNodeName.displayValue
+                                );
+                            }
                         }
                         if (detailConn)
                         {
                             debugOut.printf(
-                                "    Connector: %-24s QCap: %4d\n",
-                                connector, curPeer.outQueueCapacity()
+                                "    Connector:  %-24s\n",
+                                connector
                             );
                         }
                         if (detailContext)
@@ -239,7 +276,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                             Role peerRole = peerAccCtx.getRole();
                             SecurityType peerDomain = peerAccCtx.getDomain();
                             debugOut.printf(
-                                "    Identity:  %-24s Role: %-24s\n" +
+                                "    Identity:   %-24s Role: %-24s\n" +
                                 "    Security domain: %-24s\n",
                                 peerIdentity, peerRole, peerDomain
                             );
