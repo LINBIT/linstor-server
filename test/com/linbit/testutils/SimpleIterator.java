@@ -26,9 +26,9 @@ public class SimpleIterator implements Iterator<Object[]>, Iterable<Object[]>
     public boolean hasNext()
     {
         boolean hasNext = false;
-        for (int i = 0; i < currentIdx.length; ++i)
+        for (int idx = 0; idx < currentIdx.length; ++idx)
         {
-            if (currentIdx[i] < values[i].length - 1)
+            if (currentIdx[idx] < values[idx].length - 1)
             {
                 hasNext = true;
                 break;
@@ -42,22 +42,22 @@ public class SimpleIterator implements Iterator<Object[]>, Iterable<Object[]>
     {
         incrementIdx();
         Object[] next = new Object[currentIdx.length];
-        for (int i = 0; i < currentIdx.length; ++i)
+        for (int idx = 0; idx < currentIdx.length; ++idx)
         {
-            next[i] = values[i][currentIdx[i]];
+            next[idx] = values[idx][currentIdx[idx]];
         }
         return next;
     }
 
     private void incrementIdx()
     {
-        for (int i = 0; i < currentIdx.length; ++i)
+        for (int idx = 0; idx < currentIdx.length; ++idx)
         {
-            if (++currentIdx[i] >= values[i].length)
+            if (++currentIdx[idx] >= values[idx].length)
             {
-                if (i != values.length - 1)
+                if (idx != values.length - 1)
                 {
-                    currentIdx[i] = 0;
+                    currentIdx[idx] = 0;
                 }
             }
             else

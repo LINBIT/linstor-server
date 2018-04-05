@@ -19,15 +19,15 @@ public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
         usedColumns = new int[values.length - skipColumns.length];
         int usedIdx = 0;
         int skipIdx = 0;
-        for (int i = 0; i < values.length; ++i)
+        for (int valueIdx = 0; valueIdx < values.length; ++valueIdx)
         {
-            if (skipIdx < skipColumns.length && i == skipColumns[skipIdx])
+            if (skipIdx < skipColumns.length && valueIdx == skipColumns[skipIdx])
             {
                 ++skipIdx;
             }
             else
             {
-                usedColumns[usedIdx] = i;
+                usedColumns[usedIdx] = valueIdx;
                 ++usedIdx;
             }
         }
@@ -43,9 +43,9 @@ public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
     public boolean hasNextCombination()
     {
         boolean hasNext = false;
-        for (int i : usedColumns)
+        for (int usedCol : usedColumns)
         {
-            if (currentIdx[i] < values[i].length - 1)
+            if (currentIdx[usedCol] < values[usedCol].length - 1)
             {
                 hasNext = true;
                 break;
@@ -62,9 +62,9 @@ public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
         {
             currentIteration = getNext();
         }
-        catch (Exception e)
+        catch (Exception exc)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException(exc);
         }
         return currentIteration;
     }
@@ -73,14 +73,14 @@ public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
 
     private void incrementIdx()
     {
-        for (int i : usedColumns)
+        for (int usedCol : usedColumns)
         {
-            ++currentIdx[i];
-            if (currentIdx[i] >= values[i].length)
+            ++currentIdx[usedCol];
+            if (currentIdx[usedCol] >= values[usedCol].length)
             {
-                if (i != values.length - 1)
+                if (usedCol != values.length - 1)
                 {
-                    currentIdx[i] = 0;
+                    currentIdx[usedCol] = 0;
                 }
             }
             else
@@ -92,9 +92,9 @@ public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
 
     protected void resetAllIdx()
     {
-        for (int i = 0; i < currentIdx.length; ++i)
+        for (int idx = 0; idx < currentIdx.length; ++idx)
         {
-            currentIdx[i] = 0;
+            currentIdx[idx] = 0;
         }
         currentIdx[usedColumns[0]] = -1; // we increment it at the start of next()
     }

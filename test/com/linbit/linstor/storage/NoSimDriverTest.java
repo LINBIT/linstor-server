@@ -517,9 +517,9 @@ public abstract class NoSimDriverTest
                 fail("%sFile [%s] should exist, but it does not.", logIndent, file, origRetryCount, retryDelay);
             }
         }
-        catch (ChildProcessTimeoutException | IOException e)
+        catch (ChildProcessTimeoutException | IOException exc)
         {
-            e.printStackTrace();
+            exc.printStackTrace();
         }
     }
 
@@ -552,15 +552,15 @@ public abstract class NoSimDriverTest
         log("   requesting unused identifier... ");
 
         String identifier = null;
-        int i = 0;
+        int idx = 0;
         while (identifier == null)
         {
-            identifier = baseIdentifier + i;
+            identifier = baseIdentifier + idx;
             if (volumeExists(identifier))
             {
                 identifier = null;
             }
-            ++i;
+            ++idx;
         }
         identifier = prefix + identifier + suffix;
         log("using identifier: [%s]... done %n", identifier);
@@ -874,10 +874,10 @@ public abstract class NoSimDriverTest
                 cleanUp();
             }
         }
-        catch (Exception e)
+        catch (Exception exc)
         {
             System.err.println();
-            e.printStackTrace();
+            exc.printStackTrace();
             cleanUp();
         }
     }

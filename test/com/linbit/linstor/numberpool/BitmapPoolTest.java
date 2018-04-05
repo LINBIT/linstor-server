@@ -285,9 +285,9 @@ public class BitmapPoolTest
     {
         int rangeSize = rangeEndInclusive - rangeStart + 1;
         int[] numbers = new int[rangeSize];
-        for (int i = 0; i < rangeSize; i++)
+        for (int idx = 0; idx < rangeSize; idx++)
         {
-            numbers[i] = rangeStart + i;
+            numbers[idx] = rangeStart + idx;
         }
         return numbers;
     }

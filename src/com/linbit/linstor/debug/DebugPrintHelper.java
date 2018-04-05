@@ -18,7 +18,7 @@ public class DebugPrintHelper
 
     private final String sprtText;
 
-    private static final DebugPrintHelper instance = new DebugPrintHelper();
+    private static final DebugPrintHelper INSTANCE = new DebugPrintHelper();
 
     private DebugPrintHelper()
     {
@@ -29,7 +29,7 @@ public class DebugPrintHelper
 
     public static DebugPrintHelper getInstance()
     {
-        return instance;
+        return INSTANCE;
     }
 
     public void printMissingParamError(

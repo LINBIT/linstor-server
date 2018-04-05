@@ -107,7 +107,7 @@ public class DbConnectionPoolModule extends AbstractModule
                 String.format("Using %s in memory database", args.getInMemoryDbType())
             );
 
-            DatabaseDriverInfo dbInfo = DatabaseDriverInfo.CreateDriverInfo(args.getInMemoryDbType());
+            DatabaseDriverInfo dbInfo = DatabaseDriverInfo.createDriverInfo(args.getInMemoryDbType());
             connectionUrl = dbInfo.jdbcInMemoryUrl();
         }
         return connectionUrl;

@@ -695,9 +695,9 @@ public class StateFlagBitsTest
     private FlagImpl[] asFlagImplArray(Object[] iteration, int... iterationIdx)
     {
         FlagImpl[] flags = new FlagImpl[iterationIdx.length];
-        for (int i = 0; i < iterationIdx.length; ++i)
+        for (int idx = 0; idx < iterationIdx.length; ++idx)
         {
-            flags[i] = (FlagImpl) iteration[iterationIdx[i]];
+            flags[idx] = (FlagImpl) iteration[iterationIdx[idx]];
         }
         return flags;
     }

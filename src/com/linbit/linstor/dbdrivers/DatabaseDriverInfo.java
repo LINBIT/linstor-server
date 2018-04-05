@@ -14,7 +14,7 @@ public interface DatabaseDriverInfo
         }
     }
 
-    static DatabaseDriverInfo CreateDriverInfo(final String dbType)
+    static DatabaseDriverInfo createDriverInfo(final String dbType)
     {
         DatabaseDriverInfo dbdriver = null;
         switch (dbType)

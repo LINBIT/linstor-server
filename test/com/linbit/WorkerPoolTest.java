@@ -120,7 +120,7 @@ public class WorkerPoolTest
                 }
             };
         final int taskCount = DEFAULT_QUEUE_SIZE;
-        for (int i = 0; i < taskCount; i++)
+        for (int idx = 0; idx < taskCount; idx++)
         {
             pool.submit(task);
         }
@@ -326,7 +326,7 @@ public class WorkerPoolTest
 
     private static class WorkerPoolBuilder
     {
-        private static final AtomicInteger id = new AtomicInteger(0);
+        private static final AtomicInteger ID_GEN = new AtomicInteger(0);
 
         private int parallelism = DEFAULT_THREAD_COUNT;
         private int queueSize = DEFAULT_QUEUE_SIZE;
@@ -336,7 +336,7 @@ public class WorkerPoolTest
 
         private WorkerPoolBuilder()
         {
-            threadPrefix = DEFAULT_THREAD_PREFIX  + "_" + Integer.toString(id.incrementAndGet());
+            threadPrefix = DEFAULT_THREAD_PREFIX  + "_" + Integer.toString(ID_GEN.incrementAndGet());
         }
 
         public WorkerPool build()

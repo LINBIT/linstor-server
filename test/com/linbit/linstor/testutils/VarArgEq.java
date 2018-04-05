@@ -25,9 +25,9 @@ public class VarArgEq<T> extends ArgumentMatcher<T[]> implements VarargMatcher
     }
 
     @Override
-    public boolean matches(Object o)
+    public boolean matches(Object object)
     {
-        return Equality.areEqual(wanted, o);
+        return Equality.areEqual(wanted, object);
     }
 
     @Override

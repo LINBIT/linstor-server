@@ -30,7 +30,7 @@ import com.google.protobuf.Message;
 
 public class ProtobufIO
 {
-    public static final Object callbackLock = new Object();
+    public static final Object CALLBACK_LOCK = new Object();
 
     public static interface MessageCallback
     {
@@ -303,7 +303,7 @@ public class ProtobufIO
         Map<String, String> variablesMap
     )
     {
-        synchronized (callbackLock)
+        synchronized (CALLBACK_LOCK)
         {
             if ((retCode & MASK_ERROR) == MASK_ERROR)
             {

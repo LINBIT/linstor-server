@@ -155,7 +155,7 @@ public class SecurityTypeTest
                     secType.requireAccess(accCtx, requestedAT);
                     fail("Exception expected");
                 }
-                catch (AccessDeniedException e)
+                catch (AccessDeniedException exc)
                 {
                     // expected
                 }

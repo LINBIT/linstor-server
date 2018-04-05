@@ -73,7 +73,7 @@ public class LinstorConfig
                 "  <entry key=\"connection-url\">%s</entry>\n" +
                 "</properties>\n";
 
-            DatabaseDriverInfo dbInfo = DatabaseDriverInfo.CreateDriverInfo(dbtype);
+            DatabaseDriverInfo dbInfo = DatabaseDriverInfo.createDriverInfo(dbtype);
 
             if (dbInfo != null)
             {

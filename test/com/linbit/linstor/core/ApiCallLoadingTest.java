@@ -37,10 +37,10 @@ public class ApiCallLoadingTest
 
         {
             String cp = "." + File.pathSeparator + "build" + File.separator + "libs" + File.separator + "*.jar";
-            List<String> p = new ApiCallLoader(errorReporter).expandClassPath(cp);
-            ArrayList<String> a = new ArrayList<>();
-            a.add(Paths.get(".").toAbsolutePath().toString());
-            assertArrayEquals("*.jar is not supported", a.toArray(), p.toArray());
+            List<String> cpList = new ApiCallLoader(errorReporter).expandClassPath(cp);
+            ArrayList<String> expectedList = new ArrayList<>();
+            expectedList.add(Paths.get(".").toAbsolutePath().toString());
+            assertArrayEquals("*.jar is not supported", expectedList.toArray(), cpList.toArray());
         }
 
         {
@@ -58,10 +58,10 @@ public class ApiCallLoadingTest
 
         {
             String cp = "." + File.pathSeparator + "*";
-            List<String> p = new ApiCallLoader(errorReporter).expandClassPath(cp);
-            ArrayList<String> a = new ArrayList<>();
-            a.add(Paths.get(".").toAbsolutePath().toString());
-            assertArrayEquals(a.toArray(), p.toArray());
+            List<String> cpList = new ApiCallLoader(errorReporter).expandClassPath(cp);
+            ArrayList<String> expectedList = new ArrayList<>();
+            expectedList.add(Paths.get(".").toAbsolutePath().toString());
+            assertArrayEquals(expectedList.toArray(), cpList.toArray());
         }
     }
 }

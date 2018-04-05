@@ -72,7 +72,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 
 public class ClientProtobuf implements Runnable
 {
-    public static final Object callbackLock = new Object();
+    public static final Object CALLBACK_LOCK = new Object();
 
     public static interface MessageCallback
     {
@@ -493,7 +493,7 @@ public class ClientProtobuf implements Runnable
         Map<String, String> objRefsMap, Map<String, String> variablesMap
     )
     {
-        synchronized (callbackLock)
+        synchronized (CALLBACK_LOCK)
         {
             if ((retCode & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
             {
@@ -1199,13 +1199,13 @@ public class ClientProtobuf implements Runnable
      * Resuorce connection messages
      */
 
-    public int sendCreateRscConn(String nodeName1, String NodeName2, String rscName, Map<String, String> props)
+    public int sendCreateRscConn(String nodeName1, String nodeName2, String rscName, Map<String, String> props)
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
         RscConn.Builder msgBuilder = RscConn.newBuilder().
             setNodeName1(nodeName1).
-            setNodeName2(NodeName2).
+            setNodeName2(nodeName2).
             setRscName(rscName);
         if (props != null)
         {
@@ -1259,7 +1259,7 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
-    public int sendDeleteRscConn(String nodeName1, String NodeName2, String rscName)
+    public int sendDeleteRscConn(String nodeName1, String nodeName2, String rscName)
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -1268,7 +1268,7 @@ public class ClientProtobuf implements Runnable
             ApiConsts.API_DEL_RSC_CONN,
             MsgDelRscConn.newBuilder().
                 setNodeName1(nodeName1).
-                setNodeName2(NodeName2).
+                setNodeName2(nodeName2).
                 setResourceName(rscName).
                 build()
         );
@@ -1281,7 +1281,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateVlmConn(
         String nodeName1,
-        String NodeName2,
+        String nodeName2,
         String rscName,
         int vlmNr,
         Map<String, String> props
@@ -1291,7 +1291,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         VlmConn.Builder msgBuilder = VlmConn.newBuilder().
             setNodeName1(nodeName1).
-            setNodeName2(NodeName2).
+            setNodeName2(nodeName2).
             setResourceName(rscName).
             setVolumeNr(vlmNr);
         if (props != null)
@@ -1348,7 +1348,7 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
-    public int sendDeleteVlmConn(String nodeName1, String NodeName2, String rscName, int vlmNr)
+    public int sendDeleteVlmConn(String nodeName1, String nodeName2, String rscName, int vlmNr)
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -1357,7 +1357,7 @@ public class ClientProtobuf implements Runnable
             ApiConsts.API_DEL_VLM_CONN,
             MsgDelVlmConn.newBuilder().
                 setNodeName1(nodeName1).
-                setNodeName2(NodeName2).
+                setNodeName2(nodeName2).
                 setResourceName(rscName).
                 setVolumeNr(vlmNr).
                 build()

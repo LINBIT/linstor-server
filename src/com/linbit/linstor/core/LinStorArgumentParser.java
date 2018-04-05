@@ -29,9 +29,9 @@ public class LinStorArgumentParser
         {
             cmd.parse(args);
         }
-        catch (Exception e)
+        catch (Exception exc)
         {
-            System.err.println(e.getMessage());
+            System.err.println(exc.getMessage());
             cmd.usage(System.err);
             System.exit(2);
         }
