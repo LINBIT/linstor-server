@@ -150,7 +150,7 @@ public class WorkerPoolTest
 
         final Throwable throwable = errorReporter.unexpected.poll(10, TimeUnit.SECONDS);
         Assert.assertEquals("Unexpected throwable received", throwable.getClass(), TestException.class);
-        Assert.assertEquals("Unexpected exception id received", ((TestException)throwable).id, exceptionId);
+        Assert.assertEquals("Unexpected exception id received", ((TestException) throwable).id, exceptionId);
     }
 
     @Test
@@ -175,7 +175,7 @@ public class WorkerPoolTest
         Assert.assertEquals("Unexpected throwable received", throwable.getClass(), ImplementationError.class);
         final Throwable cause = throwable.getCause();
         Assert.assertEquals("Unexpected cause received", cause.getClass(), TestException.class);
-        Assert.assertEquals("Unexpected exception id received", ((TestException)cause).id, exceptionId);
+        Assert.assertEquals("Unexpected exception id received", ((TestException) cause).id, exceptionId);
     }
 
     private int getPrefixedThreadCount(String threadPrefix)
