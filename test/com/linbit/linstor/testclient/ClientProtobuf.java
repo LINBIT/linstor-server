@@ -204,7 +204,7 @@ public class ClientProtobuf implements Runnable
     private Socket sock;
     private InputStream inputStream;
     private OutputStream outputStream;
-    private AtomicInteger msgId = new AtomicInteger(0);
+    private AtomicInteger msgIdGen = new AtomicInteger(0);
 
     private Thread thread;
     private boolean shutdown;
@@ -596,7 +596,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendPing() throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(msgId, ApiConsts.API_PING, null);
         return msgId;
     }
@@ -614,7 +614,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         NodeOuterClass.Node.Builder nodeBuilder = NodeOuterClass.Node.newBuilder()
             .setName(nodeName)
             .setType(nodeType);
@@ -666,7 +666,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModNode.Builder msgBuilder = MsgModNode.newBuilder()
             .setNodeName(nodeName);
         if (uuid != null)
@@ -696,7 +696,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteNode(String nodeName) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_NODE,
@@ -721,7 +721,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         RscDfn.Builder rscDfnBuilder = RscDfn.newBuilder();
         rscDfnBuilder.setRscName(resName);
         if (port != null)
@@ -755,7 +755,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModRscDfn.Builder msgBuilder = MsgModRscDfn.newBuilder()
             .setRscName(rscName);
         if (rscDfnUuid != null)
@@ -784,7 +784,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteRscDfn(String resName) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_RSC_DFN,
@@ -801,7 +801,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateStorPoolDfn(String storPoolName) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_CRT_STOR_POOL_DFN,
@@ -824,7 +824,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModStorPoolDfn.Builder builder = MsgModStorPoolDfn.newBuilder()
             .setStorPoolName(storPoolName);
         if (storPoolUuid != null)
@@ -849,7 +849,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteStorPoolDfn(String storPoolName) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_STOR_POOL_DFN,
@@ -866,7 +866,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateStorPool(String nodeName, String storPoolName, String driver) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_CRT_STOR_POOL,
@@ -892,7 +892,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
 
         MsgModStorPool.Builder builder = MsgModStorPool.newBuilder()
             .setNodeName(nodeName)
@@ -922,7 +922,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteStorPool(String nodeName, String storPoolName) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_STOR_POOL,
@@ -947,7 +947,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         Rsc.Builder rscBuilder = Rsc.newBuilder()
             .setNodeName(nodeName)
             .setName(resName);
@@ -994,7 +994,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModRsc.Builder builder = MsgModRsc.newBuilder()
             .setNodeName(nodeName)
             .setRscName(rscName);
@@ -1021,7 +1021,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteRsc(String nodeName, String resName) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_RSC,
@@ -1039,7 +1039,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateVlmDfn(String rscName, List<? extends VlmDfn> vlmDfns) throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_CRT_VLM_DFN,
@@ -1062,7 +1062,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModVlmDfn.Builder builder = MsgModVlmDfn.newBuilder()
             .setRscName(rscName)
             .setVlmNr(vlmNr);
@@ -1102,7 +1102,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgDelVlmDfn.Builder builder = MsgDelVlmDfn.newBuilder()
             .setRscName(rscName)
             .setVlmNr(vlmNr);
@@ -1126,7 +1126,7 @@ public class ClientProtobuf implements Runnable
     public int sendCreateNodeConn(String nodeName1, String nodeName2, Map<String, String> props)
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         NodeConn.Builder msgBuilder = NodeConn.newBuilder()
             .setNodeName1(nodeName1)
             .setNodeName2(nodeName2);
@@ -1155,7 +1155,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModNodeConn.Builder builder = MsgModNodeConn.newBuilder()
             .setNode1Name(nodeName1)
             .setNode2Name(nodeName2);
@@ -1183,7 +1183,7 @@ public class ClientProtobuf implements Runnable
     public int sendDeleteNodeConn(String nodeName1, String nodeName2)
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_NODE_CONN,
@@ -1202,7 +1202,7 @@ public class ClientProtobuf implements Runnable
     public int sendCreateRscConn(String nodeName1, String nodeName2, String rscName, Map<String, String> props)
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         RscConn.Builder msgBuilder = RscConn.newBuilder()
             .setNodeName1(nodeName1)
             .setNodeName2(nodeName2)
@@ -1233,7 +1233,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModRscConn.Builder builder = MsgModRscConn.newBuilder()
             .setNode1Name(nodeName1)
             .setNode2Name(nodeName2)
@@ -1262,7 +1262,7 @@ public class ClientProtobuf implements Runnable
     public int sendDeleteRscConn(String nodeName1, String nodeName2, String rscName)
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_RSC_CONN,
@@ -1288,7 +1288,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         VlmConn.Builder msgBuilder = VlmConn.newBuilder()
             .setNodeName1(nodeName1)
             .setNodeName2(nodeName2)
@@ -1321,7 +1321,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         MsgModVlmConn.Builder builder = MsgModVlmConn.newBuilder()
             .setNode1Name(nodeName1)
             .setNode2Name(nodeName2)
@@ -1351,7 +1351,7 @@ public class ClientProtobuf implements Runnable
     public int sendDeleteVlmConn(String nodeName1, String nodeName2, String rscName, int vlmNr)
         throws IOException
     {
-        int msgId = this.msgId.incrementAndGet();
+        int msgId = msgIdGen.incrementAndGet();
         send(
             msgId,
             ApiConsts.API_DEL_VLM_CONN,

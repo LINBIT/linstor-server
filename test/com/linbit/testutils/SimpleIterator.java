@@ -8,10 +8,10 @@ public class SimpleIterator implements Iterator<Object[]>, Iterable<Object[]>
     private final int[] currentIdx;
     private final Object[][] values;
 
-    public SimpleIterator(Object[][] values)
+    public SimpleIterator(Object[][] valuesRef)
     {
-        this.values = values;
-        currentIdx = new int[values.length];
+        values = valuesRef;
+        currentIdx = new int[valuesRef.length];
         Arrays.fill(currentIdx, 0);
         currentIdx[0] = -1; // next() first triggers an increment
     }

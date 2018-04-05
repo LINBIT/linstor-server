@@ -19,9 +19,9 @@ public class VarArgEq<T> extends ArgumentMatcher<T[]> implements VarargMatcher
 
     private final T[] wanted;
 
-    private VarArgEq(T[] wanted)
+    private VarArgEq(T[] wantedRef)
     {
-        this.wanted = wanted;
+        wanted = wantedRef;
     }
 
     @Override

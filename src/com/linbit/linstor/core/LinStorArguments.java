@@ -38,19 +38,19 @@ public class LinStorArguments
         return startDebugConsole;
     }
 
-    public void setInMemoryDbType(final String inMemoryDbType)
+    public void setInMemoryDbType(final String inMemoryDbTypeRef)
     {
-        this.inMemoryDbType = inMemoryDbType;
+        inMemoryDbType = inMemoryDbTypeRef;
     }
 
-    public void setInMemoryDbPort(final int inMemoryDbPort)
+    public void setInMemoryDbPort(final int inMemoryDbPortRef)
     {
-        this.inMemoryDbPort = inMemoryDbPort;
+        inMemoryDbPort = inMemoryDbPortRef;
     }
 
-    public void setInMemoryDbAddress(final String inMemoryDbAddress)
+    public void setInMemoryDbAddress(final String inMemoryDbAddressRef)
     {
-        this.inMemoryDbAddress = inMemoryDbAddress;
+        inMemoryDbAddress = inMemoryDbAddressRef;
     }
 
     public String getInMemoryDbType()

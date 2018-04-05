@@ -60,7 +60,7 @@ public class ProtobufIO
 
     private List<MessageCallback> callbacks = new ArrayList<>();
 
-    protected AtomicInteger msgId = new AtomicInteger(0);
+    protected AtomicInteger msgIdGen = new AtomicInteger(0);
 
 
     public ProtobufIO(
@@ -91,11 +91,11 @@ public class ProtobufIO
         );
     }
 
-    public int send(int msgId, String apiCall, Message... messages) throws IOException
+    public int send(int msgIdRef, String apiCallRef, Message... messages) throws IOException
     {
         MsgHeader headerMsg = MsgHeader.newBuilder()
-            .setApiCall(apiCall)
-            .setMsgId(msgId)
+            .setApiCall(apiCallRef)
+            .setMsgId(msgIdRef)
             .build();
 
         ByteArrayOutputStream baos;
@@ -111,7 +111,7 @@ public class ProtobufIO
 
         send(protoData);
 
-        return msgId;
+        return msgIdRef;
     }
 
     public void send(byte[] data) throws IOException
@@ -177,7 +177,7 @@ public class ProtobufIO
 
     public int getNextMsgId()
     {
-        return msgId.incrementAndGet();
+        return msgIdGen.incrementAndGet();
     }
 
     public void formatMessage(

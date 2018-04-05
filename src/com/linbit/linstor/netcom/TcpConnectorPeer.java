@@ -221,12 +221,12 @@ public class TcpConnectorPeer implements Peer
     @Override
     public boolean sendMessage(byte[] data)
     {
-        boolean connected = false;
+        boolean isConnected = false;
         try
         {
             Message msg = createMessage();
             msg.setData(data);
-            connected = sendMessage(msg);
+            isConnected = sendMessage(msg);
         }
         catch (IllegalMessageStateException exc)
         {
@@ -235,7 +235,7 @@ public class TcpConnectorPeer implements Peer
                 exc
             );
         }
-        return connected;
+        return isConnected;
     }
 
     @Override

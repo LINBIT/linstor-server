@@ -344,24 +344,27 @@ public class WorkerPoolTest
             return WorkerPool.initialize(parallelism, queueSize, fairness, threadPrefix, errorReporter, null);
         }
 
-        public WorkerPoolBuilder parallelism(int parallelism)
+        public WorkerPoolBuilder parallelism(int parallelismRef)
         {
-            this.parallelism = parallelism;
+            parallelism = parallelismRef;
             return this;
         }
-        public WorkerPoolBuilder queueSize(int queueSize)
+
+        public WorkerPoolBuilder queueSize(int queueSizeRef)
         {
-            this.queueSize = queueSize;
+            queueSize = queueSizeRef;
             return this;
         }
-        public WorkerPoolBuilder fair(boolean fairness)
+
+        public WorkerPoolBuilder fair(boolean fairnessRef)
         {
-            this.fairness = fairness;
+            fairness = fairnessRef;
             return this;
         }
-        public WorkerPoolBuilder threadPrefix(String prefix)
+
+        public WorkerPoolBuilder threadPrefix(String prefixRef)
         {
-            threadPrefix = prefix;
+            threadPrefix = prefixRef;
             return this;
         }
         public WorkerPoolBuilder errorReporter(ErrorReporter reporter)
@@ -377,10 +380,10 @@ public class WorkerPoolTest
 
         public int id;
 
-        TestException(int id)
+        TestException(int idRef)
         {
-            super(Integer.toString(id));
-            this.id = id;
+            super(Integer.toString(idRef));
+            id = idRef;
         }
     }
 }

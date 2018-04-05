@@ -26,16 +26,16 @@ public class StltUpdateRequester
 
     @Inject
     public StltUpdateRequester(
-        ErrorReporter errorReporter,
-        @ApiContext AccessContext apiCtx,
-        CtrlStltSerializer interComSerializer,
-        ControllerPeerConnector controllerPeerConnector
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        CtrlStltSerializer interComSerializerRef,
+        ControllerPeerConnector controllerPeerConnectorRef
     )
     {
-        this.errorReporter = errorReporter;
-        this.apiCtx = apiCtx;
-        this.interComSerializer = interComSerializer;
-        this.controllerPeerConnector = controllerPeerConnector;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        interComSerializer = interComSerializerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
     }
 
     public void requestNodeUpdate(UUID nodeUuid, NodeName nodeName)

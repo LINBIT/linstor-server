@@ -10,11 +10,11 @@ public class NetInterfaceApiTestImpl implements NetInterfaceApi
     private String name;
     private String address;
 
-    public NetInterfaceApiTestImpl(UUID uuid, String name, String address)
+    public NetInterfaceApiTestImpl(UUID uuidRef, String nameRef, String addressRef)
     {
-        this.uuid = uuid;
-        this.name = name;
-        this.address = address;
+        uuid = uuidRef;
+        name = nameRef;
+        address = addressRef;
     }
 
     @Override

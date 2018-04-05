@@ -12,14 +12,14 @@ public abstract class AbsIterator<T> implements Iterator<T>, Iterable<T>
     private final int[] usedColumns;
     public T currentIteration;
 
-    public AbsIterator(Object[][] values, int[] skipColumns)
+    public AbsIterator(Object[][] valuesRef, int[] skipColumns)
     {
-        this.values = values;
-        currentIdx = new int[values.length];
-        usedColumns = new int[values.length - skipColumns.length];
+        this.values = valuesRef;
+        currentIdx = new int[valuesRef.length];
+        usedColumns = new int[valuesRef.length - skipColumns.length];
         int usedIdx = 0;
         int skipIdx = 0;
-        for (int valueIdx = 0; valueIdx < values.length; ++valueIdx)
+        for (int valueIdx = 0; valueIdx < valuesRef.length; ++valueIdx)
         {
             if (skipIdx < skipColumns.length && valueIdx == skipColumns[skipIdx])
             {

@@ -11,10 +11,14 @@ public class StltConnectingAttempt
     public TcpConnector tcpConnector;
     public Node node;
 
-    public StltConnectingAttempt(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node)
+    public StltConnectingAttempt(
+        InetSocketAddress inetSocketAddressRef,
+        TcpConnector tcpConnectorRef,
+        Node nodeRef
+    )
     {
-        this.inetSocketAddress = inetSocketAddress;
-        this.tcpConnector = tcpConnector;
-        this.node = node;
+        inetSocketAddress = inetSocketAddressRef;
+        tcpConnector = tcpConnectorRef;
+        node = nodeRef;
     }
 }

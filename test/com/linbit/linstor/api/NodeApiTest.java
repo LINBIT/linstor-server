@@ -235,15 +235,15 @@ public class NodeApiTest extends ApiTestBase
             );
         }
 
-        public AbsApiCallTester setNodeName(String nodeName)
+        public AbsApiCallTester setNodeName(String nodeNameRef)
         {
-            this.nodeName = nodeName;
+            nodeName = nodeNameRef;
             return this;
         }
 
-        public AbsApiCallTester setNodeType(String nodeType)
+        public AbsApiCallTester setNodeType(String nodeTypeRef)
         {
-            this.nodeType = nodeType;
+            nodeType = nodeTypeRef;
             return this;
         }
 
@@ -311,25 +311,25 @@ public class NodeApiTest extends ApiTestBase
 
         public AbsApiCallTester nodeUuid(java.util.UUID uuid)
         {
-            this.nodeUuid = uuid;
+            nodeUuid = uuid;
             return this;
         }
 
-        public AbsApiCallTester nodeName(String nodeName)
+        public AbsApiCallTester nodeName(String nodeNameRef)
         {
-            this.nodeName = nodeName;
+            nodeName = nodeNameRef;
             return this;
         }
 
-        public AbsApiCallTester nodeType(String nodeType)
+        public AbsApiCallTester nodeType(String nodeTypeRef)
         {
-            this.nodeType = nodeType;
+            nodeType = nodeTypeRef;
             return this;
         }
 
-        public AbsApiCallTester overrideProps(String key, String value)
+        public AbsApiCallTester overrideProps(String key, String valueRef)
         {
-            overrideProps.put(key, value);
+            overrideProps.put(key, valueRef);
             return this;
         }
 

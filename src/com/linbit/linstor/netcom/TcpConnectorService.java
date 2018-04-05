@@ -192,7 +192,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     public TcpConnectorService(
-        ErrorReporter errorReporter,
+        ErrorReporter errorReporterRef,
         MessageProcessor msgProcessorRef,
         SocketAddress bindAddressRef,
         AccessContext defaultPeerAccCtxRef,
@@ -200,7 +200,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         ConnectionObserver connObserverRef
     )
     {
-        this(errorReporter, msgProcessorRef, defaultPeerAccCtxRef, privilegedAccCtxRef, connObserverRef);
+        this(errorReporterRef, msgProcessorRef, defaultPeerAccCtxRef, privilegedAccCtxRef, connObserverRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         bindAddress = bindAddressRef;
     }

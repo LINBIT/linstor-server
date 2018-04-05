@@ -214,18 +214,18 @@ public class SizeConvTest
     static class TestEntry
     {
         TestEntry(
-            long size,
-            SizeConv.SizeUnit unitIn,
-            SizeConv.SizeUnit unitOut,
-            long expectedResult,
-            boolean expectedRounded
+            long sizeRef,
+            SizeConv.SizeUnit unitInRef,
+            SizeConv.SizeUnit unitOutRef,
+            long expectedResultRef,
+            boolean expectedRoundedRef
         )
         {
-            this.size = size;
-            this.unitIn = unitIn;
-            this.unitOut = unitOut;
-            this.expectedResult = expectedResult;
-            this.expectedRounded = expectedRounded;
+            size = sizeRef;
+            unitIn = unitInRef;
+            unitOut = unitOutRef;
+            expectedResult = expectedResultRef;
+            expectedRounded = expectedRoundedRef;
         }
 
         long size;

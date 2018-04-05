@@ -188,15 +188,15 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
     private StorPoolDefinitionData findStorPoolDefinitionDatabyName(
         List<StorPoolDefinitionData> listStorPoolDefs,
-        StorPoolName spName
+        StorPoolName spNameRef
     )
     {
         StorPoolDefinitionData data = null;
-        for (StorPoolDefinitionData spdd : listStorPoolDefs)
+        for (StorPoolDefinitionData storPoolDFn : listStorPoolDefs)
         {
-            if (spdd.getName().equals(spName))
+            if (storPoolDFn.getName().equals(spNameRef))
             {
-                data = spdd;
+                data = storPoolDFn;
                 break;
             }
         }

@@ -310,12 +310,17 @@ public class BitmapPoolTest
         private final int rangeEnd;
         private final int offset;
 
-        public PoolConfiguration(final int size, final int rangeStart, final int rangeEnd, final int offset)
+        public PoolConfiguration(
+            final int sizeRef,
+            final int rangeStartRef,
+            final int rangeEndRef,
+            final int offsetRef
+        )
         {
-            this.size = size;
-            this.rangeStart = rangeStart;
-            this.rangeEnd = rangeEnd;
-            this.offset = offset;
+            size = sizeRef;
+            rangeStart = rangeStartRef;
+            rangeEnd = rangeEndRef;
+            offset = offsetRef;
         }
 
         public int getSize()

@@ -726,9 +726,9 @@ public class StateFlagBitsTest
 
         private long value;
 
-        private FlagImpl(long value)
+        private FlagImpl(long valueRef)
         {
-            this.value = value;
+            value = valueRef;
         }
 
         @Override

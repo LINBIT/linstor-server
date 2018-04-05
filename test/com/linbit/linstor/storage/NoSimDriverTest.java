@@ -844,9 +844,9 @@ public abstract class NoSimDriverTest
         }
     }
 
-    protected void setPoolName(String poolName) throws StorageException
+    protected void setPoolName(String poolNameRef) throws StorageException
     {
-        Map<String, String> config = getPoolConfigMap(poolName);
+        Map<String, String> config = getPoolConfigMap(poolNameRef);
         driver.setConfiguration(config);
     }
 
@@ -939,9 +939,9 @@ public abstract class NoSimDriverTest
 
     protected class DebugExtCmd extends ExtCmd
     {
-        DebugExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
+        DebugExtCmd(Timer<String, Action<String>> timerRef, ErrorReporter errLogRef)
         {
-            super(timer, errLogRef);
+            super(timerRef, errLogRef);
         }
 
         @Override

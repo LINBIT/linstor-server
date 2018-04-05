@@ -8,11 +8,11 @@ public class SatelliteConnectionApiTestImpl implements SatelliteConnectionApi
     private int port;
     private String encryptionType;
 
-    public SatelliteConnectionApiTestImpl(String netIfName, int port, String encryptionType)
+    public SatelliteConnectionApiTestImpl(String netIfNameRef, int portRef, String encryptionTypeRef)
     {
-        this.netIfName = netIfName;
-        this.port = port;
-        this.encryptionType = encryptionType;
+        netIfName = netIfNameRef;
+        port = portRef;
+        encryptionType = encryptionTypeRef;
     }
 
     @Override

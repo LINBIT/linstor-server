@@ -122,9 +122,9 @@ public class TestExtCmd extends ExtCmd
     {
         private String[] commandParts;
 
-        public Command(String... commandParts)
+        public Command(String... commandPartsRef)
         {
-            this.commandParts = commandParts;
+            commandParts = commandPartsRef;
         }
 
         @Override
