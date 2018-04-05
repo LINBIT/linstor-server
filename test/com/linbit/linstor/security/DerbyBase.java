@@ -34,7 +34,6 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -176,7 +175,6 @@ public abstract class DerbyBase implements DerbyTestConstants
         truncateTables();
         insertDefaults(con);
         errorReporter.logTrace("cleanups done, initializing: %s", testMethodName.getMethodName());
-//        dbConnPool.returnConnection(con);
 
         MockitoAnnotations.initMocks(this);
 
@@ -290,14 +288,6 @@ public abstract class DerbyBase implements DerbyTestConstants
         }
         connection.commit();
     }
-
-//    private static void dropTables() throws SQLException
-//    {
-//        for (int idx = 0; idx < DROP_TABLES.length; ++idx)
-//        {
-//            dropTable(con, idx);
-//        }
-//    }
 
     private void truncateTables() throws SQLException
     {

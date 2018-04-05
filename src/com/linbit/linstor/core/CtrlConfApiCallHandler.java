@@ -572,9 +572,9 @@ public class CtrlConfApiCallHandler
         SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithPassword(
             salt,
             newPassphrase.getBytes(StandardCharsets.UTF_8),
-            CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this has to be
-            // also configurable
+            CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this also has to be configurable
         );
+
         byte[] encryptedMasterKey = cipher.encrypt(masterKey);
         ctrlConf.setProp(KEY_CRYPT_KEY, Base64.encode(encryptedMasterKey), NAMESPACE_ENCRYPTED);
         ctrlConf.setProp(KEY_PASSPHRASE_SALT, Base64.encode(salt), NAMESPACE_ENCRYPTED);
@@ -617,9 +617,10 @@ public class CtrlConfApiCallHandler
             SymmetricKeyCipher ciper =  SymmetricKeyCipher.getInstanceWithPassword(
                 passphraseSalt,
                 oldPassphrase.getBytes(StandardCharsets.UTF_8),
-                CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this has to be
-                // also configurable
+                CipherStrength.KEY_LENGTH_128
             );
+            // TODO if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
+
             byte[] decryptedMasterKey = ciper.decrypt(encryptedMasterKey);
 
             sha512.reset();

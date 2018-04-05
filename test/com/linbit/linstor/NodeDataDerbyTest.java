@@ -517,7 +517,6 @@ public class NodeDataDerbyTest extends DerbyBase
 
             commit();
         }
-//        clearCaches();
 
         NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
         NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, null, null, false, false);

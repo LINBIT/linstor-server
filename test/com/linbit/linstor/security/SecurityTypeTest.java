@@ -100,7 +100,6 @@ public class SecurityTypeTest
                 try
                 {
                     sourceDomain.delRule(accCtx, targetDomain);
-//                    System.out.println(secTypeIt);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)

@@ -29,7 +29,6 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     public NoSimZfsDriverTest(ZfsDriverKind driverKind) throws IOException
     {
         super(driverKind);
-//      poolName = "linStorZfsDriverTestPool-REMOVE-ME";
         poolName = "testPool";
     }
 

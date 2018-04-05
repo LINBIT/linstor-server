@@ -42,7 +42,6 @@ public abstract class NoSimDriverTest
     protected FileSystemWatch fileSystemWatch;
     protected CoreTimer timer;
 
-//    protected final String baseIdentifier = "linStorDriverTest-REMOVE-ME-Vol-";
     protected final String baseIdentifier = "testVol";
 
     protected boolean poolExisted;

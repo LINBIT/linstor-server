@@ -1392,11 +1392,8 @@ public class ClientProtobuf implements Runnable
         byteBuffer.putInt(0, 0); // message type
         byteBuffer.putInt(4, protoHeader.length + protoData.length);
 
-//        println("sending header: " + header.length);
         outputStream.write(header);
-//        println("sending protoHeader:" + protoHeader.length);
         outputStream.write(protoHeader);
-//        println("sending protoData:" + protoData.length);
         outputStream.write(protoData);
 
         sentCount++;
