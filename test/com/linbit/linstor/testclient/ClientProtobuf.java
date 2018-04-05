@@ -700,9 +700,9 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_NODE,
-            MsgDelNode.newBuilder().
-                setNodeName(nodeName).
-                build()
+            MsgDelNode.newBuilder()
+                .setNodeName(nodeName)
+                .build()
         );
         return msgId;
     }
@@ -722,8 +722,8 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        RscDfn.Builder rscDfnBuilder = RscDfn.newBuilder().
-            setRscName(resName);
+        RscDfn.Builder rscDfnBuilder = RscDfn.newBuilder();
+        rscDfnBuilder.setRscName(resName);
         if (port != null)
         {
             rscDfnBuilder.setRscDfnPort(port);
@@ -788,9 +788,9 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_RSC_DFN,
-            MsgDelRscDfn.newBuilder().
-                setRscName(resName).
-                build()
+            MsgDelRscDfn.newBuilder()
+                .setRscName(resName)
+                .build()
         );
         return msgId;
     }
@@ -853,9 +853,9 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_STOR_POOL_DFN,
-            MsgDelStorPoolDfn.newBuilder().
-                setStorPoolName(storPoolName).
-                build()
+            MsgDelStorPoolDfn.newBuilder()
+                .setStorPoolName(storPoolName)
+                .build()
         );
         return msgId;
     }
@@ -870,8 +870,8 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_CRT_STOR_POOL,
-            MsgCrtStorPool.newBuilder().
-                setStorPool(
+            MsgCrtStorPool.newBuilder()
+                .setStorPool(
                     StorPool.newBuilder()
                         .setNodeName(nodeName)
                         .setStorPoolName(storPoolName)
@@ -926,10 +926,10 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_STOR_POOL,
-            MsgDelStorPool.newBuilder().
-                setNodeName(nodeName).
-                setStorPoolName(storPoolName).
-                build()
+            MsgDelStorPool.newBuilder()
+                .setNodeName(nodeName)
+                .setStorPoolName(storPoolName)
+                .build()
         );
         return msgId;
     }
@@ -948,9 +948,9 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        Rsc.Builder rscBuilder = Rsc.newBuilder().
-            setNodeName(nodeName).
-            setName(resName);
+        Rsc.Builder rscBuilder = Rsc.newBuilder()
+            .setNodeName(nodeName)
+            .setName(resName);
         if (resProps != null)
         {
             rscBuilder.addAllProps(asLinStorMapEntryList(resProps));
@@ -1025,10 +1025,10 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_RSC,
-            MsgDelRsc.newBuilder().
-                setNodeName(nodeName).
-                setRscName(resName).
-                build()
+            MsgDelRsc.newBuilder()
+                .setNodeName(nodeName)
+                .setRscName(resName)
+                .build()
         );
         return msgId;
     }
@@ -1187,10 +1187,10 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_NODE_CONN,
-            MsgDelNodeConn.newBuilder().
-                setNodeName1(nodeName1).
-                setNodeName2(nodeName2).
-                build()
+            MsgDelNodeConn.newBuilder()
+                .setNodeName1(nodeName1)
+                .setNodeName2(nodeName2)
+                .build()
         );
         return msgId;
     }
@@ -1203,10 +1203,10 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        RscConn.Builder msgBuilder = RscConn.newBuilder().
-            setNodeName1(nodeName1).
-            setNodeName2(nodeName2).
-            setRscName(rscName);
+        RscConn.Builder msgBuilder = RscConn.newBuilder()
+            .setNodeName1(nodeName1)
+            .setNodeName2(nodeName2)
+            .setRscName(rscName);
         if (props != null)
         {
             msgBuilder.addAllRscConnProps(asLinStorMapEntryList(props));
@@ -1266,11 +1266,11 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_RSC_CONN,
-            MsgDelRscConn.newBuilder().
-                setNodeName1(nodeName1).
-                setNodeName2(nodeName2).
-                setResourceName(rscName).
-                build()
+            MsgDelRscConn.newBuilder()
+                .setNodeName1(nodeName1)
+                .setNodeName2(nodeName2)
+                .setResourceName(rscName)
+                .build()
         );
         return msgId;
     }
@@ -1289,11 +1289,11 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        VlmConn.Builder msgBuilder = VlmConn.newBuilder().
-            setNodeName1(nodeName1).
-            setNodeName2(nodeName2).
-            setResourceName(rscName).
-            setVolumeNr(vlmNr);
+        VlmConn.Builder msgBuilder = VlmConn.newBuilder()
+            .setNodeName1(nodeName1)
+            .setNodeName2(nodeName2)
+            .setResourceName(rscName)
+            .setVolumeNr(vlmNr);
         if (props != null)
         {
             msgBuilder.addAllVolumeConnProps(asLinStorMapEntryList(props));
@@ -1355,22 +1355,22 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             ApiConsts.API_DEL_VLM_CONN,
-            MsgDelVlmConn.newBuilder().
-                setNodeName1(nodeName1).
-                setNodeName2(nodeName2).
-                setResourceName(rscName).
-                setVolumeNr(vlmNr).
-                build()
+            MsgDelVlmConn.newBuilder()
+                .setNodeName1(nodeName1)
+                .setNodeName2(nodeName2)
+                .setResourceName(rscName)
+                .setVolumeNr(vlmNr)
+                .build()
         );
         return msgId;
     }
 
     public void send(int msgId, String apiCall, Message msg) throws IOException
     {
-        MsgHeader headerMsg = MsgHeader.newBuilder().
-            setApiCall(apiCall).
-            setMsgId(msgId).
-            build();
+        MsgHeader headerMsg = MsgHeader.newBuilder()
+            .setApiCall(apiCall)
+            .setMsgId(msgId)
+            .build();
 
         ByteArrayOutputStream baos;
         baos = new ByteArrayOutputStream();
@@ -1415,12 +1415,12 @@ public class ClientProtobuf implements Runnable
     public Vlm createVlm(int vlmNr, String storPoolName, String blockDevice, String metaDisk)
     {
         return
-            Vlm.newBuilder().
-                setVlmNr(vlmNr).
-                setStorPoolName(storPoolName).
-                setBlockDevice(blockDevice).
-                setMetaDisk(metaDisk).
-                build();
+            Vlm.newBuilder()
+                .setVlmNr(vlmNr)
+                .setStorPoolName(storPoolName)
+                .setBlockDevice(blockDevice)
+                .setMetaDisk(metaDisk)
+                .build();
     }
 
     private Iterable<LinStorMapEntry> asLinStorMapEntryList(Map<String, String> map)

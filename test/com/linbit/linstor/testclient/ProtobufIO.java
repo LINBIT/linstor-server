@@ -93,10 +93,10 @@ public class ProtobufIO
 
     public int send(int msgId, String apiCall, Message... messages) throws IOException
     {
-        MsgHeader headerMsg = MsgHeader.newBuilder().
-            setApiCall(apiCall).
-            setMsgId(msgId).
-            build();
+        MsgHeader headerMsg = MsgHeader.newBuilder()
+            .setApiCall(apiCall)
+            .setMsgId(msgId)
+            .build();
 
         ByteArrayOutputStream baos;
         baos = new ByteArrayOutputStream();
