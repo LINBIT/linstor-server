@@ -32,6 +32,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -185,14 +186,14 @@ public class ReadOnlyPropsContainerTest
         assertEquals("", roProp.getPath());
 
         writableProp.setProp("a/b/c/d", "value");
-        final Props namespaceA = roProp.getNamespace("a");
+        final Props namespaceA = roProp.getNamespace("a").orElse(null);
 
         assertEquals("a/", namespaceA.getPath());
 
-        final Props namespaceB = namespaceA.getNamespace("b");
+        final Props namespaceB = namespaceA.getNamespace("b").orElse(null);
         assertEquals("a/b/", namespaceB.getPath());
 
-        final Props namespaceC = roProp.getNamespace("a/b/c");
+        final Props namespaceC = roProp.getNamespace("a/b/c").orElse(null);
         assertEquals("a/b/c/", namespaceC.getPath());
     }
 
@@ -200,9 +201,10 @@ public class ReadOnlyPropsContainerTest
     public void testGetPathTrailingSlash() throws Throwable
     {
         writableProp.setProp("a/b/c/d", "value");
-        final Props namespaceC = roProp.getNamespace("a/b/c");
+        final Props namespaceC = roProp.getNamespace("a/b/c").orElse(null);
+        assertNotNull(namespaceC);
 
-        assertEquals(namespaceC, roProp.getNamespace("a/b/c/"));
+        assertEquals(namespaceC, roProp.getNamespace("a/b/c/").orElse(null));
     }
 
     @Test
@@ -306,19 +308,19 @@ public class ReadOnlyPropsContainerTest
         writableProp.setProp(key, value);
         assertEquals(value, roProp.getProp(key));
 
-        final Props firstNamespace = roProp.getNamespace(first);
+        final Props firstNamespace = roProp.getNamespace(first).orElse(null);
         assertEquals(value, firstNamespace.getProp(second));
 
-        assertNull(roProp.getNamespace("non existent"));
+        assertNull(roProp.getNamespace("non existent").orElse(null));
 
         writableProp.removeProp(key);
-        assertNull(roProp.getNamespace(first));
+        assertNull(roProp.getNamespace(first).orElse(null));
     }
 
     @Test(expected = AccessDeniedException.class)
     public void testGetNamespaceSet() throws Throwable
     {
-        final Props firstNamespace = roProp.getNamespace(FIRST_KEY + "0");
+        final Props firstNamespace = roProp.getNamespace(FIRST_KEY + "0").orElse(null);
         firstNamespace.setProp("key", "value");
     }
 

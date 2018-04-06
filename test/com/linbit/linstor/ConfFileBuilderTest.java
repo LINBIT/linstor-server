@@ -18,6 +18,7 @@ import org.mockito.stubbing.Answer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -162,6 +163,7 @@ public class ConfFileBuilderTest
         Props vlmProps = Mockito.mock(Props.class);
         Props rscProps = Mockito.mock(Props.class);
         Props nodeProps = Mockito.mock(Props.class);
+        Props rscDfnProps = Mockito.mock(Props.class);
 
         when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
 
@@ -189,6 +191,8 @@ public class ConfFileBuilderTest
             .thenReturn(!resourceDeleted);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
+        when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);
+        when(rscDfnProps.getNamespace(any(String.class))).thenReturn(Optional.empty());
         when(resourceDefinition.getPort(any(AccessContext.class)))
             .thenReturn(new TcpPortNumber(42));
 

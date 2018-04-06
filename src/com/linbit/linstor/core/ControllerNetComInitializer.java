@@ -247,23 +247,16 @@ public final class ControllerNetComInitializer
                 invalidNameExc
             );
         }
-        Props configProp;
-        try
+        Props configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
+        if (configProp == null)
         {
-            configProp = netComProps.getNamespace(serviceNameStr);
-        }
-        catch (InvalidKeyException invalidKeyExc)
-        {
-            throw new ImplementationError(
-                String.format(
-                    "A properties container returned the key '%s' as the identifier for a namespace, " +
+            errorLogRef.logError(
+                "A properties container returned the key '%s' as the identifier for a namespace, " +
                     "but using the same key to obtain a reference to the namespace generated an " +
                     "%s",
-                    serviceName,
-                    invalidKeyExc.getClass().getSimpleName()
-                ),
-                invalidKeyExc
+                serviceName
             );
+            throw new RuntimeException();
         }
         String bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
         Integer port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));

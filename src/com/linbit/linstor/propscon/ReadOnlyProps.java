@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -152,16 +153,11 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
-    public Props getNamespace(String namespace) throws InvalidKeyException
+    public Optional<Props> getNamespace(String namespace)
     {
-        Props ret = propsMap.getNamespace(namespace);
-        if (ret != null)
-        {
-            ret = new ReadOnlyProps(ret);
-        }
-        return ret;
+        Optional<Props> ret = propsMap.getNamespace(namespace);
+        return Optional.ofNullable(ret.map(ReadOnlyProps::new).orElse(null));
     }
-
 
     @Override
     public Iterator<String> iterateNamespaces()

@@ -237,7 +237,7 @@ public class PropsContainerTest extends DerbyBase
         final String secondValue = "other value";
         root.setProp(key, firstValue);
 
-        final Props firstNamespace = root.getNamespace(first);
+        final Props firstNamespace = root.getNamespace(first).orElse(null);
         firstNamespace.setProp(second2, secondValue);
 
         assertEquals(secondValue, firstNamespace.getProp(second2));
@@ -249,7 +249,7 @@ public class PropsContainerTest extends DerbyBase
     {
         root.setProp("a/b/c", "abc");
 
-        final Props abNamespace = root.getNamespace("a/b");
+        final Props abNamespace = root.getNamespace("a/b").orElse(null);
 
         root.clear();
 
@@ -407,7 +407,7 @@ public class PropsContainerTest extends DerbyBase
         final String value = "value";
         root.setProp(key, value);
 
-        Props firstNamespace = root.getNamespace(first);
+        Props firstNamespace = root.getNamespace(first).orElse(null);
 
         final String removedValue = firstNamespace.removeProp(second);
 
@@ -427,7 +427,7 @@ public class PropsContainerTest extends DerbyBase
 
         assertNull(root.getProp(removedKey));
 
-        final Props containerNamespace = root.getNamespace(removedContainer);
+        final Props containerNamespace = root.getNamespace(removedContainer).orElse(null);
         assertNull(containerNamespace.getProp(removedEntryKey));
     }
 
@@ -437,14 +437,14 @@ public class PropsContainerTest extends DerbyBase
         assertEquals("", root.getPath());
 
         root.setProp("a/b/c/d", "value");
-        final Props namespaceA = root.getNamespace("a");
+        final Props namespaceA = root.getNamespace("a").orElse(null);
 
         assertEquals("a/", namespaceA.getPath());
 
-        final Props namespaceB = namespaceA.getNamespace("b");
+        final Props namespaceB = namespaceA.getNamespace("b").orElse(null);
         assertEquals("a/b/", namespaceB.getPath());
 
-        final Props namespaceC = root.getNamespace("a/b/c");
+        final Props namespaceC = root.getNamespace("a/b/c").orElse(null);
         assertEquals("a/b/c/", namespaceC.getPath());
     }
 
@@ -452,9 +452,10 @@ public class PropsContainerTest extends DerbyBase
     public void testGetPathTrailingSlash() throws Throwable
     {
         root.setProp("a/b/c/d", "value");
-        final Props namespaceC = root.getNamespace("a/b/c");
+        final Props namespaceC = root.getNamespace("a/b/c").orElse(null);
+        assertNotNull(namespaceC);
 
-        assertEquals(namespaceC, root.getNamespace("a/b/c/"));
+        assertEquals(namespaceC, root.getNamespace("a/b/c/").orElse(null));
     }
 
     @Test
@@ -564,13 +565,13 @@ public class PropsContainerTest extends DerbyBase
         root.setProp(key, value);
         assertEquals(value, root.getProp(key));
 
-        final Props firstNamespace = root.getNamespace(first);
+        final Props firstNamespace = root.getNamespace(first).orElse(null);
         assertEquals(value, firstNamespace.getProp(second));
 
-        assertNull(root.getNamespace("non existent"));
+        assertNull(root.getNamespace("non existent").orElse(null));
 
         root.removeProp(key);
-        assertNull(root.getNamespace(first));
+        assertNull(root.getNamespace(first).orElse(null));
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -585,7 +586,9 @@ public class PropsContainerTest extends DerbyBase
             String actualFirstKey = iterateFirstNamespaces.next();
             assertEquals(expectedfirstKey, actualFirstKey);
 
-            Iterator<String> iterateSecondNamespaces = root.getNamespace(expectedfirstKey).iterateNamespaces();
+            Iterator<String> iterateSecondNamespaces =
+                root.getNamespace(expectedfirstKey)
+                    .map(Props::iterateNamespaces).orElse(new ArrayList<String>().iterator());
 
             // the "second level" only consists of keys - no namespaces
             assertFalse(iterateSecondNamespaces.hasNext());
@@ -908,7 +911,7 @@ public class PropsContainerTest extends DerbyBase
         rootEntrySet.add(insertedContainerEntry);
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
-        final Props containerNamespace = root.getNamespace(insertedContainer);
+        final Props containerNamespace = root.getNamespace(insertedContainer).orElse(null);
         assertEquals(insertedContainerValue, containerNamespace.getProp(insertedEntryKey));
 
         // do not override existing key
@@ -939,7 +942,7 @@ public class PropsContainerTest extends DerbyBase
         rootEntrySet.add(insertedContainerEntry);
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
-        final Props containerNamespace = root.getNamespace(insertedContainer);
+        final Props containerNamespace = root.getNamespace(insertedContainer).orElse(null);
         assertEquals(insertedContainerValue, containerNamespace.getProp(insertedEntryKey));
 
         // do not override existing key
@@ -1312,7 +1315,7 @@ public class PropsContainerTest extends DerbyBase
         rootKeySet.add(insertedContainerkey);
         assertEquals("", root.getProp(insertedContainerkey));
         assertEquals("", root.getProp(insertedEntryKey, insertedContainer));
-        final Props containerNamespace = root.getNamespace(insertedContainer);
+        final Props containerNamespace = root.getNamespace(insertedContainer).orElse(null);
         assertEquals("", containerNamespace.getProp(insertedEntryKey));
 
         // do not override existing key
@@ -1571,7 +1574,7 @@ public class PropsContainerTest extends DerbyBase
         rootMap.put(insertedContainerKey, insertedContainerValue);
 
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
-        Props containerNamespace = root.getNamespace(container);
+        Props containerNamespace = root.getNamespace(container).orElse(null);
         assertEquals(insertedContainerValue, containerNamespace.getProp(containerKey));
     }
 
@@ -1606,7 +1609,7 @@ public class PropsContainerTest extends DerbyBase
         rootMap.remove(glue(removedNamespace, "second0"));
         rootMap.remove(glue(removedNamespace, "second1"));
         // remove the other two entries, thus the namespace should get deleted too
-        assertNull(root.getNamespace(removedNamespace));
+        assertNull(root.getNamespace(removedNamespace).orElse(null));
     }
 
     @Test

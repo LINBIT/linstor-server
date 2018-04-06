@@ -110,7 +110,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                 Props searchRoot = conf;
                 if (prmNamespace != null)
                 {
-                    searchRoot = conf.getNamespace(prmNamespace);
+                    searchRoot = conf.getNamespace(prmNamespace).orElse(null);
                     if (searchRoot == null)
                     {
                         throw new NamespaceException(

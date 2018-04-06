@@ -166,7 +166,7 @@ public final class Controller
             taskScheduleService.addTask(new GarbageCollectorTask());
 
             controllerNetComInitializer.initNetComServices(
-                ctrlConf.getNamespace(PROPSCON_KEY_NETCOM),
+                ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null),
                 errorReporter,
                 initCtx
             );

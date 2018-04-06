@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -52,7 +53,6 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
     Iterator<String> keysIterator();
     Iterator<String> valuesIterator();
 
-    Props getNamespace(String namespace)
-        throws InvalidKeyException;
+    Optional<Props> getNamespace(String namespace);
     Iterator<String> iterateNamespaces();
 }

@@ -183,25 +183,18 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         throws StorageException
     {
         checkDeleted();
-        try
+        if (storageDriverRef.getKind().hasBackingStorage())
         {
-            if (storageDriverRef.getKind().hasBackingStorage())
+            Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
+            if (!namespace.isPresent())
             {
-                Props namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
-                if (namespace == null)
-                {
-                    throw new ImplementationError(
-                        "Missing required namespace for backing storage",
-                        null
-                    );
-                }
-                Map<String, String> map = namespace.map();
-                storageDriverRef.setConfiguration(map);
+                throw new ImplementationError(
+                    "Missing required namespace for backing storage",
+                    null
+                );
             }
-        }
-        catch (InvalidKeyException invalidKeyExc)
-        {
-            throw new ImplementationError("Hard coded constant cause an invalid key exception", invalidKeyExc);
+            Map<String, String> map = namespace.get().map();
+            storageDriverRef.setConfiguration(map);
         }
     }
 

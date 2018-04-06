@@ -311,7 +311,7 @@ public class CtrlConfApiCallHandler
         {
             ctrlConfProt.requireAccess(accCtx, AccessType.VIEW);
 
-            Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED);
+            Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
             if (namespace == null || namespace.isEmpty())
             {
                 AbsApiCallHandler.reportStatic(
@@ -404,7 +404,7 @@ public class CtrlConfApiCallHandler
         {
             ctrlConfProt.requireAccess(accCtx, AccessType.CHANGE);
 
-            Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED);
+            Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
 
             if (oldPassphrase == null)
             {

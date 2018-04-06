@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -210,13 +211,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
         String[] pathElements = splitPath(namespace, key);
         checkKey(pathElements[PATH_KEY]);
 
-        PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
-        String value = null;
-        if (con != null)
-        {
-            value = con.propMap.get(pathElements[PATH_KEY]);
-        }
-        return value;
+        Optional<PropsContainer> con = findNamespace(pathElements[PATH_NAMESPACE]);
+
+        return con.isPresent() ? con.get().propMap.get(pathElements[PATH_KEY]) : null;
     }
 
     /**
@@ -282,7 +279,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         String actualKey = pathElements[PATH_KEY];
         checkKey(actualKey);
 
-        PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
+        PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]).orElse(null);
         if (con != null)
         {
             value = con.propMap.remove(actualKey);
@@ -365,7 +362,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 String actualKey = pathElements[PATH_KEY];
                 checkKey(actualKey);
 
-                PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
+                PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]).orElse(null);
                 if (con != null)
                 {
                     String value = con.propMap.remove(actualKey);
@@ -656,12 +653,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace The name of the namespace that should be returned
      * @return The namespace's PropsContainer, or null, if the namespace does not exist
-     * @throws InvalidKeyException If the namespace specification is invalid
      */
     @Override
-    public Props getNamespace(String namespace) throws InvalidKeyException
+    public Optional<Props> getNamespace(String namespace)
     {
-        return findNamespace(namespace);
+        return Optional.ofNullable(findNamespace(namespace).orElse(null));
     }
 
     /**
@@ -681,9 +677,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace The name of the namespace that should be returned
      * @return The namespace's PropsContainer, or null, if the namespace does not exist
-     * @throws InvalidKeyException If the namespace specification is invalid
      */
-    private PropsContainer findNamespace(String namespace)
+    private Optional<PropsContainer> findNamespace(String namespace)
     {
         PropsContainer con = this;
         if (namespace != null)
@@ -698,7 +693,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 con = con.containerMap.get(tokens.nextToken());
             }
         }
-        return con;
+        return Optional.ofNullable(con);
     }
 
     /**
@@ -1046,11 +1041,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 String[] pathElements = container.splitPath(null, (String) key);
 
-                PropsContainer con = container.findNamespace(pathElements[PATH_NAMESPACE]);
-                if (con != null)
-                {
-                    result = con.propMap.containsKey(pathElements[PATH_KEY]);
-                }
+                Optional<PropsContainer> con = container.findNamespace(pathElements[PATH_NAMESPACE]);
+                result = con.map(props -> props.propMap.containsKey(pathElements[PATH_KEY])).orElse(false);
             }
             catch (ClassCastException castExc)
             {
