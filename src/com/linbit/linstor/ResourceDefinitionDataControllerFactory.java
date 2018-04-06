@@ -76,8 +76,8 @@ public class ResourceDefinitionDataControllerFactory
         }
         else
         {
-            tcpPortPool.allocate(port);
             chosenTcpPort = new TcpPortNumber(port);
+            tcpPortPool.allocate(port);
         }
 
         resDfn = new ResourceDefinitionData(

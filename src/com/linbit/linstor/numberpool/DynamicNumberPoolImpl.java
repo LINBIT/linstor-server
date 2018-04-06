@@ -1,6 +1,5 @@
 package com.linbit.linstor.numberpool;
 
-import com.linbit.Checks;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
@@ -14,9 +13,6 @@ import java.util.regex.Matcher;
 
 public class DynamicNumberPoolImpl implements DynamicNumberPool
 {
-    private static final String OUT_OF_RANGE_EXC_FORMAT =
-        " %d is out of range [%d - %d]";
-
     private static final String IN_USE_EXC_FORMAT =
         " %d is already in use";
 
@@ -110,22 +106,9 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
     }
 
     @Override
-    public int getRangeMin()
-    {
-        return rangeMin;
-    }
-
-    @Override
-    public int getRangeMax()
-    {
-        return rangeMax;
-    }
-
-    @Override
     public void allocate(int nr)
-        throws ValueOutOfRangeException, ValueInUseException
+        throws ValueInUseException
     {
-        Checks.genericRangeCheck(nr, rangeMin, rangeMax, elementName + OUT_OF_RANGE_EXC_FORMAT);
         synchronized (numberPool)
         {
             if (numberPool.isAllocated(nr))
@@ -137,7 +120,8 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
     }
 
     @Override
-    public int autoAllocate() throws ExhaustedPoolException
+    public int autoAllocate()
+        throws ExhaustedPoolException
     {
         synchronized (numberPool)
         {

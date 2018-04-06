@@ -14,12 +14,8 @@ public interface DynamicNumberPool
      */
     void reloadRange();
 
-    int getRangeMin();
-
-    int getRangeMax();
-
     void allocate(int nr)
-        throws ValueOutOfRangeException, ValueInUseException;
+        throws ValueInUseException;
 
     int autoAllocate()
         throws ExhaustedPoolException;

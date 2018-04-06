@@ -218,7 +218,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     @Override
     public MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException
+        throws AccessDeniedException, SQLException, ValueInUseException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);

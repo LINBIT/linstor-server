@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -276,7 +275,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     @Override
     public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException
+        throws AccessDeniedException, SQLException, ValueInUseException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         if (tcpPortPool != null)

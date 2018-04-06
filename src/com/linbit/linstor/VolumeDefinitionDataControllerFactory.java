@@ -76,8 +76,8 @@ public class VolumeDefinitionDataControllerFactory
         }
         else
         {
-            minorNrPool.allocate(minor);
             chosenMinorNr = new MinorNumber(minor);
+            minorNrPool.allocate(minor);
         }
 
         volDfnData = new VolumeDefinitionData(
