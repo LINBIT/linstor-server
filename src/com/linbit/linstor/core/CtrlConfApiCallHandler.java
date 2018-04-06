@@ -135,10 +135,10 @@ public class CtrlConfApiCallHandler
             }
             switch (fullKey)
             {
-                case ApiConsts.KEY_TCP_PORT_RANGE:
+                case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
                     setTcpPort(key, namespace, value, apiCallRc);
                     break;
-                case ApiConsts.KEY_MINOR_NR_RANGE:
+                case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                     setMinorNr(key, namespace, value, apiCallRc);
                     break;
                 // TODO: check for other properties
@@ -245,10 +245,10 @@ public class CtrlConfApiCallHandler
             {
                 switch (fullKey)
                 {
-                    case ApiConsts.KEY_TCP_PORT_RANGE:
+                    case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
                         tcpPortPool.reloadRange();
                         break;
-                    case ApiConsts.KEY_MINOR_NR_RANGE:
+                    case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                         minorNrPool.reloadRange();
                         break;
                     // TODO: check for other properties

@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -33,7 +34,6 @@ public class NumberPoolModule extends AbstractModule
     public static final String UNINITIALIZED_MINOR_NUMBER_POOL = "UninitializedMinorNumberPool";
     public static final String UNINITIALIZED_TCP_PORT_POOL = "UninitializedTcpPortPool";
 
-    private static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
     // we will load the ranges from the database, but if the database contains
@@ -41,7 +41,6 @@ public class NumberPoolModule extends AbstractModule
     private static final int DEFAULT_MINOR_NR_MIN = 1000;
     private static final int DEFAULT_MINOR_NR_MAX = 49999;
 
-    private static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
     private static final String TCP_PORT_ELEMENT_NAME = "TCP port";
 
     // we will load the ranges from the database, but if the database contains
@@ -65,7 +64,7 @@ public class NumberPoolModule extends AbstractModule
         DynamicNumberPool minorNrPool = new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
-            PROPSCON_KEY_MINOR_NR_RANGE,
+            ApiConsts.KEY_MINOR_NR_AUTO_RANGE,
             MINOR_NR_ELEMENT_NAME,
             MinorNumber::minorNrCheck,
             MinorNumber.MINOR_NR_MAX,
@@ -132,7 +131,7 @@ public class NumberPoolModule extends AbstractModule
         DynamicNumberPool tcpPortPool = new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
-            PROPSCON_KEY_TCP_PORT_RANGE,
+            ApiConsts.KEY_TCP_PORT_AUTO_RANGE,
             TCP_PORT_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,
