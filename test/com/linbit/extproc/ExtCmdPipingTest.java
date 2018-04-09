@@ -41,14 +41,22 @@ public class ExtCmdPipingTest
     @Test
     public void execTest() throws Exception
     {
+        final int expectedRc = 42;
+        final int expectedLen = 12345;
         ExtCmd ec = new ExtCmd(intrTimer, errLog);
-        ExtCmd.OutputData output = ec.exec("test-support/TestOutput", "42", "12345", "stdout", "exit");
+        ExtCmd.OutputData output = ec.exec(
+            "test-support/TestOutput",
+            Integer.toString(expectedRc),
+            Integer.toString(expectedLen),
+            "stdout",
+            "exit"
+        );
 
-        if (output.stdoutData.length != 12345)
+        if (output.stdoutData.length != expectedLen)
         {
             fail(String.format("Unexpected stdoutData length %d", output.stdoutData.length));
         }
-        if (output.exitCode != 42)
+        if (output.exitCode != expectedRc)
         {
             fail(String.format("Unexpected exit code %d", output.exitCode));
         }
@@ -60,14 +68,22 @@ public class ExtCmdPipingTest
     @Test
     public void execStderrTest() throws Exception
     {
+        final int expectedRc = 21;
+        final int expectedLen = 76543;
         ExtCmd ec = new ExtCmd(intrTimer, errLog);
-        ExtCmd.OutputData output = ec.exec("test-support/TestOutput", "21", "76543", "stderr", "exit");
+        ExtCmd.OutputData output = ec.exec(
+            "test-support/TestOutput",
+            Integer.toString(expectedRc),
+            Integer.toString(expectedLen),
+            "stderr",
+            "exit"
+        );
 
-        if (output.stderrData.length != 76543)
+        if (output.stderrData.length != expectedLen)
         {
             fail(String.format("Unexpected stderrData length %d", output.stderrData.length));
         }
-        if (output.exitCode != 21)
+        if (output.exitCode != expectedRc)
         {
             fail(String.format("Unexpected exit code %d", output.exitCode));
         }
@@ -79,17 +95,25 @@ public class ExtCmdPipingTest
     @Test
     public void asyncExecTest() throws Exception
     {
+        final int expectedRc = 23;
+        final int expectedLen = 3456;
         ExtCmd ec = new ExtCmd(intrTimer, errLog);
-        ec.asyncExec("test-support/TestOutput", "23", "3456", "stdout", "exit");
+        ec.asyncExec(
+            "test-support/TestOutput",
+            Integer.toString(expectedRc),
+            Integer.toString(expectedLen),
+            "stdout",
+            "exit"
+        );
 
         // TODO: run something else while the external process is working
 
         ExtCmd.OutputData output = ec.syncProcess();
-        if (output.stdoutData.length != 3456)
+        if (output.stdoutData.length != expectedLen)
         {
             fail(String.format("Unexpected stdoutData length %d", output.stdoutData.length));
         }
-        if (output.exitCode != 23)
+        if (output.exitCode != expectedRc)
         {
             fail(String.format("Unexpected exit code %d", output.exitCode));
         }
@@ -139,6 +163,7 @@ public class ExtCmdPipingTest
     /**
      * Tests synchronous execution of a command that times out
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test(expected = ChildProcessTimeoutException.class)
     public void execHangingProcessTest() throws Exception
     {
@@ -151,6 +176,7 @@ public class ExtCmdPipingTest
     /**
      * Tests asynchronous execution of a command that times out
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     @Test(expected = ChildProcessTimeoutException.class)
     public void asyncExecHangingProcessTest() throws Exception
     {

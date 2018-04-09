@@ -281,7 +281,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
+    @SuppressWarnings({"checkstyle:variabledeclarationusagedistance", "checkstyle:magicnumber"})
     public void testLoadResources() throws Exception
     {
         driver.create(resDfn);

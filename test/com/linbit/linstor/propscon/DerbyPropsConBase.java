@@ -17,6 +17,10 @@ import static org.junit.Assert.assertTrue;
 
 public class DerbyPropsConBase extends DerbyBase
 {
+    private static final int COL_ID_INSTANCE = 1;
+    private static final int COL_ID_KEY = 2;
+    private static final int COL_ID_VAL = 3;
+
     private static final String SELECT_ALL_PROPS =
         "SELECT * FROM " + TBL_PROPS_CONTAINERS;
     private static final String INSERT =
@@ -45,9 +49,9 @@ public class DerbyPropsConBase extends DerbyBase
         StringBuilder sb = new StringBuilder();
         while (allContent.next())
         {
-            sb.append(allContent.getString(1)).append(": ")
-                .append(allContent.getString(2)).append(" = ")
-                .append(allContent.getString(3)).append("\n");
+            sb.append(allContent.getString(COL_ID_INSTANCE)).append(": ")
+                .append(allContent.getString(COL_ID_KEY)).append(" = ")
+                .append(allContent.getString(COL_ID_VAL)).append("\n");
         }
         allContent.close();
         stmt.close();
@@ -69,11 +73,11 @@ public class DerbyPropsConBase extends DerbyBase
         ResultSet resultSet = getAllProps();
         while (resultSet.next())
         {
-            String instanceName = resultSet.getString(1);
+            String instanceName = resultSet.getString(COL_ID_INSTANCE);
             if (expectedInstanceName.equals(instanceName)) // not an assert as db may contain multiple containers
             {
-                String key = resultSet.getString(2);
-                String value = resultSet.getString(3);
+                String key = resultSet.getString(COL_ID_KEY);
+                String value = resultSet.getString(COL_ID_VAL);
 
                 assertTrue("Unexpected key [" + key + "]", map.containsKey(key));
                 String expectedValue = map.remove(key);
@@ -91,9 +95,9 @@ public class DerbyPropsConBase extends DerbyBase
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
             {
-                preparedStatement.setString(1, instanceName);
-                preparedStatement.setString(2, key);
-                preparedStatement.setString(3, value);
+                preparedStatement.setString(COL_ID_INSTANCE, instanceName);
+                preparedStatement.setString(COL_ID_KEY, key);
+                preparedStatement.setString(COL_ID_VAL, value);
                 preparedStatement.executeUpdate();
             }
             con.commit();
@@ -106,13 +110,13 @@ public class DerbyPropsConBase extends DerbyBase
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
             {
-                preparedStatement.setString(1, instanceName);
+                preparedStatement.setString(COL_ID_INSTANCE, instanceName);
 
                 Set<Entry<String,String>> entrySet = map.entrySet();
                 for (Entry<String, String> entry : entrySet)
                 {
-                    preparedStatement.setString(2, entry.getKey());
-                    preparedStatement.setString(3, entry.getValue());
+                    preparedStatement.setString(COL_ID_KEY, entry.getKey());
+                    preparedStatement.setString(COL_ID_VAL, entry.getValue());
                     preparedStatement.executeUpdate();
                 }
             }
@@ -144,8 +148,8 @@ public class DerbyPropsConBase extends DerbyBase
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(DELETE))
             {
-                preparedStatement.setString(1, instanceName);
-                preparedStatement.setString(2, key);
+                preparedStatement.setString(COL_ID_INSTANCE, instanceName);
+                preparedStatement.setString(COL_ID_KEY, key);
                 preparedStatement.executeUpdate();
             }
             con.commit();

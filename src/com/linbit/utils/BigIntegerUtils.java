@@ -6,7 +6,7 @@ public class BigIntegerUtils
 {
     public static long longValueExact(BigInteger bigInt)
     {
-        if (bigInt.bitLength() > 63)
+        if (bigInt.bitLength() >= Long.SIZE)
         {
             throw new ArithmeticException("Input value for conversion is not within the range of data type long");
         }

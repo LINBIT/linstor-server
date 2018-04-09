@@ -287,7 +287,7 @@ public class ClientProtobuf implements Runnable
     }
 
     @Override
-    @SuppressWarnings("DescendantToken")
+    @SuppressWarnings({"DescendantToken", "checkstyle:magicnumber"})
     // multiple returns - only for this prototype
     public void run()
     {
@@ -533,6 +533,7 @@ public class ClientProtobuf implements Runnable
         return msg.replaceAll("\\n", "\n               ");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private void decodeRetValue(StringBuilder sb, long retCode)
     {
         if ((retCode & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
@@ -561,6 +562,7 @@ public class ClientProtobuf implements Runnable
         }
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public static void appendReadableRetCode(StringBuilder sb, long retCode)
     {
         appendReadableRetCode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
@@ -1365,6 +1367,7 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public void send(int msgId, String apiCall, Message msg) throws IOException
     {
         MsgHeader headerMsg = MsgHeader.newBuilder()

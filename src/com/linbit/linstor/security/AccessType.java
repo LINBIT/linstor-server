@@ -113,6 +113,7 @@ public enum AccessType
         return accType;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public static AccessType get(int flag)
     {
         AccessType accType;

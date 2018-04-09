@@ -211,7 +211,7 @@ public class CmdSetConnectionContext extends BaseDebugCmd
 
                     debugOut.println("New access conntext for connection " + client.getId() + ":");
                     AutoIndent.printWithIndent(
-                        debugOut, 4,
+                        debugOut, AutoIndent.DEFAULT_INDENTATION,
                         String.format(
                             "Identity:        %s\n" +
                             "Role:            %s\n" +

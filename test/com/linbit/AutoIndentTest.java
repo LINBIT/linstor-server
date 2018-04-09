@@ -91,7 +91,8 @@ public class AutoIndentTest
     @Test
     public void testLargeIndent()
     {
-        for (int indent = 1; indent < 10; indent++)
+        final int count = 10;
+        for (int indent = 1; indent < count; indent++)
         {
             assertEquals("Failed with indent: " + indent,
                 getSpaces(indent) + "simple\n" + getSpaces(indent) + "test\n",

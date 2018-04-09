@@ -113,6 +113,7 @@ public class StringConvTest
      * Test of getDfltByte method, of class StringConv.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testGetDfltByte() throws Exception
     {
         if (StringConv.getDfltByte(Byte.toString((byte) 42), (byte) 0) != (byte) 42)
@@ -150,6 +151,7 @@ public class StringConvTest
      * Test of getDfltShort method, of class StringConv.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testGetDfltShort() throws Exception
     {
         if (StringConv.getDfltShort(Short.toString((short) 31337), (short) 0) != (short) 31337)
@@ -187,6 +189,7 @@ public class StringConvTest
      * Test of getDfltInt method, of class StringConv.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testGetDfltInt() throws Exception
     {
         if (StringConv.getDfltInt(Integer.toString(19191), 0) != 19191)
@@ -224,6 +227,7 @@ public class StringConvTest
      * Test of getDfltLong method, of class StringConv.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testGetDfltLong() throws Exception
     {
         if (StringConv.getDfltLong(Long.toString(100), 0L) != 100L)
@@ -261,6 +265,7 @@ public class StringConvTest
      * Test of getDfltFloat method, of class StringConv.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testGetDfltFloat() throws Exception
     {
         if (StringConv.getDfltFloat(Float.toString((float) 37.1), 0) != (float) 37.1)
@@ -298,6 +303,7 @@ public class StringConvTest
      * Test of getDfltDouble method, of class StringConv.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testGetDfltDouble() throws Exception
     {
         if (StringConv.getDfltDouble(Double.toString(43.3), Double.MIN_NORMAL) != 43.3)

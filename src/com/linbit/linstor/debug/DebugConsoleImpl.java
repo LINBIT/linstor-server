@@ -503,7 +503,7 @@ public class DebugConsoleImpl implements DebugConsole
         if (cmdDescr != null)
         {
             debugOut.println("\u001b[1;37mDescription:\u001b[0m");
-            AutoIndent.printWithIndent(debugOut, 4, cmdDescr);
+            AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, cmdDescr);
             debugOut.println();
         }
 
@@ -518,7 +518,11 @@ public class DebugConsoleImpl implements DebugConsole
                     for (Map.Entry<String, String> paramEntry : paramsDescr.entrySet())
                     {
                         debugOut.printf("    %s\n", paramEntry.getKey());
-                        AutoIndent.printWithIndent(debugOut, 8, paramEntry.getValue());
+                        AutoIndent.printWithIndent(
+                            debugOut,
+                            2 * AutoIndent.DEFAULT_INDENTATION,
+                            paramEntry.getValue()
+                        );
                     }
                     debugOut.println();
                 }
@@ -546,7 +550,7 @@ public class DebugConsoleImpl implements DebugConsole
                         "list of supported parameters. The following description is provided by\n" +
                         "the command for the use of such additional parameters:\n"
                     );
-                    AutoIndent.printWithIndent(debugOut, 4, undeclParamsDescr);
+                    AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, undeclParamsDescr);
                     debugOut.println();
                 }
             }

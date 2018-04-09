@@ -16,6 +16,7 @@ import java.util.Map;
  */
 public class CmdDisplayApis extends BaseDebugCmd
 {
+    private static final int DEFAULT_INDENTATION_LEVEL = 4;
     private final CommonMessageProcessor commonMessageProcessor;
 
     @Inject
@@ -52,10 +53,10 @@ public class CmdDisplayApis extends BaseDebugCmd
             String description = apiObj.getDescription();
             if (description != null)
             {
-                AutoIndent.printWithIndent(debugOut, 4, description);
+                AutoIndent.printWithIndent(debugOut, AutoIndent.DEFAULT_INDENTATION, description);
             }
             AutoIndent.printWithIndent(
-                debugOut, 4,
+                debugOut, AutoIndent.DEFAULT_INDENTATION,
                 "Provider: " + apiObj.getClazz().getCanonicalName() + "\n" +
                 "Call policy: " + (apiObj.requiresAuth() ? "Authenticated identity" : "Anonymous/PUBLIC")
             );

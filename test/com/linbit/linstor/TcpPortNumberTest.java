@@ -12,6 +12,7 @@ import org.junit.Test;
  */
 public class TcpPortNumberTest
 {
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int[] CTOR_FAIL_TESTS =
     {
         -1,
@@ -33,6 +34,7 @@ public class TcpPortNumberTest
     TcpPortNumber testGreater;
     TcpPortNumber testEqual;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public TcpPortNumberTest()
         throws ValueOutOfRangeException
     {
@@ -134,6 +136,7 @@ public class TcpPortNumberTest
      * Test of hashCode method, of class TcpPortNumber.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testHashCode()
         throws ValueOutOfRangeException
     {

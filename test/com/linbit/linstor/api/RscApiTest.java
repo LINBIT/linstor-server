@@ -46,7 +46,7 @@ public class RscApiTest extends ApiTestBase
     private TransportType tesTRscDfnTransportType;
     private ResourceDefinitionData testRscDfn;
 
-    @SuppressWarnings("checkstype:magicnumber")
+    @SuppressWarnings("checkstyle:magicnumber")
     public RscApiTest() throws Exception
     {
         super();

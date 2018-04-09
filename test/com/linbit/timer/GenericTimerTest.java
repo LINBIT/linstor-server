@@ -53,6 +53,7 @@ public class GenericTimerTest
      * Test of addDelayedAction method, of class GenericTimer.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testDelayedAction() throws Exception
     {
         // Set delay 200 ms
@@ -79,6 +80,7 @@ public class GenericTimerTest
      * Test with multiple queued actions, addDelayedAction
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testDelayedActionMulti() throws Exception
     {
         long now = System.currentTimeMillis();
@@ -127,6 +129,7 @@ public class GenericTimerTest
      * Test with multiple queued actions, addScheduledAction
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testScheduledActionMulti() throws Exception
     {
         long now = System.currentTimeMillis();
@@ -175,6 +178,7 @@ public class GenericTimerTest
      * Test of addScheduledAction method, of class GenericTimer.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testScheduledAction()
     {
         // Set target time in 200 ms
@@ -202,6 +206,7 @@ public class GenericTimerTest
      * Test of cancelAction method, of class GenericTimer.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testCancelAction() throws Exception
     {
         // Set delay 200 ms
@@ -238,6 +243,7 @@ public class GenericTimerTest
      * Test for Action == null in addDelayedAction()
      */
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testDelayedNull() throws Exception
     {
         instance.addDelayedAction(1000L, null);
@@ -247,12 +253,14 @@ public class GenericTimerTest
      * Test for Action == null in addScheduledAction()
      */
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testScheduledNull()
     {
         instance.addScheduledAction(1000L, null);
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testScheduledTimeInPast() throws Exception
     {
         TestAction actionObj = new TestAction();

@@ -16,6 +16,8 @@ import org.junit.Test;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+
+@SuppressWarnings("checkstyle:magicnumber")
 public class ClientProcessHandlerTest
 {
     public static final String TEST_PROGRAM = "test-support/TestProcess";

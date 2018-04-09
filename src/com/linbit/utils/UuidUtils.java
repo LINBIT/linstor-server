@@ -6,9 +6,11 @@ import java.util.UUID;
 
 public class UuidUtils
 {
+    private static final int UUID_BYTES = 16;
+
     public static byte[] asByteArray(UUID id)
     {
-        ByteBuffer buffer = ByteBuffer.allocate(16);
+        ByteBuffer buffer = ByteBuffer.allocate(UUID_BYTES);
         buffer.putLong(id.getMostSignificantBits());
         buffer.putLong(id.getLeastSignificantBits());
         return buffer.array();

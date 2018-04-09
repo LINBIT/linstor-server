@@ -59,6 +59,7 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     protected long getPoolSizeInKiB() throws ChildProcessTimeoutException, IOException
     {
         OutputData vgsOut = callChecked("zpool", "get", "size", "-Hp", poolName);

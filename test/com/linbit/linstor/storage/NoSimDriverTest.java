@@ -36,6 +36,7 @@ import com.linbit.timer.Timer;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
+@SuppressWarnings("checkstyle:magicnumber")
 public abstract class NoSimDriverTest
 {
     protected ErrorReporter errorReporter;
@@ -56,7 +57,7 @@ public abstract class NoSimDriverTest
     protected boolean noCleanUp;
     protected boolean inCleanUp = false;
 
-    private final Path baseMountPath = Paths.get("/mnt","linstorTests");
+    private final Path baseMountPath = Paths.get("/mnt", "linstorTests");
 
     private boolean baseMountPathExisted;
 
@@ -246,7 +247,7 @@ public abstract class NoSimDriverTest
 
 
             log("   modifying original data...");
-            callChecked("/bin/sh", "-c","echo 'overridden Test' > " + origTestFile2);
+            callChecked("/bin/sh", "-c", "echo 'overridden Test' > " + origTestFile2);
             callChecked("touch", origTestFile3);
             callChecked("rm", origTestFile1);
             // file status orig:
@@ -322,8 +323,8 @@ public abstract class NoSimDriverTest
             String restTestFile3 = restMountPath + File.separator + testFile3;
             createMountPoint(restMountPath, "   creating mountpoint [%s]...");
 
-            mount(origBlockDevice, origMountPath,"   mounting [%s] to mountpoint [%s]...");
-            mount(restBlockDevice, restMountPath,"   mounting [%s] to mountpoint [%s]...");
+            mount(origBlockDevice, origMountPath, "   mounting [%s] to mountpoint [%s]...");
+            mount(restBlockDevice, restMountPath, "   mounting [%s] to mountpoint [%s]...");
 
             log("   checking existence of original files...");
             checkFileExists(false, origTestFile1, "\n      ", 10, 200);

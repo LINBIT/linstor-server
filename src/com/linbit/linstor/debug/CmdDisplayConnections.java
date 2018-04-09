@@ -407,6 +407,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
         return result;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private void  printPrivString(PrintStream output, PrivilegeSet privSet)
     {
         List<Privilege> privList = privSet.getEnabledPrivileges();

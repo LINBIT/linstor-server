@@ -41,6 +41,7 @@ public abstract class BaseErrorReporter
         SECTION_SEPARATOR = new String(separator);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     BaseErrorReporter(String moduleName)
     {
         dmModule = moduleName;
@@ -156,28 +157,28 @@ public abstract class BaseErrorReporter
         {
             detailsAvailable = true;
             output.println("Description:");
-            AutoIndent.printWithIndent(output, 4, descriptionMsg);
+            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
         }
 
         if (causeMsg != null)
         {
             detailsAvailable = true;
             output.println("Cause:");
-            AutoIndent.printWithIndent(output, 4, causeMsg);
+            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, causeMsg);
         }
 
         if (correctionMsg != null)
         {
             detailsAvailable = true;
             output.println("Correction:");
-            AutoIndent.printWithIndent(output, 4, correctionMsg);
+            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, correctionMsg);
         }
 
         if (detailsMsg != null)
         {
             detailsAvailable = true;
             output.println("Additional information:");
-            AutoIndent.printWithIndent(output, 4, detailsMsg);
+            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, detailsMsg);
         }
 
         if (detailsAvailable)
@@ -331,7 +332,7 @@ public abstract class BaseErrorReporter
         if (contextInfo != null)
         {
             output.println("Error context:");
-            AutoIndent.printWithIndent(output, 4, contextInfo);
+            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
             output.println();
         }
 

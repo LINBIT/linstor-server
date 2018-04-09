@@ -89,6 +89,10 @@ public abstract class DerbyBase implements DerbyTestConstants
         " WHERE " + PROPS_INSTANCE + " = ? " +
         " ORDER BY " + PROP_KEY;
 
+    private static final int PROPS_COL_ID_INSTANCE = 1;
+    private static final int PROPS_COL_ID_KEY = 2;
+    private static final int PROPS_COL_ID_VAL = 3;
+
     protected static ErrorReporter errorReporter =
         new StdErrorReporter("TESTS", "");
 
@@ -302,15 +306,16 @@ public abstract class DerbyBase implements DerbyTestConstants
 
     protected String debugGetAllProsContent() throws SQLException
     {
+
         Connection connection = getConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT * FROM " + TBL_PROPS_CONTAINERS);
         ResultSet allContent = stmt.executeQuery();
         StringBuilder sb = new StringBuilder();
         while (allContent.next())
         {
-            sb.append(allContent.getString(1)).append(": ")
-                .append(allContent.getString(2)).append(" = ")
-                .append(allContent.getString(3)).append("\n");
+            sb.append(allContent.getString(PROPS_COL_ID_INSTANCE)).append(": ")
+                .append(allContent.getString(PROPS_COL_ID_KEY)).append(" = ")
+                .append(allContent.getString(PROPS_COL_ID_VAL)).append("\n");
         }
         allContent.close();
         stmt.close();

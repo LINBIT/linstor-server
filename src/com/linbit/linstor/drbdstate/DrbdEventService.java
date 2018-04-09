@@ -29,6 +29,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     public static final String SERVICE_INFO = "DrbdEventService";
     private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger(0);
     public static final String DRBDSETUP_COMMAND = "drbdsetup";
+    private static final int EVENT_QUEUE_DEFAULT_SIZE = 10_000;
 
     private ServiceName instanceName;
     private boolean started = false;
@@ -65,7 +66,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
         try
         {
             instanceName = new ServiceName(INSTANCE_PREFIX + INSTANCE_COUNT.incrementAndGet());
-            eventDeque = new LinkedBlockingDeque<>(10_000);
+            eventDeque = new LinkedBlockingDeque<>(EVENT_QUEUE_DEFAULT_SIZE);
             demonHandler = new DaemonHandler(eventDeque, DRBDSETUP_COMMAND, "events2", "all");
             running = false;
             errorReporter = errorReporterRef;

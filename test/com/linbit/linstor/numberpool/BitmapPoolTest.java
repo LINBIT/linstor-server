@@ -232,6 +232,7 @@ public class BitmapPoolTest
         }
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private List<PoolConfiguration> poolConfigurations()
     {
         return Arrays.asList(

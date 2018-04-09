@@ -16,6 +16,7 @@ public class VolumeNumber implements Comparable<VolumeNumber>
     //        but currently, there is at least one signedness bug somewhere
     //        in the network protocol implementation that limits the usable
     //        range to 0 - 32767
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int VOLUME_NR_MAX = (1 << 15) - 1;
 
     private static final String VOLUME_NR_EXC_FORMAT =

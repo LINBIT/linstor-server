@@ -2,6 +2,7 @@ package com.linbit.linstor.debug;
 
 import java.util.Arrays;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public class HexViewer
 {
     public static final String DISPLAY_SPECIAL_CHARS =

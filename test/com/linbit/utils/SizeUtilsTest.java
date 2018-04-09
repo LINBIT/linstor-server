@@ -9,6 +9,7 @@ import org.junit.Test;
 public class SizeUtilsTest
 {
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testApproxSizeAllSupportedMagnitudes()
     {
         BigInteger kib = BigInteger.valueOf(1);
@@ -22,6 +23,7 @@ public class SizeUtilsTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testApproxSizeDecimal()
     {
         checkApprox(102400, "100.00 MiB");
@@ -30,6 +32,7 @@ public class SizeUtilsTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testApproxSizeRounding()
     {
         checkApprox(102400, "100.00 MiB");

@@ -121,7 +121,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
         // Initialize the default bind address
         {
-            byte[] defaultIpv6Addr = new byte[16];
+            final int ipV6Len = 16;
+            byte[] defaultIpv6Addr = new byte[ipV6Len];
             Arrays.fill(defaultIpv6Addr, (byte) 0);
             try
             {

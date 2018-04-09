@@ -27,6 +27,7 @@ public class AuthenticationTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testPasswordsMatch() throws Exception
     {
         MessageDigest md = MessageDigest.getInstance("SHA-512");

@@ -57,6 +57,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Inject private VolumeDataDerbyDriver driver;
 
     @Before
+    @SuppressWarnings("checkstyle:magicnumber")
     public void setUp() throws Exception
     {
         super.setUpAndEnterScope();

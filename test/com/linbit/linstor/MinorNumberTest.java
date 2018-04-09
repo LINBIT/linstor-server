@@ -14,6 +14,7 @@ import org.junit.Test;
  */
 public class MinorNumberTest
 {
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int[] CTOR_FAIL_TESTS =
     {
         -1,
@@ -40,6 +41,7 @@ public class MinorNumberTest
     }
 
     @Before
+    @SuppressWarnings("checkstyle:magicnumber")
     public void setUp()
         throws ValueOutOfRangeException
     {
@@ -156,6 +158,7 @@ public class MinorNumberTest
      * Test of hashCode method, of class MinorNumber.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testHashCode()
         throws ValueOutOfRangeException
     {

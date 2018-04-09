@@ -265,18 +265,18 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 String detailsMsg       = errorInfo.getDetailsText();
 
                 output.println("Description:");
-                AutoIndent.printWithIndent(output, 4, descriptionMsg);
+                AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
 
                 if (causeMsg != null)
                 {
                     output.println("Cause:");
-                    AutoIndent.printWithIndent(output, 4, causeMsg);
+                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, causeMsg);
                 }
 
                 if (correctionMsg != null)
                 {
                     output.println("Correction:");
-                    AutoIndent.printWithIndent(output, 4, correctionMsg);
+                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, correctionMsg);
                 }
 
                 output.println();
@@ -284,7 +284,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 if (contextInfo != null)
                 {
                     output.println("Error context:");
-                    AutoIndent.printWithIndent(output, 4, contextInfo);
+                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
                     output.println();
                 }
 

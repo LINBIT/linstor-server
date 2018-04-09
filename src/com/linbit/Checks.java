@@ -342,6 +342,7 @@ public class Checks
         }
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private static boolean isIpV4(String addr)
     {
         Matcher matcher = IPv4_PATTERN.matcher(addr.trim());
@@ -367,6 +368,7 @@ public class Checks
         return ret;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private static boolean isIpV6(String addr) throws InvalidIpAddressException
     {
         boolean ret = true;

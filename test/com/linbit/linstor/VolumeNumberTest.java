@@ -12,6 +12,7 @@ import org.junit.Test;
  */
 public class VolumeNumberTest
 {
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int[] CTOR_FAIL_TESTS =
     {
         -1,
@@ -33,6 +34,7 @@ public class VolumeNumberTest
     VolumeNumber testGreater;
     VolumeNumber testEqual;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public VolumeNumberTest()
         throws ValueOutOfRangeException
     {
@@ -133,6 +135,7 @@ public class VolumeNumberTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testHashCode()
         throws ValueOutOfRangeException
     {

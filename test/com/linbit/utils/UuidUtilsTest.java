@@ -10,6 +10,7 @@ import org.junit.Test;
 public class UuidUtilsTest
 {
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testIdToBytes()
     {
         long most = 13;
@@ -22,10 +23,11 @@ public class UuidUtilsTest
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0x0D,
             0x00, 0x00, 0x00, 0x00, (byte) 0x02, (byte) 0x80, (byte) 0xDE, (byte) 0x80
         };
-        assertArrayEquals(expected,asByteArray);
+        assertArrayEquals(expected, asByteArray);
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testBytesToId()
     {
         byte[] arr = new byte[]

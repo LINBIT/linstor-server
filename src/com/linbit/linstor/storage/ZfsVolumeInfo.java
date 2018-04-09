@@ -9,12 +9,12 @@ import com.linbit.extproc.ExtCmd.OutputData;
 
 public class ZfsVolumeInfo extends VolumeInfo
 {
-
     public ZfsVolumeInfo(long size, String identifier, String path)
     {
         super(size, identifier, path);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public static ZfsVolumeInfo getInfo(
         final ExtCmd ec,
         final String zfsCommand,

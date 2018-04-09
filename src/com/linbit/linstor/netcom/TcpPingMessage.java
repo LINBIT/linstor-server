@@ -13,6 +13,7 @@ public class TcpPingMessage extends TcpConnectorMessage
 {
     protected static final byte[] PING_CONTENT;
     protected final ByteBuffer pingByteBuffer;
+    private static final int DEFAULT_PING_HEADER_MSG_ID = 42;
 
     static
     {
@@ -20,7 +21,7 @@ public class TcpPingMessage extends TcpConnectorMessage
         {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MsgHeader.Builder headerBuilder = MsgHeader.newBuilder();
-            headerBuilder.setMsgId(42);
+            headerBuilder.setMsgId(DEFAULT_PING_HEADER_MSG_ID);
             headerBuilder.setApiCall("Ping");
 
             MsgHeader header = headerBuilder.build();

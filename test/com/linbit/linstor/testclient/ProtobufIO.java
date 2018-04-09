@@ -114,6 +114,7 @@ public class ProtobufIO
         return msgIdRef;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public void send(byte[] data) throws IOException
     {
         byte[] header = new byte[16];
@@ -264,6 +265,7 @@ public class ProtobufIO
         return msg.replaceAll("\\n", "\n               ");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private void decodeRetValue(StringBuilder sb, long retCode)
     {
         if ((retCode & MASK_ERROR) == MASK_ERROR)
@@ -382,7 +384,7 @@ public class ProtobufIO
     private class ProtobufIOWorker implements Runnable
     {
         @Override
-        @SuppressWarnings("DescendantToken")
+        @SuppressWarnings({"DescendantToken", "checkstyle:magicnumber"})
         public void run()
         {
             StringBuilder sb = new StringBuilder();

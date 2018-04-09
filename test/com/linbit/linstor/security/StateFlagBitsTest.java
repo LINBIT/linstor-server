@@ -18,6 +18,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.testutils.SimpleIterator;
 import java.sql.SQLException;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public class StateFlagBitsTest
 {
     private AccessContext sysCtx;

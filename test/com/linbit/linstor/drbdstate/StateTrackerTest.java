@@ -41,6 +41,7 @@ public class StateTrackerTest
      * Test of addObserver method, of class StateTracker.
      */
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testObserveResCreate() throws ValueOutOfRangeException
     {
         resObs.expect(StateTracker.OBS_RES_CRT);
@@ -78,6 +79,7 @@ public class StateTrackerTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testObserveVolEvents() throws ValueOutOfRangeException
     {
         tracker.addObserver(

@@ -133,8 +133,13 @@ public class ZfsDriverTest extends StorageTestUtils
 
         driver.checkVolume(identifier, size);
 
-        expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size + zfsExtent * 4 + 1);
-        // TODO: add comments what is going on here + replace the 4 with "TEST_TOLERANCE_FACTOR"
+        expectZfsVolumeInfoBehavior(
+            ZFS_COMMAND_DEFAULT,
+            ZFS_POOL_DEFAULT,
+            identifier,
+            size + zfsExtent * TEST_TOLERANCE_FACTOR + 1
+        );
+        // TODO: add comments what is going on here
 
         try
         {
@@ -409,7 +414,7 @@ public class ZfsDriverTest extends StorageTestUtils
     }
 
     @Test(expected = StorageException.class)
-
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testCheckVolumeTooSmall() throws StorageException
     {
         String identifier = "testVolume";

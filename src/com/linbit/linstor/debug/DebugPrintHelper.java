@@ -131,22 +131,22 @@ public class DebugPrintHelper
         if (errorText != null)
         {
             debugErr.println("Error:");
-            AutoIndent.printWithIndent(debugErr, 4, errorText);
+            AutoIndent.printWithIndent(debugErr, AutoIndent.DEFAULT_INDENTATION, errorText);
         }
         if (causeText != null)
         {
             debugErr.println("Cause:");
-            AutoIndent.printWithIndent(debugErr, 4, causeText);
+            AutoIndent.printWithIndent(debugErr, AutoIndent.DEFAULT_INDENTATION, causeText);
         }
         if (correctionText != null)
         {
             debugErr.println("Correction:");
-            AutoIndent.printWithIndent(debugErr, 4, correctionText);
+            AutoIndent.printWithIndent(debugErr, AutoIndent.DEFAULT_INDENTATION, correctionText);
         }
         if (errorDetailsText != null)
         {
             debugErr.println("Error details:");
-            AutoIndent.printWithIndent(debugErr, 4, errorDetailsText);
+            AutoIndent.printWithIndent(debugErr, AutoIndent.DEFAULT_INDENTATION, errorDetailsText);
         }
     }
 

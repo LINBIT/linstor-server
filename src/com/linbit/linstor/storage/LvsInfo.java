@@ -40,7 +40,8 @@ public class LvsInfo extends VolumeInfo
         final ExtCmd ec,
         final String lvmLvsCommand,
         final String volumeGroup
-    ) throws ChildProcessTimeoutException, IOException
+    )
+        throws ChildProcessTimeoutException, IOException
     {
         final OutputData output = ec.exec(
             LvsInfo.getCommand(lvmLvsCommand, volumeGroup)
@@ -54,9 +55,9 @@ public class LvsInfo extends VolumeInfo
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
-            if (data.length >= 3)
+            final int expectedColCount = 3;
+            if (data.length >= expectedColCount)
             {
-
                 final String identifier = data[0];
                 final String path = data[1];
                 final String rawSize = data[2];

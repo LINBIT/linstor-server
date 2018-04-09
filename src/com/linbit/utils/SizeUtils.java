@@ -16,6 +16,7 @@ public class SizeUtils
         return approximateSizeString(BigInteger.valueOf(kib));
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public static String approximateSizeString(BigInteger kib)
     {
         final BigInteger maxRemainder = BigInteger.valueOf(1 << 10);

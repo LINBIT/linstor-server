@@ -10,6 +10,8 @@ import java.util.Arrays;
  */
 public class AutoIndent
 {
+    public static final int DEFAULT_INDENTATION = 4;
+
     private static final int CACHED_SPACER_SIZE = 40;
 
     private static final byte[] CACHED_SPACER = new byte[CACHED_SPACER_SIZE];

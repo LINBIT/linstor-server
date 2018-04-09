@@ -420,6 +420,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testEntrySetIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
@@ -493,8 +494,8 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.remove(entryToRemove);
     }
 
-    @SuppressWarnings("unlikely-arg-type")
     @Test
+    @SuppressWarnings({"unlikely-arg-type", "checkstyle:magicnumber"})
     public void testEntrySetContainsAll()
     {
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -552,6 +553,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("unlikely-arg-type")
     public void testEntrySetEquals()
     {
         final HashSet<Entry<String, String>> clone = new HashSet<>(roEntrySet);
@@ -675,6 +677,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testKeySetIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
@@ -734,6 +737,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testKeySetContainsAll()
     {
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -773,7 +777,7 @@ public class ReadOnlyPropsContainerTest
     {
         final HashSet<String> keysToRemove = new HashSet<>();
         keysToRemove.add(FIRST_KEY + "0");
-        keysToRemove.add(glue(FIRST_KEY + "1",SECOND_KEY + "2"));
+        keysToRemove.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         roKeySet.removeAll(keysToRemove);
     }
@@ -785,6 +789,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("unlikely-arg-type")
     public void testKeySetEquals()
     {
         final HashSet<String> clone = new HashSet<>(roKeySet);
@@ -968,6 +973,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("unlikely-arg-type")
     public void testMapEquals() throws Throwable
     {
         // we assume that map contains the correct data
@@ -1053,6 +1059,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("unlikely-arg-type")
     public void testMapEntryEquals() throws Throwable
     {
         writableProp.clear();
@@ -1170,6 +1177,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testValuesColIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
@@ -1236,6 +1244,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testValuesContainsAll()
     {
         final ArrayList<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);

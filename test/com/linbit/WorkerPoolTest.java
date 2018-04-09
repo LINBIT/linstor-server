@@ -81,6 +81,7 @@ public class WorkerPoolTest
     }
 
     @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void testShutdown() throws InterruptedException, ExecutionException, TimeoutException
     {
         WorkerPoolBuilder workerPoolBuilder = new WorkerPoolBuilder();
@@ -192,10 +193,11 @@ public class WorkerPoolTest
         return prefixedThreadCount;
     }
 
-
+    @SuppressWarnings("checkstyle:magicnumber")
     private void waitUntilPoolFinishes() throws InterruptedException, ExecutionException, TimeoutException
     {
-        exec(new Runnable()
+        exec(
+            new Runnable()
             {
                 @Override
                 public void run()
@@ -203,7 +205,8 @@ public class WorkerPoolTest
                     pool.finish();
                 }
             },
-            15_000);
+            15_000
+        );
     }
 
 

@@ -11,6 +11,7 @@ import org.junit.Test;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@SuppressWarnings("checkstyle:magicnumber")
 public class MetaDataApiTest
 {
     private MetaDataApi md;

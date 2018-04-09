@@ -136,6 +136,7 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     protected long getExtentSize() throws StorageException
     {
         final String[] command = new String[]
@@ -339,6 +340,7 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public long getFreeSize() throws StorageException
     {
         final String[] command = new String[]
