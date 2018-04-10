@@ -22,6 +22,7 @@ public class ControllerDebugModule extends AbstractModule
         commandsBinder.addBinding().to(CmdSetConfValue.class);
         commandsBinder.addBinding().to(CmdDeleteConfValue.class);
         commandsBinder.addBinding().to(CmdDisplayObjectStatistics.class);
+        commandsBinder.addBinding().to(CmdDisplayObjProt.class);
     }
 
     // Use Provides methods because the ObjectProtection objects are not present on the satellite
