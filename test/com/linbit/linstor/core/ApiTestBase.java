@@ -26,7 +26,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.DerbyBase;
+import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
@@ -47,7 +47,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class ApiTestBase extends DerbyBase
+public abstract class ApiTestBase extends GenericDbBase
 {
     protected static final AccessContext ALICE_ACC_CTX;
     protected static final AccessContext BOB_ACC_CTX;

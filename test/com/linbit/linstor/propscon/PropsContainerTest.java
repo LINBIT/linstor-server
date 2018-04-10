@@ -1,6 +1,6 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.linstor.security.DerbyBase;
+import com.linbit.linstor.security.GenericDbBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PropsContainerTest extends DerbyBase
+public class PropsContainerTest extends GenericDbBase
 {
     private static final String TEST_INSTANCE_NAME = "testInstanceName";
 

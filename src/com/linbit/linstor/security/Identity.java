@@ -3,7 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
+import com.linbit.linstor.dbdrivers.derby.DbConstants;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -153,7 +153,7 @@ public final class Identity implements Comparable<Identity>
             ResultSet loadData = secDb.loadIdentities(dbConn);
             while (loadData.next())
             {
-                String name = loadData.getString(DerbyConstants.IDENTITY_DSP_NAME);
+                String name = loadData.getString(DbConstants.IDENTITY_DSP_NAME);
                 IdentityName idName = new IdentityName(name);
                 if (!idName.equals(SYSTEM_ID.name) &&
                     !idName.equals(PUBLIC_ID.name))

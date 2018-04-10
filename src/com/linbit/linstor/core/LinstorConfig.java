@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -117,7 +117,7 @@ public class LinstorConfig
             {
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
                     "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
-                DerbyDriver.executeStatement(con, String.format(stmt, controllerPort));
+                GenericDbDriver.executeStatement(con, String.format(stmt, controllerPort));
                 con.commit();
             }
             System.out.println("Controller plain port set to " + controllerPort);
@@ -143,7 +143,7 @@ public class LinstorConfig
             {
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
                     "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
-                DerbyDriver.executeStatement(con, String.format(stmt, listenAddress));
+                GenericDbDriver.executeStatement(con, String.format(stmt, listenAddress));
                 con.commit();
             }
             System.out.println("Controller plain listen address set to " + listenAddress);

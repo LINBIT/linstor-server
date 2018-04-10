@@ -6,22 +6,22 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorRuntimeException;
-import com.linbit.linstor.NetInterfaceDataDerbyDriver;
-import com.linbit.linstor.NodeConnectionDataDerbyDriver;
-import com.linbit.linstor.NodeDataDerbyDriver;
-import com.linbit.linstor.ResourceConnectionDataDerbyDriver;
-import com.linbit.linstor.ResourceDataDerbyDriver;
-import com.linbit.linstor.ResourceDefinitionDataDerbyDriver;
-import com.linbit.linstor.SatelliteConnectionDataDerbyDriver;
-import com.linbit.linstor.StorPoolDataDerbyDriver;
+import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
+import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
+import com.linbit.linstor.NodeDataGenericDbDriver;
+import com.linbit.linstor.ResourceConnectionDataGenericDbDriver;
+import com.linbit.linstor.ResourceDataGenericDbDriver;
+import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
+import com.linbit.linstor.SatelliteConnectionDataGenericDbDriver;
+import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataDerbyDriver;
+import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinitionDataFactory;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.VolumeConnectionDataDerbyDriver;
-import com.linbit.linstor.VolumeDataDerbyDriver;
-import com.linbit.linstor.VolumeDefinitionDataDerbyDriver;
+import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
+import com.linbit.linstor.VolumeDataGenericDbDriver;
+import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.api.LinStorScope;
@@ -42,13 +42,13 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.PropsConDerbyDriver;
+import com.linbit.linstor.propscon.PropsConGenericDbDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.DbDerbyPersistence;
+import com.linbit.linstor.security.DbPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.security.ObjectProtectionDerbyDriver;
+import com.linbit.linstor.security.ObjectProtectionGenericDbDriver;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -64,25 +64,25 @@ public class ControllerDbModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(DbAccessor.class).to(DbDerbyPersistence.class);
+        bind(DbAccessor.class).to(DbPersistence.class);
 
-        bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionDerbyDriver.class);
+        bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
-        bind(DatabaseDriver.class).to(DerbyDriver.class);
+        bind(DatabaseDriver.class).to(GenericDbDriver.class);
 
-        bind(PropsConDatabaseDriver.class).to(PropsConDerbyDriver.class);
-        bind(NodeDataDatabaseDriver.class).to(NodeDataDerbyDriver.class);
-        bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDataDerbyDriver.class);
-        bind(ResourceDataDatabaseDriver.class).to(ResourceDataDerbyDriver.class);
-        bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataDerbyDriver.class);
-        bind(VolumeDataDatabaseDriver.class).to(VolumeDataDerbyDriver.class);
-        bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataDerbyDriver.class);
-        bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataDerbyDriver.class);
-        bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataDerbyDriver.class);
-        bind(SatelliteConnectionDataDatabaseDriver.class).to(SatelliteConnectionDataDerbyDriver.class);
-        bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDataDerbyDriver.class);
-        bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDataDerbyDriver.class);
-        bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataDerbyDriver.class);
+        bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
+        bind(NodeDataDatabaseDriver.class).to(NodeDataGenericDbDriver.class);
+        bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDataGenericDbDriver.class);
+        bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);
+        bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
+        bind(VolumeDataDatabaseDriver.class).to(VolumeDataGenericDbDriver.class);
+        bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
+        bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
+        bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);
+        bind(SatelliteConnectionDataDatabaseDriver.class).to(SatelliteConnectionDataGenericDbDriver.class);
+        bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDataGenericDbDriver.class);
+        bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDataGenericDbDriver.class);
+        bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataGenericDbDriver.class);
     }
 
     @Provides

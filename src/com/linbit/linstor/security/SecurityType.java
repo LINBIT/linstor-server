@@ -3,7 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
+import com.linbit.linstor.dbdrivers.derby.DbConstants;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -179,7 +179,7 @@ public final class SecurityType implements Comparable<SecurityType>
                 ResultSet loadData = secDb.loadSecurityTypes(dbConn);
                 while (loadData.next())
                 {
-                    String dspName = loadData.getString(DerbyConstants.TYPE_DSP_NAME);
+                    String dspName = loadData.getString(DbConstants.TYPE_DSP_NAME);
                     SecTypeName typeName = new SecTypeName(dspName);
                     if (!typeName.equals(SYSTEM_TYPE.name) &&
                         !typeName.equals(PUBLIC_TYPE.name))
@@ -195,9 +195,9 @@ public final class SecurityType implements Comparable<SecurityType>
                 ResultSet loadData = secDb.loadTeRules(dbConn);
                 while (loadData.next())
                 {
-                    String domainNameStr = loadData.getString(DerbyConstants.DOMAIN_NAME);
-                    String typeNameStr = loadData.getString(DerbyConstants.TYPE_NAME);
-                    String accTypeStr = loadData.getString(DerbyConstants.ACCESS_TYPE);
+                    String domainNameStr = loadData.getString(DbConstants.DOMAIN_NAME);
+                    String typeNameStr = loadData.getString(DbConstants.TYPE_NAME);
+                    String accTypeStr = loadData.getString(DbConstants.ACCESS_TYPE);
 
                     SecurityType secDomain = get(new SecTypeName(domainNameStr));
                     SecurityType secType = get(new SecTypeName(typeNameStr));

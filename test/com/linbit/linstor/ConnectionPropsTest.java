@@ -6,7 +6,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.DerbyBase;
+import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Before;
@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class ConnectionPropsTest extends DerbyBase
+public class ConnectionPropsTest extends GenericDbBase
 {
     private NodeName nodeName1;
     private NodeName nodeName2;

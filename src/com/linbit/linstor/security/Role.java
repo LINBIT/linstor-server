@@ -3,7 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
+import com.linbit.linstor.dbdrivers.derby.DbConstants;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -157,7 +157,7 @@ public final class Role implements Comparable<Role>
             ResultSet loadData = secDb.loadRoles(dbConn);
             while (loadData.next())
             {
-                String name = loadData.getString(DerbyConstants.ROLE_DSP_NAME);
+                String name = loadData.getString(DbConstants.ROLE_DSP_NAME);
                 RoleName rlName = new RoleName(name);
                 if (!rlName.equals(SYSTEM_ROLE.name) &&
                     !rlName.equals(PUBLIC_ROLE.name))

@@ -5,7 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
+import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.Base64;
 
@@ -110,17 +110,17 @@ public final class Authentication
             // Position cursor on the first row
             if (signInEntry.next())
             {
-                final String storedIdStr = signInEntry.getString(DerbyConstants.IDENTITY_NAME);
-                final String storedDfltRoleStr = signInEntry.getString(DerbyConstants.ROLE_NAME);
-                final String storedDfltTypeStr = signInEntry.getString(DerbyConstants.DOMAIN_NAME);
-                final Long storedDfltRolePrivs = signInEntry.getLong(DerbyConstants.ROLE_PRIVILEGES);
+                final String storedIdStr = signInEntry.getString(DbConstants.IDENTITY_NAME);
+                final String storedDfltRoleStr = signInEntry.getString(DbConstants.ROLE_NAME);
+                final String storedDfltTypeStr = signInEntry.getString(DbConstants.DOMAIN_NAME);
+                final Long storedDfltRolePrivs = signInEntry.getLong(DbConstants.ROLE_PRIVILEGES);
 
                 byte[] storedSalt;
                 byte[] storedHash;
                 try
                 {
-                    String saltBase64 = signInEntry.getString(DerbyConstants.PASS_SALT);
-                    String hashBase64 = signInEntry.getString(DerbyConstants.PASS_HASH);
+                    String saltBase64 = signInEntry.getString(DbConstants.PASS_SALT);
+                    String hashBase64 = signInEntry.getString(DbConstants.PASS_HASH);
 
                     storedSalt = Base64.decode(saltBase64.trim());
                     storedHash = Base64.decode(hashBase64.trim());

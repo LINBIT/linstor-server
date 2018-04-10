@@ -2,7 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
+import com.linbit.linstor.dbdrivers.derby.DbConstants;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -49,8 +49,8 @@ public final class Authorization
             ResultSet idRoleEntry = dbDriver.getIdRoleMapEntry(dbConn, accCtx.subjectId.name, reqRole.name);
             if (idRoleEntry.next())
             {
-                String idName = idRoleEntry.getString(DerbyConstants.IDENTITY_NAME);
-                String roleName = idRoleEntry.getString(DerbyConstants.ROLE_NAME);
+                String idName = idRoleEntry.getString(DbConstants.IDENTITY_NAME);
+                String roleName = idRoleEntry.getString(DbConstants.ROLE_NAME);
                 // Double-check the entry
                 if (accCtx.subjectId.name.value.equalsIgnoreCase(idName) &&
                     reqRole.name.value.equalsIgnoreCase(roleName))

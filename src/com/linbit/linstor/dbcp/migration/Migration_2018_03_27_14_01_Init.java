@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 
 import java.sql.Connection;
 
@@ -20,8 +20,8 @@ public class Migration_2018_03_27_14_01_Init extends LinstorMigration
             String sql = MigrationUtils.loadResource("2018_03_27_14_01_init-db.sql");
 
             DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(getDbType());
-            DerbyDriver.executeStatement(connection, databaseInfo.isolationStatement());
-            DerbyDriver.runSql(connection, databaseInfo.prepareInit(sql));
+            GenericDbDriver.executeStatement(connection, databaseInfo.isolationStatement());
+            GenericDbDriver.runSql(connection, databaseInfo.prepareInit(sql));
         }
     }
 }

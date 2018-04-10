@@ -6,7 +6,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.H2DatabaseInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -18,7 +18,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
 public class DbConnectionPoolModule extends AbstractModule
 {
@@ -163,14 +163,14 @@ public class DbConnectionPoolModule extends AbstractModule
 
                 if (args.getInMemoryDbPort() > 0)
                 {
-                    DerbyDriver.executeStatement(con,
+                    GenericDbDriver.executeStatement(con,
                         String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
                                 "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'",
                             args.getInMemoryDbPort()));
                 }
                 if (args.getInMemoryDbAddress() != null)
                 {
-                    DerbyDriver.executeStatement(con,
+                    GenericDbDriver.executeStatement(con,
                         String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
                                 "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'",
                             args.getInMemoryDbAddress()));
