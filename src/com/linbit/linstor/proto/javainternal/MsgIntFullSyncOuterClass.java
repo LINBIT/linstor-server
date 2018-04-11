@@ -176,6 +176,31 @@ public final class MsgIntFullSyncOuterClass {
      */
     com.google.protobuf.ByteString
         getMasterKeyBytes();
+
+    /**
+     * <pre>
+     * Satellite conf properties (drbd options)
+     * </pre>
+     *
+     * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+     */
+    boolean hasCtrlData();
+    /**
+     * <pre>
+     * Satellite conf properties (drbd options)
+     * </pre>
+     *
+     * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+     */
+    com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData getCtrlData();
+    /**
+     * <pre>
+     * Satellite conf properties (drbd options)
+     * </pre>
+     *
+     * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+     */
+    com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerDataOrBuilder getCtrlDataOrBuilder();
   }
   /**
    * <pre>
@@ -261,6 +286,19 @@ public final class MsgIntFullSyncOuterClass {
               java.lang.String s = input.readStringRequireUtf8();
 
               masterKey_ = s;
+              break;
+            }
+            case 50: {
+              com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.Builder subBuilder = null;
+              if (ctrlData_ != null) {
+                subBuilder = ctrlData_.toBuilder();
+              }
+              ctrlData_ = input.readMessage(com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.parser(), extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(ctrlData_);
+                ctrlData_ = subBuilder.buildPartial();
+              }
+
               break;
             }
           }
@@ -516,6 +554,39 @@ public final class MsgIntFullSyncOuterClass {
       }
     }
 
+    public static final int CTRL_DATA_FIELD_NUMBER = 6;
+    private com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData ctrlData_;
+    /**
+     * <pre>
+     * Satellite conf properties (drbd options)
+     * </pre>
+     *
+     * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+     */
+    public boolean hasCtrlData() {
+      return ctrlData_ != null;
+    }
+    /**
+     * <pre>
+     * Satellite conf properties (drbd options)
+     * </pre>
+     *
+     * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+     */
+    public com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData getCtrlData() {
+      return ctrlData_ == null ? com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.getDefaultInstance() : ctrlData_;
+    }
+    /**
+     * <pre>
+     * Satellite conf properties (drbd options)
+     * </pre>
+     *
+     * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+     */
+    public com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerDataOrBuilder getCtrlDataOrBuilder() {
+      return getCtrlData();
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -540,6 +611,12 @@ public final class MsgIntFullSyncOuterClass {
           return false;
         }
       }
+      if (hasCtrlData()) {
+        if (!getCtrlData().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -560,6 +637,9 @@ public final class MsgIntFullSyncOuterClass {
       }
       if (!getMasterKeyBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, masterKey_);
+      }
+      if (ctrlData_ != null) {
+        output.writeMessage(6, getCtrlData());
       }
     }
 
@@ -587,6 +667,10 @@ public final class MsgIntFullSyncOuterClass {
       if (!getMasterKeyBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, masterKey_);
       }
+      if (ctrlData_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(6, getCtrlData());
+      }
       memoizedSize = size;
       return size;
     }
@@ -613,6 +697,11 @@ public final class MsgIntFullSyncOuterClass {
           == other.getFullSyncTimestamp());
       result = result && getMasterKey()
           .equals(other.getMasterKey());
+      result = result && (hasCtrlData() == other.hasCtrlData());
+      if (hasCtrlData()) {
+        result = result && getCtrlData()
+            .equals(other.getCtrlData());
+      }
       return result;
     }
 
@@ -640,6 +729,10 @@ public final class MsgIntFullSyncOuterClass {
           getFullSyncTimestamp());
       hash = (37 * hash) + MASTER_KEY_FIELD_NUMBER;
       hash = (53 * hash) + getMasterKey().hashCode();
+      if (hasCtrlData()) {
+        hash = (37 * hash) + CTRL_DATA_FIELD_NUMBER;
+        hash = (53 * hash) + getCtrlData().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -787,6 +880,12 @@ public final class MsgIntFullSyncOuterClass {
 
         masterKey_ = "";
 
+        if (ctrlDataBuilder_ == null) {
+          ctrlData_ = null;
+        } else {
+          ctrlData_ = null;
+          ctrlDataBuilder_ = null;
+        }
         return this;
       }
 
@@ -840,6 +939,11 @@ public final class MsgIntFullSyncOuterClass {
         }
         result.fullSyncTimestamp_ = fullSyncTimestamp_;
         result.masterKey_ = masterKey_;
+        if (ctrlDataBuilder_ == null) {
+          result.ctrlData_ = ctrlData_;
+        } else {
+          result.ctrlData_ = ctrlDataBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -967,6 +1071,9 @@ public final class MsgIntFullSyncOuterClass {
           masterKey_ = other.masterKey_;
           onChanged();
         }
+        if (other.hasCtrlData()) {
+          mergeCtrlData(other.getCtrlData());
+        }
         onChanged();
         return this;
       }
@@ -984,6 +1091,11 @@ public final class MsgIntFullSyncOuterClass {
         }
         for (int i = 0; i < getRscsCount(); i++) {
           if (!getRscs(i).isInitialized()) {
+            return false;
+          }
+        }
+        if (hasCtrlData()) {
+          if (!getCtrlData().isInitialized()) {
             return false;
           }
         }
@@ -2071,6 +2183,159 @@ public final class MsgIntFullSyncOuterClass {
         onChanged();
         return this;
       }
+
+      private com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData ctrlData_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData, com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.Builder, com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerDataOrBuilder> ctrlDataBuilder_;
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public boolean hasCtrlData() {
+        return ctrlDataBuilder_ != null || ctrlData_ != null;
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData getCtrlData() {
+        if (ctrlDataBuilder_ == null) {
+          return ctrlData_ == null ? com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.getDefaultInstance() : ctrlData_;
+        } else {
+          return ctrlDataBuilder_.getMessage();
+        }
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public Builder setCtrlData(com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData value) {
+        if (ctrlDataBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ctrlData_ = value;
+          onChanged();
+        } else {
+          ctrlDataBuilder_.setMessage(value);
+        }
+
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public Builder setCtrlData(
+          com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.Builder builderForValue) {
+        if (ctrlDataBuilder_ == null) {
+          ctrlData_ = builderForValue.build();
+          onChanged();
+        } else {
+          ctrlDataBuilder_.setMessage(builderForValue.build());
+        }
+
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public Builder mergeCtrlData(com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData value) {
+        if (ctrlDataBuilder_ == null) {
+          if (ctrlData_ != null) {
+            ctrlData_ =
+              com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.newBuilder(ctrlData_).mergeFrom(value).buildPartial();
+          } else {
+            ctrlData_ = value;
+          }
+          onChanged();
+        } else {
+          ctrlDataBuilder_.mergeFrom(value);
+        }
+
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public Builder clearCtrlData() {
+        if (ctrlDataBuilder_ == null) {
+          ctrlData_ = null;
+          onChanged();
+        } else {
+          ctrlData_ = null;
+          ctrlDataBuilder_ = null;
+        }
+
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.Builder getCtrlDataBuilder() {
+        
+        onChanged();
+        return getCtrlDataFieldBuilder().getBuilder();
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerDataOrBuilder getCtrlDataOrBuilder() {
+        if (ctrlDataBuilder_ != null) {
+          return ctrlDataBuilder_.getMessageOrBuilder();
+        } else {
+          return ctrlData_ == null ?
+              com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.getDefaultInstance() : ctrlData_;
+        }
+      }
+      /**
+       * <pre>
+       * Satellite conf properties (drbd options)
+       * </pre>
+       *
+       * <code>.com.linbit.linstor.proto.javainternal.MsgIntControllerData ctrl_data = 6;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData, com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.Builder, com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerDataOrBuilder> 
+          getCtrlDataFieldBuilder() {
+        if (ctrlDataBuilder_ == null) {
+          ctrlDataBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData, com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData.Builder, com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerDataOrBuilder>(
+                  getCtrlData(),
+                  getParentForChildren(),
+                  isClean());
+          ctrlData_ = null;
+        }
+        return ctrlDataBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -2139,15 +2404,18 @@ public final class MsgIntFullSyncOuterClass {
       "internal\032/linstor/proto/javainternal/Msg" +
       "IntNodeData.proto\0323linstor/proto/javaint" +
       "ernal/MsgIntStorPoolData.proto\032.linstor/" +
-      "proto/javainternal/MsgIntRscData.proto\"\232" +
-      "\002\n\016MsgIntFullSync\022D\n\005nodes\030\001 \003(\01325.com.l" +
-      "inbit.linstor.proto.javainternal.MsgIntN" +
-      "odeData\022M\n\nstor_pools\030\002 \003(\01329.com.linbit" +
-      ".linstor.proto.javainternal.MsgIntStorPo",
-      "olData\022B\n\004rscs\030\003 \003(\01324.com.linbit.linsto" +
-      "r.proto.javainternal.MsgIntRscData\022\033\n\023fu" +
-      "ll_sync_timestamp\030\004 \001(\022\022\022\n\nmaster_key\030\005 " +
-      "\001(\tP\000P\001P\002b\006proto3"
+      "proto/javainternal/MsgIntRscData.proto\0325" +
+      "linstor/proto/javainternal/MsgIntControl" +
+      "lerData.proto\"\352\002\n\016MsgIntFullSync\022D\n\005node" +
+      "s\030\001 \003(\01325.com.linbit.linstor.proto.javai" +
+      "nternal.MsgIntNodeData\022M\n\nstor_pools\030\002 \003",
+      "(\01329.com.linbit.linstor.proto.javaintern" +
+      "al.MsgIntStorPoolData\022B\n\004rscs\030\003 \003(\01324.co" +
+      "m.linbit.linstor.proto.javainternal.MsgI" +
+      "ntRscData\022\033\n\023full_sync_timestamp\030\004 \001(\022\022\022" +
+      "\n\nmaster_key\030\005 \001(\t\022N\n\tctrl_data\030\006 \001(\0132;." +
+      "com.linbit.linstor.proto.javainternal.Ms" +
+      "gIntControllerDataP\000P\001P\002P\003b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2163,16 +2431,18 @@ public final class MsgIntFullSyncOuterClass {
           com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.getDescriptor(),
           com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.getDescriptor(),
           com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.getDescriptor(),
+          com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_descriptor,
-        new java.lang.String[] { "Nodes", "StorPools", "Rscs", "FullSyncTimestamp", "MasterKey", });
+        new java.lang.String[] { "Nodes", "StorPools", "Rscs", "FullSyncTimestamp", "MasterKey", "CtrlData", });
     com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.getDescriptor();
     com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.getDescriptor();
     com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.getDescriptor();
+    com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

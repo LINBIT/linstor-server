@@ -31,10 +31,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ControllerCoreModule extends AbstractModule
 {
     public static final String CONTROLLER_PROPS = "ControllerProps";
+    public static final String SATELLITE_PROPS = "SatelliteProps";
 
     public static final String CTRL_CONF_LOCK = "ctrlConfLock";
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
+    private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
     @Override
     protected void configure()
@@ -65,6 +67,38 @@ public class ControllerCoreModule extends AbstractModule
             initScope.seed(TransactionMgr.class, transMgr);
 
             propsContainer = propsContainerFactory.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME);
+            transMgr.commit();
+            initScope.exit();
+        }
+        finally
+        {
+            if (transMgr != null)
+            {
+                transMgr.returnConnection();
+            }
+        }
+        return propsContainer;
+    }
+
+    @Provides
+    @Singleton
+    @Named(SATELLITE_PROPS)
+    public Props loadSatellitePropsContainer(
+        DbConnectionPool dbConnPool,
+        PropsContainerFactory propsContainerFactory,
+        LinStorScope initScope
+    )
+        throws SQLException
+    {
+        Props propsContainer;
+        TransactionMgr transMgr = null;
+        try
+        {
+            transMgr = new ControllerTransactionMgr(dbConnPool);
+            initScope.enter();
+            initScope.seed(TransactionMgr.class, transMgr);
+
+            propsContainer = propsContainerFactory.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME);
             transMgr.commit();
             initScope.exit();
         }

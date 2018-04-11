@@ -276,6 +276,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
+    public void controllerUpdateApplied()
+    {
+        synchronized (sched)
+        {
+            rcvPendingBundle.updControllerMap.clear();
+            sched.notify();
+        }
+    }
+
+    @Override
     public void nodeUpdateApplied(Set<NodeName> nodeSet)
     {
         synchronized (sched)
@@ -604,6 +614,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             dispatchRscSet.addAll(updPendingBundle.updRscMap.keySet());
 
             // Request updates from the controller
+            requestControllerUpdates(updPendingBundle.updControllerMap);
             requestNodeUpdates(updPendingBundle.updNodeMap);
             requestRscDfnUpdates(updPendingBundle.updRscDfnMap);
             requestRscUpdates(updPendingBundle.updRscMap);
@@ -859,6 +870,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         finally
         {
             rcfgRdLock.unlock();
+        }
+    }
+
+    private void requestControllerUpdates(Map<NodeName, UUID> updateControllerMap)
+    {
+        if (!updateControllerMap.isEmpty())
+        {
+            stltUpdateRequester.requestControllerUpdate();
         }
     }
 

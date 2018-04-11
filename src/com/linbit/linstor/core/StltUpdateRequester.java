@@ -38,6 +38,16 @@ public class StltUpdateRequester
         controllerPeerConnector = controllerPeerConnectorRef;
     }
 
+    public void requestControllerUpdate()
+    {
+        sendRequest(
+            interComSerializer
+            .builder(InternalApiConsts.API_REQUEST_CONTROLLER, 0)
+            .requestControllerUpdate()
+            .build()
+        );
+    }
+
     public void requestNodeUpdate(UUID nodeUuid, NodeName nodeName)
     {
         sendRequest(

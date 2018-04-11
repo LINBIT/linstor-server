@@ -10,6 +10,7 @@ import java.util.Set;
 
 public interface DeviceManager extends DrbdStateChange
 {
+    void controllerUpdateApplied();
     void nodeUpdateApplied(Set<NodeName> nodeSet);
     void rscDefUpdateApplied(Set<ResourceName> rscDfnSet);
     void storPoolUpdateApplied(Set<StorPoolName> storPoolSet);

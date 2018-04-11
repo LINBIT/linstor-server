@@ -1,5 +1,19 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.regex.Matcher;
+
+import com.google.inject.Provider;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
@@ -8,6 +22,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -35,19 +50,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
-import com.google.inject.Provider;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-
 public class CtrlConfApiCallHandler
 {
     private static final String NAMESPACE_ENCRYPTED = "encrypted";
@@ -63,6 +65,7 @@ public class CtrlConfApiCallHandler
     private final CtrlClientSerializer ctrlClientcomSrzl;
     private final ObjectProtection ctrlConfProt;
     private final Props ctrlConf;
+    private final Props stltConf;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
     private final AccessContext accCtx;
@@ -93,6 +96,7 @@ public class CtrlConfApiCallHandler
         CtrlClientSerializer ctrlClientcomSrzlRef,
         @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
         @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @PeerContext AccessContext accCtxRef,
@@ -109,6 +113,7 @@ public class CtrlConfApiCallHandler
         ctrlClientcomSrzl = ctrlClientcomSrzlRef;
         ctrlConfProt = ctrlConfProtRef;
         ctrlConf = ctrlConfRef;
+        stltConf = stltConfRef;
         tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
         accCtx = accCtxRef;
@@ -120,6 +125,24 @@ public class CtrlConfApiCallHandler
         nodesMap = nodesMapRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
         whitelistProps = whitelistPropsRef;
+    }
+
+    private void updateSatelliteConf() throws AccessDeniedException
+    {
+        for (Node nodeToContact : nodesMap.values())
+        {
+            Peer satellitePeer = nodeToContact.getPeer(accCtx);
+
+            if (satellitePeer.isConnected() && !satellitePeer.hasFullSyncFailed())
+            {
+                byte[] changedMessage = ctrlStltSrzl
+                    .builder(InternalApiConsts.API_CHANGED_CONTROLLER, 0)
+                    .changedController(nodeToContact.getUuid(), nodeToContact.getName().getDisplayName())
+                    .build();
+
+                satellitePeer.sendMessage(changedMessage);
+            }
+        }
     }
 
     public ApiCallRc setProp(String key, String namespace, String value)
@@ -149,9 +172,17 @@ public class CtrlConfApiCallHandler
                         setMinorNr(key, namespace, value, apiCallRc);
                         break;
                     default:
-                    break;
+                        stltConf.setProp(fullKey, value);
+                        break;
                 }
                 transMgrProvider.get().commit();
+
+                updateSatelliteConf();
+
+                apiCallRc.addEntry(
+                    "Successfully set property '" + fullKey + "' to value '" + value + "'",
+                    ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT | ApiConsts.CREATED
+                );
             }
             else
             {
@@ -206,7 +237,7 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown error occured while setting controller config prop with key '" +
+                errorMsg = "An unknown error occurred while setting controller config prop with key '" +
                     key + "' in namespace '" + namespace + "' with value '" + value + "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
@@ -228,9 +259,13 @@ public class CtrlConfApiCallHandler
         try
         {
             ctrlConfProt.requireAccess(accCtx, AccessType.VIEW);
-            data = ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId)
-                .ctrlCfgProps(ctrlConf.map())
-                .build();
+            CtrlClientSerializer.CtrlClientSerializerBuilder builder =
+                ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId);
+            Map<String, String> mergedMap = new TreeMap<>(ctrlConf.map());
+            mergedMap.putAll(stltConf.map());
+            builder.ctrlCfgProps(mergedMap);
+
+            data = builder.build();
         }
         catch (Exception exc)
         {
@@ -256,6 +291,7 @@ public class CtrlConfApiCallHandler
                 fullKey = key;
             }
             String oldValue = ctrlConf.removeProp(key, namespace);
+            stltConf.removeProp(key, namespace);
 
             if (oldValue != null)
             {
@@ -274,6 +310,13 @@ public class CtrlConfApiCallHandler
             }
 
             transMgrProvider.get().commit();
+
+            updateSatelliteConf();
+
+            apiCallRc.addEntry(
+                "Successfully deleted property '" + fullKey + "'",
+                ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_DEL | ApiConsts.DELETED
+            );
         }
         catch (Exception exc)
         {
@@ -853,5 +896,27 @@ public class CtrlConfApiCallHandler
             );
         }
         return isValid;
+    }
+
+    void respondController(int msgId, UUID nodeUuid, String nodeNameStr)
+    {
+        try
+        {
+            Peer currentPeer = peerProvider.get();
+            NodeName nodeName = new NodeName(nodeNameStr);
+
+            currentPeer.sendMessage(
+                ctrlStltSrzl
+                    .builder(InternalApiConsts.API_APPLY_CONTROLLER, msgId)
+                    .controllerData(currentPeer.getFullSyncId(), currentPeer.getNextSerializerId())
+                    .build()
+            );
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(exc)
+            );
+        }
     }
 }

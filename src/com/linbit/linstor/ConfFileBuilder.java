@@ -1,11 +1,15 @@
 package com.linbit.linstor;
 
+import com.google.protobuf.Api;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -47,6 +51,20 @@ public class ConfFileBuilder
         indentDepth = 0;
     }
 
+    // Constructor used for the common linstor conf
+    public ConfFileBuilder(
+        final ErrorReporter errorReporterRef
+    )
+    {
+        errorReporter = errorReporterRef;
+        accCtx = null;
+        localRsc = null;
+        remoteResources = null;
+
+        stringBuilder = new StringBuilder();
+        indentDepth = 0;
+    }
+
     public String build()
         throws AccessDeniedException
     {
@@ -58,9 +76,16 @@ public class ConfFileBuilder
         final Set<Set<String>> nodeMeshes = new HashSet<>();
         final Map<String, List<String>> singleConnections = new HashMap<>();
 
+        final ResourceDefinition rscDfn = localRsc.getDefinition();
+
         appendLine("resource %s", localRsc.getDefinition().getName().displayValue);
         try (Section resourceSection = new Section())
         {
+            // include linstor common
+            appendLine("template-file \"linstor_common.conf\";");
+
+            appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS);
+
             appendLine("net");
             try (Section netSection = new Section())
             {
@@ -68,7 +93,17 @@ public class ConfFileBuilder
                 appendLine("cram-hmac-alg     %s;", "sha1");
                 // TODO: make configurable
                 appendLine("shared-secret     \"%s\";", localRsc.getDefinition().getSecret(accCtx));
-                // TODO: print other "custom" net properties
+
+                appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+            }
+
+            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
+            {
+                appendLine("disk");
+                try (Section _ignore = new Section())
+                {
+                    appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                }
             }
 
             // TODO: print options properties
@@ -209,6 +244,56 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
+    public String buildCommonConf(final Props satelliteProps)
+    {
+        appendLine("common");
+        try (Section common_ = new Section())
+        {
+            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
+            {
+                appendLine("disk");
+                try (Section ignore = new Section())
+                {
+                    appendDrbdOptions(satelliteProps, ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                }
+            }
+
+            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
+            {
+                appendLine("net");
+                try (Section ignore = new Section())
+                {
+                    appendDrbdOptions(satelliteProps, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+                }
+            }
+
+            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS).isPresent())
+            {
+                appendLine("options");
+                try (Section ignore = new Section())
+                {
+                    appendDrbdOptions(satelliteProps, ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS);
+                }
+            }
+        }
+
+        return stringBuilder.toString();
+    }
+
+    private void appendDrbdOptions(final Props props, final String namespace)
+    {
+        Map<String, String> drbdProps = props.getNamespace(namespace)
+            .map(Props::map).orElse(new HashMap<>());
+
+        for (Map.Entry<String, String> entry : drbdProps.entrySet())
+        {
+            appendLine("%s %s;",
+                entry.getKey().substring(namespace.length() + 1),
+                entry.getValue()
+            );
+        }
+    }
+
     private NetInterface getPreferredNetIf(Resource rsc)
     {
         NetInterface preferredNetIf = null;
@@ -303,11 +388,22 @@ public class ConfFileBuilder
                     metaDisk = vlm.getMetaDiskPath(localAccCtx);
                 }
             }
-            appendLine("volume %s", vlm.getVolumeDefinition().getVolumeNumber().value);
+
+            final VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            appendLine("volume %s", vlmDfn.getVolumeNumber().value);
             try (Section volumeSection = new Section())
             {
                 appendLine("disk        %s;", disk);
-                // TODO: print disk properties
+
+                if (vlmDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
+                {
+                    appendLine("disk");
+                    try (Section _ignore = new Section())
+                    {
+                        appendDrbdOptions(vlmDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                    }
+                }
+
                 appendLine("meta-disk   %s;", metaDisk);
                 appendLine("device      minor %d;",
                     vlm.getVolumeDefinition().getMinorNr(localAccCtx).value

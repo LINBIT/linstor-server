@@ -8,6 +8,7 @@ import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltApiCallHandler;
@@ -16,6 +17,7 @@ import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
@@ -74,11 +76,13 @@ public class FullSync implements ApiCall
     {
         MsgIntFullSync fullSync = MsgIntFullSync.parseDelimitedFrom(msgDataIn);
 
+        MsgIntControllerData msgIntControllerData = fullSync.getCtrlData();
         Set<NodePojo> nodes = new TreeSet<>(asNodes(fullSync.getNodesList()));
         Set<StorPoolPojo> storPools = new TreeSet<>(asStorPool(fullSync.getStorPoolsList()));
         Set<RscPojo> resources = new TreeSet<>(asResources(fullSync.getRscsList()));
 
         apiCallHandler.applyFullSync(
+            ProtoMapUtils.asMap(msgIntControllerData.getControllerPropsList()),
             nodes,
             storPools,
             resources,

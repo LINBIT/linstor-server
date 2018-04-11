@@ -28,6 +28,16 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     }
 
     @Override
+    public void updateController(UUID nodeUuid, NodeName name)
+    {
+        synchronized (sched)
+        {
+            cachedUpdates.updControllerMap.put(name, nodeUuid);
+            sched.notify();
+        }
+    }
+
+    @Override
     public void updateNode(UUID nodeUuid, NodeName name)
     {
         synchronized (sched)
@@ -140,6 +150,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
      */
     static class UpdateBundle
     {
+        final Map<NodeName, UUID> updControllerMap = new TreeMap<>();
         final Map<NodeName, UUID> updNodeMap = new TreeMap<>();
         final Map<ResourceName, UUID> updRscDfnMap = new TreeMap<>();
         final Map<ResourceName, Map<NodeName, UUID>> updRscMap = new TreeMap<>();
@@ -156,6 +167,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         {
             other.clear();
 
+            other.updControllerMap.putAll(updControllerMap);
             other.updNodeMap.putAll(updNodeMap);
             other.updRscDfnMap.putAll(updRscDfnMap);
             for (Entry<ResourceName, Map<NodeName, UUID>> entry : updRscMap.entrySet())
@@ -172,8 +184,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
          */
         boolean isEmpty()
         {
-            return updNodeMap.isEmpty() && updRscDfnMap.isEmpty() && updRscMap.isEmpty() &&
-                   updStorPoolMap.isEmpty() && chkRscMap.isEmpty();
+            return updControllerMap.isEmpty() && updNodeMap.isEmpty() && updRscDfnMap.isEmpty() &&
+                updRscMap.isEmpty() && updStorPoolMap.isEmpty() && chkRscMap.isEmpty();
         }
 
         /**
@@ -182,6 +194,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         void clear()
         {
             // Clear the collected updates
+            updControllerMap.clear();
             updNodeMap.clear();
             updRscDfnMap.clear();
             updRscMap.clear();

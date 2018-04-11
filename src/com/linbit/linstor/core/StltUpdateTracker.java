@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface StltUpdateTracker
 {
+    void updateController(UUID nodeUuid, NodeName name);
     void updateNode(UUID nodeUuid, NodeName name);
     void updateResourceDfn(UUID rscDfnUuid, ResourceName name);
     void updateResource(ResourceName rscName, Map<NodeName, UUID> updNodeSet);

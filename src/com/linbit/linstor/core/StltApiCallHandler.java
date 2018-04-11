@@ -1,10 +1,27 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -15,23 +32,15 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.StltStorPoolApiCallHandler.ChangedData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.LockSupport;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.io.IOException;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
 import org.slf4j.event.Level;
+
+import static com.linbit.linstor.core.SatelliteCoreModule.SATELLITE_PROPS;
 
 @Singleton
 public class StltApiCallHandler
@@ -65,6 +74,7 @@ public class StltApiCallHandler
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObj;
     private final StltVlmDfnApiCallHandler vlmDfnHandler;
+    private final Props stltConf;
 
     @Inject
     public StltApiCallHandler(
@@ -84,6 +94,7 @@ public class StltApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        @Named(SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
@@ -114,6 +125,7 @@ public class StltApiCallHandler
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
         vlmDfnHandler = vlmDfnHandlerRef;
+        stltConf = satellitePropsRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -204,6 +216,7 @@ public class StltApiCallHandler
     }
 
     public void applyFullSync(
+        Map<String, String> satelliteProps,
         Set<NodePojo> nodes,
         Set<StorPoolPojo> storPools,
         Set<RscPojo> resources,
@@ -217,7 +230,7 @@ public class StltApiCallHandler
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
-            );
+            )
         )
         {
             if (updateMonitor.getCurrentFullSyncId() == fullSyncId)
@@ -228,6 +241,8 @@ public class StltApiCallHandler
                 nodesMap.clear();
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
+
+                applyControllerChanges(satelliteProps);
 
                 for (NodePojo node : nodes)
                 {
@@ -332,6 +347,59 @@ public class StltApiCallHandler
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
             updateMonitor.getNextFullSyncId();
 
+        }
+    }
+
+    public void applyControllerChanges(
+        Map<String, String> satelliteProps
+    )
+    {
+        try (LockSupport ls = LockSupport.lock(reconfigurationLock.writeLock()))
+        {
+            stltConf.clear();
+            stltConf.map().putAll(satelliteProps);
+
+            try (
+                FileOutputStream commonFileOut = new FileOutputStream(
+                    SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"
+                )
+            )
+            {
+                ConfFileBuilder confFileBuilder = new ConfFileBuilder(errorReporter);
+                commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
+            }
+            catch (IOException ioExc)
+            {
+                String ioErrorMsg = ioExc.getMessage();
+                errorReporter.reportError(new DrbdDeviceHandler.ResourceException(
+                        "Creation of the common Linstor DRBD configuration file " +
+                        "'linstor_common.conf' failed due to an I/O error",
+                        null,
+                        "Creation of the DRBD configuration file failed due to an I/O error",
+                        "- Check whether enough free space is available for the creation of the file\n" +
+                            "- Check whether the application has write access to the target directory\n" +
+                            "- Check whether the storage is operating flawlessly",
+                        "The error reported by the runtime environment or operating system is:\n" +
+                            ioErrorMsg != null ?
+                            ioErrorMsg :
+                            "The runtime environment or operating system did not provide a description of " +
+                                "the I/O error",
+                        ioExc
+                    )
+                );
+            }
+
+            Map<ResourceName, UUID> slctRsc = new TreeMap<>();
+            for (ResourceDefinition curRscDfn : rscDfnMap.values())
+            {
+                slctRsc.put(curRscDfn.getName(), curRscDfn.getUuid());
+            }
+
+            deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
+            deviceManager.controllerUpdateApplied();
+        }
+        catch (AccessDeniedException | SQLException ignore)
+        {
         }
     }
 

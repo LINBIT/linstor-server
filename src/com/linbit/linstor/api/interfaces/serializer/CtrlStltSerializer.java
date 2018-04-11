@@ -29,10 +29,12 @@ public interface CtrlStltSerializer extends CommonSerializer
             UUID nodeDisklessStorPoolUuid
         );
 
+        CtrlStltSerializerBuilder changedController(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder changedResource(UUID rscUuid, String rscName);
         CtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String storPoolName);
 
+        CtrlStltSerializerBuilder controllerData(long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder nodeData(Node node, Collection<Node> relatedNodes, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder deletedNodeData(String nodeNameStr, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
@@ -70,10 +72,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             UUID vlmUuid
         );
 
+        CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
-        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
+        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName); 
 
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
     }

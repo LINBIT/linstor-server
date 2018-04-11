@@ -12,6 +12,10 @@ public class InternalApiConsts
     public static final String API_FULL_SYNC_FAILED  = "FullSyncFailed";
     public static final String API_FULL_SYNC_SUCCESS = "FullSyncSuccess";
 
+    public static final String API_CHANGED_CONTROLLER   = "ChangedController";
+    public static final String API_REQUEST_CONTROLLER   = "RequestController";
+    public static final String API_APPLY_CONTROLLER     = "ApplyController";
+
     public static final String API_CHANGED_NODE       = "ChangedNode";
     public static final String API_REQUEST_NODE       = "RequestNode";
     public static final String API_APPLY_NODE         = "ApplyNode";

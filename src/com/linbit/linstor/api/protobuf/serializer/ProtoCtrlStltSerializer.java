@@ -1,5 +1,19 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import com.google.protobuf.ByteString;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.NetInterface;
@@ -17,6 +31,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -28,6 +43,7 @@ import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
 import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.MsgIntDelRscOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
@@ -48,25 +64,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.utils.Base64;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
     implements CtrlStltSerializer, CtrlStltSerializerBuilderImpl.CtrlStltSerializationWriter
 {
+    private final CtrlSerializerHelper ctrlSerializerHelper;
     private final ResourceSerializerHelper rscSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
     private final CtrlSecurityObjects secObjs;
@@ -75,12 +79,13 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
     public ProtoCtrlStltSerializer(
         ErrorReporter errReporter,
         @ApiContext AccessContext serializerCtx,
-        CtrlSecurityObjects secObjsRef
-    )
+        CtrlSecurityObjects secObjsRef,
+        @Named(ControllerCoreModule.SATELLITE_PROPS) Props ctrlConfRef)
     {
         super(errReporter, serializerCtx);
         secObjs = secObjsRef;
 
+        ctrlSerializerHelper = new CtrlSerializerHelper(ctrlConfRef);
         rscSerializerHelper = new ResourceSerializerHelper();
         nodeSerializerHelper = new NodeSerializerHelper();
     }
@@ -135,6 +140,19 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         throws IOException
     {
         appendObjectId(storPoolUuid, storPoolName, baos);
+    }
+
+    @Override
+    public void writeControllerData(
+        long fullSyncTimestamp,
+        long serializerid,
+        ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        ctrlSerializerHelper
+            .buildControllerDataMsg(fullSyncTimestamp, serializerid)
+            .writeDelimitedTo(baos);
     }
 
     @Override
@@ -245,7 +263,12 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         ArrayList<MsgIntStorPoolData> serializedStorPools = new ArrayList<>();
         ArrayList<MsgIntRscData> serializedRscs = new ArrayList<>();
 
-        LinkedList<Node> nodes = new LinkedList<Node>(nodeSet);
+        MsgIntControllerData serializedController = ctrlSerializerHelper.buildControllerDataMsg(
+            fullSyncTimestamp,
+            updateId
+        );
+
+        LinkedList<Node> nodes = new LinkedList<>(nodeSet);
 
         while (!nodes.isEmpty())
         {
@@ -295,6 +318,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .addAllRscs(serializedRscs)
             .setFullSyncTimestamp(fullSyncTimestamp)
             .setMasterKey(encodedMasterKey)
+            .setCtrlData(serializedController)
             .build()
             .writeDelimitedTo(baos);
     }
@@ -557,6 +581,29 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                }
             }
             return nodeConns;
+        }
+    }
+
+    private class CtrlSerializerHelper
+    {
+        private Props ctrlConfProps;
+
+        CtrlSerializerHelper(
+            final Props ctrlConfRef
+        )
+        {
+            ctrlConfProps = ctrlConfRef;
+        }
+
+        private MsgIntControllerData buildControllerDataMsg(
+            long fullSyncTimestamp,
+            long updateId)
+        {
+            return MsgIntControllerData.newBuilder()
+                .addAllControllerProps(ProtoMapUtils.fromMap(ctrlConfProps.map()))
+                .setFullSyncId(fullSyncTimestamp)
+                .setUpdateId(updateId)
+                .build();
         }
     }
 

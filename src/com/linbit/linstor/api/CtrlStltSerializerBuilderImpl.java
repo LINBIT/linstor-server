@@ -65,6 +65,21 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
     }
 
     @Override
+    public CtrlStltSerializerBuilder changedController(UUID nodeUuid, String nodeName)
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeChangedNode(nodeUuid, nodeName, baos); // just appends an object id
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName)
     {
         try
@@ -100,6 +115,24 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         try
         {
             ctrlStltSerializationWriter.writeChangedStorPool(storPoolUuid, storPoolName, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder controllerData(
+        long fullSyncTimestamp,
+        long serializerId
+    )
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeControllerData(fullSyncTimestamp, serializerId, baos);
         }
         catch (IOException ioExc)
         {
@@ -394,6 +427,21 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
     }
 
     @Override
+    public CtrlStltSerializerBuilder requestControllerUpdate()
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeRequestNodeUpdate(UUID.randomUUID(), "thisnamedoesnotmatter", baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName)
     {
         try
@@ -490,6 +538,13 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             throws IOException;
 
         void writeChangedStorPool(UUID nodeUuid, String nodeName, ByteArrayOutputStream baos)
+            throws IOException;
+
+        void writeControllerData(
+            long fullSyncTimestamp,
+            long serializerId,
+            ByteArrayOutputStream baos
+        )
             throws IOException;
 
         void writeNodeData(

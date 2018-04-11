@@ -1283,6 +1283,21 @@ public class CtrlApiCallHandler
         }
     }
 
+    public void handleControllerRequest(
+        UUID nodeUuid,
+        String nodeNameStr
+    )
+    {
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock()))
+        {
+            ctrlConfApiCallHandler.respondController(
+                msgId.get(),
+                nodeUuid,
+                nodeNameStr
+            );
+        }
+    }
+
     public void handleNodeRequest(
         UUID nodeUuid,
         String nodeNameStr
