@@ -1631,13 +1631,25 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 }
             }
             else
+            if (propsWhiteList.isKeyKnown(linstorObj, key))
             {
-                // report
                 report(
                     null,
-                    "Invalid property",
+                    "Invalid property value",
                     "The value '" + value + "' is not valid for the key '" + key + "'",
                     "The value must match '" + propsWhiteList.getRuleValue(linstorObj, key) + "'",
+                    null,
+                    ApiConsts.FAIL_INVLD_PROP
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+            else
+            {
+                report(
+                    null,
+                    "Invalid property key",
+                    "The key '" + key + "' is not whitelisted.",
+                    null,
                     null,
                     ApiConsts.FAIL_INVLD_PROP
                 );

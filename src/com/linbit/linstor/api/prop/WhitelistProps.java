@@ -83,4 +83,9 @@ public class WhitelistProps
     {
         return rules.get(linstorObj).get(key).getValue();
     }
+
+    public boolean isKeyKnown(LinStorObject linstorObj, String key)
+    {
+        return rules.get(linstorObj).get(key) != null;
+    }
 }
