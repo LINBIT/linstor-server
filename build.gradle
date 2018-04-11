@@ -155,6 +155,7 @@ applicationDistribution.into("bin") {
 
 task showMeCache << {
   configurations.compile.each { println it }
+  configurations.runtime.each { println it }
 }
 
 task showMeTestCache << {
