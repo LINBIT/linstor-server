@@ -13,10 +13,13 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.Builder;
+import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -71,6 +74,7 @@ public class CtrlConfApiCallHandler
     private final CtrlStltSerializer ctrlStltSrzl;
     private final NodesMap nodesMap;
     private final AccessContext apiCtx;
+    private final WhitelistProps whitelistProps;
 
     static
     {
@@ -98,7 +102,8 @@ public class CtrlConfApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @ApiContext AccessContext apiCtxRef,
         CoreModule.NodesMap nodesMapRef,
-        CtrlStltSerializer ctrlStltSrzlRef
+        CtrlStltSerializer ctrlStltSrzlRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -115,6 +120,7 @@ public class CtrlConfApiCallHandler
         apiCtx = apiCtxRef;
         nodesMap = nodesMapRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
+        whitelistProps = whitelistPropsRef;
     }
 
     public ApiCallRc setProp(String key, String namespace, String value)
@@ -133,26 +139,38 @@ public class CtrlConfApiCallHandler
             {
                 fullKey = key;
             }
-            switch (fullKey)
+            if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, fullKey, value, false))
             {
-                case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                    setTcpPort(key, namespace, value, apiCallRc);
-                    break;
-                case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
-                    setMinorNr(key, namespace, value, apiCallRc);
-                    break;
-                // TODO: check for other properties
-                default:
+                switch (fullKey)
                 {
-                    apiCallRc.addEntry(
-                        String.format("Setting property '%s' is currently not supported.", fullKey),
-                        ApiConsts.FAIL_INVLD_PROP
+                    case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
+                        setTcpPort(key, namespace, value, apiCallRc);
+                        break;
+                    case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
+                        setMinorNr(key, namespace, value, apiCallRc);
+                        break;
+                    default:
+                    break;
+                }
+                transMgrProvider.get().commit();
+            }
+            else
+            {
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                if (whitelistProps.isKeyKnown(LinStorObject.CONTROLLER, fullKey))
+                {
+                    entry.setMessageFormat("The key '" + fullKey + "' is not whitelisted");
+                }
+                else
+                {
+                    entry.setMessageFormat("The value '" + value + "' is not valid.");
+                    entry.setDetailsFormat("The value must match: " +
+                        whitelistProps.getRuleValue(LinStorObject.CONTROLLER, fullKey)
                     );
                 }
-                break;
+                entry.setReturnCode(ApiConsts.FAIL_INVLD_PROP | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
+                apiCallRc.addEntry(entry);
             }
-
-            transMgrProvider.get().commit();
         }
         catch (Exception exc)
         {
@@ -194,7 +212,7 @@ public class CtrlConfApiCallHandler
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
 
-            apiCallRc.addEntry(errorMsg, rc);
+            apiCallRc.addEntry(errorMsg, rc | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
             errorReporter.reportError(
                 exc,
                 accCtx,
@@ -218,7 +236,7 @@ public class CtrlConfApiCallHandler
         }
         catch (Exception exc)
         {
-            // the list will be empty
+            data = new byte[0]; // the list will be empty
         }
         return data;
     }
