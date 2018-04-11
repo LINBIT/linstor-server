@@ -887,7 +887,8 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         long retCode
     )
     {
-        if (apiCallRc != null)
+        ApiCallRcImpl apiCallRcImpl = apiCallRc.get();
+        if (apiCallRcImpl != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(retCode | apiCallType.get().opMask | linstorObj.objMask);
@@ -919,7 +920,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 entry.putAllVariables(variables.get());
             }
 
-            apiCallRc.get().addEntry(entry);
+            apiCallRcImpl.addEntry(entry);
         }
     }
 
