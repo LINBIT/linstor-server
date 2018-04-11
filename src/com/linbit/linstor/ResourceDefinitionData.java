@@ -349,11 +349,19 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-            // preventing ConcurrentModificationException
-            Collection<Resource> values = new ArrayList<>(resourceMap.values());
-            for (Resource rsc : values)
+            // Shallow copy the resource collection because calling delete results in elements being removed from it
+            Collection<Resource> resources = new ArrayList<>(resourceMap.values());
+            for (Resource rsc : resources)
             {
                 rsc.delete(accCtx);
+            }
+
+            // Shallow copy the volume definition collection because calling delete results in elements being removed
+            // from it
+            Collection<VolumeDefinition> volumeDefinitions = new ArrayList<>(volumeMap.values());
+            for (VolumeDefinition volumeDefinition : volumeDefinitions)
+            {
+                volumeDefinition.delete(accCtx);
             }
 
             rscDfnProps.delete();
