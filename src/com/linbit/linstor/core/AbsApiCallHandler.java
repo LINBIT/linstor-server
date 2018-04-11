@@ -1601,7 +1601,11 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (propsWhiteList.isAllowed(linstorObj, key, value, true))
+            boolean isAuxProp = key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/");
+            if (
+                isAuxProp ||
+                propsWhiteList.isAllowed(linstorObj, key, value, true)
+            )
             {
                 try
                 {
@@ -1617,13 +1621,41 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 }
                 catch (InvalidKeyException exc)
                 {
-                    // we tried to insert an invalid but whitelisted key
-                    throw asImplError(exc);
+                    if (isAuxProp)
+                    {
+                        throw asExc(
+                            exc,
+                            "Invalid key.",
+                            "The key '" + key + "' is invalid.",
+                            null,
+                            null,
+                            ApiConsts.FAIL_INVLD_PROP
+                        );
+                    }
+                    else
+                    {
+                        // we tried to insert an invalid but whitelisted key
+                        throw asImplError(exc);
+                    }
                 }
                 catch (InvalidValueException exc)
                 {
-                    // we tried to insert an invalid but whitelisted value
-                    throw asImplError(exc);
+                    if (isAuxProp)
+                    {
+                        throw asExc(
+                            exc,
+                            "Invalid value.",
+                            "The value '" + value + "' is invalid.",
+                            null,
+                            null,
+                            ApiConsts.FAIL_INVLD_PROP
+                        );
+                    }
+                    else
+                    {
+                        // we tried to insert an invalid but whitelisted value
+                        throw asImplError(exc);
+                    }
                 }
                 catch (SQLException exc)
                 {
