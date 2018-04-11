@@ -501,7 +501,7 @@ public final class GeneratedPropertyRules
                 .name("storage_pool_name")
                 .type("regex")
                 .keyRef("KEY_STOR_POOL_NAME")
-                .value("[a-zA-Z]+")
+                .value("^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$")
                 .build()
         );
         propertyList.add(
@@ -561,7 +561,7 @@ public final class GeneratedPropertyRules
                 .info("Preferred network interface to use")
                 .type("regex")
                 .keyRef("KEY_STOR_POOL_PREF_NIC")
-                .value("[a-zA-Z0-9]+")
+                .value("^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$")
                 .build()
         );
         propertyList.add(
