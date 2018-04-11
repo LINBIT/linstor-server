@@ -10,20 +10,18 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.pojo.ResourceState;
 
-public interface CtrlStltSerializer
+public interface CtrlStltSerializer extends CommonSerializer
 {
-    Builder builder(String apiCall, int msgId);
+    CtrlStltSerializerBuilder builder(String apiCall, int msgId);
 
-    public interface Builder
+    public interface CtrlStltSerializerBuilder extends CommonSerializerBuilder
     {
-        byte[] build();
-
         /*
          * Controller -> Satellite
          */
-        Builder primaryRequest(String rscName, String rscUuid);
+        CtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid);
 
-        Builder authMessage(
+        CtrlStltSerializerBuilder authMessage(
             UUID nodeUuid,
             String nodeName,
             byte[] sharedSecret,
@@ -31,17 +29,17 @@ public interface CtrlStltSerializer
             UUID nodeDisklessStorPoolUuid
         );
 
-        Builder changedNode(UUID nodeUuid, String nodeName);
-        Builder changedResource(UUID rscUuid, String rscName);
-        Builder changedStorPool(UUID storPoolUuid, String storPoolName);
+        CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName);
+        CtrlStltSerializerBuilder changedResource(UUID rscUuid, String rscName);
+        CtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String storPoolName);
 
-        Builder nodeData(Node node, Collection<Node> relatedNodes, long fullSyncTimestamp, long updateId);
-        Builder deletedNodeData(String nodeNameStr, long fullSyncTimestamp, long updateId);
-        Builder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
-        Builder deletedResourceData(String rscNameStr, long fullSyncTimestamp, long updateId);
-        Builder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
-        Builder deletedStorPoolData(String storPoolName, long fullSyncTimestamp, long updateId);
-        Builder fullSync(
+        CtrlStltSerializerBuilder nodeData(Node node, Collection<Node> relatedNodes, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder deletedNodeData(String nodeNameStr, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder deletedResourceData(String rscNameStr, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder deletedStorPoolData(String storPoolName, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,
             Set<Resource> resources,
@@ -52,31 +50,31 @@ public interface CtrlStltSerializer
         /*
          * Satellite -> Controller
          */
-        Builder resourceState(String nodeName, ResourceState rsc);
+        CtrlStltSerializerBuilder resourceState(String nodeName, ResourceState rsc);
 
-        Builder notifyResourceDeleted(
+        CtrlStltSerializerBuilder notifyResourceDeleted(
             String nodeName,
             String resourceName,
             UUID rscUuid,
             Map<StorPool, Long> freeSpaceMap
         );
-        Builder notifyResourceApplied(
+        CtrlStltSerializerBuilder notifyResourceApplied(
             String resourceName,
             UUID rscUuid,
             Map<StorPool, Long> freeSpaceMap
         );
-        Builder notifyVolumeDeleted(
+        CtrlStltSerializerBuilder notifyVolumeDeleted(
             String nodeName,
             String resourceName,
             int volumeNr,
             UUID vlmUuid
         );
 
-        Builder requestNodeUpdate(UUID nodeUuid, String nodeName);
-        Builder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
-        Builder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
-        Builder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
+        CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
+        CtrlStltSerializerBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
+        CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
+        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
 
-        Builder cryptKey(byte[] masterKey, long timestamp, long updateId);
+        CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
     }
 }

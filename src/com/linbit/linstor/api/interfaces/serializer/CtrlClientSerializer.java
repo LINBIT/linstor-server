@@ -11,26 +11,24 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.pojo.ResourceState;
 
-public interface CtrlClientSerializer
+public interface CtrlClientSerializer extends CommonSerializer
 {
-    Builder builder(String apiCall, int msgId);
+    CtrlClientSerializerBuilder builder(String apiCall, int msgId);
 
-    public interface Builder
+    public interface CtrlClientSerializerBuilder extends CommonSerializerBuilder
     {
-        byte[] build();
-
         /*
          * Controller -> Client
          */
-        Builder nodeList(List<Node.NodeApi> nodes);
-        Builder storPoolDfnList(List<StorPoolDefinition.StorPoolDfnApi> storPoolDfns);
-        Builder storPoolList(List<StorPool.StorPoolApi> storPools);
-        Builder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
-        Builder resourceList(List<Resource.RscApi> rscs, Collection<ResourceState> rscStates);
+        CtrlClientSerializerBuilder nodeList(List<Node.NodeApi> nodes);
+        CtrlClientSerializerBuilder storPoolDfnList(List<StorPoolDefinition.StorPoolDfnApi> storPoolDfns);
+        CtrlClientSerializerBuilder storPoolList(List<StorPool.StorPoolApi> storPools);
+        CtrlClientSerializerBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
+        CtrlClientSerializerBuilder resourceList(List<Resource.RscApi> rscs, Collection<ResourceState> rscStates);
 
-        Builder apiVersion(long features, String controllerInfo);
+        CtrlClientSerializerBuilder apiVersion(long features, String controllerInfo);
 
-        Builder ctrlCfgSingleProp(String namespace, String key, String value);
-        Builder ctrlCfgProps(Map<String, String> map);
+        CtrlClientSerializerBuilder ctrlCfgSingleProp(String namespace, String key, String value);
+        CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
     }
 }

@@ -1,16 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.google.protobuf.ByteString;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.NetInterface;
@@ -23,18 +12,18 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.AbsCtrlStltSerializer;
+import com.linbit.linstor.api.CtrlStltSerializerBuilderImpl;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.proto.MsgHeaderOuterClass;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
+import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
@@ -42,13 +31,13 @@ import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.MsgIntDelRscOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
-import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
+import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
@@ -61,11 +50,22 @@ import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 
 @Singleton
-public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
+public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
+    implements CtrlStltSerializer, CtrlStltSerializerBuilderImpl.CtrlStltSerializationWriter
 {
     private final ResourceSerializerHelper rscSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
@@ -86,13 +86,9 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
-    public void writeHeader(String apiCall, int msgId, ByteArrayOutputStream baos) throws IOException
+    public CtrlStltSerializerBuilder builder(String apiCall, int msgId)
     {
-        MsgHeaderOuterClass.MsgHeader.newBuilder()
-            .setApiCall(apiCall)
-            .setMsgId(msgId)
-            .build()
-            .writeDelimitedTo(baos);
+        return new CtrlStltSerializerBuilderImpl(errorReporter, this, apiCall, msgId);
     }
 
     /*

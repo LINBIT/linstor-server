@@ -29,6 +29,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.pojo.VolumeStateDevManager;
@@ -340,7 +341,7 @@ class DrbdDeviceHandler implements DeviceHandler
         Collection<ResourceState> rscStates
     )
     {
-        CtrlStltSerializer.Builder bld = interComSerializer.builder(InternalApiConsts.API_UPDATE_STATES, 1);
+        CtrlStltSerializerBuilder bld = interComSerializer.builder(InternalApiConsts.API_UPDATE_STATES, 1);
 
         for (ResourceState rscState : rscStates)
         {

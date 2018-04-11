@@ -17,7 +17,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.Builder;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.core.CoreModule.NodesMap;
@@ -229,10 +228,9 @@ public class CtrlConfApiCallHandler
         try
         {
             ctrlConfProt.requireAccess(accCtx, AccessType.VIEW);
-            Builder builder = ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId);
-            builder.ctrlCfgProps(ctrlConf.map());
-
-            data = builder.build();
+            data = ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId)
+                .ctrlCfgProps(ctrlConf.map())
+                .build();
         }
         catch (Exception exc)
         {

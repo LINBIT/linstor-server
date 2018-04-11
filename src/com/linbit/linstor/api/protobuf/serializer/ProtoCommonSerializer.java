@@ -1,12 +1,51 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.CommonSerializerBuilderImpl;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
+import com.linbit.linstor.security.AccessContext;
 
-public class ProtoCommonSerializer
+import javax.inject.Inject;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+public class ProtoCommonSerializer implements CommonSerializer, CommonSerializerBuilderImpl.CommonSerializerWriter
 {
+    protected final ErrorReporter errorReporter;
+    protected final AccessContext serializerCtx;
+
+    @Inject
+    public ProtoCommonSerializer(
+        final ErrorReporter errReporterRef,
+        final @ApiContext AccessContext serializerCtxRef
+    )
+    {
+        this.errorReporter = errReporterRef;
+        this.serializerCtx = serializerCtxRef;
+    }
+
+    @Override
+    public CommonSerializerBuilder builder(String apiCall, int msgId)
+    {
+        return new CommonSerializerBuilderImpl(errorReporter, this, apiCall, msgId);
+    }
+
+    @Override
+    public void writeHeader(String apiCall, int msgId, ByteArrayOutputStream baos) throws IOException
+    {
+        MsgHeaderOuterClass.MsgHeader.newBuilder()
+            .setApiCall(apiCall)
+            .setMsgId(msgId)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
     public static RscStateOuterClass.RscState buildResourceState(
         final String nodeName,
         final ResourceState rscState

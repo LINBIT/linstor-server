@@ -18,13 +18,13 @@ import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.AbsCtrlClientSerializer;
+import com.linbit.linstor.api.CtrlClientSerializerBuilderImpl;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
-import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
@@ -42,7 +42,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
+public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
+    implements CtrlClientSerializer, CtrlClientSerializerBuilderImpl.CtrlClientSerializationWriter
 {
     @Inject
     public ProtoCtrlClientSerializer(
@@ -54,13 +55,9 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
     }
 
     @Override
-    public void writeHeader(String apiCall, int msgId, ByteArrayOutputStream baos) throws IOException
+    public CtrlClientSerializerBuilder builder(String apiCall, int msgId)
     {
-        MsgHeaderOuterClass.MsgHeader.newBuilder()
-            .setApiCall(apiCall)
-            .setMsgId(msgId)
-            .build()
-            .writeDelimitedTo(baos);
+        return new CtrlClientSerializerBuilderImpl(errorReporter, this, apiCall, msgId);
     }
 
     @Override
