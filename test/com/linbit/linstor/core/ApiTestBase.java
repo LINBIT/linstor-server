@@ -5,18 +5,17 @@ import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiCallRc.RcEntry;
+import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
-import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
@@ -162,26 +161,33 @@ public abstract class ApiTestBase extends GenericDbBase
 
     protected static NetInterfaceApi createNetInterfaceApi(String name, String address)
     {
-        return createNetInterfaceApi(java.util.UUID.randomUUID(), name, address);
+        return createNetInterfaceApi(
+            name,
+            address,
+            ApiConsts.DFLT_STLT_PORT_PLAIN,
+            EncryptionType.PLAIN.name()
+        );
     }
 
-    protected static NetInterfaceApi createNetInterfaceApi(java.util.UUID uuid, String name, String address)
-    {
-        return new NetInterfaceApiTestImpl(uuid, name, address);
-    }
-
-    protected static SatelliteConnectionApi createStltConnApi(String netIfName)
-    {
-        return createStltConnApi(netIfName, ApiConsts.DFLT_STLT_PORT_PLAIN, ApiConsts.VAL_NETCOM_TYPE_PLAIN);
-    }
-
-    protected static SatelliteConnectionApi createStltConnApi(
-        String netIfName,
+    protected static NetInterfaceApi createNetInterfaceApi(
+        String name,
+        String address,
         Integer port,
-        String encryptionType
+        String encrType
     )
     {
-        return new SatelliteConnectionApiTestImpl(netIfName, port, encryptionType);
+        return createNetInterfaceApi(java.util.UUID.randomUUID(), name, address, port, encrType);
+    }
+
+    protected static NetInterfaceApi createNetInterfaceApi(
+        java.util.UUID uuid,
+        String name,
+        String address,
+        Integer port,
+        String encrType
+    )
+    {
+        return new NetInterfacePojo(uuid, name, address, port, encrType);
     }
 
     protected void expectRc(long index, long expectedRc, RcEntry rcEntry)

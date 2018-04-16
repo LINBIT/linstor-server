@@ -79,9 +79,11 @@ public class DbConstants
     public static final String NODE_TYPE     = "NODE_TYPE";
 
     // NODE_NET_INTERFACES column names
-    public static final String NODE_NET_NAME     = "NODE_NET_NAME";
-    public static final String NODE_NET_DSP_NAME = "NODE_NET_DSP_NAME";
-    public static final String INET_ADDRESS      = "INET_ADDRESS";
+    public static final String NODE_NET_NAME       = "NODE_NET_NAME";
+    public static final String NODE_NET_DSP_NAME   = "NODE_NET_DSP_NAME";
+    public static final String INET_ADDRESS        = "INET_ADDRESS";
+    public static final String STLT_CONN_PORT      = "STLT_CONN_PORT";
+    public static final String STLT_CONN_ENCR_TYPE = "STLT_CONN_ENCR_TYPE";
 
     // SATELLITE_CONNECTIONS column names
     public static final String TCP_PORT      = "TCP_PORT";

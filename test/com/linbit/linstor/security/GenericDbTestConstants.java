@@ -83,15 +83,12 @@ public interface GenericDbTestConstants
     String NODE_NET_DSP_NAME = "NODE_NET_DSP_NAME";
     String INET_ADDRESS      = "INET_ADDRESS";
 
-    // SATELLITE_CONNECTIONS column names
-    String TCP_PORT      = "TCP_PORT";
-    String INET_TYPE     = "INET_TYPE";
-
     // RESOURCE_DEFINITIONS column names
     String RESOURCE_NAME     = "RESOURCE_NAME";
     String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
     String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
     String SECRET            = "SECRET";
+    String TCP_PORT          = "TCP_PORT";
     String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
 
     // RESOURCES column names
@@ -137,7 +134,6 @@ public interface GenericDbTestConstants
     int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
     int TBL_COL_COUNT_NODES                 = 5;
     int TBL_COL_COUNT_NODE_NET_INTERFACES   = 5;
-    int TBL_COL_COUNT_SATELLITE_CONNECTIONS = 5;
     int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 7;
     int TBL_COL_COUNT_RESOURCES             = 5;
     int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
@@ -160,7 +156,6 @@ public interface GenericDbTestConstants
     String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
     String TRUNCATE_RESOURCES             = "DELETE FROM " + TBL_RESOURCES;
     String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
-    String TRUNCATE_SATELLITE_CONNECTIONS = "DELETE FROM " + TBL_SATELLITE_CONNECTIONS;
     String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
     String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
     String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
@@ -414,7 +409,6 @@ public interface GenericDbTestConstants
         TRUNCATE_STOR_POOL_DEFINITIONS,
         TRUNCATE_RESOURCES,
         TRUNCATE_RESOURCE_DEFINITIONS,
-        TRUNCATE_SATELLITE_CONNECTIONS,
         TRUNCATE_NODE_NET_INTERFACES,
         TRUNCATE_NODES,
         TRUNCATE_SEC_ACL_MAP,

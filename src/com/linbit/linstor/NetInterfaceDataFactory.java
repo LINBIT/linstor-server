@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -37,6 +38,8 @@ public class NetInterfaceDataFactory
         Node node,
         NetInterfaceName name,
         LsIpAddress addr,
+        TcpPortNumber port,
+        EncryptionType encrType,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -61,6 +64,8 @@ public class NetInterfaceDataFactory
                 name,
                 node,
                 addr,
+                port,
+                encrType,
                 driver,
                 transObjFactory,
                 transMgrProvider
@@ -86,12 +91,20 @@ public class NetInterfaceDataFactory
             netData = driver.load(node, netName, false);
             if (netData == null)
             {
+                /*
+                 * stlt conn port and encr type are default null as one satellite
+                 * should not communicate with any other satellite directly, thus
+                 * the port and encr type are not needed
+                 */
+
                 netData = new NetInterfaceData(
                     uuid,
                     accCtx,
                     netName,
                     node,
                     addr,
+                    null, // stlt conn port
+                    null, // stlt conn encr type
                     driver,
                     transObjFactory,
                     transMgrProvider

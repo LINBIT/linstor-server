@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
@@ -121,7 +120,6 @@ public class CtrlApiCallHandler
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
-        List<SatelliteConnectionApi> satelliteConnectionApis,
         Map<String, String> propsRef
     )
     {
@@ -137,7 +135,6 @@ public class CtrlApiCallHandler
                 nodeNameStr,
                 nodeTypeStr,
                 netIfs,
-                satelliteConnectionApis,
                 props
             );
         }

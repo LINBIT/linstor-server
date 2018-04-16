@@ -42,6 +42,24 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
         return netInterface.getAddress();
     }
 
+    @Override
+    public String getSatelliteConnectionEncryptionType()
+    {
+        return netInterface.getStltEncryptionType();
+    }
+
+    @Override
+    public int getSatelliteConnectionPort()
+    {
+        return netInterface.getStltPort();
+    }
+
+    @Override
+    public boolean isUsableAsSatelliteConnection()
+    {
+        return netInterface.hasStltEncryptionType() && netInterface.hasStltPort();
+    }
+
     public static List<NetInterfaceOuterClass.NetInterface> toNetInterfaceProtoList(
         List<NetInterface.NetInterfaceApi> netInterfaceApiList)
     {

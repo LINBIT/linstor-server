@@ -7,11 +7,10 @@ import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.SatelliteConnection;
-import com.linbit.linstor.SatelliteConnection.EncryptionType;
-import com.linbit.linstor.SatelliteConnectionDataFactory;
+import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -27,6 +26,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -38,7 +38,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     private String currentNetIfName;
     private final SatelliteConnector satelliteConnector;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
-    private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
 
     @Inject
     CtrlNetIfApiCallHandler(
@@ -48,7 +47,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         SatelliteConnector satelliteConnectorRef,
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
@@ -68,7 +66,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         );
         satelliteConnector = satelliteConnectorRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
-        satelliteConnectionDataFactory = satelliteConnectionDataFactoryRef;
     }
 
     public ApiCallRc createNetIf(
@@ -92,8 +89,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             NodeData node = loadNode(nodeNameStr, true);
             NetInterfaceName netIfName = asNetInterfaceName(netIfNameStr);
 
-            NetInterfaceData netIf = createNetIf(node, netIfName, address);
-
             if (node.getSatelliteConnection(apiCtx) != null && stltPort != null)
             {
                 throw asExc(
@@ -102,9 +97,11 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                     ApiConsts.FAIL_EXISTS_STLT_CONN
                 );
             }
+
+            NetInterfaceData netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
+
             if (stltPort != null && stltEncrType != null)
             {
-                createStltConn(node, netIf, stltPort, stltEncrType);
                 satelliteConnector.startConnecting(node, apiCtx);
             }
 
@@ -156,15 +153,12 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             Node node = netIf.getNode();
             if (stltPort != null && stltEncrType != null)
             {
-                SatelliteConnection stltConn = node.getSatelliteConnection(apiCtx);
-                if (stltConn == null)
+                needsReconnect |= setStltConn(netIf, stltPort, stltEncrType);
+
+                NetInterface currStltConn = getSatelliteConnection(node);
+                if (currStltConn == null)
                 {
-                    createStltConn(node, netIf, stltPort, stltEncrType);
-                }
-                else
-                {
-                    needsReconnect |= setStltPort(stltConn, stltPort);
-                    needsReconnect |= setStltEncrType(stltConn, stltEncrType);
+                    setSatelliteConnection(node, netIf);
                 }
             }
 
@@ -196,6 +190,48 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
         return apiCallRc;
     }
+
+    private NetInterface getSatelliteConnection(Node node)
+    {
+        NetInterface netIf = null;
+        try
+        {
+            netIf = node.getSatelliteConnection(peerAccCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "access the current satellite connection",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return netIf;
+    }
+
+    private void setSatelliteConnection(Node node, NetInterface netIf)
+    {
+        try
+        {
+            node.setSatelliteConnection(peerAccCtx, netIf);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "set the current satellite connection",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        catch (SQLException exc)
+        {
+            throw asSqlExc(
+                exc,
+                "updating satellite connection"
+            );
+        }
+    }
+
 
     public ApiCallRc deleteNetIf(
         String nodeNameStr,
@@ -230,7 +266,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 Node node = netIf.getNode();
                 boolean closeConnection = false;
                 closeConnection = netIf.equals(
-                    node.getSatelliteConnection(apiCtx).getNetInterface()
+                    node.getSatelliteConnection(apiCtx)
                 );
 
                 UUID uuid = netIf.getUuid();
@@ -271,17 +307,29 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     private NetInterfaceData createNetIf(
         NodeData node,
         NetInterfaceName netIfName,
-        String address
+        String address,
+        Integer stltConnPort,
+        String stltConnEncrType
     )
     {
         NetInterfaceData netIf;
         try
         {
+            TcpPortNumber port = null;
+            EncryptionType type = null;
+            if (stltConnPort != null && stltConnEncrType != null)
+            {
+                port = asTcpPortNumber(stltConnPort);
+                type = asEncryptionType(stltConnEncrType);
+            }
+
             netIf = netInterfaceDataFactory.getInstance(
                 peerAccCtx,
                 node,
                 netIfName,
                 asLsIpAddress(address),
+                port,
+                type,
                 true,
                 true
             );
@@ -312,48 +360,18 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         return netIf;
     }
 
-    private void createStltConn(
-        Node node,
-        NetInterface netIf,
-        Integer stltPort,
-        String stltEncrType
-    )
+    private EncryptionType asEncryptionType(String stltConnEncrType)
     {
+        EncryptionType type = null;
         try
         {
-            satelliteConnectionDataFactory.getInstance(
-                peerAccCtx,
-                node,
-                netIf,
-                asTcpPortNumber(stltPort),
-                SatelliteConnection.EncryptionType.valueOf(stltEncrType.toUpperCase()),
-                true,
-                true
-            );
+            type = EncryptionType.valueOfIgnoreCase(stltConnEncrType);
         }
-        catch (AccessDeniedException exc)
+        catch (IllegalArgumentException illegalArgExc)
         {
-            throw asAccDeniedExc(
-                exc,
-                "create " + getObjectDescriptionInline(),
-                ApiConsts.FAIL_ACC_DENIED_STLT_CONN
-            );
+            throw asExc(illegalArgExc, "Invalid encryption type", ApiConsts.FAIL_INVLD_NET_TYPE);
         }
-        catch (LinStorDataAlreadyExistsException exc)
-        {
-            throw asExc(
-                exc,
-                getObjectDescriptionInlineFirstLetterCaps() + " already exists",
-                ApiConsts.FAIL_EXISTS_STLT_CONN
-            );
-        }
-        catch (SQLException exc)
-        {
-            throw asSqlExc(
-                exc,
-                "creating " + getObjectDescriptionInline()
-            );
-        }
+        return type;
     }
 
     private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr)
@@ -415,6 +433,31 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         }
     }
 
+    private boolean setStltConn(NetInterface netIf, Integer stltPort, String stltEncrType)
+    {
+        boolean changed = false;
+        try
+        {
+            changed = netIf.setStltConn(peerAccCtx, asTcpPortNumber(stltPort), asEncryptionType(stltEncrType));
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "modify the satellite connection port and / or encryption type",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "updating the net interface's satellite connection port and / or encryption type"
+            );
+        }
+        return changed;
+    }
+
     private boolean addressChanged(NetInterface netIf, String addressStr)
     {
         boolean ret;
@@ -431,61 +474,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             );
         }
         return ret;
-    }
-
-    private boolean setStltPort(SatelliteConnection stltConn, int stltPort)
-    {
-        boolean changed = stltConn.getPort().value != stltPort;
-        try
-        {
-            stltConn.setPort(peerAccCtx, asTcpPortNumber(stltPort));
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw asAccDeniedExc(
-                exc,
-                "updating satellite port for " + getObjectDescriptionInline(),
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        catch (SQLException exc)
-        {
-            throw asSqlExc(
-                exc,
-                "updating satellite port for " + getObjectDescriptionInline()
-            );
-        }
-        return changed;
-    }
-
-    private boolean setStltEncrType(SatelliteConnection stltConn, String stltEncrType)
-    {
-        boolean changed = stltConn.getEncryptionType().name().equals(stltEncrType);
-        try
-        {
-            stltConn.setEncryptionType(
-                peerAccCtx,
-                EncryptionType.valueOf(
-                    stltEncrType.toUpperCase()
-                )
-            );
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw asAccDeniedExc(
-                exc,
-                "updating satellite encryption type for " + getObjectDescriptionInline(),
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        catch (SQLException exc)
-        {
-            throw asSqlExc(
-                exc,
-                "updating satellite port for " + getObjectDescriptionInline()
-            );
-        }
-        return changed;
     }
 
     private void deleteNetIf(NetInterface netIf)

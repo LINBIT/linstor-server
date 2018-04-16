@@ -2874,12 +2874,30 @@ public final class MsgIntNodeDataOuterClass {
 
     /**
      * <pre>
-     * Netif port
+     * Satellite connection port
      * </pre>
      *
-     * <code>sint32 net_if_port = 5;</code>
+     * <code>sint32 stlt_conn_port = 5;</code>
      */
-    int getNetIfPort();
+    int getStltConnPort();
+
+    /**
+     * <pre>
+     * Satellite connection encryption type (SSL, Plain)
+     * </pre>
+     *
+     * <code>string stlt_conn_encr_type = 6;</code>
+     */
+    java.lang.String getStltConnEncrType();
+    /**
+     * <pre>
+     * Satellite connection encryption type (SSL, Plain)
+     * </pre>
+     *
+     * <code>string stlt_conn_encr_type = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getStltConnEncrTypeBytes();
   }
   /**
    * Protobuf type {@code com.linbit.linstor.proto.javainternal.NetIf}
@@ -2897,7 +2915,8 @@ public final class MsgIntNodeDataOuterClass {
       netIfName_ = "";
       netIfAddr_ = "";
       netIfType_ = "";
-      netIfPort_ = 0;
+      stltConnPort_ = 0;
+      stltConnEncrType_ = "";
     }
 
     @java.lang.Override
@@ -2951,7 +2970,13 @@ public final class MsgIntNodeDataOuterClass {
             }
             case 40: {
 
-              netIfPort_ = input.readSInt32();
+              stltConnPort_ = input.readSInt32();
+              break;
+            }
+            case 50: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              stltConnEncrType_ = s;
               break;
             }
           }
@@ -3145,17 +3170,59 @@ public final class MsgIntNodeDataOuterClass {
       }
     }
 
-    public static final int NET_IF_PORT_FIELD_NUMBER = 5;
-    private int netIfPort_;
+    public static final int STLT_CONN_PORT_FIELD_NUMBER = 5;
+    private int stltConnPort_;
     /**
      * <pre>
-     * Netif port
+     * Satellite connection port
      * </pre>
      *
-     * <code>sint32 net_if_port = 5;</code>
+     * <code>sint32 stlt_conn_port = 5;</code>
      */
-    public int getNetIfPort() {
-      return netIfPort_;
+    public int getStltConnPort() {
+      return stltConnPort_;
+    }
+
+    public static final int STLT_CONN_ENCR_TYPE_FIELD_NUMBER = 6;
+    private volatile java.lang.Object stltConnEncrType_;
+    /**
+     * <pre>
+     * Satellite connection encryption type (SSL, Plain)
+     * </pre>
+     *
+     * <code>string stlt_conn_encr_type = 6;</code>
+     */
+    public java.lang.String getStltConnEncrType() {
+      java.lang.Object ref = stltConnEncrType_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        stltConnEncrType_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Satellite connection encryption type (SSL, Plain)
+     * </pre>
+     *
+     * <code>string stlt_conn_encr_type = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStltConnEncrTypeBytes() {
+      java.lang.Object ref = stltConnEncrType_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        stltConnEncrType_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private byte memoizedIsInitialized = -1;
@@ -3182,8 +3249,11 @@ public final class MsgIntNodeDataOuterClass {
       if (!getNetIfTypeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, netIfType_);
       }
-      if (netIfPort_ != 0) {
-        output.writeSInt32(5, netIfPort_);
+      if (stltConnPort_ != 0) {
+        output.writeSInt32(5, stltConnPort_);
+      }
+      if (!getStltConnEncrTypeBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, stltConnEncrType_);
       }
     }
 
@@ -3204,9 +3274,12 @@ public final class MsgIntNodeDataOuterClass {
       if (!getNetIfTypeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, netIfType_);
       }
-      if (netIfPort_ != 0) {
+      if (stltConnPort_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(5, netIfPort_);
+          .computeSInt32Size(5, stltConnPort_);
+      }
+      if (!getStltConnEncrTypeBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, stltConnEncrType_);
       }
       memoizedSize = size;
       return size;
@@ -3232,8 +3305,10 @@ public final class MsgIntNodeDataOuterClass {
           .equals(other.getNetIfAddr());
       result = result && getNetIfType()
           .equals(other.getNetIfType());
-      result = result && (getNetIfPort()
-          == other.getNetIfPort());
+      result = result && (getStltConnPort()
+          == other.getStltConnPort());
+      result = result && getStltConnEncrType()
+          .equals(other.getStltConnEncrType());
       return result;
     }
 
@@ -3252,8 +3327,10 @@ public final class MsgIntNodeDataOuterClass {
       hash = (53 * hash) + getNetIfAddr().hashCode();
       hash = (37 * hash) + NET_IF_TYPE_FIELD_NUMBER;
       hash = (53 * hash) + getNetIfType().hashCode();
-      hash = (37 * hash) + NET_IF_PORT_FIELD_NUMBER;
-      hash = (53 * hash) + getNetIfPort();
+      hash = (37 * hash) + STLT_CONN_PORT_FIELD_NUMBER;
+      hash = (53 * hash) + getStltConnPort();
+      hash = (37 * hash) + STLT_CONN_ENCR_TYPE_FIELD_NUMBER;
+      hash = (53 * hash) + getStltConnEncrType().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -3380,7 +3457,9 @@ public final class MsgIntNodeDataOuterClass {
 
         netIfType_ = "";
 
-        netIfPort_ = 0;
+        stltConnPort_ = 0;
+
+        stltConnEncrType_ = "";
 
         return this;
       }
@@ -3408,7 +3487,8 @@ public final class MsgIntNodeDataOuterClass {
         result.netIfName_ = netIfName_;
         result.netIfAddr_ = netIfAddr_;
         result.netIfType_ = netIfType_;
-        result.netIfPort_ = netIfPort_;
+        result.stltConnPort_ = stltConnPort_;
+        result.stltConnEncrType_ = stltConnEncrType_;
         onBuilt();
         return result;
       }
@@ -3466,8 +3546,12 @@ public final class MsgIntNodeDataOuterClass {
           netIfType_ = other.netIfType_;
           onChanged();
         }
-        if (other.getNetIfPort() != 0) {
-          setNetIfPort(other.getNetIfPort());
+        if (other.getStltConnPort() != 0) {
+          setStltConnPort(other.getStltConnPort());
+        }
+        if (!other.getStltConnEncrType().isEmpty()) {
+          stltConnEncrType_ = other.stltConnEncrType_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -3851,40 +3935,129 @@ public final class MsgIntNodeDataOuterClass {
         return this;
       }
 
-      private int netIfPort_ ;
+      private int stltConnPort_ ;
       /**
        * <pre>
-       * Netif port
+       * Satellite connection port
        * </pre>
        *
-       * <code>sint32 net_if_port = 5;</code>
+       * <code>sint32 stlt_conn_port = 5;</code>
        */
-      public int getNetIfPort() {
-        return netIfPort_;
+      public int getStltConnPort() {
+        return stltConnPort_;
       }
       /**
        * <pre>
-       * Netif port
+       * Satellite connection port
        * </pre>
        *
-       * <code>sint32 net_if_port = 5;</code>
+       * <code>sint32 stlt_conn_port = 5;</code>
        */
-      public Builder setNetIfPort(int value) {
+      public Builder setStltConnPort(int value) {
         
-        netIfPort_ = value;
+        stltConnPort_ = value;
         onChanged();
         return this;
       }
       /**
        * <pre>
-       * Netif port
+       * Satellite connection port
        * </pre>
        *
-       * <code>sint32 net_if_port = 5;</code>
+       * <code>sint32 stlt_conn_port = 5;</code>
        */
-      public Builder clearNetIfPort() {
+      public Builder clearStltConnPort() {
         
-        netIfPort_ = 0;
+        stltConnPort_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object stltConnEncrType_ = "";
+      /**
+       * <pre>
+       * Satellite connection encryption type (SSL, Plain)
+       * </pre>
+       *
+       * <code>string stlt_conn_encr_type = 6;</code>
+       */
+      public java.lang.String getStltConnEncrType() {
+        java.lang.Object ref = stltConnEncrType_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          stltConnEncrType_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Satellite connection encryption type (SSL, Plain)
+       * </pre>
+       *
+       * <code>string stlt_conn_encr_type = 6;</code>
+       */
+      public com.google.protobuf.ByteString
+          getStltConnEncrTypeBytes() {
+        java.lang.Object ref = stltConnEncrType_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          stltConnEncrType_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Satellite connection encryption type (SSL, Plain)
+       * </pre>
+       *
+       * <code>string stlt_conn_encr_type = 6;</code>
+       */
+      public Builder setStltConnEncrType(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        stltConnEncrType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite connection encryption type (SSL, Plain)
+       * </pre>
+       *
+       * <code>string stlt_conn_encr_type = 6;</code>
+       */
+      public Builder clearStltConnEncrType() {
+        
+        stltConnEncrType_ = getDefaultInstance().getStltConnEncrType();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite connection encryption type (SSL, Plain)
+       * </pre>
+       *
+       * <code>string stlt_conn_encr_type = 6;</code>
+       */
+      public Builder setStltConnEncrTypeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        stltConnEncrType_ = value;
         onChanged();
         return this;
       }
@@ -5783,16 +5956,17 @@ public final class MsgIntNodeDataOuterClass {
       "\n\nnode_props\030\007 \003(\0132).com.linbit.linstor.",
       "proto.LinStorMapEntry\022$\n\034node_diskless_s" +
       "tor_pool_uuid\030\010 \001(\t\022\024\n\014full_sync_id\030\t \001(" +
-      "\022\022\021\n\tupdate_id\030\n \001(\022\"p\n\005NetIf\022\023\n\013net_if_" +
-      "uuid\030\001 \001(\t\022\023\n\013net_if_name\030\002 \001(\t\022\023\n\013net_i" +
-      "f_addr\030\003 \001(\t\022\023\n\013net_if_type\030\004 \001(\t\022\023\n\013net" +
-      "_if_port\030\005 \001(\021\"\367\001\n\010NodeConn\022\027\n\017other_nod" +
-      "e_uuid\030\001 \001(\t\022\027\n\017other_node_name\030\002 \001(\t\022\027\n" +
-      "\017other_node_type\030\003 \001(\t\022\030\n\020other_node_fla" +
-      "gs\030\004 \001(\022\022\026\n\016node_conn_uuid\030\005 \001(\t\022B\n\017node" +
-      "_conn_props\030\006 \003(\0132).com.linbit.linstor.p",
-      "roto.LinStorMapEntry\022*\n\"other_node_diskl" +
-      "ess_stor_pool_uuid\030\007 \001(\tP\000b\006proto3"
+      "\022\022\021\n\tupdate_id\030\n \001(\022\"\220\001\n\005NetIf\022\023\n\013net_if" +
+      "_uuid\030\001 \001(\t\022\023\n\013net_if_name\030\002 \001(\t\022\023\n\013net_" +
+      "if_addr\030\003 \001(\t\022\023\n\013net_if_type\030\004 \001(\t\022\026\n\016st" +
+      "lt_conn_port\030\005 \001(\021\022\033\n\023stlt_conn_encr_typ" +
+      "e\030\006 \001(\t\"\367\001\n\010NodeConn\022\027\n\017other_node_uuid\030" +
+      "\001 \001(\t\022\027\n\017other_node_name\030\002 \001(\t\022\027\n\017other_" +
+      "node_type\030\003 \001(\t\022\030\n\020other_node_flags\030\004 \001(" +
+      "\022\022\026\n\016node_conn_uuid\030\005 \001(\t\022B\n\017node_conn_p",
+      "rops\030\006 \003(\0132).com.linbit.linstor.proto.Li" +
+      "nStorMapEntry\022*\n\"other_node_diskless_sto" +
+      "r_pool_uuid\030\007 \001(\tP\000b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5818,7 +5992,7 @@ public final class MsgIntNodeDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_NetIf_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_NetIf_descriptor,
-        new java.lang.String[] { "NetIfUuid", "NetIfName", "NetIfAddr", "NetIfType", "NetIfPort", });
+        new java.lang.String[] { "NetIfUuid", "NetIfName", "NetIfAddr", "NetIfType", "StltConnPort", "StltConnEncrType", });
     internal_static_com_linbit_linstor_proto_javainternal_NodeConn_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_com_linbit_linstor_proto_javainternal_NodeConn_fieldAccessorTable = new

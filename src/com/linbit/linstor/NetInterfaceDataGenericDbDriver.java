@@ -3,6 +3,8 @@ package com.linbit.linstor;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
@@ -35,15 +37,17 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     private static final String NET_NAME = DbConstants.NODE_NET_NAME;
     private static final String NET_DSP_NAME = DbConstants.NODE_NET_DSP_NAME;
     private static final String INET_ADDRESS = DbConstants.INET_ADDRESS;
+    private static final String STLT_CONN_PORT = DbConstants.STLT_CONN_PORT;
+    private static final String STLT_CONN_ENCR_TYPE = DbConstants.STLT_CONN_ENCR_TYPE;
 
     private static final String NNI_SELECT_BY_NODE =
         " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-                      INET_ADDRESS +
+                      INET_ADDRESS + ", " + STLT_CONN_PORT + ", " + STLT_CONN_ENCR_TYPE +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ?";
     private static final String NNI_SELECT_BY_NODE_AND_NET =
         " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-                      INET_ADDRESS +
+                      INET_ADDRESS + ", " + STLT_CONN_PORT + ", " + STLT_CONN_ENCR_TYPE +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +
                     NET_NAME  + " = ?";
@@ -54,6 +58,12 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
             INET_ADDRESS +
         ") VALUES (?, ?, ?, ?, ?)";
+    private static final String NNI_INSERT_WITH_STLT_CONN =
+        " INSERT INTO " + TBL_NODE_NET +
+        " (" +
+        NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
+        INET_ADDRESS + ", " + STLT_CONN_PORT + ", " + STLT_CONN_ENCR_TYPE +
+        ") VALUES (?, ?, ?, ?, ?, ?, ?)";
     private static final String NNI_DELETE =
         " DELETE FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +
@@ -63,8 +73,20 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         " SET "   + INET_ADDRESS  + " = ? " +
         " WHERE " + NODE_NAME     + " = ? AND " +
         "       " + NET_NAME      + " = ?";
+    private static final String NNI_UPDATE_STLT_CONN_PORT =
+        " UPDATE " + TBL_NODE_NET +
+        " SET "   + STLT_CONN_PORT + " = ? " +
+        " WHERE " + NODE_NAME      + " = ? AND " +
+        "       " + NET_NAME       + " = ?";
+    private static final String NNI_UPDATE_STLT_CONN_ENCR_TYPE =
+        " UPDATE " + TBL_NODE_NET +
+        " SET "   + STLT_CONN_ENCR_TYPE + " = ? " +
+        " WHERE " + NODE_NAME           + " = ? AND " +
+        "       " + NET_NAME            + " = ?";
 
     private final SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> netIfAddressDriver;
+    private final SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> netIfStltConnPortDriver;
+    private final SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> netIfStltConnEncrTypeDriver;
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -85,6 +107,8 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         transMgrProvider = transMgrProviderRef;
 
         netIfAddressDriver = new NodeNetInterfaceAddressDriver();
+        netIfStltConnPortDriver = new StltConnPortDriver();
+        netIfStltConnEncrTypeDriver = new StltConnEncrTypeDriver();
     }
 
     @Override
@@ -195,6 +219,18 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         return netIfAddressDriver;
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> getStltConnEncrTypeDriver()
+    {
+        return netIfStltConnEncrTypeDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> getStltConnPortDriver()
+    {
+        return netIfStltConnPortDriver;
+    }
+
     public List<NetInterfaceData> loadNetInterfaceData(Node node)
         throws SQLException
     {
@@ -263,6 +299,8 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         {
             UUID uuid = UUID.fromString(resultSet.getString(NET_UUID));
             LsIpAddress addr;
+            TcpPortNumber port = null;
+            EncryptionType encrType = null;
 
             try
             {
@@ -281,6 +319,31 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                     invalidIpAddressExc
                 );
             }
+
+            String encrTypeStr = resultSet.getString(STLT_CONN_ENCR_TYPE);
+            Integer portInt = resultSet.getInt(STLT_CONN_PORT);
+            if (!resultSet.wasNull())
+            {
+                try
+                {
+                    port = new TcpPortNumber(portInt);
+                }
+                catch (ValueOutOfRangeException valueOutOfRangeExc)
+                {
+                    throw new LinStorSqlRuntimeException(
+                        String.format(
+                            "The satellite connection port of a stored NetInterface could not be restored " +
+                                "(NodeName=%s, NetInterfaceName=%s, invalid stlt conn port=%s)",
+                            node.getName().displayValue,
+                            netName.displayValue,
+                            portInt
+                        ),
+                        valueOutOfRangeExc
+                    );
+                }
+                encrType = EncryptionType.valueOfIgnoreCase(encrTypeStr);
+            }
+
             try
             {
                 ret = new NetInterfaceData(
@@ -289,6 +352,8 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                     netName,
                     node,
                     addr,
+                    port,
+                    encrType,
                     this,
                     transObjFactory,
                     transMgrProvider
@@ -380,6 +445,94 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                 inetAddress.getAddress(),
                 getId(parent)
             );
+        }
+    }
+
+    private class StltConnPortDriver implements SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(NetInterfaceData parent, TcpPortNumber port)
+            throws SQLException
+        {
+            errorReporter.logTrace(
+                "Updating NetInterface's satellite connection port from [%d] to [%d] %s",
+                getStltPort(parent),
+                port.value,
+                getId(parent)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(NNI_UPDATE_STLT_CONN_PORT))
+            {
+                stmt.setInt(1, port.value);
+                stmt.setString(2, parent.getNode().getName().value);
+                stmt.setString(3, parent.getName().value);
+
+                stmt.executeUpdate();
+            }
+            errorReporter.logTrace(
+                "NetInterface's satellite connection port updated from [%d] to [%d] %s",
+                getStltPort(parent),
+                port.value,
+                getId(parent)
+            );
+        }
+
+        private int getStltPort(NetInterfaceData netIf)
+        {
+            int port = 0;
+            try
+            {
+                port = netIf.getStltConnPort(dbCtx).value;
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            }
+            return port;
+        }
+    }
+
+    private class StltConnEncrTypeDriver implements SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(NetInterfaceData parent, EncryptionType encrType)
+            throws SQLException
+        {
+            errorReporter.logTrace(
+                "Updating NetInterface's satellite connections encryption type from [%s] to [%s] %s",
+                getStltEncrType(parent),
+                encrType.name(),
+                getId(parent)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(NNI_UPDATE_STLT_CONN_ENCR_TYPE))
+            {
+                stmt.setString(1, encrType.name());
+                stmt.setString(2, parent.getNode().getName().value);
+                stmt.setString(3, parent.getName().value);
+
+                stmt.executeUpdate();
+            }
+            errorReporter.logTrace(
+                "NetInterface's satellite connections encryption type updated from [%s] to [%s] %s",
+                getStltEncrType(parent),
+                encrType.name(),
+                getId(parent)
+            );
+        }
+
+        private String getStltEncrType(NetInterfaceData parent)
+        {
+            String type = null;
+            try
+            {
+                type = parent.getStltConnEncryptionType(dbCtx).name();
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            }
+            return type;
         }
     }
 }

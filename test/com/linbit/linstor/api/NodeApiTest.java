@@ -5,7 +5,6 @@ import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
@@ -111,15 +110,6 @@ public class NodeApiTest extends ApiTestBase
     }
 
     @Test
-    public void crtMissingStltConn() throws Exception
-    {
-        evaluateTest(
-            new CreateNodeCall(ApiConsts.FAIL_MISSING_STLT_CONN)
-                .clearStltApis()
-        );
-    }
-
-    @Test
     public void crtInvalidNodeName() throws Exception
     {
         evaluateTest(
@@ -143,9 +133,7 @@ public class NodeApiTest extends ApiTestBase
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_NAME)
                 .clearNetIfApis()
-                .clearStltApis()
                 .addNetIfApis("invalid net if name", "127.0.0.1")
-                .addStltApis("invalid net if name")
         );
     }
 
@@ -155,9 +143,7 @@ public class NodeApiTest extends ApiTestBase
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_ADDR)
                 .clearNetIfApis()
-                .clearStltApis()
                 .addNetIfApis("net0", "127.0.0.1.42")
-                .addStltApis("net0")
         );
     }
 
@@ -167,9 +153,7 @@ public class NodeApiTest extends ApiTestBase
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_ADDR)
                 .clearNetIfApis()
-                .clearStltApis()
                 .addNetIfApis("net0", "0::0::0")
-                .addStltApis("net0")
         );
     }
 
@@ -198,7 +182,6 @@ public class NodeApiTest extends ApiTestBase
         String nodeName;
         String nodeType;
         List<NetInterfaceApi> netIfApis;
-        List<SatelliteConnectionApi> stltApis;
         Map<String, String> props;
 
         CreateNodeCall(long expectedRc)
@@ -214,11 +197,7 @@ public class NodeApiTest extends ApiTestBase
             nodeType = ApiConsts.VAL_NODE_TYPE_STLT;
             netIfApis = new ArrayList<>();
             netIfApis.add(
-                createNetInterfaceApi("tcp0", "127.0.0.1")
-            );
-            stltApis = new ArrayList<>();
-            stltApis.add(
-                createStltConnApi("tcp0")
+                createNetInterfaceApi("tcp0","127.0.0.1")
             );
             props = new TreeMap<>();
         }
@@ -230,7 +209,6 @@ public class NodeApiTest extends ApiTestBase
                 nodeName,
                 nodeType,
                 netIfApis,
-                stltApis,
                 props
             );
         }
@@ -256,18 +234,6 @@ public class NodeApiTest extends ApiTestBase
         public CreateNodeCall addNetIfApis(String name, String address)
         {
             this.netIfApis.add(createNetInterfaceApi(name, address));
-            return this;
-        }
-
-        public CreateNodeCall clearStltApis()
-        {
-            this.stltApis.clear();
-            return this;
-        }
-
-        public AbsApiCallTester addStltApis(String name)
-        {
-            this.stltApis.add(createStltConnApi(name));
             return this;
         }
 

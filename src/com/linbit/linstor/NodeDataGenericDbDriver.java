@@ -7,12 +7,14 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -86,7 +88,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private final SingleColumnDatabaseDriver<NodeData, NodeType> typeDriver;
 
     private final Provider<NetInterfaceDataGenericDbDriver> netInterfaceDriverProvider;
-    private final Provider<SatelliteConnectionDataGenericDbDriver> satelliteConnectionDriverProvider;
     private final Provider<ResourceDataGenericDbDriver> resourceDataDriverProvider;
     private final Provider<StorPoolDataGenericDbDriver> storPoolDriverProvider;
     private final Provider<NodeConnectionDataGenericDbDriver> nodeConnectionDriverProvider;
@@ -104,7 +105,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         ErrorReporter errorReporterRef,
         @Uninitialized CoreModule.NodesMap nodesMapRef,
         Provider<NetInterfaceDataGenericDbDriver> netInterfaceDriverProviderRef,
-        Provider<SatelliteConnectionDataGenericDbDriver> satelliteConnectionDriverProviderRef,
         Provider<ResourceDataGenericDbDriver> resourceDataDriverProviderRef,
         Provider<StorPoolDataGenericDbDriver> storPoolDriverProviderRef,
         Provider<NodeConnectionDataGenericDbDriver> nodeConnectionDriverProviderRef,
@@ -119,7 +119,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         errorReporter = errorReporterRef;
         nodesMap = nodesMapRef;
         netInterfaceDriverProvider = netInterfaceDriverProviderRef;
-        satelliteConnectionDriverProvider = satelliteConnectionDriverProviderRef;
         resourceDataDriverProvider = resourceDataDriverProviderRef;
         storPoolDriverProvider = storPoolDriverProviderRef;
         nodeConnectionDriverProvider = nodeConnectionDriverProviderRef;
@@ -273,13 +272,18 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
                     netIfaces.size()
                 );
 
-                SatelliteConnectionData satelliteConnection =
-                    satelliteConnectionDriverProvider.get().load(node, true);
-                node.setSatelliteConnection(dbCtx, satelliteConnection);
-                errorReporter.logTrace(
-                    "Node's SatelliteConnection restored %s",
-                    getId(node)
-                );
+                String curStltConnName = node.getProps(dbCtx).getProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
+                if (curStltConnName != null)
+                {
+                    node.setSatelliteConnection(
+                        dbCtx,
+                        node.getNetInterface(dbCtx, new NetInterfaceName(curStltConnName))
+                    );
+                    errorReporter.logTrace(
+                        "Node's SatelliteConnection restored %s",
+                        getId(node)
+                    );
+                }
 
                 List<ResourceData> resList =
                     resourceDataDriverProvider.get().loadResourceData(dbCtx, node);
@@ -330,6 +334,14 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             catch (AccessDeniedException accessDeniedExc)
             {
                 GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            }
+            catch (InvalidKeyException invldKeyExc)
+            {
+                throw new ImplementationError("Hardcoded invalid key exception", invldKeyExc);
+            }
+            catch (InvalidNameException invldNameExc)
+            {
+                throw new ImplementationError("Invalid stored named exception", invldNameExc);
             }
         }
         else

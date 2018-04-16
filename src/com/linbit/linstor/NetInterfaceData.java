@@ -13,6 +13,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.inject.Provider;
@@ -33,6 +34,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final NetInterfaceName niName;
 
     private final TransactionSimpleObject<NetInterfaceData, LsIpAddress> niAddress;
+    private final TransactionSimpleObject<NetInterfaceData, TcpPortNumber> niStltConnPort;
+    private final TransactionSimpleObject<NetInterfaceData, EncryptionType> niStltConnEncrType;
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
 
@@ -44,6 +47,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         NetInterfaceName netName,
         Node node,
         LsIpAddress addr,
+        TcpPortNumber stltConnPortRef,
+        EncryptionType stltConnEncrTypeRef,
         NetInterfaceDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
@@ -64,6 +69,17 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             addr,
             dbDriver.getNetInterfaceAddressDriver()
         );
+        niStltConnPort = transObjFactory.createTransactionSimpleObject(
+            this,
+            stltConnPortRef,
+            dbDriver.getStltConnPortDriver()
+        );
+        niStltConnEncrType = transObjFactory.createTransactionSimpleObject(
+            this,
+            stltConnEncrTypeRef,
+            dbDriver.getStltConnEncrTypeDriver()
+        );
+
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.<TransactionObject>asList(
@@ -120,6 +136,49 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
+    public boolean isUsableAsStltConn(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return niStltConnEncrType.get() != null && niStltConnPort.get() != null;
+    }
+
+    @Override
+    public boolean setStltConn(AccessContext accCtx, TcpPortNumber port, EncryptionType encrType)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        TcpPortNumber oldPort = niStltConnPort.set(port);
+        EncryptionType oldEncrType = niStltConnEncrType.set(encrType);
+
+        return !Objects.equals(oldPort, port) || !Objects.equals(oldEncrType, encrType);
+    }
+
+    @Override
+    public TcpPortNumber getStltConnPort(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return niStltConnPort.get();
+    }
+
+    @Override
+    public EncryptionType getStltConnEncryptionType(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return niStltConnEncrType.get();
+    }
+
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         if (!deleted.get())
@@ -145,10 +204,21 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     @Override
     public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
+        Integer port = null;
+        String encrType = null;
+
+        if (niStltConnPort.get() != null && niStltConnEncrType.get() != null)
+        {
+            port = niStltConnPort.get().value;
+            encrType = niStltConnEncrType.get().name();
+        }
+
         return new NetInterfacePojo(
-                getUuid(),
-                getName().getDisplayName(),
-                getAddress(accCtx).getAddress()
+            getUuid(),
+            getName().getDisplayName(),
+            getAddress(accCtx).getAddress(),
+            port,
+            encrType
         );
     }
 

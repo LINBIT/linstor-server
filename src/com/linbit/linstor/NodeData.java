@@ -1,10 +1,14 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -28,6 +32,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -79,7 +84,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient Peer peer;
 
-    private transient TransactionSimpleObject<NodeData, SatelliteConnection> satelliteConnection;
+    private transient TransactionSimpleObject<NodeData, NetInterface> currentStltConn;
 
     private TransactionSimpleObject<NodeData, Boolean> deleted;
 
@@ -97,7 +102,7 @@ public class NodeData extends BaseTransactionObject implements Node
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         super(transMgrProvider);
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
@@ -132,7 +137,7 @@ public class NodeData extends BaseTransactionObject implements Node
             this, checkedType, dbDriver.getNodeTypeDriver()
         );
 
-        satelliteConnection = transObjFactory.createTransactionSimpleObject(this, null, null);
+        currentStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             flags,
@@ -144,7 +149,7 @@ public class NodeData extends BaseTransactionObject implements Node
             nodeConnections,
             nodeProps,
             deleted,
-            satelliteConnection
+            currentStltConn
         );
         activateTransMgr();
     }
@@ -312,10 +317,10 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.remove(niRef.getName());
-        SatelliteConnection stltConn = satelliteConnection.get();
-        if (stltConn != null && stltConn.getNetInterface().equals(niRef))
+
+        if (Objects.equals(currentStltConn.get(), niRef))
         {
-            stltConn.delete(accCtx);
+            removeSatelliteconnection(accCtx);
         }
     }
 
@@ -468,25 +473,45 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public SatelliteConnection getSatelliteConnection(AccessContext accCtx) throws AccessDeniedException
+    public NetInterface getSatelliteConnection(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return satelliteConnection.get();
+        return currentStltConn.get();
     }
 
     @Override
-    public void setSatelliteConnection(AccessContext accCtx, SatelliteConnection satelliteConnectionRef)
+    public void setSatelliteConnection(AccessContext accCtx, NetInterface satelliteConnectionRef)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        satelliteConnection.set(satelliteConnectionRef);
+
+        currentStltConn.set(satelliteConnectionRef);
+        try
+        {
+            nodeProps.setProp(
+                ApiConsts.KEY_CUR_STLT_CONN_NAME,
+                satelliteConnectionRef.getName().displayValue
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
-    void removeSatelliteconnection(AccessContext accCtx, SatelliteConnection satelliteConnectionRef)
+    void removeSatelliteconnection(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        satelliteConnection.set(null);
+        currentStltConn.set(null);
+        try
+        {
+            nodeProps.removeProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
@@ -545,7 +570,7 @@ public class NodeData extends BaseTransactionObject implements Node
         throws AccessDeniedException
     {
         List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
-        for(NetInterface ni : streamNetInterfaces(accCtx).collect(toList()))
+        for (NetInterface ni : streamNetInterfaces(accCtx).collect(toList()))
         {
             netInterfaces.add(ni.getApiData(accCtx));
         }

@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.NetInterface.EncryptionType;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.security.GenericDbBase;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +31,9 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     private final String niAddrStr = "127.0.0.1";
     private final LsIpAddress niAddr;
 
+    private final TcpPortNumber niStltConnPort;
+    private final EncryptionType niStltConnEncrType;
+
     private Node node;
 
     private NetInterfaceDataGenericDbDriver dbDriver;
@@ -37,11 +42,15 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     private NetInterfaceData niData;
     private SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> niAddrDriver;
 
+
+
     public NetInterfaceDataGenericDbDriverTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
         niName = new NetInterfaceName("TestNetInterfaceName");
         niAddr = new LsIpAddress(niAddrStr);
+        niStltConnPort = new TcpPortNumber(ApiConsts.DFLT_STLT_PORT_PLAIN);
+        niStltConnEncrType = EncryptionType.PLAIN;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -71,7 +80,16 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
 
         // not persisted
         niData = new NetInterfaceData(
-            niUuid, SYS_CTX, niName, node, niAddr, dbDriver, transObjFactory, transMgrProvider
+            niUuid,
+            SYS_CTX,
+            niName,
+            node,
+            niAddr,
+            niStltConnPort,
+            niStltConnEncrType,
+            dbDriver,
+            transObjFactory,
+            transMgrProvider
         );
     }
 
@@ -120,6 +138,8 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             node,
             netInterfaceName,
             niAddr,
+            niStltConnPort,
+            niStltConnEncrType,
             true,
             false
         );
@@ -178,6 +198,8 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             node,
             niName,
             niAddr,
+            niStltConnPort,
+            niStltConnEncrType,
             false,
             false
         );
@@ -194,6 +216,8 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             node,
             niName,
             niAddr,
+            niStltConnPort,
+            niStltConnEncrType,
             false,
             false
         );
@@ -225,6 +249,8 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             node,
             niName,
             niAddr,
+            niStltConnPort,
+            niStltConnEncrType,
             true,
             false
         );
@@ -337,8 +363,12 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             node,
             niName,
             niAddr,
+            niStltConnPort,
+            niStltConnEncrType,
             false,
             true
         );
     }
+
+    // TODO: add tests for StltConnPort and StltConnEncrType
 }

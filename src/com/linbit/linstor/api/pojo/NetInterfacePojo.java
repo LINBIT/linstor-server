@@ -12,16 +12,22 @@ public class NetInterfacePojo implements NetInterface.NetInterfaceApi
     private final UUID uuid;
     private final String name;
     private final String address;
+    private final Integer port;
+    private final String encrType;
 
     public NetInterfacePojo(
         final UUID uuidRef,
         final String nameRef,
-        final String addressRef
+        final String addressRef,
+        final Integer portRef,
+        final String encrTypeRef
     )
     {
         uuid = uuidRef;
         name = nameRef;
         address = addressRef;
+        port = portRef;
+        encrType = encrTypeRef;
     }
 
     @Override
@@ -40,5 +46,23 @@ public class NetInterfacePojo implements NetInterface.NetInterfaceApi
     public String getAddress()
     {
         return address;
+    }
+
+    @Override
+    public boolean isUsableAsSatelliteConnection()
+    {
+        return port != null && encrType != null;
+    }
+
+    @Override
+    public int getSatelliteConnectionPort()
+    {
+        return port;
+    }
+
+    @Override
+    public String getSatelliteConnectionEncryptionType()
+    {
+        return encrType;
     }
 }

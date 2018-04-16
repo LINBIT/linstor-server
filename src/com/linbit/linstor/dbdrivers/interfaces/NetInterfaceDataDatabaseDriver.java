@@ -3,9 +3,11 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import java.sql.SQLException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.TcpPortNumber;
 
 /**
  * Database driver for {@link NetInterfaceData}.
@@ -56,4 +58,14 @@ public interface NetInterfaceDataDatabaseDriver
      * A special sub-driver to update the persisted ipAddress.
      */
     SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver();
+
+    /**
+     * A special sub-driver to update the persisted satellite connection port.
+     */
+    SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> getStltConnPortDriver();
+
+    /**
+     * A special sub-driver to update the persisted satellite connection port.
+     */
+    SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> getStltConnEncrTypeDriver();
 }

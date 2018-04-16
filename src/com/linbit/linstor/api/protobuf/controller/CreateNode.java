@@ -2,11 +2,9 @@ package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -51,7 +49,6 @@ public class CreateNode implements ApiCall
             protoNode.getName(),
             protoNode.getType(),
             extractNetIfs(protoNode.getNetInterfacesList()),
-            extractSatelliteConnections(protoNode.getNetInterfacesList()),
             ProtoMapUtils.asMap(protoNode.getPropsList())
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
@@ -65,27 +62,5 @@ public class CreateNode implements ApiCall
             netIfs.add(new NetInterfaceApiData(protoNetIf));
         }
         return netIfs;
-    }
-
-    private List<SatelliteConnectionApi> extractSatelliteConnections(
-        List<NetInterfaceOuterClass.NetInterface> protoNetIfs
-    )
-    {
-        List<SatelliteConnectionApi> stltConnList = new ArrayList<>();
-        for (NetInterfaceOuterClass.NetInterface netIf : protoNetIfs)
-        {
-            if (netIf.hasStltEncryptionType() && netIf.hasStltPort())
-            {
-                stltConnList.add(
-                    new SatelliteConnectionPojo(
-                        netIf.getName(),
-                        netIf.getStltPort(),
-                        netIf.getStltEncryptionType()
-                    )
-                );
-            }
-            // TODO: if only one is set, maybe print a warning or something
-        }
-        return stltConnList;
     }
 }

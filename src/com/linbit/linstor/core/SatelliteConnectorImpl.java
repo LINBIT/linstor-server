@@ -5,8 +5,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.NetComContainer;
@@ -61,10 +62,10 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     {
         try
         {
-            SatelliteConnection satelliteConnection = node.getSatelliteConnection(accCtx);
-            if (satelliteConnection != null)
+            NetInterface stltConn = node.getSatelliteConnection(accCtx);
+            if (stltConn != null)
             {
-                SatelliteConnection.EncryptionType type = satelliteConnection.getEncryptionType();
+                EncryptionType type = stltConn.getStltConnEncryptionType(accCtx);
                 String serviceType;
                 switch (type)
                 {
@@ -100,8 +101,8 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                 {
                     connectSatellite(
                         new InetSocketAddress(
-                            satelliteConnection.getNetInterface().getAddress(accCtx).getAddress(),
-                            satelliteConnection.getPort().value
+                            stltConn.getAddress(accCtx).getAddress(),
+                            stltConn.getStltConnPort(accCtx).value
                         ),
                         tcpConnector,
                         node

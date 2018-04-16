@@ -69,7 +69,9 @@ public class ApplyNode implements ApiCall
                 new NetInterfacePojo(
                     UUID.fromString(netIf.getNetIfUuid()),
                     netIf.getNetIfName(),
-                    netIf.getNetIfAddr()
+                    netIf.getNetIfAddr(),
+                    netIf.getStltConnPort(),
+                    netIf.getStltConnEncrType()
                 )
             );
         }

@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import javax.inject.Inject;
+
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Resource.RscFlags;
@@ -8,6 +10,7 @@ import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
@@ -351,6 +354,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 node1,
                 netName,
                 new LsIpAddress(netHost),
+                new TcpPortNumber(ApiConsts.DFLT_CTRL_PORT_PLAIN),
+                EncryptionType.PLAIN,
                 true,
                 true
             );

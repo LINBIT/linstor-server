@@ -5,6 +5,8 @@ import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -27,6 +29,20 @@ public class SatelliteNiDriver implements NetInterfaceDataDatabaseDriver
     public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver()
     {
         return (SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>) singleColDriver;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> getStltConnEncrTypeDriver()
+    {
+        return (SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType>) singleColDriver;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> getStltConnPortDriver()
+    {
+        return (SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber>) singleColDriver;
     }
 
     @Override

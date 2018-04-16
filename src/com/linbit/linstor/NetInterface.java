@@ -14,6 +14,18 @@ import java.util.UUID;
  */
 public interface NetInterface extends TransactionObject, DbgInstanceUuid
 {
+    enum EncryptionType
+    {
+        SSL,
+        PLAIN;
+
+        public static EncryptionType valueOfIgnoreCase(String string)
+            throws IllegalArgumentException
+        {
+            return valueOf(string.toUpperCase());
+        }
+    }
+
     UUID getUuid();
 
     NetInterfaceName getName();
@@ -26,6 +38,15 @@ public interface NetInterface extends TransactionObject, DbgInstanceUuid
     LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, SQLException;
 
+    boolean isUsableAsStltConn(AccessContext accCtx) throws AccessDeniedException;
+
+    boolean setStltConn(AccessContext accCtx, TcpPortNumber port, EncryptionType encrType)
+        throws AccessDeniedException, SQLException;
+
+    TcpPortNumber getStltConnPort(AccessContext accCtx) throws AccessDeniedException;
+
+    EncryptionType getStltConnEncryptionType(AccessContext accCtx) throws AccessDeniedException;
+
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
@@ -36,5 +57,13 @@ public interface NetInterface extends TransactionObject, DbgInstanceUuid
         UUID getUuid();
         String getName();
         String getAddress();
+
+        boolean isUsableAsSatelliteConnection();
+
+        int getSatelliteConnectionPort();
+        String getSatelliteConnectionEncryptionType();
     }
+
+
+
 }

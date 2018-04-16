@@ -22,9 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.Message;
 import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
@@ -58,8 +56,6 @@ import com.linbit.linstor.proto.MsgModVlmConnOuterClass.MsgModVlmConn;
 import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
 import com.linbit.linstor.proto.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.RscOuterClass.Rsc;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.NodeConnOuterClass.NodeConn;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.RscConnOuterClass.RscConn;
@@ -611,8 +607,7 @@ public class ClientProtobuf implements Runnable
         String nodeName,
         String nodeType,
         Map<String, String> props,
-        List<? extends NetInterface.NetInterfaceApi> netIfs,
-        List<? extends SatelliteConnectionApi> stltConns
+        List<? extends NetInterface.NetInterfaceApi> netIfs
     )
         throws IOException
     {
@@ -623,29 +618,6 @@ public class ClientProtobuf implements Runnable
         if (props != null)
         {
             nodeBuilder.addAllProps(asLinStorMapEntryList(props));
-        }
-
-        HashMap<String, SatelliteConnectionApi> stltConnMap = new HashMap<>();
-        for (SatelliteConnectionApi stltConnApi : stltConns)
-        {
-            stltConnMap.put(stltConnApi.getNetInterfaceName(), stltConnApi);
-        }
-
-        for (NetInterfaceApi netIf : netIfs)
-        {
-            SatelliteConnectionApi stltConn = stltConnMap.get(netIf.getName());
-            Builder netIfBuilder = NetInterfaceOuterClass.NetInterface.newBuilder()
-                .setName(netIf.getName())
-                .setAddress(netIf.getAddress());
-            if (stltConn != null)
-            {
-                netIfBuilder
-                    .setStltEncryptionType(stltConn.getEncryptionType())
-                    .setStltPort(stltConn.getPort());
-            }
-            nodeBuilder.addNetInterfaces(
-                netIfBuilder.build()
-            );
         }
 
         MsgCrtNode.Builder msgCrtNodeBuilder = MsgCrtNode.newBuilder();

@@ -94,10 +94,10 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
 
     Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
 
-    SatelliteConnection getSatelliteConnection(AccessContext accCtx)
+    NetInterface getSatelliteConnection(AccessContext accCtx)
         throws AccessDeniedException;
 
-    void setSatelliteConnection(AccessContext accCtx, SatelliteConnection stltConn)
+    void setSatelliteConnection(AccessContext accCtx, NetInterface netIf)
         throws AccessDeniedException, SQLException;
 
     void markDeleted(AccessContext accCtx)

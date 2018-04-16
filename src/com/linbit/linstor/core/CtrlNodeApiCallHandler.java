@@ -10,6 +10,7 @@ import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
@@ -17,9 +18,6 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.SatelliteConnection.EncryptionType;
-import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.SatelliteConnectionDataFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
@@ -68,7 +66,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final SatelliteConnector satelliteConnector;
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
-    private final SatelliteConnectionDataFactory satelliteConnectionDataFactory;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -82,7 +79,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        SatelliteConnectionDataFactory satelliteConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
@@ -106,7 +102,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         satelliteConnector = satelliteConnectorRef;
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
-        satelliteConnectionDataFactory = satelliteConnectionDataFactoryRef;
     }
 
     /**
@@ -152,7 +147,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
-        List<SatelliteConnectionApi> satelliteConnectionApis,
         Map<String, String> propsMap
     )
     {
@@ -181,31 +175,43 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 reportMissingNetInterfaces();
             }
             else
-            if (satelliteConnectionApis.isEmpty())
-            {
-                // TODO for auxiliary nodes maybe no stltConn required?
-                reportMissingSatelliteConnection();
-            }
-            else
             {
                 Map<String, NetInterface> netIfMap = new TreeMap<>();
 
                 for (NetInterfaceApi netIfApi : netIfs)
                 {
+                    TcpPortNumber port = null;
+                    EncryptionType encrType = null;
+                    if (netIfApi.isUsableAsSatelliteConnection())
+                    {
+                        port = asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
+                        encrType = asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
+                    }
+
                     NetInterfaceData netIf = createNetInterface(
                         node,
                         asNetInterfaceName(netIfApi.getName()),
-                        asLsIpAddress(netIfApi.getAddress())
+                        asLsIpAddress(netIfApi.getAddress()),
+                        port,
+                        encrType
                     );
+
+                    if (netIfApi.isUsableAsSatelliteConnection() &&
+                        getCurrentStltConn(node) == null
+                    )
+                    {
+                        setCurrentStltConn(node, netIf);
+                    }
                     netIfMap.put(netIfApi.getName(), netIf);
                 }
 
-                SatelliteConnectionApi stltConnApi = satelliteConnectionApis.iterator().next();
-
-                createSatelliteConnection(
-                    node,
-                    stltConnApi
-                );
+                if (getCurrentStltConn(node) == null)
+                {
+                    addAnswer(
+                        "No satellite connection defined for " + getObjectDescriptionInline(),
+                        ApiConsts.WARN_NO_STLT_CONN_DEFINED
+                    );
+                }
 
                 commit();
                 nodesMap.put(nodeName, node);
@@ -234,6 +240,47 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             );
         }
         return apiCallRc;
+    }
+
+    private void setCurrentStltConn(Node node, NetInterfaceData netIf)
+    {
+        try
+        {
+            node.setSatelliteConnection(peerAccCtx, netIf);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "set the current satellite connection of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        catch (SQLException exc)
+        {
+            throw asSqlExc(
+                exc,
+                "setting the current satellite connection of " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    private NetInterface getCurrentStltConn(Node node)
+    {
+        NetInterface netIf = null;
+        try
+        {
+            netIf = node.getSatelliteConnection(peerAccCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asAccDeniedExc(
+                exc,
+                "access the current satellite connection of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return netIf;
     }
 
     public ApiCallRc modifyNode(
@@ -642,7 +689,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private NetInterfaceData createNetInterface(
         Node node,
         NetInterfaceName netName,
-        LsIpAddress addr
+        LsIpAddress addr,
+        TcpPortNumber port,
+        EncryptionType type
     )
         throws ApiCallHandlerFailedException
     {
@@ -654,6 +703,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 node,
                 netName,
                 addr,
+                port,
+                type,
                 true,   // persist node
                 true    // throw LinStorDataAlreadyExistsException if needed
             );
@@ -683,52 +734,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         return netIf;
     }
-
-    private void createSatelliteConnection(
-        Node node,
-        SatelliteConnectionApi stltConnApi
-    )
-    {
-        NetInterfaceName stltNetIfName = asNetInterfaceName(stltConnApi.getNetInterfaceName());
-        TcpPortNumber stltNetIfPort = asTcpPortNumber(stltConnApi.getPort());
-        EncryptionType stltNetIfEncryptionType = asEncryptionType(stltConnApi.getEncryptionType());
-
-        NetInterface netIf = getNetInterface(node, stltNetIfName);
-
-        try
-        {
-
-            satelliteConnectionDataFactory.getInstance(
-                peerAccCtx,
-                node,
-                netIf,
-                stltNetIfPort,
-                stltNetIfEncryptionType,
-                true,
-                true
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "creating a satellite connection",
-                ApiConsts.FAIL_ACC_DENIED_STLT_CONN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException alreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "New node already had an satellite connection",
-                alreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(sqlExc, "creating a satellite connection");
-        }
-    }
-
 
     private NetInterface getNetInterface(Node node, NetInterfaceName niName)
     {

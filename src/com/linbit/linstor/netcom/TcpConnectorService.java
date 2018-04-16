@@ -12,8 +12,8 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.AccessToDeletedDataException;
+import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.TcpConnectorMessage.ReadState;
@@ -313,12 +313,19 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
         else
         {
-            SatelliteConnection stltConn;
+            NetInterface stltConn;
             try
             {
                 stltConn = peer.getNode().getSatelliteConnection(privilegedAccCtx);
-                final String host = stltConn.getNetInterface().getAddress(privilegedAccCtx).getAddress();
-                final int port = stltConn.getPort().value;
+                if (stltConn == null)
+                {
+                    throw new ImplementationError(
+                        "Attempt to connect to a satellite with unknown port / encryption type",
+                        null
+                    );
+                }
+                final String host = stltConn.getAddress(privilegedAccCtx).getAddress();
+                final int port = stltConn.getStltConnPort(privilegedAccCtx).value;
                 address = new InetSocketAddress(host, port);
             }
             catch (AccessDeniedException exc)

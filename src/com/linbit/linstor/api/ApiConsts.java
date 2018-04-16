@@ -96,6 +96,7 @@ public class ApiConsts
     public static final long FAIL_INVLD_TRANSPORT_TYPE = 214 | MASK_ERROR;
     public static final long FAIL_INVLD_TCP_PORT = 215 | MASK_ERROR;
     public static final long FAIL_INVLD_CRYPT_PASSPHRASE = 216 | MASK_ERROR;
+    public static final long FAIL_INVLD_ENCRYPT_TYPE = 217 | MASK_ERROR;
 
     /*
      * Codes 300-399: dependency not found failures
@@ -195,6 +196,7 @@ public class ApiConsts
     public static final long WARN_INVLD_OPT_PROP_NETCOM_ENABLED = 1001 | MASK_WARN;
     public static final long WARN_NOT_CONNECTED = 1002 | MASK_WARN;
     public static final long WARN_STLT_NOT_UPDATED = 1003 | MASK_WARN;
+    public static final long WARN_NO_STLT_CONN_DEFINED = 1004 | MASK_WARN;
     public static final long WARN_NOT_FOUND = 3000 | MASK_WARN;
 
     /*
@@ -397,6 +399,7 @@ public class ApiConsts
     public static final String KEY_SSL_PROTO = "SslProto";
     public static final String KEY_TCP_PORT_AUTO_RANGE = "TcpPortAutoRange";
     public static final String KEY_MINOR_NR_AUTO_RANGE = "MinorNrAutoRange";
+    public static final String KEY_CUR_STLT_CONN_NAME = "CurStltConnName";
 
     /*
      * Property values
