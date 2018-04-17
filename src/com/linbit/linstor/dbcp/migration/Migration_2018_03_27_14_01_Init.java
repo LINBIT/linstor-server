@@ -15,7 +15,7 @@ public class Migration_2018_03_27_14_01_Init extends LinstorMigration
     public void migrate(Connection connection)
         throws Exception
     {
-        if (MigrationUtils.statementFails(connection, "SELECT 1 FROM SEC_CONFIGURATION"))
+        if (!MigrationUtils.tableExists(connection, "SEC_CONFIGURATION"))
         {
             String sql = MigrationUtils.loadResource("2018_03_27_14_01_init-db.sql");
 

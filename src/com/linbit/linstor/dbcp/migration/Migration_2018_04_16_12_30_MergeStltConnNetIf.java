@@ -1,8 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,15 +14,15 @@ import java.sql.Statement;
 )
 public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigration
 {
-    private static final String TBL_NET_IF = "LINSTOR.NODE_NET_INTERFACES";
+    private static final String TBL_NET_IF = "NODE_NET_INTERFACES";
     private static final String NODE_NAME  = "NODE_NAME";
     private static final String NET_NAME   = "NODE_NET_NAME";
-    private static final String TBL_PROPS_CONTAINERS = "LINSTOR.PROPS_CONTAINERS";
+    private static final String TBL_PROPS_CONTAINERS = "PROPS_CONTAINERS";
     private static final String PROPS_INSTANCE       = "PROPS_INSTANCE";
     private static final String PROP_KEY             = "PROP_KEY";
     private static final String PROP_VALUE           = "PROP_VALUE";
 
-    private static final String OLD_TBL_SC           =  "LINSTOR.SATELLITE_CONNECTIONS";
+    private static final String OLD_TBL_SC           = "SATELLITE_CONNECTIONS";
     private static final String OLD_SC_UUID          = "UUID";
     private static final String OLD_SC_NODE_NAME     = "NODE_NAME";
     private static final String OLD_SC_NODE_NET_NAME = "NODE_NET_NAME";
@@ -38,11 +36,8 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
     public void migrate(Connection connection)
         throws Exception
     {
-        if (MigrationUtils.statementFails(connection, "SELECT " + NEW_NI_STLT_CONN_PORT + " FROM " + TBL_NET_IF))
+        if (MigrationUtils.tableExists(connection, OLD_TBL_SC))
         {
-            DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(getDbType());
-            GenericDbDriver.executeStatement(connection, databaseInfo.isolationStatement());
-
             alterTableNetIf(connection);
             copyData(connection);
             dropTableStltConn(connection);

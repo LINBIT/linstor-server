@@ -15,21 +15,30 @@ public class MigrationUtils
         return Resources.toString(Resources.getResource(MigrationUtils.class, resourceName), StandardCharsets.UTF_8);
     }
 
-    public static boolean statementFails(Connection connection, String sql)
+    public static boolean statementSucceeds(Connection connection, String sql)
         throws SQLException
     {
-        boolean fails = false;
+        boolean succeeds = true;
         try
         {
             connection.createStatement().executeQuery(sql);
         }
         catch (SQLException exc)
         {
-            fails = true;
+            succeeds = false;
+        }
+        finally
+        {
             connection.rollback();
         }
 
-        return fails;
+        return succeeds;
+    }
+
+    public static boolean tableExists(Connection connection, String tableName)
+        throws SQLException
+    {
+        return statementSucceeds(connection, "SELECT 1 FROM " + tableName);
     }
 
     private MigrationUtils()
