@@ -3,35 +3,35 @@ package com.linbit.linstor.dbdrivers.derby;
 public class DbConstants
 {
     // View names
-    public static final String VIEW_SEC_IDENTITIES_LOAD = "LINSTOR.SEC_IDENTITIES_LOAD";
-    public static final String VIEW_SEC_ROLES_LOAD      = "LINSTOR.SEC_ROLES_LOAD";
-    public static final String VIEW_SEC_TYPES_LOAD      = "LINSTOR.SEC_TYPES_LOAD";
-    public static final String VIEW_SEC_TYPE_RULES_LOAD = "LINSTOR.SEC_TYPE_RULES_LOAD";
+    public static final String VIEW_SEC_IDENTITIES_LOAD = "SEC_IDENTITIES_LOAD";
+    public static final String VIEW_SEC_ROLES_LOAD      = "SEC_ROLES_LOAD";
+    public static final String VIEW_SEC_TYPES_LOAD      = "SEC_TYPES_LOAD";
+    public static final String VIEW_SEC_TYPE_RULES_LOAD = "SEC_TYPE_RULES_LOAD";
 
     // Table names
-    public static final String TBL_SEC_CONFIGURATION     = "LINSTOR.SEC_CONFIGURATION";
-    public static final String TBL_SEC_IDENTITIES        = "LINSTOR.SEC_IDENTITIES";
-    public static final String TBL_SEC_TYPES             = "LINSTOR.SEC_TYPES";
-    public static final String TBL_SEC_ROLES             = "LINSTOR.SEC_ROLES";
-    public static final String TBL_SEC_ID_ROLE_MAP       = "LINSTOR.SEC_ID_ROLE_MAP";
-    public static final String TBL_SEC_ACCESS_TYPES      = "LINSTOR.SEC_ACCESS_TYPES";
-    public static final String TBL_SEC_TYPE_RULES        = "LINSTOR.SEC_TYPE_RULES";
-    public static final String TBL_SEC_DFLT_ROLES        = "LINSTOR.SEC_DFLT_ROLES";
-    public static final String TBL_SEC_OBJECT_PROTECTION = "LINSTOR.SEC_OBJECT_PROTECTION";
-    public static final String TBL_SEC_ACL_MAP           = "LINSTOR.SEC_ACL_MAP";
-    public static final String TBL_NODES                 = "LINSTOR.NODES";
-    public static final String TBL_NODE_NET_INTERFACES   = "LINSTOR.NODE_NET_INTERFACES";
-    public static final String TBL_SATELLITE_CONNECTIONS = "LINSTOR.SATELLITE_CONNECTIONS";
-    public static final String TBL_RESOURCE_DEFINITIONS  = "LINSTOR.RESOURCE_DEFINITIONS";
-    public static final String TBL_RESOURCES             = "LINSTOR.RESOURCES";
-    public static final String TBL_STOR_POOL_DEFINITIONS = "LINSTOR.STOR_POOL_DEFINITIONS";
-    public static final String TBL_NODE_STOR_POOL        = "LINSTOR.NODE_STOR_POOL";
-    public static final String TBL_VOLUME_DEFINITIONS    = "LINSTOR.VOLUME_DEFINITIONS";
-    public static final String TBL_VOLUMES               = "LINSTOR.VOLUMES";
-    public static final String TBL_NODE_CONNECTIONS      = "LINSTOR.NODE_CONNECTIONS";
-    public static final String TBL_RESOURCE_CONNECTIONS  = "LINSTOR.RESOURCE_CONNECTIONS";
-    public static final String TBL_VOLUME_CONNECTIONS    = "LINSTOR.VOLUME_CONNECTIONS";
-    public static final String TBL_PROPS_CONTAINERS      = "LINSTOR.PROPS_CONTAINERS";
+    public static final String TBL_SEC_CONFIGURATION     = "SEC_CONFIGURATION";
+    public static final String TBL_SEC_IDENTITIES        = "SEC_IDENTITIES";
+    public static final String TBL_SEC_TYPES             = "SEC_TYPES";
+    public static final String TBL_SEC_ROLES             = "SEC_ROLES";
+    public static final String TBL_SEC_ID_ROLE_MAP       = "SEC_ID_ROLE_MAP";
+    public static final String TBL_SEC_ACCESS_TYPES      = "SEC_ACCESS_TYPES";
+    public static final String TBL_SEC_TYPE_RULES        = "SEC_TYPE_RULES";
+    public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
+    public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
+    public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
+    public static final String TBL_NODES                 = "NODES";
+    public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    public static final String TBL_SATELLITE_CONNECTIONS = "SATELLITE_CONNECTIONS";
+    public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
+    public static final String TBL_RESOURCES             = "RESOURCES";
+    public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
+    public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    public static final String TBL_VOLUMES               = "VOLUMES";
+    public static final String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
+    public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
+    public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
+    public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
