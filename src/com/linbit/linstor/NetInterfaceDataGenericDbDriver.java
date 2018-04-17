@@ -14,17 +14,19 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 @Singleton
 public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabaseDriver
@@ -166,7 +168,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     public void create(NetInterfaceData netInterfaceData) throws SQLException
     {
         errorReporter.logTrace("Creating NetInterface %s", getId(netInterfaceData));
-        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_INSERT))
+        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_INSERT_WITH_STLT_CONN))
         {
             LsIpAddress inetAddress = getAddress(netInterfaceData);
 
@@ -176,7 +178,21 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             stmt.setString(4, netInterfaceData.getName().displayValue);
             stmt.setString(5, inetAddress.getAddress());
 
+            if (netInterfaceData.isUsableAsStltConn(dbCtx))
+            {
+                stmt.setInt(6, netInterfaceData.getStltConnPort(dbCtx).value);
+                stmt.setString(7, netInterfaceData.getStltConnEncryptionType(dbCtx).name());
+            }
+            else
+            {
+                stmt.setNull(6, Types.INTEGER);
+                stmt.setNull(7, Types.VARCHAR);
+            }
             stmt.executeUpdate();
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
         }
         errorReporter.logTrace("NetInterface created %s", getId(netInterfaceData));
     }

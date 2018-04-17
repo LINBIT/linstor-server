@@ -1,16 +1,18 @@
 package com.linbit.linstor.core;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
@@ -40,9 +42,6 @@ import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,7 +54,9 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
 
 public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
@@ -433,7 +434,12 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     if (!hasRsc)
                     {
                         nodesMap.remove(nodeName);
-                        nodeData.getPeer(apiCtx).closeConnection();
+
+                        Peer nodePeer = nodeData.getPeer(apiCtx);
+                        if (nodePeer != null)
+                        {
+                            nodePeer.closeConnection();
+                        }
                     }
                     else
                     {

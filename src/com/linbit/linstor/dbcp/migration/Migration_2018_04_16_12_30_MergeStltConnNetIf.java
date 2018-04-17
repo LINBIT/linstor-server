@@ -1,11 +1,14 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 @Migration(
     version = "2018.04.16.12.30",
@@ -14,17 +17,21 @@ import java.sql.SQLException;
 public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigration
 {
     private static final String TBL_NET_IF = "LINSTOR.NODE_NET_INTERFACES";
-    private static final String NODE_NAME = "NODE_NAME";
-    private static final String NET_NAME = "NODE_NET_NAME";
+    private static final String NODE_NAME  = "NODE_NAME";
+    private static final String NET_NAME   = "NODE_NET_NAME";
+    private static final String TBL_PROPS_CONTAINERS = "LINSTOR.PROPS_CONTAINERS";
+    private static final String PROPS_INSTANCE       = "PROPS_INSTANCE";
+    private static final String PROP_KEY             = "PROP_KEY";
+    private static final String PROP_VALUE           = "PROP_VALUE";
 
-    private static final String OLD_TBL_SC =  "LINSTOR.SATELLITE_CONNECTIONS";
-    private static final String OLD_SC_UUID = "UUID";
-    private static final String OLD_SC_NODE_NAME = "NODE_NAME";
+    private static final String OLD_TBL_SC           =  "LINSTOR.SATELLITE_CONNECTIONS";
+    private static final String OLD_SC_UUID          = "UUID";
+    private static final String OLD_SC_NODE_NAME     = "NODE_NAME";
     private static final String OLD_SC_NODE_NET_NAME = "NODE_NET_NAME";
-    private static final String OLD_SC_TCP_PORT = "TCP_PORT";
-    private static final String OLD_SC_INET_TYPE = "INET_TYPE";
+    private static final String OLD_SC_TCP_PORT      = "TCP_PORT";
+    private static final String OLD_SC_INET_TYPE     = "INET_TYPE";
 
-    private static final String NEW_NI_STLT_CONN_PORT = "STLT_CONN_PORT";
+    private static final String NEW_NI_STLT_CONN_PORT      = "STLT_CONN_PORT";
     private static final String NEW_NI_STLT_CONN_ENCR_TYPE = "STLT_CONN_ENCR_TYPE";
 
     @Override
@@ -61,29 +68,45 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
             "SELECT " + OLD_SC_UUID + ", " + OLD_SC_NODE_NAME + ", " + OLD_SC_NODE_NET_NAME + ", " +
              OLD_SC_TCP_PORT + ", " + OLD_SC_INET_TYPE + " " +
             " FROM " + OLD_TBL_SC;
-        String update =
+        String updateNetIfTbl =
             " UPDATE " + TBL_NET_IF +
-            " SET "   + NEW_NI_STLT_CONN_PORT + " = ? " +
-            " WHERE " + NODE_NAME      + " = ? AND " +
-            "       " + NET_NAME       + " = ?";
+            " SET "   + NEW_NI_STLT_CONN_PORT      + " = ?, " +
+                        NEW_NI_STLT_CONN_ENCR_TYPE + " = ? " +
+            " WHERE " + NODE_NAME + " = ? AND " +
+            "       " + NET_NAME  + " = ?";
+        String insertNodeProps =
+            " INSERT INTO " + TBL_PROPS_CONTAINERS +
+            " (" + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE + ") "+
+            " VALUES (?, ?, ?)";
 
-        PreparedStatement updateStmt = connection.prepareStatement(update);
+
+        PreparedStatement netIfUpdateStmt = connection.prepareStatement(updateNetIfTbl);
+        PreparedStatement insertNodePropsStmt = connection.prepareStatement(insertNodeProps);
         ResultSet resultSet = connection.createStatement().executeQuery(query);
         while (resultSet.next())
         {
-            updateStmt.setInt(1, resultSet.getInt(OLD_SC_TCP_PORT));
-            updateStmt.setString(2, OLD_SC_NODE_NAME);
-            updateStmt.setString(3, OLD_SC_NODE_NET_NAME);
-            updateStmt.executeQuery();
+            netIfUpdateStmt.setInt(1, resultSet.getInt(OLD_SC_TCP_PORT));
+            netIfUpdateStmt.setString(2, resultSet.getString(OLD_SC_INET_TYPE));
+            netIfUpdateStmt.setString(3, resultSet.getString(OLD_SC_NODE_NAME));
+            netIfUpdateStmt.setString(4, resultSet.getString(OLD_SC_NODE_NET_NAME));
+            netIfUpdateStmt.executeUpdate();
+
+            insertNodePropsStmt.setString(1, "/NODES/" + resultSet.getString(OLD_SC_NODE_NAME));
+            insertNodePropsStmt.setString(2, ApiConsts.KEY_CUR_STLT_CONN_NAME);
+            insertNodePropsStmt.setString(3, resultSet.getString(OLD_SC_NODE_NET_NAME));
+            insertNodePropsStmt.executeUpdate();
         }
         resultSet.close();
-        updateStmt.close();
+        netIfUpdateStmt.close();
+        insertNodePropsStmt.close();
     }
 
     private void dropTableStltConn(Connection connection) throws SQLException
     {
         String dropOldSc =
             "DROP TABLE " + OLD_TBL_SC;
-        connection.createStatement().execute(dropOldSc);
+        Statement dropTblStmt = connection.createStatement();
+        dropTblStmt.executeUpdate(dropOldSc);
+        dropTblStmt.close();
     }
 }
