@@ -1435,7 +1435,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             for (Node nodeToContact : nodesToContact.values())
             {
                 Peer satellitePeer = nodeToContact.getPeer(apiCtx);
-                if (satellitePeer.isConnected() && !fullSyncFailed(satellitePeer))
+                if (satellitePeer != null && satellitePeer.isConnected() && !fullSyncFailed(satellitePeer))
                 {
                     satellitePeer.sendMessage(changedMessage);
                 }
