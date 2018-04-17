@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -161,9 +162,11 @@ public class ConfFileBuilderTest
 
         Props storPoolProps = Mockito.mock(Props.class);
         Props vlmProps = Mockito.mock(Props.class);
+        Props vlmDfnProps = Mockito.mock(Props.class);
         Props rscProps = Mockito.mock(Props.class);
         Props nodeProps = Mockito.mock(Props.class);
         Props rscDfnProps = Mockito.mock(Props.class);
+        Optional<Props> drbdprops = Optional.empty();
 
         when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
 
@@ -203,6 +206,9 @@ public class ConfFileBuilderTest
         when(rscDfnProps.getNamespace(any(String.class))).thenReturn(Optional.empty());
         when(resourceDefinition.getPort(any(AccessContext.class)))
             .thenReturn(new TcpPortNumber(42));
+
+        when(volumeDefinition.getProps(accessContext)).thenReturn(vlmDfnProps);
+        when(vlmDfnProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS)).thenReturn(drbdprops);
 
         when(resource.getObjProt()).thenReturn(dummyObjectProtection);
         when(resource.getDefinition()).thenReturn(resourceDefinition);

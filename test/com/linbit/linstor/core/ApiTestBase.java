@@ -86,6 +86,9 @@ public abstract class ApiTestBase extends GenericDbBase
     @Inject @Named(ControllerCoreModule.CONTROLLER_PROPS)
     protected Props ctrlConf;
 
+    @Inject @Named(ControllerCoreModule.SATELLITE_PROPS)
+    protected Props stltConf;
+
     @Inject Provider<TransactionMgr> transMgrProvider;
 
     @Before
