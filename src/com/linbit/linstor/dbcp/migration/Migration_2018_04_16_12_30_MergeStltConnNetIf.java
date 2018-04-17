@@ -31,7 +31,7 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
     public void migrate(Connection connection)
         throws Exception
     {
-        if (MigrationUtils.statementFails(connection, "SELECT 1 FROM SATELLITE_CONNECTION"))
+        if (MigrationUtils.statementFails(connection, "SELECT " + NEW_NI_STLT_CONN_PORT + " FROM " + TBL_NET_IF))
         {
             DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(getDbType());
             GenericDbDriver.executeStatement(connection, databaseInfo.isolationStatement());
