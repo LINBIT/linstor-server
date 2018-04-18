@@ -43,7 +43,7 @@ public class PropertyBuilder
                 prop = new RegexProperty(
                     name,
                     key,
-                    "(?i)(?:true|false)",
+                    "(?i)(?:true|false|yes|no)",
                     internal,
                     info
                 );
