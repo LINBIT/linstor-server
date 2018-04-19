@@ -165,22 +165,19 @@ public final class Satellite
         }
 
         // now check that the config include is in /etc/drbd.conf
-        final Path drbdConf = Paths.get("/etc/drbd.conf");
-        final String includeString = "include /var/lib/drbd.d/*.res;";
-        if (Files.exists(drbdConf))
+        final Path linstorInclude = Paths.get("/etc/drbd.d/linstor-resources.res");
+        if (!Files.exists(linstorInclude))
         {
-            try (Stream<String> stream = Files.lines(drbdConf))
+            try
             {
-                if (stream.noneMatch(line -> line.contains(includeString)))
-                {
-                    final String str = "\n# This line was added by linstor\n" + includeString + "\n";
-                    Files.write(drbdConf, str.getBytes(), StandardOpenOption.APPEND);
-                }
+                final String text = "# This line was added by linstor\n" +
+                    "include \"/var/lib/drbd.d/*.res\";\n";
+                Files.write(linstorInclude, text.getBytes());
             }
             catch (IOException ioExc)
             {
                 throw new ImplementationError(
-                    "Unable to append linstor drbd config include to: " + drbdConf.toString(),
+                    "Unable to write linstor drbd include file to: " + linstorInclude.toString(),
                     ioExc
                 );
             }
