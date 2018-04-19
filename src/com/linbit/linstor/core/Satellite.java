@@ -1,7 +1,19 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.Guice;
 import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Stream;
+
+import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
@@ -33,12 +45,6 @@ import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
-
-import javax.inject.Named;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * linstor satellite prototype
@@ -112,6 +118,8 @@ public final class Satellite
 
         try
         {
+            ensureDrbdConfigSetup();
+
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
@@ -136,6 +144,46 @@ public final class Satellite
         finally
         {
             reconfigurationLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Adds /var/lib/drbd.d/ include to drbd.conf and ensures the /var/lib/drbd.d directory exists
+     */
+    private void ensureDrbdConfigSetup()
+    {
+        try
+        {
+            Files.createDirectories(Paths.get(SatelliteCoreModule.CONFIG_PATH));
+        }
+        catch (IOException ioExc)
+        {
+            throw new ImplementationError(
+                "Unable to create linstor drbd configuration directory: " + SatelliteCoreModule.CONFIG_PATH,
+                ioExc
+            );
+        }
+
+        // now check that the config include is in /etc/drbd.conf
+        final Path drbdConf = Paths.get("/etc/drbd.conf");
+        final String includeString = "include /var/lib/drbd.d/*.res;";
+        if (Files.exists(drbdConf))
+        {
+            try (Stream<String> stream = Files.lines(drbdConf))
+            {
+                if (stream.noneMatch(line -> line.contains(includeString)))
+                {
+                    final String str = "\n# This line was added by linstor\n" + includeString + "\n";
+                    Files.write(drbdConf, str.getBytes(), StandardOpenOption.APPEND);
+                }
+            }
+            catch (IOException ioExc)
+            {
+                throw new ImplementationError(
+                    "Unable to append linstor drbd config include to: " + drbdConf.toString(),
+                    ioExc
+                );
+            }
         }
     }
 
