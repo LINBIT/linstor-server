@@ -49,7 +49,7 @@ public class WhitelistTest
             pwl.isAllowed(
                 LinStorObject.STORAGEPOOL,
                 buildKey(ApiConsts.NAMESPC_STORAGE_DRIVER, ApiConsts.KEY_STOR_POOL_VOLUME_GROUP),
-                "in_validName", false
+                "in_validName+*", false
             )
         );
     }
