@@ -183,6 +183,18 @@ task generatePropRules(type:Exec) {
     commandLine 'make', '../src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java'
 }
 
+task genJava(type:Exec) {
+    workingDir 'linstor-common'
+
+    commandLine 'make', 'java'
+}
+
+task cleanCommon(type:Exec) {
+    workingDir 'linstor-common'
+
+    commandLine 'make', 'cleanjava'
+}
+
 task cleanTestCommands(type:Exec) {
   workingDir 'test-support'
 
@@ -195,6 +207,10 @@ task cleanTestCommands(type:Exec) {
   ext.output = {
     return standardOutput.toString()
   }
+}
+
+task generate {
+    dependsOn generatePropRules
 }
 
 compileJava {
