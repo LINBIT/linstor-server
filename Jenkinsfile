@@ -1,20 +1,21 @@
 node {
     def GRADLE_HOME = tool name: 'gradle', type: 'hudson.plugins.gradle.GradleInstallation'
 
-    stage('Checkout')
+    stage('Checkout') {
+        checkout scm
+        sh 'git submodule update --init'
+    }
 
-    checkout scm
+    stage('Assemble') {
+        sh "${GRADLE_HOME}/bin/gradle clean assemble"
+    }
 
-    stage('Assemble')
+    stage('Check') {
+        // Continue on non-zero exit code from gradle
+        sh "${GRADLE_HOME}/bin/gradle check || true"
+    }
 
-    sh "${GRADLE_HOME}/bin/gradle clean assemble"
-
-    stage('Check')
-
-    // Continue on non-zero exit code from gradle
-    sh "${GRADLE_HOME}/bin/gradle check || true"
-
-    stage('JUnit Report')
-
-    junit 'build/test-results/test/*.xml'
+    stage('JUnit Report') {
+        junit 'build/test-results/test/*.xml'
+    }
 }
