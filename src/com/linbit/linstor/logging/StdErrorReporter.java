@@ -299,6 +299,10 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 }
 
                 // Report the error and any nested errors
+                if (errorInfo.getCause() != null && printStackTraces)
+                {
+                    errorInfo.getCause().printStackTrace();
+                }
                 int loopCtr = 0;
                 for (Throwable nestedErrorInfo = errorInfo.getCause();
                      nestedErrorInfo != null;

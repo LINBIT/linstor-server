@@ -26,7 +26,7 @@ public abstract class BaseErrorReporter
     final String dmModule;
     final Calendar cal;
 
-    private final boolean printStackTraces;
+    protected final boolean printStackTraces;
 
 
     // Unique instance ID of this error reporter instance
