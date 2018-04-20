@@ -159,9 +159,4 @@ public class PropertyBuilder
         min = Long.parseLong(minStr);
         return this;
     }
-
-    public static void main(String[] args)
-    {
-        GeneratedPropertyRules.getWhitelistedProperties();
-    }
 }

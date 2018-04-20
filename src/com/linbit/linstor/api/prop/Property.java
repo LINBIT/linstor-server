@@ -8,11 +8,18 @@ public interface Property
     enum PropertyType
     {
         REGEX,
-        SYMBOL,
+        SYMBOL("handler"),
         BOOLEAN,
-        RANGE,
+        RANGE("numeric"),
         STRING,
         NUMERIC_OR_SYMBOL;
+
+        private String[] alternativeNames;
+
+        PropertyType(String... alternativeNamesRef)
+        {
+            alternativeNames = alternativeNamesRef;
+        }
 
         public static PropertyType valueOfIgnoreCase(String typeRef)
         {
@@ -24,6 +31,14 @@ public interface Property
                 {
                     ret = propType;
                     break;
+                }
+                for (String altName : propType.alternativeNames)
+                {
+                    if (altName.equalsIgnoreCase(type))
+                    {
+                        ret = propType;
+                        break;
+                    }
                 }
             }
             return ret;

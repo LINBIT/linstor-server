@@ -30,6 +30,8 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
 import com.linbit.linstor.core.StltStorPoolApiCallHandler.ChangedData;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
@@ -81,6 +83,9 @@ public class StltApiCallHandler
     private final Props stltConf;
     private final EventBroker eventBroker;
 
+    private WhitelistPropsReconfigurator whiteListPropsReconfigurator;
+    private WhitelistProps whitelistProps;
+
     @Inject
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -106,7 +111,9 @@ public class StltApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
         StltVlmDfnApiCallHandler vlmDfnHandlerRef,
-        EventBroker eventBrokerRef
+        EventBroker eventBrokerRef,
+        WhitelistProps whiteListPropsRef,
+        WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -133,6 +140,8 @@ public class StltApiCallHandler
         vlmDfnHandler = vlmDfnHandlerRef;
         stltConf = satellitePropsRef;
         eventBroker = eventBrokerRef;
+        whitelistProps = whiteListPropsRef;
+        whiteListPropsReconfigurator = whiteListPropsReconfiguratorRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -320,6 +329,8 @@ public class StltApiCallHandler
                     vlmDfnHandler.decryptAllVlmDfnKeys();
                 }
 
+                whiteListPropsReconfigurator.reconfigure();
+
                 updateMonitor.setFullSyncApplied();
 
                 // There are no explicit controller - satellite watches.
@@ -357,7 +368,6 @@ public class StltApiCallHandler
             // in other words: if this exception happens, either the controller or this satellite has
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
             updateMonitor.getNextFullSyncId();
-
         }
     }
 
@@ -381,9 +391,7 @@ public class StltApiCallHandler
         }
     }
 
-    public void applyControllerChanges(
-        Map<String, String> satelliteProps
-    )
+    public void applyControllerChanges(Map<String, String> satelliteProps)
     {
         try (LockSupport ls = LockSupport.lock(reconfigurationLock.writeLock()))
         {
@@ -396,7 +404,10 @@ public class StltApiCallHandler
                 )
             )
             {
-                ConfFileBuilder confFileBuilder = new ConfFileBuilder(errorReporter);
+                ConfFileBuilder confFileBuilder = new ConfFileBuilder(
+                    errorReporter,
+                    whitelistProps
+                );
                 commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
             }
             catch (IOException ioExc)
@@ -404,9 +415,10 @@ public class StltApiCallHandler
                 String ioErrorMsg = ioExc.getMessage();
                 if (ioErrorMsg == null)
                 {
-                    ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
-                        "the I/O error";
+                    ioErrorMsg = "The runtime environment or operating system did not provide a " +
+                        "description of the I/O error";
                 }
+
                 errorReporter.reportError(
                     new DrbdDeviceHandler.ResourceException(
                         "Creation of the common Linstor DRBD configuration file " +

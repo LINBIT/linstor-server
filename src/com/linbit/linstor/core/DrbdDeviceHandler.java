@@ -32,6 +32,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.pojo.VolumeStateDevManager;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
@@ -93,6 +94,7 @@ class DrbdDeviceHandler implements DeviceHandler
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final MetaDataApi drbdMd;
+    private final WhitelistProps whitelistProps;
 
     // Number of peer slots for DRBD meta data; this should be replaced with a property of the
     // resource definition or otherwise a system-wide default
@@ -121,7 +123,8 @@ class DrbdDeviceHandler implements DeviceHandler
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.NodesMap nodesMapRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         errLog = errLogRef;
@@ -135,6 +138,7 @@ class DrbdDeviceHandler implements DeviceHandler
         controllerPeerConnector = controllerPeerConnectorRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
+        whitelistProps = whitelistPropsRef;
         drbdMd = new MetaData();
     }
 
@@ -1118,7 +1122,13 @@ class DrbdDeviceHandler implements DeviceHandler
             )
         )
         {
-            String content = new ConfFileBuilder(this.errLog, wrkCtx, rsc, peerResources).build();
+            String content = new ConfFileBuilder(
+                this.errLog,
+                wrkCtx,
+                rsc,
+                peerResources,
+                whitelistProps
+            ).build();
             resFileOut.write(content.getBytes());
         }
         catch (IOException ioExc)

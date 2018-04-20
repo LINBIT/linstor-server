@@ -1603,10 +1603,13 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             String key = entry.getKey();
             String value = entry.getValue();
             boolean isAuxProp = key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/");
-            if (
+
+            // boolean isPropAllowed = true;
+            boolean isPropAllowed =
                 isAuxProp ||
-                propsWhiteList.isAllowed(linstorObj, key, value, true)
-            )
+                propsWhiteList.isAllowed(linstorObj, key, value, true);
+
+            if (isPropAllowed)
             {
                 try
                 {

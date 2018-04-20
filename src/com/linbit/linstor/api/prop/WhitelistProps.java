@@ -1,18 +1,33 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.util.Arrays;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 @Singleton
 public class WhitelistProps
@@ -23,6 +38,7 @@ public class WhitelistProps
     @Inject
     public WhitelistProps(ErrorReporter errorReporterRef)
     {
+        rules = new HashMap<>();
         errorReporter = errorReporterRef;
 
         List<Property> props = GeneratedPropertyRules.getWhitelistedProperties();
@@ -32,8 +48,6 @@ public class WhitelistProps
         );
 
         Map<LinStorObject, List<String>> rulesStr = GeneratedPropertyRules.getWhitelistedRules();
-
-        rules = new HashMap<>();
         for (Entry<LinStorObject, List<String>> ruleEntry : rulesStr.entrySet())
         {
             Map<String, Property> rulesPropMap = new HashMap<>();
@@ -49,6 +63,126 @@ public class WhitelistProps
         Arrays.stream(LinStorObject.values())
             .filter(obj -> !rules.containsKey(obj))
             .forEach(obj -> rules.put(obj, new HashMap<>()));
+    }
+
+    /**
+     * This method should only be called while holding a reconfiguration.writeLock
+     *
+     * This instance should be singleton, as (beside reconfiguration) it is only read-only.
+     * Modifying it while not holding the reconf.writeLock might cause {@link ConcurrentModificationException}s
+     */
+    public void reconfigure()
+    {
+        rules.clear();
+    }
+
+    public void appendRules(
+        boolean overrideProp,
+        InputStream xmlStream,
+        String keyPrefix,
+        LinStorObject... lsObjs
+    )
+    {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try
+        {
+            Document doc = dbf.newDocumentBuilder().parse(xmlStream);
+            NodeList options = doc.getElementsByTagName("option");
+
+            for (int idx = 0; idx < options.getLength(); idx++)
+            {
+                Element option = (Element) options.item(idx);
+                NamedNodeMap optionArgs = option.getAttributes();
+                String propName = optionArgs.getNamedItem("name").getTextContent();
+                String propType = optionArgs.getNamedItem("type").getTextContent();
+
+                if (!"set-defaults".equals(propName))
+                {
+                    // just ignore "set-defaults"
+
+                    PropertyBuilder propBuilder = new PropertyBuilder();
+                    propBuilder.name(propName);
+                    propBuilder.type(propType);
+                    String actualKey;
+                    if (keyPrefix == null)
+                    {
+                        actualKey = propName;
+                    }
+                    else
+                    {
+                        actualKey = keyPrefix + "/" + propName;
+                    }
+                    propBuilder.keyStr(actualKey);
+
+                    switch (propType.toLowerCase())
+                    {
+                        case "boolean":
+                        case "string":
+                            // nothing to do
+                            break;
+                        case "handler":
+                            propBuilder.values(extractEnumValues(option, "handler"));
+                            break;
+                        case "numeric":
+                            propBuilder.min(getText(option, "min"));
+                            propBuilder.max(getText(option, "max"));
+                            break;
+                        case "numeric-or-symbol":
+                            propBuilder.values(extractEnumValues(option, "symbol"));
+                            propBuilder.min(getText(option, "min"));
+                            propBuilder.max(getText(option, "max"));
+                            break;
+                        default:
+                            throw new RuntimeException("unknown type: " + propType);
+                    }
+
+                    Property prop = propBuilder.build();
+
+                    for (LinStorObject lsObj : lsObjs)
+                    {
+                        Map<String, Property> propMap = rules.get(lsObj);
+                        if (propMap == null)
+                        {
+                            propMap = new HashMap<>();
+                            rules.put(lsObj, propMap);
+                        }
+
+                        if (!overrideProp)
+                        {
+                            Property oldProp = propMap.get(propName);
+                            if (oldProp != null)
+                            {
+                                throw new LinStorRuntimeException(
+                                    "Property '" + propName + "' would be overridden by the current operation."
+                                );
+                            }
+                        }
+                        propMap.put(prop.getKey(), prop);
+                    }
+                }
+            }
+        }
+        catch (SAXException exc)
+        {
+            throw new LinStorRuntimeException(
+                "Invalid XML file",
+                exc
+            );
+        }
+        catch (IOException exc)
+        {
+            throw new LinStorRuntimeException(
+                "IO Exception occured while reading drbd options xml",
+                exc
+            );
+        }
+        catch (ParserConfigurationException exc)
+        {
+            throw new LinStorRuntimeException(
+                "Error while parsing the drbd options xml",
+                exc
+            );
+        }
     }
 
     public boolean isAllowed(LinStorObject lsObj, String key, String value, boolean log)
@@ -93,5 +227,38 @@ public class WhitelistProps
     public boolean isKeyKnown(LinStorObject linstorObj, String key)
     {
         return rules.get(linstorObj).get(key) != null;
+    }
+
+
+    private String[] extractEnumValues(Element option, String tag)
+    {
+        ArrayList<String> enums = new ArrayList<>();
+        foreachElement(
+            option,
+            tag,
+            (elem) ->  enums.add(elem.getTextContent())
+        );
+        String[] arr = new String[enums.size()];
+        enums.toArray(arr);
+        return arr;
+    }
+
+
+    private void foreachElement(Element elem, String tag, Consumer<Element> consumer)
+    {
+        NodeList list = elem.getElementsByTagName(tag);
+        for (int idx = 0; idx < list.getLength(); idx++)
+        {
+            Node node = list.item(idx);
+            if (node instanceof Element)
+            {
+                consumer.accept((Element) node);
+            }
+        }
+    }
+
+    private String getText(Element elem, String string)
+    {
+        return elem.getElementsByTagName(string).item(0).getTextContent();
     }
 }

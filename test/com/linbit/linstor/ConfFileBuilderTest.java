@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -35,6 +36,7 @@ public class ConfFileBuilderTest
     private AccessContext accessContext;
 
     private ObjectProtection dummyObjectProtection;
+    private WhitelistProps whitelistProps;
 
     @Before
     public void setUp()
@@ -46,6 +48,9 @@ public class ConfFileBuilderTest
         accessContext = DummySecurityInitializer.getSystemAccessContext();
 
         dummyObjectProtection = DummySecurityInitializer.getDummyObjectProtection(accessContext);
+
+        whitelistProps = new WhitelistProps(errorReporter);
+        // just let it empty - we do not want test drbd-options anyways here
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -57,7 +62,8 @@ public class ConfFileBuilderTest
             errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
+            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            whitelistProps
         ).build();
 
         int leftBraceCount = countOccurrences(confFile, "\\{");
@@ -75,7 +81,8 @@ public class ConfFileBuilderTest
             errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
+            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            whitelistProps
         ).build();
 
         assertThat(countOccurrences(confFile, "^ *resource")).isEqualTo(1);
@@ -101,14 +108,16 @@ public class ConfFileBuilderTest
             errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
+            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            whitelistProps
         ).build();
 
         String confFileDeleted = new ConfFileBuilder(
             errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", true, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", true, false))
+            Collections.singletonList(makeMockResource(202, "5.6.7.8", true, false)),
+            whitelistProps
         ).build();
 
         assertThat(countOccurrences(confFileNormal, "^ *volume ")).isEqualTo(2);
@@ -124,14 +133,16 @@ public class ConfFileBuilderTest
             errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false))
+            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            whitelistProps
         ).build();
 
         String confFileDeleted = new ConfFileBuilder(
             errorReporter,
             accessContext,
             makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, true))
+            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, true)),
+            whitelistProps
         ).build();
 
         assertThat(countOccurrences(confFileNormal, "^ *on ")).isEqualTo(2);

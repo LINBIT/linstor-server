@@ -4,6 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.slf4j.event.Level;
+
 public class ConfFileBuilder
 {
     private static final ResourceNameComparator RESOURCE_NAME_COMPARATOR = new ResourceNameComparator();
@@ -29,21 +33,25 @@ public class ConfFileBuilder
     private final AccessContext accCtx;
     private final Resource localRsc;
     private final Collection<Resource> remoteResources;
+    private final WhitelistProps whitelistProps;
 
     private StringBuilder stringBuilder;
     private int indentDepth;
+
 
     public ConfFileBuilder(
         final ErrorReporter errorReporterRef,
         final AccessContext accCtxRef,
         final Resource localRscRef,
-        final Collection<Resource> remoteResourcesRef
+        final Collection<Resource> remoteResourcesRef,
+        final WhitelistProps whitelistPropsRef
     )
     {
         errorReporter = errorReporterRef;
         accCtx = accCtxRef;
         localRsc = localRscRef;
         remoteResources = remoteResourcesRef;
+        whitelistProps = whitelistPropsRef;
 
         stringBuilder = new StringBuilder();
         indentDepth = 0;
@@ -51,13 +59,15 @@ public class ConfFileBuilder
 
     // Constructor used for the common linstor conf
     public ConfFileBuilder(
-        final ErrorReporter errorReporterRef
+        final ErrorReporter errorReporterRef,
+        final WhitelistProps whitelistPropsRef
     )
     {
         errorReporter = errorReporterRef;
         accCtx = null;
         localRsc = null;
         remoteResources = null;
+        whitelistProps = whitelistPropsRef;
 
         stringBuilder = new StringBuilder();
         indentDepth = 0;
@@ -90,7 +100,11 @@ public class ConfFileBuilder
             // include linstor common
             appendLine("template-file \"linstor_common.conf\";");
 
-            appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS);
+            appendDrbdOptions(
+                LinStorObject.CONTROLLER,
+                rscDfn.getProps(accCtx),
+                ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS
+            );
 
             appendLine("net");
             try (Section netSection = new Section())
@@ -100,7 +114,11 @@ public class ConfFileBuilder
                 // TODO: make configurable
                 appendLine("shared-secret     \"%s\";", localRsc.getDefinition().getSecret(accCtx));
 
-                appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+                appendDrbdOptions(
+                    LinStorObject.CONTROLLER,
+                    rscDfn.getProps(accCtx),
+                    ApiConsts.NAMESPC_DRBD_NET_OPTIONS
+                );
             }
 
             if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
@@ -108,7 +126,11 @@ public class ConfFileBuilder
                 appendLine("disk");
                 try (Section ignore = new Section())
                 {
-                    appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        rscDfn.getProps(accCtx),
+                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                    );
                 }
             }
 
@@ -196,7 +218,6 @@ public class ConfFileBuilder
                     String fromHost = fromNode.getName().displayValue;
                     String toHost = toNode.getName().displayValue;
 
-                    int hostNameLen = Math.max(fromHost.length(), toHost.length());
                     appendLine("connection");
                     try (Section connectionSection = new Section())
                     {
@@ -209,13 +230,15 @@ public class ConfFileBuilder
                         if (rscConn != null)
                         {
                             if (rscConn.getProps(accCtx)
-                                    .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent())
+                                    .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
+                            )
                             {
                                 appendLine("");
                                 appendLine("disk");
                                 try (Section ignore = new Section())
                                 {
                                     appendDrbdOptions(
+                                        LinStorObject.CONTROLLER,
                                         rscConn.getProps(accCtx),
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                                     );
@@ -281,7 +304,11 @@ public class ConfFileBuilder
                 appendLine("disk");
                 try (Section ignore = new Section())
                 {
-                    appendDrbdOptions(satelliteProps, ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        satelliteProps,
+                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                    );
                 }
             }
 
@@ -290,7 +317,11 @@ public class ConfFileBuilder
                 appendLine("net");
                 try (Section ignore = new Section())
                 {
-                    appendDrbdOptions(satelliteProps, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        satelliteProps,
+                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS
+                    );
                 }
             }
 
@@ -299,7 +330,11 @@ public class ConfFileBuilder
                 appendLine("options");
                 try (Section ignore = new Section())
                 {
-                    appendDrbdOptions(satelliteProps, ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS);
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        satelliteProps,
+                        ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS
+                    );
                 }
             }
         }
@@ -307,17 +342,38 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
-    private void appendDrbdOptions(final Props props, final String namespace)
+    private void appendDrbdOptions(
+        final LinStorObject lsObj,
+        final Props props,
+        final String namespace
+    )
     {
         Map<String, String> drbdProps = props.getNamespace(namespace)
             .map(Props::map).orElse(new HashMap<>());
 
         for (Map.Entry<String, String> entry : drbdProps.entrySet())
         {
-            appendLine("%s %s;",
-                entry.getKey().substring(namespace.length() + 1),
-                entry.getValue()
-            );
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (whitelistProps.isAllowed(lsObj, key, value, true))
+            {
+                appendLine("%s %s;",
+                    key.substring(namespace.length() + 1),
+                    value
+                );
+            }
+            else
+            {
+                errorReporter.reportProblem(
+                    Level.WARN,
+                    new LinStorException(
+                        "Ignoring property '" + key + "' with value '" + value + "' as it is not whitelisted."
+                    ),
+                    null,
+                    null,
+                    "The whitelist was generated from 'drbdsetup xml-help {resource,peer-device,net,disk}-options'" +
+                    " when the satellite started.");
+            }
         }
     }
 
@@ -427,7 +483,11 @@ public class ConfFileBuilder
                     appendLine("disk");
                     try (Section ignore = new Section())
                     {
-                        appendDrbdOptions(vlmDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                        appendDrbdOptions(
+                            LinStorObject.CONTROLLER,
+                            vlmDfn.getProps(accCtx),
+                            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                        );
                     }
                 }
 
