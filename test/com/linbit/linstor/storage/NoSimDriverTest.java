@@ -387,28 +387,16 @@ public abstract class NoSimDriverTest
         log("testing deleteVolume   %n");
 
         deleteVolume(identifier, "   deleting volume [%s]...");
+        log(" done%n");
 
-        try
-        {
-            deleteVolume(identifier, "   test deleting already deleted volume [%s]...");
-            fail("      deleteVolume should have thrown StorageException");
-        }
-        catch (StorageException expected)
-        {
-            // expected
-            log(" done%n");
-        }
+        // the next command threw an exception in the past
+        // however, this was changed. if we try to remove a volume, we only get an exception
+        // if the volume still exists after this call. If it was never there, we just keep going
+        deleteVolume(identifier, "   test deleting already deleted volume [%s]...");
+        log(" done%n");
 
-        try
-        {
-            deleteVolume("unknownVolume", "   test deleting unknown volume [%s]...");
-            fail("      deleteVolume should have thrown StorageException");
-        }
-        catch (StorageException expected)
-        {
-            // expected
-            log(" done%n");
-        }
+        deleteVolume("unknownVolume", "   test deleting unknown volume [%s]...");
+        log(" done%n");
 
         if (isThinDriver())
         {
