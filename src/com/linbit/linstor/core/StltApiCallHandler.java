@@ -398,7 +398,7 @@ public class StltApiCallHandler
             deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
             deviceManager.controllerUpdateApplied();
         }
-        catch (AccessDeniedException | SQLException ignore)
+        catch (AccessDeniedException | SQLException ignored)
         {
         }
     }

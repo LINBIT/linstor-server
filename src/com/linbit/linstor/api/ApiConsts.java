@@ -197,6 +197,7 @@ public class ApiConsts
     public static final long WARN_NOT_CONNECTED = 1002 | MASK_WARN;
     public static final long WARN_STLT_NOT_UPDATED = 1003 | MASK_WARN;
     public static final long WARN_NO_STLT_CONN_DEFINED = 1004 | MASK_WARN;
+    public static final long WARN_DEL_UNSET_PROP = 1005 | MASK_WARN;
     public static final long WARN_NOT_FOUND = 3000 | MASK_WARN;
 
     /*

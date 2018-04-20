@@ -216,7 +216,15 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                 for (String delKey : deletePropKeys)
                 {
-                    map.remove(delKey);
+                    String oldValue = map.remove(delKey);
+                    if (oldValue == null)
+                    {
+                        addAnswer(
+                            "Could not delete property '" + delKey + "' as it did not exist. " +
+                                "This operation had no effect.",
+                            ApiConsts.WARN_DEL_UNSET_PROP
+                        );
+                    }
                 }
             }
 
