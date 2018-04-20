@@ -235,7 +235,11 @@ public final class Satellite
         );
         LinStor.printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(Satellite.MODULE, cArgs.getWorkingDirectory());
+        ErrorReporter errorLog = new StdErrorReporter(
+            Satellite.MODULE,
+            cArgs.getWorkingDirectory(),
+            cArgs.isPrintStacktraces()
+        );
 
         try
         {

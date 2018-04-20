@@ -261,7 +261,11 @@ public final class Controller
         );
         LinStor.printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(Controller.MODULE, cArgs.getWorkingDirectory());
+        ErrorReporter errorLog = new StdErrorReporter(
+            Controller.MODULE,
+            cArgs.getWorkingDirectory(),
+            cArgs.isPrintStacktraces()
+        );
 
         try
         {

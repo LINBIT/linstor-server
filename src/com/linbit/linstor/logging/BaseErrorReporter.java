@@ -26,6 +26,8 @@ public abstract class BaseErrorReporter
     final String dmModule;
     final Calendar cal;
 
+    private final boolean printStackTraces;
+
 
     // Unique instance ID of this error reporter instance
     // The linstor server would typically create one instance of the error reporter upon startup,
@@ -42,11 +44,12 @@ public abstract class BaseErrorReporter
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    BaseErrorReporter(String moduleName)
+    BaseErrorReporter(String moduleName, boolean printStackTracesRef)
     {
         dmModule = moduleName;
         instanceId = String.format("%07X", ((System.currentTimeMillis() / 1000) & 0xFFFFFFF));
         cal = Calendar.getInstance();
+        printStackTraces = printStackTracesRef;
     }
 
     String formatLogMsg(long reportNr, Throwable errorInfo)
@@ -343,6 +346,11 @@ public abstract class BaseErrorReporter
     void reportBacktrace(PrintStream output, Throwable errorInfo)
     {
         StackTraceElement[] trace = errorInfo.getStackTrace();
+        if (printStackTraces)
+        {
+            errorInfo.printStackTrace();
+        }
+
         if (trace == null)
         {
             output.println("No call backtrace is available.");

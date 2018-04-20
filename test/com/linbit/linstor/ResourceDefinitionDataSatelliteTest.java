@@ -58,7 +58,7 @@ public class ResourceDefinitionDataSatelliteTest
     {
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
-            new LoggingModule(new StdErrorReporter("TESTS", "")),
+            new LoggingModule(new StdErrorReporter("TESTS", "", true)),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
             new TestCoreModule(),

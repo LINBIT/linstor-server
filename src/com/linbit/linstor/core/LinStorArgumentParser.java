@@ -16,6 +16,12 @@ public class LinStorArgumentParser
     )
     private String memoryDB = null;
 
+    @CommandLine.Option(
+        names = {"-p", "--stack-traces"},
+        description = "print error stack traces on standard error"
+    )
+    private boolean printStackTrace = false;
+
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
@@ -71,10 +77,8 @@ public class LinStorArgumentParser
             }
         }
 
-        if (linArgParser.debugConsole)
-        {
-            cArgs.setStartDebugConsole(true);
-        }
+        cArgs.setPrintStacktraces(linArgParser.printStackTrace);
+        cArgs.setStartDebugConsole(linArgParser.debugConsole);
 
         return cArgs;
     }

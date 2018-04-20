@@ -9,6 +9,7 @@ public class LinStorArguments
     private String inMemoryDbType;
     private int inMemoryDbPort;
     private String inMemoryDbAddress;
+    private boolean printStacktraces;
 
     public LinStorArguments()
     {
@@ -16,6 +17,7 @@ public class LinStorArguments
         inMemoryDbType = null;
         inMemoryDbAddress = null;
         inMemoryDbPort = 0;
+        printStacktraces = false;
     }
 
     public void setWorkingDirectory(final String workingDirectoryRef)
@@ -66,5 +68,15 @@ public class LinStorArguments
     public String getInMemoryDbAddress()
     {
         return inMemoryDbAddress;
+    }
+
+    public boolean isPrintStacktraces()
+    {
+        return printStacktraces;
+    }
+
+    public void setPrintStacktraces(boolean printStacktraces)
+    {
+        this.printStacktraces = printStacktraces;
     }
 }
