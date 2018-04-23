@@ -537,13 +537,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             {
                                 // Protocol error - I/O error while reading a message
                                 // Close the connection
-                                AccessContext peerAccCtx = null;
-                                if (connPeer != null)
-                                {
-                                    peerAccCtx = connPeer.getAccessContext();
-                                }
                                 errorReporter.reportError(
-                                    Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                    Level.TRACE, ioExc, connPeer.getAccessContext(), connPeer,
                                     "I/O exception while attempting to receive data from the peer"
                                 );
                                 closeConnection(currentKey, true);
@@ -649,13 +644,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 // Protocol error - I/O error while writing a message
                                 // Close channel / disconnect peer, invalidate SelectionKey
                                 // Close the connection
-                                AccessContext peerAccCtx = null;
-                                if (connPeer != null)
-                                {
-                                    peerAccCtx = connPeer.getAccessContext();
-                                }
                                 errorReporter.reportError(
-                                    Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                    Level.TRACE, ioExc, connPeer.getAccessContext(), connPeer,
                                     "I/O exception while attempting to send data to the peer"
                                 );
                                 closeConnection(currentKey, true);

@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.google.protobuf.Api;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.RscFlags;
@@ -9,8 +8,6 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
-import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -109,7 +106,7 @@ public class ConfFileBuilder
             if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
             {
                 appendLine("disk");
-                try (Section _ignore = new Section())
+                try (Section ignore = new Section())
                 {
                     appendDrbdOptions(rscDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
                 }
@@ -258,7 +255,7 @@ public class ConfFileBuilder
         appendLine(header());
         appendLine("");
         appendLine("common");
-        try (Section common_ = new Section())
+        try (Section commonSection = new Section())
         {
             if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
             {
@@ -409,7 +406,7 @@ public class ConfFileBuilder
                 if (vlmDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
                 {
                     appendLine("disk");
-                    try (Section _ignore = new Section())
+                    try (Section ignore = new Section())
                     {
                         appendDrbdOptions(vlmDfn.getProps(accCtx), ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
                     }

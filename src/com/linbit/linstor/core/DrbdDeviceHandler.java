@@ -360,7 +360,7 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceDefinition rscDfn,
         ResourceState rscState
     )
-        throws NoInitialStateException, AccessDeniedException
+        throws NoInitialStateException
     {
         // Check whether the resource is known to DRBD
         DrbdResource drbdRsc = drbdState.getDrbdResource(rscDfn.getName().displayValue);
@@ -946,7 +946,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         }
 
                         // Create backend storage if required
-                        if (!vlmState.hasDisk() && vlm != null)
+                        if (!vlmState.hasDisk())
                         {
                             createStorageVolume(rscDfn, vlmState);
                             vlmState.setHasDisk(true);
@@ -1176,6 +1176,11 @@ class DrbdDeviceHandler implements DeviceHandler
         catch (IOException ioExc)
         {
             String ioErrorMsg = ioExc.getMessage();
+            if (ioErrorMsg == null)
+            {
+                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
+                    "the I/O error";
+            }
             throw new ResourceException(
                 "Creation of the DRBD configuration file for resource '" + rscName.displayValue +
                 "' failed due to an I/O error",
@@ -1184,11 +1189,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 "- Check whether enough free space is available for the creation of the file\n" +
                 "- Check whether the application has write access to the target directory\n" +
                 "- Check whether the storage is operating flawlessly",
-                "The error reported by the runtime environment or operating system is:\n" +
-                ioErrorMsg != null ?
-                ioErrorMsg :
-                "The runtime environment or operating system did not provide a description of " +
-                "the I/O error",
+                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
                 ioExc
             );
         }
@@ -1362,6 +1363,11 @@ class DrbdDeviceHandler implements DeviceHandler
         catch (IOException ioExc)
         {
             String ioErrorMsg = ioExc.getMessage();
+            if (ioErrorMsg == null)
+            {
+                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
+                    "the I/O error";
+            }
             throw new ResourceException(
                 "Deletion of the DRBD configuration file for resource '" + rscName.displayValue +
                 "' failed due to an I/O error",
@@ -1369,11 +1375,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 "Deletion of the DRBD configuration file failed due to an I/O error",
                 "- Check whether the application has write access to the target directory\n" +
                 "- Check whether the storage is operating flawlessly",
-                "The error reported by the runtime environment or operating system is:\n" +
-                ioErrorMsg != null ?
-                ioErrorMsg :
-                "The runtime environment or operating system did not provide a description of " +
-                "the I/O error",
+                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
                 ioExc
             );
         }

@@ -113,7 +113,11 @@ public final class Authentication
                 final String storedIdStr = signInEntry.getString(DbConstants.IDENTITY_NAME);
                 final String storedDfltRoleStr = signInEntry.getString(DbConstants.ROLE_NAME);
                 final String storedDfltTypeStr = signInEntry.getString(DbConstants.DOMAIN_NAME);
-                final Long storedDfltRolePrivs = signInEntry.getLong(DbConstants.ROLE_PRIVILEGES);
+                final Long storedDfltRolePrivs;
+                {
+                    long tmp = signInEntry.getLong(DbConstants.ROLE_PRIVILEGES);
+                    storedDfltRolePrivs = signInEntry.wasNull() ? null : tmp;
+                }
 
                 byte[] storedSalt;
                 byte[] storedHash;

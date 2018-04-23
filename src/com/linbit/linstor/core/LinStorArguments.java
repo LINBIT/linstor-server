@@ -75,8 +75,8 @@ public class LinStorArguments
         return printStacktraces;
     }
 
-    public void setPrintStacktraces(boolean printStacktraces)
+    public void setPrintStacktraces(boolean printStacktracesRef)
     {
-        this.printStacktraces = printStacktraces;
+        printStacktraces = printStacktracesRef;
     }
 }

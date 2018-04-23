@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -439,6 +440,7 @@ public class SecurityModelTest
             buddyCtx = sysCtx.impersonate(
                 buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
+            assertNotNull(buddyCtx);
         }
         catch (AccessDeniedException deniedExc)
         {
@@ -484,6 +486,7 @@ public class SecurityModelTest
             buddyCtx = sysCtx.impersonate(
                 buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
+            assertNotNull(buddyCtx);
         }
         catch (AccessDeniedException deniedExc)
         {

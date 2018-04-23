@@ -516,7 +516,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         return this;
     }
 
-    public static interface CtrlStltSerializationWriter extends CommonSerializerWriter
+    public interface CtrlStltSerializationWriter extends CommonSerializerWriter
     {
         /*
          * Controller -> Satellite

@@ -438,9 +438,9 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
 
     private static class ActionScheduler<K extends Comparable<K>, V extends Action<K>> extends Thread
     {
-        private final GenericTimer container;
+        private final GenericTimer<K, V> container;
 
-        ActionScheduler(GenericTimer containerRef)
+        ActionScheduler(GenericTimer<K, V> containerRef)
         {
             container = containerRef;
         }

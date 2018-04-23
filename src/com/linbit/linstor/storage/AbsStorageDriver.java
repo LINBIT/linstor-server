@@ -204,8 +204,6 @@ public abstract class AbsStorageDriver implements StorageDriver
                         ProcessBuilder.Redirect.PIPE,
                         command
                     );
-                    Thread.sleep(1000); // TODO: check if this is really needed (could be
-                    // a left over from a debugging session)
                     outputStream.write((cryptKey + "\n").getBytes());
                     outputStream.flush();
 

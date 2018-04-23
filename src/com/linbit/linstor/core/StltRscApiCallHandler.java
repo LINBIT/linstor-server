@@ -892,19 +892,4 @@ class StltRscApiCallHandler
     {
         return Stream.of(Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
     }
-
-    private static class UpdatedObjects
-    {
-        private final Map<ResourceName, Set<NodeName>> createdRscMap;
-        private final Map<ResourceName, Set<NodeName>> updatedRscMap;
-
-        UpdatedObjects(
-            Map<ResourceName, Set<NodeName>> createdRscMapRef,
-            Map<ResourceName, Set<NodeName>> updatedRscMapRef
-        )
-        {
-            createdRscMap = createdRscMapRef;
-            updatedRscMap = updatedRscMapRef;
-        }
-    }
 }
