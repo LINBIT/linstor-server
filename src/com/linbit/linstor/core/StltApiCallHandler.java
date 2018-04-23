@@ -19,6 +19,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
@@ -369,7 +370,7 @@ public class StltApiCallHandler
                 UUID.randomUUID(), controllerPeer.getId(), 0, new EventIdentifier(null, null, null, null)
             ));
         }
-        catch (AccessDeniedException exc)
+        catch (AccessDeniedException | LinStorDataAlreadyExistsException exc)
         {
             errorReporter.reportError(
                 exc,

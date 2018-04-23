@@ -1,6 +1,7 @@
 package com.linbit.linstor.event;
 
 import com.linbit.WorkQueue;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
@@ -64,7 +65,7 @@ public class EventBroker
      * Requires the nodes-map and resource-definition-map locks to be held.
      */
     public void createWatch(AccessContext accCtx, Watch watch)
-        throws AccessDeniedException
+        throws AccessDeniedException, LinStorDataAlreadyExistsException
     {
         // Find all affected objects of each type under this watch
         Map<WatchableObject, List<ObjectIdentifier>> objectsToWatch =

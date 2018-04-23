@@ -1,5 +1,7 @@
 package com.linbit.linstor.event;
 
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
+
 import java.util.Collection;
 
 /**
@@ -10,7 +12,8 @@ public interface WatchStore
     /**
      * Add a watch.
      */
-    void addWatch(Watch watch);
+    void addWatch(Watch watch)
+        throws LinStorDataAlreadyExistsException;
 
     /**
      * Get all watches for the identified object and all ancestor objects.

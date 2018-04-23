@@ -45,6 +45,7 @@ public class WatchStoreTest
 
     @Test
     public void getWatchesForPreciseEvent()
+        throws Exception
     {
         Watch watch = makeWatch(volumeEventIdentifier);
         watchStore.addWatch(watch);
@@ -56,6 +57,7 @@ public class WatchStoreTest
 
     @Test
     public void getWatchesGlobalForVolumeEvent()
+        throws Exception
     {
         Watch watch = makeWatch(globalEventIdentifier);
         watchStore.addWatch(watch);
@@ -67,6 +69,7 @@ public class WatchStoreTest
 
     @Test
     public void noWatchesResourceForGlobalEvent()
+        throws Exception
     {
         Watch watch = makeWatch(resourceEventIdentifier);
         watchStore.addWatch(watch);
@@ -78,6 +81,7 @@ public class WatchStoreTest
 
     @Test
     public void getWatchesResourceOnlyForResourceEvent()
+        throws Exception
     {
         Watch resourceWatch = makeWatch(resourceEventIdentifier);
         Watch volumeWatch = makeWatch(volumeEventIdentifier);
@@ -91,6 +95,7 @@ public class WatchStoreTest
 
     @Test
     public void getWatchesResourceAndVolumeForVolumeEvent()
+        throws Exception
     {
         Watch resourceWatch = makeWatch(resourceEventIdentifier);
         Watch volumeWatch = makeWatch(volumeEventIdentifier);
@@ -104,6 +109,7 @@ public class WatchStoreTest
 
     @Test
     public void removeWatchesForPeer()
+        throws Exception
     {
         String testPeerId = "TestPeer";
 
@@ -122,6 +128,7 @@ public class WatchStoreTest
 
     @Test
     public void removeWatchForPeerAndId()
+        throws Exception
     {
         String testPeerId = "TestPeer";
         Integer testWatchId = 7;
@@ -144,6 +151,7 @@ public class WatchStoreTest
 
     @Test
     public void removeWatchesForObject()
+        throws Exception
     {
         Watch globalWatch = makeWatch(globalEventIdentifier);
         Watch resourceWatch = makeWatch(resourceEventIdentifier);

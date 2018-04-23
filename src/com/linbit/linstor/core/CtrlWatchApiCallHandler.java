@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
@@ -69,6 +70,40 @@ public class CtrlWatchApiCallHandler
             volumeNumber != null ? volumeNumber : "<all>"
         );
 
+        String errorMsg = null;
+        long rc = 0;
+        Exception errorExc = null;
+
+        NodeName nodeName = null;
+        if (nodeNameStr != null)
+        {
+            try
+            {
+                nodeName = new NodeName(nodeNameStr);
+            }
+            catch (InvalidNameException exc)
+            {
+                errorMsg = "Invalid name: " + exc.invalidName;
+                rc = ApiConsts.FAIL_INVLD_NODE_NAME;
+                errorExc = exc;
+            }
+        }
+
+        ResourceName resourceName = null;
+        if (resourceNameStr != null)
+        {
+            try
+            {
+                resourceName = new ResourceName(resourceNameStr);
+            }
+            catch (InvalidNameException exc)
+            {
+                errorMsg = "Invalid name: " + exc.invalidName;
+                rc = ApiConsts.FAIL_INVLD_RSC_NAME;
+                errorExc = exc;
+            }
+        }
+
         try
         {
             // Watches can result in data being retrieved for objects that do not yet exist.
@@ -81,41 +116,44 @@ public class CtrlWatchApiCallHandler
                 UUID.randomUUID(), peer.getId(), peerWatchId,
                 new EventIdentifier(
                     eventName,
-                    nodeNameStr != null ? new NodeName(nodeNameStr) : null,
-                    resourceNameStr != null ? new ResourceName(resourceNameStr) : null,
+                    nodeName,
+                    resourceName,
                     volumeNumber != null ? new VolumeNumber(volumeNumber) : null
                 )
             ));
 
             apiCallRc.addEntry("Watch created", ApiConsts.MASK_CRT | ApiConsts.CREATED);
         }
-        catch (AccessDeniedException | InvalidNameException | ValueOutOfRangeException exc)
+        catch (AccessDeniedException |
+            ValueOutOfRangeException |
+            LinStorDataAlreadyExistsException exc)
         {
-            String errorMsg;
-            long rc;
             if (exc instanceof AccessDeniedException)
             {
                 errorMsg = AbsApiCallHandler.getAccDeniedMsg(
                     accCtx,
                     "create a watch"
                 );
-                rc = ApiConsts.FAIL_ACC_DENIED_CTRL_CFG;
+                rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
             }
             else
-            if (exc instanceof InvalidNameException)
-            {
-                errorMsg = "Invalid name: " + ((InvalidNameException) exc).invalidName;
-                rc = ApiConsts.FAIL_INVLD_PROP;
-            }
-            else
+            if (exc instanceof ValueOutOfRangeException)
             {
                 errorMsg = "Value out of range";
-                rc = ApiConsts.FAIL_INVLD_PROP;
+                rc = ApiConsts.FAIL_INVLD_VLM_NR;
             }
+            else
+            {
+                errorMsg = "Watch ID already in use";
+                rc = ApiConsts.FAIL_EXISTS_WATCH;
+            }
+        }
 
+        if (errorMsg != null)
+        {
             apiCallRc.addEntry(errorMsg, rc | ApiConsts.MASK_CRT);
             errorReporter.reportError(
-                exc,
+                errorExc,
                 accCtx,
                 null,
                 errorMsg

@@ -131,6 +131,7 @@ public class ApiConsts
     public static final long FAIL_ACC_DENIED_STLT_CONN = 410 | MASK_ERROR;
     public static final long FAIL_ACC_DENIED_CTRL_CFG = 411 | MASK_ERROR;
     public static final long FAIL_ACC_DENIED_COMMAND = 412 | MASK_ERROR;
+    public static final long FAIL_ACC_DENIED_WATCH = 413 | MASK_ERROR;
 
     /*
      * Codes 500-599: data already exists failures
@@ -148,6 +149,7 @@ public class ApiConsts
     public static final long FAIL_EXISTS_STOR_POOL = 510 | MASK_ERROR;
     public static final long FAIL_EXISTS_STLT_CONN = 511 | MASK_ERROR;
     public static final long FAIL_EXISTS_CRYPT_PASSPHRASE = 512 | MASK_ERROR;
+    public static final long FAIL_EXISTS_WATCH = 513 | MASK_ERROR;
 
     /*
      * Codes 600-699: data missing failures

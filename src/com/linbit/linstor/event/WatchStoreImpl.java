@@ -1,5 +1,6 @@
 package com.linbit.linstor.event;
 
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
@@ -33,7 +34,17 @@ public class WatchStoreImpl implements WatchStore
 
     @Override
     public void addWatch(Watch watch)
+        throws LinStorDataAlreadyExistsException
     {
+        Map<Integer, Watch> peerWatches = watchesByPeer.get(watch.getPeerId());
+        if (peerWatches != null)
+        {
+            if (peerWatches.containsKey(watch.getPeerWatchId()))
+            {
+                throw new LinStorDataAlreadyExistsException("Watch with this ID already exists");
+            }
+        }
+
         ObjectIdentifier objectIdentifier = watch.getEventIdentifier().getObjectIdentifier();
 
         putMultiMap(watchesByObject, objectIdentifier, watch);
