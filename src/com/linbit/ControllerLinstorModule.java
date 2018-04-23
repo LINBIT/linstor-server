@@ -30,4 +30,19 @@ public class ControllerLinstorModule extends AbstractModule
             "MainWorkerPool"
         );
     }
+
+    @Provides
+    @Singleton
+    @Named(LinStorModule.EVENT_WRITER_WORKER_POOL_NAME)
+    public WorkQueue initializeEventWriterWorkerThreadPool(
+        ErrorReporter errorLog,
+        DbConnectionPool dbConnPool
+    )
+    {
+        return WorkerPoolInitializer.createDefaultWorkerThreadPool(
+            errorLog,
+            dbConnPool,
+            "EventWriterWorkerPool"
+        );
+    }
 }

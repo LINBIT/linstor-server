@@ -14,7 +14,10 @@ public interface ResourceObserver
      *
      * @param resource DrbdResource instance tracking the new DRBD resource's state
      */
-    void resourceCreated(DrbdResource resource);
+    default void resourceCreated(DrbdResource resource)
+    {
+        // Do nothing
+    }
 
     /**
      * Called when the role of a DRBD resource has changed
@@ -23,10 +26,13 @@ public interface ResourceObserver
      * @param previous Role of the resource before the change
      * @param current Role of the resource after the change
      */
-    void roleChanged(
+    default void roleChanged(
         DrbdResource resource,
         DrbdResource.Role previous, DrbdResource.Role current
-    );
+    )
+    {
+        // Do nothing
+    }
 
     /**
      * Called when the role of a DRBD resource's peer resource (connection) has changed
@@ -37,10 +43,13 @@ public interface ResourceObserver
      * @param previous Role of the peer resource (connection) before the change
      * @param current Role of the peer resource (connection) after the change
      */
-    void peerRoleChanged(
+    default void peerRoleChanged(
         DrbdResource resource, DrbdConnection connection,
         DrbdResource.Role previous, DrbdResource.Role current
-    );
+    )
+    {
+        // Do nothing
+    }
 
     /**
      * Called when a DRBD resource has been destroyed and is no longer known
@@ -51,7 +60,10 @@ public interface ResourceObserver
      *     purpose of passing it to this method is to inform the observer about the resource's
      *     name and last known state before the resource disappeared.
      */
-    void resourceDestroyed(DrbdResource resource);
+    default void resourceDestroyed(DrbdResource resource)
+    {
+        // Do nothing
+    }
 
     /**
      * Called when a DRBD volume or peer volume has been created
@@ -62,7 +74,10 @@ public interface ResourceObserver
      *     local volume, this argument is set to null
      * @param volume DrbdVolume instance tracking the new DRBD volume's state
      */
-    void volumeCreated(DrbdResource resource, DrbdConnection connection, DrbdVolume volume);
+    default void volumeCreated(DrbdResource resource, DrbdConnection connection, DrbdVolume volume)
+    {
+        // Do nothing
+    }
 
     /**
      * Called when the minor number of a local volume has changed.
@@ -74,10 +89,13 @@ public interface ResourceObserver
      * @param previous Minor number of the volume before the change
      * @param current Minor number of the volume after the change
      */
-    void minorNrChanged(
+    default void minorNrChanged(
         DrbdResource resource, DrbdVolume volume,
         MinorNumber previous, MinorNumber current
-    );
+    )
+    {
+        // Do nothing
+    }
 
     /**
      * Called when the disk state of a DRBD volume or peer volume has changed
@@ -91,10 +109,13 @@ public interface ResourceObserver
      * @param previous Disk state of the volume before the change
      * @param current Disk state of the volume after the change
      */
-    void diskStateChanged(
+    default void diskStateChanged(
         DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
         DrbdVolume.DiskState previous, DrbdVolume.DiskState current
-    );
+    )
+    {
+        // Do nothing
+    }
 
     /**
      * Called when the replication state of a DRBD volume or
@@ -109,10 +130,13 @@ public interface ResourceObserver
      * @param previous Replication state of the volume before the change
      * @param current Replication state of the volume after the change
      */
-    void replicationStateChanged(
+    default void replicationStateChanged(
         DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
         DrbdVolume.ReplState previous, DrbdVolume.ReplState current
-    );
+    )
+    {
+        // Do nothing
+    }
 
     /**
      * Called when a DRBD resource's volume or peer volume has been destroyed
@@ -125,7 +149,10 @@ public interface ResourceObserver
      *     purpose of passing it to this method is to inform the observer about the volume's
      *     volume number and last known state before the volume disappeared.
      */
-    void volumeDestroyed(DrbdResource resource, DrbdVolume volume);
+    default void volumeDestroyed(DrbdResource resource, DrbdVolume volume)
+    {
+        // Do nothing
+    }
 
     /**
      * Called when a DRBD connection has been created
@@ -133,7 +160,10 @@ public interface ResourceObserver
      * @param resource Representation of the DRBD resource that owns the connection
      * @param connection DrbdConnection instance tracking the DRBD connection's state
      */
-    void connectionCreated(DrbdResource resource, DrbdConnection connection);
+    default void connectionCreated(DrbdResource resource, DrbdConnection connection)
+    {
+        // Do nothing
+    }
 
     /**
      * Called when the connection state of a DRBD connection has changed
@@ -143,10 +173,13 @@ public interface ResourceObserver
      * @param previous Connection state before the change
      * @param current Connection state after the change
      */
-    void connectionStateChanged(
+    default void connectionStateChanged(
         DrbdResource resource, DrbdConnection connection,
         DrbdConnection.State previous, DrbdConnection.State current
-    );
+    )
+    {
+        // Do nothing
+    }
 
     /**
      * Called when a DRBD connection has been destroyed and is no
@@ -160,5 +193,8 @@ public interface ResourceObserver
      *     to this method is to inform the observer about the connection's and
      *     peer resource's last known state before the connection disappeared
      */
-    void connectionDestroyed(DrbdResource resource, DrbdConnection connection);
+    default void connectionDestroyed(DrbdResource resource, DrbdConnection connection)
+    {
+        // Do nothing
+    }
 }

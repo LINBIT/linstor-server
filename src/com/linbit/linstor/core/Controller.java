@@ -19,6 +19,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
@@ -28,6 +29,12 @@ import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.debug.DebugModule;
+import com.linbit.linstor.event.ControllerEventModule;
+import com.linbit.linstor.event.EventModule;
+import com.linbit.linstor.event.handler.EventHandler;
+import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
+import com.linbit.linstor.event.writer.EventWriter;
+import com.linbit.linstor.event.writer.protobuf.ProtobufEventWriter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -272,8 +279,29 @@ public final class Controller
             Thread.currentThread().setName("Main");
 
             ApiType apiType = new ProtobufApiType();
-            List<Class<? extends ApiCall>> apiCalls =
-                new ApiCallLoader(errorLog).loadApiCalls(apiType, Arrays.asList("common", "controller"));
+            ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
+            List<String> packageSuffixes = Arrays.asList("common", "controller");
+
+            List<Class<? extends ApiCall>> apiCalls = classPathLoader.loadClasses(
+                ProtobufApiType.class.getPackage().getName(),
+                packageSuffixes,
+                ApiCall.class,
+                ProtobufApiCall.class
+            );
+
+            List<Class<? extends EventWriter>> eventWriters = classPathLoader.loadClasses(
+                ProtobufEventWriter.class.getPackage().getName(),
+                packageSuffixes,
+                EventWriter.class,
+                ProtobufEventWriter.class
+            );
+
+            List<Class<? extends EventHandler>> eventHandlers = classPathLoader.loadClasses(
+                ProtobufEventHandler.class.getPackage().getName(),
+                packageSuffixes,
+                EventHandler.class,
+                ProtobufEventHandler.class
+            );
 
             Injector injector = Guice.createInjector(
                 new GuiceConfigModule(),
@@ -296,6 +324,8 @@ public final class Controller
                 new ApiModule(apiType, apiCalls),
                 new ApiCallHandlerModule(),
                 new CtrlApiCallHandlerModule(),
+                new EventModule(eventWriters, eventHandlers),
+                new ControllerEventModule(),
                 new DebugModule(),
                 new ControllerDebugModule(),
                 new ControllerTransactionMgrModule()

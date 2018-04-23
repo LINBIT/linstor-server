@@ -1,16 +1,27 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.SatellitePeerCtx;
+import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 class StltConnTracker implements ConnectionObserver
 {
     private final CoreModule.PeerMap peerMap;
+    private final EventBroker eventBroker;
 
-    StltConnTracker(CoreModule.PeerMap peerMapRef)
+    @Inject
+    StltConnTracker(
+        CoreModule.PeerMap peerMapRef,
+        EventBroker eventBrokerRef
+    )
     {
         peerMap = peerMapRef;
+        eventBroker = eventBrokerRef;
     }
 
     @Override
@@ -52,6 +63,8 @@ class StltConnTracker implements ConnectionObserver
     {
         if (connPeer != null)
         {
+            eventBroker.removeWatchesForPeer(connPeer.getId());
+
             synchronized (peerMap)
             {
                 peerMap.remove(connPeer.getId());

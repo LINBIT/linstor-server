@@ -14,7 +14,7 @@ public class ResourceState
     private boolean requiresAdjust;
     private boolean isPrimary;
 
-    private Map<VolumeNumber, ? extends VolumeState> volumeMap;
+    private Map<VolumeNumber, VolumeState> volumeMap;
 
     public ResourceState()
     {
@@ -26,7 +26,7 @@ public class ResourceState
         boolean isPresentRef,
         boolean requiresAdjustRef,
         boolean isPrimaryRef,
-        Map<VolumeNumber, ? extends VolumeState> volumes
+        Map<VolumeNumber, VolumeState> volumes
     )
     {
         rscName = rscNameRef;
@@ -94,14 +94,24 @@ public class ResourceState
         isPrimary = primary;
     }
 
-    public Collection<? extends VolumeState> getVolumes()
+    public Collection<VolumeState> getVolumes()
     {
         return volumeMap.values();
     }
 
-    public void setVolumes(Map<VolumeNumber, ? extends VolumeState> volumes)
+    public void setVolumes(Map<VolumeNumber, VolumeState> volumes)
     {
         this.volumeMap = volumes;
+    }
+
+    public VolumeState getVolumeState(VolumeNumber volumeNumber)
+    {
+        return volumeMap.get(volumeNumber);
+    }
+
+    public void putVolumeState(VolumeNumber volumeNumber, VolumeState volumeState)
+    {
+        volumeMap.put(volumeNumber, volumeState);
     }
 
     @Override

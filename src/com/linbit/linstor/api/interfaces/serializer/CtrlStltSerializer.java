@@ -8,11 +8,14 @@ import java.util.UUID;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.api.pojo.ResourceState;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
-    CtrlStltSerializerBuilder builder(String apiCall, int msgId);
+    CtrlStltSerializerBuilder builder();
+
+    CtrlStltSerializerBuilder builder(String apiCall);
+
+    CtrlStltSerializerBuilder builder(String apiCall, Integer msgId);
 
     public interface CtrlStltSerializerBuilder extends CommonSerializerBuilder
     {
@@ -52,8 +55,6 @@ public interface CtrlStltSerializer extends CommonSerializer
         /*
          * Satellite -> Controller
          */
-        CtrlStltSerializerBuilder resourceState(String nodeName, ResourceState rsc);
-
         CtrlStltSerializerBuilder notifyResourceDeleted(
             String nodeName,
             String resourceName,

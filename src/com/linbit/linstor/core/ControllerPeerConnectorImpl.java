@@ -86,7 +86,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     @Override
     public NodeData getLocalNode()
     {
-        return (NodeData) nodesMap.get(localNodeName);
+        return localNodeName == null ? null : (NodeData) nodesMap.get(localNodeName);
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -25,7 +24,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         ErrorReporter errorReporterRef,
         CtrlStltSerializationWriter ctrlStltSerializationWriterRef,
         String apiCall,
-        int msgId
+        Integer msgId
     )
     {
         super(errorReporterRef, ctrlStltSerializationWriterRef, apiCall, msgId);
@@ -353,21 +352,6 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
     }
 
     @Override
-    public CtrlStltSerializerBuilder resourceState(String nodeName, ResourceState rsc)
-    {
-        try
-        {
-            ctrlStltSerializationWriter.writeResourceState(nodeName, rsc, baos);
-        }
-        catch (IOException ioExc)
-        {
-            errorReporter.reportError(ioExc);
-            exceptionOccured = true;
-        }
-        return this;
-    }
-
-    @Override
     public CtrlStltSerializerBuilder notifyResourceApplied(
         String resourceName,
         UUID rscUuid,
@@ -610,13 +594,6 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
          * Satellite -> Controller
          */
         void writePrimaryRequest(String rscName, String rscUuid, ByteArrayOutputStream baos)
-            throws IOException;
-
-        void writeResourceState(
-            String nodeName,
-            ResourceState rscState,
-            ByteArrayOutputStream baos
-        )
             throws IOException;
 
         void writeNotifyResourceApplied(

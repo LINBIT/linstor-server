@@ -55,7 +55,19 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
     }
 
     @Override
-    public CtrlClientSerializerBuilder builder(String apiCall, int msgId)
+    public CtrlClientSerializerBuilder builder()
+    {
+        return builder(null);
+    }
+
+    @Override
+    public CtrlClientSerializerBuilder builder(String apiCall)
+    {
+        return builder(null, null);
+    }
+
+    @Override
+    public CtrlClientSerializerBuilder builder(String apiCall, Integer msgId)
     {
         return new CtrlClientSerializerBuilderImpl(errorReporter, this, apiCall, msgId);
     }

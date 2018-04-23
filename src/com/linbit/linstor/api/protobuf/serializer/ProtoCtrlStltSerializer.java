@@ -91,7 +91,19 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
     }
 
     @Override
-    public CtrlStltSerializerBuilder builder(String apiCall, int msgId)
+    public CtrlStltSerializerBuilder builder()
+    {
+        return builder(null);
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder builder(String apiCall)
+    {
+        return builder(null, null);
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder builder(String apiCall, Integer msgId)
     {
         return new CtrlStltSerializerBuilderImpl(errorReporter, this, apiCall, msgId);
     }
@@ -334,15 +346,6 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .setRscName(rscName)
             .setRscUuid(rscUuid)
             .build()
-            .writeDelimitedTo(baos);
-    }
-
-
-    @Override
-    public void writeResourceState(String nodeName, ResourceState rscState, ByteArrayOutputStream baos)
-        throws IOException
-    {
-        ProtoCommonSerializer.buildResourceState(nodeName, rscState)
             .writeDelimitedTo(baos);
     }
 

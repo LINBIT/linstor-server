@@ -36,6 +36,7 @@ public class CtrlApiCallHandler
     private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
     private final CtrlNetIfApiCallHandler netIfApiCallHandler;
+    private final CtrlWatchApiCallHandler watchApiCallHandler;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
@@ -61,6 +62,7 @@ public class CtrlApiCallHandler
         CtrlRscConnectionApiCallHandler rscConnApiCallHandlerRef,
         CtrlVlmConnectionApiCallHandler vlmConnApiCallHandlerRef,
         CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
+        CtrlWatchApiCallHandler watchApiCallHandlerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
@@ -83,6 +85,7 @@ public class CtrlApiCallHandler
         rscConnApiCallHandler = rscConnApiCallHandlerRef;
         vlmConnApiCallHandler = vlmConnApiCallHandlerRef;
         netIfApiCallHandler = netIfApiCallHandlerRef;
+        watchApiCallHandler = watchApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -1425,6 +1428,30 @@ public class CtrlApiCallHandler
         )
         {
             apiCallRc = netIfApiCallHandler.deleteNetIf(nodeName, netIfName);
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc createWatch(
+        int peerWatchId,
+        String eventName,
+        String nodeNameStr,
+        String resourceNameStr,
+        Integer volumeNumber
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = watchApiCallHandler.createWatch(
+                peerWatchId, eventName, nodeNameStr, resourceNameStr, volumeNumber
+            );
         }
         return apiCallRc;
     }

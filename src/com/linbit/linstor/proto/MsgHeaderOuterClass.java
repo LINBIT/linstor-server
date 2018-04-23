@@ -23,9 +23,10 @@ public final class MsgHeaderOuterClass {
      * Identifying number for this message
      * Immediate answers to this message will be sent
      * back with the same msg_id
+     * Only provided with API calls where an answer is expected.
      * </pre>
      *
-     * <code>required int32 msg_id = 1;</code>
+     * <code>optional int32 msg_id = 1;</code>
      */
     boolean hasMsgId();
     /**
@@ -33,9 +34,10 @@ public final class MsgHeaderOuterClass {
      * Identifying number for this message
      * Immediate answers to this message will be sent
      * back with the same msg_id
+     * Only provided with API calls where an answer is expected.
      * </pre>
      *
-     * <code>required int32 msg_id = 1;</code>
+     * <code>optional int32 msg_id = 1;</code>
      */
     int getMsgId();
 
@@ -165,9 +167,10 @@ public final class MsgHeaderOuterClass {
      * Identifying number for this message
      * Immediate answers to this message will be sent
      * back with the same msg_id
+     * Only provided with API calls where an answer is expected.
      * </pre>
      *
-     * <code>required int32 msg_id = 1;</code>
+     * <code>optional int32 msg_id = 1;</code>
      */
     public boolean hasMsgId() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -177,9 +180,10 @@ public final class MsgHeaderOuterClass {
      * Identifying number for this message
      * Immediate answers to this message will be sent
      * back with the same msg_id
+     * Only provided with API calls where an answer is expected.
      * </pre>
      *
-     * <code>required int32 msg_id = 1;</code>
+     * <code>optional int32 msg_id = 1;</code>
      */
     public int getMsgId() {
       return msgId_;
@@ -254,10 +258,6 @@ public final class MsgHeaderOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasMsgId()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       if (!hasApiCall()) {
         memoizedIsInitialized = 0;
         return false;
@@ -549,9 +549,6 @@ public final class MsgHeaderOuterClass {
       }
 
       public final boolean isInitialized() {
-        if (!hasMsgId()) {
-          return false;
-        }
         if (!hasApiCall()) {
           return false;
         }
@@ -583,9 +580,10 @@ public final class MsgHeaderOuterClass {
        * Identifying number for this message
        * Immediate answers to this message will be sent
        * back with the same msg_id
+       * Only provided with API calls where an answer is expected.
        * </pre>
        *
-       * <code>required int32 msg_id = 1;</code>
+       * <code>optional int32 msg_id = 1;</code>
        */
       public boolean hasMsgId() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -595,9 +593,10 @@ public final class MsgHeaderOuterClass {
        * Identifying number for this message
        * Immediate answers to this message will be sent
        * back with the same msg_id
+       * Only provided with API calls where an answer is expected.
        * </pre>
        *
-       * <code>required int32 msg_id = 1;</code>
+       * <code>optional int32 msg_id = 1;</code>
        */
       public int getMsgId() {
         return msgId_;
@@ -607,9 +606,10 @@ public final class MsgHeaderOuterClass {
        * Identifying number for this message
        * Immediate answers to this message will be sent
        * back with the same msg_id
+       * Only provided with API calls where an answer is expected.
        * </pre>
        *
-       * <code>required int32 msg_id = 1;</code>
+       * <code>optional int32 msg_id = 1;</code>
        */
       public Builder setMsgId(int value) {
         bitField0_ |= 0x00000001;
@@ -622,9 +622,10 @@ public final class MsgHeaderOuterClass {
        * Identifying number for this message
        * Immediate answers to this message will be sent
        * back with the same msg_id
+       * Only provided with API calls where an answer is expected.
        * </pre>
        *
-       * <code>required int32 msg_id = 1;</code>
+       * <code>optional int32 msg_id = 1;</code>
        */
       public Builder clearMsgId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -815,7 +816,7 @@ public final class MsgHeaderOuterClass {
     java.lang.String[] descriptorData = {
       "\n\035linstor/proto/MsgHeader.proto\022\030com.lin" +
       "bit.linstor.proto\"-\n\tMsgHeader\022\016\n\006msg_id" +
-      "\030\001 \002(\005\022\020\n\010api_call\030\002 \002(\t"
+      "\030\001 \001(\005\022\020\n\010api_call\030\002 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

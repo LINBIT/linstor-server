@@ -7,6 +7,6 @@ public class DrbdStateModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(DrbdStateTracker.class).to(DrbdEventService.class);
+        bind(DrbdStateStore.class).to(DrbdEventService.class);
     }
 }

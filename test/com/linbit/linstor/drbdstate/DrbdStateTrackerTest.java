@@ -14,21 +14,21 @@ import org.junit.Test;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class StateTrackerTest
+public class DrbdStateTrackerTest
 {
-    private StateTracker tracker;
-    private StateTracker.ResObsMux mux;
+    private DrbdStateTracker tracker;
+    private DrbdStateTracker.ResObsMux mux;
     private TestResObs resObs;
 
-    public StateTrackerTest()
+    public DrbdStateTrackerTest()
     {
     }
 
     @Before
     public void setUp()
     {
-        tracker = new StateTracker();
-        mux = new StateTracker.ResObsMux(tracker);
+        tracker = new DrbdStateTracker();
+        mux = new DrbdStateTracker.ResObsMux(tracker);
         resObs = new TestResObs();
     }
 
@@ -38,14 +38,14 @@ public class StateTrackerTest
     }
 
     /**
-     * Test of addObserver method, of class StateTracker.
+     * Test of addObserver method, of class DrbdStateTracker.
      */
     @Test
     @SuppressWarnings("checkstyle:magicnumber")
     public void testObserveResCreate() throws ValueOutOfRangeException
     {
-        resObs.expect(StateTracker.OBS_RES_CRT);
-        tracker.addObserver(resObs, StateTracker.OBS_RES_CRT);
+        resObs.expect(DrbdStateTracker.OBS_RES_CRT);
+        tracker.addObserver(resObs, DrbdStateTracker.OBS_RES_CRT);
 
         // Should trigger the ResourceObserver
         // FIXME: dummy DrbdResource instance?
@@ -59,13 +59,13 @@ public class StateTrackerTest
     }
 
     /**
-     * Test of addObserver method, of class StateTracker.
+     * Test of addObserver method, of class DrbdStateTracker.
      */
     @Test
     public void testObserveResDestroy()
     {
-        resObs.expect(StateTracker.OBS_RES_DSTR);
-        tracker.addObserver(resObs, StateTracker.OBS_RES_DSTR);
+        resObs.expect(DrbdStateTracker.OBS_RES_DSTR);
+        tracker.addObserver(resObs, DrbdStateTracker.OBS_RES_DSTR);
 
         // Should not trigger the ResourceObserver
         mux.resourceCreated(null);
@@ -84,11 +84,11 @@ public class StateTrackerTest
     {
         tracker.addObserver(
             resObs,
-            StateTracker.OBS_VOL_CRT | StateTracker.OBS_VOL_DSTR |
-            StateTracker.OBS_MINOR | StateTracker.OBS_DISK | StateTracker.OBS_REPL
+            DrbdStateTracker.OBS_VOL_CRT | DrbdStateTracker.OBS_VOL_DSTR |
+            DrbdStateTracker.OBS_MINOR | DrbdStateTracker.OBS_DISK | DrbdStateTracker.OBS_REPL
         );
 
-        resObs.expect(StateTracker.OBS_MINOR);
+        resObs.expect(DrbdStateTracker.OBS_MINOR);
         // Should trigger the ResourceObserver
         // FIXME: dummy DrbdResource, DrbdVolume instances?
         mux.minorNrChanged(null, null, new MinorNumber(5), new MinorNumber(10));
@@ -98,7 +98,7 @@ public class StateTrackerTest
         // Should not trigger the ResourceObserver
         mux.resourceCreated(null);
 
-        resObs.expect(StateTracker.OBS_REPL);
+        resObs.expect(DrbdStateTracker.OBS_REPL);
         // Should trigger the ResourceObserver
         // FIXME: dummy DrbdResource, DrbdVolume, DrbdConnection instances?
         mux.replicationStateChanged(null, null, null, DrbdVolume.ReplState.OFF, DrbdVolume.ReplState.SYNC_SOURCE);
@@ -115,19 +115,19 @@ public class StateTrackerTest
     {
         tracker.addObserver(
             resObs,
-            StateTracker.OBS_CONN | StateTracker.OBS_CONN_CRT | StateTracker.OBS_CONN_DSTR
+            DrbdStateTracker.OBS_CONN | DrbdStateTracker.OBS_CONN_CRT | DrbdStateTracker.OBS_CONN_DSTR
         );
 
         // Should not trigger the ResourceObserver
         mux.roleChanged(null, DrbdResource.Role.PRIMARY, DrbdResource.Role.SECONDARY);
 
 
-        resObs.expect(StateTracker.OBS_CONN_CRT);
+        resObs.expect(DrbdStateTracker.OBS_CONN_CRT);
         // Should trigger the ResourceObserver
         mux.connectionCreated(null, null);
         resObs.assertTriggered();
 
-        resObs.expect(StateTracker.OBS_CONN);
+        resObs.expect(DrbdStateTracker.OBS_CONN);
         // Should trigger the ResourceObserver
         mux.connectionStateChanged(
             null, null,
@@ -135,7 +135,7 @@ public class StateTrackerTest
         );
         resObs.assertTriggered();
 
-        resObs.expect(StateTracker.OBS_CONN_DSTR);
+        resObs.expect(DrbdStateTracker.OBS_CONN_DSTR);
         // Should trigger the ResourceObserver
         mux.connectionDestroyed(null, null);
         resObs.assertTriggered();
@@ -146,17 +146,17 @@ public class StateTrackerTest
     @Test
     public void testObserveAllEvents()
     {
-        tracker.addObserver(resObs, StateTracker.OBS_ALL);
+        tracker.addObserver(resObs, DrbdStateTracker.OBS_ALL);
 
-        resObs.expect(StateTracker.OBS_ROLE);
+        resObs.expect(DrbdStateTracker.OBS_ROLE);
         mux.roleChanged(null, DrbdResource.Role.UNKNOWN, DrbdResource.Role.PRIMARY);
         resObs.assertTriggered();
 
-        resObs.expect(StateTracker.OBS_PEER_ROLE);
+        resObs.expect(DrbdStateTracker.OBS_PEER_ROLE);
         mux.peerRoleChanged(null, null, DrbdResource.Role.PRIMARY, DrbdResource.Role.UNKNOWN);
         resObs.assertTriggered();
 
-        resObs.expect(StateTracker.OBS_RES_DSTR);
+        resObs.expect(DrbdStateTracker.OBS_RES_DSTR);
         mux.resourceDestroyed(null);
         resObs.assertTriggered();
 
@@ -194,62 +194,62 @@ public class StateTrackerTest
             String label = "<NO_EVENT>";
 
             // Using an if-chain, because switch (variable) does not support type long
-            if (eventId == StateTracker.OBS_RES_CRT)
+            if (eventId == DrbdStateTracker.OBS_RES_CRT)
             {
                     label = "OBS_RES_CRT";
             }
             else
-            if (eventId == StateTracker.OBS_RES_DSTR)
+            if (eventId == DrbdStateTracker.OBS_RES_DSTR)
             {
                     label = "OBS_RES_DSTR";
             }
             else
-            if (eventId == StateTracker.OBS_ROLE)
+            if (eventId == DrbdStateTracker.OBS_ROLE)
             {
                     label = "OBS_ROLE";
             }
             else
-            if (eventId == StateTracker.OBS_PEER_ROLE)
+            if (eventId == DrbdStateTracker.OBS_PEER_ROLE)
             {
                     label = "OBS_PEER_ROLE";
             }
             else
-            if (eventId == StateTracker.OBS_VOL_CRT)
+            if (eventId == DrbdStateTracker.OBS_VOL_CRT)
             {
                     label = "OBS_VOL_CRT";
             }
             else
-            if (eventId == StateTracker.OBS_VOL_DSTR)
+            if (eventId == DrbdStateTracker.OBS_VOL_DSTR)
             {
                     label = "OBS_VOL_DSTR";
             }
             else
-            if (eventId == StateTracker.OBS_MINOR)
+            if (eventId == DrbdStateTracker.OBS_MINOR)
             {
                     label = "OBS_MINOR";
             }
             else
-            if (eventId == StateTracker.OBS_DISK)
+            if (eventId == DrbdStateTracker.OBS_DISK)
             {
                     label = "OBS_DISK";
             }
             else
-            if (eventId == StateTracker.OBS_REPL)
+            if (eventId == DrbdStateTracker.OBS_REPL)
             {
                     label = "OBS_REPL";
             }
             else
-            if (eventId == StateTracker.OBS_CONN_CRT)
+            if (eventId == DrbdStateTracker.OBS_CONN_CRT)
             {
                     label = "OBS_CONN_CRT";
             }
             else
-            if (eventId == StateTracker.OBS_CONN_DSTR)
+            if (eventId == DrbdStateTracker.OBS_CONN_DSTR)
             {
                     label = "OBS_CONN_DSTR";
             }
             else
-            if (eventId == StateTracker.OBS_CONN)
+            if (eventId == DrbdStateTracker.OBS_CONN)
             {
                     label = "OBS_CONN";
             }
@@ -281,13 +281,13 @@ public class StateTrackerTest
         @Override
         public void resourceCreated(DrbdResource resource)
         {
-            checkExpected(StateTracker.OBS_RES_CRT);
+            checkExpected(DrbdStateTracker.OBS_RES_CRT);
         }
 
         @Override
         public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
         {
-            checkExpected(StateTracker.OBS_ROLE);
+            checkExpected(DrbdStateTracker.OBS_ROLE);
         }
 
         @Override
@@ -296,19 +296,19 @@ public class StateTrackerTest
             DrbdResource.Role previous, DrbdResource.Role current
         )
         {
-            checkExpected(StateTracker.OBS_PEER_ROLE);
+            checkExpected(DrbdStateTracker.OBS_PEER_ROLE);
         }
 
         @Override
         public void resourceDestroyed(DrbdResource resource)
         {
-            checkExpected(StateTracker.OBS_RES_DSTR);
+            checkExpected(DrbdStateTracker.OBS_RES_DSTR);
         }
 
         @Override
         public void volumeCreated(DrbdResource resource, DrbdConnection connection, DrbdVolume volume)
         {
-            checkExpected(StateTracker.OBS_VOL_CRT);
+            checkExpected(DrbdStateTracker.OBS_VOL_CRT);
         }
 
         @Override
@@ -317,7 +317,7 @@ public class StateTrackerTest
             MinorNumber previous, MinorNumber current
         )
         {
-            checkExpected(StateTracker.OBS_MINOR);
+            checkExpected(DrbdStateTracker.OBS_MINOR);
         }
 
         @Override
@@ -326,7 +326,7 @@ public class StateTrackerTest
             DrbdVolume.DiskState previous, DrbdVolume.DiskState current
         )
         {
-            checkExpected(StateTracker.OBS_DISK);
+            checkExpected(DrbdStateTracker.OBS_DISK);
         }
 
         @Override
@@ -335,19 +335,19 @@ public class StateTrackerTest
             DrbdVolume.ReplState previous, DrbdVolume.ReplState current
         )
         {
-            checkExpected(StateTracker.OBS_REPL);
+            checkExpected(DrbdStateTracker.OBS_REPL);
         }
 
         @Override
         public void volumeDestroyed(DrbdResource resource, DrbdVolume volume)
         {
-            checkExpected(StateTracker.OBS_VOL_DSTR);
+            checkExpected(DrbdStateTracker.OBS_VOL_DSTR);
         }
 
         @Override
         public void connectionCreated(DrbdResource resource, DrbdConnection connection)
         {
-            checkExpected(StateTracker.OBS_CONN_CRT);
+            checkExpected(DrbdStateTracker.OBS_CONN_CRT);
         }
 
         @Override
@@ -356,13 +356,13 @@ public class StateTrackerTest
             DrbdConnection.State previous, DrbdConnection.State current
         )
         {
-            checkExpected(StateTracker.OBS_CONN);
+            checkExpected(DrbdStateTracker.OBS_CONN);
         }
 
         @Override
         public void connectionDestroyed(DrbdResource resource, DrbdConnection connection)
         {
-            checkExpected(StateTracker.OBS_CONN_DSTR);
+            checkExpected(DrbdStateTracker.OBS_CONN_DSTR);
         }
     }
 }

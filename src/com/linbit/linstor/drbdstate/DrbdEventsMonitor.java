@@ -10,7 +10,7 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 
 /**
- * Drbdsetup events tracker
+ * Drbdsetup events monitor
  *
  * Interprets the 'drbdsetup events2 all' event lines and updates/triggers the
  * DRBD state tracker
@@ -18,7 +18,7 @@ import java.util.TreeMap;
  * @author Rene Blauensteiner &lt;rene.blauensteiner@linbit.com&gt;
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class EventsTracker
+public class DrbdEventsMonitor
 {
     public static final String ACTION_CREATE    = "create";
     public static final String ACTION_CHANGE    = "change";
@@ -32,10 +32,10 @@ public class EventsTracker
     public static final String OBJ_END_OF_INIT  = "-";
 
     // DRBD state tracker & events multiplexer reference
-    private final StateTracker tracker;
+    private final DrbdStateTracker tracker;
     private boolean stateAvailable = false;
 
-    public EventsTracker(StateTracker trackerRef)
+    public DrbdEventsMonitor(DrbdStateTracker trackerRef)
     {
         tracker = trackerRef;
     }

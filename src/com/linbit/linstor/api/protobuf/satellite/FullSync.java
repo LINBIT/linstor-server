@@ -13,7 +13,6 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltApiCallHandler;
 import com.linbit.linstor.core.StltApiCallHandlerUtils;
-import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -48,7 +47,6 @@ public class FullSync implements ApiCall
     private final ControllerPeerConnector controllerPeerConnector;
     private final Peer controllerPeer;
     private final ErrorReporter errorReporter;
-    private final UpdateMonitor updateMonitor;
 
     @Inject
     public FullSync(
@@ -57,8 +55,7 @@ public class FullSync implements ApiCall
         ApiCallAnswerer apiCallAnswererRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Peer controllerPeerRef,
-        ErrorReporter errorReporterRef,
-        UpdateMonitor updateMonitorRef
+        ErrorReporter errorReporterRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
@@ -67,7 +64,6 @@ public class FullSync implements ApiCall
         controllerPeerConnector = controllerPeerConnectorRef;
         controllerPeer = controllerPeerRef;
         errorReporter = errorReporterRef;
-        updateMonitor = updateMonitorRef;
     }
 
     @Override

@@ -30,6 +30,9 @@ import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.StltStorPoolApiCallHandler.ChangedData;
+import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.Watch;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -75,6 +78,7 @@ public class StltApiCallHandler
     private final StltSecurityObjects stltSecObj;
     private final StltVlmDfnApiCallHandler vlmDfnHandler;
     private final Props stltConf;
+    private final EventBroker eventBroker;
 
     @Inject
     public StltApiCallHandler(
@@ -100,7 +104,8 @@ public class StltApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
-        StltVlmDfnApiCallHandler vlmDfnHandlerRef
+        StltVlmDfnApiCallHandler vlmDfnHandlerRef,
+        EventBroker eventBrokerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -126,6 +131,7 @@ public class StltApiCallHandler
         stltSecObj = stltSecObjRef;
         vlmDfnHandler = vlmDfnHandlerRef;
         stltConf = satellitePropsRef;
+        eventBroker = eventBrokerRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -314,6 +320,10 @@ public class StltApiCallHandler
                 }
 
                 updateMonitor.setFullSyncApplied();
+
+                // There are no explicit controller - satellite watches.
+                // FullSync implicitly creates a watch for all events.
+                createWatchForPeer();
             }
             else
             {
@@ -347,6 +357,26 @@ public class StltApiCallHandler
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
             updateMonitor.getNextFullSyncId();
 
+        }
+    }
+
+    private void createWatchForPeer()
+    {
+        Peer controllerPeer = controllerPeerConnector.getControllerPeer();
+        try
+        {
+            eventBroker.createWatch(apiCtx, new Watch(
+                UUID.randomUUID(), controllerPeer.getId(), 0, new EventIdentifier(null, null, null, null)
+            ));
+        }
+        catch (AccessDeniedException exc)
+        {
+            errorReporter.reportError(
+                exc,
+                null,
+                controllerPeer,
+                "Failed to create implicit watch for controller"
+            );
         }
     }
 

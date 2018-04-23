@@ -1,18 +1,5 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Stream;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
@@ -25,6 +12,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
@@ -32,8 +20,13 @@ import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.debug.SatelliteDebugModule;
+import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateModule;
+import com.linbit.linstor.event.EventModule;
+import com.linbit.linstor.event.SatelliteEventModule;
+import com.linbit.linstor.event.writer.EventWriter;
+import com.linbit.linstor.event.writer.protobuf.ProtobufEventWriter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -45,6 +38,18 @@ import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * linstor satellite prototype
@@ -72,6 +77,8 @@ public final class Satellite
 
     private final DeviceManagerImpl devMgr;
 
+    private final DrbdEventPublisher drbdEventPublisher;
+
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
     private final DebugConsoleCreator debugConsoleCreator;
@@ -90,6 +97,7 @@ public final class Satellite
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         DeviceManagerImpl devMgrRef,
+        DrbdEventPublisher drbdEventPublisherRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         FileSystemWatch fsWatchSvcRef,
@@ -103,6 +111,7 @@ public final class Satellite
         reconfigurationLock = reconfigurationLockRef;
         systemServicesMap = systemServicesMapRef;
         devMgr = devMgrRef;
+        drbdEventPublisher = drbdEventPublisherRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         fsWatchSvc = fsWatchSvcRef;
@@ -127,6 +136,7 @@ public final class Satellite
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
             systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
             systemServicesMap.put(devMgr.getInstanceName(), devMgr);
+            systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
 
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
@@ -246,8 +256,22 @@ public final class Satellite
             Thread.currentThread().setName("Main");
 
             ApiType apiType = new ProtobufApiType();
-            List<Class<? extends ApiCall>> apiCalls =
-                new ApiCallLoader(errorLog).loadApiCalls(apiType, Arrays.asList("common", "satellite"));
+            ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
+            List<String> packageSuffixes = Arrays.asList("common", "satellite");
+
+            List<Class<? extends ApiCall>> apiCalls = classPathLoader.loadClasses(
+                ProtobufApiType.class.getPackage().getName(),
+                packageSuffixes,
+                ApiCall.class,
+                ProtobufApiCall.class
+            );
+
+            List<Class<? extends EventWriter>> eventWriters = classPathLoader.loadClasses(
+                ProtobufEventWriter.class.getPackage().getName(),
+                packageSuffixes,
+                EventWriter.class,
+                ProtobufEventWriter.class
+            );
 
             Injector injector = Guice.createInjector(
                 new GuiceConfigModule(),
@@ -263,6 +287,8 @@ public final class Satellite
                 new DrbdStateModule(),
                 new ApiModule(apiType, apiCalls),
                 new ApiCallHandlerModule(),
+                new EventModule(eventWriters, Collections.emptyList()),
+                new SatelliteEventModule(),
                 new DebugModule(),
                 new SatelliteDebugModule(),
                 new SatelliteTransactionMgrModule()

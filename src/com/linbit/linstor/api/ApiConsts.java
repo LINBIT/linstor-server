@@ -299,10 +299,11 @@ public class ApiConsts
     public static final String API_LST_STOR_POOL_DFN = "LstStorPoolDfn";
 
     /*
-     * Subscription APIs
+     * Event APIs
      */
-    public static final String API_CRT_SUBSCR = "CrtSubscr";
-    public static final String API_DEL_SUBSCR = "DelSubscr";
+    public static final String API_CRT_WATCH = "CrtWatch";
+    public static final String API_CANCEL_WATCH = "CancelWatch";
+    public static final String API_EVENT = "Event";
     public static final String API_RPT_SPC = "RptSpc";
     public static final String API_PING = "Ping";
     public static final String API_PONG = "Pong";
@@ -321,6 +322,12 @@ public class ApiConsts
      * Control APIs
      */
     public static final String API_SHTDWN = "Shtdwn";
+
+    /*
+     * Events
+     */
+    public static final String EVENT_VOLUME_DISK_STATE = "VlmDiskState";
+    public static final String EVENT_RESOURCE_STATE = "ResourceState";
 
     /*
      * Object property keys

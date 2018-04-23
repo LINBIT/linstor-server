@@ -13,7 +13,11 @@ import com.linbit.linstor.api.pojo.ResourceState;
 
 public interface CtrlClientSerializer extends CommonSerializer
 {
-    CtrlClientSerializerBuilder builder(String apiCall, int msgId);
+    CtrlClientSerializerBuilder builder();
+
+    CtrlClientSerializerBuilder builder(String apiCall);
+
+    CtrlClientSerializerBuilder builder(String apiCall, Integer msgId);
 
     public interface CtrlClientSerializerBuilder extends CommonSerializerBuilder
     {

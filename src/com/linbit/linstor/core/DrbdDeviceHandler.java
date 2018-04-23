@@ -29,13 +29,12 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.pojo.VolumeStateDevManager;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
-import com.linbit.linstor.drbdstate.DrbdStateTracker;
+import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -55,7 +54,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -88,7 +86,7 @@ class DrbdDeviceHandler implements DeviceHandler
     private final Provider<DeviceManager> deviceManagerProvider;
     private final FileSystemWatch fileSystemWatch;
     private final CoreTimer timer;
-    private final DrbdStateTracker drbdState;
+    private final DrbdStateStore drbdState;
     private final DrbdAdm drbdUtils;
     private final CtrlStltSerializer interComSerializer;
     private final ControllerPeerConnector controllerPeerConnector;
@@ -118,7 +116,7 @@ class DrbdDeviceHandler implements DeviceHandler
         Provider<DeviceManager> deviceManagerProviderRef,
         FileSystemWatch fileSystemWatchRef,
         CoreTimer timerRef,
-        DrbdStateTracker drbdStateRef,
+        DrbdStateStore drbdStateRef,
         DrbdAdm drbdUtilsRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
@@ -149,7 +147,7 @@ class DrbdDeviceHandler implements DeviceHandler
         rscState.setRequiresAdjust(true);
         rscState.setRscName(rsc.getDefinition().getName().getDisplayName());
         {
-            Map<VolumeNumber, VolumeStateDevManager> vlmStateMap = new TreeMap<>();
+            Map<VolumeNumber, VolumeState> vlmStateMap = new TreeMap<>();
             Iterator<Volume> vlmIter = rsc.iterateVolumes();
             while (vlmIter.hasNext())
             {
@@ -172,26 +170,6 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         return rscState;
-    }
-
-    private void updateAllResourceStatesOnController(final Peer peer, Map<String, ResourceState> mapResourceStates)
-        throws AccessDeniedException, NoInitialStateException
-    {
-        for (ResourceDefinition updRscDfn : rscDfnMap.values())
-        {
-            Iterator<Resource> itUpdRsc = updRscDfn.iterateResource(wrkCtx);
-            while (itUpdRsc.hasNext())
-            {
-                Resource updRsc = itUpdRsc.next();
-                if (!mapResourceStates.containsKey(updRsc.getDefinition().getName().getDisplayName()))
-                {
-                    ResourceState updRscState = fillResourceState(updRsc);
-                    evaluateDrbdResource(updRsc, updRscDfn, updRscState);
-                    mapResourceStates.put(updRsc.getDefinition().getName().getDisplayName(), updRscState);
-                }
-            }
-        }
-        updateStatesOnController(peer, mapResourceStates.values());
     }
 
     /**
@@ -263,17 +241,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
             // Reevaluate the resource after changes have been made
             evaluateDrbdResource(rsc, rscDfn, rscState);
-            // Update only the current resource
-            // Upon startup, the satellite adjusts all resources and informs the controller about their state.
-            // Updating only the current resource may miss state changes of other resources, however,
-            // updating all resources may still miss state changes of other resources, but is also
-            // extremely slow.
-            // Therefore, update only the current resource until proper state tracking is implemented
-            // using the DrbdEventService
-            Map<String, ResourceState> rscStates = new HashMap<>();
-            rscStates.put(rscName.getDisplayName(), rscState);
-            // updateAllResourceStatesOnController(localNode.getPeer(wrkCtx), rscStates);
-            updateStatesOnController(localNode.getPeer(wrkCtx), rscStates.values());
         }
         catch (AccessDeniedException accExc)
         {
@@ -330,25 +297,6 @@ class DrbdDeviceHandler implements DeviceHandler
             .primaryRequest(rscName, rscUuid)
             .build();
 
-        if (data != null)
-        {
-            ctrlPeer.sendMessage(data);
-        }
-    }
-
-    private void updateStatesOnController(
-        final Peer ctrlPeer,
-        Collection<ResourceState> rscStates
-    )
-    {
-        CtrlStltSerializerBuilder bld = interComSerializer.builder(InternalApiConsts.API_UPDATE_STATES, 1);
-
-        for (ResourceState rscState : rscStates)
-        {
-            bld.resourceState(controllerPeerConnector.getLocalNode().getName().getDisplayName(), rscState);
-        }
-
-        byte[] data = bld.build();
         if (data != null)
         {
             ctrlPeer.sendMessage(data);

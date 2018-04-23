@@ -32,6 +32,18 @@ public class SatelliteLinstorModule extends AbstractModule
 
     @Provides
     @Singleton
+    @Named(LinStorModule.EVENT_WRITER_WORKER_POOL_NAME)
+    public WorkQueue initializeEventWriterWorkerThreadPool(ErrorReporter errorLog)
+    {
+        return WorkerPoolInitializer.createDefaultWorkerThreadPool(
+            errorLog,
+            null,
+            "EventWriterWorkerPool"
+        );
+    }
+
+    @Provides
+    @Singleton
     @Named(STLT_WORKER_POOL_NAME)
     public WorkQueue initializeStltWorkerThreadPool(ErrorReporter errorLog)
     {

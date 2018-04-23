@@ -1,6 +1,7 @@
 package com.linbit.linstor.drbdstate;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +23,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class DrbdEventService implements SystemService, Runnable, DrbdStateTracker
+public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
 {
     public static final ServiceName SERVICE_NAME;
     public static final String INSTANCE_PREFIX = "DrbdEventService-";
@@ -38,12 +39,12 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     private Thread thread;
     private boolean running;
 
-    private final EventsTracker eventsTracker;
+    private final DrbdEventsMonitor eventsMonitor;
     private boolean needsReinitialize = false;
 
     private DaemonHandler demonHandler;
     private final ErrorReporter errorReporter;
-    private final StateTracker tracker;
+    private final DrbdStateTracker tracker;
 
     static
     {
@@ -60,7 +61,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     @Inject
     public DrbdEventService(
         final ErrorReporter errorReporterRef,
-        final StateTracker trackerRef
+        final DrbdStateTracker trackerRef
     )
     {
         try
@@ -71,7 +72,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
             running = false;
             errorReporter = errorReporterRef;
             tracker = trackerRef;
-            eventsTracker = new EventsTracker(trackerRef);
+            eventsMonitor = new DrbdEventsMonitor(trackerRef);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -90,7 +91,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
                 event = eventDeque.take();
                 if (event instanceof StdOutEvent)
                 {
-                    eventsTracker.receiveEvent(new String(((StdOutEvent) event).data));
+                    eventsMonitor.receiveEvent(new String(((StdOutEvent) event).data));
                 }
                 else
                 if (event instanceof StdErrEvent)
@@ -161,7 +162,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     {
         if (needsReinitialize)
         {
-            eventsTracker.reinitializing();
+            eventsMonitor.reinitializing();
         }
         needsReinitialize = true;
         running = true;
@@ -226,7 +227,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     @Override
     public boolean isDrbdStateAvailable()
     {
-        return eventsTracker.isStateAvailable();
+        return eventsMonitor.isStateAvailable();
     }
 
     @Override
@@ -249,6 +250,16 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
             throw new NoInitialStateException("drbdsetup events2 not fully parsed yet");
         }
         return tracker.getResource(name);
+    }
+
+    @Override
+    public Collection<DrbdResource> getAllDrbdResources() throws NoInitialStateException
+    {
+        if (!isDrbdStateAvailable())
+        {
+            throw new NoInitialStateException("drbdsetup events2 not fully parsed yet");
+        }
+        return tracker.getAllResources();
     }
 
     private static class PoisonEvent implements Event

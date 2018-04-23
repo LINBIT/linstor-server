@@ -1,6 +1,8 @@
 package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,12 +59,12 @@ public class DrbdResource
         }
     }
 
-    protected final String resName;
+    protected final ResourceName resName;
     protected Role resRole;
     private final Map<String, DrbdConnection> connList;
     private final Map<VolumeNumber, DrbdVolume> volList;
 
-    protected DrbdResource(String name)
+    protected DrbdResource(ResourceName name)
     {
         resName = name;
         resRole = Role.UNKNOWN;
@@ -70,7 +72,7 @@ public class DrbdResource
         volList = new TreeMap<>();
     }
 
-    public String getName()
+    public ResourceName getName()
     {
         return resName;
     }
@@ -91,7 +93,20 @@ public class DrbdResource
             );
         }
 
-        return new DrbdResource(name);
+        DrbdResource newResource;
+        try
+        {
+            newResource = new DrbdResource(new ResourceName(name));
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new EventsSourceException(
+                "Create resource event with an invalid resource name",
+                exc
+            );
+        }
+
+        return newResource;
     }
 
     protected void update(Map<String, String> props, ResourceObserver obs)

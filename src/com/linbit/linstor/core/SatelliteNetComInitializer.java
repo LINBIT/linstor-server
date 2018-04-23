@@ -57,7 +57,7 @@ public final class SatelliteNetComInitializer
     private final ErrorReporter errorReporter;
     private final AccessContext publicCtx;
     private final MessageProcessor msgProc;
-    private final CoreModule.PeerMap peerMap;
+    private final StltConnTracker stltConnTracker;
     private final Map<ServiceName, SystemService> systemServicesMap;
 
     @Inject
@@ -65,14 +65,14 @@ public final class SatelliteNetComInitializer
         ErrorReporter errorReporterRef,
         @PublicContext AccessContext publicCtxRef,
         CommonMessageProcessor msgProcRef,
-        CoreModule.PeerMap peerMapRef,
+        StltConnTracker stltConnTrackerRef,
         Map<ServiceName, SystemService> systemServicesMapRef
     )
     {
         errorReporter = errorReporterRef;
         publicCtx = publicCtxRef;
         msgProc = msgProcRef;
-        peerMap = peerMapRef;
+        stltConnTracker = stltConnTrackerRef;
         systemServicesMap = systemServicesMapRef;
     }
 
@@ -117,7 +117,7 @@ public final class SatelliteNetComInitializer
                     bindAddress,
                     publicCtx,
                     initCtx,
-                    new StltConnTracker(peerMap)
+                    stltConnTracker
                 );
             }
             else
@@ -138,7 +138,7 @@ public final class SatelliteNetComInitializer
                         bindAddress,
                         publicCtx,
                         initCtx,
-                        new StltConnTracker(peerMap),
+                        stltConnTracker,
                         sslProtocol,
                         keyStoreFile,
                         keyStorePasswd,

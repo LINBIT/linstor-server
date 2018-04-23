@@ -23,7 +23,7 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
         ErrorReporter errorReporterRef,
         CtrlClientSerializationWriter serializationWriterRef,
         String apiCall,
-        int msgId
+        Integer msgId
     )
     {
         super(errorReporterRef, serializationWriterRef, apiCall, msgId);

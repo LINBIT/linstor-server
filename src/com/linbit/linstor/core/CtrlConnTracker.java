@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -18,17 +19,20 @@ class CtrlConnTracker implements ConnectionObserver
     private final CtrlClientSerializer ctrlClientSerializer;
     private final CoreModule.PeerMap peerMap;
     private final ReconnectorTask reconnectorTask;
+    private final EventBroker eventBroker;
 
     @Inject
     CtrlConnTracker(
         CtrlClientSerializer ctrlClientSerializerRef,
         CoreModule.PeerMap peerMapRef,
-        ReconnectorTask reconnectorTaskRef
+        ReconnectorTask reconnectorTaskRef,
+        EventBroker eventBrokerRef
     )
     {
         ctrlClientSerializer = ctrlClientSerializerRef;
         peerMap = peerMapRef;
         reconnectorTask = reconnectorTaskRef;
+        eventBroker = eventBrokerRef;
     }
 
     @Override
@@ -88,6 +92,8 @@ class CtrlConnTracker implements ConnectionObserver
     {
         if (connPeer != null)
         {
+            eventBroker.removeWatchesForPeer(connPeer.getId());
+
             synchronized (peerMap)
             {
                 peerMap.remove(connPeer.getId());

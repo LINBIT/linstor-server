@@ -11,12 +11,12 @@ public class VolumeState
     /**
      * Indicates whether the volume is currently active (in use by DRBD)
      */
-    protected boolean isPresent = false;
+    protected Boolean isPresent = false;
 
     /**
      * Indicates whether a storage backend volume is present
      */
-    protected boolean hasDisk = false;
+    protected Boolean hasDisk = false;
 
     /**
      * Indicates whether DRBD meta data is present on the storage backend volume
@@ -25,27 +25,27 @@ public class VolumeState
      * the initial assumption is that there is existing meta data, and the check
      * attempts to prove that there is no meta data
      */
-    protected boolean hasMetaData = true;
+    protected Boolean hasMetaData = true;
 
     /**
      * Indicates whether a check for meta data should be performed
      */
-    protected boolean checkMetaData = true;
+    protected Boolean checkMetaData = true;
 
     /**
      * Indicates whether DRBD thinks the volume's backend storage volume has failed
      */
-    protected boolean diskFailed = false;
+    protected Boolean diskFailed = false;
 
     /**
      * Net size (without DRBD meta data) of the volume in kiB
      */
-    protected long netSize = 0L;
+    protected Long netSize = 0L;
 
     /**
      * Gross size (with internal DRBD meta data) of the volume in kiB
      */
-    protected long grossSize = 0L;
+    protected Long grossSize = 0L;
 
     /**
      * Drbd disk state
@@ -59,13 +59,13 @@ public class VolumeState
     public VolumeState(
         VolumeNumber vlmNrRef,
         MinorNumber minorNrRef,
-        boolean isPresentRef,
-        boolean hasDiskRef,
-        boolean hasMetaDataRef,
-        boolean checkMetaDataRef,
-        boolean diskFailedRef,
-        long netSizeRef,
-        long grossSizeRef,
+        Boolean isPresentRef,
+        Boolean hasDiskRef,
+        Boolean hasMetaDataRef,
+        Boolean checkMetaDataRef,
+        Boolean diskFailedRef,
+        Long netSizeRef,
+        Long grossSizeRef,
         final String diskStateRef
     )
     {
@@ -103,37 +103,37 @@ public class VolumeState
         return minorNr;
     }
 
-    public boolean isPresent()
+    public Boolean isPresent()
     {
         return isPresent;
     }
 
-    public boolean hasDisk()
+    public Boolean hasDisk()
     {
         return hasDisk;
     }
 
-    public boolean hasMetaData()
+    public Boolean hasMetaData()
     {
         return hasMetaData;
     }
 
-    public boolean isCheckMetaData()
+    public Boolean isCheckMetaData()
     {
         return checkMetaData;
     }
 
-    public boolean isDiskFailed()
+    public Boolean isDiskFailed()
     {
         return diskFailed;
     }
 
-    public long getNetSize()
+    public Long getNetSize()
     {
         return netSize;
     }
 
-    public long getGrossSize()
+    public Long getGrossSize()
     {
         return grossSize;
     }
@@ -153,37 +153,37 @@ public class VolumeState
         this.minorNr = minorNrRef;
     }
 
-    public void setPresent(boolean present)
+    public void setPresent(Boolean present)
     {
         isPresent = present;
     }
 
-    public void setHasDisk(boolean hasDiskRef)
+    public void setHasDisk(Boolean hasDiskRef)
     {
         hasDisk = hasDiskRef;
     }
 
-    public void setHasMetaData(boolean hasMetaDataRef)
+    public void setHasMetaData(Boolean hasMetaDataRef)
     {
         hasMetaData = hasMetaDataRef;
     }
 
-    public void setCheckMetaData(boolean checkMetaDataRef)
+    public void setCheckMetaData(Boolean checkMetaDataRef)
     {
         checkMetaData = checkMetaDataRef;
     }
 
-    public void setDiskFailed(boolean diskFailedRef)
+    public void setDiskFailed(Boolean diskFailedRef)
     {
         diskFailed = diskFailedRef;
     }
 
-    public void setNetSize(long netSizeRef)
+    public void setNetSize(Long netSizeRef)
     {
         netSize = netSizeRef;
     }
 
-    public void setGrossSize(long grossSizeRef)
+    public void setGrossSize(Long grossSizeRef)
     {
         grossSize = grossSizeRef;
     }
