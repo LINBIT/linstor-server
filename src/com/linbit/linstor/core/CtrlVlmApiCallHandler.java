@@ -14,6 +14,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
@@ -207,6 +208,13 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                                 }
                             }
 
+                            List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
+                            for (ResourceConnection rscConn : rsc.streamResourceConnections(peerAccCtx)
+                                    .collect(toList()))
+                            {
+                                rscConns.add(rscConn.getApiData(peerAccCtx));
+                            }
+
                             if (!volumes.isEmpty())
                             {
                                 RscPojo filteredRscVlms = new RscPojo(
@@ -220,6 +228,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                                     rsc.getProps(peerAccCtx).map(),
                                     volumes,
                                     null,
+                                    rscConns,
                                     null,
                                     null);
                                 rscs.add(filteredRscVlms);

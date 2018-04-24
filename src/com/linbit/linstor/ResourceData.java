@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Provider;
@@ -216,6 +217,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             resourceConnections.remove(sourceResource);
         }
+    }
+
+    @Override
+    public Stream<ResourceConnection> streamResourceConnections(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return resourceConnections.values().stream();
     }
 
     @Override
@@ -458,6 +468,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             volumes.add(itVolumes.next().getApiData(accCtx));
         }
+        List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
+        for (ResourceConnection rscConn : streamResourceConnections(accCtx).collect(Collectors.toList()))
+        {
+            rscConns.add(rscConn.getApiData(accCtx));
+        }
         return new RscPojo(
             getDefinition().getName().getDisplayName(),
             getAssignedNode().getName().getDisplayName(),
@@ -469,6 +484,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
             getProps(accCtx).map(),
             volumes,
             null, // otherRscList
+            rscConns,
             fullSyncId,
             updateId
         );

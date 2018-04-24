@@ -17,6 +17,8 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.ResourceConnectionDataFactory;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition;
@@ -42,6 +44,7 @@ import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -87,6 +90,7 @@ class StltRscApiCallHandler
     private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
+    private final ResourceConnectionDataFactory resourceConnectionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
 
@@ -108,7 +112,8 @@ class StltRscApiCallHandler
         StorPoolDataFactory storPoolDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        StltSecurityObjects stltSecObjsRef
+        StltSecurityObjects stltSecObjsRef,
+        ResourceConnectionDataFactory resourceConnectionDataFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -128,6 +133,7 @@ class StltRscApiCallHandler
         volumeDataFactory = volumeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObjs = stltSecObjsRef;
+        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
     }
 
     /**
@@ -560,6 +566,20 @@ class StltRscApiCallHandler
                 }
             }
 
+            // create resource connections
+            for (ResourceConnection.RscConnApi rscConnApi : rscRawData.getRscConnections())
+            {
+                Resource sourceResource = rscDfn.getResource(apiCtx, new NodeName(rscConnApi.getSourceNodeName()));
+                Resource targetResource = rscDfn.getResource(apiCtx, new NodeName(rscConnApi.getTargetNodeName()));
+
+                ResourceConnection rscConn = resourceConnectionDataFactory.getInstanceSatellite(
+                    apiCtx, rscConnApi.getUuid(), sourceResource, targetResource);
+
+                Map<String, String> propMap = rscConn.getProps(apiCtx).map();
+                propMap.clear();
+                propMap.putAll(rscConnApi.getProps());
+            }
+
             if (rscDfnToRegister != null)
             {
                 rscDfnMap.put(rscName, rscDfnToRegister);
@@ -568,7 +588,6 @@ class StltRscApiCallHandler
             {
                 nodesMap.put(node.getName(), node);
             }
-
 
             // decrypt all new volume definition keys
             byte[] masterKey = stltSecObjs.getCryptKey();

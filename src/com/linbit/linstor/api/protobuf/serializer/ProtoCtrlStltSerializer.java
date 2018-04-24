@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
 import com.linbit.InvalidNameException;
@@ -20,6 +21,7 @@ import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
@@ -56,6 +58,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObje
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
+import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
@@ -651,11 +654,30 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                 .addAllOtherResources(
                     buildOtherResources(otherResources)
                 )
+                .addAllRscConnections(buildRscConnections(localResource))
                 .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build();
             return message;
+        }
+
+        private Iterable<? extends RscConnectionData> buildRscConnections(Resource localResource)
+            throws AccessDeniedException
+        {
+            List<RscConnectionData> list = new ArrayList<>();
+
+            for (ResourceConnection conn : localResource.streamResourceConnections(serializerCtx)
+                .collect(Collectors.toList()))
+            {
+                list.add(RscConnectionData.newBuilder()
+                    .setNode1(conn.getSourceResource(serializerCtx).getAssignedNode().getName().getDisplayName())
+                    .setNode2(conn.getTargetResource(serializerCtx).getAssignedNode().getName().getDisplayName())
+                    .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()))
+                    .build()
+                );
+            }
+            return list;
         }
 
         private Iterable<? extends VlmDfn> buildVlmDfnMessages(Resource localResource)

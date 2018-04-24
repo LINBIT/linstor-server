@@ -348,10 +348,54 @@ public final class MsgIntRscDataOuterClass {
 
     /**
      * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    java.util.List<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData> 
+        getRscConnectionsList();
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData getRscConnections(int index);
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    int getRscConnectionsCount();
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    java.util.List<? extends com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder> 
+        getRscConnectionsOrBuilderList();
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder getRscConnectionsOrBuilder(
+        int index);
+
+    /**
+     * <pre>
      * Resource definition transport type (IP, RDMA, RoCE)
      * </pre>
      *
-     * <code>string rsc_dfn_transport_type = 14;</code>
+     * <code>string rsc_dfn_transport_type = 15;</code>
      */
     java.lang.String getRscDfnTransportType();
     /**
@@ -359,7 +403,7 @@ public final class MsgIntRscDataOuterClass {
      * Resource definition transport type (IP, RDMA, RoCE)
      * </pre>
      *
-     * <code>string rsc_dfn_transport_type = 14;</code>
+     * <code>string rsc_dfn_transport_type = 15;</code>
      */
     com.google.protobuf.ByteString
         getRscDfnTransportTypeBytes();
@@ -369,7 +413,7 @@ public final class MsgIntRscDataOuterClass {
      * FullSync id
      * </pre>
      *
-     * <code>sint64 full_sync_id = 15;</code>
+     * <code>sint64 full_sync_id = 16;</code>
      */
     long getFullSyncId();
 
@@ -378,7 +422,7 @@ public final class MsgIntRscDataOuterClass {
      * Update id
      * </pre>
      *
-     * <code>sint64 update_id = 16;</code>
+     * <code>sint64 update_id = 17;</code>
      */
     long getUpdateId();
   }
@@ -411,6 +455,7 @@ public final class MsgIntRscDataOuterClass {
       vlmDfns_ = java.util.Collections.emptyList();
       localVolumes_ = java.util.Collections.emptyList();
       otherResources_ = java.util.Collections.emptyList();
+      rscConnections_ = java.util.Collections.emptyList();
       rscDfnTransportType_ = "";
       fullSyncId_ = 0L;
       updateId_ = 0L;
@@ -531,17 +576,26 @@ public final class MsgIntRscDataOuterClass {
               break;
             }
             case 114: {
+              if (!((mutable_bitField0_ & 0x00002000) == 0x00002000)) {
+                rscConnections_ = new java.util.ArrayList<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData>();
+                mutable_bitField0_ |= 0x00002000;
+              }
+              rscConnections_.add(
+                  input.readMessage(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.parser(), extensionRegistry));
+              break;
+            }
+            case 122: {
               java.lang.String s = input.readStringRequireUtf8();
 
               rscDfnTransportType_ = s;
               break;
             }
-            case 120: {
+            case 128: {
 
               fullSyncId_ = input.readSInt64();
               break;
             }
-            case 128: {
+            case 136: {
 
               updateId_ = input.readSInt64();
               break;
@@ -568,6 +622,9 @@ public final class MsgIntRscDataOuterClass {
         }
         if (((mutable_bitField0_ & 0x00001000) == 0x00001000)) {
           otherResources_ = java.util.Collections.unmodifiableList(otherResources_);
+        }
+        if (((mutable_bitField0_ & 0x00002000) == 0x00002000)) {
+          rscConnections_ = java.util.Collections.unmodifiableList(rscConnections_);
         }
         makeExtensionsImmutable();
       }
@@ -1080,14 +1137,69 @@ public final class MsgIntRscDataOuterClass {
       return otherResources_.get(index);
     }
 
-    public static final int RSC_DFN_TRANSPORT_TYPE_FIELD_NUMBER = 14;
+    public static final int RSC_CONNECTIONS_FIELD_NUMBER = 14;
+    private java.util.List<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData> rscConnections_;
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    public java.util.List<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData> getRscConnectionsList() {
+      return rscConnections_;
+    }
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    public java.util.List<? extends com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder> 
+        getRscConnectionsOrBuilderList() {
+      return rscConnections_;
+    }
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    public int getRscConnectionsCount() {
+      return rscConnections_.size();
+    }
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData getRscConnections(int index) {
+      return rscConnections_.get(index);
+    }
+    /**
+     * <pre>
+     * List of resource connections
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+     */
+    public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder getRscConnectionsOrBuilder(
+        int index) {
+      return rscConnections_.get(index);
+    }
+
+    public static final int RSC_DFN_TRANSPORT_TYPE_FIELD_NUMBER = 15;
     private volatile java.lang.Object rscDfnTransportType_;
     /**
      * <pre>
      * Resource definition transport type (IP, RDMA, RoCE)
      * </pre>
      *
-     * <code>string rsc_dfn_transport_type = 14;</code>
+     * <code>string rsc_dfn_transport_type = 15;</code>
      */
     public java.lang.String getRscDfnTransportType() {
       java.lang.Object ref = rscDfnTransportType_;
@@ -1106,7 +1218,7 @@ public final class MsgIntRscDataOuterClass {
      * Resource definition transport type (IP, RDMA, RoCE)
      * </pre>
      *
-     * <code>string rsc_dfn_transport_type = 14;</code>
+     * <code>string rsc_dfn_transport_type = 15;</code>
      */
     public com.google.protobuf.ByteString
         getRscDfnTransportTypeBytes() {
@@ -1122,27 +1234,27 @@ public final class MsgIntRscDataOuterClass {
       }
     }
 
-    public static final int FULL_SYNC_ID_FIELD_NUMBER = 15;
+    public static final int FULL_SYNC_ID_FIELD_NUMBER = 16;
     private long fullSyncId_;
     /**
      * <pre>
      * FullSync id
      * </pre>
      *
-     * <code>sint64 full_sync_id = 15;</code>
+     * <code>sint64 full_sync_id = 16;</code>
      */
     public long getFullSyncId() {
       return fullSyncId_;
     }
 
-    public static final int UPDATE_ID_FIELD_NUMBER = 16;
+    public static final int UPDATE_ID_FIELD_NUMBER = 17;
     private long updateId_;
     /**
      * <pre>
      * Update id
      * </pre>
      *
-     * <code>sint64 update_id = 16;</code>
+     * <code>sint64 update_id = 17;</code>
      */
     public long getUpdateId() {
       return updateId_;
@@ -1180,6 +1292,12 @@ public final class MsgIntRscDataOuterClass {
       }
       for (int i = 0; i < getOtherResourcesCount(); i++) {
         if (!getOtherResources(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getRscConnectionsCount(); i++) {
+        if (!getRscConnections(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -1229,14 +1347,17 @@ public final class MsgIntRscDataOuterClass {
       for (int i = 0; i < otherResources_.size(); i++) {
         output.writeMessage(13, otherResources_.get(i));
       }
+      for (int i = 0; i < rscConnections_.size(); i++) {
+        output.writeMessage(14, rscConnections_.get(i));
+      }
       if (!getRscDfnTransportTypeBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 14, rscDfnTransportType_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 15, rscDfnTransportType_);
       }
       if (fullSyncId_ != 0L) {
-        output.writeSInt64(15, fullSyncId_);
+        output.writeSInt64(16, fullSyncId_);
       }
       if (updateId_ != 0L) {
-        output.writeSInt64(16, updateId_);
+        output.writeSInt64(17, updateId_);
       }
     }
 
@@ -1293,16 +1414,20 @@ public final class MsgIntRscDataOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(13, otherResources_.get(i));
       }
+      for (int i = 0; i < rscConnections_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(14, rscConnections_.get(i));
+      }
       if (!getRscDfnTransportTypeBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, rscDfnTransportType_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(15, rscDfnTransportType_);
       }
       if (fullSyncId_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(15, fullSyncId_);
+          .computeSInt64Size(16, fullSyncId_);
       }
       if (updateId_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(16, updateId_);
+          .computeSInt64Size(17, updateId_);
       }
       memoizedSize = size;
       return size;
@@ -1346,6 +1471,8 @@ public final class MsgIntRscDataOuterClass {
           .equals(other.getLocalVolumesList());
       result = result && getOtherResourcesList()
           .equals(other.getOtherResourcesList());
+      result = result && getRscConnectionsList()
+          .equals(other.getRscConnectionsList());
       result = result && getRscDfnTransportType()
           .equals(other.getRscDfnTransportType());
       result = result && (getFullSyncId()
@@ -1399,6 +1526,10 @@ public final class MsgIntRscDataOuterClass {
       if (getOtherResourcesCount() > 0) {
         hash = (37 * hash) + OTHER_RESOURCES_FIELD_NUMBER;
         hash = (53 * hash) + getOtherResourcesList().hashCode();
+      }
+      if (getRscConnectionsCount() > 0) {
+        hash = (37 * hash) + RSC_CONNECTIONS_FIELD_NUMBER;
+        hash = (53 * hash) + getRscConnectionsList().hashCode();
       }
       hash = (37 * hash) + RSC_DFN_TRANSPORT_TYPE_FIELD_NUMBER;
       hash = (53 * hash) + getRscDfnTransportType().hashCode();
@@ -1531,6 +1662,7 @@ public final class MsgIntRscDataOuterClass {
           getVlmDfnsFieldBuilder();
           getLocalVolumesFieldBuilder();
           getOtherResourcesFieldBuilder();
+          getRscConnectionsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -1580,6 +1712,12 @@ public final class MsgIntRscDataOuterClass {
           bitField0_ = (bitField0_ & ~0x00001000);
         } else {
           otherResourcesBuilder_.clear();
+        }
+        if (rscConnectionsBuilder_ == null) {
+          rscConnections_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00002000);
+        } else {
+          rscConnectionsBuilder_.clear();
         }
         rscDfnTransportType_ = "";
 
@@ -1663,6 +1801,15 @@ public final class MsgIntRscDataOuterClass {
           result.otherResources_ = otherResources_;
         } else {
           result.otherResources_ = otherResourcesBuilder_.build();
+        }
+        if (rscConnectionsBuilder_ == null) {
+          if (((bitField0_ & 0x00002000) == 0x00002000)) {
+            rscConnections_ = java.util.Collections.unmodifiableList(rscConnections_);
+            bitField0_ = (bitField0_ & ~0x00002000);
+          }
+          result.rscConnections_ = rscConnections_;
+        } else {
+          result.rscConnections_ = rscConnectionsBuilder_.build();
         }
         result.rscDfnTransportType_ = rscDfnTransportType_;
         result.fullSyncId_ = fullSyncId_;
@@ -1867,6 +2014,32 @@ public final class MsgIntRscDataOuterClass {
             }
           }
         }
+        if (rscConnectionsBuilder_ == null) {
+          if (!other.rscConnections_.isEmpty()) {
+            if (rscConnections_.isEmpty()) {
+              rscConnections_ = other.rscConnections_;
+              bitField0_ = (bitField0_ & ~0x00002000);
+            } else {
+              ensureRscConnectionsIsMutable();
+              rscConnections_.addAll(other.rscConnections_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.rscConnections_.isEmpty()) {
+            if (rscConnectionsBuilder_.isEmpty()) {
+              rscConnectionsBuilder_.dispose();
+              rscConnectionsBuilder_ = null;
+              rscConnections_ = other.rscConnections_;
+              bitField0_ = (bitField0_ & ~0x00002000);
+              rscConnectionsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getRscConnectionsFieldBuilder() : null;
+            } else {
+              rscConnectionsBuilder_.addAllMessages(other.rscConnections_);
+            }
+          }
+        }
         if (!other.getRscDfnTransportType().isEmpty()) {
           rscDfnTransportType_ = other.rscDfnTransportType_;
           onChanged();
@@ -1904,6 +2077,11 @@ public final class MsgIntRscDataOuterClass {
         }
         for (int i = 0; i < getOtherResourcesCount(); i++) {
           if (!getOtherResources(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getRscConnectionsCount(); i++) {
+          if (!getRscConnections(i).isInitialized()) {
             return false;
           }
         }
@@ -3997,13 +4175,325 @@ public final class MsgIntRscDataOuterClass {
         return otherResourcesBuilder_;
       }
 
+      private java.util.List<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData> rscConnections_ =
+        java.util.Collections.emptyList();
+      private void ensureRscConnectionsIsMutable() {
+        if (!((bitField0_ & 0x00002000) == 0x00002000)) {
+          rscConnections_ = new java.util.ArrayList<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData>(rscConnections_);
+          bitField0_ |= 0x00002000;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder> rscConnectionsBuilder_;
+
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData> getRscConnectionsList() {
+        if (rscConnectionsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(rscConnections_);
+        } else {
+          return rscConnectionsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public int getRscConnectionsCount() {
+        if (rscConnectionsBuilder_ == null) {
+          return rscConnections_.size();
+        } else {
+          return rscConnectionsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData getRscConnections(int index) {
+        if (rscConnectionsBuilder_ == null) {
+          return rscConnections_.get(index);
+        } else {
+          return rscConnectionsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder setRscConnections(
+          int index, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData value) {
+        if (rscConnectionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRscConnectionsIsMutable();
+          rscConnections_.set(index, value);
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder setRscConnections(
+          int index, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder builderForValue) {
+        if (rscConnectionsBuilder_ == null) {
+          ensureRscConnectionsIsMutable();
+          rscConnections_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder addRscConnections(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData value) {
+        if (rscConnectionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRscConnectionsIsMutable();
+          rscConnections_.add(value);
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder addRscConnections(
+          int index, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData value) {
+        if (rscConnectionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRscConnectionsIsMutable();
+          rscConnections_.add(index, value);
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder addRscConnections(
+          com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder builderForValue) {
+        if (rscConnectionsBuilder_ == null) {
+          ensureRscConnectionsIsMutable();
+          rscConnections_.add(builderForValue.build());
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder addRscConnections(
+          int index, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder builderForValue) {
+        if (rscConnectionsBuilder_ == null) {
+          ensureRscConnectionsIsMutable();
+          rscConnections_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder addAllRscConnections(
+          java.lang.Iterable<? extends com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData> values) {
+        if (rscConnectionsBuilder_ == null) {
+          ensureRscConnectionsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, rscConnections_);
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder clearRscConnections() {
+        if (rscConnectionsBuilder_ == null) {
+          rscConnections_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00002000);
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public Builder removeRscConnections(int index) {
+        if (rscConnectionsBuilder_ == null) {
+          ensureRscConnectionsIsMutable();
+          rscConnections_.remove(index);
+          onChanged();
+        } else {
+          rscConnectionsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder getRscConnectionsBuilder(
+          int index) {
+        return getRscConnectionsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder getRscConnectionsOrBuilder(
+          int index) {
+        if (rscConnectionsBuilder_ == null) {
+          return rscConnections_.get(index);  } else {
+          return rscConnectionsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public java.util.List<? extends com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder> 
+           getRscConnectionsOrBuilderList() {
+        if (rscConnectionsBuilder_ != null) {
+          return rscConnectionsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(rscConnections_);
+        }
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder addRscConnectionsBuilder() {
+        return getRscConnectionsFieldBuilder().addBuilder(
+            com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder addRscConnectionsBuilder(
+          int index) {
+        return getRscConnectionsFieldBuilder().addBuilder(
+            index, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * List of resource connections
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.javainternal.RscConnectionData rsc_connections = 14;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder> 
+           getRscConnectionsBuilderList() {
+        return getRscConnectionsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder> 
+          getRscConnectionsFieldBuilder() {
+        if (rscConnectionsBuilder_ == null) {
+          rscConnectionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder>(
+                  rscConnections_,
+                  ((bitField0_ & 0x00002000) == 0x00002000),
+                  getParentForChildren(),
+                  isClean());
+          rscConnections_ = null;
+        }
+        return rscConnectionsBuilder_;
+      }
+
       private java.lang.Object rscDfnTransportType_ = "";
       /**
        * <pre>
        * Resource definition transport type (IP, RDMA, RoCE)
        * </pre>
        *
-       * <code>string rsc_dfn_transport_type = 14;</code>
+       * <code>string rsc_dfn_transport_type = 15;</code>
        */
       public java.lang.String getRscDfnTransportType() {
         java.lang.Object ref = rscDfnTransportType_;
@@ -4022,7 +4512,7 @@ public final class MsgIntRscDataOuterClass {
        * Resource definition transport type (IP, RDMA, RoCE)
        * </pre>
        *
-       * <code>string rsc_dfn_transport_type = 14;</code>
+       * <code>string rsc_dfn_transport_type = 15;</code>
        */
       public com.google.protobuf.ByteString
           getRscDfnTransportTypeBytes() {
@@ -4042,7 +4532,7 @@ public final class MsgIntRscDataOuterClass {
        * Resource definition transport type (IP, RDMA, RoCE)
        * </pre>
        *
-       * <code>string rsc_dfn_transport_type = 14;</code>
+       * <code>string rsc_dfn_transport_type = 15;</code>
        */
       public Builder setRscDfnTransportType(
           java.lang.String value) {
@@ -4059,7 +4549,7 @@ public final class MsgIntRscDataOuterClass {
        * Resource definition transport type (IP, RDMA, RoCE)
        * </pre>
        *
-       * <code>string rsc_dfn_transport_type = 14;</code>
+       * <code>string rsc_dfn_transport_type = 15;</code>
        */
       public Builder clearRscDfnTransportType() {
         
@@ -4072,7 +4562,7 @@ public final class MsgIntRscDataOuterClass {
        * Resource definition transport type (IP, RDMA, RoCE)
        * </pre>
        *
-       * <code>string rsc_dfn_transport_type = 14;</code>
+       * <code>string rsc_dfn_transport_type = 15;</code>
        */
       public Builder setRscDfnTransportTypeBytes(
           com.google.protobuf.ByteString value) {
@@ -4092,7 +4582,7 @@ public final class MsgIntRscDataOuterClass {
        * FullSync id
        * </pre>
        *
-       * <code>sint64 full_sync_id = 15;</code>
+       * <code>sint64 full_sync_id = 16;</code>
        */
       public long getFullSyncId() {
         return fullSyncId_;
@@ -4102,7 +4592,7 @@ public final class MsgIntRscDataOuterClass {
        * FullSync id
        * </pre>
        *
-       * <code>sint64 full_sync_id = 15;</code>
+       * <code>sint64 full_sync_id = 16;</code>
        */
       public Builder setFullSyncId(long value) {
         
@@ -4115,7 +4605,7 @@ public final class MsgIntRscDataOuterClass {
        * FullSync id
        * </pre>
        *
-       * <code>sint64 full_sync_id = 15;</code>
+       * <code>sint64 full_sync_id = 16;</code>
        */
       public Builder clearFullSyncId() {
         
@@ -4130,7 +4620,7 @@ public final class MsgIntRscDataOuterClass {
        * Update id
        * </pre>
        *
-       * <code>sint64 update_id = 16;</code>
+       * <code>sint64 update_id = 17;</code>
        */
       public long getUpdateId() {
         return updateId_;
@@ -4140,7 +4630,7 @@ public final class MsgIntRscDataOuterClass {
        * Update id
        * </pre>
        *
-       * <code>sint64 update_id = 16;</code>
+       * <code>sint64 update_id = 17;</code>
        */
       public Builder setUpdateId(long value) {
         
@@ -4153,7 +4643,7 @@ public final class MsgIntRscDataOuterClass {
        * Update id
        * </pre>
        *
-       * <code>sint64 update_id = 16;</code>
+       * <code>sint64 update_id = 17;</code>
        */
       public Builder clearUpdateId() {
         
@@ -6250,6 +6740,1215 @@ public final class MsgIntRscDataOuterClass {
 
   }
 
+  public interface RscConnectionDataOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.linbit.linstor.proto.javainternal.RscConnectionData)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>bytes uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString getUuid();
+
+    /**
+     * <code>string node_1 = 2;</code>
+     */
+    java.lang.String getNode1();
+    /**
+     * <code>string node_1 = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getNode1Bytes();
+
+    /**
+     * <code>string node_2 = 3;</code>
+     */
+    java.lang.String getNode2();
+    /**
+     * <code>string node_2 = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getNode2Bytes();
+
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getPropsList();
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getProps(int index);
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    int getPropsCount();
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getPropsOrBuilderList();
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getPropsOrBuilder(
+        int index);
+  }
+  /**
+   * <pre>
+   * Resource connection
+   * </pre>
+   *
+   * Protobuf type {@code com.linbit.linstor.proto.javainternal.RscConnectionData}
+   */
+  public  static final class RscConnectionData extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:com.linbit.linstor.proto.javainternal.RscConnectionData)
+      RscConnectionDataOrBuilder {
+    // Use RscConnectionData.newBuilder() to construct.
+    private RscConnectionData(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private RscConnectionData() {
+      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      node1_ = "";
+      node2_ = "";
+      props_ = java.util.Collections.emptyList();
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+    }
+    private RscConnectionData(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+
+              uuid_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              node1_ = s;
+              break;
+            }
+            case 26: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              node2_ = s;
+              break;
+            }
+            case 34: {
+              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
+                props_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                mutable_bitField0_ |= 0x00000008;
+              }
+              props_.add(
+                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
+          props_ = java.util.Collections.unmodifiableList(props_);
+        }
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.class, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString uuid_;
+    /**
+     * <code>bytes uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString getUuid() {
+      return uuid_;
+    }
+
+    public static final int NODE_1_FIELD_NUMBER = 2;
+    private volatile java.lang.Object node1_;
+    /**
+     * <code>string node_1 = 2;</code>
+     */
+    public java.lang.String getNode1() {
+      java.lang.Object ref = node1_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        node1_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string node_1 = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNode1Bytes() {
+      java.lang.Object ref = node1_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        node1_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int NODE_2_FIELD_NUMBER = 3;
+    private volatile java.lang.Object node2_;
+    /**
+     * <code>string node_2 = 3;</code>
+     */
+    public java.lang.String getNode2() {
+      java.lang.Object ref = node2_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        node2_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string node_2 = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNode2Bytes() {
+      java.lang.Object ref = node2_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        node2_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int PROPS_FIELD_NUMBER = 4;
+    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> props_;
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getPropsList() {
+      return props_;
+    }
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getPropsOrBuilderList() {
+      return props_;
+    }
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    public int getPropsCount() {
+      return props_.size();
+    }
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getProps(int index) {
+      return props_.get(index);
+    }
+    /**
+     * <pre>
+     * Resource Connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getPropsOrBuilder(
+        int index) {
+      return props_.get(index);
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      for (int i = 0; i < getPropsCount(); i++) {
+        if (!getProps(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!uuid_.isEmpty()) {
+        output.writeBytes(1, uuid_);
+      }
+      if (!getNode1Bytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, node1_);
+      }
+      if (!getNode2Bytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, node2_);
+      }
+      for (int i = 0; i < props_.size(); i++) {
+        output.writeMessage(4, props_.get(i));
+      }
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!uuid_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, uuid_);
+      }
+      if (!getNode1Bytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, node1_);
+      }
+      if (!getNode2Bytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, node2_);
+      }
+      for (int i = 0; i < props_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, props_.get(i));
+      }
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData)) {
+        return super.equals(obj);
+      }
+      com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData other = (com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData) obj;
+
+      boolean result = true;
+      result = result && getUuid()
+          .equals(other.getUuid());
+      result = result && getNode1()
+          .equals(other.getNode1());
+      result = result && getNode2()
+          .equals(other.getNode2());
+      result = result && getPropsList()
+          .equals(other.getPropsList());
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + UUID_FIELD_NUMBER;
+      hash = (53 * hash) + getUuid().hashCode();
+      hash = (37 * hash) + NODE_1_FIELD_NUMBER;
+      hash = (53 * hash) + getNode1().hashCode();
+      hash = (37 * hash) + NODE_2_FIELD_NUMBER;
+      hash = (53 * hash) + getNode2().hashCode();
+      if (getPropsCount() > 0) {
+        hash = (37 * hash) + PROPS_FIELD_NUMBER;
+        hash = (53 * hash) + getPropsList().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * Resource connection
+     * </pre>
+     *
+     * Protobuf type {@code com.linbit.linstor.proto.javainternal.RscConnectionData}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.linbit.linstor.proto.javainternal.RscConnectionData)
+        com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionDataOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.class, com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.Builder.class);
+      }
+
+      // Construct using com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+          getPropsFieldBuilder();
+        }
+      }
+      public Builder clear() {
+        super.clear();
+        uuid_ = com.google.protobuf.ByteString.EMPTY;
+
+        node1_ = "";
+
+        node2_ = "";
+
+        if (propsBuilder_ == null) {
+          props_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000008);
+        } else {
+          propsBuilder_.clear();
+        }
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_descriptor;
+      }
+
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData getDefaultInstanceForType() {
+        return com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.getDefaultInstance();
+      }
+
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData build() {
+        com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData buildPartial() {
+        com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData result = new com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        result.uuid_ = uuid_;
+        result.node1_ = node1_;
+        result.node2_ = node2_;
+        if (propsBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008)) {
+            props_ = java.util.Collections.unmodifiableList(props_);
+            bitField0_ = (bitField0_ & ~0x00000008);
+          }
+          result.props_ = props_;
+        } else {
+          result.props_ = propsBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData) {
+          return mergeFrom((com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData other) {
+        if (other == com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.getDefaultInstance()) return this;
+        if (other.getUuid() != com.google.protobuf.ByteString.EMPTY) {
+          setUuid(other.getUuid());
+        }
+        if (!other.getNode1().isEmpty()) {
+          node1_ = other.node1_;
+          onChanged();
+        }
+        if (!other.getNode2().isEmpty()) {
+          node2_ = other.node2_;
+          onChanged();
+        }
+        if (propsBuilder_ == null) {
+          if (!other.props_.isEmpty()) {
+            if (props_.isEmpty()) {
+              props_ = other.props_;
+              bitField0_ = (bitField0_ & ~0x00000008);
+            } else {
+              ensurePropsIsMutable();
+              props_.addAll(other.props_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.props_.isEmpty()) {
+            if (propsBuilder_.isEmpty()) {
+              propsBuilder_.dispose();
+              propsBuilder_ = null;
+              props_ = other.props_;
+              bitField0_ = (bitField0_ & ~0x00000008);
+              propsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getPropsFieldBuilder() : null;
+            } else {
+              propsBuilder_.addAllMessages(other.props_);
+            }
+          }
+        }
+        onChanged();
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        for (int i = 0; i < getPropsCount(); i++) {
+          if (!getProps(i).isInitialized()) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>bytes uuid = 1;</code>
+       */
+      public com.google.protobuf.ByteString getUuid() {
+        return uuid_;
+      }
+      /**
+       * <code>bytes uuid = 1;</code>
+       */
+      public Builder setUuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        uuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bytes uuid = 1;</code>
+       */
+      public Builder clearUuid() {
+        
+        uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object node1_ = "";
+      /**
+       * <code>string node_1 = 2;</code>
+       */
+      public java.lang.String getNode1() {
+        java.lang.Object ref = node1_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          node1_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string node_1 = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNode1Bytes() {
+        java.lang.Object ref = node1_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          node1_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string node_1 = 2;</code>
+       */
+      public Builder setNode1(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        node1_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string node_1 = 2;</code>
+       */
+      public Builder clearNode1() {
+        
+        node1_ = getDefaultInstance().getNode1();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string node_1 = 2;</code>
+       */
+      public Builder setNode1Bytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        node1_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object node2_ = "";
+      /**
+       * <code>string node_2 = 3;</code>
+       */
+      public java.lang.String getNode2() {
+        java.lang.Object ref = node2_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          node2_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string node_2 = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNode2Bytes() {
+        java.lang.Object ref = node2_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          node2_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string node_2 = 3;</code>
+       */
+      public Builder setNode2(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        node2_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string node_2 = 3;</code>
+       */
+      public Builder clearNode2() {
+        
+        node2_ = getDefaultInstance().getNode2();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string node_2 = 3;</code>
+       */
+      public Builder setNode2Bytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        node2_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> props_ =
+        java.util.Collections.emptyList();
+      private void ensurePropsIsMutable() {
+        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
+          props_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(props_);
+          bitField0_ |= 0x00000008;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> propsBuilder_;
+
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getPropsList() {
+        if (propsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(props_);
+        } else {
+          return propsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public int getPropsCount() {
+        if (propsBuilder_ == null) {
+          return props_.size();
+        } else {
+          return propsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getProps(int index) {
+        if (propsBuilder_ == null) {
+          return props_.get(index);
+        } else {
+          return propsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder setProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (propsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensurePropsIsMutable();
+          props_.set(index, value);
+          onChanged();
+        } else {
+          propsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder setProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (propsBuilder_ == null) {
+          ensurePropsIsMutable();
+          props_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          propsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder addProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (propsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensurePropsIsMutable();
+          props_.add(value);
+          onChanged();
+        } else {
+          propsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder addProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (propsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensurePropsIsMutable();
+          props_.add(index, value);
+          onChanged();
+        } else {
+          propsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder addProps(
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (propsBuilder_ == null) {
+          ensurePropsIsMutable();
+          props_.add(builderForValue.build());
+          onChanged();
+        } else {
+          propsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder addProps(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (propsBuilder_ == null) {
+          ensurePropsIsMutable();
+          props_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          propsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder addAllProps(
+          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (propsBuilder_ == null) {
+          ensurePropsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, props_);
+          onChanged();
+        } else {
+          propsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder clearProps() {
+        if (propsBuilder_ == null) {
+          props_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000008);
+          onChanged();
+        } else {
+          propsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public Builder removeProps(int index) {
+        if (propsBuilder_ == null) {
+          ensurePropsIsMutable();
+          props_.remove(index);
+          onChanged();
+        } else {
+          propsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getPropsBuilder(
+          int index) {
+        return getPropsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getPropsOrBuilder(
+          int index) {
+        if (propsBuilder_ == null) {
+          return props_.get(index);  } else {
+          return propsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getPropsOrBuilderList() {
+        if (propsBuilder_ != null) {
+          return propsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(props_);
+        }
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addPropsBuilder() {
+        return getPropsFieldBuilder().addBuilder(
+            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addPropsBuilder(
+          int index) {
+        return getPropsFieldBuilder().addBuilder(
+            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Resource Connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry props = 4;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getPropsBuilderList() {
+        return getPropsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getPropsFieldBuilder() {
+        if (propsBuilder_ == null) {
+          propsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  props_,
+                  ((bitField0_ & 0x00000008) == 0x00000008),
+                  getParentForChildren(),
+                  isClean());
+          props_ = null;
+        }
+        return propsBuilder_;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:com.linbit.linstor.proto.javainternal.RscConnectionData)
+    }
+
+    // @@protoc_insertion_point(class_scope:com.linbit.linstor.proto.javainternal.RscConnectionData)
+    private static final com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData();
+    }
+
+    public static com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<RscConnectionData>
+        PARSER = new com.google.protobuf.AbstractParser<RscConnectionData>() {
+      public RscConnectionData parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new RscConnectionData(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<RscConnectionData> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<RscConnectionData> getParserForType() {
+      return PARSER;
+    }
+
+    public com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_descriptor;
   private static final 
@@ -6260,6 +7959,11 @@ public final class MsgIntRscDataOuterClass {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -6274,7 +7978,7 @@ public final class MsgIntRscDataOuterClass {
       "nternal\032#linstor/proto/LinStorMapEntry.p" +
       "roto\032\030linstor/proto/Node.proto\032\032linstor/" +
       "proto/VlmDfn.proto\032\027linstor/proto/Vlm.pr" +
-      "oto\"\325\004\n\rMsgIntRscData\022\020\n\010rsc_name\030\001 \001(\t\022" +
+      "oto\"\250\005\n\rMsgIntRscData\022\020\n\010rsc_name\030\001 \001(\t\022" +
       "\024\n\014rsc_dfn_uuid\030\002 \001(\t\022\024\n\014rsc_dfn_port\030\003 " +
       "\001(\021\022\025\n\rrsc_dfn_flags\030\004 \001(\022\022\026\n\016rsc_dfn_se" +
       "cret\030\005 \001(\t\022@\n\rrsc_dfn_props\030\006 \003(\0132).com." +
@@ -6287,15 +7991,20 @@ public final class MsgIntRscDataOuterClass {
       "l_volumes\030\014 \003(\0132\035.com.linbit.linstor.pro" +
       "to.Vlm\022R\n\017other_resources\030\r \003(\01329.com.li" +
       "nbit.linstor.proto.javainternal.MsgIntOt" +
-      "herRscData\022\036\n\026rsc_dfn_transport_type\030\016 \001" +
-      "(\t\022\024\n\014full_sync_id\030\017 \001(\022\022\021\n\tupdate_id\030\020 ",
-      "\001(\022\"\201\002\n\022MsgIntOtherRscData\022,\n\004node\030\001 \001(\013" +
-      "2\036.com.linbit.linstor.proto.Node\022\022\n\nnode" +
-      "_flags\030\004 \001(\022\022\020\n\010rsc_uuid\030\006 \001(\t\022\023\n\013rsc_no" +
-      "de_id\030\007 \001(\021\022\021\n\trsc_flags\030\010 \001(\022\022<\n\trsc_pr" +
-      "ops\030\t \003(\0132).com.linbit.linstor.proto.Lin" +
-      "StorMapEntry\0221\n\nlocal_vlms\030\n \003(\0132\035.com.l" +
-      "inbit.linstor.proto.Vlmb\006proto3"
+      "herRscData\022Q\n\017rsc_connections\030\016 \003(\01328.co" +
+      "m.linbit.linstor.proto.javainternal.RscC",
+      "onnectionData\022\036\n\026rsc_dfn_transport_type\030" +
+      "\017 \001(\t\022\024\n\014full_sync_id\030\020 \001(\022\022\021\n\tupdate_id" +
+      "\030\021 \001(\022\"\201\002\n\022MsgIntOtherRscData\022,\n\004node\030\001 " +
+      "\001(\0132\036.com.linbit.linstor.proto.Node\022\022\n\nn" +
+      "ode_flags\030\004 \001(\022\022\020\n\010rsc_uuid\030\006 \001(\t\022\023\n\013rsc" +
+      "_node_id\030\007 \001(\021\022\021\n\trsc_flags\030\010 \001(\022\022<\n\trsc" +
+      "_props\030\t \003(\0132).com.linbit.linstor.proto." +
+      "LinStorMapEntry\0221\n\nlocal_vlms\030\n \003(\0132\035.co" +
+      "m.linbit.linstor.proto.Vlm\"{\n\021RscConnect" +
+      "ionData\022\014\n\004uuid\030\001 \001(\014\022\016\n\006node_1\030\002 \001(\t\022\016\n",
+      "\006node_2\030\003 \001(\t\0228\n\005props\030\004 \003(\0132).com.linbi" +
+      "t.linstor.proto.LinStorMapEntryb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -6318,13 +8027,19 @@ public final class MsgIntRscDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_descriptor,
-        new java.lang.String[] { "RscName", "RscDfnUuid", "RscDfnPort", "RscDfnFlags", "RscDfnSecret", "RscDfnProps", "LocalRscUuid", "LocalRscFlags", "LocalRscNodeId", "LocalRscProps", "VlmDfns", "LocalVolumes", "OtherResources", "RscDfnTransportType", "FullSyncId", "UpdateId", });
+        new java.lang.String[] { "RscName", "RscDfnUuid", "RscDfnPort", "RscDfnFlags", "RscDfnSecret", "RscDfnProps", "LocalRscUuid", "LocalRscFlags", "LocalRscNodeId", "LocalRscProps", "VlmDfns", "LocalVolumes", "OtherResources", "RscConnections", "RscDfnTransportType", "FullSyncId", "UpdateId", });
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_descriptor,
         new java.lang.String[] { "Node", "NodeFlags", "RscUuid", "RscNodeId", "RscFlags", "RscProps", "LocalVlms", });
+    internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_descriptor =
+      getDescriptor().getMessageTypes().get(2);
+    internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_com_linbit_linstor_proto_javainternal_RscConnectionData_descriptor,
+        new java.lang.String[] { "Uuid", "Node1", "Node2", "Props", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.NodeOuterClass.getDescriptor();
     com.linbit.linstor.proto.VlmDfnOuterClass.getDescriptor();

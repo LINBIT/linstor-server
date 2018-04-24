@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -184,5 +185,17 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         {
             throw new AccessToDeletedDataException("Access to deleted resource connection");
         }
+    }
+
+    @Override
+    public RscConnApi getApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return new RscConnPojo(
+            getUuid(),
+            sourceResource.getAssignedNode().getName().getDisplayName(),
+            targetResource.getAssignedNode().getName().getDisplayName(),
+            getProps(accCtx).map()
+        );
     }
 }

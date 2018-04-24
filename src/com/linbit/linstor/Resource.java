@@ -40,6 +40,9 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
 
     NodeId getNodeId();
 
+    Stream<ResourceConnection> streamResourceConnections(AccessContext accCtx)
+        throws AccessDeniedException;
+
     ResourceConnection getResourceConnection(AccessContext accCtx, Resource otherResource)
         throws AccessDeniedException;
 

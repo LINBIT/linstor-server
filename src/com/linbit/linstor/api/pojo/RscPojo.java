@@ -1,12 +1,14 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 
 public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
 {
@@ -20,6 +22,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     private final Map<String, String> localRscProps;
     private final List<Volume.VlmApi> localVlms;
     private final List<OtherRscPojo> otherRscs;
+    private final List<ResourceConnection.RscConnApi> rscConnections;
     private final Long fullSyncId;
     private final Long updateId;
 
@@ -34,6 +37,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         final Map<String, String> localRscPropsRef,
         final List<Volume.VlmApi> localVlmsRef,
         final List<OtherRscPojo> otherRscListRef,
+        final List<ResourceConnection.RscConnApi> rscConnectionsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef
     )
@@ -46,6 +50,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         localRscFlags = localRscFlagsRef;
         localRscNodeId = localRscNodeIdRef;
         localRscProps = localRscPropsRef;
+        rscConnections = rscConnectionsRef;
         localVlms = localVlmsRef;
         otherRscs = otherRscListRef;
         fullSyncId = fullSyncIdRef;
@@ -158,6 +163,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     public List<OtherRscPojo> getOtherRscList()
     {
         return otherRscs;
+    }
+
+    public List<ResourceConnection.RscConnApi> getRscConnections()
+    {
+        return rscConnections;
     }
 
     public long getFullSyncId()

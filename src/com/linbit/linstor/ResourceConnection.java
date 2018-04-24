@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.linstor.propscon.Props;
@@ -23,4 +24,14 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
     Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
     void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
+    RscConnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
+    interface RscConnApi
+    {
+        UUID getUuid();
+        String getSourceNodeName();
+        String getTargetNodeName();
+        Map<String, String> getProps();
+    }
 }

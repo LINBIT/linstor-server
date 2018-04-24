@@ -2,10 +2,12 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
@@ -21,6 +23,7 @@ import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
+import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
 import java.io.IOException;
@@ -29,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_APPLY_RSC,
@@ -54,11 +58,13 @@ public class ApplyRsc implements ApiCall
         apiCallHandler.applyResourceChanges(rscRawData);
     }
 
+    //deserialize sync msg and put into pojo, extend rsc api and pojo!
     static RscPojo asRscPojo(MsgIntRscData rscData)
     {
         List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
         List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
+        List<ResourceConnection.RscConnApi> rscConns = extractRscConn(rscData.getRscConnectionsList());
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscData.getRscDfnUuid()),
             rscData.getRscName(),
@@ -79,6 +85,7 @@ public class ApplyRsc implements ApiCall
             ProtoMapUtils.asMap(rscData.getLocalRscPropsList()),
             localVlms,
             otherRscList,
+            rscConns,
             rscData.getFullSyncId(),
             rscData.getUpdateId()
         );
@@ -129,6 +136,18 @@ public class ApplyRsc implements ApiCall
             );
         }
         return list;
+    }
+
+    private static List<ResourceConnection.RscConnApi> extractRscConn(List<RscConnectionData> rscConnections)
+    {
+        return rscConnections.stream()
+            .map(rscConnData ->
+                new RscConnPojo(
+                    UUID.nameUUIDFromBytes(rscConnData.getUuid().toByteArray()),
+                    rscConnData.getNode1(),
+                    rscConnData.getNode2(),
+                    ProtoMapUtils.asMap(rscConnData.getPropsList())))
+            .collect(Collectors.toList());
     }
 
     static List<OtherRscPojo> extractRawOtherRsc(List<MsgIntOtherRscData> otherResourcesList)
