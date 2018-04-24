@@ -131,7 +131,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             );
         )
         {
-            ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr);
+            ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr, true);
 
             if (rscConnUuid != null && !rscConnUuid.equals(rscConn.getUuid()))
             {
@@ -194,7 +194,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             );
         )
         {
-            ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr);
+            ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr, false);
             UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
 
@@ -339,7 +339,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private ResourceConnectionData loadRscConn(
         String nodeName1,
         String nodeName2,
-        String rscNameStr
+        String rscNameStr,
+        boolean createIfNotExists
     )
         throws ApiCallHandlerFailedException
     {
@@ -357,7 +358,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 peerAccCtx,
                 rsc1,
                 rsc2,
-                false,
+                createIfNotExists,
                 false
             );
         }
