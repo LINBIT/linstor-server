@@ -203,6 +203,25 @@ public class ConfFileBuilder
                         String format = "host %s;";
                         appendLine(format, fromHost);
                         appendLine(format, toHost);
+
+                        ResourceConnection rscConn = localRsc.getResourceConnection(accCtx, peerRsc);
+
+                        if (rscConn != null)
+                        {
+                            if (rscConn.getProps(accCtx)
+                                    .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent())
+                            {
+                                appendLine("");
+                                appendLine("disk");
+                                try (Section ignore = new Section())
+                                {
+                                    appendDrbdOptions(
+                                        rscConn.getProps(accCtx),
+                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                    );
+                                }
+                            }
+                        }
                     }
                 }
             }
