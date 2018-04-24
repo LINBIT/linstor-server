@@ -35,6 +35,9 @@ public class WatchableObjectFinder
         resourceDefinitionMap = resourceDefinitionMapRef;
     }
 
+    /**
+     * Requires the nodes-map and resource-definition-map read locks to be held.
+     */
     public Map<WatchableObject, List<ObjectIdentifier>> findDescendantObjects(
         AccessContext accCtx,
         ObjectIdentifier objectIdentifier

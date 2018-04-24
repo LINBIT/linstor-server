@@ -62,7 +62,7 @@ public class EventBroker
     /**
      * Add a watch and send initial state for all relevant events.
      * <p>
-     * Requires the nodes-map and resource-definition-map locks to be held.
+     * Requires the nodes-map and resource-definition-map read locks to be held.
      */
     public void createWatch(AccessContext accCtx, Watch watch)
         throws AccessDeniedException, LinStorDataAlreadyExistsException
