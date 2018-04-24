@@ -35,8 +35,8 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
-import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -189,7 +189,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
             new SharedDbConnectionPoolModule(),
-            new ControllerDbModule(),
+            new TestDbModule(),
             new ControllerTransactionMgrModule(),
             new TestApiModule(),
             additionalModule,
