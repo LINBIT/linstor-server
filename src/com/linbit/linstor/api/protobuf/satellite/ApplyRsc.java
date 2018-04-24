@@ -143,7 +143,7 @@ public class ApplyRsc implements ApiCall
         return rscConnections.stream()
             .map(rscConnData ->
                 new RscConnPojo(
-                    UUID.nameUUIDFromBytes(rscConnData.getUuid().toByteArray()),
+                    UUID.fromString(rscConnData.getUuid()),
                     rscConnData.getNode1(),
                     rscConnData.getNode2(),
                     ProtoMapUtils.asMap(rscConnData.getPropsList())))

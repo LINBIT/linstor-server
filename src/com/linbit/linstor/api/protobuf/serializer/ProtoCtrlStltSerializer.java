@@ -671,6 +671,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                 .collect(Collectors.toList()))
             {
                 list.add(RscConnectionData.newBuilder()
+                    .setUuid(conn.getUuid().toString())
                     .setNode1(conn.getSourceResource(serializerCtx).getAssignedNode().getName().getDisplayName())
                     .setNode2(conn.getTargetResource(serializerCtx).getAssignedNode().getName().getDisplayName())
                     .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()))

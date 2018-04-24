@@ -6745,9 +6745,14 @@ public final class MsgIntRscDataOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>bytes uuid = 1;</code>
+     * <code>string uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getUuid();
+    java.lang.String getUuid();
+    /**
+     * <code>string uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getUuidBytes();
 
     /**
      * <code>string node_1 = 2;</code>
@@ -6829,7 +6834,7 @@ public final class MsgIntRscDataOuterClass {
       super(builder);
     }
     private RscConnectionData() {
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      uuid_ = "";
       node1_ = "";
       node2_ = "";
       props_ = java.util.Collections.emptyList();
@@ -6861,8 +6866,9 @@ public final class MsgIntRscDataOuterClass {
               break;
             }
             case 10: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              uuid_ = input.readBytes();
+              uuid_ = s;
               break;
             }
             case 18: {
@@ -6914,12 +6920,37 @@ public final class MsgIntRscDataOuterClass {
 
     private int bitField0_;
     public static final int UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString uuid_;
+    private volatile java.lang.Object uuid_;
     /**
-     * <code>bytes uuid = 1;</code>
+     * <code>string uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
+    public java.lang.String getUuid() {
+      java.lang.Object ref = uuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        uuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getUuidBytes() {
+      java.lang.Object ref = uuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        uuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int NODE_1_FIELD_NUMBER = 2;
@@ -7063,8 +7094,8 @@ public final class MsgIntRscDataOuterClass {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!uuid_.isEmpty()) {
-        output.writeBytes(1, uuid_);
+      if (!getUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, uuid_);
       }
       if (!getNode1Bytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, node1_);
@@ -7082,9 +7113,8 @@ public final class MsgIntRscDataOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!uuid_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, uuid_);
+      if (!getUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, uuid_);
       }
       if (!getNode1Bytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, node1_);
@@ -7263,7 +7293,7 @@ public final class MsgIntRscDataOuterClass {
       }
       public Builder clear() {
         super.clear();
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
+        uuid_ = "";
 
         node1_ = "";
 
@@ -7353,8 +7383,9 @@ public final class MsgIntRscDataOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData other) {
         if (other == com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData.getDefaultInstance()) return this;
-        if (other.getUuid() != com.google.protobuf.ByteString.EMPTY) {
-          setUuid(other.getUuid());
+        if (!other.getUuid().isEmpty()) {
+          uuid_ = other.uuid_;
+          onChanged();
         }
         if (!other.getNode1().isEmpty()) {
           node1_ = other.node1_;
@@ -7422,17 +7453,43 @@ public final class MsgIntRscDataOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object uuid_ = "";
       /**
-       * <code>bytes uuid = 1;</code>
+       * <code>string uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
+      public java.lang.String getUuid() {
+        java.lang.Object ref = uuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          uuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>bytes uuid = 1;</code>
+       * <code>string uuid = 1;</code>
        */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getUuidBytes() {
+        java.lang.Object ref = uuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          uuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string uuid = 1;</code>
+       */
+      public Builder setUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -7442,11 +7499,25 @@ public final class MsgIntRscDataOuterClass {
         return this;
       }
       /**
-       * <code>bytes uuid = 1;</code>
+       * <code>string uuid = 1;</code>
        */
       public Builder clearUuid() {
         
         uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string uuid = 1;</code>
+       */
+      public Builder setUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        uuid_ = value;
         onChanged();
         return this;
       }
@@ -8002,7 +8073,7 @@ public final class MsgIntRscDataOuterClass {
       "_props\030\t \003(\0132).com.linbit.linstor.proto." +
       "LinStorMapEntry\0221\n\nlocal_vlms\030\n \003(\0132\035.co" +
       "m.linbit.linstor.proto.Vlm\"{\n\021RscConnect" +
-      "ionData\022\014\n\004uuid\030\001 \001(\014\022\016\n\006node_1\030\002 \001(\t\022\016\n",
+      "ionData\022\014\n\004uuid\030\001 \001(\t\022\016\n\006node_1\030\002 \001(\t\022\016\n",
       "\006node_2\030\003 \001(\t\0228\n\005props\030\004 \003(\0132).com.linbi" +
       "t.linstor.proto.LinStorMapEntryb\006proto3"
     };
