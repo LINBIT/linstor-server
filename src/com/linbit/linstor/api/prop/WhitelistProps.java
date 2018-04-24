@@ -3,6 +3,7 @@ package com.linbit.linstor.api.prop;
 import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,11 @@ public class WhitelistProps
             }
             rules.put(ruleEntry.getKey(), rulesPropMap);
         }
+
+        // init unused objects with an empty whitelist. avoid null pointer
+        Arrays.stream(LinStorObject.values())
+            .filter(obj -> !rules.containsKey(obj))
+            .forEach(obj -> rules.put(obj, new HashMap<>()));
     }
 
     public boolean isAllowed(LinStorObject lsObj, String key, String value, boolean log)
