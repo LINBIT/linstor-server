@@ -11,7 +11,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.utils.Tripple;
+import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
 
@@ -193,7 +193,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         );
         driver.create(volCon);
 
-        Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap = new HashMap<>();
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap = new HashMap<>();
         addToMap(vlmMap, volSrc);
         addToMap(vlmMap, volDst);
         List<VolumeConnectionData> cons = driver.loadAll(vlmMap);
@@ -209,11 +209,11 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     }
 
     private void addToMap(
-        Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap,
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap,
         VolumeData vol
     )
     {
-        vlmMap.put(new Tripple<NodeName, ResourceName, VolumeNumber>(
+        vlmMap.put(new Triple<NodeName, ResourceName, VolumeNumber>(
                 vol.getResource().getAssignedNode().getName(),
                 vol.getResourceDefinition().getName(),
                 vol.getVolumeDefinition().getVolumeNumber()

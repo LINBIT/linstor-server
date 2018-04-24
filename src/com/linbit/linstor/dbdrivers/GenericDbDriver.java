@@ -43,8 +43,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.utils.Tripple;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Triple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -199,8 +199,8 @@ public class GenericDbDriver implements DatabaseDriver
 
 
             // temporary storPool map
-            Map<Tuple<NodeName, StorPoolName>, StorPoolData> tmpStorPoolMap =
-                mapByName(loadedStorPools, storPool -> new Tuple<>(
+            Map<Pair<NodeName, StorPoolName>, StorPoolData> tmpStorPoolMap =
+                mapByName(loadedStorPools, storPool -> new Pair<>(
                     storPool.getNode().getName(),
                     storPool.getName()
                 )
@@ -217,8 +217,8 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // temporary resource map
-            Map<Tuple<NodeName, ResourceName>, ResourceData> tmpRscMap =
-                mapByName(loadedResources, rsc -> new Tuple<>(
+            Map<Pair<NodeName, ResourceName>, ResourceData> tmpRscMap =
+                mapByName(loadedResources, rsc -> new Pair<>(
                     rsc.getAssignedNode().getName(),
                     rsc.getDefinition().getName()
                 )
@@ -245,8 +245,8 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // temporary volume definition map
-            Map<Tuple<ResourceName, VolumeNumber>, VolumeDefinitionData> tmpVlmDfnMap =
-                mapByName(loadedVlmDfnMap, vlmDfn -> new Tuple<>(
+            Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> tmpVlmDfnMap =
+                mapByName(loadedVlmDfnMap, vlmDfn -> new Pair<>(
                     vlmDfn.getResourceDefinition().getName(),
                     vlmDfn.getVolumeNumber()
                 )
@@ -270,8 +270,8 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // temporary volume map
-            Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> tmpVlmMap =
-                mapByName(loadedVolumes, vlm -> new Tripple<>(
+            Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> tmpVlmMap =
+                mapByName(loadedVolumes, vlm -> new Triple<>(
                     vlm.getResource().getAssignedNode().getName(),
                     vlm.getResourceDefinition().getName(),
                     vlm.getVolumeDefinition().getVolumeNumber()

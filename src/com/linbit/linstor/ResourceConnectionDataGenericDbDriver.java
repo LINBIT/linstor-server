@@ -12,7 +12,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -78,7 +78,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         transMgrProvider = transMgrProviderRef;
     }
 
-    public List<ResourceConnectionData> loadAll(Map<Tuple<NodeName, ResourceName>, ResourceData> tmpRscMap)
+    public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ResourceData> tmpRscMap)
         throws SQLException
     {
         errorReporter.logTrace("Loading all ResourceConnections");
@@ -106,8 +106,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
 
                     ResourceConnectionData conDfn = restoreResourceConnection(
                         resultSet,
-                        tmpRscMap.get(new Tuple<>(sourceNodeName, rscName)),
-                        tmpRscMap.get(new Tuple<>(targetNodeName, rscName))
+                        tmpRscMap.get(new Pair<>(sourceNodeName, rscName)),
+                        tmpRscMap.get(new Pair<>(targetNodeName, rscName))
                     );
                     rscConnections.add(conDfn);
                 }

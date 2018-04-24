@@ -14,7 +14,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -96,9 +96,9 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
             {
                 if (resultSet.next())
                 {
-                    Tuple<StorPoolDefinitionData, InitMaps> tuple = load(resultSet);
-                    disklessStorPoolDfn = tuple.objA;
-                    disklessStorPoolDfnInitMaps = tuple.objB;
+                    Pair<StorPoolDefinitionData, InitMaps> pair = load(resultSet);
+                    disklessStorPoolDfn = pair.objA;
+                    disklessStorPoolDfnInitMaps = pair.objB;
                 }
                 else
                 {
@@ -184,8 +184,8 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
             {
                 while (resultSet.next())
                 {
-                    Tuple<StorPoolDefinitionData, InitMaps> tuple = load(resultSet);
-                    storPoolMap.put(tuple.objA, tuple.objB);
+                    Pair<StorPoolDefinitionData, InitMaps> pair = load(resultSet);
+                    storPoolMap.put(pair.objA, pair.objB);
                 }
             }
         }
@@ -193,9 +193,9 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
         return storPoolMap;
     }
 
-    public Tuple<StorPoolDefinitionData, InitMaps> load(ResultSet resultSet) throws SQLException
+    public Pair<StorPoolDefinitionData, InitMaps> load(ResultSet resultSet) throws SQLException
     {
-        Tuple<StorPoolDefinitionData, InitMaps> retTuple = new Tuple<>();
+        Pair<StorPoolDefinitionData, InitMaps> retPair = new Pair<>();
 
         StorPoolDefinitionData storPoolDefinition = null;
         StorPoolName storPoolName;
@@ -235,21 +235,21 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
                 storPoolsMap
             );
 
-            retTuple.objA = storPoolDefinition;
-            retTuple.objB = new StorPoolDfnInitMap(storPoolsMap);
+            retPair.objA = storPoolDefinition;
+            retPair.objB = new StorPoolDfnInitMap(storPoolsMap);
 
             errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getId(storPoolName));
         }
         else
         {
-            retTuple.objA = storPoolDefinition;
+            retPair.objA = storPoolDefinition;
             if (storPoolName.displayValue.equals(LinStor.DISKLESS_STOR_POOL_NAME))
             {
-                retTuple.objB = disklessStorPoolDfnInitMaps;
+                retPair.objB = disklessStorPoolDfnInitMaps;
             }
             errorReporter.logTrace("StorPoolDefinition loaded from cache %s", getId(storPoolName));
         }
-        return retTuple;
+        return retPair;
     }
 
     private ObjectProtection getObjectProtection(StorPoolName storPoolName)

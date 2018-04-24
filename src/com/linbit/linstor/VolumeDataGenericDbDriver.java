@@ -17,7 +17,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -157,9 +157,9 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     }
 
     public Map<VolumeData, Volume.InitMaps> loadAll(
-        Map<Tuple<NodeName, ResourceName>, ResourceData> rscMap,
-        Map<Tuple<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap,
-        Map<Tuple<NodeName, StorPoolName>, StorPoolData> storPoolMap
+        Map<Pair<NodeName, ResourceName>, ResourceData> rscMap,
+        Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap,
+        Map<Pair<NodeName, StorPoolName>, StorPoolData> storPoolMap
     )
         throws SQLException
     {
@@ -178,15 +178,15 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
                         StorPoolName storPoolName = new StorPoolName(resultSet.getString(VOL_STOR_POOL));
                         VolumeNumber vlmNr = new VolumeNumber(resultSet.getInt(VOL_ID));
 
-                        Tuple<VolumeData, Volume.InitMaps> tuple = restoreVlm(
+                        Pair<VolumeData, Volume.InitMaps> pair = restoreVlm(
                             resultSet,
-                            rscMap.get(new Tuple<>(nodeName, rscName)),
-                            vlmDfnMap.get(new Tuple<>(rscName, vlmNr)),
-                            storPoolMap.get(new Tuple<>(nodeName, storPoolName))
+                            rscMap.get(new Pair<>(nodeName, rscName)),
+                            vlmDfnMap.get(new Pair<>(rscName, vlmNr)),
+                            storPoolMap.get(new Pair<>(nodeName, storPoolName))
                         );
                         vlmMap.put(
-                            tuple.objA,
-                            tuple.objB
+                            pair.objA,
+                            pair.objB
                         );
                     }
                     catch (InvalidNameException exc)
@@ -210,7 +210,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         return vlmMap;
     }
 
-    private Tuple<VolumeData, Volume.InitMaps> restoreVlm(
+    private Pair<VolumeData, Volume.InitMaps> restoreVlm(
         ResultSet resultSet,
         Resource rsc,
         VolumeDefinition vlmDfn,
@@ -234,7 +234,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             vlmConnsMap
         );
 
-        return new Tuple<>(
+        return new Pair<>(
             vlm,
             new VolumeInitMaps(
                 vlmConnsMap

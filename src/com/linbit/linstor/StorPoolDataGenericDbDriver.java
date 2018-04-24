@@ -14,7 +14,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -172,14 +172,14 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                         NodeName nodeName = new NodeName(resultSet.getString(SP_NODE));
                         StorPoolName storPoolName = new StorPoolName(resultSet.getString(SP_POOL));
 
-                        Tuple<StorPoolData, StorPool.InitMaps> tuple = restoreStorPool(
+                        Pair<StorPoolData, InitMaps> pair = restoreStorPool(
                             resultSet,
                             nodesMap.get(nodeName),
                             storPoolDfnMap.get(storPoolName)
                         );
                         storPools.put(
-                            tuple.objA,
-                            tuple.objB
+                            pair.objA,
+                            pair.objB
                         );
                     }
                     catch (InvalidNameException exc)
@@ -196,7 +196,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         return storPools;
     }
 
-    private Tuple<StorPoolData, InitMaps> restoreStorPool(
+    private Pair<StorPoolData, InitMaps> restoreStorPool(
         ResultSet resultSet,
         Node node,
         StorPoolDefinition storPoolDfn
@@ -221,7 +221,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         {
             ((NodeData) node).setDisklessStorPool(storPool);
         }
-        return new Tuple<>(storPool, new StorPoolInitMaps(vlmMap));
+        return new Pair<>(storPool, new StorPoolInitMaps(vlmMap));
     }
 
     public List<StorPoolData> loadStorPools(NodeData node)

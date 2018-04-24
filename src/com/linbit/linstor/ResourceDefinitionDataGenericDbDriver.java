@@ -26,7 +26,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -204,8 +204,8 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             {
                 while (resultSet.next())
                 {
-                    Tuple<ResourceDefinitionData, InitMaps> tuple = load(resultSet);
-                    rscDfnMap.put(tuple.objA, tuple.objB);
+                    Pair<ResourceDefinitionData, InitMaps> pair = load(resultSet);
+                    rscDfnMap.put(pair.objA, pair.objB);
                 }
             }
         }
@@ -213,9 +213,9 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         return rscDfnMap;
     }
 
-    private Tuple<ResourceDefinitionData, InitMaps> load(ResultSet resultSet) throws SQLException
+    private Pair<ResourceDefinitionData, InitMaps> load(ResultSet resultSet) throws SQLException
     {
-        Tuple<ResourceDefinitionData, InitMaps> retTuple = new Tuple<>();
+        Pair<ResourceDefinitionData, InitMaps> retPair = new Pair<>();
         ResourceDefinitionData resDfn;
         ResourceName resourceName;
         TcpPortNumber port;
@@ -277,17 +277,17 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 rscMap
             );
 
-            retTuple.objA = resDfn;
-            retTuple.objB = new RscDfnInitMaps(vlmDfnMap, rscMap);
+            retPair.objA = resDfn;
+            retPair.objB = new RscDfnInitMaps(vlmDfnMap, rscMap);
 
             errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
         }
         else
         {
-            retTuple.objA = resDfn;
+            retPair.objA = resDfn;
             errorReporter.logTrace("ResourceDefinition loaded from cache %s", getId(resDfn));
         }
-        return retTuple;
+        return retPair;
     }
 
     private ObjectProtection getObjectProtection(ResourceName resourceName)

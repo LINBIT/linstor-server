@@ -8,7 +8,7 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -259,13 +259,13 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
         driver.create(vol);
 
-        Map<Tuple<NodeName, ResourceName>, ResourceData> rscMap = new HashMap<>();
-        Map<Tuple<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap = new HashMap<>();
-        Map<Tuple<NodeName, StorPoolName>, StorPoolData> storPoolMap = new HashMap<>();
+        Map<Pair<NodeName, ResourceName>, ResourceData> rscMap = new HashMap<>();
+        Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap = new HashMap<>();
+        Map<Pair<NodeName, StorPoolName>, StorPoolData> storPoolMap = new HashMap<>();
 
-        rscMap.put(new Tuple<>(nodeName, resName), res);
-        vlmDfnMap.put(new Tuple<>(resName, volNr), volDfn);
-        storPoolMap.put(new Tuple<>(nodeName, storPoolName), storPool);
+        rscMap.put(new Pair<>(nodeName, resName), res);
+        vlmDfnMap.put(new Pair<>(resName, volNr), volDfn);
+        storPoolMap.put(new Pair<>(nodeName, storPoolName), storPool);
 
         Map<VolumeData, InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap, storPoolMap);
 

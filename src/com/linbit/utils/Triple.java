@@ -2,17 +2,17 @@ package com.linbit.utils;
 
 import com.google.common.base.Objects;
 
-public class Tripple<A, B, C> implements Comparable<Tripple<A, B, C>>
+public class Triple<A, B, C> implements Comparable<Triple<A, B, C>>
 {
     public A objA;
     public B objB;
     public C objC;
 
-    public Tripple()
+    public Triple()
     {
     }
 
-    public Tripple(A aRef, B bRef, C cRef)
+    public Triple(A aRef, B bRef, C cRef)
     {
         objA = aRef;
         objB = bRef;
@@ -36,7 +36,7 @@ public class Tripple<A, B, C> implements Comparable<Tripple<A, B, C>>
         boolean eq = this == obj;
         if (!eq && obj != null && getClass() == obj.getClass())
         {
-            Tripple<?, ?, ?> other = (Tripple<?, ?, ?>) obj;
+            Triple<?, ?, ?> other = (Triple<?, ?, ?>) obj;
             eq = Objects.equal(objA, other.objA) &&
                 Objects.equal(objB, other.objB) &&
                 Objects.equal(objC, other.objC);
@@ -46,7 +46,7 @@ public class Tripple<A, B, C> implements Comparable<Tripple<A, B, C>>
 
     @SuppressWarnings("unchecked")
     @Override
-    public int compareTo(Tripple<A, B, C> other)
+    public int compareTo(Triple<A, B, C> other)
     {
         int eq = 0;
         if (objA instanceof Comparable)

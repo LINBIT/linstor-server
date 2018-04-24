@@ -22,7 +22,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -182,7 +182,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         return ret;
     }
 
-    private Tuple<VolumeDefinitionData, VolumeDefinition.InitMaps> restoreVolumeDefinition(
+    private Pair<VolumeDefinitionData, InitMaps> restoreVolumeDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
         VolumeNumber volNr
@@ -191,7 +191,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     {
         errorReporter.logTrace("Restoring VolumeDefinition %s", getId(resDfn, volNr));
         VolumeDefinitionData vlmDfn = null;
-        Tuple<VolumeDefinitionData, InitMaps> retTuple;
+        Pair<VolumeDefinitionData, InitMaps> retPair;
         try
         {
             vlmDfn = cacheGet(resDfn, volNr);
@@ -214,14 +214,14 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                     transMgrProvider,
                     vlmMap
                 );
-                retTuple = new Tuple<>(vlmDfn, new VolumeDefinitionInitMaps(vlmMap));
+                retPair = new Pair<>(vlmDfn, new VolumeDefinitionInitMaps(vlmMap));
 
                 errorReporter.logTrace("VolumeDefinition %s created during restore", getId(vlmDfn));
                 // restore references
             }
             else
             {
-                retTuple = new Tuple<>(vlmDfn, null);
+                retPair = new Pair<>(vlmDfn, null);
                 errorReporter.logTrace("VolumeDefinition %s restored from cache", getId(vlmDfn));
             }
         }
@@ -253,7 +253,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                 valueOutOfRangeExc
             );
         }
-        return retTuple;
+        return retPair;
     }
 
 
@@ -298,15 +298,15 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                         );
                     }
 
-                    Tuple<VolumeDefinitionData, VolumeDefinition.InitMaps> tuple = restoreVolumeDefinition(
+                    Pair<VolumeDefinitionData, InitMaps> pair = restoreVolumeDefinition(
                         resultSet,
                         rscDfnMap.get(rscName),
                         volNr
                     );
 
-                    ret.put(tuple.objA, tuple.objB);
+                    ret.put(pair.objA, pair.objB);
 
-                    errorReporter.logTrace("VolumeDefinition created %s", getId(tuple.objA));
+                    errorReporter.logTrace("VolumeDefinition created %s", getId(pair.objA));
                 }
             }
         }

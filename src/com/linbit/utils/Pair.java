@@ -2,16 +2,16 @@ package com.linbit.utils;
 
 import com.google.common.base.Objects;
 
-public class Tuple<A, B> implements Comparable<Tuple<A, B>>
+public class Pair<A, B> implements Comparable<Pair<A, B>>
 {
     public A objA;
     public B objB;
 
-    public Tuple()
+    public Pair()
     {
     }
 
-    public Tuple(A aRef, B bRef)
+    public Pair(A aRef, B bRef)
     {
         objA = aRef;
         objB = bRef;
@@ -33,7 +33,7 @@ public class Tuple<A, B> implements Comparable<Tuple<A, B>>
         boolean eq = this == obj;
         if (!eq && obj != null && getClass() == obj.getClass())
         {
-            Tuple<?, ?> other = (Tuple<?, ?>) obj;
+            Pair<?, ?> other = (Pair<?, ?>) obj;
             eq = Objects.equal(objA, other.objA) && Objects.equal(objB, other.objB);
         }
         return eq;
@@ -41,16 +41,16 @@ public class Tuple<A, B> implements Comparable<Tuple<A, B>>
 
     @SuppressWarnings("unchecked")
     @Override
-    public int compareTo(Tuple<A, B> otherTuple)
+    public int compareTo(Pair<A, B> otherPair)
     {
         int eq = 0;
         if (objA instanceof Comparable)
         {
-            eq = ((Comparable<A>) objA).compareTo(otherTuple.objA);
+            eq = ((Comparable<A>) objA).compareTo(otherPair.objA);
         }
         if (eq == 0 && objB instanceof Comparable)
         {
-            eq = ((Comparable<B>) objB).compareTo(otherTuple.objB);
+            eq = ((Comparable<B>) objB).compareTo(otherPair.objB);
         }
         return eq;
     }

@@ -6,7 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -128,9 +128,9 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(resCon);
 
-        Map<Tuple<NodeName, ResourceName>, ResourceData> rscmap = new HashMap<>();
-        rscmap.put(new Tuple<NodeName, ResourceName>(sourceName, resName), resSrc);
-        rscmap.put(new Tuple<NodeName, ResourceName>(targetName, resName), resDst);
+        Map<Pair<NodeName, ResourceName>, ResourceData> rscmap = new HashMap<>();
+        rscmap.put(new Pair<NodeName, ResourceName>(sourceName, resName), resSrc);
+        rscmap.put(new Pair<NodeName, ResourceName>(targetName, resName), resDst);
         List<ResourceConnectionData> cons = driver.loadAll(rscmap);
 
         assertNotNull(cons);

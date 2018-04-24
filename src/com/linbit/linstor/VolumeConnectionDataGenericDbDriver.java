@@ -13,7 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.Tripple;
+import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -163,7 +163,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     }
 
     public List<VolumeConnectionData> loadAll(
-        Map<Tripple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap
     )
         throws SQLException
     {
@@ -182,8 +182,8 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
 
                     VolumeConnectionData vlmConn = restoreVolumeConnectionData(
                         resultSet,
-                        vlmMap.get(new Tripple<>(nodeNameSrc, rscName, vlmNr)),
-                        vlmMap.get(new Tripple<>(nodeNameDst, rscName, vlmNr))
+                        vlmMap.get(new Triple<>(nodeNameSrc, rscName, vlmNr)),
+                        vlmMap.get(new Triple<>(nodeNameDst, rscName, vlmNr))
                     );
                     vlmConns.add(vlmConn);
                 }

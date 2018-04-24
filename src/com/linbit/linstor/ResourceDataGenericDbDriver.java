@@ -20,7 +20,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -171,14 +171,14 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
                         rscNameStr = resultSet.getString(RES_NAME);
                         ResourceName rscName = new ResourceName(rscNameStr);
 
-                        Tuple<ResourceData, Resource.InitMaps> tuple = restoreRsc(
+                        Pair<ResourceData, InitMaps> pair = restoreRsc(
                             resultSet,
                             nodesMap.get(nodeName),
                             rscDfnMap.get(rscName)
                         );
                         loadedResources.put(
-                            tuple.objA,
-                            tuple.objB
+                            pair.objA,
+                            pair.objB
                         );
                     }
                     catch (InvalidNameException exc)
@@ -230,7 +230,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         return ret;
     }
 
-    private Tuple<ResourceData, InitMaps> restoreRsc(
+    private Pair<ResourceData, InitMaps> restoreRsc(
         ResultSet resultSet,
         Node node,
         ResourceDefinition rscDfn
@@ -258,7 +258,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             rscConnMap,
             vlmMap
         );
-        return new Tuple<ResourceData, Resource.InitMaps>(rscData, initMaps);
+        return new Pair<ResourceData, InitMaps>(rscData, initMaps);
     }
 
     private NodeId getNodeId(ResultSet resultSet, Node node, ResourceDefinition rscDfn)

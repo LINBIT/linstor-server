@@ -22,7 +22,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
-import com.linbit.utils.Tuple;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -141,10 +141,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             {
                 while (resultSet.next())
                 {
-                    Tuple<NodeData, Node.InitMaps> tuple = load(resultSet);
+                    Pair<NodeData, Node.InitMaps> pair = load(resultSet);
                     loadedNodesMap.put(
-                        tuple.objA,
-                        tuple.objB
+                        pair.objA,
+                        pair.objB
                     );
                 }
             }
@@ -181,10 +181,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         return node;
     }
 
-    private Tuple<NodeData, Node.InitMaps> load(ResultSet resultSet)
+    private Pair<NodeData, Node.InitMaps> load(ResultSet resultSet)
         throws SQLException, ImplementationError
     {
-        Tuple<NodeData, Node.InitMaps> retTuple = new Tuple<>();
+        Pair<NodeData, Node.InitMaps> retPair = new Pair<>();
         NodeData node;
         NodeName nodeName = null;
         try
@@ -229,8 +229,8 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
                 nodeConnMap
             );
 
-            retTuple.objA = node;
-            retTuple.objB = new NodeInitMaps(
+            retPair.objA = node;
+            retPair.objB = new NodeInitMaps(
                 rscMap,
                 netIfMap,
                 storPoolMap,
@@ -241,10 +241,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         }
         else
         {
-            retTuple.objA = node;
+            retPair.objA = node;
             errorReporter.logTrace("Node loaded from cache %s", getId(node));
         }
-        return retTuple;
+        return retPair;
     }
 
     private ObjectProtection getObjectProtection(NodeName nodeName) throws SQLException
