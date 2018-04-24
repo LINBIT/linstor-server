@@ -38,7 +38,9 @@ import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Tripple;
@@ -158,11 +160,19 @@ public class GenericDbDriver implements DatabaseDriver
             Map<StorPoolName, StorPoolDefinitionData> tmpStorPoolDfnMap =
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinitionData::getName);
 
+            // loading net interfaces
             List<NetInterfaceData> loadedNetIfs = netIfDriver.loadAll(tmpNodesMap);
             for (NetInterfaceData netIf : loadedNetIfs)
             {
-                loadedNodesMap.get(netIf.getNode())
-                    .getNetIfMap().put(netIf.getName(), netIf);
+                Node node = netIf.getNode();
+                loadedNodesMap.get(node).getNetIfMap()
+                    .put(netIf.getName(), netIf);
+
+                String curStltConnName = node.getProps(dbCtx).getProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
+                if (netIf.getName().value.equalsIgnoreCase(curStltConnName))
+                {
+                    node.setSatelliteConnection(dbCtx, netIf);
+                }
             }
 
             List<NodeConnectionData> loadedNodeConns = nodeConnDriver.loadAll(tmpNodesMap);
@@ -284,6 +294,10 @@ public class GenericDbDriver implements DatabaseDriver
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError("dbCtx has not enough privileges", exc);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Invalid hardcoded props key", exc);
         }
     }
 

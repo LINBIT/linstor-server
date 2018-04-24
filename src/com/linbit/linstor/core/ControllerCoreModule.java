@@ -179,7 +179,6 @@ public class ControllerCoreModule extends AbstractModule
 
                 transMgr.commit();
                 initScope.exit();
-
             }
             finally
             {

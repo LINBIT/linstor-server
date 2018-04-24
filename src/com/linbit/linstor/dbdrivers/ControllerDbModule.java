@@ -15,9 +15,7 @@ import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.annotation.Uninitialized;
-import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -36,9 +34,6 @@ import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtectionGenericDbDriver;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
-
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -81,9 +76,7 @@ public class ControllerDbModule extends AbstractModule
     public StorPoolDefinition initializeDisklessStorPoolDfn(
         ErrorReporter errorLogRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
-        DbConnectionPool dbConnPool,
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap,
-        LinStorScope initScopeScope,
         StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver
     )
     {
@@ -92,18 +85,8 @@ public class ControllerDbModule extends AbstractModule
         try
         {
             storPoolDfnMapLock.writeLock().lock();
-            TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
-
-            initScopeScope.enter();
-            initScopeScope.seed(TransactionMgr.class, transMgr);
-
             disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
-
-            transMgr.commit();
-            initScopeScope.exit();
-
             storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
-            transMgr.returnConnection();
         }
         catch (SQLException sqlExc)
         {

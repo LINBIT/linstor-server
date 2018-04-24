@@ -25,7 +25,6 @@ import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
-
 import static com.linbit.linstor.dbcp.migration.LinstorMigration.PLACEHOLDER_KEY_DB_TYPE;
 
 /**
