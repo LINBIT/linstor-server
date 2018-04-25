@@ -412,11 +412,6 @@ public class ApiConsts
     public static final String KEY_CUR_STLT_CONN_NAME = "CurStltConnName";
 
     /*
-     * Node properties
-     */
-    public static final String KEY_CURRENT_STLT_CONN_NAME = "CurStltConnName";
-
-    /*
      * Property values
      */
     public static final String VAL_NETCOM_TYPE_SSL = "SSL";
