@@ -164,7 +164,10 @@ public class EventBroker
             {
                 byte[] eventData = eventWriter.writeEvent(eventIdentifier.getObjectIdentifier());
 
-                watches.forEach(watch -> sendEvent(watch, eventData));
+                if (eventData != null)
+                {
+                    watches.forEach(watch -> sendEvent(watch, eventData));
+                }
             }
             catch (Exception exc)
             {

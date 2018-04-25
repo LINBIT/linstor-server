@@ -1,6 +1,8 @@
 package com.linbit.linstor.event.generator.satellite;
 
 import com.linbit.linstor.drbdstate.DrbdEventService;
+import com.linbit.linstor.drbdstate.DrbdResource;
+import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.generator.VolumeDiskStateGenerator;
 
@@ -22,9 +24,22 @@ public class StltVolumeDiskStateGenerator implements VolumeDiskStateGenerator
     public String generate(ObjectIdentifier objectIdentifier)
         throws Exception
     {
-        return drbdEventService.getDrbdResource(objectIdentifier.getResourceName().displayValue)
-            .getVolume(objectIdentifier.getVolumeNumber())
-            .getDiskState()
-            .toString();
+        String diskState = null;
+
+        if (drbdEventService.isDrbdStateAvailable())
+        {
+            DrbdResource drbdResource =
+                drbdEventService.getDrbdResource(objectIdentifier.getResourceName().displayValue);
+            if (drbdResource != null)
+            {
+                DrbdVolume volume = drbdResource.getVolume(objectIdentifier.getVolumeNumber());
+                if (volume != null)
+                {
+                    diskState = volume.getDiskState().toString();
+                }
+            }
+        }
+
+        return diskState;
     }
 }
