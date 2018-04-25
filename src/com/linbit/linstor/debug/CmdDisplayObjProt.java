@@ -15,8 +15,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessControlEntry;
 import com.linbit.linstor.security.AccessControlList;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.RoleName;
+import com.linbit.linstor.security.SecurityModule;
 
 import javax.inject.Named;
 import java.io.PrintStream;
@@ -35,7 +38,22 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     private static final String CLS_NODE        = "NODE";
     private static final String CLS_RSCDFN      = "RSCDFN";
     private static final String CLS_RSC         = "RSC";
-    private static final String CLS_STORPOOL    = "STORPOOL";
+    private static final String CLS_STORPOOLDFN = "STORPOOLDFN";
+    private static final String CLS_SYSOBJ      = "SYSOBJ";
+
+    private static final String SO_NODE_DIR         = "NODEDIR";
+    private static final String SO_RSCDFN_DIR       = "RSCDFNDIR";
+    private static final String SO_STORPOOLDFN_DIR  = "STORPOOLDFNDIR";
+    private static final String SO_CFGVAL           = "CFGVAL";
+    private static final String SO_SHUTDOWN         = "SHUTDOWN";
+
+    private static final String LBL_NODE_DIR        = "nodes directory";
+    private static final String LBL_RSCDFN_DIR      = "resource definitions directory";
+    private static final String LBL_STORPOOLDFN_DIR = "storage pool definitions directory";
+    private static final String LBL_CFGVAL          = "application configuration values";
+    private static final String LBL_SHUTDOWN        = "application shutdown";
+
+    private static final String PFX_ARTICLE         = "the ";
 
     static
     {
@@ -46,15 +64,28 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             "    " + CLS_NODE + "\n" +
             "    " + CLS_RSCDFN + "\n" +
             "    " + CLS_RSC + "\n" +
-            "    " + CLS_STORPOOL
+            "    " + CLS_STORPOOLDFN + "\n" +
+            "    " + CLS_SYSOBJ
         );
         PARAMETER_DESCRIPTIONS.put(
             PRM_OBJ_NAME,
-            "Name of the protected object\n" +
-            "The name of resources and storage pools must be specified as a path,\n" +
+            "Name of the protected object\n\n" +
+            "For nodes (class " + CLS_NODE + ") and resource definitions (class " + CLS_RSCDFN + ")\n" +
+            "objects, this is the name of the node or resource definition, respectively.\n\n" +
+            "For resources (class " + CLS_RSC + ") the name must be specified as a path,\n" +
             "with path components separated by a forward slash (/):\n" +
-            "    NodeName/ResourceDefinitionName\n" +
-            "    NodeName/StoragePoolName"
+            "    NodeName/ResourceName\n\n" +
+            "For system objects (class " + CLS_SYSOBJ + "), name is one of:\n" +
+            "    " + SO_NODE_DIR + "\n" +
+            "        Controls the ability to view, create or delete nodes\n" +
+            "    " + SO_RSCDFN_DIR + "\n" +
+            "        Controls the ability to view, create or delete resource definitions\n" +
+            "    " + SO_STORPOOLDFN_DIR + "\n" +
+            "        Controls the ability to view, create or delete storage pool definitions\n" +
+            "    " + SO_CFGVAL + "\n" +
+            "        Controls the ability to view or change the configuration\n" +
+            "    " + SO_SHUTDOWN + "\n" +
+            "        LINSTOR shutdown authorization"
         );
     }
 
@@ -62,9 +93,14 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final CoreModule.NodesMap nodesMap;
+    private final ObjectProtection nodesMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final ObjectProtection storPoolDfnMapProt;
+    private final ObjectProtection confProt;
+    private final ObjectProtection shutdownProt;
 
     @Inject
     public CmdDisplayObjProt(
@@ -72,9 +108,14 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CoreModule.NodesMap nodesMapRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef
+        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
+        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef,
+        @Named(SecurityModule.SHUTDOWN_PROT) ObjectProtection shutdownProtRef
     )
     {
         super(
@@ -92,17 +133,22 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
-        storPoolDfnMap = storPoolDfnMapRef;
         nodesMap = nodesMapRef;
+        nodesMapProt = nodesMapProtRef;
         rscDfnMap = rscDfnMapRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        storPoolDfnMapProt = storPoolDfnMapProtRef;
+        confProt = confProtRef;
+        shutdownProt = shutdownProtRef;
     }
 
     @Override
     public void execute(
-        PrintStream debugOut,
-        PrintStream debugErr,
-        AccessContext accCtx,
-        Map<String, String> parameters
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final AccessContext accCtx,
+        final Map<String, String> parameters
     )
         throws Exception
     {
@@ -126,8 +172,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
                     case CLS_RSC:
                         printRscProt(debugOut, debugErr, accCtx, objPath);
                         break;
-                    case CLS_STORPOOL:
+                    case CLS_STORPOOLDFN:
                         printStorPoolDfnProt(debugOut, debugErr, accCtx, objPath);
+                        break;
+                    case CLS_SYSOBJ:
+                        printSysObjProt(debugOut, debugErr, accCtx, objPath);
                         break;
                     default:
                         printError(
@@ -138,7 +187,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
                             "    " + CLS_NODE + "\n" +
                             "    " + CLS_RSCDFN + "\n" +
                             "    " + CLS_RSC + "\n" +
-                            "    " + CLS_STORPOOL,
+                            "    " + CLS_STORPOOLDFN,
                             null
                         );
                         break;
@@ -173,6 +222,52 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         }
     }
 
+    private void printSysObjProt(
+        final PrintStream debugOut,
+        final PrintStream debugErr,
+        final AccessContext accCtx,
+        final String objPath
+    )
+        throws InvalidNameException, AccessDeniedException
+    {
+        final String sysObj = objPath.trim().toUpperCase();
+        final ObjectProtection objProt;
+        final String label;
+        switch (sysObj)
+        {
+            case SO_NODE_DIR:
+                objProt = nodesMapProt;
+                label = PFX_ARTICLE + LBL_NODE_DIR;
+                break;
+            case SO_RSCDFN_DIR:
+                objProt = rscDfnMapProt;
+                label = PFX_ARTICLE + LBL_RSCDFN_DIR;
+                break;
+            case SO_STORPOOLDFN_DIR:
+                objProt = storPoolDfnMapProt;
+                label = PFX_ARTICLE + LBL_STORPOOLDFN_DIR;
+                break;
+            case SO_CFGVAL:
+                objProt = confProt;
+                label = LBL_CFGVAL;
+                break;
+            case SO_SHUTDOWN:
+                objProt = shutdownProt;
+                label = LBL_SHUTDOWN;
+                break;
+            default:
+                throw new InvalidNameException(
+                    "The identifier '" + objPath + "' is not a valid system object name",
+                    objPath
+                );
+        }
+
+        printSectionSeparator(debugOut);
+        debugOut.println("Object protection for " + label);
+        printObjProt(debugOut, debugErr, objProt);
+        printSectionSeparator(debugOut);
+    }
+
     private void printNodeProt(
         PrintStream debugOut,
         PrintStream debugErr,
@@ -181,6 +276,8 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
+        nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+
         NodeName nodeObjName = new NodeName(objPath);
         Lock nodesMapRdLock = nodesMapLock.readLock();
         nodesMapRdLock.lock();
@@ -225,6 +322,8 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
+        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+
         ResourceName rscName = new ResourceName(objPath);
         Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
         rscDfnMapRdLock.lock();
@@ -270,6 +369,9 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
+        nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+
         String[] pathTokens = objPath.split("/", 2);
         if (pathTokens.length == 2)
         {
@@ -359,6 +461,8 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
+        storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+
         StorPoolName spName = new StorPoolName(objPath);
         Lock storPoolMapRdLock = storPoolDfnMapLock.readLock();
         storPoolMapRdLock.lock();
