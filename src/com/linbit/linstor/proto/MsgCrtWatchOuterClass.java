@@ -117,18 +117,35 @@ public final class MsgCrtWatchOuterClass {
 
     /**
      * <pre>
-     * Filter: Only events related to volumes and their definitions with this number
+     * Whether to apply the volume number filter
      * </pre>
      *
-     * <code>optional sint32 volume_number = 5;</code>
+     * <code>optional bool filter_by_volume_number = 5;</code>
+     */
+    boolean hasFilterByVolumeNumber();
+    /**
+     * <pre>
+     * Whether to apply the volume number filter
+     * </pre>
+     *
+     * <code>optional bool filter_by_volume_number = 5;</code>
+     */
+    boolean getFilterByVolumeNumber();
+
+    /**
+     * <pre>
+     * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
+     * </pre>
+     *
+     * <code>optional sint32 volume_number = 6;</code>
      */
     boolean hasVolumeNumber();
     /**
      * <pre>
-     * Filter: Only events related to volumes and their definitions with this number
+     * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
      * </pre>
      *
-     * <code>optional sint32 volume_number = 5;</code>
+     * <code>optional sint32 volume_number = 6;</code>
      */
     int getVolumeNumber();
   }
@@ -152,6 +169,7 @@ public final class MsgCrtWatchOuterClass {
       eventName_ = "";
       resourceName_ = "";
       nodeName_ = "";
+      filterByVolumeNumber_ = false;
       volumeNumber_ = 0;
     }
 
@@ -208,6 +226,11 @@ public final class MsgCrtWatchOuterClass {
             }
             case 40: {
               bitField0_ |= 0x00000010;
+              filterByVolumeNumber_ = input.readBool();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
               volumeNumber_ = input.readSInt32();
               break;
             }
@@ -423,24 +446,47 @@ public final class MsgCrtWatchOuterClass {
       }
     }
 
-    public static final int VOLUME_NUMBER_FIELD_NUMBER = 5;
-    private int volumeNumber_;
+    public static final int FILTER_BY_VOLUME_NUMBER_FIELD_NUMBER = 5;
+    private boolean filterByVolumeNumber_;
     /**
      * <pre>
-     * Filter: Only events related to volumes and their definitions with this number
+     * Whether to apply the volume number filter
      * </pre>
      *
-     * <code>optional sint32 volume_number = 5;</code>
+     * <code>optional bool filter_by_volume_number = 5;</code>
      */
-    public boolean hasVolumeNumber() {
+    public boolean hasFilterByVolumeNumber() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
      * <pre>
-     * Filter: Only events related to volumes and their definitions with this number
+     * Whether to apply the volume number filter
      * </pre>
      *
-     * <code>optional sint32 volume_number = 5;</code>
+     * <code>optional bool filter_by_volume_number = 5;</code>
+     */
+    public boolean getFilterByVolumeNumber() {
+      return filterByVolumeNumber_;
+    }
+
+    public static final int VOLUME_NUMBER_FIELD_NUMBER = 6;
+    private int volumeNumber_;
+    /**
+     * <pre>
+     * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
+     * </pre>
+     *
+     * <code>optional sint32 volume_number = 6;</code>
+     */
+    public boolean hasVolumeNumber() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <pre>
+     * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
+     * </pre>
+     *
+     * <code>optional sint32 volume_number = 6;</code>
      */
     public int getVolumeNumber() {
       return volumeNumber_;
@@ -475,7 +521,10 @@ public final class MsgCrtWatchOuterClass {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, nodeName_);
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeSInt32(5, volumeNumber_);
+        output.writeBool(5, filterByVolumeNumber_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeSInt32(6, volumeNumber_);
       }
       unknownFields.writeTo(output);
     }
@@ -500,7 +549,11 @@ public final class MsgCrtWatchOuterClass {
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(5, volumeNumber_);
+          .computeBoolSize(5, filterByVolumeNumber_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt32Size(6, volumeNumber_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -539,6 +592,11 @@ public final class MsgCrtWatchOuterClass {
         result = result && getNodeName()
             .equals(other.getNodeName());
       }
+      result = result && (hasFilterByVolumeNumber() == other.hasFilterByVolumeNumber());
+      if (hasFilterByVolumeNumber()) {
+        result = result && (getFilterByVolumeNumber()
+            == other.getFilterByVolumeNumber());
+      }
       result = result && (hasVolumeNumber() == other.hasVolumeNumber());
       if (hasVolumeNumber()) {
         result = result && (getVolumeNumber()
@@ -570,6 +628,11 @@ public final class MsgCrtWatchOuterClass {
       if (hasNodeName()) {
         hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getNodeName().hashCode();
+      }
+      if (hasFilterByVolumeNumber()) {
+        hash = (37 * hash) + FILTER_BY_VOLUME_NUMBER_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+            getFilterByVolumeNumber());
       }
       if (hasVolumeNumber()) {
         hash = (37 * hash) + VOLUME_NUMBER_FIELD_NUMBER;
@@ -705,8 +768,10 @@ public final class MsgCrtWatchOuterClass {
         bitField0_ = (bitField0_ & ~0x00000004);
         nodeName_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
-        volumeNumber_ = 0;
+        filterByVolumeNumber_ = false;
         bitField0_ = (bitField0_ & ~0x00000010);
+        volumeNumber_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
 
@@ -749,6 +814,10 @@ public final class MsgCrtWatchOuterClass {
         result.nodeName_ = nodeName_;
         if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
           to_bitField0_ |= 0x00000010;
+        }
+        result.filterByVolumeNumber_ = filterByVolumeNumber_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
         }
         result.volumeNumber_ = volumeNumber_;
         result.bitField0_ = to_bitField0_;
@@ -810,6 +879,9 @@ public final class MsgCrtWatchOuterClass {
           bitField0_ |= 0x00000008;
           nodeName_ = other.nodeName_;
           onChanged();
+        }
+        if (other.hasFilterByVolumeNumber()) {
+          setFilterByVolumeNumber(other.getFilterByVolumeNumber());
         }
         if (other.hasVolumeNumber()) {
           setVolumeNumber(other.getVolumeNumber());
@@ -1197,49 +1269,97 @@ public final class MsgCrtWatchOuterClass {
         return this;
       }
 
-      private int volumeNumber_ ;
+      private boolean filterByVolumeNumber_ ;
       /**
        * <pre>
-       * Filter: Only events related to volumes and their definitions with this number
+       * Whether to apply the volume number filter
        * </pre>
        *
-       * <code>optional sint32 volume_number = 5;</code>
+       * <code>optional bool filter_by_volume_number = 5;</code>
        */
-      public boolean hasVolumeNumber() {
+      public boolean hasFilterByVolumeNumber() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
        * <pre>
-       * Filter: Only events related to volumes and their definitions with this number
+       * Whether to apply the volume number filter
        * </pre>
        *
-       * <code>optional sint32 volume_number = 5;</code>
+       * <code>optional bool filter_by_volume_number = 5;</code>
+       */
+      public boolean getFilterByVolumeNumber() {
+        return filterByVolumeNumber_;
+      }
+      /**
+       * <pre>
+       * Whether to apply the volume number filter
+       * </pre>
+       *
+       * <code>optional bool filter_by_volume_number = 5;</code>
+       */
+      public Builder setFilterByVolumeNumber(boolean value) {
+        bitField0_ |= 0x00000010;
+        filterByVolumeNumber_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Whether to apply the volume number filter
+       * </pre>
+       *
+       * <code>optional bool filter_by_volume_number = 5;</code>
+       */
+      public Builder clearFilterByVolumeNumber() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        filterByVolumeNumber_ = false;
+        onChanged();
+        return this;
+      }
+
+      private int volumeNumber_ ;
+      /**
+       * <pre>
+       * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
+       * </pre>
+       *
+       * <code>optional sint32 volume_number = 6;</code>
+       */
+      public boolean hasVolumeNumber() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <pre>
+       * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
+       * </pre>
+       *
+       * <code>optional sint32 volume_number = 6;</code>
        */
       public int getVolumeNumber() {
         return volumeNumber_;
       }
       /**
        * <pre>
-       * Filter: Only events related to volumes and their definitions with this number
+       * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
        * </pre>
        *
-       * <code>optional sint32 volume_number = 5;</code>
+       * <code>optional sint32 volume_number = 6;</code>
        */
       public Builder setVolumeNumber(int value) {
-        bitField0_ |= 0x00000010;
+        bitField0_ |= 0x00000020;
         volumeNumber_ = value;
         onChanged();
         return this;
       }
       /**
        * <pre>
-       * Filter: Only events related to volumes and their definitions with this number
+       * Filter: Only events related to volumes and their definitions with this number (when filter_by_volume_number set)
        * </pre>
        *
-       * <code>optional sint32 volume_number = 5;</code>
+       * <code>optional sint32 volume_number = 6;</code>
        */
       public Builder clearVolumeNumber() {
-        bitField0_ = (bitField0_ & ~0x00000010);
+        bitField0_ = (bitField0_ & ~0x00000020);
         volumeNumber_ = 0;
         onChanged();
         return this;
@@ -1308,10 +1428,11 @@ public final class MsgCrtWatchOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\037linstor/proto/MsgCrtWatch.proto\022\030com.l" +
-      "inbit.linstor.proto\"t\n\013MsgCrtWatch\022\020\n\010wa" +
-      "tch_id\030\001 \002(\005\022\022\n\nevent_name\030\002 \001(\t\022\025\n\rreso" +
-      "urce_name\030\003 \001(\t\022\021\n\tnode_name\030\004 \001(\t\022\025\n\rvo" +
-      "lume_number\030\005 \001(\021"
+      "inbit.linstor.proto\"\225\001\n\013MsgCrtWatch\022\020\n\010w" +
+      "atch_id\030\001 \002(\005\022\022\n\nevent_name\030\002 \001(\t\022\025\n\rres" +
+      "ource_name\030\003 \001(\t\022\021\n\tnode_name\030\004 \001(\t\022\037\n\027f" +
+      "ilter_by_volume_number\030\005 \001(\010\022\025\n\rvolume_n" +
+      "umber\030\006 \001(\021"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1330,7 +1451,7 @@ public final class MsgCrtWatchOuterClass {
     internal_static_com_linbit_linstor_proto_MsgCrtWatch_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgCrtWatch_descriptor,
-        new java.lang.String[] { "WatchId", "EventName", "ResourceName", "NodeName", "VolumeNumber", });
+        new java.lang.String[] { "WatchId", "EventName", "ResourceName", "NodeName", "FilterByVolumeNumber", "VolumeNumber", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
