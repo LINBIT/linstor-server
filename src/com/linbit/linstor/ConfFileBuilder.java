@@ -447,6 +447,18 @@ public class ConfFileBuilder
                 String tmpDisk = vlm.getBlockDevicePath(localAccCtx);
                 if (tmpDisk.trim().equals(""))
                 {
+                    if (vlm.getResource().equals(localRsc))
+                    {
+                        throw new LinStorRuntimeException(
+                            "Local volume does an empty block device. This might be result of an other error.",
+                            "The storage driver returned an empty string instead of the path of the backing device",
+                            "This is either an implementation error or just a side effect of an other " +
+                                "recently occured error. Please check the error logs and try to solve the other " +
+                                "other errors first",
+                            null,
+                            null
+                        );
+                    }
                     disk = "/dev/drbd/this/is/not/used";
                 }
                 else

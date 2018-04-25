@@ -414,6 +414,7 @@ public class LvmDriver extends AbsStorageDriver
                 "--noheadings",
                 "--nosuffix"
             };
+        String rawOut = null;
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
@@ -421,15 +422,29 @@ public class LvmDriver extends AbsStorageDriver
 
             checkExitCode(output, command);
 
-            String rawOut = new String(output.stdoutData);
+            rawOut = new String(output.stdoutData);
             // cut everything after the decimal dot
             int indexOf = rawOut.indexOf('.');
             if (indexOf == -1)
             {
                 indexOf = rawOut.indexOf(',');
             }
-            rawOut = rawOut.substring(0, indexOf);
+            if (indexOf > -1)   // could be plain '0' instead of '0.00'
+            {
+                rawOut = rawOut.substring(0, indexOf);
+            }
             freeSize = Long.parseLong(rawOut.trim());
+        }
+        catch (NumberFormatException nfexc)
+        {
+            throw new StorageException(
+                "Unable to parse volume group's free size.",
+                "Volume group: " + volumeGroup + "; free size to parse: '" + rawOut + "'",
+                null,
+                null,
+                "External command used to query free size: " + glue(command, " "),
+                nfexc
+            );
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {

@@ -102,6 +102,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
             if (stltPort != null && stltEncrType != null)
             {
+                node.setSatelliteConnection(apiCtx, netIf);
                 satelliteConnector.startConnecting(node, apiCtx);
             }
 
