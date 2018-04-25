@@ -395,42 +395,47 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     void updateRealFreeSpace(Peer peer, FreeSpacePojo[] freeSpacePojos)
     {
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                null, // apiCallRc
-                peer.getNode().getName().displayValue,
-                null // storPoolName
-            );
-        )
+        if (!peer.getNode().isDeleted())
         {
-            String nodeName = peer.getNode().getName().displayValue;
-
-            for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
+            try (
+                AbsApiCallHandler basicallyThis = setContext(
+                    ApiCallType.MODIFY,
+                    null, // apiCallRc
+                    peer.getNode().getName().displayValue,
+                    null // storPoolName
+                );
+            )
             {
-                currentStorPoolNameStr = freeSpacePojo.getStorPoolName();
+                String nodeName = peer.getNode().getName().displayValue;
 
-                StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
-                if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
+                for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
                 {
-                    setRealFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                    currentStorPoolNameStr = freeSpacePojo.getStorPoolName();
+
+                    StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
+                    if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
+                    {
+                        setRealFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                    }
+                    else
+                    {
+                        throw asExc(
+                            null,
+                            "UUIDs mismatched when updating free space of " + getObjectDescriptionInline(),
+                            ApiConsts.FAIL_UUID_STOR_POOL
+                        );
+                    }
                 }
-                else
-                {
-                    throw asExc(
-                        null,
-                        "UUIDs mismatched when updating free space of " + getObjectDescriptionInline(),
-                        ApiConsts.FAIL_UUID_STOR_POOL
-                    );
-                }
+
+                commit();
             }
-
-            commit();
+            catch (ApiCallHandlerFailedException ignored)
+            {
+                // already reported
+            }
         }
-        catch (ApiCallHandlerFailedException ignored)
-        {
-            // already reported
-        }
+        // else: the node is deleted, thus if it still has any storpools left, those will
+        // soon be deleted as well.
     }
 
     private void setRealFreeSpace(StorPoolData storPool, long freeSpace)

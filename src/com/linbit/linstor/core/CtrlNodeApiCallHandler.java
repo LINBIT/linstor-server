@@ -20,6 +20,7 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
@@ -45,6 +46,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -381,10 +383,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 boolean success = true;
                 boolean hasRsc = false;
 
+                Set<ResourceDefinition> changedResourceDefinitions = new HashSet<>();
+
                 for (Resource rsc : getRscStream(nodeData).collect(toList()))
                 {
                     hasRsc = true;
                     markDeleted(rsc);
+                    changedResourceDefinitions.add(rsc.getDefinition());
                 }
                 if (!hasRsc)
                 {
@@ -443,6 +448,17 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     }
                     else
                     {
+                        for (ResourceDefinition rscDfn : changedResourceDefinitions)
+                        {
+                            // in case the node still has some resources deployed, we just marked
+                            // those to be deleted and now we have to send the new DELETE-flags
+                            // to the satellites.
+                            updateSatellites(rscDfn);
+
+                            // when they finished undeploying the resource(s), the corresponding
+                            // "resourceDeleted" method in CtrlRscApiCallHandler will check if the
+                            // node also needs to be deleted, and does so if needed.
+                        }
                         updateSatellites(nodeData);
                     }
 
