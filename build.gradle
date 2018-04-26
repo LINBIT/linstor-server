@@ -49,7 +49,7 @@ dependencies
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
 
-    runtime group: 'com.h2database', name: 'h2', version: '1.4.196'
+    runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
 //    runtime group: 'org.apache.derby', name: 'derby',       version: '10.14.1.0'
 //    runtime group: 'org.apache.derby', name: 'derbyclient', version: '10.14.1.0'
