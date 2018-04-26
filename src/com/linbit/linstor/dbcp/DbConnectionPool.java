@@ -26,6 +26,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
 import static com.linbit.linstor.dbcp.migration.LinstorMigration.PLACEHOLDER_KEY_DB_TYPE;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
 /**
  * JDBC pool
@@ -36,7 +37,6 @@ public class DbConnectionPool implements ControllerDatabase
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "SQL database connection pool service";
-    private static final String DATABASE_SCHEMA_NAME = "LINSTOR";
     private static final String SCHEMA_HISTORY_TABLE_NAME = "FLYWAY_SCHEMA_HISTORY";
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;

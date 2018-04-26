@@ -2,6 +2,9 @@ package com.linbit.linstor.dbdrivers.derby;
 
 public class DbConstants
 {
+    // Schema name
+    public static final String DATABASE_SCHEMA_NAME = "LINSTOR";
+
     // View names
     public static final String VIEW_SEC_IDENTITIES_LOAD = "SEC_IDENTITIES_LOAD";
     public static final String VIEW_SEC_ROLES_LOAD      = "SEC_ROLES_LOAD";
