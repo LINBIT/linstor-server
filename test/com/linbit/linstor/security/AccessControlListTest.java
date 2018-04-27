@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.linbit.ImplementationError;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -59,15 +60,34 @@ public class AccessControlListTest
             switch (requestedAt)
             {
                 case VIEW:
-                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_VIEW);
+                    expectException &= !accCtx.privEffective.hasSomePrivilege(
+                        Privilege.PRIV_OBJ_VIEW,
+                        Privilege.PRIV_OBJ_USE,
+                        Privilege.PRIV_OBJ_CHANGE,
+                        Privilege.PRIV_OBJ_CONTROL,
+                        Privilege.PRIV_OBJ_OWNER
+                    );
                     break;
                 case USE:
-                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_USE);
+                    expectException &= !accCtx.privEffective.hasSomePrivilege(
+                        Privilege.PRIV_OBJ_USE,
+                        Privilege.PRIV_OBJ_CHANGE,
+                        Privilege.PRIV_OBJ_CONTROL,
+                        Privilege.PRIV_OBJ_OWNER
+                    );
                     break;
                 case CHANGE:
-                    expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_CHANGE);
+                    expectException &= !accCtx.privEffective.hasSomePrivilege(
+                        Privilege.PRIV_OBJ_CHANGE,
+                        Privilege.PRIV_OBJ_CONTROL,
+                        Privilege.PRIV_OBJ_OWNER
+                    );
                     break;
                 case CONTROL:
+                    expectException &= !accCtx.privEffective.hasSomePrivilege(
+                        Privilege.PRIV_OBJ_CONTROL,
+                        Privilege.PRIV_OBJ_OWNER
+                    );
                     expectException &= !accCtx.privEffective.hasPrivileges(Privilege.PRIV_OBJ_CONTROL);
                     break;
                 default:
