@@ -23,20 +23,17 @@ public class ApiCallAnswerer
 {
     private final ErrorReporter errorReporter;
 
-    private final AccessContext accCtx;
     private final Peer peer;
     private final int msgId;
 
     @Inject
     public ApiCallAnswerer(
         ErrorReporter errorReporterRef,
-        @PeerContext AccessContext accCtxRef,
         Peer peerRef,
         @Named(ApiModule.MSG_ID) int msgIdRef
     )
     {
         errorReporter = errorReporterRef;
-        accCtx = accCtxRef;
         peer = peerRef;
         msgId = msgIdRef;
     }
@@ -96,8 +93,8 @@ public class ApiCallAnswerer
             {
                 errorReporter.reportError(
                     ioExc,
-                    accCtx,
-                    peer,
+                    null,
+                    null,
                     "IOException occured while generating ApiCallResponse"
                 );
             }
@@ -135,8 +132,8 @@ public class ApiCallAnswerer
         {
             errorReporter.reportError(
                 ioExc,
-                accCtx,
-                peer,
+                null,
+                null,
                 "IOException occured while generating protobuf api header"
             );
         }
