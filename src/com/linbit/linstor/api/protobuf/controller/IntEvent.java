@@ -1,22 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.handler.EventHandler;
-import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.event.EventProcessor;
 import com.linbit.linstor.proto.MsgEventOuterClass;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 @ProtobufApiCall(
     name = ApiConsts.API_EVENT,
@@ -24,17 +16,14 @@ import java.util.Map;
 )
 public class IntEvent implements ApiCall
 {
-    private final ErrorReporter errorReporter;
-    private final Map<String, EventHandler> eventHandlers;
+    private final EventProcessor eventProcessor;
 
     @Inject
     public IntEvent(
-        ErrorReporter errorReporterRef,
-        Map<String, EventHandler> eventHandlersRef
+        EventProcessor eventProcessorRef
     )
     {
-        errorReporter = errorReporterRef;
-        eventHandlers = eventHandlersRef;
+        eventProcessor = eventProcessorRef;
     }
 
     @Override
@@ -43,31 +32,13 @@ public class IntEvent implements ApiCall
     {
         MsgEventOuterClass.MsgEvent msgEvent = MsgEventOuterClass.MsgEvent.parseDelimitedFrom(msgDataIn);
 
-        EventHandler eventHandler = eventHandlers.get(msgEvent.getEventName());
-        if (eventHandler == null)
-        {
-            errorReporter.logWarning("Unknown event '%s' received", msgEvent.getEventName());
-        }
-        else
-        {
-            try
-            {
-                NodeName nodeName =
-                    msgEvent.hasNodeName() ? new NodeName(msgEvent.getNodeName()) : null;
-                ResourceName resourceName =
-                    msgEvent.hasResourceName() ? new ResourceName(msgEvent.getResourceName()) : null;
-                VolumeNumber volumeNumber =
-                    msgEvent.hasVolumeNumber() ? new VolumeNumber(msgEvent.getVolumeNumber()) : null;
-
-                eventHandler.execute(
-                    new EventIdentifier(msgEvent.getEventName(), nodeName, resourceName, volumeNumber),
-                    msgDataIn
-                );
-            }
-            catch (InvalidNameException | ValueOutOfRangeException exc)
-            {
-                errorReporter.logWarning("Invalid event received: " + exc.getMessage());
-            }
-        }
+        eventProcessor.handleEvent(
+            msgEvent.getEventAction(),
+            msgEvent.getEventName(),
+            msgEvent.hasNodeName() ? msgEvent.getNodeName() : null,
+            msgEvent.hasResourceName() ? msgEvent.getResourceName() : null,
+            msgEvent.hasVolumeNumber() ? msgEvent.getVolumeNumber() : null,
+            msgDataIn
+        );
     }
 }

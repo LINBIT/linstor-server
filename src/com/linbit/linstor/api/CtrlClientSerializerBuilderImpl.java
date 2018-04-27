@@ -1,17 +1,17 @@
 package com.linbit.linstor.api;
 
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.satellitestate.SatelliteState;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -92,11 +92,12 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
     }
 
     @Override
-    public CtrlClientSerializerBuilder resourceList(List<Resource.RscApi> rscs, Collection<ResourceState> rscStates)
+    public CtrlClientSerializerBuilder resourceList(
+        List<Resource.RscApi> rscs, Map<NodeName, SatelliteState> satelliteStates)
     {
         try
         {
-            serializationWriter.writeRscList(rscs, rscStates, baos);
+            serializationWriter.writeRscList(rscs, satelliteStates, baos);
         }
         catch (IOException ioExc)
         {
@@ -167,7 +168,7 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
 
         void writeRscList(
             List<Resource.RscApi> rscs,
-            Collection<ResourceState> rscStates,
+            Map<NodeName, SatelliteState> satelliteStates,
             ByteArrayOutputStream baos
         )
             throws IOException;

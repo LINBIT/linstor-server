@@ -1,8 +1,6 @@
 package com.linbit.linstor.api;
 
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
-import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -57,11 +55,15 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     }
 
     @Override
-    public CommonSerializerBuilder event(Integer watchId, EventIdentifier eventIdentifier)
+    public CommonSerializerBuilder event(
+        Integer watchId,
+        EventIdentifier eventIdentifier,
+        String eventStreamAction
+    )
     {
         try
         {
-            commonSerializationWriter.writeEvent(watchId, eventIdentifier, baos);
+            commonSerializationWriter.writeEvent(watchId, eventIdentifier, eventStreamAction, baos);
         }
         catch (IOException ioExc)
         {
@@ -87,11 +89,11 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     }
 
     @Override
-    public CommonSerializerBuilder resourceStateEvent(String resourceStateString)
+    public CommonSerializerBuilder resourceStateEvent(Boolean resourceReady)
     {
         try
         {
-            commonSerializationWriter.writeResourceStateEvent(resourceStateString, baos);
+            commonSerializationWriter.writeResourceStateEvent(resourceReady, baos);
         }
         catch (IOException ioExc)
         {
@@ -106,13 +108,18 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
         void writeHeader(String apiCall, Integer msgId, ByteArrayOutputStream baos)
             throws IOException;
 
-        void writeEvent(Integer watchId, EventIdentifier eventIdentifier, ByteArrayOutputStream baos)
+        void writeEvent(
+            Integer watchId,
+            EventIdentifier eventIdentifier,
+            String eventStreamAction,
+            ByteArrayOutputStream baos
+        )
         throws IOException;
 
         void writeVolumeDiskState(String diskState, ByteArrayOutputStream baos)
             throws IOException;
 
-        void writeResourceStateEvent(String resourceStateString, ByteArrayOutputStream baos)
+        void writeResourceStateEvent(Boolean resourceReady, ByteArrayOutputStream baos)
             throws IOException;
     }
 }

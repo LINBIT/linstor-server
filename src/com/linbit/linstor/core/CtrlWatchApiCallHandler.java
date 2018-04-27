@@ -112,7 +112,7 @@ public class CtrlWatchApiCallHandler
             nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
             rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
 
-            eventBroker.createWatch(peer.getAccessContext(), new Watch(
+            eventBroker.createWatch(new Watch(
                 UUID.randomUUID(), peer.getId(), peerWatchId,
                 new EventIdentifier(
                     eventName,

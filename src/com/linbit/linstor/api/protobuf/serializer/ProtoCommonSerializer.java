@@ -3,14 +3,10 @@ package com.linbit.linstor.api.protobuf.serializer;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.CommonSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgEventOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
-import com.linbit.linstor.proto.RscStateOuterClass;
-import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.security.AccessContext;
@@ -71,18 +67,16 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
 
     @Override
     public void writeEvent(
-        Integer watchId, EventIdentifier eventIdentifier, ByteArrayOutputStream baos
+        Integer watchId, EventIdentifier eventIdentifier, String eventStreamAction, ByteArrayOutputStream baos
     )
         throws IOException
     {
         MsgEventOuterClass.MsgEvent.Builder eventBuilder = MsgEventOuterClass.MsgEvent.newBuilder();
 
-        if (watchId != null)
-        {
-            eventBuilder.setWatchId(watchId);
-        }
-
-        eventBuilder.setEventName(eventIdentifier.getEventName());
+        eventBuilder
+            .setWatchId(watchId)
+            .setEventAction(eventStreamAction)
+            .setEventName(eventIdentifier.getEventName());
 
         if (eventIdentifier.getResourceName() != null)
         {
@@ -113,89 +107,12 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
     }
 
     @Override
-    public void writeResourceStateEvent(String resourceStateString, ByteArrayOutputStream baos)
+    public void writeResourceStateEvent(Boolean resourceReady, ByteArrayOutputStream baos)
         throws IOException
     {
         EventRscStateOuterClass.EventRscState.newBuilder()
-            .setState(resourceStateString)
+            .setReady(resourceReady)
             .build()
             .writeDelimitedTo(baos);
-    }
-
-    private static VlmStateOuterClass.VlmState buildVolumeState(VolumeState vlmState)
-    {
-        VlmStateOuterClass.VlmState.Builder vlmStateBuilder = VlmStateOuterClass.VlmState.newBuilder();
-
-        vlmStateBuilder.setVlmNr(vlmState.getVlmNr().value);
-
-        if (vlmState.isPresent() != null)
-        {
-            vlmStateBuilder.setIsPresent(vlmState.isPresent());
-        }
-
-        if (vlmState.hasDisk() != null)
-        {
-            vlmStateBuilder.setHasDisk(vlmState.hasDisk());
-        }
-
-        if (vlmState.hasMetaData() != null)
-        {
-            vlmStateBuilder.setHasMetaData(vlmState.hasMetaData());
-        }
-
-        if (vlmState.isCheckMetaData() != null)
-        {
-            vlmStateBuilder.setCheckMetaData(vlmState.isCheckMetaData());
-        }
-
-        if (vlmState.isDiskFailed() != null)
-        {
-            vlmStateBuilder.setDiskFailed(vlmState.isDiskFailed());
-        }
-
-        if (vlmState.getNetSize() != null)
-        {
-            vlmStateBuilder.setNetSize(vlmState.getNetSize());
-        }
-
-        if (vlmState.getGrossSize() != null)
-        {
-            vlmStateBuilder.setGrossSize(vlmState.getGrossSize());
-        }
-
-        if (vlmState.getMinorNr() != null)
-        {
-            vlmStateBuilder.setVlmMinorNr(vlmState.getMinorNr().value);
-        }
-
-        if (vlmState.getDiskState() != null)
-        {
-            vlmStateBuilder.setDiskState(vlmState.getDiskState());
-        }
-
-        return vlmStateBuilder.build();
-    }
-
-    public static RscStateOuterClass.RscState buildResourceState(
-        final String nodeName,
-        final ResourceState rscState
-    )
-    {
-        RscStateOuterClass.RscState.Builder rscStateBuilder = RscStateOuterClass.RscState.newBuilder();
-
-        rscStateBuilder
-            .setRscName(rscState.getRscName())
-            .setNodeName(nodeName)
-            .setIsPresent(rscState.isPresent())
-            .setRequiresAdjust(rscState.requiresAdjust())
-            .setIsPrimary(rscState.isPrimary());
-
-        // volumes
-        for (VolumeState vlmState : rscState.getVolumes())
-        {
-            rscStateBuilder.addVlmStates(buildVolumeState(vlmState));
-        }
-
-        return rscStateBuilder.build();
     }
 }

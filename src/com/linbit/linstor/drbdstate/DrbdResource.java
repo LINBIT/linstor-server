@@ -166,6 +166,16 @@ public class DrbdResource
         return removedConn;
     }
 
+    public Map<String, DrbdConnection> getConnectionsMap()
+    {
+        Map<String, DrbdConnection> connListCopy;
+        synchronized (connList)
+        {
+            connListCopy = new TreeMap<>(connList);
+        }
+        return connListCopy;
+    }
+
     public DrbdVolume getVolume(VolumeNumber volNr)
     {
         DrbdVolume vol = null;

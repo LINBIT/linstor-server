@@ -344,11 +344,15 @@ public class DrbdStateTracker
         }
 
         @Override
-        public void volumeDestroyed(DrbdResource resource, DrbdVolume volume)
+        public void volumeDestroyed(
+            DrbdResource resource,
+            DrbdConnection connection,
+            DrbdVolume volume
+        )
         {
             for (ResourceObserver obs : container.observers[container.OBS_VOL_DSTR_SLOT])
             {
-                obs.volumeDestroyed(resource, volume);
+                obs.volumeDestroyed(resource, null, volume);
             }
         }
 

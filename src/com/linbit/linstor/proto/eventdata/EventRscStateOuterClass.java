@@ -23,26 +23,17 @@ public final class EventRscStateOuterClass {
      * The state of the resource
      * </pre>
      *
-     * <code>optional string state = 1;</code>
+     * <code>optional bool ready = 1;</code>
      */
-    boolean hasState();
+    boolean hasReady();
     /**
      * <pre>
      * The state of the resource
      * </pre>
      *
-     * <code>optional string state = 1;</code>
+     * <code>optional bool ready = 1;</code>
      */
-    java.lang.String getState();
-    /**
-     * <pre>
-     * The state of the resource
-     * </pre>
-     *
-     * <code>optional string state = 1;</code>
-     */
-    com.google.protobuf.ByteString
-        getStateBytes();
+    boolean getReady();
   }
   /**
    * Protobuf type {@code com.linbit.linstor.proto.eventdata.EventRscState}
@@ -56,7 +47,7 @@ public final class EventRscStateOuterClass {
       super(builder);
     }
     private EventRscState() {
-      state_ = "";
+      ready_ = false;
     }
 
     @java.lang.Override
@@ -87,10 +78,9 @@ public final class EventRscStateOuterClass {
               }
               break;
             }
-            case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
+            case 8: {
               bitField0_ |= 0x00000001;
-              state_ = bs;
+              ready_ = input.readBool();
               break;
             }
           }
@@ -118,16 +108,16 @@ public final class EventRscStateOuterClass {
     }
 
     private int bitField0_;
-    public static final int STATE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object state_;
+    public static final int READY_FIELD_NUMBER = 1;
+    private boolean ready_;
     /**
      * <pre>
      * The state of the resource
      * </pre>
      *
-     * <code>optional string state = 1;</code>
+     * <code>optional bool ready = 1;</code>
      */
-    public boolean hasState() {
+    public boolean hasReady() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
@@ -135,41 +125,10 @@ public final class EventRscStateOuterClass {
      * The state of the resource
      * </pre>
      *
-     * <code>optional string state = 1;</code>
+     * <code>optional bool ready = 1;</code>
      */
-    public java.lang.String getState() {
-      java.lang.Object ref = state_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          state_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * The state of the resource
-     * </pre>
-     *
-     * <code>optional string state = 1;</code>
-     */
-    public com.google.protobuf.ByteString
-        getStateBytes() {
-      java.lang.Object ref = state_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        state_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
+    public boolean getReady() {
+      return ready_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -185,7 +144,7 @@ public final class EventRscStateOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, state_);
+        output.writeBool(1, ready_);
       }
       unknownFields.writeTo(output);
     }
@@ -196,7 +155,8 @@ public final class EventRscStateOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, state_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, ready_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -215,10 +175,10 @@ public final class EventRscStateOuterClass {
       com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState other = (com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState) obj;
 
       boolean result = true;
-      result = result && (hasState() == other.hasState());
-      if (hasState()) {
-        result = result && getState()
-            .equals(other.getState());
+      result = result && (hasReady() == other.hasReady());
+      if (hasReady()) {
+        result = result && (getReady()
+            == other.getReady());
       }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
@@ -231,9 +191,10 @@ public final class EventRscStateOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasState()) {
-        hash = (37 * hash) + STATE_FIELD_NUMBER;
-        hash = (53 * hash) + getState().hashCode();
+      if (hasReady()) {
+        hash = (37 * hash) + READY_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+            getReady());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -353,7 +314,7 @@ public final class EventRscStateOuterClass {
       }
       public Builder clear() {
         super.clear();
-        state_ = "";
+        ready_ = false;
         bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
@@ -382,7 +343,7 @@ public final class EventRscStateOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.state_ = state_;
+        result.ready_ = ready_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -425,10 +386,8 @@ public final class EventRscStateOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState other) {
         if (other == com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.getDefaultInstance()) return this;
-        if (other.hasState()) {
-          bitField0_ |= 0x00000001;
-          state_ = other.state_;
-          onChanged();
+        if (other.hasReady()) {
+          setReady(other.getReady());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -458,15 +417,15 @@ public final class EventRscStateOuterClass {
       }
       private int bitField0_;
 
-      private java.lang.Object state_ = "";
+      private boolean ready_ ;
       /**
        * <pre>
        * The state of the resource
        * </pre>
        *
-       * <code>optional string state = 1;</code>
+       * <code>optional bool ready = 1;</code>
        */
-      public boolean hasState() {
+      public boolean hasReady() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
@@ -474,56 +433,21 @@ public final class EventRscStateOuterClass {
        * The state of the resource
        * </pre>
        *
-       * <code>optional string state = 1;</code>
+       * <code>optional bool ready = 1;</code>
        */
-      public java.lang.String getState() {
-        java.lang.Object ref = state_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            state_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
+      public boolean getReady() {
+        return ready_;
       }
       /**
        * <pre>
        * The state of the resource
        * </pre>
        *
-       * <code>optional string state = 1;</code>
+       * <code>optional bool ready = 1;</code>
        */
-      public com.google.protobuf.ByteString
-          getStateBytes() {
-        java.lang.Object ref = state_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          state_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * The state of the resource
-       * </pre>
-       *
-       * <code>optional string state = 1;</code>
-       */
-      public Builder setState(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        state_ = value;
+      public Builder setReady(boolean value) {
+        bitField0_ |= 0x00000001;
+        ready_ = value;
         onChanged();
         return this;
       }
@@ -532,28 +456,11 @@ public final class EventRscStateOuterClass {
        * The state of the resource
        * </pre>
        *
-       * <code>optional string state = 1;</code>
+       * <code>optional bool ready = 1;</code>
        */
-      public Builder clearState() {
+      public Builder clearReady() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        state_ = getDefaultInstance().getState();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * The state of the resource
-       * </pre>
-       *
-       * <code>optional string state = 1;</code>
-       */
-      public Builder setStateBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        state_ = value;
+        ready_ = false;
         onChanged();
         return this;
       }
@@ -622,7 +529,7 @@ public final class EventRscStateOuterClass {
     java.lang.String[] descriptorData = {
       "\n+linstor/proto/eventdata/EventRscState." +
       "proto\022\"com.linbit.linstor.proto.eventdat" +
-      "a\"\036\n\rEventRscState\022\r\n\005state\030\001 \001(\t"
+      "a\"\036\n\rEventRscState\022\r\n\005ready\030\001 \001(\010"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -641,7 +548,7 @@ public final class EventRscStateOuterClass {
     internal_static_com_linbit_linstor_proto_eventdata_EventRscState_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_eventdata_EventRscState_descriptor,
-        new java.lang.String[] { "State", });
+        new java.lang.String[] { "Ready", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

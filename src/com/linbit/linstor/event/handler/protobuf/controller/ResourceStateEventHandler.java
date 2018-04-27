@@ -6,23 +6,23 @@ import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
-import com.linbit.linstor.satellitestate.SatelliteVolumeState;
+import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufEventHandler(
-    eventName = ApiConsts.EVENT_VOLUME_DISK_STATE
+    eventName = ApiConsts.EVENT_RESOURCE_STATE
 )
-public class VolumeDiskStateEventHandler implements EventHandler
+public class ResourceStateEventHandler implements EventHandler
 {
     private final EventBroker eventBroker;
     private final Peer peer;
 
     @Inject
-    public VolumeDiskStateEventHandler(
+    public ResourceStateEventHandler(
         EventBroker eventBrokerRef,
         Peer peerRef
     )
@@ -37,30 +37,28 @@ public class VolumeDiskStateEventHandler implements EventHandler
     {
         if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) || eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
         {
-            EventVlmDiskStateOuterClass.EventVlmDiskState eventVlmDiskState =
-                EventVlmDiskStateOuterClass.EventVlmDiskState.parseDelimitedFrom(eventDataIn);
+            EventRscStateOuterClass.EventRscState eventRscState =
+                EventRscStateOuterClass.EventRscState.parseDelimitedFrom(eventDataIn);
 
-            peer.getSatelliteState().setOnVolume(
+            peer.getSatelliteState().setOnResource(
                 eventIdentifier.getResourceName(),
-                eventIdentifier.getVolumeNumber(),
-                SatelliteVolumeState::setDiskState,
-                eventVlmDiskState.getDiskState()
+                SatelliteResourceState::setReady,
+                eventRscState.getReady()
             );
         }
         else
         {
-            peer.getSatelliteState().unsetOnVolume(
+            peer.getSatelliteState().unsetOnResource(
                 eventIdentifier.getResourceName(),
-                eventIdentifier.getVolumeNumber(),
-                SatelliteVolumeState::setDiskState
+                SatelliteResourceState::setReady
             );
         }
 
         eventBroker.forwardEvent(new EventIdentifier(
-            ApiConsts.EVENT_VOLUME_DISK_STATE,
+            ApiConsts.EVENT_RESOURCE_STATE,
             peer.getNode().getName(),
             eventIdentifier.getResourceName(),
-            eventIdentifier.getVolumeNumber()
+            null
         ), eventAction);
     }
 }

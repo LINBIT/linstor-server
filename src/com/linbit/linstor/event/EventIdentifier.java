@@ -4,6 +4,8 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 
+import java.util.Objects;
+
 public class EventIdentifier
 {
     private final String eventName;
@@ -55,5 +57,37 @@ public class EventIdentifier
     public ObjectIdentifier getObjectIdentifier()
     {
         return new ObjectIdentifier(nodeName, resourceName, volumeNumber);
+    }
+
+    @Override
+    // Single exit point exception: Automatically generated code
+    @SuppressWarnings("DescendantToken")
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass())
+        {
+            return false;
+        }
+        EventIdentifier that = (EventIdentifier) obj;
+        return Objects.equals(eventName, that.eventName) &&
+            Objects.equals(nodeName, that.nodeName) &&
+            Objects.equals(resourceName, that.resourceName) &&
+            Objects.equals(volumeNumber, that.volumeNumber);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(eventName, nodeName, resourceName, volumeNumber);
+    }
+
+    @Override
+    public String toString()
+    {
+        return eventName + "(" + getObjectIdentifier() + ")";
     }
 }

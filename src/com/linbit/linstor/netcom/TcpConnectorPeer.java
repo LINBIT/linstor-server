@@ -3,8 +3,7 @@ package com.linbit.linstor.netcom;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -23,7 +22,6 @@ import javax.net.ssl.SSLException;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -75,7 +73,7 @@ public class TcpConnectorPeer implements Peer
     protected Message internalPingMsg;
     protected Message internalPongMsg;
 
-    private Map<ResourceName, ResourceState> resourceStateMap;
+    private SatelliteState satelliteState;
 
     private long fullSyncId;
     private final AtomicLong serializerId;
@@ -110,6 +108,11 @@ public class TcpConnectorPeer implements Peer
 
         serializerId = new AtomicLong(0);
         serializerLock = new ReentrantReadWriteLock(true);
+
+        if (node != null)
+        {
+            satelliteState = new SatelliteState();
+        }
     }
 
     @Override
@@ -498,15 +501,9 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void setResourceStates(final Map<ResourceName, ResourceState> resourceStateMapRef)
+    public SatelliteState getSatelliteState()
     {
-        resourceStateMap = resourceStateMapRef;
-    }
-
-    @Override
-    public Map<ResourceName, ResourceState> getResourceStates()
-    {
-        return resourceStateMap;
+        return satelliteState;
     }
 
     @Override

@@ -67,7 +67,14 @@ public class ObjectIdentifier
     @Override
     public int hashCode()
     {
-
         return Objects.hash(nodeName, resourceName, volumeNumber);
+    }
+
+    @Override
+    public String toString()
+    {
+        return (nodeName == null ? "" : nodeName) +
+            "/" + (resourceName == null ? "" : resourceName) +
+            (volumeNumber == null ? "" : "/" + volumeNumber);
     }
 }

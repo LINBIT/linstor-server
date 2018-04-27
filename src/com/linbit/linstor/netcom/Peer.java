@@ -2,14 +2,12 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.common.Ping;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import javax.net.ssl.SSLException;
@@ -219,16 +217,9 @@ public interface Peer
     long getLastPongReceived();
 
     /**
-     * Sets the current resource states for this peer(satellite).
-     * @param resourceStateMap new resource states.
+     * Get the state data for this satellite, if the peer represents one.
      */
-    void setResourceStates(Map<ResourceName, ResourceState> resourceStateMap);
-
-    /**
-     * Method to access the current resource states;
-     * @return A map containing the currently known resource states
-     */
-    Map<ResourceName, ResourceState> getResourceStates();
+    SatelliteState getSatelliteState();
 
     /**
      * Whenever a FullSync or a LinStor object gets serialized, the FullSync timestamp

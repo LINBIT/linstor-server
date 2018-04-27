@@ -46,6 +46,7 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -60,6 +61,7 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -680,7 +682,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     )
     {
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
-        List<ResourceState> rscStates = new ArrayList<>();
+        Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
         try
         {
             rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
@@ -714,16 +716,11 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 final Peer peer = node.getPeer(peerAccCtx);
                 if (peer != null)
                 {
-                    final Map<ResourceName, ResourceState> resourceStateMap = peer.getResourceStates();
+                    final SatelliteState satelliteState = peer.getSatelliteState();
 
-                    if (resourceStateMap != null)
+                    if (satelliteState != null)
                     {
-                        ArrayList<ResourceState> stateCopy = new ArrayList<>(resourceStateMap.values());
-                        for (ResourceState rscState : stateCopy)
-                        {
-                            rscState.setNodeName(node.getName().getDisplayName());
-                            rscStates.add(rscState);
-                        }
+                        satelliteStates.put(node.getName(), satelliteState);
                     }
                 }
             }
@@ -736,7 +733,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         return clientComSerializer
                 .builder(API_LST_RSC, msgId)
-                .resourceList(rscs, rscStates)
+                .resourceList(rscs, satelliteStates)
                 .build();
     }
 

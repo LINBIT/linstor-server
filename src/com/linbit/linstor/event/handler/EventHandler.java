@@ -7,6 +7,6 @@ import java.io.InputStream;
 
 public interface EventHandler
 {
-    void execute(EventIdentifier eventIdentifier, InputStream eventDataIn)
+    void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException;
 }

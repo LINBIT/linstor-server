@@ -14,10 +14,14 @@ public interface CommonSerializer
     {
         byte[] build();
 
-        CommonSerializerBuilder event(Integer watchId, EventIdentifier eventIdentifier);
+        CommonSerializerBuilder event(
+            Integer watchId,
+            EventIdentifier eventIdentifier,
+            String eventStreamAction
+        );
 
         CommonSerializerBuilder volumeDiskState(String diskState);
 
-        CommonSerializerBuilder resourceStateEvent(String resourceStateString);
+        CommonSerializerBuilder resourceStateEvent(Boolean resourceReady);
     }
 }

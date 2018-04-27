@@ -376,11 +376,11 @@ public class StltApiCallHandler
         Peer controllerPeer = controllerPeerConnector.getControllerPeer();
         try
         {
-            eventBroker.createWatch(apiCtx, new Watch(
+            eventBroker.createWatch(new Watch(
                 UUID.randomUUID(), controllerPeer.getId(), 0, new EventIdentifier(null, null, null, null)
             ));
         }
-        catch (AccessDeniedException | LinStorDataAlreadyExistsException exc)
+        catch (LinStorDataAlreadyExistsException exc)
         {
             errorReporter.reportError(
                 exc,

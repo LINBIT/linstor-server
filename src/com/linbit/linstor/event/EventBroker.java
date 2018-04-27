@@ -1,23 +1,22 @@
 package com.linbit.linstor.event;
 
+import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.event.writer.EventWriter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,67 +25,73 @@ public class EventBroker
 {
     private final ErrorReporter errorReporter;
     private final WatchStore watchStore;
-    private final WatchableObjectFinder watchableObjectFinder;
+    private final EventStreamStore eventStreamStore;
     private final CommonSerializer commonSerializer;
     private final WorkQueue workQueue;
     private final CoreModule.PeerMap peerMap;
     private final Map<String, EventWriter> eventWriters;
-    private final Map<String, EventWriterDescriptor> eventWriterDescriptors;
 
-    private final ReentrantLock watchStoreLock;
+    private final ReentrantLock watchAndStreamLock;
 
     @Inject
     public EventBroker(
         ErrorReporter errorReporterRef,
         WatchStore watchStoreRef,
-        WatchableObjectFinder watchableObjectFinderRef,
+        EventStreamStore eventStreamStoreRef,
         CommonSerializer commonSerializerRef,
         @Named(LinStorModule.EVENT_WRITER_WORKER_POOL_NAME) WorkQueue workQueueRef,
         CoreModule.PeerMap peerMapRef,
-        Map<String, EventWriter> eventWritersRef,
-        Map<String, EventWriterDescriptor> eventWriterDescriptorsRef
+        Map<String, EventWriter> eventWritersRef
     )
     {
         errorReporter = errorReporterRef;
         watchStore = watchStoreRef;
-        watchableObjectFinder = watchableObjectFinderRef;
+        eventStreamStore = eventStreamStoreRef;
         commonSerializer = commonSerializerRef;
         workQueue = workQueueRef;
         peerMap = peerMapRef;
         eventWriters = eventWritersRef;
-        eventWriterDescriptors = eventWriterDescriptorsRef;
 
-        watchStoreLock = new ReentrantLock();
+        watchAndStreamLock = new ReentrantLock();
     }
 
     /**
      * Add a watch and send initial state for all relevant events.
-     * <p>
-     * Requires the nodes-map and resource-definition-map read locks to be held.
      */
-    public void createWatch(AccessContext accCtx, Watch watch)
-        throws AccessDeniedException, LinStorDataAlreadyExistsException
+    public void createWatch(Watch watch)
+        throws LinStorDataAlreadyExistsException
     {
-        // Find all affected objects of each type under this watch
-        Map<WatchableObject, List<ObjectIdentifier>> objectsToWatch =
-            watchableObjectFinder.findDescendantObjects(accCtx, watch.getEventIdentifier().getObjectIdentifier());
-
-        watchStoreLock.lock();
+        watchAndStreamLock.lock();
         try
         {
-            // Send all relevant events to all affected objects
-            for (EventWriterDescriptor descriptor : eventWriterDescriptors.values())
+            Collection<String> eventNames = getMatchingEventNames(watch.getEventIdentifier().getEventName());
+
+            for (String eventName : eventNames)
             {
-                List<ObjectIdentifier> objects = objectsToWatch.get(descriptor.getObjectType());
-                EventWriter eventWriter = eventWriters.get(descriptor.getEventName());
-                for (ObjectIdentifier objectIdentifier : objects)
+                Collection<EventIdentifier> eventStreams =
+                    eventStreamStore.getDescendantEventStreams(new EventIdentifier(
+                        eventName,
+                        watch.getEventIdentifier().getNodeName(),
+                        watch.getEventIdentifier().getResourceName(),
+                        watch.getEventIdentifier().getVolumeNumber()
+                    ));
+
+                for (EventIdentifier eventIdentifier : eventStreams)
                 {
-                    writeAndSend(
-                        new EventIdentifier(descriptor.getEventName(), objectIdentifier.getNodeName(),
-                            objectIdentifier.getResourceName(), objectIdentifier.getVolumeNumber()),
-                        eventWriter,
-                        Collections.singleton(watch)
-                    );
+                    EventWriter eventWriter = eventWriters.get(eventIdentifier.getEventName());
+                    if (eventWriter == null)
+                    {
+                        errorReporter.logWarning("Stream is open for unknown event " + eventIdentifier.getEventName());
+                    }
+                    else
+                    {
+                        writeAndSend(
+                            eventIdentifier,
+                            ApiConsts.EVENT_STREAM_OPEN,
+                            eventWriter,
+                            Collections.singleton(watch)
+                        );
+                    }
                 }
             }
 
@@ -94,24 +99,98 @@ public class EventBroker
         }
         finally
         {
-            watchStoreLock.unlock();
+            watchAndStreamLock.unlock();
         }
     }
 
-    public void removeWatchesForPeer(String peerId)
+    private Collection<String> getMatchingEventNames(String eventName)
     {
-        watchStoreLock.lock();
+        return eventName == null || eventName.isEmpty() ? eventWriters.keySet() : Collections.singleton(eventName);
+    }
+
+    public void connectionClosed(Peer peer)
+    {
+        watchAndStreamLock.lock();
         try
         {
-            watchStore.removeWatchesForPeer(peerId);
+            Node node = peer.getNode();
+            if (node != null)
+            {
+                // The peer is a Satellite
+                for (String eventName : eventWriters.keySet())
+                {
+                    Collection<EventIdentifier> eventStreams =
+                        eventStreamStore.getDescendantEventStreams(new EventIdentifier(
+                            eventName,
+                            node.getName(),
+                            null,
+                            null
+                        ));
+
+                    for (EventIdentifier eventIdentifier : eventStreams)
+                    {
+                        Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
+
+                        writeAndSend(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, null, watches);
+
+                        eventStreamStore.removeEventStream(eventIdentifier);
+                    }
+                }
+            }
+
+            watchStore.removeWatchesForPeer(peer.getId());
         }
         finally
         {
-            watchStoreLock.unlock();
+            watchAndStreamLock.unlock();
         }
     }
 
+    public void forwardEvent(EventIdentifier eventIdentifier, String eventStreamAction)
+    {
+        switch (eventStreamAction)
+        {
+            case ApiConsts.EVENT_STREAM_VALUE:
+                triggerEvent(eventIdentifier);
+                break;
+            case ApiConsts.EVENT_STREAM_OPEN:
+                openEventStream(eventIdentifier);
+                break;
+            case ApiConsts.EVENT_STREAM_CLOSE_REMOVED:
+                closeEventStream(eventIdentifier);
+                break;
+            case ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION:
+                throw new ImplementationError("NoConnection event received from satellite");
+            default:
+                throw new ImplementationError("Unknown event action '" + eventStreamAction + "'");
+        }
+    }
+
+    public void openEventStream(EventIdentifier eventIdentifier)
+    {
+        watchAndStreamLock.lock();
+        try
+        {
+            eventStreamStore.addEventStream(eventIdentifier);
+        }
+        catch (LinStorDataAlreadyExistsException exc)
+        {
+            throw new ImplementationError(
+                "Stream is already open: " + eventIdentifier, exc);
+        }
+        finally
+        {
+            watchAndStreamLock.unlock();
+        }
+        triggerEvent(eventIdentifier, ApiConsts.EVENT_STREAM_OPEN);
+    }
+
     public void triggerEvent(EventIdentifier eventIdentifier)
+    {
+        triggerEvent(eventIdentifier, ApiConsts.EVENT_STREAM_VALUE);
+    }
+
+    private void triggerEvent(EventIdentifier eventIdentifier, String eventStreamAction)
     {
         EventWriter eventWriter = eventWriters.get(eventIdentifier.getEventName());
         if (eventWriter == null)
@@ -122,37 +201,94 @@ public class EventBroker
         {
             Collection<Watch> watches;
 
-            watchStoreLock.lock();
+            watchAndStreamLock.lock();
             try
             {
                 watches = watchStore.getWatchesForEvent(eventIdentifier);
             }
             finally
             {
-                watchStoreLock.unlock();
+                watchAndStreamLock.unlock();
             }
 
             if (!watches.isEmpty())
             {
-                writeAndSend(eventIdentifier, eventWriter, watches);
+                writeAndSend(eventIdentifier, eventStreamAction, eventWriter, watches);
             }
         }
     }
 
-    private void writeAndSend(EventIdentifier eventIdentifier, EventWriter eventWriter, Collection<Watch> watches)
+    public void closeEventStream(EventIdentifier eventIdentifier)
     {
-        workQueue.submit(new EventSender(eventIdentifier, eventWriter, watches));
+        watchAndStreamLock.lock();
+        try
+        {
+            Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
+
+            writeAndSend(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED, null, watches);
+
+            eventStreamStore.removeEventStream(eventIdentifier);
+        }
+        finally
+        {
+            watchAndStreamLock.unlock();
+        }
+    }
+
+    public void closeAllEventStreams(String eventName, ObjectIdentifier objectIdentifier)
+    {
+        watchAndStreamLock.lock();
+        try
+        {
+            Collection<EventIdentifier> eventStreams =
+                eventStreamStore.getDescendantEventStreams(new EventIdentifier(
+                    eventName,
+                    objectIdentifier.getNodeName(),
+                    objectIdentifier.getResourceName(),
+                    objectIdentifier.getVolumeNumber()
+                ));
+
+            for (EventIdentifier eventIdentifier : eventStreams)
+            {
+                Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
+
+                writeAndSend(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED, null, watches);
+
+                eventStreamStore.removeEventStream(eventIdentifier);
+            }
+        }
+        finally
+        {
+            watchAndStreamLock.unlock();
+        }
+    }
+
+    private void writeAndSend(
+        EventIdentifier eventIdentifier,
+        String eventStreamAction,
+        EventWriter eventWriter,
+        Collection<Watch> watches
+    )
+    {
+        workQueue.submit(new EventSender(eventIdentifier, eventStreamAction, eventWriter, watches));
     }
 
     private class EventSender implements Runnable
     {
         private final EventIdentifier eventIdentifier;
+        private final String eventStreamAction;
         private final EventWriter eventWriter;
         private final Collection<Watch> watches;
 
-        EventSender(EventIdentifier eventIdentifierRef, EventWriter eventWriterRef, Collection<Watch> watchesRef)
+        EventSender(
+            EventIdentifier eventIdentifierRef,
+            String eventStreamActionRef,
+            EventWriter eventWriterRef,
+            Collection<Watch> watchesRef
+        )
         {
             eventIdentifier = eventIdentifierRef;
+            eventStreamAction = eventStreamActionRef;
             eventWriter = eventWriterRef;
             watches = watchesRef;
         }
@@ -162,7 +298,8 @@ public class EventBroker
         {
             try
             {
-                byte[] eventData = eventWriter.writeEvent(eventIdentifier.getObjectIdentifier());
+                byte[] eventData = eventWriter == null ? new byte[] {} :
+                    eventWriter.writeEvent(eventIdentifier.getObjectIdentifier());
 
                 if (eventData != null)
                 {
@@ -198,7 +335,7 @@ public class EventBroker
             else
             {
                 byte[] eventHeaderBytes = commonSerializer.builder(ApiConsts.API_EVENT)
-                    .event(watch.getPeerWatchId(), eventIdentifier)
+                    .event(watch.getPeerWatchId(), eventIdentifier, eventStreamAction)
                     .build();
 
                 byte[] completeData = new byte[eventHeaderBytes.length + eventData.length];

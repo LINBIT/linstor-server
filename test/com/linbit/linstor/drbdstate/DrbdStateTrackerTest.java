@@ -339,7 +339,11 @@ public class DrbdStateTrackerTest
         }
 
         @Override
-        public void volumeDestroyed(DrbdResource resource, DrbdVolume volume)
+        public void volumeDestroyed(
+            DrbdResource resource,
+            DrbdConnection connection,
+            DrbdVolume volume
+        )
         {
             checkExpected(DrbdStateTracker.OBS_VOL_DSTR);
         }

@@ -28,78 +28,6 @@ public final class VlmStateOuterClass {
     int getVlmNr();
 
     /**
-     * <code>optional sint32 vlm_minor_nr = 2;</code>
-     */
-    boolean hasVlmMinorNr();
-    /**
-     * <code>optional sint32 vlm_minor_nr = 2;</code>
-     */
-    int getVlmMinorNr();
-
-    /**
-     * <code>optional bool is_present = 3;</code>
-     */
-    boolean hasIsPresent();
-    /**
-     * <code>optional bool is_present = 3;</code>
-     */
-    boolean getIsPresent();
-
-    /**
-     * <code>optional bool has_disk = 4;</code>
-     */
-    boolean hasHasDisk();
-    /**
-     * <code>optional bool has_disk = 4;</code>
-     */
-    boolean getHasDisk();
-
-    /**
-     * <code>optional bool has_meta_data = 5;</code>
-     */
-    boolean hasHasMetaData();
-    /**
-     * <code>optional bool has_meta_data = 5;</code>
-     */
-    boolean getHasMetaData();
-
-    /**
-     * <code>optional bool check_meta_data = 6;</code>
-     */
-    boolean hasCheckMetaData();
-    /**
-     * <code>optional bool check_meta_data = 6;</code>
-     */
-    boolean getCheckMetaData();
-
-    /**
-     * <code>optional bool disk_failed = 7;</code>
-     */
-    boolean hasDiskFailed();
-    /**
-     * <code>optional bool disk_failed = 7;</code>
-     */
-    boolean getDiskFailed();
-
-    /**
-     * <code>optional uint64 net_size = 8;</code>
-     */
-    boolean hasNetSize();
-    /**
-     * <code>optional uint64 net_size = 8;</code>
-     */
-    long getNetSize();
-
-    /**
-     * <code>optional uint64 gross_size = 9;</code>
-     */
-    boolean hasGrossSize();
-    /**
-     * <code>optional uint64 gross_size = 9;</code>
-     */
-    long getGrossSize();
-
-    /**
      * <code>optional string disk_state = 10;</code>
      */
     boolean hasDiskState();
@@ -126,14 +54,6 @@ public final class VlmStateOuterClass {
     }
     private VlmState() {
       vlmNr_ = 0;
-      vlmMinorNr_ = 0;
-      isPresent_ = false;
-      hasDisk_ = false;
-      hasMetaData_ = false;
-      checkMetaData_ = false;
-      diskFailed_ = false;
-      netSize_ = 0L;
-      grossSize_ = 0L;
       diskState_ = "";
     }
 
@@ -170,49 +90,9 @@ public final class VlmStateOuterClass {
               vlmNr_ = input.readSInt32();
               break;
             }
-            case 16: {
-              bitField0_ |= 0x00000002;
-              vlmMinorNr_ = input.readSInt32();
-              break;
-            }
-            case 24: {
-              bitField0_ |= 0x00000004;
-              isPresent_ = input.readBool();
-              break;
-            }
-            case 32: {
-              bitField0_ |= 0x00000008;
-              hasDisk_ = input.readBool();
-              break;
-            }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              hasMetaData_ = input.readBool();
-              break;
-            }
-            case 48: {
-              bitField0_ |= 0x00000020;
-              checkMetaData_ = input.readBool();
-              break;
-            }
-            case 56: {
-              bitField0_ |= 0x00000040;
-              diskFailed_ = input.readBool();
-              break;
-            }
-            case 64: {
-              bitField0_ |= 0x00000080;
-              netSize_ = input.readUInt64();
-              break;
-            }
-            case 72: {
-              bitField0_ |= 0x00000100;
-              grossSize_ = input.readUInt64();
-              break;
-            }
             case 82: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000200;
+              bitField0_ |= 0x00000002;
               diskState_ = bs;
               break;
             }
@@ -256,133 +136,13 @@ public final class VlmStateOuterClass {
       return vlmNr_;
     }
 
-    public static final int VLM_MINOR_NR_FIELD_NUMBER = 2;
-    private int vlmMinorNr_;
-    /**
-     * <code>optional sint32 vlm_minor_nr = 2;</code>
-     */
-    public boolean hasVlmMinorNr() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>optional sint32 vlm_minor_nr = 2;</code>
-     */
-    public int getVlmMinorNr() {
-      return vlmMinorNr_;
-    }
-
-    public static final int IS_PRESENT_FIELD_NUMBER = 3;
-    private boolean isPresent_;
-    /**
-     * <code>optional bool is_present = 3;</code>
-     */
-    public boolean hasIsPresent() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>optional bool is_present = 3;</code>
-     */
-    public boolean getIsPresent() {
-      return isPresent_;
-    }
-
-    public static final int HAS_DISK_FIELD_NUMBER = 4;
-    private boolean hasDisk_;
-    /**
-     * <code>optional bool has_disk = 4;</code>
-     */
-    public boolean hasHasDisk() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <code>optional bool has_disk = 4;</code>
-     */
-    public boolean getHasDisk() {
-      return hasDisk_;
-    }
-
-    public static final int HAS_META_DATA_FIELD_NUMBER = 5;
-    private boolean hasMetaData_;
-    /**
-     * <code>optional bool has_meta_data = 5;</code>
-     */
-    public boolean hasHasMetaData() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <code>optional bool has_meta_data = 5;</code>
-     */
-    public boolean getHasMetaData() {
-      return hasMetaData_;
-    }
-
-    public static final int CHECK_META_DATA_FIELD_NUMBER = 6;
-    private boolean checkMetaData_;
-    /**
-     * <code>optional bool check_meta_data = 6;</code>
-     */
-    public boolean hasCheckMetaData() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
-    }
-    /**
-     * <code>optional bool check_meta_data = 6;</code>
-     */
-    public boolean getCheckMetaData() {
-      return checkMetaData_;
-    }
-
-    public static final int DISK_FAILED_FIELD_NUMBER = 7;
-    private boolean diskFailed_;
-    /**
-     * <code>optional bool disk_failed = 7;</code>
-     */
-    public boolean hasDiskFailed() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
-    }
-    /**
-     * <code>optional bool disk_failed = 7;</code>
-     */
-    public boolean getDiskFailed() {
-      return diskFailed_;
-    }
-
-    public static final int NET_SIZE_FIELD_NUMBER = 8;
-    private long netSize_;
-    /**
-     * <code>optional uint64 net_size = 8;</code>
-     */
-    public boolean hasNetSize() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
-    }
-    /**
-     * <code>optional uint64 net_size = 8;</code>
-     */
-    public long getNetSize() {
-      return netSize_;
-    }
-
-    public static final int GROSS_SIZE_FIELD_NUMBER = 9;
-    private long grossSize_;
-    /**
-     * <code>optional uint64 gross_size = 9;</code>
-     */
-    public boolean hasGrossSize() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
-    }
-    /**
-     * <code>optional uint64 gross_size = 9;</code>
-     */
-    public long getGrossSize() {
-      return grossSize_;
-    }
-
     public static final int DISK_STATE_FIELD_NUMBER = 10;
     private volatile java.lang.Object diskState_;
     /**
      * <code>optional string disk_state = 10;</code>
      */
     public boolean hasDiskState() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
      * <code>optional string disk_state = 10;</code>
@@ -438,30 +198,6 @@ public final class VlmStateOuterClass {
         output.writeSInt32(1, vlmNr_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeSInt32(2, vlmMinorNr_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBool(3, isPresent_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeBool(4, hasDisk_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBool(5, hasMetaData_);
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBool(6, checkMetaData_);
-      }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        output.writeBool(7, diskFailed_);
-      }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
-        output.writeUInt64(8, netSize_);
-      }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        output.writeUInt64(9, grossSize_);
-      }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 10, diskState_);
       }
       unknownFields.writeTo(output);
@@ -477,38 +213,6 @@ public final class VlmStateOuterClass {
           .computeSInt32Size(1, vlmNr_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(2, vlmMinorNr_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, isPresent_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(4, hasDisk_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(5, hasMetaData_);
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(6, checkMetaData_);
-      }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(7, diskFailed_);
-      }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(8, netSize_);
-      }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(9, grossSize_);
-      }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(10, diskState_);
       }
       size += unknownFields.getSerializedSize();
@@ -533,46 +237,6 @@ public final class VlmStateOuterClass {
         result = result && (getVlmNr()
             == other.getVlmNr());
       }
-      result = result && (hasVlmMinorNr() == other.hasVlmMinorNr());
-      if (hasVlmMinorNr()) {
-        result = result && (getVlmMinorNr()
-            == other.getVlmMinorNr());
-      }
-      result = result && (hasIsPresent() == other.hasIsPresent());
-      if (hasIsPresent()) {
-        result = result && (getIsPresent()
-            == other.getIsPresent());
-      }
-      result = result && (hasHasDisk() == other.hasHasDisk());
-      if (hasHasDisk()) {
-        result = result && (getHasDisk()
-            == other.getHasDisk());
-      }
-      result = result && (hasHasMetaData() == other.hasHasMetaData());
-      if (hasHasMetaData()) {
-        result = result && (getHasMetaData()
-            == other.getHasMetaData());
-      }
-      result = result && (hasCheckMetaData() == other.hasCheckMetaData());
-      if (hasCheckMetaData()) {
-        result = result && (getCheckMetaData()
-            == other.getCheckMetaData());
-      }
-      result = result && (hasDiskFailed() == other.hasDiskFailed());
-      if (hasDiskFailed()) {
-        result = result && (getDiskFailed()
-            == other.getDiskFailed());
-      }
-      result = result && (hasNetSize() == other.hasNetSize());
-      if (hasNetSize()) {
-        result = result && (getNetSize()
-            == other.getNetSize());
-      }
-      result = result && (hasGrossSize() == other.hasGrossSize());
-      if (hasGrossSize()) {
-        result = result && (getGrossSize()
-            == other.getGrossSize());
-      }
       result = result && (hasDiskState() == other.hasDiskState());
       if (hasDiskState()) {
         result = result && getDiskState()
@@ -592,45 +256,6 @@ public final class VlmStateOuterClass {
       if (hasVlmNr()) {
         hash = (37 * hash) + VLM_NR_FIELD_NUMBER;
         hash = (53 * hash) + getVlmNr();
-      }
-      if (hasVlmMinorNr()) {
-        hash = (37 * hash) + VLM_MINOR_NR_FIELD_NUMBER;
-        hash = (53 * hash) + getVlmMinorNr();
-      }
-      if (hasIsPresent()) {
-        hash = (37 * hash) + IS_PRESENT_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getIsPresent());
-      }
-      if (hasHasDisk()) {
-        hash = (37 * hash) + HAS_DISK_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getHasDisk());
-      }
-      if (hasHasMetaData()) {
-        hash = (37 * hash) + HAS_META_DATA_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getHasMetaData());
-      }
-      if (hasCheckMetaData()) {
-        hash = (37 * hash) + CHECK_META_DATA_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getCheckMetaData());
-      }
-      if (hasDiskFailed()) {
-        hash = (37 * hash) + DISK_FAILED_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getDiskFailed());
-      }
-      if (hasNetSize()) {
-        hash = (37 * hash) + NET_SIZE_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getNetSize());
-      }
-      if (hasGrossSize()) {
-        hash = (37 * hash) + GROSS_SIZE_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getGrossSize());
       }
       if (hasDiskState()) {
         hash = (37 * hash) + DISK_STATE_FIELD_NUMBER;
@@ -756,24 +381,8 @@ public final class VlmStateOuterClass {
         super.clear();
         vlmNr_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        vlmMinorNr_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        isPresent_ = false;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        hasDisk_ = false;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        hasMetaData_ = false;
-        bitField0_ = (bitField0_ & ~0x00000010);
-        checkMetaData_ = false;
-        bitField0_ = (bitField0_ & ~0x00000020);
-        diskFailed_ = false;
-        bitField0_ = (bitField0_ & ~0x00000040);
-        netSize_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000080);
-        grossSize_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000100);
         diskState_ = "";
-        bitField0_ = (bitField0_ & ~0x00000200);
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
 
@@ -804,38 +413,6 @@ public final class VlmStateOuterClass {
         result.vlmNr_ = vlmNr_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
-        }
-        result.vlmMinorNr_ = vlmMinorNr_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.isPresent_ = isPresent_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.hasDisk_ = hasDisk_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.hasMetaData_ = hasMetaData_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
-          to_bitField0_ |= 0x00000020;
-        }
-        result.checkMetaData_ = checkMetaData_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
-          to_bitField0_ |= 0x00000040;
-        }
-        result.diskFailed_ = diskFailed_;
-        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
-          to_bitField0_ |= 0x00000080;
-        }
-        result.netSize_ = netSize_;
-        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
-          to_bitField0_ |= 0x00000100;
-        }
-        result.grossSize_ = grossSize_;
-        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
-          to_bitField0_ |= 0x00000200;
         }
         result.diskState_ = diskState_;
         result.bitField0_ = to_bitField0_;
@@ -883,32 +460,8 @@ public final class VlmStateOuterClass {
         if (other.hasVlmNr()) {
           setVlmNr(other.getVlmNr());
         }
-        if (other.hasVlmMinorNr()) {
-          setVlmMinorNr(other.getVlmMinorNr());
-        }
-        if (other.hasIsPresent()) {
-          setIsPresent(other.getIsPresent());
-        }
-        if (other.hasHasDisk()) {
-          setHasDisk(other.getHasDisk());
-        }
-        if (other.hasHasMetaData()) {
-          setHasMetaData(other.getHasMetaData());
-        }
-        if (other.hasCheckMetaData()) {
-          setCheckMetaData(other.getCheckMetaData());
-        }
-        if (other.hasDiskFailed()) {
-          setDiskFailed(other.getDiskFailed());
-        }
-        if (other.hasNetSize()) {
-          setNetSize(other.getNetSize());
-        }
-        if (other.hasGrossSize()) {
-          setGrossSize(other.getGrossSize());
-        }
         if (other.hasDiskState()) {
-          bitField0_ |= 0x00000200;
+          bitField0_ |= 0x00000002;
           diskState_ = other.diskState_;
           onChanged();
         }
@@ -975,268 +528,12 @@ public final class VlmStateOuterClass {
         return this;
       }
 
-      private int vlmMinorNr_ ;
-      /**
-       * <code>optional sint32 vlm_minor_nr = 2;</code>
-       */
-      public boolean hasVlmMinorNr() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>optional sint32 vlm_minor_nr = 2;</code>
-       */
-      public int getVlmMinorNr() {
-        return vlmMinorNr_;
-      }
-      /**
-       * <code>optional sint32 vlm_minor_nr = 2;</code>
-       */
-      public Builder setVlmMinorNr(int value) {
-        bitField0_ |= 0x00000002;
-        vlmMinorNr_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional sint32 vlm_minor_nr = 2;</code>
-       */
-      public Builder clearVlmMinorNr() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        vlmMinorNr_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private boolean isPresent_ ;
-      /**
-       * <code>optional bool is_present = 3;</code>
-       */
-      public boolean hasIsPresent() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <code>optional bool is_present = 3;</code>
-       */
-      public boolean getIsPresent() {
-        return isPresent_;
-      }
-      /**
-       * <code>optional bool is_present = 3;</code>
-       */
-      public Builder setIsPresent(boolean value) {
-        bitField0_ |= 0x00000004;
-        isPresent_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bool is_present = 3;</code>
-       */
-      public Builder clearIsPresent() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        isPresent_ = false;
-        onChanged();
-        return this;
-      }
-
-      private boolean hasDisk_ ;
-      /**
-       * <code>optional bool has_disk = 4;</code>
-       */
-      public boolean hasHasDisk() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <code>optional bool has_disk = 4;</code>
-       */
-      public boolean getHasDisk() {
-        return hasDisk_;
-      }
-      /**
-       * <code>optional bool has_disk = 4;</code>
-       */
-      public Builder setHasDisk(boolean value) {
-        bitField0_ |= 0x00000008;
-        hasDisk_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bool has_disk = 4;</code>
-       */
-      public Builder clearHasDisk() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        hasDisk_ = false;
-        onChanged();
-        return this;
-      }
-
-      private boolean hasMetaData_ ;
-      /**
-       * <code>optional bool has_meta_data = 5;</code>
-       */
-      public boolean hasHasMetaData() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <code>optional bool has_meta_data = 5;</code>
-       */
-      public boolean getHasMetaData() {
-        return hasMetaData_;
-      }
-      /**
-       * <code>optional bool has_meta_data = 5;</code>
-       */
-      public Builder setHasMetaData(boolean value) {
-        bitField0_ |= 0x00000010;
-        hasMetaData_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bool has_meta_data = 5;</code>
-       */
-      public Builder clearHasMetaData() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        hasMetaData_ = false;
-        onChanged();
-        return this;
-      }
-
-      private boolean checkMetaData_ ;
-      /**
-       * <code>optional bool check_meta_data = 6;</code>
-       */
-      public boolean hasCheckMetaData() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
-      }
-      /**
-       * <code>optional bool check_meta_data = 6;</code>
-       */
-      public boolean getCheckMetaData() {
-        return checkMetaData_;
-      }
-      /**
-       * <code>optional bool check_meta_data = 6;</code>
-       */
-      public Builder setCheckMetaData(boolean value) {
-        bitField0_ |= 0x00000020;
-        checkMetaData_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bool check_meta_data = 6;</code>
-       */
-      public Builder clearCheckMetaData() {
-        bitField0_ = (bitField0_ & ~0x00000020);
-        checkMetaData_ = false;
-        onChanged();
-        return this;
-      }
-
-      private boolean diskFailed_ ;
-      /**
-       * <code>optional bool disk_failed = 7;</code>
-       */
-      public boolean hasDiskFailed() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
-      }
-      /**
-       * <code>optional bool disk_failed = 7;</code>
-       */
-      public boolean getDiskFailed() {
-        return diskFailed_;
-      }
-      /**
-       * <code>optional bool disk_failed = 7;</code>
-       */
-      public Builder setDiskFailed(boolean value) {
-        bitField0_ |= 0x00000040;
-        diskFailed_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bool disk_failed = 7;</code>
-       */
-      public Builder clearDiskFailed() {
-        bitField0_ = (bitField0_ & ~0x00000040);
-        diskFailed_ = false;
-        onChanged();
-        return this;
-      }
-
-      private long netSize_ ;
-      /**
-       * <code>optional uint64 net_size = 8;</code>
-       */
-      public boolean hasNetSize() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
-      }
-      /**
-       * <code>optional uint64 net_size = 8;</code>
-       */
-      public long getNetSize() {
-        return netSize_;
-      }
-      /**
-       * <code>optional uint64 net_size = 8;</code>
-       */
-      public Builder setNetSize(long value) {
-        bitField0_ |= 0x00000080;
-        netSize_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional uint64 net_size = 8;</code>
-       */
-      public Builder clearNetSize() {
-        bitField0_ = (bitField0_ & ~0x00000080);
-        netSize_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private long grossSize_ ;
-      /**
-       * <code>optional uint64 gross_size = 9;</code>
-       */
-      public boolean hasGrossSize() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
-      }
-      /**
-       * <code>optional uint64 gross_size = 9;</code>
-       */
-      public long getGrossSize() {
-        return grossSize_;
-      }
-      /**
-       * <code>optional uint64 gross_size = 9;</code>
-       */
-      public Builder setGrossSize(long value) {
-        bitField0_ |= 0x00000100;
-        grossSize_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional uint64 gross_size = 9;</code>
-       */
-      public Builder clearGrossSize() {
-        bitField0_ = (bitField0_ & ~0x00000100);
-        grossSize_ = 0L;
-        onChanged();
-        return this;
-      }
-
       private java.lang.Object diskState_ = "";
       /**
        * <code>optional string disk_state = 10;</code>
        */
       public boolean hasDiskState() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
        * <code>optional string disk_state = 10;</code>
@@ -1279,7 +576,7 @@ public final class VlmStateOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000200;
+  bitField0_ |= 0x00000002;
         diskState_ = value;
         onChanged();
         return this;
@@ -1288,7 +585,7 @@ public final class VlmStateOuterClass {
        * <code>optional string disk_state = 10;</code>
        */
       public Builder clearDiskState() {
-        bitField0_ = (bitField0_ & ~0x00000200);
+        bitField0_ = (bitField0_ & ~0x00000002);
         diskState_ = getDefaultInstance().getDiskState();
         onChanged();
         return this;
@@ -1301,7 +598,7 @@ public final class VlmStateOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000200;
+  bitField0_ |= 0x00000002;
         diskState_ = value;
         onChanged();
         return this;
@@ -1370,12 +667,8 @@ public final class VlmStateOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\034linstor/proto/VlmState.proto\022\030com.linb" +
-      "it.linstor.proto\"\325\001\n\010VlmState\022\016\n\006vlm_nr\030" +
-      "\001 \002(\021\022\024\n\014vlm_minor_nr\030\002 \001(\021\022\022\n\nis_presen" +
-      "t\030\003 \001(\010\022\020\n\010has_disk\030\004 \001(\010\022\025\n\rhas_meta_da" +
-      "ta\030\005 \001(\010\022\027\n\017check_meta_data\030\006 \001(\010\022\023\n\013dis" +
-      "k_failed\030\007 \001(\010\022\020\n\010net_size\030\010 \001(\004\022\022\n\ngros" +
-      "s_size\030\t \001(\004\022\022\n\ndisk_state\030\n \001(\t"
+      "it.linstor.proto\".\n\010VlmState\022\016\n\006vlm_nr\030\001" +
+      " \002(\021\022\022\n\ndisk_state\030\n \001(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1394,7 +687,7 @@ public final class VlmStateOuterClass {
     internal_static_com_linbit_linstor_proto_VlmState_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_VlmState_descriptor,
-        new java.lang.String[] { "VlmNr", "VlmMinorNr", "IsPresent", "HasDisk", "HasMetaData", "CheckMetaData", "DiskFailed", "NetSize", "GrossSize", "DiskState", });
+        new java.lang.String[] { "VlmNr", "DiskState", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

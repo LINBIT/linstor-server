@@ -326,6 +326,14 @@ public class ApiConsts
     public static final String API_SHTDWN = "Shtdwn";
 
     /*
+     * Event stream actions
+     */
+    public static final String EVENT_STREAM_OPEN = "Open";
+    public static final String EVENT_STREAM_VALUE = "Value";
+    public static final String EVENT_STREAM_CLOSE_NO_CONNECTION = "CloseNoConnection";
+    public static final String EVENT_STREAM_CLOSE_REMOVED = "CloseRemoved";
+
+    /*
      * Events
      */
     public static final String EVENT_VOLUME_DISK_STATE = "VlmDiskState";

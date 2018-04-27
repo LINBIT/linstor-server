@@ -4,11 +4,12 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -18,15 +19,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Publishes DRBD events as LinStor events.
  */
 @Singleton
-public class DrbdEventPublisher implements SystemService, ResourceObserver
+public class DrbdEventPublisher implements SystemService, ResourceObserver, DrbdStateChange
 {
     private static final ServiceName SERVICE_NAME;
     private static final String INSTANCE_PREFIX = "DrbdEventPublisher-";
     private static final String SERVICE_INFO = "DrbdEventPublisher";
     private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger(0);
 
+    private final ErrorReporter errorReporter;
     private final DrbdEventService drbdEventService;
-    private final ControllerPeerConnector controllerPeerConnector;
     private final EventBroker eventBroker;
 
     private ServiceName instanceName;
@@ -36,7 +37,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         try
         {
-            SERVICE_NAME = new ServiceName("DrbdEventService");
+            SERVICE_NAME = new ServiceName("DrbdEventPublisher");
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -46,13 +47,13 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
     @Inject
     public DrbdEventPublisher(
+        ErrorReporter errorReporterRef,
         DrbdEventService drbdEventServiceRef,
-        ControllerPeerConnector controllerPeerConnectorRef,
         EventBroker eventBrokerRef
     )
     {
+        errorReporter = errorReporterRef;
         drbdEventService = drbdEventServiceRef;
-        controllerPeerConnector = controllerPeerConnectorRef;
         eventBroker = eventBrokerRef;
 
         try
@@ -98,6 +99,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     @Override
     public void start()
     {
+        drbdEventService.addDrbdStateChangeObserver(this);
         drbdEventService.addObserver(this, DrbdStateTracker.OBS_ALL);
         started = true;
     }
@@ -116,6 +118,51 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
+    public void resourceCreated(DrbdResource resource)
+    {
+        eventBroker.openEventStream(resourceStateEventIdentifier(resource));
+    }
+
+    @Override
+    public void resourceDestroyed(DrbdResource resource)
+    {
+        eventBroker.closeEventStream(resourceStateEventIdentifier(resource));
+    }
+
+    @Override
+    public void volumeCreated(
+        DrbdResource resource, DrbdConnection connection, DrbdVolume volume
+    )
+    {
+        if (connection == null)
+        {
+            eventBroker.openEventStream(volumeDiskStateEventIdentifier(resource, volume));
+        }
+    }
+
+    @Override
+    public void volumeDestroyed(
+        DrbdResource resource,
+        DrbdConnection connection,
+        DrbdVolume volume
+    )
+    {
+        if (connection == null)
+        {
+            eventBroker.closeEventStream(volumeDiskStateEventIdentifier(resource, volume));
+        }
+    }
+
+    @Override
+    public void drbdStateUnavailable()
+    {
+        eventBroker.closeAllEventStreams(
+            ApiConsts.EVENT_VOLUME_DISK_STATE,
+            new ObjectIdentifier(null, null, null)
+        );
+    }
+
+    @Override
     public void diskStateChanged(
         DrbdResource resource,
         DrbdConnection connection,
@@ -124,15 +171,39 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         DrbdVolume.DiskState current
     )
     {
-        NodeData localNode = controllerPeerConnector.getLocalNode();
-        if (localNode != null)
-        {
-            eventBroker.triggerEvent(new EventIdentifier(
-                ApiConsts.EVENT_VOLUME_DISK_STATE,
-                localNode.getName(),
-                resource.getName(),
-                volume.getVolNr()
-            ));
-        }
+        eventBroker.triggerEvent(volumeDiskStateEventIdentifier(resource, volume));
+        eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+    }
+
+    @Override
+    public void replicationStateChanged(
+        DrbdResource resource,
+        DrbdConnection connection,
+        DrbdVolume volume,
+        DrbdVolume.ReplState previous,
+        DrbdVolume.ReplState current
+    )
+    {
+        eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+    }
+
+    private EventIdentifier volumeDiskStateEventIdentifier(DrbdResource resource, DrbdVolume volume)
+    {
+        return new EventIdentifier(
+            ApiConsts.EVENT_VOLUME_DISK_STATE,
+            null,
+            resource.getName(),
+            volume.getVolNr()
+        );
+    }
+
+    private EventIdentifier resourceStateEventIdentifier(DrbdResource resource)
+    {
+        return new EventIdentifier(
+            ApiConsts.EVENT_RESOURCE_STATE,
+            null,
+            resource.getName(),
+            null
+        );
     }
 }

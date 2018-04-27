@@ -267,9 +267,14 @@ public class DrbdEventsMonitor
     private void destroyResource(Map<String, String> props) throws EventsSourceException
     {
         String resName = getProp(props, DrbdResource.PROP_KEY_RES_NAME, ACTION_DESTROY, OBJ_RESOURCE);
-        if (tracker.removeResource(resName) == null)
+        DrbdResource resource = tracker.removeResource(resName);
+        if (resource == null)
         {
             nonExistentResource(ACTION_DESTROY, OBJ_RESOURCE, resName);
+        }
+        else
+        {
+            tracker.multiplexer.resourceDestroyed(resource);
         }
     }
 
@@ -277,9 +282,14 @@ public class DrbdEventsMonitor
     {
         DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_CONNECTION);
         String connName = getProp(props, DrbdConnection.PROP_KEY_CONN_NAME, ACTION_DESTROY, OBJ_CONNECTION);
-        if (resource.removeConnection(connName) == null)
+        DrbdConnection connection = resource.removeConnection(connName);
+        if (connection == null)
         {
             nonExistentConnection(ACTION_DESTROY, OBJ_CONNECTION, resource, connName);
+        }
+        else
+        {
+            tracker.multiplexer.connectionDestroyed(resource, connection);
         }
     }
 
@@ -287,9 +297,14 @@ public class DrbdEventsMonitor
     {
         DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_VOLUME);
         VolumeNumber volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_VOLUME);
-        if (resource.removeVolume(volNr) == null)
+        DrbdVolume volume = resource.removeVolume(volNr);
+        if (volume == null)
         {
             nonExistentVolume(ACTION_DESTROY, OBJ_VOLUME, resource, null, volNr);
+        }
+        else
+        {
+            tracker.multiplexer.volumeDestroyed(resource, null, volume);
         }
     }
 
@@ -298,9 +313,14 @@ public class DrbdEventsMonitor
         DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
         DrbdConnection connection = getConnection(resource, props, ACTION_DESTROY, OBJ_PEER_VOLUME);
         VolumeNumber volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
-        if (connection.removeVolume(volNr) == null)
+        DrbdVolume volume = connection.removeVolume(volNr);
+        if (volume == null)
         {
             nonExistentVolume(ACTION_DESTROY, OBJ_PEER_VOLUME, resource, connection, volNr);
+        }
+        else
+        {
+            tracker.multiplexer.volumeDestroyed(resource, connection, volume);
         }
     }
 

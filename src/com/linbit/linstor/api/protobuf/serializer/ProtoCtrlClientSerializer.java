@@ -2,14 +2,15 @@ package com.linbit.linstor.api.protobuf.serializer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Node.NodeApi;
@@ -17,10 +18,12 @@ import com.linbit.linstor.Resource.RscApi;
 import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.CtrlClientSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -31,11 +34,16 @@ import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
 import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
+import com.linbit.linstor.proto.RscStateOuterClass;
+import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
@@ -128,7 +136,7 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
     }
 
     @Override
-    public void writeRscList(List<RscApi> rscs, Collection<ResourceState> rscStates, ByteArrayOutputStream baos)
+    public void writeRscList(List<RscApi> rscs, Map<NodeName, SatelliteState> satelliteStates, ByteArrayOutputStream baos)
         throws IOException
     {
         MsgLstRscOuterClass.MsgLstRsc.Builder msgListRscsBuilder = MsgLstRscOuterClass.MsgLstRsc.newBuilder();
@@ -138,14 +146,19 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
             msgListRscsBuilder.addResources(RscApiData.toRscProto(apiRsc));
         }
 
-        for (ResourceState rscState : rscStates)
+        for (Map.Entry<NodeName, SatelliteState> satelliteEntry : satelliteStates.entrySet())
         {
-            msgListRscsBuilder.addResourceStates(
-                ProtoCommonSerializer.buildResourceState(
-                    rscState.getNodeName(),
-                    rscState
-                )
-            );
+            for (Map.Entry<ResourceName, SatelliteResourceState> resourceEntry :
+                satelliteEntry.getValue().getResourceStates().entrySet())
+            {
+                msgListRscsBuilder.addResourceStates(
+                    buildResourceState(
+                        satelliteEntry.getKey(),
+                        resourceEntry.getKey(),
+                        resourceEntry.getValue()
+                    )
+                );
+            }
         }
 
         msgListRscsBuilder.build().writeDelimitedTo(baos);
@@ -199,5 +212,42 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
             fullKey = key;
         }
         return fullKey;
+    }
+
+    private static VlmStateOuterClass.VlmState buildVolumeState(
+        VolumeNumber volumeNumber, SatelliteVolumeState volumeState)
+    {
+        VlmStateOuterClass.VlmState.Builder vlmStateBuilder = VlmStateOuterClass.VlmState.newBuilder();
+
+        vlmStateBuilder
+            .setVlmNr(volumeNumber.value);
+
+        if (volumeState.getDiskState() != null)
+        {
+            vlmStateBuilder.setDiskState(volumeState.getDiskState());
+        }
+
+        return vlmStateBuilder.build();
+    }
+
+    private static RscStateOuterClass.RscState buildResourceState(
+        final NodeName nodeName,
+        final ResourceName resourceName,
+        final SatelliteResourceState resourceState
+    )
+    {
+        RscStateOuterClass.RscState.Builder rscStateBuilder = RscStateOuterClass.RscState.newBuilder();
+
+        rscStateBuilder
+            .setNodeName(nodeName.displayValue)
+            .setRscName(resourceName.displayValue);
+
+        // volumes
+        for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeEntry : resourceState.getVolumeStates().entrySet())
+        {
+            rscStateBuilder.addVlmStates(buildVolumeState(volumeEntry.getKey(), volumeEntry.getValue()));
+        }
+
+        return rscStateBuilder.build();
     }
 }

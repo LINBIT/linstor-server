@@ -141,15 +141,18 @@ public interface ResourceObserver
     /**
      * Called when a DRBD resource's volume or peer volume has been destroyed
      * and is no longer known to the DRBD kernel module
-     *
-     * @param resource Representation of the DRBD resource that owned the volume
+     *  @param resource Representation of the DRBD resource that owned the volume
      *     before it disappeared
+     * @param connection
      * @param volume DrbdVolume instance tracking the DRBD volume's state. This instance
      *     is no longer known to the DRBD tracking logic when the method is called. The main
      *     purpose of passing it to this method is to inform the observer about the volume's
-     *     volume number and last known state before the volume disappeared.
      */
-    default void volumeDestroyed(DrbdResource resource, DrbdVolume volume)
+    default void volumeDestroyed(
+        DrbdResource resource,
+        DrbdConnection connection,
+        DrbdVolume volume
+    )
     {
         // Do nothing
     }

@@ -47,33 +47,6 @@ public final class RscStateOuterClass {
         getNodeNameBytes();
 
     /**
-     * <code>required bool is_present = 3;</code>
-     */
-    boolean hasIsPresent();
-    /**
-     * <code>required bool is_present = 3;</code>
-     */
-    boolean getIsPresent();
-
-    /**
-     * <code>required bool requires_adjust = 4;</code>
-     */
-    boolean hasRequiresAdjust();
-    /**
-     * <code>required bool requires_adjust = 4;</code>
-     */
-    boolean getRequiresAdjust();
-
-    /**
-     * <code>required bool is_primary = 5;</code>
-     */
-    boolean hasIsPrimary();
-    /**
-     * <code>required bool is_primary = 5;</code>
-     */
-    boolean getIsPrimary();
-
-    /**
      * <code>repeated .com.linbit.linstor.proto.VlmState vlm_states = 6;</code>
      */
     java.util.List<com.linbit.linstor.proto.VlmStateOuterClass.VlmState> 
@@ -111,9 +84,6 @@ public final class RscStateOuterClass {
     private RscState() {
       rscName_ = "";
       nodeName_ = "";
-      isPresent_ = false;
-      requiresAdjust_ = false;
-      isPrimary_ = false;
       vlmStates_ = java.util.Collections.emptyList();
     }
 
@@ -157,25 +127,10 @@ public final class RscStateOuterClass {
               nodeName_ = bs;
               break;
             }
-            case 24: {
-              bitField0_ |= 0x00000004;
-              isPresent_ = input.readBool();
-              break;
-            }
-            case 32: {
-              bitField0_ |= 0x00000008;
-              requiresAdjust_ = input.readBool();
-              break;
-            }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              isPrimary_ = input.readBool();
-              break;
-            }
             case 50: {
-              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
                 vlmStates_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmStateOuterClass.VlmState>();
-                mutable_bitField0_ |= 0x00000020;
+                mutable_bitField0_ |= 0x00000004;
               }
               vlmStates_.add(
                   input.readMessage(com.linbit.linstor.proto.VlmStateOuterClass.VlmState.PARSER, extensionRegistry));
@@ -189,7 +144,7 @@ public final class RscStateOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
           vlmStates_ = java.util.Collections.unmodifiableList(vlmStates_);
         }
         this.unknownFields = unknownFields.build();
@@ -293,51 +248,6 @@ public final class RscStateOuterClass {
       }
     }
 
-    public static final int IS_PRESENT_FIELD_NUMBER = 3;
-    private boolean isPresent_;
-    /**
-     * <code>required bool is_present = 3;</code>
-     */
-    public boolean hasIsPresent() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>required bool is_present = 3;</code>
-     */
-    public boolean getIsPresent() {
-      return isPresent_;
-    }
-
-    public static final int REQUIRES_ADJUST_FIELD_NUMBER = 4;
-    private boolean requiresAdjust_;
-    /**
-     * <code>required bool requires_adjust = 4;</code>
-     */
-    public boolean hasRequiresAdjust() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <code>required bool requires_adjust = 4;</code>
-     */
-    public boolean getRequiresAdjust() {
-      return requiresAdjust_;
-    }
-
-    public static final int IS_PRIMARY_FIELD_NUMBER = 5;
-    private boolean isPrimary_;
-    /**
-     * <code>required bool is_primary = 5;</code>
-     */
-    public boolean hasIsPrimary() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <code>required bool is_primary = 5;</code>
-     */
-    public boolean getIsPrimary() {
-      return isPrimary_;
-    }
-
     public static final int VLM_STATES_FIELD_NUMBER = 6;
     private java.util.List<com.linbit.linstor.proto.VlmStateOuterClass.VlmState> vlmStates_;
     /**
@@ -387,18 +297,6 @@ public final class RscStateOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasIsPresent()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasRequiresAdjust()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasIsPrimary()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       for (int i = 0; i < getVlmStatesCount(); i++) {
         if (!getVlmStates(i).isInitialized()) {
           memoizedIsInitialized = 0;
@@ -417,15 +315,6 @@ public final class RscStateOuterClass {
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBool(3, isPresent_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeBool(4, requiresAdjust_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBool(5, isPrimary_);
-      }
       for (int i = 0; i < vlmStates_.size(); i++) {
         output.writeMessage(6, vlmStates_.get(i));
       }
@@ -442,18 +331,6 @@ public final class RscStateOuterClass {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, isPresent_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(4, requiresAdjust_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(5, isPrimary_);
       }
       for (int i = 0; i < vlmStates_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -486,21 +363,6 @@ public final class RscStateOuterClass {
         result = result && getNodeName()
             .equals(other.getNodeName());
       }
-      result = result && (hasIsPresent() == other.hasIsPresent());
-      if (hasIsPresent()) {
-        result = result && (getIsPresent()
-            == other.getIsPresent());
-      }
-      result = result && (hasRequiresAdjust() == other.hasRequiresAdjust());
-      if (hasRequiresAdjust()) {
-        result = result && (getRequiresAdjust()
-            == other.getRequiresAdjust());
-      }
-      result = result && (hasIsPrimary() == other.hasIsPrimary());
-      if (hasIsPrimary()) {
-        result = result && (getIsPrimary()
-            == other.getIsPrimary());
-      }
       result = result && getVlmStatesList()
           .equals(other.getVlmStatesList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -521,21 +383,6 @@ public final class RscStateOuterClass {
       if (hasNodeName()) {
         hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getNodeName().hashCode();
-      }
-      if (hasIsPresent()) {
-        hash = (37 * hash) + IS_PRESENT_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getIsPresent());
-      }
-      if (hasRequiresAdjust()) {
-        hash = (37 * hash) + REQUIRES_ADJUST_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getRequiresAdjust());
-      }
-      if (hasIsPrimary()) {
-        hash = (37 * hash) + IS_PRIMARY_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getIsPrimary());
       }
       if (getVlmStatesCount() > 0) {
         hash = (37 * hash) + VLM_STATES_FIELD_NUMBER;
@@ -664,15 +511,9 @@ public final class RscStateOuterClass {
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeName_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
-        isPresent_ = false;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        requiresAdjust_ = false;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        isPrimary_ = false;
-        bitField0_ = (bitField0_ & ~0x00000010);
         if (vlmStatesBuilder_ == null) {
           vlmStates_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
+          bitField0_ = (bitField0_ & ~0x00000004);
         } else {
           vlmStatesBuilder_.clear();
         }
@@ -708,22 +549,10 @@ public final class RscStateOuterClass {
           to_bitField0_ |= 0x00000002;
         }
         result.nodeName_ = nodeName_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.isPresent_ = isPresent_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.requiresAdjust_ = requiresAdjust_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.isPrimary_ = isPrimary_;
         if (vlmStatesBuilder_ == null) {
-          if (((bitField0_ & 0x00000020) == 0x00000020)) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
             vlmStates_ = java.util.Collections.unmodifiableList(vlmStates_);
-            bitField0_ = (bitField0_ & ~0x00000020);
+            bitField0_ = (bitField0_ & ~0x00000004);
           }
           result.vlmStates_ = vlmStates_;
         } else {
@@ -781,20 +610,11 @@ public final class RscStateOuterClass {
           nodeName_ = other.nodeName_;
           onChanged();
         }
-        if (other.hasIsPresent()) {
-          setIsPresent(other.getIsPresent());
-        }
-        if (other.hasRequiresAdjust()) {
-          setRequiresAdjust(other.getRequiresAdjust());
-        }
-        if (other.hasIsPrimary()) {
-          setIsPrimary(other.getIsPrimary());
-        }
         if (vlmStatesBuilder_ == null) {
           if (!other.vlmStates_.isEmpty()) {
             if (vlmStates_.isEmpty()) {
               vlmStates_ = other.vlmStates_;
-              bitField0_ = (bitField0_ & ~0x00000020);
+              bitField0_ = (bitField0_ & ~0x00000004);
             } else {
               ensureVlmStatesIsMutable();
               vlmStates_.addAll(other.vlmStates_);
@@ -807,7 +627,7 @@ public final class RscStateOuterClass {
               vlmStatesBuilder_.dispose();
               vlmStatesBuilder_ = null;
               vlmStates_ = other.vlmStates_;
-              bitField0_ = (bitField0_ & ~0x00000020);
+              bitField0_ = (bitField0_ & ~0x00000004);
               vlmStatesBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getVlmStatesFieldBuilder() : null;
@@ -826,15 +646,6 @@ public final class RscStateOuterClass {
           return false;
         }
         if (!hasNodeName()) {
-          return false;
-        }
-        if (!hasIsPresent()) {
-          return false;
-        }
-        if (!hasRequiresAdjust()) {
-          return false;
-        }
-        if (!hasIsPrimary()) {
           return false;
         }
         for (int i = 0; i < getVlmStatesCount(); i++) {
@@ -1016,108 +827,12 @@ public final class RscStateOuterClass {
         return this;
       }
 
-      private boolean isPresent_ ;
-      /**
-       * <code>required bool is_present = 3;</code>
-       */
-      public boolean hasIsPresent() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <code>required bool is_present = 3;</code>
-       */
-      public boolean getIsPresent() {
-        return isPresent_;
-      }
-      /**
-       * <code>required bool is_present = 3;</code>
-       */
-      public Builder setIsPresent(boolean value) {
-        bitField0_ |= 0x00000004;
-        isPresent_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required bool is_present = 3;</code>
-       */
-      public Builder clearIsPresent() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        isPresent_ = false;
-        onChanged();
-        return this;
-      }
-
-      private boolean requiresAdjust_ ;
-      /**
-       * <code>required bool requires_adjust = 4;</code>
-       */
-      public boolean hasRequiresAdjust() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <code>required bool requires_adjust = 4;</code>
-       */
-      public boolean getRequiresAdjust() {
-        return requiresAdjust_;
-      }
-      /**
-       * <code>required bool requires_adjust = 4;</code>
-       */
-      public Builder setRequiresAdjust(boolean value) {
-        bitField0_ |= 0x00000008;
-        requiresAdjust_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required bool requires_adjust = 4;</code>
-       */
-      public Builder clearRequiresAdjust() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        requiresAdjust_ = false;
-        onChanged();
-        return this;
-      }
-
-      private boolean isPrimary_ ;
-      /**
-       * <code>required bool is_primary = 5;</code>
-       */
-      public boolean hasIsPrimary() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <code>required bool is_primary = 5;</code>
-       */
-      public boolean getIsPrimary() {
-        return isPrimary_;
-      }
-      /**
-       * <code>required bool is_primary = 5;</code>
-       */
-      public Builder setIsPrimary(boolean value) {
-        bitField0_ |= 0x00000010;
-        isPrimary_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required bool is_primary = 5;</code>
-       */
-      public Builder clearIsPrimary() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        isPrimary_ = false;
-        onChanged();
-        return this;
-      }
-
       private java.util.List<com.linbit.linstor.proto.VlmStateOuterClass.VlmState> vlmStates_ =
         java.util.Collections.emptyList();
       private void ensureVlmStatesIsMutable() {
-        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
           vlmStates_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmStateOuterClass.VlmState>(vlmStates_);
-          bitField0_ |= 0x00000020;
+          bitField0_ |= 0x00000004;
          }
       }
 
@@ -1267,7 +982,7 @@ public final class RscStateOuterClass {
       public Builder clearVlmStates() {
         if (vlmStatesBuilder_ == null) {
           vlmStates_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
+          bitField0_ = (bitField0_ & ~0x00000004);
           onChanged();
         } else {
           vlmStatesBuilder_.clear();
@@ -1344,7 +1059,7 @@ public final class RscStateOuterClass {
           vlmStatesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.linstor.proto.VlmStateOuterClass.VlmState, com.linbit.linstor.proto.VlmStateOuterClass.VlmState.Builder, com.linbit.linstor.proto.VlmStateOuterClass.VlmStateOrBuilder>(
                   vlmStates_,
-                  ((bitField0_ & 0x00000020) == 0x00000020),
+                  ((bitField0_ & 0x00000004) == 0x00000004),
                   getParentForChildren(),
                   isClean());
           vlmStates_ = null;
@@ -1416,11 +1131,9 @@ public final class RscStateOuterClass {
     java.lang.String[] descriptorData = {
       "\n\034linstor/proto/RscState.proto\022\030com.linb" +
       "it.linstor.proto\032\034linstor/proto/VlmState" +
-      ".proto\"\250\001\n\010RscState\022\020\n\010rsc_name\030\001 \002(\t\022\021\n" +
-      "\tnode_name\030\002 \002(\t\022\022\n\nis_present\030\003 \002(\010\022\027\n\017" +
-      "requires_adjust\030\004 \002(\010\022\022\n\nis_primary\030\005 \002(" +
-      "\010\0226\n\nvlm_states\030\006 \003(\0132\".com.linbit.linst" +
-      "or.proto.VlmStateP\000"
+      ".proto\"g\n\010RscState\022\020\n\010rsc_name\030\001 \002(\t\022\021\n\t" +
+      "node_name\030\002 \002(\t\0226\n\nvlm_states\030\006 \003(\0132\".co" +
+      "m.linbit.linstor.proto.VlmStateP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1440,7 +1153,7 @@ public final class RscStateOuterClass {
     internal_static_com_linbit_linstor_proto_RscState_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_RscState_descriptor,
-        new java.lang.String[] { "RscName", "NodeName", "IsPresent", "RequiresAdjust", "IsPrimary", "VlmStates", });
+        new java.lang.String[] { "RscName", "NodeName", "VlmStates", });
     com.linbit.linstor.proto.VlmStateOuterClass.getDescriptor();
   }
 

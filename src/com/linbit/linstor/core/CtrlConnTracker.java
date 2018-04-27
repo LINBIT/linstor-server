@@ -92,7 +92,7 @@ class CtrlConnTracker implements ConnectionObserver
     {
         if (connPeer != null)
         {
-            eventBroker.removeWatchesForPeer(connPeer.getId());
+            eventBroker.connectionClosed(connPeer);
 
             synchronized (peerMap)
             {
