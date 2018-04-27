@@ -226,6 +226,30 @@ clean {
   delete += 'generated-resources'
 }
 
+/////////////////////////// Dependency resolution ///////////////////////////
+task resolveDependencies {
+    doLast {
+        project.rootProject.allprojects.each { subProject ->
+            subProject.buildscript.configurations.each { configuration ->
+                resolveConfiguration(configuration)
+            }
+            subProject.configurations.each { configuration ->
+                resolveConfiguration(configuration)
+            }
+        }
+    }
+}
+
+static void resolveConfiguration(configuration) {
+    def nonResolveableConfigurations =
+            ['apiElements', 'implementation', 'runtimeElements', 'runtimeOnly', 'testImplementation',
+             'testRuntimeOnly', 'generatedImplementation', 'generatedRuntimeOnly']
+
+    if (!nonResolveableConfigurations.contains(configuration.getName())) {
+        configuration.resolve()
+    }
+}
+
 /////////////////////////// Packaging ///////////////////////////
 ospackage {
     packageName 'linstor-server'
