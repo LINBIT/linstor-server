@@ -49,7 +49,7 @@ public class WhitelistPropsReconfigurator
             ExtCmd resourceOptsExcCmd = new ExtCmd(timer, errLog);
             OutputData rscOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "resource-options");
             OutputData peerDevOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "peer-device-options");
-            OutputData netOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "net-options");
+            OutputData netOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "new-peer");
             OutputData diskOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "disk-options");
 
             whitelistProps.appendRules(
