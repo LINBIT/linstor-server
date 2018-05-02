@@ -55,7 +55,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -200,51 +199,19 @@ class DrbdDeviceHandler implements DeviceHandler
             // Evaluate resource & volumes state by checking the DRBD state
             evaluateDrbdResource(rsc, rscDfn, rscState);
 
-            try
+            if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
+                rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
             {
-                if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
-                    rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
-                {
-                    deleteResource(rsc, rscDfn, localNode, rscState);
-                }
-                else
-                {
-                    createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
-
-                    if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
-                        rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DISKLESS))
-                    {
-                        errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
-                        sendRequestPrimaryResource(
-                            localNode.getPeer(wrkCtx),
-                            rscDfn.getName().getDisplayName(),
-                            rsc.getUuid().toString()
-                        );
-                    }
-                    else
-                    if (rsc.isCreatePrimary() && !rscState.isPrimary())
-                    {
-                        // set primary
-                        errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
-                        ((ResourceData) rsc).unsetCreatePrimary();
-                        setResourcePrimary(rsc);
-                    }
-
-                    deviceManagerProvider.get().notifyResourceApplied(rsc);
-                }
+                deleteResource(rsc, rscDfn, localNode, rscState);
             }
-            catch (ResourceException rscExc)
+            else
             {
-                errLog.reportProblem(Level.ERROR, rscExc, null, null, null);
+                createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
             }
-            catch (Exception exc)
-            {
-                // FIXME: Narrow exception handling
-                errLog.reportError(exc);
-            }
-
-            // Reevaluate the resource after changes have been made
-            evaluateDrbdResource(rsc, rscDfn, rscState);
+        }
+        catch (ResourceException rscExc)
+        {
+            errLog.reportProblem(Level.ERROR, rscExc, null, null, null);
         }
         catch (AccessDeniedException accExc)
         {
@@ -830,6 +797,34 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws AccessDeniedException, ResourceException
     {
+        createResourceStorage(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
+
+        createResourceConfiguration(rscName, rsc, rscDfn);
+
+        createResourceMetaData(rscName, rscDfn, rscState);
+
+        adjustResource(rscName, rscState);
+
+        deleteResourceVolumes(localNode, rscName, rsc, rscDfn, rscState);
+        // TODO: Notify the controller of successful deletion of volumes
+
+        // TODO: Wait for the DRBD resource to reach the target state
+
+        makePrimaryIfRequired(localNode, rscName, rsc, rscDfn, rscState);
+
+        deviceManagerProvider.get().notifyResourceApplied(rsc);
+    }
+
+    private void createResourceStorage(
+        Node localNode,
+        NodeName localNodeName,
+        ResourceName rscName,
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        ResourceState rscState
+    )
+        throws AccessDeniedException, ResourceException
+    {
         Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
         Props rscProps = rsc.getProps(wrkCtx);
         Props rscDfnProps = rscDfn.getProps(wrkCtx);
@@ -866,14 +861,13 @@ class DrbdDeviceHandler implements DeviceHandler
                             errLog.logTrace(
                                 "%s",
                                 "Resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
-                                " has no backend storage => hasMetaData = false, checkMetaData = false"
+                                    " has no backend storage => hasMetaData = false, checkMetaData = false"
                             );
                             // If there is no disk, then there cannot be any meta data
                             vlmState.setCheckMetaData(false);
                             vlmState.setHasMetaData(false);
                         }
-                        else
-                        if (vlmState.isCheckMetaData())
+                        else if (vlmState.isCheckMetaData())
                         {
                             // Check for the existence of meta data
                             try
@@ -888,7 +882,7 @@ class DrbdDeviceHandler implements DeviceHandler
                                 errLog.logTrace(
                                     "%s",
                                     "Resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
-                                    " meta data check result: hasMetaData = " + vlmState.hasMetaData()
+                                        " meta data check result: hasMetaData = " + vlmState.hasMetaData()
                                 );
                             }
                             catch (ExtCmdFailedException cmdExc)
@@ -926,7 +920,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         }
                         errLog.logTrace(
                             "Resource '" + rscName + "' volume " + vlmState.getVlmNr().toString() +
-                            " block device = %s, meta disk = %s",
+                                " block device = %s, meta disk = %s",
                             vlm.getBlockDevicePath(wrkCtx),
                             vlm.getMetaDiskPath(wrkCtx)
                         );
@@ -943,166 +937,56 @@ class DrbdDeviceHandler implements DeviceHandler
             }
             catch (MdException mdExc)
             {
-                vlmState.setSkip(true);
-                reportMdException(mdExc, rscName, vlmState);
+                throw new ResourceException(
+                    "Meta data calculation for resource '" + rscName.displayValue + "' volume " +
+                        vlmState.getVlmNr().value + " failed",
+                    "Operations on resource " + rscName.displayValue + " volume " + vlmState.getVlmNr().value +
+                        " were aborted",
+                    "The calculation of the volume's DRBD meta data size failed",
+                    "Check whether the volume's properties, such as size, DRBD peer count and activity log " +
+                        "settings, are within the range supported by DRBD",
+                    mdExc.getMessage(),
+                    mdExc
+                );
             }
             catch (VolumeException vlmExc)
             {
-                vlmState.setSkip(true);
-                errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
+                throw new ResourceException(
+                    "Initialization of storage for resource '" + rscName.displayValue + "' volume " +
+                        vlmState.getVlmNr().value + " failed",
+                    vlmExc
+                );
             }
             catch (StorageException storExc)
             {
-                vlmState.setSkip(true);
-                errLog.reportProblem(
-                    Level.ERROR,
-                    new VolumeException(
-                        "The storage driver could not determine the block device path for " +
+                throw new ResourceException(
+                    "The storage driver could not determine the block device path for " +
                         "volume " + vlmState.getVlmNr() + " of resource " + rscName.displayValue,
-                        this.getAbortMsg(rscName, vlmState.getVlmNr()),
-                        "The storage driver could not determine the block device path for the volume's " +
+                    this.getAbortMsg(rscName, vlmState.getVlmNr()),
+                    "The storage driver could not determine the block device path for the volume's " +
                         "backend storage",
-                        "- Check whether the storage driver is configured correctly\n" +
+                    "- Check whether the storage driver is configured correctly\n" +
                         "- Check whether any external programs required by the storage driver are\n" +
                         "  functional\n",
-                        null,
-                        storExc
-                    ),
                     null,
-                    null,
-                    null
+                    storExc
                 );
             }
         }
-
-        // Create DRBD resource configuration file
-        errLog.logTrace(
-            "%s",
-            "Creating resource " + rscName.displayValue + " configuration file"
-        );
-        createResourceConfiguration(rsc, rscDfn);
-
-        // Create volume meta data
-        for (VolumeState vlmStateBase : rscState.getVolumes())
-        {
-            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
-            try
-            {
-                if (!(vlmState.isSkip() || vlmState.isMarkedForDelete()))
-                {
-                    try
-                    {
-                        if (vlmState.hasDisk() && !vlmState.hasMetaData())
-                        {
-                            errLog.logTrace(
-                                "%s",
-                                "Creating resource " + rscName.displayValue + " Volume " +
-                                vlmState.getVlmNr().value + " meta data"
-                            );
-                            createVolumeMetaData(rscDfn, vlmState);
-                        }
-                    }
-                    catch (ExtCmdFailedException cmdExc)
-                    {
-                        throw new VolumeException(
-                            "Meta data creation for resource '" + rscName.displayValue + "' volume " +
-                            vlmState.getVlmNr().value + " failed",
-                            getAbortMsg(rscName),
-                            "Meta data creation failed because the execution of an external command failed",
-                            "- Check whether the required software is installed\n" +
-                            "- Check whether the application's search path includes the location\n" +
-                            "  of the external software\n" +
-                            "- Check whether the application has execute permission for " +
-                            "the external command\n",
-                            null,
-                            cmdExc
-                        );
-                    }
-                }
-            }
-            catch (VolumeException vlmExc)
-            {
-                vlmState.setSkip(true);
-                errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
-            }
-        }
-
-        // Create the DRBD resource
-        if (rscState.requiresAdjust())
-        {
-            errLog.logTrace(
-                "%s",
-                "Adjusting resource " + rscName.displayValue
-            );
-            try
-            {
-                drbdUtils.adjust(rscName, false, false, false, null);
-            }
-            catch (ExtCmdFailedException cmdExc)
-            {
-                throw new ResourceException(
-                    "Adjusting the DRBD state of resource '" + rscName.displayValue + "' failed",
-                    getAbortMsg(rscName),
-                    "The external command for adjusting the DRBD state of the resource failed",
-                    "- Check whether the required software is installed\n" +
-                    "- Check whether the application's search path includes the location\n" +
-                    "  of the external software\n" +
-                    "- Check whether the application has execute permission for the external command\n",
-                    null,
-                    cmdExc
-                );
-            }
-        }
-
-        // Delete volumes
-        for (VolumeState vlmStateBase : rscState.getVolumes())
-        {
-            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
-
-            try
-            {
-                if (vlmState.isMarkedForDelete() && !vlmState.isSkip())
-                {
-                    Volume vlm = rsc.getVolume(vlmState.getVlmNr());
-                    VolumeDefinition vlmDfn = vlm != null ? vlm.getVolumeDefinition() : null;
-                    // If this is a volume state that describes a volume seen by DRBD but not known
-                    // to LINSTOR (e.g., manually configured in DRBD), then no volume object and
-                    // volume definition object will be present.
-                    // The backing storage for such volumes is ignored, as they are not managed
-                    // by LINSTOR.
-                    if (vlm != null && vlmDfn != null)
-                    {
-                        if (!vlmState.isDriverKnown())
-                        {
-                            getVolumeStorageDriver(
-                                rscName, localNode, vlm, vlmDfn, vlmState,
-                                nodeProps, rscProps, rscDfnProps
-                            );
-                        }
-                        if (vlmState.getDriver() != null)
-                        {
-                            deleteStorageVolume(rscDfn, vlmState);
-                        }
-                    }
-                }
-            }
-            catch (VolumeException vlmExc)
-            {
-                errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
-            }
-        }
-        // TODO: Notify the controller of successful deletion of volumes
-
-        // TODO: Wait for the DRBD resource to reach the target state
     }
 
     private void createResourceConfiguration(
+        ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn
     )
         throws AccessDeniedException, ResourceException
     {
-        ResourceName rscName = rscDfn.getName();
+        errLog.logTrace(
+            "%s",
+            "Creating resource " + rscName.displayValue + " configuration file"
+        );
+
         List<Resource> peerResources = new ArrayList<>();
         {
             Iterator<Resource> peerRscIter = rscDfn.iterateResource(wrkCtx);
@@ -1141,15 +1025,177 @@ class DrbdDeviceHandler implements DeviceHandler
             }
             throw new ResourceException(
                 "Creation of the DRBD configuration file for resource '" + rscName.displayValue +
-                "' failed due to an I/O error",
+                    "' failed due to an I/O error",
                 getAbortMsg(rscName),
                 "Creation of the DRBD configuration file failed due to an I/O error",
                 "- Check whether enough free space is available for the creation of the file\n" +
-                "- Check whether the application has write access to the target directory\n" +
-                "- Check whether the storage is operating flawlessly",
+                    "- Check whether the application has write access to the target directory\n" +
+                    "- Check whether the storage is operating flawlessly",
                 "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
                 ioExc
             );
+        }
+    }
+
+    private void createResourceMetaData(ResourceName rscName, ResourceDefinition rscDfn, ResourceState rscState)
+        throws ResourceException
+    {
+        for (VolumeState vlmStateBase : rscState.getVolumes())
+        {
+            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
+            if (!(vlmState.isSkip() || vlmState.isMarkedForDelete()))
+            {
+                try
+                {
+                    if (vlmState.hasDisk() && !vlmState.hasMetaData())
+                    {
+                        errLog.logTrace(
+                            "%s",
+                            "Creating resource " + rscName.displayValue + " Volume " +
+                            vlmState.getVlmNr().value + " meta data"
+                        );
+                        createVolumeMetaData(rscDfn, vlmState);
+                    }
+                }
+                catch (ExtCmdFailedException cmdExc)
+                {
+                    throw new ResourceException(
+                        "Meta data creation for resource '" + rscName.displayValue + "' volume " +
+                        vlmState.getVlmNr().value + " failed",
+                        getAbortMsg(rscName),
+                        "Meta data creation failed because the execution of an external command failed",
+                        "- Check whether the required software is installed\n" +
+                        "- Check whether the application's search path includes the location\n" +
+                        "  of the external software\n" +
+                        "- Check whether the application has execute permission for " +
+                        "the external command\n",
+                        null,
+                        cmdExc
+                    );
+                }
+            }
+        }
+    }
+
+    private void adjustResource(ResourceName rscName, ResourceState rscState)
+        throws ResourceException
+    {
+        if (rscState.requiresAdjust())
+        {
+            errLog.logTrace(
+                "%s",
+                "Adjusting resource " + rscName.displayValue
+            );
+            try
+            {
+                drbdUtils.adjust(rscName, false, false, false, null);
+            }
+            catch (ExtCmdFailedException cmdExc)
+            {
+                throw new ResourceException(
+                    "Adjusting the DRBD state of resource '" + rscName.displayValue + "' failed",
+                    getAbortMsg(rscName),
+                    "The external command for adjusting the DRBD state of the resource failed",
+                    "- Check whether the required software is installed\n" +
+                        "- Check whether the application's search path includes the location\n" +
+                        "  of the external software\n" +
+                        "- Check whether the application has execute permission for the external command\n",
+                    null,
+                    cmdExc
+                );
+            }
+        }
+    }
+
+    private void deleteResourceVolumes(
+        Node localNode,
+        ResourceName rscName,
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        ResourceState rscState
+    )
+        throws AccessDeniedException, ResourceException
+    {
+        Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
+        Props rscProps = rsc.getProps(wrkCtx);
+        Props rscDfnProps = rscDfn.getProps(wrkCtx);
+
+        // Delete volumes
+        for (VolumeState vlmStateBase : rscState.getVolumes())
+        {
+            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
+
+            try
+            {
+                if (vlmState.isMarkedForDelete() && !vlmState.isSkip())
+                {
+                    Volume vlm = rsc.getVolume(vlmState.getVlmNr());
+                    VolumeDefinition vlmDfn = vlm != null ? vlm.getVolumeDefinition() : null;
+                    // If this is a volume state that describes a volume seen by DRBD but not known
+                    // to LINSTOR (e.g., manually configured in DRBD), then no volume object and
+                    // volume definition object will be present.
+                    // The backing storage for such volumes is ignored, as they are not managed
+                    // by LINSTOR.
+                    if (vlm != null && vlmDfn != null)
+                    {
+                        if (!vlmState.isDriverKnown())
+                        {
+                            getVolumeStorageDriver(
+                                rscName, localNode, vlm, vlmDfn, vlmState,
+                                nodeProps, rscProps, rscDfnProps
+                            );
+                        }
+                        if (vlmState.getDriver() != null)
+                        {
+                            deleteStorageVolume(rscDfn, vlmState);
+                        }
+                    }
+                }
+            }
+            catch (VolumeException vlmExc)
+            {
+                throw new ResourceException(
+                    "Deletion of storage for resource '" + rscName.displayValue + "' volume " +
+                        vlmState.getVlmNr().value + " failed",
+                    vlmExc
+                );
+            }
+        }
+    }
+
+    private void makePrimaryIfRequired(
+        Node localNode,
+        ResourceName rscName,
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        ResourceState rscState
+    )
+        throws AccessDeniedException, ResourceException
+    {
+        try
+        {
+            if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
+                rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DISKLESS))
+            {
+                errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
+                sendRequestPrimaryResource(
+                    localNode.getPeer(wrkCtx),
+                    rscDfn.getName().getDisplayName(),
+                    rsc.getUuid().toString()
+                );
+            }
+            else
+            if (rsc.isCreatePrimary() && !rscState.isPrimary())
+            {
+                // set primary
+                errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
+                ((ResourceData) rsc).unsetCreatePrimary();
+                setResourcePrimary(rsc);
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -1431,25 +1477,6 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         System.out.println("\u001b[1;31m== END DrbdDeviceHandler.debugListSatelliteObjects() ==\u001b[0m");
         System.out.println();
-    }
-
-    private void reportMdException(MdException mdExc, ResourceName rscName, VolumeState vlmState)
-    {
-        errLog.reportProblem(
-            Level.ERROR,
-            new VolumeException(
-                "Meta data calculation for resource '" + rscName.displayValue + "' volume " +
-                vlmState.getVlmNr().value + " failed",
-                "Operations on resource " + rscName.displayValue + " volume " + vlmState.getVlmNr().value +
-                " were aborted",
-                "The calculation of the volume's DRBD meta data size failed",
-                "Check whether the volume's properties, such as size, DRBD peer count and activity log " +
-                "settings, are within the range supported by DRBD",
-                mdExc.getMessage(),
-                mdExc
-            ),
-            null, null, null
-        );
     }
 
     static class ResourceException extends LinStorException
