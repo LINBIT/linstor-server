@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReport;
 
@@ -20,6 +21,8 @@ public interface CommonSerializer
     {
         byte[] build();
 
+        CommonSerializerBuilder apiCallRcSeries(ApiCallRc apiCallRc);
+
         CommonSerializerBuilder event(
             Integer watchId,
             EventIdentifier eventIdentifier,
@@ -29,6 +32,8 @@ public interface CommonSerializer
         CommonSerializerBuilder volumeDiskState(String diskState);
 
         CommonSerializerBuilder resourceStateEvent(Boolean resourceReady);
+
+        CommonSerializerBuilder resourceDeploymentStateEvent(ApiCallRc apiCallRc);
 
         CommonSerializerBuilder requestErrorReports(
             Set<String> nodes,

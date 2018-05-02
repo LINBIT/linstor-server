@@ -40,6 +40,17 @@ public class EventStreamStoreImpl implements EventStreamStore
     }
 
     @Override
+    public boolean addEventStreamIfNew(EventIdentifier eventIdentifier)
+    {
+        boolean isNew = allStreams.add(eventIdentifier);
+        if (isNew)
+        {
+            insertRecursively(eventIdentifier);
+        }
+        return isNew;
+    }
+
+    @Override
     public void removeEventStream(EventIdentifier eventIdentifier)
     {
         allStreams.remove(eventIdentifier);

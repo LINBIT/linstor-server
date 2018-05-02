@@ -2,6 +2,7 @@ package com.linbit.linstor.tasks;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CtrlNodeApiCallHandler;
@@ -23,15 +24,18 @@ public class ErrorReportTimeOutTask implements TaskScheduleService.Task {
     private final int TIMEOUT_SECS = 3;
 
     private ErrorReporter errorReporter;
+    private final CommonSerializer commonSerializer;
     private final ReadWriteLock ctrlErrorListLock;
 
     @Inject
     ErrorReportTimeOutTask(
         ErrorReporter errorReporterRef,
+        CommonSerializer commonSerializerRef,
         @Named(ControllerCoreModule.CTRL_ERROR_LIST_LOCK) ReadWriteLock errorListLockRef
     )
     {
         errorReporter = errorReporterRef;
+        commonSerializer = commonSerializerRef;
         ctrlErrorListLock = errorListLockRef;
     }
 
@@ -51,6 +55,7 @@ public class ErrorReportTimeOutTask implements TaskScheduleService.Task {
                     apiCallRc.addEntry("No error reports received from: " + errorReportRequest.requestNodes, ApiConsts.MASK_ERROR);
                     ApiCallAnswerer apiCallAnswerer = new ApiCallAnswerer(
                         errorReporter,
+                        commonSerializer,
                         entry.getKey().objA,
                         entry.getKey().objB
                     );

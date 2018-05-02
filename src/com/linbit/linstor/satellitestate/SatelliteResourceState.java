@@ -1,6 +1,7 @@
 package com.linbit.linstor.satellitestate;
 
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.ApiCallRc;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,8 @@ import java.util.function.Function;
 public class SatelliteResourceState
 {
     private Boolean ready;
+
+    private ApiCallRc deploymentState;
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
 
@@ -21,6 +24,16 @@ public class SatelliteResourceState
     public void setReady(Boolean readyRef)
     {
         ready = readyRef;
+    }
+
+    public ApiCallRc getDeploymentState()
+    {
+        return deploymentState;
+    }
+
+    public void setDeploymentState(ApiCallRc deploymentStateRef)
+    {
+        deploymentState = deploymentStateRef;
     }
 
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()

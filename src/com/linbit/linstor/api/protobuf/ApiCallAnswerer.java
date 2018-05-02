@@ -1,17 +1,12 @@
 package com.linbit.linstor.api.protobuf;
 
-import com.linbit.ImplementationError;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse.Builder;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
-import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -22,6 +17,7 @@ import java.io.OutputStream;
 public class ApiCallAnswerer
 {
     private final ErrorReporter errorReporter;
+    private final CommonSerializer commonSerializer;
 
     private final Peer peer;
     private final int msgId;
@@ -29,11 +25,13 @@ public class ApiCallAnswerer
     @Inject
     public ApiCallAnswerer(
         ErrorReporter errorReporterRef,
+        CommonSerializer commonSerializerRef,
         Peer peerRef,
         @Named(ApiModule.MSG_ID) int msgIdRef
     )
     {
         errorReporter = errorReporterRef;
+        commonSerializer = commonSerializerRef;
         peer = peerRef;
         msgId = msgIdRef;
     }
@@ -50,71 +48,11 @@ public class ApiCallAnswerer
 
     public void answerApiCallRc(ApiCallRc apiCallRc)
     {
-        byte[] apiCallMsgData = createApiCallResponse(apiCallRc);
-        byte[] apiCallData = prepareMessage(apiCallMsgData, ApiConsts.API_REPLY);
+        byte[] apiCallMsgData = commonSerializer.builder(ApiConsts.API_REPLY, msgId)
+            .apiCallRcSeries(apiCallRc)
+            .build();
 
-        peer.sendMessage(apiCallData);
-    }
-
-    public byte[] createApiCallResponse(ApiCallRc apiCallRc)
-    {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (RcEntry apiCallEntry : apiCallRc.getEntries())
-        {
-            Builder msgApiCallResponseBuilder = MsgApiCallResponse.newBuilder();
-
-            msgApiCallResponseBuilder.setRetCode(apiCallEntry.getReturnCode());
-            if (apiCallEntry.getCauseFormat() != null)
-            {
-                msgApiCallResponseBuilder.setCauseFormat(apiCallEntry.getCauseFormat());
-            }
-            if (apiCallEntry.getCorrectionFormat() != null)
-            {
-                msgApiCallResponseBuilder.setCorrectionFormat(apiCallEntry.getCorrectionFormat());
-            }
-            if (apiCallEntry.getDetailsFormat() != null)
-            {
-                msgApiCallResponseBuilder.setDetailsFormat(apiCallEntry.getDetailsFormat());
-            }
-            if (apiCallEntry.getMessageFormat() != null)
-            {
-                msgApiCallResponseBuilder.setMessageFormat(apiCallEntry.getMessageFormat());
-            }
-            msgApiCallResponseBuilder.addAllObjRefs(ProtoMapUtils.fromMap(apiCallEntry.getObjRefs()));
-            msgApiCallResponseBuilder.addAllVariables(ProtoMapUtils.fromMap(apiCallEntry.getVariables()));
-
-            MsgApiCallResponse protoMsg = msgApiCallResponseBuilder.build();
-
-            try
-            {
-                protoMsg.writeDelimitedTo(baos);
-            }
-            catch (IOException ioExc)
-            {
-                errorReporter.reportError(
-                    ioExc,
-                    null,
-                    null,
-                    "IOException occured while generating ApiCallResponse"
-                );
-            }
-        }
-
-        byte[] protoMsgsBytes = baos.toByteArray();
-        try
-        {
-            baos.close();
-        }
-        catch (IOException ioExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "ByteArrayOutputStream.close() should never throw an IOException, but it did",
-                    ioExc
-                )
-            );
-        }
-        return protoMsgsBytes;
+        peer.sendMessage(apiCallMsgData);
     }
 
     public byte[] prepareMessage(byte[] protoMsgsBytes, String apicalltype)

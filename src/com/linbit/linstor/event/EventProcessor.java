@@ -44,8 +44,8 @@ public class EventProcessor
     )
         throws IOException
     {
-        EventHandler eventHandler = eventHandlers.get(eventName).get();
-        if (eventHandler == null)
+        Provider<EventHandler> eventHandlerProvider = eventHandlers.get(eventName);
+        if (eventHandlerProvider == null)
         {
             errorReporter.logWarning("Unknown event '%s' received", eventName);
         }
@@ -62,7 +62,7 @@ public class EventProcessor
 
                 EventIdentifier eventIdentifier = new EventIdentifier(eventName, nodeName, resourceName, volumeNumber);
 
-                eventHandler.execute(eventAction, eventIdentifier, eventDataIn);
+                eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
             }
             catch (InvalidNameException | ValueOutOfRangeException exc)
             {

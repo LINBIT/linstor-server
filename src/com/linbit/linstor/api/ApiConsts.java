@@ -339,7 +339,10 @@ public class ApiConsts
      * Events
      */
     public static final String EVENT_VOLUME_DISK_STATE = "VlmDiskState";
+    // State of resource based on DRBD status (or other underlying system)
     public static final String EVENT_RESOURCE_STATE = "ResourceState";
+    // State of resource based on execution of commands to deploy it
+    public static final String EVENT_RESOURCE_DEPLOYMENT_STATE = "ResourceDeploymentState";
 
     /*
      * Object property keys

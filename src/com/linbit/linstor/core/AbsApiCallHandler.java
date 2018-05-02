@@ -992,7 +992,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * @param errorReporter
      * @param peer
      */
-    protected static final void reportStatic(
+    public static final void reportStatic(
         Throwable throwableRef,
         String errorMsg,
         long retCode,

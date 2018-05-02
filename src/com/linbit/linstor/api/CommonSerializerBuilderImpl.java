@@ -60,6 +60,21 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     }
 
     @Override
+    public CommonSerializerBuilder apiCallRcSeries(ApiCallRc apiCallRc)
+    {
+        try
+        {
+            commonSerializationWriter.writeApiCallRcSeries(apiCallRc, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CommonSerializerBuilder event(
         Integer watchId,
         EventIdentifier eventIdentifier,
@@ -109,6 +124,21 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     }
 
     @Override
+    public CommonSerializerBuilder resourceDeploymentStateEvent(ApiCallRc apiCallRc)
+    {
+        try
+        {
+            commonSerializationWriter.writeResourceDeploymentStateEvent(apiCallRc, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports)
     {
         try
@@ -148,6 +178,9 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
         void writeHeader(String apiCall, Integer msgId, ByteArrayOutputStream baos)
             throws IOException;
 
+        void writeApiCallRcSeries(ApiCallRc apiCallRc, ByteArrayOutputStream baos)
+            throws IOException;
+
         void writeEvent(
             Integer watchId,
             EventIdentifier eventIdentifier,
@@ -160,6 +193,9 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
             throws IOException;
 
         void writeResourceStateEvent(Boolean resourceReady, ByteArrayOutputStream baos)
+            throws IOException;
+
+        void writeResourceDeploymentStateEvent(ApiCallRc apiCallRc, ByteArrayOutputStream baos)
             throws IOException;
 
         void writeRequestErrorReports(

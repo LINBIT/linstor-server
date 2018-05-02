@@ -4,11 +4,11 @@ import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.StltApiCallHandler;
 import com.linbit.linstor.core.UpdateMonitor;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass;
@@ -27,24 +27,24 @@ public class CtrlAuth implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
     private final ApiCallAnswerer apiCallAnswerer;
+    private final CommonSerializer commonSerializer;
     private final UpdateMonitor updateMonitor;
     private final Peer controllerPeer;
-    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlAuth(
         StltApiCallHandler apiCallHandlerRef,
         ApiCallAnswerer apiCallAnswererRef,
+        CommonSerializer commonSerializerRef,
         UpdateMonitor updateMonitorRef,
-        Peer controllerPeerRef,
-        ErrorReporter errorReporterRef
+        Peer controllerPeerRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
         apiCallAnswerer = apiCallAnswererRef;
+        commonSerializer = commonSerializerRef;
         updateMonitor = updateMonitorRef;
         controllerPeer = controllerPeerRef;
-        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -86,10 +86,9 @@ public class CtrlAuth implements ApiCall
         {
             // whatever happened should be in the apiCallRc
             controllerPeer.sendMessage(
-                apiCallAnswerer.prepareMessage(
-                    apiCallAnswerer.createApiCallResponse(apiCallRc),
-                    InternalApiConsts.API_AUTH_ERROR
-                )
+                commonSerializer.builder(InternalApiConsts.API_AUTH_ERROR)
+                    .apiCallRcSeries(apiCallRc)
+                    .build()
             );
         }
     }

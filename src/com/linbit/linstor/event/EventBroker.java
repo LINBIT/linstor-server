@@ -185,6 +185,21 @@ public class EventBroker
         triggerEvent(eventIdentifier, ApiConsts.EVENT_STREAM_OPEN);
     }
 
+    public void openOrTriggerEvent(EventIdentifier eventIdentifier)
+    {
+        boolean isNew;
+        watchAndStreamLock.lock();
+        try
+        {
+            isNew = eventStreamStore.addEventStreamIfNew(eventIdentifier);
+        }
+        finally
+        {
+            watchAndStreamLock.unlock();
+        }
+        triggerEvent(eventIdentifier, isNew ? ApiConsts.EVENT_STREAM_OPEN : ApiConsts.EVENT_STREAM_VALUE);
+    }
+
     public void triggerEvent(EventIdentifier eventIdentifier)
     {
         triggerEvent(eventIdentifier, ApiConsts.EVENT_STREAM_VALUE);

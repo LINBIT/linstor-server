@@ -27,6 +27,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
@@ -38,6 +39,8 @@ import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
+import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -94,6 +97,8 @@ class DrbdDeviceHandler implements DeviceHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final MetaDataApi drbdMd;
     private final WhitelistProps whitelistProps;
+    private final DeploymentStateTracker deploymentStateTracker;
+    private final EventBroker eventBroker;
 
     // Number of peer slots for DRBD meta data; this should be replaced with a property of the
     // resource definition or otherwise a system-wide default
@@ -123,7 +128,9 @@ class DrbdDeviceHandler implements DeviceHandler
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        DeploymentStateTracker deploymentStateTrackerRef,
+        EventBroker eventBrokerRef
     )
     {
         errLog = errLogRef;
@@ -138,6 +145,8 @@ class DrbdDeviceHandler implements DeviceHandler
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         whitelistProps = whitelistPropsRef;
+        deploymentStateTracker = deploymentStateTrackerRef;
+        eventBroker = eventBrokerRef;
         drbdMd = new MetaData();
     }
 
@@ -191,6 +200,9 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceName rscName = rscDfn.getName();
         Node localNode = rsc.getAssignedNode();
         NodeName localNodeName = localNode.getName();
+
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        boolean deleted = false;
         try
         {
             // Volatile state information of the resource and its volumes
@@ -203,49 +215,73 @@ class DrbdDeviceHandler implements DeviceHandler
                 rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
             {
                 deleteResource(rsc, rscDfn, localNode, rscState);
+                deleted = true;
             }
             else
             {
                 createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
+                apiCallRc.addEntry("Resource deployed", ApiConsts.CREATED);
             }
         }
         catch (ResourceException rscExc)
         {
-            errLog.reportProblem(Level.ERROR, rscExc, null, null, null);
+            AbsApiCallHandler.reportStatic(
+                rscExc, rscExc.getMessage(), rscExc.getCauseText(), rscExc.getDetailsText(), rscExc.getCorrectionText(),
+                ApiConsts.FAIL_UNKNOWN_ERROR, null, null, apiCallRc, errLog, null, null
+            );
         }
         catch (AccessDeniedException accExc)
         {
-            errLog.reportError(
-                Level.ERROR,
-                new ImplementationError(
-                    "Worker access context not authorized to perform a required operation",
-                    accExc
-                )
+            AbsApiCallHandler.reportStatic(
+                accExc, "Satellite worker access context not authorized to perform a required operation",
+                ApiConsts.FAIL_IMPL_ERROR,
+                null, null, apiCallRc, errLog, null, null
             );
         }
         catch (NoInitialStateException drbdStateExc)
         {
-            errLog.reportProblem(
-                Level.ERROR,
-                new LinStorException(
-                    "DRBD state tracking is unavailable, operations on resource '" + rscName.displayValue +
+            AbsApiCallHandler.reportStatic(
+                drbdStateExc,
+                "DRBD state tracking is unavailable, operations on resource '" + rscName.displayValue +
                     "' were aborted.",
-                    getAbortMsg(rscName),
-                    "DRBD state tracking is unavailable",
-                    "Operations will continue automatically when DRBD state tracking is recovered",
-                    null,
-                    null
-                ),
-                null, null,
-                "This error was generated while attempting to evaluate the current state of the resource"
+                getAbortMsg(rscName),
+                "DRBD state tracking is unavailable",
+                "Operations will continue automatically when DRBD state tracking is recovered",
+                ApiConsts.FAIL_UNKNOWN_ERROR,
+                null, null, apiCallRc, errLog, null, null
             );
+        }
+        catch (Exception exc)
+        {
+            AbsApiCallHandler.reportStatic(
+                exc, exc.getMessage(), ApiConsts.FAIL_UNKNOWN_ERROR,
+                null, null, apiCallRc, errLog, null, null
+            );
+        }
+
+        try
+        {
+            EventIdentifier eventIdentifier = new EventIdentifier(
+                ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE,
+                null, rscName, null
+            );
+            if (deleted)
+            {
+                deploymentStateTracker.removeDeploymentState(rscName);
+                eventBroker.closeEventStream(eventIdentifier);
+            }
+            else
+            {
+                deploymentStateTracker.setDeploymentState(rscName, apiCallRc);
+                eventBroker.openOrTriggerEvent(eventIdentifier);
+            }
         }
         catch (Exception exc)
         {
             errLog.reportError(
                 Level.ERROR,
                 new ImplementationError(
-                    "Unhandled exception",
+                    "Exception updating resource deployment state",
                     exc
                 )
             );
@@ -954,7 +990,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 throw new ResourceException(
                     "Initialization of storage for resource '" + rscName.displayValue + "' volume " +
                         vlmState.getVlmNr().value + " failed",
-                    vlmExc
+                    null, vlmExc.getMessage(),
+                    null, null, vlmExc
                 );
             }
             catch (StorageException storExc)
