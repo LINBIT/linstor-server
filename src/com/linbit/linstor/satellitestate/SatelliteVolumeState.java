@@ -4,6 +4,15 @@ public class SatelliteVolumeState
 {
     private String diskState;
 
+    public SatelliteVolumeState()
+    {
+    }
+
+    public SatelliteVolumeState(SatelliteVolumeState other)
+    {
+        diskState = other.diskState;
+    }
+
     public String getDiskState()
     {
         return diskState;

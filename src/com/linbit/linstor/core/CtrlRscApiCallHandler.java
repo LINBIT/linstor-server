@@ -69,6 +69,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
@@ -716,11 +717,20 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 final Peer peer = node.getPeer(peerAccCtx);
                 if (peer != null)
                 {
-                    final SatelliteState satelliteState = peer.getSatelliteState();
-
-                    if (satelliteState != null)
+                    Lock readLock = peer.getSatelliteStateLock().readLock();
+                    readLock.lock();
+                    try
                     {
-                        satelliteStates.put(node.getName(), satelliteState);
+                        final SatelliteState satelliteState = peer.getSatelliteState();
+
+                        if (satelliteState != null)
+                        {
+                            satelliteStates.put(node.getName(), new SatelliteState(satelliteState));
+                        }
+                    }
+                    finally
+                    {
+                        readLock.unlock();
                     }
                 }
             }

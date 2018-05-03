@@ -12,6 +12,18 @@ public class SatelliteState
 {
     private final Map<ResourceName, SatelliteResourceState> resourceStates = new HashMap<>();
 
+    public SatelliteState()
+    {
+    }
+
+    public SatelliteState(SatelliteState other)
+    {
+        for (Map.Entry<ResourceName, SatelliteResourceState> resourceStateEntry : other.resourceStates.entrySet())
+        {
+            resourceStates.put(resourceStateEntry.getKey(), new SatelliteResourceState(resourceStateEntry.getValue()));
+        }
+    }
+
     public Map<ResourceName, SatelliteResourceState> getResourceStates()
     {
         return resourceStates;

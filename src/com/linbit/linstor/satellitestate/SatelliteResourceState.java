@@ -16,6 +16,20 @@ public class SatelliteResourceState
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
 
+    public SatelliteResourceState()
+    {
+    }
+
+    public SatelliteResourceState(SatelliteResourceState other)
+    {
+        ready = other.ready;
+        deploymentState = other.deploymentState;
+        for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
+        {
+            volumeStates.put(volumeStateEntry.getKey(), new SatelliteVolumeState(volumeStateEntry.getValue()));
+        }
+    }
+
     public Boolean getReady()
     {
         return ready;

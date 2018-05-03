@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
@@ -251,11 +252,20 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 final Peer peer = node.getPeer(peerAccCtx);
                 if (peer != null)
                 {
-                    final SatelliteState satelliteState = peer.getSatelliteState();
-
-                    if (satelliteState != null)
+                    Lock readLock = peer.getSatelliteStateLock().readLock();
+                    readLock.lock();
+                    try
                     {
-                        satelliteStates.put(node.getName(), satelliteState);
+                        final SatelliteState satelliteState = peer.getSatelliteState();
+
+                        if (satelliteState != null)
+                        {
+                            satelliteStates.put(node.getName(), new SatelliteState(satelliteState));
+                        }
+                    }
+                    finally
+                    {
+                        readLock.unlock();
                     }
                 }
             }
