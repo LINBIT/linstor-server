@@ -386,21 +386,9 @@ public class StltApiCallHandler
     private void createWatchForPeer()
     {
         Peer controllerPeer = controllerPeerConnector.getControllerPeer();
-        try
-        {
-            eventBroker.createWatch(new Watch(
-                UUID.randomUUID(), controllerPeer.getId(), 0, new EventIdentifier(null, null, null, null)
-            ));
-        }
-        catch (LinStorDataAlreadyExistsException exc)
-        {
-            errorReporter.reportError(
-                exc,
-                null,
-                controllerPeer,
-                "Failed to create implicit watch for controller"
-            );
-        }
+        eventBroker.createWatch(new Watch(
+            UUID.randomUUID(), controllerPeer.getId(), 0, new EventIdentifier(null, null, null, null)
+        ));
     }
 
     public void applyControllerChanges(Map<String, String> satelliteProps)

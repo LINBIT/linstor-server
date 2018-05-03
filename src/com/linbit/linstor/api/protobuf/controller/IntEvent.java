@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.event.EventProcessor;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgEventOuterClass;
 
 import javax.inject.Inject;
@@ -17,13 +18,16 @@ import java.io.InputStream;
 public class IntEvent implements ApiCall
 {
     private final EventProcessor eventProcessor;
+    private final Peer peer;
 
     @Inject
     public IntEvent(
-        EventProcessor eventProcessorRef
+        EventProcessor eventProcessorRef,
+        Peer peerRef
     )
     {
         eventProcessor = eventProcessorRef;
+        peer = peerRef;
     }
 
     @Override
@@ -33,11 +37,12 @@ public class IntEvent implements ApiCall
         MsgEventOuterClass.MsgEvent msgEvent = MsgEventOuterClass.MsgEvent.parseDelimitedFrom(msgDataIn);
 
         eventProcessor.handleEvent(
+            msgEvent.getEventCounter(),
             msgEvent.getEventAction(),
             msgEvent.getEventName(),
-            msgEvent.hasNodeName() ? msgEvent.getNodeName() : null,
             msgEvent.hasResourceName() ? msgEvent.getResourceName() : null,
             msgEvent.hasVolumeNumber() ? msgEvent.getVolumeNumber() : null,
+            peer,
             msgDataIn
         );
     }

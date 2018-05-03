@@ -2,8 +2,6 @@ package com.linbit.linstor.event;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,13 +11,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Singleton
 public class EventStreamStoreImpl implements EventStreamStore
 {
     private final Set<EventIdentifier> allStreams;
     private final Map<EventIdentifier, Set<EventIdentifier>> childrenMap;
 
-    @Inject
     public EventStreamStoreImpl()
     {
         allStreams = new HashSet<>();
@@ -32,7 +28,7 @@ public class EventStreamStoreImpl implements EventStreamStore
     {
         if (allStreams.contains(eventIdentifier))
         {
-            throw new LinStorDataAlreadyExistsException("Event stream already exists");
+            throw new LinStorDataAlreadyExistsException("Event stream " + eventIdentifier + " already exists");
         }
 
         allStreams.add(eventIdentifier);

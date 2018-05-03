@@ -125,8 +125,7 @@ public class CtrlWatchApiCallHandler
             apiCallRc.addEntry("Watch created", ApiConsts.MASK_CRT | ApiConsts.CREATED);
         }
         catch (AccessDeniedException |
-            ValueOutOfRangeException |
-            LinStorDataAlreadyExistsException exc)
+            ValueOutOfRangeException exc)
         {
             if (exc instanceof AccessDeniedException)
             {
@@ -137,15 +136,9 @@ public class CtrlWatchApiCallHandler
                 rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
             }
             else
-            if (exc instanceof ValueOutOfRangeException)
             {
                 errorMsg = "Value out of range";
                 rc = ApiConsts.FAIL_INVLD_VLM_NR;
-            }
-            else
-            {
-                errorMsg = "Watch ID already in use";
-                rc = ApiConsts.FAIL_EXISTS_WATCH;
             }
         }
 

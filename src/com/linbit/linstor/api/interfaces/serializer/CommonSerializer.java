@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,6 +24,7 @@ public interface CommonSerializer
 
         CommonSerializerBuilder event(
             Integer watchId,
+            long eventCounter,
             EventIdentifier eventIdentifier,
             String eventStreamAction
         );

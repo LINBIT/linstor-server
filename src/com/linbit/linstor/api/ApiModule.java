@@ -51,20 +51,20 @@ public class ApiModule extends AbstractModule
 
         bind(AccessContext.class)
             .annotatedWith(PeerContext.class)
-            .toProvider(LinStorScope.<AccessContext>seededKeyProvider())
+            .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Peer.class)
-            .toProvider(LinStorScope.<Peer>seededKeyProvider())
+            .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Message.class)
-            .toProvider(LinStorScope.<Message>seededKeyProvider())
+            .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Integer.class)
             .annotatedWith(Names.named(ApiModule.MSG_ID))
-            .toProvider(LinStorScope.<Integer>seededKeyProvider())
+            .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(TransactionMgr.class)
-            .toProvider(LinStorScope.<TransactionMgr>seededKeyProvider())
+            .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
     }
 }

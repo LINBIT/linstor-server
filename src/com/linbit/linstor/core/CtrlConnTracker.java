@@ -6,6 +6,7 @@ import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.EventProcessor;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -20,19 +21,22 @@ class CtrlConnTracker implements ConnectionObserver
     private final CoreModule.PeerMap peerMap;
     private final ReconnectorTask reconnectorTask;
     private final EventBroker eventBroker;
+    private final EventProcessor eventProcessor;
 
     @Inject
     CtrlConnTracker(
         CtrlClientSerializer ctrlClientSerializerRef,
         CoreModule.PeerMap peerMapRef,
         ReconnectorTask reconnectorTaskRef,
-        EventBroker eventBrokerRef
+        EventBroker eventBrokerRef,
+        EventProcessor eventProcessorRef
     )
     {
         ctrlClientSerializer = ctrlClientSerializerRef;
         peerMap = peerMapRef;
         reconnectorTask = reconnectorTaskRef;
         eventBroker = eventBrokerRef;
+        eventProcessor = eventProcessorRef;
     }
 
     @Override
@@ -51,6 +55,8 @@ class CtrlConnTracker implements ConnectionObserver
                 peerMap.put(connPeer.getId(), connPeer);
             }
             reconnectorTask.peerConnected(connPeer);
+
+            eventProcessor.outboundConnectionEstablished(connPeer);
         }
         // TODO: If a satellite has been connected, schedule any necessary actions
     }
@@ -93,6 +99,7 @@ class CtrlConnTracker implements ConnectionObserver
         if (connPeer != null)
         {
             eventBroker.connectionClosed(connPeer);
+            eventProcessor.connectionClosed(connPeer);
 
             synchronized (peerMap)
             {

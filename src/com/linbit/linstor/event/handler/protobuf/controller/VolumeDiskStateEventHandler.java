@@ -58,7 +58,7 @@ public class VolumeDiskStateEventHandler implements EventHandler
 
         eventBroker.forwardEvent(new EventIdentifier(
             ApiConsts.EVENT_VOLUME_DISK_STATE,
-            peer.getNode().getName(),
+            eventIdentifier.getNodeName(),
             eventIdentifier.getResourceName(),
             eventIdentifier.getVolumeNumber()
         ), eventAction);

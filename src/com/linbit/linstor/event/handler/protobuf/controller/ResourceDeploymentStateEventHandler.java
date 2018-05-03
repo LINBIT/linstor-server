@@ -78,7 +78,7 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
 
         eventBroker.forwardEvent(new EventIdentifier(
             ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE,
-            peer.getNode().getName(),
+            eventIdentifier.getNodeName(),
             eventIdentifier.getResourceName(),
             null
         ), eventAction);

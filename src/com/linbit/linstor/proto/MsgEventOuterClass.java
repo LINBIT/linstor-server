@@ -37,6 +37,23 @@ public final class MsgEventOuterClass {
 
     /**
      * <pre>
+     * Incrementing counter for events for this watch, starting at 1
+     * </pre>
+     *
+     * <code>optional int64 event_counter = 7;</code>
+     */
+    boolean hasEventCounter();
+    /**
+     * <pre>
+     * Incrementing counter for events for this watch, starting at 1
+     * </pre>
+     *
+     * <code>optional int64 event_counter = 7;</code>
+     */
+    long getEventCounter();
+
+    /**
+     * <pre>
      * The action represented by the event: open stream, new data, close stream
      * </pre>
      *
@@ -180,6 +197,7 @@ public final class MsgEventOuterClass {
     }
     private MsgEvent() {
       watchId_ = 0;
+      eventCounter_ = 0L;
       eventAction_ = "";
       eventName_ = "";
       resourceName_ = "";
@@ -222,31 +240,36 @@ public final class MsgEventOuterClass {
             }
             case 18: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000004;
+              bitField0_ |= 0x00000008;
               eventName_ = bs;
               break;
             }
             case 26: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000008;
+              bitField0_ |= 0x00000010;
               resourceName_ = bs;
               break;
             }
             case 34: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000010;
+              bitField0_ |= 0x00000020;
               nodeName_ = bs;
               break;
             }
             case 40: {
-              bitField0_ |= 0x00000020;
+              bitField0_ |= 0x00000040;
               volumeNumber_ = input.readSInt32();
               break;
             }
             case 50: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000002;
+              bitField0_ |= 0x00000004;
               eventAction_ = bs;
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000002;
+              eventCounter_ = input.readInt64();
               break;
             }
           }
@@ -297,6 +320,29 @@ public final class MsgEventOuterClass {
       return watchId_;
     }
 
+    public static final int EVENT_COUNTER_FIELD_NUMBER = 7;
+    private long eventCounter_;
+    /**
+     * <pre>
+     * Incrementing counter for events for this watch, starting at 1
+     * </pre>
+     *
+     * <code>optional int64 event_counter = 7;</code>
+     */
+    public boolean hasEventCounter() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Incrementing counter for events for this watch, starting at 1
+     * </pre>
+     *
+     * <code>optional int64 event_counter = 7;</code>
+     */
+    public long getEventCounter() {
+      return eventCounter_;
+    }
+
     public static final int EVENT_ACTION_FIELD_NUMBER = 6;
     private volatile java.lang.Object eventAction_;
     /**
@@ -307,7 +353,7 @@ public final class MsgEventOuterClass {
      * <code>required string event_action = 6;</code>
      */
     public boolean hasEventAction() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
      * <pre>
@@ -361,7 +407,7 @@ public final class MsgEventOuterClass {
      * <code>required string event_name = 2;</code>
      */
     public boolean hasEventName() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
      * <pre>
@@ -415,7 +461,7 @@ public final class MsgEventOuterClass {
      * <code>optional string resource_name = 3;</code>
      */
     public boolean hasResourceName() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
      * <pre>
@@ -469,7 +515,7 @@ public final class MsgEventOuterClass {
      * <code>optional string node_name = 4;</code>
      */
     public boolean hasNodeName() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000020) == 0x00000020);
     }
     /**
      * <pre>
@@ -523,7 +569,7 @@ public final class MsgEventOuterClass {
      * <code>optional sint32 volume_number = 5;</code>
      */
     public boolean hasVolumeNumber() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000040) == 0x00000040);
     }
     /**
      * <pre>
@@ -563,20 +609,23 @@ public final class MsgEventOuterClass {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeInt32(1, watchId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, eventName_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, resourceName_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, nodeName_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         output.writeSInt32(5, volumeNumber_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 6, eventAction_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt64(7, eventCounter_);
       }
       unknownFields.writeTo(output);
     }
@@ -590,21 +639,25 @@ public final class MsgEventOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, watchId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, eventName_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, resourceName_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, nodeName_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt32Size(5, volumeNumber_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, eventAction_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(7, eventCounter_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -627,6 +680,11 @@ public final class MsgEventOuterClass {
       if (hasWatchId()) {
         result = result && (getWatchId()
             == other.getWatchId());
+      }
+      result = result && (hasEventCounter() == other.hasEventCounter());
+      if (hasEventCounter()) {
+        result = result && (getEventCounter()
+            == other.getEventCounter());
       }
       result = result && (hasEventAction() == other.hasEventAction());
       if (hasEventAction()) {
@@ -667,6 +725,11 @@ public final class MsgEventOuterClass {
       if (hasWatchId()) {
         hash = (37 * hash) + WATCH_ID_FIELD_NUMBER;
         hash = (53 * hash) + getWatchId();
+      }
+      if (hasEventCounter()) {
+        hash = (37 * hash) + EVENT_COUNTER_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getEventCounter());
       }
       if (hasEventAction()) {
         hash = (37 * hash) + EVENT_ACTION_FIELD_NUMBER;
@@ -819,16 +882,18 @@ public final class MsgEventOuterClass {
         super.clear();
         watchId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        eventAction_ = "";
+        eventCounter_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000002);
-        eventName_ = "";
+        eventAction_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        resourceName_ = "";
+        eventName_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
-        nodeName_ = "";
+        resourceName_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
-        volumeNumber_ = 0;
+        nodeName_ = "";
         bitField0_ = (bitField0_ & ~0x00000020);
+        volumeNumber_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
       }
 
@@ -860,21 +925,25 @@ public final class MsgEventOuterClass {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.eventAction_ = eventAction_;
+        result.eventCounter_ = eventCounter_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
-        result.eventName_ = eventName_;
+        result.eventAction_ = eventAction_;
         if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
           to_bitField0_ |= 0x00000008;
         }
-        result.resourceName_ = resourceName_;
+        result.eventName_ = eventName_;
         if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
           to_bitField0_ |= 0x00000010;
         }
-        result.nodeName_ = nodeName_;
+        result.resourceName_ = resourceName_;
         if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
           to_bitField0_ |= 0x00000020;
+        }
+        result.nodeName_ = nodeName_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
         }
         result.volumeNumber_ = volumeNumber_;
         result.bitField0_ = to_bitField0_;
@@ -922,23 +991,26 @@ public final class MsgEventOuterClass {
         if (other.hasWatchId()) {
           setWatchId(other.getWatchId());
         }
+        if (other.hasEventCounter()) {
+          setEventCounter(other.getEventCounter());
+        }
         if (other.hasEventAction()) {
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000004;
           eventAction_ = other.eventAction_;
           onChanged();
         }
         if (other.hasEventName()) {
-          bitField0_ |= 0x00000004;
+          bitField0_ |= 0x00000008;
           eventName_ = other.eventName_;
           onChanged();
         }
         if (other.hasResourceName()) {
-          bitField0_ |= 0x00000008;
+          bitField0_ |= 0x00000010;
           resourceName_ = other.resourceName_;
           onChanged();
         }
         if (other.hasNodeName()) {
-          bitField0_ |= 0x00000010;
+          bitField0_ |= 0x00000020;
           nodeName_ = other.nodeName_;
           onChanged();
         }
@@ -1030,6 +1102,54 @@ public final class MsgEventOuterClass {
         return this;
       }
 
+      private long eventCounter_ ;
+      /**
+       * <pre>
+       * Incrementing counter for events for this watch, starting at 1
+       * </pre>
+       *
+       * <code>optional int64 event_counter = 7;</code>
+       */
+      public boolean hasEventCounter() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Incrementing counter for events for this watch, starting at 1
+       * </pre>
+       *
+       * <code>optional int64 event_counter = 7;</code>
+       */
+      public long getEventCounter() {
+        return eventCounter_;
+      }
+      /**
+       * <pre>
+       * Incrementing counter for events for this watch, starting at 1
+       * </pre>
+       *
+       * <code>optional int64 event_counter = 7;</code>
+       */
+      public Builder setEventCounter(long value) {
+        bitField0_ |= 0x00000002;
+        eventCounter_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Incrementing counter for events for this watch, starting at 1
+       * </pre>
+       *
+       * <code>optional int64 event_counter = 7;</code>
+       */
+      public Builder clearEventCounter() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        eventCounter_ = 0L;
+        onChanged();
+        return this;
+      }
+
       private java.lang.Object eventAction_ = "";
       /**
        * <pre>
@@ -1039,7 +1159,7 @@ public final class MsgEventOuterClass {
        * <code>required string event_action = 6;</code>
        */
       public boolean hasEventAction() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
        * <pre>
@@ -1094,7 +1214,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         eventAction_ = value;
         onChanged();
         return this;
@@ -1107,7 +1227,7 @@ public final class MsgEventOuterClass {
        * <code>required string event_action = 6;</code>
        */
       public Builder clearEventAction() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         eventAction_ = getDefaultInstance().getEventAction();
         onChanged();
         return this;
@@ -1124,7 +1244,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         eventAction_ = value;
         onChanged();
         return this;
@@ -1139,7 +1259,7 @@ public final class MsgEventOuterClass {
        * <code>required string event_name = 2;</code>
        */
       public boolean hasEventName() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
        * <pre>
@@ -1194,7 +1314,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000008;
         eventName_ = value;
         onChanged();
         return this;
@@ -1207,7 +1327,7 @@ public final class MsgEventOuterClass {
        * <code>required string event_name = 2;</code>
        */
       public Builder clearEventName() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         eventName_ = getDefaultInstance().getEventName();
         onChanged();
         return this;
@@ -1224,7 +1344,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000008;
         eventName_ = value;
         onChanged();
         return this;
@@ -1239,7 +1359,7 @@ public final class MsgEventOuterClass {
        * <code>optional string resource_name = 3;</code>
        */
       public boolean hasResourceName() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
        * <pre>
@@ -1294,7 +1414,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000008;
+  bitField0_ |= 0x00000010;
         resourceName_ = value;
         onChanged();
         return this;
@@ -1307,7 +1427,7 @@ public final class MsgEventOuterClass {
        * <code>optional string resource_name = 3;</code>
        */
       public Builder clearResourceName() {
-        bitField0_ = (bitField0_ & ~0x00000008);
+        bitField0_ = (bitField0_ & ~0x00000010);
         resourceName_ = getDefaultInstance().getResourceName();
         onChanged();
         return this;
@@ -1324,7 +1444,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000008;
+  bitField0_ |= 0x00000010;
         resourceName_ = value;
         onChanged();
         return this;
@@ -1339,7 +1459,7 @@ public final class MsgEventOuterClass {
        * <code>optional string node_name = 4;</code>
        */
       public boolean hasNodeName() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       /**
        * <pre>
@@ -1394,7 +1514,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000010;
+  bitField0_ |= 0x00000020;
         nodeName_ = value;
         onChanged();
         return this;
@@ -1407,7 +1527,7 @@ public final class MsgEventOuterClass {
        * <code>optional string node_name = 4;</code>
        */
       public Builder clearNodeName() {
-        bitField0_ = (bitField0_ & ~0x00000010);
+        bitField0_ = (bitField0_ & ~0x00000020);
         nodeName_ = getDefaultInstance().getNodeName();
         onChanged();
         return this;
@@ -1424,7 +1544,7 @@ public final class MsgEventOuterClass {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000010;
+  bitField0_ |= 0x00000020;
         nodeName_ = value;
         onChanged();
         return this;
@@ -1439,7 +1559,7 @@ public final class MsgEventOuterClass {
        * <code>optional sint32 volume_number = 5;</code>
        */
       public boolean hasVolumeNumber() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       /**
        * <pre>
@@ -1459,7 +1579,7 @@ public final class MsgEventOuterClass {
        * <code>optional sint32 volume_number = 5;</code>
        */
       public Builder setVolumeNumber(int value) {
-        bitField0_ |= 0x00000020;
+        bitField0_ |= 0x00000040;
         volumeNumber_ = value;
         onChanged();
         return this;
@@ -1472,7 +1592,7 @@ public final class MsgEventOuterClass {
        * <code>optional sint32 volume_number = 5;</code>
        */
       public Builder clearVolumeNumber() {
-        bitField0_ = (bitField0_ & ~0x00000020);
+        bitField0_ = (bitField0_ & ~0x00000040);
         volumeNumber_ = 0;
         onChanged();
         return this;
@@ -1541,10 +1661,11 @@ public final class MsgEventOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\034linstor/proto/MsgEvent.proto\022\030com.linb" +
-      "it.linstor.proto\"\207\001\n\010MsgEvent\022\020\n\010watch_i" +
-      "d\030\001 \002(\005\022\024\n\014event_action\030\006 \002(\t\022\022\n\nevent_n" +
-      "ame\030\002 \002(\t\022\025\n\rresource_name\030\003 \001(\t\022\021\n\tnode" +
-      "_name\030\004 \001(\t\022\025\n\rvolume_number\030\005 \001(\021"
+      "it.linstor.proto\"\236\001\n\010MsgEvent\022\020\n\010watch_i" +
+      "d\030\001 \002(\005\022\025\n\revent_counter\030\007 \001(\003\022\024\n\014event_" +
+      "action\030\006 \002(\t\022\022\n\nevent_name\030\002 \002(\t\022\025\n\rreso" +
+      "urce_name\030\003 \001(\t\022\021\n\tnode_name\030\004 \001(\t\022\025\n\rvo" +
+      "lume_number\030\005 \001(\021"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1563,7 +1684,7 @@ public final class MsgEventOuterClass {
     internal_static_com_linbit_linstor_proto_MsgEvent_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgEvent_descriptor,
-        new java.lang.String[] { "WatchId", "EventAction", "EventName", "ResourceName", "NodeName", "VolumeNumber", });
+        new java.lang.String[] { "WatchId", "EventCounter", "EventAction", "EventName", "ResourceName", "NodeName", "VolumeNumber", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

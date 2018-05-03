@@ -8,7 +8,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -77,13 +76,14 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     @Override
     public CommonSerializerBuilder event(
         Integer watchId,
+        long eventCounter,
         EventIdentifier eventIdentifier,
         String eventStreamAction
     )
     {
         try
         {
-            commonSerializationWriter.writeEvent(watchId, eventIdentifier, eventStreamAction, baos);
+            commonSerializationWriter.writeEvent(watchId, eventCounter, eventIdentifier, eventStreamAction, baos);
         }
         catch (IOException ioExc)
         {
@@ -183,6 +183,7 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
 
         void writeEvent(
             Integer watchId,
+            long eventCounter,
             EventIdentifier eventIdentifier,
             String eventStreamAction,
             ByteArrayOutputStream baos

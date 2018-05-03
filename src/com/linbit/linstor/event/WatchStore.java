@@ -20,6 +20,8 @@ public interface WatchStore
      */
     Collection<Watch> getWatchesForEvent(EventIdentifier eventIdentifier);
 
+    long getAndIncrementEventCounter(Watch watch);
+
     /**
      * Remove all watchs for a peer.
      */

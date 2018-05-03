@@ -26,6 +26,7 @@ public class WatchStoreImpl implements WatchStore
 {
     private final Map<ObjectIdentifier, Set<Watch>> watchesByObject = new HashMap<>();
     private final Map<String, Map<Integer, Watch>> watchesByPeer = new HashMap<>();
+    private final Map<Watch, Long> eventCounterNext = new HashMap<>();
 
     @Inject
     public WatchStoreImpl()
@@ -54,6 +55,8 @@ public class WatchStoreImpl implements WatchStore
         if (peerId != null && peerWatchId != null)
         {
             getInsertingDefault(watchesByPeer, peerId, HashMap::new).put(peerWatchId, watch);
+
+            eventCounterNext.put(watch, 1L);
         }
     }
 
@@ -65,6 +68,14 @@ public class WatchStoreImpl implements WatchStore
             .filter(Objects::nonNull)
             .flatMap(Collection::stream)
             .collect(Collectors.toSet());
+    }
+
+    @Override
+    public long getAndIncrementEventCounter(Watch watch)
+    {
+        long counter = eventCounterNext.get(watch);
+        eventCounterNext.put(watch, counter + 1);
+        return counter;
     }
 
     @Override
@@ -172,6 +183,8 @@ public class WatchStoreImpl implements WatchStore
                 (ignored, peerWatchIdMap) ->
                     removeMapCollapsingEmpty(peerWatchIdMap, peerWatchId)
             );
+
+            eventCounterNext.remove(watch);
         }
     }
 }

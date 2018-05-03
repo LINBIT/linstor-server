@@ -89,7 +89,11 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
 
     @Override
     public void writeEvent(
-        Integer watchId, EventIdentifier eventIdentifier, String eventStreamAction, ByteArrayOutputStream baos
+        Integer watchId,
+        long eventCounter,
+        EventIdentifier eventIdentifier,
+        String eventStreamAction,
+        ByteArrayOutputStream baos
     )
         throws IOException
     {
@@ -97,6 +101,7 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
 
         eventBuilder
             .setWatchId(watchId)
+            .setEventCounter(eventCounter)
             .setEventAction(eventStreamAction)
             .setEventName(eventIdentifier.getEventName());
 

@@ -71,6 +71,6 @@ public class StltResourceStateGenerator implements ResourceStateGenerator
     private boolean peerVolumeUsable(DrbdConnection connection, VolumeNumber volumeNumber)
     {
         DrbdVolume peerVolume = connection.getVolume(volumeNumber);
-        return USABLE_REPLICATING_STATES.contains(peerVolume.getReplState());
+        return peerVolume != null && USABLE_REPLICATING_STATES.contains(peerVolume.getReplState());
     }
 }

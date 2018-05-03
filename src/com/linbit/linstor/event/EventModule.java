@@ -26,7 +26,6 @@ public class EventModule extends AbstractModule
     protected void configure()
     {
         bind(WatchStore.class).to(WatchStoreImpl.class);
-        bind(EventStreamStore.class).to(EventStreamStoreImpl.class);
 
         MapBinder<String, EventWriter> eventWriterBinder =
             MapBinder.newMapBinder(binder(), String.class, EventWriter.class);
