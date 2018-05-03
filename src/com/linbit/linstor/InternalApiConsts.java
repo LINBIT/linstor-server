@@ -47,6 +47,8 @@ public class InternalApiConsts
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
 
+    public static final int EXIT_CODE_NETCOM_ERROR = 20;
+
 
     private InternalApiConsts()
     {

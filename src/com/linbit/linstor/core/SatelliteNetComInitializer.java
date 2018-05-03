@@ -76,8 +76,9 @@ public final class SatelliteNetComInitializer
         systemServicesMap = systemServicesMapRef;
     }
 
-    public void initMainNetComService(AccessContext initCtx)
+    public boolean initMainNetComService(AccessContext initCtx)
     {
+        boolean success = false;
         try
         {
             Properties netComProps = new Properties();
@@ -229,6 +230,7 @@ public final class SatelliteNetComInitializer
                             addr, port
                         )
                     );
+                    success = true;
                 }
                 catch (SystemServiceStartException sysSvcStartExc)
                 {
@@ -289,5 +291,6 @@ public final class SatelliteNetComInitializer
         {
             errorReporter.reportError(ioExc);
         }
+        return success;
     }
 }

@@ -8,6 +8,7 @@ import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiModule;
@@ -141,7 +142,11 @@ public final class Satellite
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             errorReporter.logInfo("Initializing main network communications service");
-            satelliteNetComInitializer.initMainNetComService(initCtx);
+            if (!satelliteNetComInitializer.initMainNetComService(initCtx))
+            {
+                reconfigurationLock.writeLock().unlock();
+                System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
+            }
         }
         catch (AccessDeniedException accessExc)
         {
