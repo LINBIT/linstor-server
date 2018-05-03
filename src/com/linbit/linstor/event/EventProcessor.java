@@ -7,6 +7,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -14,6 +15,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Processes incoming events
@@ -23,15 +25,18 @@ public class EventProcessor
 {
     private final ErrorReporter errorReporter;
     private final Map<String, Provider<EventHandler>> eventHandlers;
+    private final Provider<Peer> peerProvider;
 
     @Inject
     public EventProcessor(
         ErrorReporter errorReporterRef,
-        Map<String, Provider<EventHandler>> eventHandlersRef
+        Map<String, Provider<EventHandler>> eventHandlersRef,
+        Provider<Peer> peerProviderRef
     )
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
+        peerProvider = peerProviderRef;
     }
 
     public void handleEvent(
@@ -51,6 +56,8 @@ public class EventProcessor
         }
         else
         {
+            Lock writeLock = peerProvider.get().getSatelliteStateLock().writeLock();
+            writeLock.lock();
             try
             {
                 NodeName nodeName =
@@ -67,6 +74,10 @@ public class EventProcessor
             catch (InvalidNameException | ValueOutOfRangeException exc)
             {
                 errorReporter.logWarning("Invalid event received: " + exc.getMessage());
+            }
+            finally
+            {
+                writeLock.unlock();
             }
         }
     }

@@ -73,6 +73,7 @@ public class TcpConnectorPeer implements Peer
     protected Message internalPingMsg;
     protected Message internalPongMsg;
 
+    private final ReadWriteLock satelliteStateLock;
     private SatelliteState satelliteState;
 
     private long fullSyncId;
@@ -109,6 +110,7 @@ public class TcpConnectorPeer implements Peer
         serializerId = new AtomicLong(0);
         serializerLock = new ReentrantReadWriteLock(true);
 
+        satelliteStateLock = new ReentrantReadWriteLock(true);
         if (node != null)
         {
             satelliteState = new SatelliteState();
@@ -498,6 +500,12 @@ public class TcpConnectorPeer implements Peer
     public long getLastPongReceived()
     {
         return lastPongReceived;
+    }
+
+    @Override
+    public ReadWriteLock getSatelliteStateLock()
+    {
+        return satelliteStateLock;
     }
 
     @Override

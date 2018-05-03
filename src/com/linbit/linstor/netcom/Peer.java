@@ -8,6 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import javax.net.ssl.SSLException;
@@ -217,7 +218,14 @@ public interface Peer
     long getLastPongReceived();
 
     /**
+     * Read lock required when accessing the SatelliteState; write lock when modifying.
+     */
+    ReadWriteLock getSatelliteStateLock();
+
+    /**
      * Get the state data for this satellite, if the peer represents one.
+     *
+     * The locks from {@link #getSatelliteState()}} synchronize access to the data.
      */
     SatelliteState getSatelliteState();
 
