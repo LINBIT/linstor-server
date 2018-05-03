@@ -53,7 +53,7 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
             {
                 ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
                 entry.setReturnCode(apiCallResponse.getRetCode());
-                entry.setMessageFormat(apiCallResponse.getMessageFormat());
+                entry.setMessageFormat(decorateMessageWithPeerInfo(apiCallResponse.getMessageFormat()));
                 entry.setCauseFormat(apiCallResponse.getCauseFormat());
                 entry.setCorrectionFormat(apiCallResponse.getCorrectionFormat());
                 entry.setDetailsFormat(apiCallResponse.getDetailsFormat());
@@ -91,5 +91,10 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
                 LinStorMapEntryOuterClass.LinStorMapEntry::getKey,
                 LinStorMapEntryOuterClass.LinStorMapEntry::getValue
             ));
+    }
+
+    private String decorateMessageWithPeerInfo(String message)
+    {
+        return "(" + peer.getNode().getName().displayValue + ") " + message;
     }
 }
