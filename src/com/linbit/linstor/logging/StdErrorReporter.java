@@ -332,8 +332,14 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                     }
                     else
                     {
-                        // FIXME: If a message is available, report the message,
-                        //        else report as error
+                        descriptionMsg = nestedErrorInfo.getMessage();
+                        if (descriptionMsg != null)
+                        {
+                            output.println("Description:");
+                            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
+                            output.println();
+                        }
+                        reportExceptionDetails(output, nestedErrorInfo, loopCtr == 0 ? contextInfo : null);
                     }
 
                     ++loopCtr;
