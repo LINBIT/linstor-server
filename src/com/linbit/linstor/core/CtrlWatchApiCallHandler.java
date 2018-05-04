@@ -104,41 +104,44 @@ public class CtrlWatchApiCallHandler
             }
         }
 
-        try
+        if (errorMsg == null)
         {
-            // Watches can result in data being retrieved for objects that do not yet exist.
-            // For these objects we do not know the access requirements.
-            // Hence we require read access to the entire node and resource definition collections.
-            nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-            rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-
-            eventBroker.createWatch(new Watch(
-                UUID.randomUUID(), peer.getId(), peerWatchId,
-                new EventIdentifier(
-                    eventName,
-                    nodeName,
-                    resourceName,
-                    volumeNumber != null ? new VolumeNumber(volumeNumber) : null
-                )
-            ));
-
-            apiCallRc.addEntry("Watch created", ApiConsts.MASK_CRT | ApiConsts.CREATED);
-        }
-        catch (AccessDeniedException |
-            ValueOutOfRangeException exc)
-        {
-            if (exc instanceof AccessDeniedException)
+            try
             {
-                errorMsg = AbsApiCallHandler.getAccDeniedMsg(
-                    accCtx,
-                    "create a watch"
-                );
-                rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
+                // Watches can result in data being retrieved for objects that do not yet exist.
+                // For these objects we do not know the access requirements.
+                // Hence we require read access to the entire node and resource definition collections.
+                nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+                rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+
+                eventBroker.createWatch(new Watch(
+                    UUID.randomUUID(), peer.getId(), peerWatchId,
+                    new EventIdentifier(
+                        eventName,
+                        nodeName,
+                        resourceName,
+                        volumeNumber != null ? new VolumeNumber(volumeNumber) : null
+                    )
+                ));
+
+                apiCallRc.addEntry("Watch created", ApiConsts.MASK_CRT | ApiConsts.CREATED);
             }
-            else
+            catch (AccessDeniedException |
+                ValueOutOfRangeException exc)
             {
-                errorMsg = "Value out of range";
-                rc = ApiConsts.FAIL_INVLD_VLM_NR;
+                if (exc instanceof AccessDeniedException)
+                {
+                    errorMsg = AbsApiCallHandler.getAccDeniedMsg(
+                        accCtx,
+                        "create a watch"
+                    );
+                    rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
+                }
+                else
+                {
+                    errorMsg = "Value out of range";
+                    rc = ApiConsts.FAIL_INVLD_VLM_NR;
+                }
             }
         }
 
