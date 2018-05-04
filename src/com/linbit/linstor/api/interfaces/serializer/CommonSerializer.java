@@ -35,6 +35,8 @@ public interface CommonSerializer
 
         CommonSerializerBuilder resourceDeploymentStateEvent(ApiCallRc apiCallRc);
 
+        CommonSerializerBuilder resourceDefinitionReadyEvent(int readyCount, int errorCount);
+
         CommonSerializerBuilder requestErrorReports(
             Set<String> nodes,
             boolean withContent,
@@ -42,6 +44,7 @@ public interface CommonSerializer
             Optional<Date> to,
             Set<String> ids
         );
+
         CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports);
     }
 }

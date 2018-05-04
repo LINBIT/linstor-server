@@ -139,6 +139,21 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     }
 
     @Override
+    public CommonSerializerBuilder resourceDefinitionReadyEvent(int readyCount, int errorCount)
+    {
+        try
+        {
+            commonSerializationWriter.writeResourceDefinitionReadyEvent(readyCount, errorCount, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports)
     {
         try
@@ -197,6 +212,9 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
             throws IOException;
 
         void writeResourceDeploymentStateEvent(ApiCallRc apiCallRc, ByteArrayOutputStream baos)
+            throws IOException;
+
+        void writeResourceDefinitionReadyEvent(int readyCount, int errorCount, ByteArrayOutputStream baos)
             throws IOException;
 
         void writeRequestErrorReports(

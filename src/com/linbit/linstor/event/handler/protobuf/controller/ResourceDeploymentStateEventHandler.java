@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.handler.EventHandler;
+import com.linbit.linstor.event.handler.ResourceDefinitionEventStreamTracker;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
@@ -25,15 +26,18 @@ import java.util.stream.Collectors;
 public class ResourceDeploymentStateEventHandler implements EventHandler
 {
     private final EventBroker eventBroker;
+    private final ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTracker;
     private final Peer peer;
 
     @Inject
     public ResourceDeploymentStateEventHandler(
         EventBroker eventBrokerRef,
+        ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTrackerRef,
         Peer peerRef
     )
     {
         eventBroker = eventBrokerRef;
+        resourceDefinitionEventStreamTracker = resourceDefinitionEventStreamTrackerRef;
         peer = peerRef;
     }
 
@@ -76,12 +80,9 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
             );
         }
 
-        eventBroker.forwardEvent(new EventIdentifier(
-            ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE,
-            eventIdentifier.getNodeName(),
-            eventIdentifier.getResourceName(),
-            null
-        ), eventAction);
+        eventBroker.forwardEvent(eventIdentifier, eventAction);
+
+        resourceDefinitionEventStreamTracker.resourceEventReceived(eventIdentifier, eventAction);
     }
 
     private Map<String, String> readLinStorMap(List<LinStorMapEntryOuterClass.LinStorMapEntry> linStorMap)

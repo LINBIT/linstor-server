@@ -343,6 +343,7 @@ public class ApiConsts
     public static final String EVENT_RESOURCE_STATE = "ResourceState";
     // State of resource based on execution of commands to deploy it
     public static final String EVENT_RESOURCE_DEPLOYMENT_STATE = "ResourceDeploymentState";
+    public static final String EVENT_RESOURCE_DEFINITION_READY = "ResourceDefinitionReady";
 
     /*
      * Object property keys

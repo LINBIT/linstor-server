@@ -13,6 +13,7 @@ import com.linbit.linstor.proto.MsgErrorReportOuterClass;
 import com.linbit.linstor.proto.MsgEventOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscDeploymentStateOuterClass;
+import com.linbit.linstor.proto.eventdata.EventRscDfnReadyOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
@@ -149,6 +150,17 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
     {
         EventRscDeploymentStateOuterClass.EventRscDeploymentState.newBuilder()
             .addAllResponses(serializeApiCallRc(apiCallRc))
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeResourceDefinitionReadyEvent(int readyCount, int errorCount, ByteArrayOutputStream baos)
+        throws IOException
+    {
+        EventRscDfnReadyOuterClass.EventRscDfnReady.newBuilder()
+            .setReadyCount(readyCount)
+            .setErrorCount(errorCount)
             .build()
             .writeDelimitedTo(baos);
     }
