@@ -1484,20 +1484,9 @@ public class CtrlApiCallHandler
         Integer volumeNumber
     )
     {
-        ApiCallRc apiCallRc;
-
-        try (
-            LockSupport ls = LockSupport.lock(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = watchApiCallHandler.createWatch(
-                peerWatchId, eventName, nodeNameStr, resourceNameStr, volumeNumber
-            );
-        }
-        return apiCallRc;
+        return watchApiCallHandler.createWatch(
+            peerWatchId, eventName, nodeNameStr, resourceNameStr, volumeNumber
+        );
     }
 
     public void updateRealFreeSpace(Peer satellitePeer, FreeSpacePojo... freeSpacePojos)
