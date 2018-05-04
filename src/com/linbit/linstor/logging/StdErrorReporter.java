@@ -269,27 +269,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 // Error report header
                 reportHeader(output, reportNr);
 
-                // Error description/cause/correction/details report
-                String causeMsg         = errorInfo.getCauseText();
-                String correctionMsg    = errorInfo.getCorrectionText();
-                String detailsMsg       = errorInfo.getDetailsText();
-
-                output.println("Description:");
-                AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
-
-                if (causeMsg != null)
-                {
-                    output.println("Cause:");
-                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, causeMsg);
-                }
-
-                if (correctionMsg != null)
-                {
-                    output.println("Correction:");
-                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, correctionMsg);
-                }
-
-                output.println();
+                reportLinStorException(output, errorInfo);
 
                 if (contextInfo != null)
                 {
