@@ -30,7 +30,6 @@ public class LvmThinDriver extends LvmDriver
 
     protected String lvmConvertCommand = LVM_CONVERT_DEFAULT;
 
-    protected String baseVolumeGroup = LVM_VOLUME_GROUP_DEFAULT;
     protected String thinPoolName = LVM_THIN_POOL_DEFAULT;
 
     public LvmThinDriver(
@@ -148,8 +147,7 @@ public class LvmThinDriver extends LvmDriver
     protected void applyConfiguration(Map<String, String> config)
     {
         super.applyConfiguration(config);
-        thinPoolName = getAsString(config, StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPoolName);
-        volumeGroup = getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, baseVolumeGroup);
+        thinPoolName = getThinPoolName(config);
         lvmConvertCommand = getAsString(config, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand);
     }
 
@@ -221,76 +219,78 @@ public class LvmThinDriver extends LvmDriver
 
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException
     {
-        String newThinPoolName = config.get(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
-        if (newThinPoolName != null)
-        {
-            newThinPoolName = newThinPoolName.trim();
-            try
+        super.checkVolumeGroupEntry(config);
+
+        String newThinPoolName = getThinPoolName(config).trim();
+        String newBasePoolName = getVolumeGroup(config).trim();
+        checkName(newThinPoolName);
+
+        checkThinPoolExists(newBasePoolName + "/" + newThinPoolName);
+    }
+
+    private void checkThinPoolExists(String newFullThinPoolId) throws StorageException
+    {
+        final String[] checkCommand = new String[]
             {
-                Checks.nameCheck(
-                    newThinPoolName,
-                    1,
-                    Integer.MAX_VALUE,
-                    VALID_CHARS,
-                    VALID_INNER_CHARS
-                );
-            }
-            catch (InvalidNameException invalidNameExc)
+                lvmLvsCommand,
+                newFullThinPoolId
+            };
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData output = extCommand.exec(checkCommand);
+            if (output.exitCode != 0)
             {
                 throw new StorageException(
                     "Invalid configuration",
-                    null,
-                    String.format("Invalid name for thin pool: %s", newThinPoolName),
-                    "Specify a valid and existing thin pool name",
+                    "Unknown thin pool",
+                    String.format("Thin pool [%s] not found.", newFullThinPoolId),
+                    "Specify a valid and existing thin pool name or create the desired thin pool manually",
                     null
                 );
             }
-            final String[] thinPoolCheckCommand = new String[]
-                {
-                    lvmVgsCommand,
-                    "-o", "vg_name",
-                    "--noheadings"
-                };
-            try
-            {
-                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-                final OutputData output = extCommand.exec(thinPoolCheckCommand);
-                final String stdOut = new String(output.stdoutData);
-                final String[] lines = stdOut.split("\n");
-
-                boolean found = false;
-                for (String line : lines)
-                {
-                    if (line.trim().equals(newThinPoolName))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    throw new StorageException(
-                        "Invalid configuration",
-                        "Unknown thin pool",
-                        String.format("Thin pool [%s] not found.", newThinPoolName),
-                        "Specify a valid and existing thin pool name or create the desired thin pool manually",
-                        null
-                    );
-                }
-            }
-            catch (ChildProcessTimeoutException | IOException exc)
-            {
-                throw new StorageException(
-                    "Failed to verify thin pool name",
-                    null,
-                    (exc instanceof ChildProcessTimeoutException) ?
-                        "External command timed out" :
-                        "External command threw an IOException",
-                    null,
-                    String.format("External command: %s", glue(thinPoolCheckCommand, " ")),
-                    exc
-                );
-            }
         }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to verify thin pool name",
+                null,
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                        "External command threw an IOException",
+                        null,
+                        String.format("External command: %s", glue(checkCommand, " ")),
+                        exc
+                );
+        }
+    }
+
+    private void checkName(String newThinPoolName) throws StorageException
+    {
+        try
+        {
+            Checks.nameCheck(
+                newThinPoolName,
+                1,
+                Integer.MAX_VALUE,
+                VALID_CHARS,
+                VALID_INNER_CHARS
+            );
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new StorageException(
+                "Invalid configuration",
+                null,
+                String.format("Invalid name for thin pool: %s", newThinPoolName),
+                "Specify a valid and existing thin pool name",
+                null
+            );
+        }
+    }
+
+    private String getThinPoolName(Map<String, String> config)
+    {
+        return getAsString(config, StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPoolName);
     }
 }

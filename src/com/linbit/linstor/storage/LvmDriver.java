@@ -266,7 +266,7 @@ public class LvmDriver extends AbsStorageDriver
         lvmLvsCommand = getAsString(config, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY, lvmLvsCommand);
         lvmVgsCommand = getAsString(config, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY, lvmVgsCommand);
 
-        volumeGroup = getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
+        volumeGroup = getVolumeGroup(config);
         sizeAlignmentToleranceFactor = uncheckedGetAsInt(
             config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
         );
@@ -313,76 +313,72 @@ public class LvmDriver extends AbsStorageDriver
      */
     protected void checkVolumeGroupEntry(final Map<String, String> config) throws StorageException
     {
-        String newVolumeGroup = config.get(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
-        if (newVolumeGroup != null)
+        String newVolumeGroup = getVolumeGroup(config).trim();
+        try
         {
-            newVolumeGroup = newVolumeGroup.trim();
-            try
+            Checks.nameCheck(
+                newVolumeGroup,
+                1,
+                Integer.MAX_VALUE,
+                VALID_CHARS,
+                VALID_INNER_CHARS
+            );
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new StorageException(
+                "Invalid configuration",
+                null,
+                String.format("Invalid name for volume group: %s", newVolumeGroup),
+                "Specify a valid and existing volume group name",
+                null
+            );
+        }
+
+        final String[] volumeGroupCheckCommand = new String[]
             {
-                Checks.nameCheck(
-                    newVolumeGroup,
-                    1,
-                    Integer.MAX_VALUE,
-                    VALID_CHARS,
-                    VALID_INNER_CHARS
-                );
+                lvmVgsCommand,
+                "-o", "vg_name",
+                "--noheadings"
+            };
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData output = extCommand.exec(volumeGroupCheckCommand);
+            final String stdOut = new String(output.stdoutData);
+            final String[] lines = stdOut.split("\n");
+            boolean found = false;
+            for (String line : lines)
+            {
+                if (line.trim().equals(newVolumeGroup))
+                {
+                    found = true;
+                    break;
+                }
             }
-            catch (InvalidNameException invalidNameExc)
+            if (!found)
             {
                 throw new StorageException(
                     "Invalid configuration",
-                    null,
-                    String.format("Invalid name for volume group: %s", newVolumeGroup),
-                    "Specify a valid and existing volume group name",
+                    "Unknown volume group",
+                    String.format("Volume group [%s] not found.", newVolumeGroup),
+                    "Specify a valid and existing volume group name or create the desired volume group manually",
                     null
                 );
             }
-
-            final String[] volumeGroupCheckCommand = new String[]
-                {
-                    lvmVgsCommand,
-                    "-o", "vg_name",
-                    "--noheadings"
-                };
-            try
-            {
-                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-                final OutputData output = extCommand.exec(volumeGroupCheckCommand);
-                final String stdOut = new String(output.stdoutData);
-                final String[] lines = stdOut.split("\n");
-                boolean found = false;
-                for (String line : lines)
-                {
-                    if (line.trim().equals(newVolumeGroup))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    throw new StorageException(
-                        "Invalid configuration",
-                        "Unknown volume group",
-                        String.format("Volume group [%s] not found.", newVolumeGroup),
-                        "Specify a valid and existing volume group name or create the desired volume group manually",
-                        null
-                    );
-                }
-            }
-            catch (ChildProcessTimeoutException | IOException exc)
-            {
-                throw new StorageException(
-                    "Failed to verify volume group name",
-                    null,
-                    (exc instanceof ChildProcessTimeoutException) ?
-                        "External command timed out" :
-                        "External command threw an IOException",
-                    null,
-                    String.format("External command: %s", glue(volumeGroupCheckCommand, " ")),
-                    exc
-                );
-            }
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to verify volume group name",
+                null,
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(volumeGroupCheckCommand, " ")),
+                exc
+            );
         }
     }
 
@@ -461,5 +457,10 @@ public class LvmDriver extends AbsStorageDriver
         }
 
         return freeSize;
+    }
+
+    protected String getVolumeGroup(Map<String, String> config)
+    {
+        return getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
     }
 }

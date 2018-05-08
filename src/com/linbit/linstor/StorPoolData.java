@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -182,14 +183,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         if (storageDriverRef.getKind().hasBackingStorage())
         {
             Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
-            if (!namespace.isPresent())
-            {
-                throw new ImplementationError(
-                    "Missing required namespace for backing storage",
-                    null
-                );
-            }
-            Map<String, String> map = namespace.get().map();
+            Map<String, String> map = namespace.map(Props::map).orElse(Collections.emptyMap());
             storageDriverRef.setConfiguration(map);
         }
     }
