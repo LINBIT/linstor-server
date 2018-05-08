@@ -251,7 +251,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 null, null, apiCallRc, errLog, null, null
             );
         }
-        catch (Exception exc)
+        catch (Exception | ImplementationError exc)
         {
             AbsApiCallHandler.reportStatic(
                 exc, exc.getMessage(), ApiConsts.FAIL_UNKNOWN_ERROR,
