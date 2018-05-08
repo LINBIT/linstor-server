@@ -461,7 +461,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                             {
                                 try (BufferedReader br = Files.newBufferedReader(f))
                                 {
-                                    for (String line; (line = br.readLine()) != null; )
+                                    String line = br.readLine();
+                                    while (line != null)
                                     {
 //                                    if (date == null && line.startsWith(errorTimeLabel))
 //                                    {
@@ -470,6 +471,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 //                                    }
 
                                         sb.append(line).append('\n');
+
+                                        line = br.readLine();
                                     }
                                 }
                             }
