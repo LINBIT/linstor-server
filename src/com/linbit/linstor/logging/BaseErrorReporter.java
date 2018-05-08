@@ -49,7 +49,7 @@ public abstract class BaseErrorReporter
     BaseErrorReporter(String moduleName, boolean printStackTracesRef)
     {
         dmModule = moduleName;
-        instanceId = String.format("%07X", ((System.currentTimeMillis() / 1000) & 0xFFFFFFF));
+        instanceId = String.format("%07X", ((System.currentTimeMillis() / 1000) & 0x7FFFFFFF));
         cal = Calendar.getInstance();
         printStackTraces = printStackTracesRef;
     }
