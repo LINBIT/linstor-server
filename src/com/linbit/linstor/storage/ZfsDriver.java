@@ -187,8 +187,8 @@ public class ZfsDriver extends AbsStorageDriver
     @Override
     protected void applyConfiguration(Map<String, String> config)
     {
-        zfsCommand = getAsString(config, StorageConstants.CONFIG_ZFS_COMMAND_KEY, zfsCommand);
-        pool = getAsString(config, StorageConstants.CONFIG_ZFS_POOL_KEY, pool);
+        zfsCommand = getZfsCommandFromConfig(config);
+        pool = getPoolFromConfig(config);
         sizeAlignmentToleranceFactor = uncheckedGetAsInt(
             config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
         );
@@ -264,67 +264,63 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected void checkPool(Map<String, String> config) throws StorageException
     {
-        String newPool = config.get(StorageConstants.CONFIG_ZFS_POOL_KEY);
-        if (newPool != null)
+        String newPool = getPoolFromConfig(config).trim();
+        try
         {
-            newPool = newPool.trim();
-            try
+            Checks.nameCheck(
+                newPool,
+                1,
+                Integer.MAX_VALUE,
+                VALID_CHARS,
+                VALID_INNER_CHARS
+            );
+        }
+        catch (InvalidNameException ine)
+        {
+            throw new StorageException(
+                "Invalid configuration",
+                null,
+                String.format("Invalid pool name: %s", newPool),
+                "Specify a valid and existing pool name",
+                null
+            );
+        }
+
+        final String[] poolCheckCommand = new String[]
             {
-                Checks.nameCheck(
-                    newPool,
-                    1,
-                    Integer.MAX_VALUE,
-                    VALID_CHARS,
-                    VALID_INNER_CHARS
-                );
-            }
-            catch (InvalidNameException ine)
+                getZfsCommandFromConfig(config),
+                "list",
+                "-H", // no headers
+                "-o", "name", // name column only
+                newPool
+            };
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData output = extCommand.exec(poolCheckCommand);
+            if (output.exitCode != 0)
             {
                 throw new StorageException(
                     "Invalid configuration",
-                    null,
-                    String.format("Invalid pool name: %s", newPool),
-                    "Specify a valid and existing pool name",
+                    "Unknown pool",
+                    String.format("pool [%s] not found.", newPool),
+                    "Specify a valid and existing pool name or create the desired pool manually",
                     null
                 );
             }
-
-            final String[] poolCheckCommand = new String[]
-                {
-                    zfsCommand,
-                    "list",
-                    "-H", // no headers
-                    "-o", "name", // name column only
-                    newPool
-                };
-            try
-            {
-                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-                final OutputData output = extCommand.exec(poolCheckCommand);
-                if (output.exitCode != 0)
-                {
-                    throw new StorageException(
-                        "Invalid configuration",
-                        "Unknown pool",
-                        String.format("pool [%s] not found.", newPool),
-                        "Specify a valid and existing pool name or create the desired pool manually",
-                        null
-                    );
-                }
-            }
-            catch (ChildProcessTimeoutException | IOException exc)
-            {
-                throw new StorageException(
-                    "Failed to verify pool name",
-                    null,
-                    (exc instanceof ChildProcessTimeoutException) ?
-                        "External command timed out" :
-                        "External command threw an IOException",
-                    null,
-                    String.format("External command: %s", glue(poolCheckCommand, " ")),
-                    exc
-                );
-            }
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to verify pool name",
+                null,
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(poolCheckCommand, " ")),
+                exc
+            );
         }
     }
 
@@ -373,5 +369,15 @@ public class ZfsDriver extends AbsStorageDriver
             );
         }
         return freeSize;
+    }
+
+    private String getPoolFromConfig(Map<String, String> config)
+    {
+        return getAsString(config, StorageConstants.CONFIG_ZFS_POOL_KEY, pool);
+    }
+
+    private String getZfsCommandFromConfig(Map<String, String> config)
+    {
+        return getAsString(config, StorageConstants.CONFIG_ZFS_COMMAND_KEY, zfsCommand);
     }
 }

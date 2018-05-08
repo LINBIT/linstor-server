@@ -102,6 +102,7 @@ public class ZfsDriverTest extends StorageTestUtils
         String zfsCommand = "otherzfs";
         File tmpFile = tempFolder.newFile(zfsCommand);
         tmpFile.setExecutable(true);
+        expectCheckPoolName(tmpFile.getAbsolutePath(), ZFS_POOL_DEFAULT);
         driver.setConfiguration(createMap(CONFIG_ZFS_COMMAND_KEY, tmpFile.getAbsolutePath()));
 
         String pool = "newPool";
@@ -112,6 +113,7 @@ public class ZfsDriverTest extends StorageTestUtils
     @Test
     public void testConfigToleranceFactor() throws StorageException
     {
+        expectCheckPoolName(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT);
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "2.4"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "0"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));

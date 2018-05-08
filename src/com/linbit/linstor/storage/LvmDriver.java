@@ -263,10 +263,10 @@ public class LvmDriver extends AbsStorageDriver
         lvmCreateCommand = getAsString(config, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY, lvmCreateCommand);
         lvmRemoveCommand = getAsString(config, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY, lvmRemoveCommand);
         lvmChangeCommand = getAsString(config, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
-        lvmLvsCommand = getAsString(config, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY, lvmLvsCommand);
-        lvmVgsCommand = getAsString(config, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY, lvmVgsCommand);
+        lvmLvsCommand = getLvmLvsCommandFromConfig(config);
+        lvmVgsCommand = getLvmVgsCommandFromConfig(config);
 
-        volumeGroup = getVolumeGroup(config);
+        volumeGroup = getVolumeGroupFromConfig(config);
         sizeAlignmentToleranceFactor = uncheckedGetAsInt(
             config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
         );
@@ -313,7 +313,7 @@ public class LvmDriver extends AbsStorageDriver
      */
     protected void checkVolumeGroupEntry(final Map<String, String> config) throws StorageException
     {
-        String newVolumeGroup = getVolumeGroup(config).trim();
+        String newVolumeGroup = getVolumeGroupFromConfig(config).trim();
         try
         {
             Checks.nameCheck(
@@ -337,7 +337,7 @@ public class LvmDriver extends AbsStorageDriver
 
         final String[] volumeGroupCheckCommand = new String[]
             {
-                lvmVgsCommand,
+                getLvmVgsCommandFromConfig(config),
                 "-o", "vg_name",
                 "--noheadings"
             };
@@ -459,8 +459,18 @@ public class LvmDriver extends AbsStorageDriver
         return freeSize;
     }
 
-    protected String getVolumeGroup(Map<String, String> config)
+    protected String getVolumeGroupFromConfig(Map<String, String> config)
     {
         return getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
+    }
+
+    protected String getLvmLvsCommandFromConfig(Map<String, String> config)
+    {
+        return getAsString(config, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY, lvmLvsCommand);
+    }
+
+    protected String getLvmVgsCommandFromConfig(Map<String, String> config)
+    {
+        return getAsString(config, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY, lvmVgsCommand);
     }
 }

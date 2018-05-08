@@ -111,6 +111,7 @@ public class LvmDriverTest extends StorageTestUtils
         String vgsCommand = "otherVgs";
         File tmpFile = tempFolder.newFile(vgsCommand);
         tmpFile.setExecutable(true);
+        expectCheckVolumeGroup(tmpFile.getAbsolutePath(), LVM_VOLUME_GROUP_DEFAULT);
         driver.setConfiguration(createMap(CONFIG_LVM_VGS_COMMAND_KEY, tmpFile.getAbsolutePath()));
 
         String volumeGroup = "newVolumeGroup";
@@ -121,6 +122,7 @@ public class LvmDriverTest extends StorageTestUtils
     @Test
     public void testConfigToleranceFactor() throws StorageException
     {
+        expectCheckVolumeGroup(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT);
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "2.4"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "0"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));

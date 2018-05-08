@@ -147,7 +147,7 @@ public class LvmThinDriver extends LvmDriver
     protected void applyConfiguration(Map<String, String> config)
     {
         super.applyConfiguration(config);
-        thinPoolName = getThinPoolName(config);
+        thinPoolName = getThinPoolNameFromConfig(config);
         lvmConvertCommand = getAsString(config, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand);
     }
 
@@ -221,18 +221,18 @@ public class LvmThinDriver extends LvmDriver
     {
         super.checkVolumeGroupEntry(config);
 
-        String newThinPoolName = getThinPoolName(config).trim();
-        String newBasePoolName = getVolumeGroup(config).trim();
+        String newThinPoolName = getThinPoolNameFromConfig(config).trim();
+        String newBasePoolName = getVolumeGroupFromConfig(config).trim();
         checkName(newThinPoolName);
 
-        checkThinPoolExists(newBasePoolName + "/" + newThinPoolName);
+        checkThinPoolExists(config, newBasePoolName + "/" + newThinPoolName);
     }
 
-    private void checkThinPoolExists(String newFullThinPoolId) throws StorageException
+    private void checkThinPoolExists(Map<String, String> config, String newFullThinPoolId) throws StorageException
     {
         final String[] checkCommand = new String[]
             {
-                lvmLvsCommand,
+                getLvmLvsCommandFromConfig(config),
                 newFullThinPoolId
             };
         try
@@ -289,7 +289,7 @@ public class LvmThinDriver extends LvmDriver
         }
     }
 
-    private String getThinPoolName(Map<String, String> config)
+    private String getThinPoolNameFromConfig(Map<String, String> config)
     {
         return getAsString(config, StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPoolName);
     }
