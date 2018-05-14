@@ -77,6 +77,7 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
                 map.put(key, value);
             }
         }
+        oldValues.clear();
     }
 
     @Override
@@ -169,9 +170,9 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
         return Collections.unmodifiableSet(map.entrySet());
     }
 
-
     private void cache(KEY key, VALUE value, VALUE oldValue)
     {
+        activateTransMgr();
         if (!Objects.equals(value, oldValue))
         {
             if (!oldValues.containsKey(key))
