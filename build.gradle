@@ -186,16 +186,18 @@ task generatePropRules(type:Exec) {
 }
 
 task unzip(type: Copy) {
-    def zipFile = file("${buildDir}/protoc-" + protobufVersion + '-linux-x86_64.zip')
-    def outputDir = file("${buildDir}/protoc-" + protobufVersion)
+    def zipFile = file("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
+    def outputDir = file("tools/protoc-" + protobufVersion)
 
     from zipTree(zipFile)
     into outputDir
 }
 
 task downloadProtoc {
-    mkdir "${buildDir}"
-    def protozip = new File("${buildDir}/protoc-" + protobufVersion + '-linux-x86_64.zip')
+    mkdir "tools"
+    outputs.dir "tools"
+    def protozip = new File("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
+    outputs.file protozip
     if (!protozip.exists()) {
         new URL('https://github.com/google/protobuf/releases/download/v'
                 + protobufVersion + '/protoc-' + protobufVersion + '-linux-x86_64.zip')
@@ -211,7 +213,7 @@ task genJava(type:Exec) {
     dependsOn getProtoc
     workingDir 'linstor-common'
 
-    commandLine 'make', "PROTOC=${buildDir}/protoc-" + protobufVersion + '/bin/protoc', 'java'
+    commandLine 'make', "PROTOC=${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc', 'java'
 }
 
 task cleanCommon(type:Exec) {
