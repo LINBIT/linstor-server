@@ -36,12 +36,14 @@ repositories
     }
 }
 
+def protobufVersion = '3.2.0'
+
 dependencies
 {
     compile group: 'com.google.inject', name: 'guice', version: '4.1.0'
     compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '4.1.0'
 
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.2.0'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
     compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
     compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
     compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
@@ -183,10 +185,33 @@ task generatePropRules(type:Exec) {
     commandLine 'make', '../src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java'
 }
 
+task unzip(type: Copy) {
+    def zipFile = file("${buildDir}/protoc-" + protobufVersion + '-linux-x86_64.zip')
+    def outputDir = file("${buildDir}/protoc-" + protobufVersion)
+
+    from zipTree(zipFile)
+    into outputDir
+}
+
+task downloadProtoc {
+    mkdir "${buildDir}"
+    def protozip = new File("${buildDir}/protoc-" + protobufVersion + '-linux-x86_64.zip')
+    if (!protozip.exists()) {
+        new URL('https://github.com/google/protobuf/releases/download/v'
+                + protobufVersion + '/protoc-' + protobufVersion + '-linux-x86_64.zip')
+                .withInputStream { i -> protozip.withOutputStream { it << i}}
+    }
+}
+
+task getProtoc {
+    dependsOn downloadProtoc, unzip
+}
+
 task genJava(type:Exec) {
+    dependsOn getProtoc
     workingDir 'linstor-common'
 
-    commandLine 'make', 'java'
+    commandLine 'make', "PROTOC=${buildDir}/protoc-" + protobufVersion + '/bin/protoc', 'java'
 }
 
 task cleanCommon(type:Exec) {
@@ -223,7 +248,7 @@ compileTestJava {
 
 clean {
   dependsOn cleanTestCommands, cleanCommon
-  delete += 'generated-resources'
+  delete += "${projectDir}/generated-resources"
 }
 
 /////////////////////////// Dependency resolution ///////////////////////////
