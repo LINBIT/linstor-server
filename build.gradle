@@ -14,7 +14,7 @@ sourceCompatibility = 1.8
 sourceSets {
     main {
         java {
-            srcDirs = ["src"]
+            srcDirs = ["src", "generated-src"]
         }
         resources {
             srcDirs = ["resources", "generated-resources"]
@@ -210,11 +210,11 @@ task cleanTestCommands(type:Exec) {
 }
 
 task generate {
-    dependsOn generatePropRules
+    dependsOn generatePropRules, genJava
 }
 
 compileJava {
-    dependsOn generatePropRules
+    dependsOn generatePropRules, generate
 }
 
 compileTestJava {
@@ -222,7 +222,7 @@ compileTestJava {
 }
 
 clean {
-  dependsOn cleanTestCommands
+  dependsOn cleanTestCommands, cleanCommon
   delete += 'generated-resources'
 }
 
