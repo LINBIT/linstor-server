@@ -80,13 +80,28 @@ public class EventBroker
         closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED);
     }
 
+    public void closeEventStreamWithData(EventIdentifier eventIdentifier, byte[] eventData)
+    {
+        closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED, eventData);
+    }
+
     private void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction)
     {
         workQueue.submit(() -> eventSender.closeEventStream(eventIdentifier, eventStreamAction));
     }
 
+    private void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction, byte[] eventData)
+    {
+        workQueue.submit(() -> eventSender.closeEventStream(eventIdentifier, eventStreamAction, eventData));
+    }
+
     public void closeAllEventStreams(String eventName, ObjectIdentifier objectIdentifier)
     {
         workQueue.submit(() -> eventSender.closeAllEventStreams(eventName, objectIdentifier));
+    }
+
+    public byte[] getEventData(EventIdentifier eventIdentifier)
+    {
+        return eventSender.getEventData(eventIdentifier);
     }
 }

@@ -158,14 +158,37 @@ public class EventSender
         }
     }
 
+    public byte[] getEventData(EventIdentifier eventIdentifier)
+    {
+        return writeEventData(eventIdentifier, eventWriters.get(eventIdentifier.getEventName()));
+    }
+
     public void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction)
+    {
+        watchAndStreamLock.lock();
+        try
+        {
+            EventWriter eventWriter = eventWriters.get(eventIdentifier.getEventName());
+            Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
+
+            writeAndSend(eventIdentifier, eventStreamAction, eventWriter, watches);
+
+            outgoingEventStreamStore.removeEventStream(eventIdentifier);
+        }
+        finally
+        {
+            watchAndStreamLock.unlock();
+        }
+    }
+
+    public void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction, byte[] eventData)
     {
         watchAndStreamLock.lock();
         try
         {
             Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
 
-            writeAndSend(eventIdentifier, eventStreamAction, null, watches);
+            writeAndSendWithEventData(eventIdentifier, eventStreamAction, eventData, watches);
 
             outgoingEventStreamStore.removeEventStream(eventIdentifier);
         }
@@ -247,6 +270,25 @@ public class EventSender
         }
     }
 
+    private void writeAndSendWithEventData(
+        EventIdentifier eventIdentifier,
+        String eventStreamAction,
+        byte[] eventData,
+        Collection<Watch> watches
+    )
+    {
+        if (eventData != null)
+        {
+            watches.forEach(
+                watch -> sendEvent(
+                    watch,
+                    eventIdentifier,
+                    eventStreamAction,
+                    eventData
+                ));
+        }
+    }
+
     private byte[] writeEventData(
         EventIdentifier eventIdentifier,
         EventWriter eventWriter
@@ -267,7 +309,7 @@ public class EventSender
                 "Failed to write event " + eventIdentifier.getEventName()
             );
         }
-        return eventData;
+        return eventData != null ? eventData : new byte[] {};
     }
 
     private void sendEvent(

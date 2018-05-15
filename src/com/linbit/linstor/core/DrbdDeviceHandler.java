@@ -58,6 +58,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -267,8 +268,36 @@ class DrbdDeviceHandler implements DeviceHandler
             );
             if (deleted)
             {
+                ApiCallRcImpl apiCallDelRc = new ApiCallRcImpl();
+
+                // objrefs
+                Map<String, String> objRefs = new HashMap<>();
+                objRefs.put(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
+                objRefs.put(ApiConsts.KEY_NODE, localNodeName.displayValue);
+
+                // varRefs
+                Map<String, String> varRefs = new HashMap<>();
+                varRefs.put(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
+                objRefs.put(ApiConsts.KEY_NODE_NAME, localNodeName.displayValue);
+
+                AbsApiCallHandler.reportSuccessStatic(
+                    String.format("Resource '%s' on node '%s' successfully deleted.",
+                        rscName.displayValue,
+                        localNodeName.displayValue),
+                    String.format("Resource '%s' on node '%s' with UUID '%s' deleted.",
+                        rscName.displayValue,
+                        localNodeName.displayValue,
+                        rsc.getUuid().toString()),
+                    ApiConsts.DELETED | ApiConsts.MASK_RSC | ApiConsts.MASK_SUCCESS,
+                    apiCallDelRc,
+                    objRefs,
+                    varRefs,
+                    errLog
+                );
+                deploymentStateTracker.setDeploymentState(rscName, apiCallDelRc);
+
+                eventBroker.closeEventStreamWithData(eventIdentifier, eventBroker.getEventData(eventIdentifier));
                 deploymentStateTracker.removeDeploymentState(rscName);
-                eventBroker.closeEventStream(eventIdentifier);
             }
             else
             {

@@ -45,7 +45,9 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) || eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
+        if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) ||
+            eventAction.equals(ApiConsts.EVENT_STREAM_VALUE) ||
+            eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
         {
             ApiCallRcImpl deploymentState = new ApiCallRcImpl();
 
