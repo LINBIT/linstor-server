@@ -47,10 +47,11 @@ public class EventStreamStoreImpl implements EventStreamStore
     }
 
     @Override
-    public void removeEventStream(EventIdentifier eventIdentifier)
+    public boolean removeEventStream(EventIdentifier eventIdentifier)
     {
-        allStreams.remove(eventIdentifier);
+        boolean wasPresent = allStreams.remove(eventIdentifier);
         removeRecursively(eventIdentifier);
+        return wasPresent;
     }
 
     @Override

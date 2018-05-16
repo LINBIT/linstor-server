@@ -57,7 +57,7 @@ public class ResourceDefinitionReadyEvent implements EventWriter
             {
                 case ApiConsts.EVENT_RESOURCE_STATE:
                     Boolean ready = resourceStateGenerator.generate(eventIdentifier.getObjectIdentifier());
-                    if (ready)
+                    if (ready != null && ready)
                     {
                         readyCount++;
                     }
@@ -65,7 +65,7 @@ public class ResourceDefinitionReadyEvent implements EventWriter
                 case ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE:
                     ApiCallRc apiCallRc =
                         resourceDeploymentStateGenerator.generate(eventIdentifier.getObjectIdentifier());
-                    if (isError(apiCallRc))
+                    if (apiCallRc != null && isError(apiCallRc))
                     {
                         errorCount++;
                     }

@@ -14,6 +14,7 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Singleton
@@ -70,5 +71,21 @@ public class SatelliteStateHelper
         }
 
         return value;
+    }
+
+    public void onSatelliteState(NodeName nodeName, Consumer<SatelliteState> consumer)
+        throws AccessDeniedException
+    {
+        withSatelliteState(
+            nodeName,
+            satelliteState -> acceptAndReturnNull(consumer, satelliteState),
+            null
+        );
+    }
+
+    private <T> Void acceptAndReturnNull(Consumer<T> consumer, T value)
+    {
+        consumer.accept(value);
+        return null;
     }
 }

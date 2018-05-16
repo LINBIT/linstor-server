@@ -35,4 +35,17 @@ public class CtrlResourceDeploymentStateGenerator implements ResourceDeploymentS
             null
         );
     }
+
+    @Override
+    public void clear(ObjectIdentifier objectIdentifier)
+        throws Exception
+    {
+        satelliteStateHelper.onSatelliteState(
+            objectIdentifier.getNodeName(),
+            satelliteState -> satelliteState.unsetOnResource(
+                objectIdentifier.getResourceName(),
+                SatelliteResourceState::setDeploymentState
+            )
+        );
+    }
 }

@@ -24,4 +24,10 @@ public class StltResourceDeploymentStateGenerator implements ResourceDeploymentS
     {
         return deploymentStateTracker.getDeploymentState(objectIdentifier.getResourceName());
     }
+
+    @Override
+    public void clear(ObjectIdentifier objectIdentifier)
+    {
+        deploymentStateTracker.removeDeploymentState(objectIdentifier.getResourceName());
+    }
 }

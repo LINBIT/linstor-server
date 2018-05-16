@@ -295,9 +295,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     errLog
                 );
                 deploymentStateTracker.setDeploymentState(rscName, apiCallDelRc);
-
-                eventBroker.closeEventStreamWithData(eventIdentifier, eventBroker.getEventData(eventIdentifier));
-                deploymentStateTracker.removeDeploymentState(rscName);
+                eventBroker.closeEventStream(eventIdentifier);
             }
             else
             {

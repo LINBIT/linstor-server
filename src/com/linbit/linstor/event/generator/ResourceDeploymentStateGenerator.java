@@ -7,4 +7,7 @@ public interface ResourceDeploymentStateGenerator
 {
     ApiCallRc generate(ObjectIdentifier objectIdentifier)
         throws Exception;
+
+    void clear(ObjectIdentifier objectIdentifier)
+        throws Exception;
 }

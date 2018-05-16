@@ -352,7 +352,7 @@ public class DrbdStateTracker
         {
             for (ResourceObserver obs : container.observers[container.OBS_VOL_DSTR_SLOT])
             {
-                obs.volumeDestroyed(resource, null, volume);
+                obs.volumeDestroyed(resource, connection, volume);
             }
         }
 

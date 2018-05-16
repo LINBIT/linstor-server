@@ -39,4 +39,11 @@ public class ResourceDeploymentStateEvent implements EventWriter
 
         return apiCallRc == null ? null : commonSerializer.builder().resourceDeploymentStateEvent(apiCallRc).build();
     }
+
+    @Override
+    public void clear(ObjectIdentifier objectIdentifier)
+        throws Exception
+    {
+        resourceDeploymentStateGenerator.clear(objectIdentifier);
+    }
 }

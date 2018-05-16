@@ -14,7 +14,10 @@ public interface EventStreamStore
      */
     boolean addEventStreamIfNew(EventIdentifier eventIdentifier);
 
-    void removeEventStream(EventIdentifier eventIdentifier);
+    /**
+     * @return True if the event stream previously existed.
+     */
+    boolean removeEventStream(EventIdentifier eventIdentifier);
 
     Collection<EventIdentifier> getDescendantEventStreams(EventIdentifier eventIdentifier);
 }

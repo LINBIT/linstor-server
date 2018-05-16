@@ -77,7 +77,7 @@ public class EventSender
                     }
                     else
                     {
-                        writeAndSend(
+                        writeAndSendTo(
                             eventIdentifier,
                             ApiConsts.EVENT_STREAM_OPEN,
                             eventWriter,
@@ -117,7 +117,7 @@ public class EventSender
         try
         {
             outgoingEventStreamStore.addEventStream(eventIdentifier);
-            sendToWatchers(eventIdentifier, ApiConsts.EVENT_STREAM_OPEN);
+            sendToWatches(eventIdentifier, ApiConsts.EVENT_STREAM_OPEN);
         }
         catch (LinStorDataAlreadyExistsException exc)
         {
@@ -137,7 +137,7 @@ public class EventSender
         try
         {
             isNew = outgoingEventStreamStore.addEventStreamIfNew(eventIdentifier);
-            sendToWatchers(eventIdentifier, isNew ? ApiConsts.EVENT_STREAM_OPEN : ApiConsts.EVENT_STREAM_VALUE);
+            sendToWatches(eventIdentifier, isNew ? ApiConsts.EVENT_STREAM_OPEN : ApiConsts.EVENT_STREAM_VALUE);
         }
         finally
         {
@@ -150,17 +150,12 @@ public class EventSender
         watchAndStreamLock.lock();
         try
         {
-            sendToWatchers(eventIdentifier, eventStreamAction);
+            sendToWatches(eventIdentifier, eventStreamAction);
         }
         finally
         {
             watchAndStreamLock.unlock();
         }
-    }
-
-    public byte[] getEventData(EventIdentifier eventIdentifier)
-    {
-        return writeEventData(eventIdentifier, eventWriters.get(eventIdentifier.getEventName()));
     }
 
     public void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction)
@@ -168,29 +163,12 @@ public class EventSender
         watchAndStreamLock.lock();
         try
         {
-            EventWriter eventWriter = eventWriters.get(eventIdentifier.getEventName());
-            Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
+            boolean wasPresent = outgoingEventStreamStore.removeEventStream(eventIdentifier);
 
-            writeAndSend(eventIdentifier, eventStreamAction, eventWriter, watches);
-
-            outgoingEventStreamStore.removeEventStream(eventIdentifier);
-        }
-        finally
-        {
-            watchAndStreamLock.unlock();
-        }
-    }
-
-    public void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction, byte[] eventData)
-    {
-        watchAndStreamLock.lock();
-        try
-        {
-            Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
-
-            writeAndSendWithEventData(eventIdentifier, eventStreamAction, eventData, watches);
-
-            outgoingEventStreamStore.removeEventStream(eventIdentifier);
+            if (wasPresent)
+            {
+                sendToWatches(eventIdentifier, eventStreamAction);
+            }
         }
         finally
         {
@@ -213,9 +191,7 @@ public class EventSender
 
             for (EventIdentifier eventIdentifier : eventStreams)
             {
-                Collection<Watch> watches = watchStore.getWatchesForEvent(eventIdentifier);
-
-                writeAndSend(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED, null, watches);
+                sendToWatches(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED);
 
                 outgoingEventStreamStore.removeEventStream(eventIdentifier);
             }
@@ -226,7 +202,7 @@ public class EventSender
         }
     }
 
-    private void sendToWatchers(EventIdentifier eventIdentifier, String eventStreamAction)
+    private void sendToWatches(EventIdentifier eventIdentifier, String eventStreamAction)
     {
         EventWriter eventWriter = eventWriters.get(eventIdentifier.getEventName());
         if (eventWriter == null)
@@ -239,7 +215,7 @@ public class EventSender
 
             if (!watches.isEmpty())
             {
-                writeAndSend(eventIdentifier, eventStreamAction, eventWriter, watches);
+                writeAndSendTo(eventIdentifier, eventStreamAction, eventWriter, watches);
             }
         }
     }
@@ -249,7 +225,7 @@ public class EventSender
         return eventName == null || eventName.isEmpty() ? eventWriters.keySet() : Collections.singleton(eventName);
     }
 
-    private void writeAndSend(
+    private void writeAndSendTo(
         EventIdentifier eventIdentifier,
         String eventStreamAction,
         EventWriter eventWriter,
@@ -258,34 +234,30 @@ public class EventSender
     {
         byte[] eventData = writeEventData(eventIdentifier, eventWriter);
 
-        if (eventData != null)
+        byte[] dataToSend;
+        if (ApiConsts.EVENT_STREAM_CLOSE_REMOVED.equals(eventStreamAction) ||
+            ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION.equals(eventStreamAction))
         {
-            watches.forEach(
-                watch -> sendEvent(
-                    watch,
-                    eventIdentifier,
-                    eventStreamAction,
-                    eventData
-                ));
-        }
-    }
+            clearEventData(eventIdentifier, eventWriter);
 
-    private void writeAndSendWithEventData(
-        EventIdentifier eventIdentifier,
-        String eventStreamAction,
-        byte[] eventData,
-        Collection<Watch> watches
-    )
-    {
-        if (eventData != null)
+            // Always send close events even when the event writer doesn't produce any data
+            dataToSend = eventData == null ? new byte[] {} : eventData;
+        }
+        else
+        {
+            dataToSend = eventData;
+        }
+
+        if (dataToSend != null)
         {
             watches.forEach(
                 watch -> sendEvent(
                     watch,
                     eventIdentifier,
                     eventStreamAction,
-                    eventData
-                ));
+                    dataToSend
+                )
+            );
         }
     }
 
@@ -297,8 +269,7 @@ public class EventSender
         byte[] eventData = null;
         try
         {
-            eventData = eventWriter == null ? new byte[] {} :
-                eventWriter.writeEvent(eventIdentifier.getObjectIdentifier());
+            eventData = eventWriter.writeEvent(eventIdentifier.getObjectIdentifier());
         }
         catch (Exception exc)
         {
@@ -309,7 +280,27 @@ public class EventSender
                 "Failed to write event " + eventIdentifier.getEventName()
             );
         }
-        return eventData != null ? eventData : new byte[] {};
+        return eventData;
+    }
+
+    private void clearEventData(
+        EventIdentifier eventIdentifier,
+        EventWriter eventWriter
+    )
+    {
+        try
+        {
+            eventWriter.clear(eventIdentifier.getObjectIdentifier());
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(
+                exc,
+                null,
+                null,
+                "Failed to clear event " + eventIdentifier.getEventName()
+            );
+        }
     }
 
     private void sendEvent(
