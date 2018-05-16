@@ -82,33 +82,35 @@ jar {
 task versionInfo() {
     String propsFile = "$projectDir/generated-resources/version-info.properties"
 
-    File gitFolder = file("$projectDir/.git")
-    if (gitFolder.exists())
-    {
-        try {
-            def stdOut = new ByteArrayOutputStream()
-            def stdErr = new ByteArrayOutputStream()
-            project.exec {
-                commandLine 'make', 'versioninfo'
-                standardOutput = stdOut
-                errorOutput = stdErr
+    doFirst {
+        File gitFolder = file("$projectDir/.git")
+        if (gitFolder.exists())
+        {
+            try {
+                def stdOut = new ByteArrayOutputStream()
+                def stdErr = new ByteArrayOutputStream()
+                project.exec {
+                    commandLine 'make', 'versioninfo'
+                    standardOutput = stdOut
+                    errorOutput = stdErr
+                }
+            } catch (ExecException exc) {
+                throw new RuntimeException("Cannot generate version.", exc)
             }
-        } catch (ExecException exc) {
-            throw new RuntimeException("Cannot generate version.", exc)
         }
-    }
 
-    if (project.hasProperty('versionOverride')) {
-        logger.warn("Overriding version with $versionOverride")
-        version = versionOverride
-    } else {
-        Properties props = new Properties()
-        try {
-            props.load(new FileInputStream(propsFile))
-        } catch (Exception exc) {
-            throw new RuntimeException("Cannot read version.", exc)
+        if (project.hasProperty('versionOverride')) {
+            logger.warn("Overriding version with $versionOverride")
+            version = versionOverride
+        } else {
+            Properties props = new Properties()
+            try {
+                props.load(new FileInputStream(propsFile))
+            } catch (Exception exc) {
+                throw new RuntimeException("Cannot read version.", exc)
+            }
+            version = props.get("version")
         }
-        version = props.get("version")
     }
 }
 
@@ -194,14 +196,18 @@ task unzip(type: Copy) {
 }
 
 task downloadProtoc {
-    mkdir "tools"
     outputs.dir "tools"
     def protozip = new File("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
     outputs.file protozip
-    if (!protozip.exists()) {
-        new URL('https://github.com/google/protobuf/releases/download/v'
-                + protobufVersion + '/protoc-' + protobufVersion + '-linux-x86_64.zip')
-                .withInputStream { i -> protozip.withOutputStream { it << i}}
+
+    doLast {
+        if (!protozip.exists()) {
+            mkdir "tools"
+            println "downloading protoc..."
+            new URL('https://github.com/google/protobuf/releases/download/v'
+                    + protobufVersion + '/protoc-' + protobufVersion + '-linux-x86_64.zip')
+                    .withInputStream { i -> protozip.withOutputStream { it << i}}
+        }
     }
 }
 
@@ -209,11 +215,11 @@ task getProtoc {
     dependsOn downloadProtoc, unzip
 }
 
+def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 task genJava(type:Exec) {
-    dependsOn getProtoc
     workingDir 'linstor-common'
 
-    commandLine 'make', "PROTOC=${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc', 'java'
+    commandLine 'make', "PROTOC=" + protoc, 'java'
 }
 
 task cleanCommon(type:Exec) {
@@ -237,7 +243,11 @@ task cleanTestCommands(type:Exec) {
 }
 
 task generate {
-    dependsOn generatePropRules, genJava
+    dependsOn generatePropRules
+
+    if(protoc.exists()) {
+        dependsOn += genJava
+    }
 }
 
 compileJava {
@@ -249,8 +259,10 @@ compileTestJava {
 }
 
 clean {
-  dependsOn cleanTestCommands, cleanCommon
-  delete += "${projectDir}/generated-resources"
+    dependsOn cleanTestCommands, cleanCommon
+    doLast {
+        delete "${projectDir}/generated-resources"
+    }
 }
 
 /////////////////////////// Dependency resolution ///////////////////////////
