@@ -2,6 +2,7 @@ GIT = git
 MAKE = make
 
 GENRES=./generated-resources
+GENSRC=generated-src
 VERSINFO=$(GENRES)/version-info.properties
 
 # echo v0.1 to get it started
@@ -18,8 +19,9 @@ GITHASH := $(shell git rev-parse HEAD)
 		grep -v "gitignore\|gitmodules" >> .filelist
 	@[ -s .filelist ] # assert there is something in .filelist now
 	@echo $(VERSINFO) >> .filelist
+	@find $(GENSRC) -name '*.java' >> .filelist
 	@echo .filelist >> .filelist
-	echo "./.filelist updated."
+	@echo "./.filelist updated."
 
 
 tgz:
@@ -53,7 +55,12 @@ check-all-committed:
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
 
-tarball: check-all-committed check-submods versioninfo .filelist
+.PHONY: gen-java
+gen-java:
+	@gradle genJava
+	@echo "generated java sources"
+
+tarball: check-all-committed check-submods versioninfo gen-java .filelist
 	$(MAKE) tgz
 
 versioninfo:
