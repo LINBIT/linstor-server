@@ -12,6 +12,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,14 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
+
+    void addInProgressSnapshot(SnapshotName snapshotName, Snapshot snapshot);
+
+    Snapshot getInProgressSnapshot(SnapshotName snapshotName);
+
+    Collection<Snapshot> getInProgressSnapshots();
+
+    void removeInProgressSnapshot(SnapshotName snapshotName);
 
     RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;

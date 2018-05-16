@@ -4,6 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
+
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -19,10 +21,13 @@ public class DrbdResource
 {
     public static final String PROP_KEY_RES_NAME = "name";
     public static final String PROP_KEY_ROLE = "role";
+    public static final String PROP_KEY_SUSPENDED = "suspended";
 
     public static final String ROLE_LABEL_PRIMARY  = "Primary";
     public static final String ROLE_LABEL_SECONDARY = "Secondary";
     public static final String ROLE_LABEL_UNKNOWN  = "Unknown";
+
+    private static final String SUSPENDED_LABEL_USER = "user";
 
     public enum Role
     {
@@ -61,6 +66,7 @@ public class DrbdResource
 
     protected final ResourceName resName;
     protected Role resRole;
+    protected Boolean suspendedUser;
     private final Map<String, DrbdConnection> connList;
     private final Map<VolumeNumber, DrbdVolume> volList;
 
@@ -68,6 +74,7 @@ public class DrbdResource
     {
         resName = name;
         resRole = Role.UNKNOWN;
+        suspendedUser = null;
         connList = new TreeMap<>();
         volList = new TreeMap<>();
     }
@@ -80,6 +87,11 @@ public class DrbdResource
     public Role getRole()
     {
         return resRole;
+    }
+
+    public Boolean getSuspendedUser()
+    {
+        return suspendedUser;
     }
 
     protected static DrbdResource newFromProps(Map<String, String> props)
@@ -112,6 +124,8 @@ public class DrbdResource
     protected void update(Map<String, String> props, ResourceObserver obs)
     {
         String roleLabel = props.get(PROP_KEY_ROLE);
+        String suspendedLabel = props.get(PROP_KEY_SUSPENDED);
+
         if (roleLabel != null)
         {
             Role prevResRole = resRole;
@@ -120,6 +134,11 @@ public class DrbdResource
             {
                 obs.roleChanged(this, prevResRole, resRole);
             }
+        }
+
+        if (suspendedLabel != null)
+        {
+            suspendedUser = Arrays.stream(suspendedLabel.split(",")).anyMatch(SUSPENDED_LABEL_USER::equals);
         }
     }
 

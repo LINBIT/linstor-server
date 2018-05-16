@@ -175,4 +175,16 @@ public class ApiRcUtils
 
         long origRetCode;
     }
+
+    public static boolean isError(ApiCallRc apiCallRc)
+    {
+        return apiCallRc.getEntries().stream().anyMatch(ApiRcUtils::entryIsError);
+    }
+
+    private static boolean entryIsError(ApiCallRc.RcEntry rcEntry)
+    {
+        return
+            (rcEntry.getReturnCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR ||
+                (rcEntry.getReturnCode() & ApiConsts.MASK_WARN) == ApiConsts.MASK_WARN;
+    }
 }

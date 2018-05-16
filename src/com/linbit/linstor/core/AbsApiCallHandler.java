@@ -17,6 +17,7 @@ import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
@@ -78,7 +79,8 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         VOLUME_CONN(ApiConsts.MASK_VLM_CONN),
         CONTROLLER(ApiConsts.MASK_CTRL_CONF),
         STORAGEPOOL(ApiConsts.MASK_STOR_POOL),
-        STORAGEPOOL_DEFINITION(ApiConsts.MASK_STOR_POOL_DFN);
+        STORAGEPOOL_DEFINITION(ApiConsts.MASK_STOR_POOL_DFN),
+        SNAPSHOT(ApiConsts.MASK_SNAPSHOT);
 
         private long objMask;
 
@@ -349,6 +351,29 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             );
         }
         return storPoolName;
+    }
+
+    /**
+     * Returns the given String as a {@link SnapshotName} if possible. If the String is not a valid
+     * {@link SnapshotName} the thrown exception is reported to controller's {@link ErrorReporter} and
+     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     */
+    protected final SnapshotName asSnapshotName(String snapshotNameStr) throws ApiCallHandlerFailedException
+    {
+        SnapshotName snapshotName;
+        try
+        {
+            snapshotName = new SnapshotName(snapshotNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw asExc(
+                invalidNameExc,
+                "The given snapshot name '%s' is invalid.",
+                ApiConsts.FAIL_INVLD_SNAPSHOT_NAME
+            );
+        }
+        return snapshotName;
     }
 
     /**

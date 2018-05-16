@@ -23,6 +23,7 @@ import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
@@ -30,11 +31,11 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.CtrlStltSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.SnapshotState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
@@ -43,6 +44,7 @@ import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.javainternal.EventInProgressSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
@@ -56,6 +58,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
@@ -463,6 +466,31 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .writeDelimitedTo(baos);
     }
 
+    @Override
+    public void writeInProgressSnapshotEvent(
+        List<SnapshotState> snapshotStates, ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        List<EventInProgressSnapshotOuterClass.InProgressSnapshot> inProgressSnapshots = new ArrayList<>();
+
+        for (SnapshotState snapshotState : snapshotStates)
+        {
+            inProgressSnapshots.add(
+                EventInProgressSnapshotOuterClass.InProgressSnapshot.newBuilder()
+                    .setSnapshotName(snapshotState.getSnapshotName().displayValue)
+                    .setSuspended(snapshotState.isSuspended())
+                    .setSnapshotTaken(snapshotState.isSnapshotTaken())
+                    .build()
+            );
+        }
+
+        EventInProgressSnapshotOuterClass.EventInProgressSnapshot.newBuilder()
+            .addAllSnapshots(inProgressSnapshots)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
     /*
      * Helper methods
      */
@@ -658,6 +686,9 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                 .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
+                .addAllInProgressSnapshots(
+                    buildInProgressSnapshots(localResource)
+                )
                 .build();
             return message;
         }
@@ -816,5 +847,25 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
 
             return protoNetIfs;
         }
+    }
+
+    private Iterable<? extends MsgIntRscDataOuterClass.IntSnapshot> buildInProgressSnapshots(Resource localResource)
+    {
+        List<MsgIntRscDataOuterClass.IntSnapshot> snapshots = new ArrayList<>();
+
+        for (Snapshot snapshot : localResource.getInProgressSnapshots())
+        {
+            snapshots.add(
+                MsgIntRscDataOuterClass.IntSnapshot.newBuilder()
+                    .setSnapshotUuid(snapshot.getUuid().toString())
+                    .setSnapshotName(snapshot.getSnapshotDefinition().getName().displayValue)
+                    .setSnapshotDefinitionUuid(snapshot.getSnapshotDefinition().getUuid().toString())
+                    .setSuspendResource(snapshot.getSuspendResource())
+                    .setTakeSnapshot(snapshot.getTakeSnapshot())
+                    .build()
+            );
+        }
+
+        return snapshots;
     }
 }

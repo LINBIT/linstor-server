@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final TransactionSimpleObject<ResourceData, Boolean> deleted;
 
     private boolean createPrimary = false;
+
+    // Transient store of snapshots which have been requested but not yet completed
+    private final Map<SnapshotName, Snapshot> inProgressSnapshots;
 
     ResourceData(
         UUID objIdRef,
@@ -141,6 +145,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resourceProps,
             deleted
         );
+
+        inProgressSnapshots = new HashMap<>();
     }
 
     @Override
@@ -455,6 +461,30 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
+    public void addInProgressSnapshot(SnapshotName snapshotName, Snapshot snapshot)
+    {
+        inProgressSnapshots.put(snapshotName, snapshot);
+    }
+
+    @Override
+    public Snapshot getInProgressSnapshot(SnapshotName snapshotName)
+    {
+        return inProgressSnapshots.get(snapshotName);
+    }
+
+    @Override
+    public Collection<Snapshot> getInProgressSnapshots()
+    {
+        return inProgressSnapshots.values();
+    }
+
+    @Override
+    public void removeInProgressSnapshot(SnapshotName snapshotName)
+    {
+        inProgressSnapshots.remove(snapshotName);
+    }
+
+    @Override
     public RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
@@ -469,6 +499,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             rscConns.add(rscConn.getApiData(accCtx));
         }
+        List<Snapshot.SnapshotApi> snapshots = new ArrayList<>();
+        for (Snapshot snapshot : inProgressSnapshots.values())
+        {
+            snapshots.add(snapshot.getApiData(accCtx));
+        }
         return new RscPojo(
             getDefinition().getName().getDisplayName(),
             getAssignedNode().getName().getDisplayName(),
@@ -482,7 +517,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
             null, // otherRscList
             rscConns,
             fullSyncId,
-            updateId
+            updateId,
+            snapshots
         );
     }
 

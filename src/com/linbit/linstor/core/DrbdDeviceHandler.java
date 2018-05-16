@@ -20,6 +20,8 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
@@ -58,11 +60,16 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.FileExistsCheck;
@@ -255,8 +262,8 @@ class DrbdDeviceHandler implements DeviceHandler
         catch (Exception | ImplementationError exc)
         {
             AbsApiCallHandler.reportStatic(
-                exc, exc.getMessage(), ApiConsts.FAIL_UNKNOWN_ERROR,
-                null, null, apiCallRc, errLog, null, null
+                exc, exc.getMessage() == null ? exc.getClass().getSimpleName() : exc.getMessage(),
+                ApiConsts.FAIL_UNKNOWN_ERROR, null, null, apiCallRc, errLog, null, null
             );
         }
 
@@ -373,6 +380,7 @@ class DrbdDeviceHandler implements DeviceHandler
             evaluateDrbdRole(rscState, drbdRsc);
             evaluateDrbdConnections(rsc, rscDfn, rscState, drbdRsc);
             evaluateDrbdVolumes(rscState, drbdRsc);
+            rscState.setSuspendedUser(drbdRsc.getSuspendedUser() == null ? false : drbdRsc.getSuspendedUser());
         }
         else
         {
@@ -875,6 +883,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
         makePrimaryIfRequired(localNode, rscName, rsc, rscDfn, rscState);
 
+        handleSnapshots(rscName, rsc, rscState);
+
         deviceManagerProvider.get().notifyResourceApplied(rsc);
     }
 
@@ -1289,6 +1299,201 @@ class DrbdDeviceHandler implements DeviceHandler
                 "- Check whether the application has execute permission for the external command\n",
                 null,
                 cmdExc
+            );
+        }
+    }
+
+    private void handleSnapshots(ResourceName rscName, Resource rsc, ResourceState rscState)
+        throws ResourceException
+    {
+        boolean snapshotInProgress = false;
+        boolean shouldSuspend = false;
+        for (Snapshot snapshot : rsc.getInProgressSnapshots())
+        {
+            snapshotInProgress = true;
+
+            if (snapshot.getSuspendResource())
+            {
+                shouldSuspend = true;
+            }
+        }
+
+        boolean isSuspended = rscState.isSuspendedUser();
+
+        adjustSuspended(rscName, shouldSuspend, isSuspended);
+
+        Set<SnapshotName> alreadySnapshotted = getAlreadySnapshotted(rscName);
+
+        Set<SnapshotName> newlyTakenSnapshots = new HashSet<>();
+        for (Snapshot snapshot : rsc.getInProgressSnapshots())
+        {
+            SnapshotName snapshotName = snapshot.getSnapshotDefinition().getName();
+
+            if (snapshot.getTakeSnapshot() && !alreadySnapshotted.contains(snapshotName))
+            {
+                for (VolumeState vlmState : rscState.getVolumes())
+                {
+                    try
+                    {
+                        takeVolumeSnapshot(
+                            rsc.getDefinition(),
+                            snapshotName,
+                            (VolumeStateDevManager) vlmState
+                        );
+                    }
+                    catch (VolumeException vlmExc)
+                    {
+                        throw new ResourceException(
+                            "Creation of snapshot for resource '" + rscName.displayValue + "' volume " +
+                                vlmState.getVlmNr().value + " failed",
+                            null, vlmExc.getMessage(),
+                            null, null, vlmExc
+                        );
+                    }
+                }
+                newlyTakenSnapshots.add(snapshotName);
+            }
+        }
+
+        EventIdentifier eventIdentifier = new EventIdentifier(
+            InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT, null, rscName, null
+        );
+        if (snapshotInProgress)
+        {
+            List<SnapshotState> newSnapshotStates =
+                computeNewSnapshotStates(rsc, shouldSuspend, alreadySnapshotted, newlyTakenSnapshots);
+
+            deploymentStateTracker.setSnapshotStates(rscName, newSnapshotStates);
+            eventBroker.openOrTriggerEvent(eventIdentifier);
+        }
+        else
+        {
+            deploymentStateTracker.removeSnapshotStates(rscName);
+            eventBroker.closeEventStream(eventIdentifier);
+        }
+    }
+
+    private void adjustSuspended(
+        ResourceName rscName,
+        boolean shouldSuspend,
+        boolean isSuspended
+    )
+        throws ResourceException
+    {
+        if (shouldSuspend && !isSuspended)
+        {
+            try
+            {
+                drbdUtils.suspendIo(rscName);
+            }
+            catch (ExtCmdFailedException cmdExc)
+            {
+                throw new ResourceException(
+                    "Suspend of the DRBD resource '" + rscName.displayValue + " failed",
+                    getAbortMsg(rscName),
+                    "The external command for suspending the DRBD resource failed",
+                    null, null, cmdExc
+                );
+            }
+        }
+        else if (!shouldSuspend && isSuspended)
+        {
+            try
+            {
+                drbdUtils.resumeIo(rscName);
+            }
+            catch (ExtCmdFailedException cmdExc)
+            {
+                throw new ResourceException(
+                    "Resume of the DRBD resource '" + rscName.displayValue + " failed",
+                    getAbortMsg(rscName),
+                    "The external command for resuming the DRBD resource failed",
+                    null, null, cmdExc
+                );
+            }
+        }
+    }
+
+    private Set<SnapshotName> getAlreadySnapshotted(ResourceName rscName)
+    {
+        List<SnapshotState> snapshotStates =
+            deploymentStateTracker.getSnapshotStates(rscName);
+
+        return snapshotStates == null ? Collections.emptySet() :
+            snapshotStates.stream()
+                .filter(SnapshotState::isSnapshotTaken)
+                .map(SnapshotState::getSnapshotName)
+                .collect(Collectors.toSet());
+    }
+
+    private List<SnapshotState> computeNewSnapshotStates(
+        Resource rsc,
+        boolean shouldSuspend,
+        Set<SnapshotName> alreadySnapshotted,
+        Set<SnapshotName> newlyTakenSnapshots
+    )
+    {
+        Set<SnapshotName> allSnapshotted = Stream.concat(alreadySnapshotted.stream(), newlyTakenSnapshots.stream())
+            .collect(Collectors.toSet());
+
+        return rsc.getInProgressSnapshots().stream()
+            .map(snapshot -> new SnapshotState(
+                snapshot.getSnapshotDefinition().getName(),
+                shouldSuspend,
+                allSnapshotted.contains(snapshot.getSnapshotDefinition().getName())
+            ))
+            .collect(toList());
+    }
+
+    private void takeVolumeSnapshot(
+        ResourceDefinition rscDfn,
+        SnapshotName snapshotName,
+        VolumeStateDevManager vlmState
+    )
+        throws VolumeException
+    {
+        if (vlmState.getDriver() != null)
+        {
+            try
+            {
+                vlmState.getDriver().createSnapshot(
+                    vlmState.getStorVlmName(),
+                    snapshotName.displayValue,
+                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                );
+            }
+            catch (StorageException storExc)
+            {
+                throw new VolumeException(
+                    "Snapshot creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                        vlmState.getVlmNr().value,
+                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                    "Creation of the snapshot failed",
+                    null,
+                    null,
+                    storExc
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        else
+        {
+            String message = "Snapshot creation failed for resource '" + rscDfn.getName().displayValue +
+                "' volume " + vlmState.getVlmNr();
+            errLog.reportProblem(
+                Level.ERROR,
+                new StorageException(
+                    message,
+                    message,
+                    "The selected storage pool driver for the volume is unavailable",
+                    null,
+                    null,
+                    null
+                ),
+                null, null, null
             );
         }
     }

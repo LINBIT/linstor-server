@@ -293,6 +293,18 @@ public class DrbdAdm
         );
     }
 
+    public void suspendIo(ResourceName rscName)
+        throws ExtCmdFailedException
+    {
+        execute(DRBDADM_UTIL, "suspend-io", rscName.displayValue);
+    }
+
+    public void resumeIo(ResourceName rscName)
+        throws ExtCmdFailedException
+    {
+        execute(DRBDADM_UTIL, "resume-io", rscName.displayValue);
+    }
+
     /**
      * Calls drbdadm to set a new current GI
      */

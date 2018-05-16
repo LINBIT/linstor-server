@@ -27,6 +27,11 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotData;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinition;
@@ -44,7 +49,6 @@ import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -618,6 +622,40 @@ class StltRscApiCallHandler
                 }
             }
 
+            // merge snapshots
+            Set<String> snapshotNames = rscRawData.getInProgressSnapshots().stream()
+                .map(Snapshot.SnapshotApi::getSnapshotName)
+                .collect(Collectors.toSet());
+            Set<SnapshotName> existingSnapshotNames = localRsc.getInProgressSnapshots().stream()
+                .map(Snapshot::getSnapshotDefinition)
+                .map(SnapshotDefinition::getName)
+                .collect(Collectors.toSet());
+            for (SnapshotName existingSnapshotName : existingSnapshotNames)
+            {
+                if (!snapshotNames.contains(existingSnapshotName.displayValue))
+                {
+                    localRsc.removeInProgressSnapshot(existingSnapshotName);
+                }
+            }
+            for (Snapshot.SnapshotApi snapshotApi : rscRawData.getInProgressSnapshots())
+            {
+                SnapshotName snapshotName = new SnapshotName(snapshotApi.getSnapshotName());
+                Snapshot existingSnapshot = localRsc.getInProgressSnapshot(snapshotName);
+                if (existingSnapshot == null)
+                {
+                    localRsc.addInProgressSnapshot(
+                        snapshotName, new SnapshotData(
+                            snapshotApi.getSnapshotUuid(),
+                            new SnapshotDefinitionData(snapshotApi.getSnapshotDfnUuid(), rscDfn, snapshotName),
+                            localRsc.getAssignedNode()
+                        )
+                    );
+                }
+
+                Snapshot snapshot = localRsc.getInProgressSnapshot(snapshotName);
+                snapshot.setSuspendResource(snapshotApi.getSuspendResource());
+                snapshot.setTakeSnapshot(snapshotApi.getTakeSnapshot());
+            }
 
             transMgrProvider.get().commit();
 

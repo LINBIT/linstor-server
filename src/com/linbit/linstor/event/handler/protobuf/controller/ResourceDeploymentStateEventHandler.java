@@ -2,10 +2,12 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.ResourceDefinitionEventStreamTracker;
+import com.linbit.linstor.event.handler.SnapshotStateMachine;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
@@ -27,17 +29,20 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
 {
     private final EventBroker eventBroker;
     private final ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTracker;
+    private final SnapshotStateMachine snapshotStateMachine;
     private final Peer peer;
 
     @Inject
     public ResourceDeploymentStateEventHandler(
         EventBroker eventBrokerRef,
         ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTrackerRef,
+        SnapshotStateMachine snapshotStateMachineRef,
         Peer peerRef
     )
     {
         eventBroker = eventBrokerRef;
         resourceDefinitionEventStreamTracker = resourceDefinitionEventStreamTrackerRef;
+        snapshotStateMachine = snapshotStateMachineRef;
         peer = peerRef;
     }
 
@@ -45,6 +50,8 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
+        boolean deploymentSuccess = false;
+
         if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) ||
             eventAction.equals(ApiConsts.EVENT_STREAM_VALUE) ||
             eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
@@ -73,6 +80,11 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
                 SatelliteResourceState::setDeploymentState,
                 deploymentState
             );
+
+            if (!eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED) && !ApiRcUtils.isError(deploymentState))
+            {
+                deploymentSuccess = true;
+            }
         }
         else
         {
@@ -80,6 +92,11 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
                 eventIdentifier.getResourceName(),
                 SatelliteResourceState::setDeploymentState
             );
+        }
+
+        if (!deploymentSuccess)
+        {
+            snapshotStateMachine.stepResourceSnapshots(eventIdentifier, true);
         }
 
         eventBroker.forwardEvent(eventIdentifier, eventAction);

@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import java.util.UUID;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.core.SnapshotState;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -80,5 +82,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName); 
 
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
+
+        CtrlStltSerializerBuilder inProgressSnapshotEvent(List<SnapshotState> snapshotStates);
     }
 }

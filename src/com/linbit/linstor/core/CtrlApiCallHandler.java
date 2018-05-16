@@ -40,6 +40,7 @@ public class CtrlApiCallHandler
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
     private final CtrlNetIfApiCallHandler netIfApiCallHandler;
     private final CtrlWatchApiCallHandler watchApiCallHandler;
+    private final CtrlSnapshotApiCallHandler snapshotApiCallHandler;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
@@ -67,6 +68,7 @@ public class CtrlApiCallHandler
         CtrlVlmConnectionApiCallHandler vlmConnApiCallHandlerRef,
         CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
         CtrlWatchApiCallHandler watchApiCallHandlerRef,
+        CtrlSnapshotApiCallHandler snapshotApiCallHandlerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
@@ -91,6 +93,7 @@ public class CtrlApiCallHandler
         vlmConnApiCallHandler = vlmConnApiCallHandlerRef;
         netIfApiCallHandler = netIfApiCallHandlerRef;
         watchApiCallHandler = watchApiCallHandlerRef;
+        snapshotApiCallHandler = snapshotApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -1522,6 +1525,29 @@ public class CtrlApiCallHandler
                 storPoolName,
                 notPlaceWithRscList,
                 notPlaceWithRscRegex
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc createSnapshot(
+        String rscName,
+        String snapshotName
+    )
+    {
+
+        ApiCallRc apiCallRc;
+
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = snapshotApiCallHandler.createSnapshot(
+                rscName,
+                snapshotName
             );
         }
         return apiCallRc;

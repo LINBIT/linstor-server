@@ -13,6 +13,7 @@ public class ResourceState
     private boolean isPresent;
     private boolean requiresAdjust;
     private boolean isPrimary;
+    private boolean isSuspendedUser;
 
     private Map<VolumeNumber, VolumeState> volumeMap;
 
@@ -20,28 +21,12 @@ public class ResourceState
     {
     }
 
-    public ResourceState(
-        String rscNameRef,
-        String nodeNameRef,
-        boolean isPresentRef,
-        boolean requiresAdjustRef,
-        boolean isPrimaryRef,
-        Map<VolumeNumber, VolumeState> volumes
-    )
-    {
-        rscName = rscNameRef;
-        nodeName = nodeNameRef;
-        isPresent = isPresentRef;
-        requiresAdjust = requiresAdjustRef;
-        isPrimary = isPrimaryRef;
-        volumeMap = volumes;
-    }
-
     public final void reset()
     {
         isPresent       = false;
         requiresAdjust  = false;
         isPrimary       = false;
+        isSuspendedUser = false;
     }
 
     public String getRscName()
@@ -94,6 +79,16 @@ public class ResourceState
         isPrimary = primary;
     }
 
+    public boolean isSuspendedUser()
+    {
+        return isSuspendedUser;
+    }
+
+    public void setSuspendedUser(boolean suspendedUser)
+    {
+        isSuspendedUser = suspendedUser;
+    }
+
     public Collection<VolumeState> getVolumes()
     {
         return volumeMap.values();
@@ -122,6 +117,7 @@ public class ResourceState
         rscActions.append("    isPresent = ").append(this.isPresent()).append("\n");
         rscActions.append("    requiresAdjust = ").append(this.requiresAdjust()).append("\n");
         rscActions.append("    isPrimary = ").append(this.isPrimary()).append("\n");
+        rscActions.append("    isSuspendedUser = ").append(this.isSuspendedUser()).append("\n");
         for (VolumeState vlmState : getVolumes())
         {
             rscActions.append(vlmState.toString());

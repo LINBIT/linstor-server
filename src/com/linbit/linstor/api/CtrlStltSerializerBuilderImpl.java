@@ -6,12 +6,14 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
+import com.linbit.linstor.core.SnapshotState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -500,6 +502,21 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         return this;
     }
 
+    @Override
+    public CtrlStltSerializerBuilder inProgressSnapshotEvent(List<SnapshotState> snapshotStates)
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeInProgressSnapshotEvent(snapshotStates, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
     public interface CtrlStltSerializationWriter extends CommonSerializerWriter
     {
         /*
@@ -646,5 +663,10 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         void writeCryptKey(byte[] masterKey, long timestamp, long updateId, ByteArrayOutputStream baos)
             throws IOException;
 
+        void writeInProgressSnapshotEvent(
+            List<SnapshotState> snapshotStates,
+            ByteArrayOutputStream baos
+        )
+            throws IOException;
     }
 }

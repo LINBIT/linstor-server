@@ -3,6 +3,7 @@ package com.linbit.linstor.event.writer.protobuf.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -65,7 +66,7 @@ public class ResourceDefinitionReadyEvent implements EventWriter
                 case ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE:
                     ApiCallRc apiCallRc =
                         resourceDeploymentStateGenerator.generate(eventIdentifier.getObjectIdentifier());
-                    if (apiCallRc != null && isError(apiCallRc))
+                    if (apiCallRc != null && ApiRcUtils.isError(apiCallRc))
                     {
                         errorCount++;
                     }
@@ -77,17 +78,5 @@ public class ResourceDefinitionReadyEvent implements EventWriter
         }
 
         return commonSerializer.builder().resourceDefinitionReadyEvent(readyCount, errorCount).build();
-    }
-
-    private boolean isError(ApiCallRc apiCallRc)
-    {
-        return apiCallRc.getEntries().stream().anyMatch(this::entryIsError);
-    }
-
-    private boolean entryIsError(ApiCallRc.RcEntry rcEntry)
-    {
-        return
-            (rcEntry.getReturnCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR ||
-            (rcEntry.getReturnCode() & ApiConsts.MASK_WARN) == ApiConsts.MASK_WARN;
     }
 }

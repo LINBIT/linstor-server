@@ -19,7 +19,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
@@ -31,7 +30,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -233,6 +231,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                                     volumes,
                                     null,
                                     rscConns,
+                                    null,
                                     null,
                                     null);
                                 rscs.add(filteredRscVlms);
