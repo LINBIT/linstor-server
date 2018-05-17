@@ -13,7 +13,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -503,11 +502,11 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
     }
 
     @Override
-    public CtrlStltSerializerBuilder inProgressSnapshotEvent(List<SnapshotState> snapshotStates)
+    public CtrlStltSerializerBuilder inProgressSnapshotEvent(SnapshotState snapshotState)
     {
         try
         {
-            ctrlStltSerializationWriter.writeInProgressSnapshotEvent(snapshotStates, baos);
+            ctrlStltSerializationWriter.writeInProgressSnapshotEvent(snapshotState, baos);
         }
         catch (IOException ioExc)
         {
@@ -664,7 +663,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             throws IOException;
 
         void writeInProgressSnapshotEvent(
-            List<SnapshotState> snapshotStates,
+            SnapshotState snapshotState,
             ByteArrayOutputStream baos
         )
             throws IOException;

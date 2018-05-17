@@ -1,12 +1,11 @@
 package com.linbit.linstor.satellitestate;
 
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.SnapshotState;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -17,9 +16,9 @@ public class SatelliteResourceState
 
     private ApiCallRc deploymentState;
 
-    private List<SnapshotState> snapshotStates = new ArrayList<>();
-
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
+
+    private final Map<SnapshotName, SnapshotState> snapshotStates = new HashMap<>();
 
     public SatelliteResourceState()
     {
@@ -29,11 +28,12 @@ public class SatelliteResourceState
     {
         ready = other.ready;
         deploymentState = other.deploymentState;
-        snapshotStates = other.snapshotStates;
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
         {
             volumeStates.put(volumeStateEntry.getKey(), new SatelliteVolumeState(volumeStateEntry.getValue()));
         }
+        snapshotStates.clear();
+        snapshotStates.putAll(other.snapshotStates);
     }
 
     public Boolean getReady()
@@ -54,16 +54,6 @@ public class SatelliteResourceState
     public void setDeploymentState(ApiCallRc deploymentStateRef)
     {
         deploymentState = deploymentStateRef;
-    }
-
-    public List<SnapshotState> getSnapshotStates()
-    {
-        return snapshotStates;
-    }
-
-    public void setSnapshotStates(List<SnapshotState> snapshotStatesRef)
-    {
-        snapshotStates = snapshotStatesRef;
     }
 
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()
@@ -98,8 +88,25 @@ public class SatelliteResourceState
         }
     }
 
+    public SnapshotState getSnapshotState(SnapshotName snapshotName)
+    {
+        return snapshotStates.get(snapshotName);
+    }
+
+    public <T> void setSnapshotState(SnapshotName snapshotName, SnapshotState snapshotState)
+    {
+        if (snapshotState == null)
+        {
+            snapshotStates.remove(snapshotName);
+        }
+        else
+        {
+            snapshotStates.put(snapshotName, snapshotState);
+        }
+    }
+
     public boolean isEmpty()
     {
-        return ready == null && volumeStates.isEmpty();
+        return ready == null && volumeStates.isEmpty() && snapshotStates.isEmpty();
     }
 }

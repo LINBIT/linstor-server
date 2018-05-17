@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.LinStorScope;
@@ -82,13 +83,9 @@ public class EventProcessor
                 // The peer is a Satellite
                 for (Map.Entry<String, Provider<EventHandler>> eventHandlerEntry : eventHandlers.entrySet())
                 {
-                    Collection<EventIdentifier> eventStreams =
-                        incomingEventStreamStore.getDescendantEventStreams(new EventIdentifier(
-                            eventHandlerEntry.getKey(),
-                            node.getName(),
-                            null,
-                            null
-                        ));
+                    Collection<EventIdentifier> eventStreams = incomingEventStreamStore.getDescendantEventStreams(
+                        EventIdentifier.node(eventHandlerEntry.getKey(), node.getName())
+                    );
 
                     for (EventIdentifier eventIdentifier : eventStreams)
                     {
@@ -113,6 +110,7 @@ public class EventProcessor
         String eventName,
         String resourceNameStr,
         Integer volumeNr,
+        String snapshotNameStr,
         Peer peer,
         InputStream eventDataIn
     )
@@ -133,6 +131,7 @@ public class EventProcessor
                     eventName,
                     resourceNameStr,
                     volumeNr,
+                    snapshotNameStr,
                     peer,
                     eventDataIn
                 ));
@@ -164,9 +163,12 @@ public class EventProcessor
                         event.getResourceNameStr() != null ? new ResourceName(event.getResourceNameStr()) : null;
                     VolumeNumber volumeNumber =
                         event.getVolumeNr() != null ? new VolumeNumber(event.getVolumeNr()) : null;
+                    SnapshotName snapshotName =
+                        event.getSnapshotNameStr() != null ? new SnapshotName(event.getSnapshotNameStr()) : null;
 
-                    EventIdentifier eventIdentifier = new EventIdentifier(
-                        event.getEventName(), event.getPeer().getNode().getName(), resourceName, volumeNumber);
+                    EventIdentifier eventIdentifier = new EventIdentifier(event.getEventName(), new ObjectIdentifier(
+                        event.getPeer().getNode().getName(), resourceName, volumeNumber, snapshotName
+                    ));
 
                     String eventAction = event.getEventAction();
 
@@ -256,6 +258,7 @@ public class EventProcessor
         private final String eventName;
         private final String resourceNameStr;
         private final Integer volumeNr;
+        private final String snapshotNameStr;
         private final Peer peer;
         private final InputStream eventDataIn;
 
@@ -265,6 +268,7 @@ public class EventProcessor
             String eventNameRef,
             String resourceNameStrRef,
             Integer volumeNrRef,
+            String snapshotNameStrRef,
             Peer peerRef,
             InputStream eventDataInRef
         )
@@ -274,6 +278,7 @@ public class EventProcessor
             eventName = eventNameRef;
             resourceNameStr = resourceNameStrRef;
             volumeNr = volumeNrRef;
+            snapshotNameStr = snapshotNameStrRef;
             peer = peerRef;
             eventDataIn = eventDataInRef;
         }
@@ -311,6 +316,11 @@ public class EventProcessor
         public InputStream getEventDataIn()
         {
             return eventDataIn;
+        }
+
+        public String getSnapshotNameStr()
+        {
+            return snapshotNameStr;
         }
     }
 }

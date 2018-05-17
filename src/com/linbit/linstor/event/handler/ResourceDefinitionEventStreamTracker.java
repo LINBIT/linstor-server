@@ -50,12 +50,11 @@ public class ResourceDefinitionEventStreamTracker
                 }
             }
 
-            eventBroker.forwardEvent(new EventIdentifier(
-                ApiConsts.EVENT_RESOURCE_DEFINITION_READY,
-                null,
-                eventIdentifier.getResourceName(),
-                null
-            ), resourceDefinitionAction);
+            eventBroker.forwardEvent(
+                EventIdentifier.resourceDefinition(
+                    ApiConsts.EVENT_RESOURCE_DEFINITION_READY, eventIdentifier.getResourceName()),
+                resourceDefinitionAction
+            );
         }
         finally
         {

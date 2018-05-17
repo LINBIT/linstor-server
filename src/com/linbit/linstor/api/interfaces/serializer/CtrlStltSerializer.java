@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -83,6 +82,6 @@ public interface CtrlStltSerializer extends CommonSerializer
 
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
 
-        CtrlStltSerializerBuilder inProgressSnapshotEvent(List<SnapshotState> snapshotStates);
+        CtrlStltSerializerBuilder inProgressSnapshotEvent(SnapshotState snapshotState);
     }
 }

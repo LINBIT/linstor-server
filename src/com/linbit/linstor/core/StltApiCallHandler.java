@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -23,7 +22,6 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
@@ -387,7 +385,7 @@ public class StltApiCallHandler
     {
         Peer controllerPeer = controllerPeerConnector.getControllerPeer();
         eventBroker.createWatch(new Watch(
-            UUID.randomUUID(), controllerPeer.getId(), 0, new EventIdentifier(null, null, null, null)
+            UUID.randomUUID(), controllerPeer.getId(), 0, EventIdentifier.global(null)
         ));
     }
 

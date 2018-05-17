@@ -1484,11 +1484,12 @@ public class CtrlApiCallHandler
         String eventName,
         String nodeNameStr,
         String resourceNameStr,
-        Integer volumeNumber
+        Integer volumeNumber,
+        String snapshotNameStr
     )
     {
         return watchApiCallHandler.createWatch(
-            peerWatchId, eventName, nodeNameStr, resourceNameStr, volumeNumber
+            peerWatchId, eventName, nodeNameStr, resourceNameStr, volumeNumber, snapshotNameStr
         );
     }
 

@@ -61,12 +61,9 @@ public class EventSender
             for (String eventName : eventNames)
             {
                 Collection<EventIdentifier> eventStreams =
-                    outgoingEventStreamStore.getDescendantEventStreams(new EventIdentifier(
-                        eventName,
-                        watch.getEventIdentifier().getNodeName(),
-                        watch.getEventIdentifier().getResourceName(),
-                        watch.getEventIdentifier().getVolumeNumber()
-                    ));
+                    outgoingEventStreamStore.getDescendantEventStreams(
+                        new EventIdentifier(eventName, watch.getEventIdentifier().getObjectIdentifier())
+                    );
 
                 for (EventIdentifier eventIdentifier : eventStreams)
                 {
@@ -182,12 +179,8 @@ public class EventSender
         try
         {
             Collection<EventIdentifier> eventStreams =
-                outgoingEventStreamStore.getDescendantEventStreams(new EventIdentifier(
-                    eventName,
-                    objectIdentifier.getNodeName(),
-                    objectIdentifier.getResourceName(),
-                    objectIdentifier.getVolumeNumber()
-                ));
+                outgoingEventStreamStore.getDescendantEventStreams(
+                    new EventIdentifier(eventName, objectIdentifier));
 
             for (EventIdentifier eventIdentifier : eventStreams)
             {

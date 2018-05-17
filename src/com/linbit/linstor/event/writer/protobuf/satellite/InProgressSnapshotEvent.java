@@ -11,11 +11,10 @@ import com.linbit.linstor.event.writer.protobuf.ProtobufEventWriter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.List;
 
 @ProtobufEventWriter(
     eventName = InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
-    objectType = WatchableObject.RESOURCE
+    objectType = WatchableObject.SNAPSHOT
 )
 @Singleton
 public class InProgressSnapshotEvent implements EventWriter
@@ -36,11 +35,14 @@ public class InProgressSnapshotEvent implements EventWriter
     public byte[] writeEvent(ObjectIdentifier objectIdentifier)
         throws Exception
     {
-        List<SnapshotState> snapshotStates =
-            deploymentStateTracker.getSnapshotStates(objectIdentifier.getResourceName());
+        SnapshotState snapshotState =
+            deploymentStateTracker.getSnapshotStates(objectIdentifier.getResourceName()).stream()
+                .filter(state -> state.getSnapshotName().equals(objectIdentifier.getSnapshotName()))
+                .findAny()
+                .orElse(null);
 
-        return snapshotStates == null ?
+        return snapshotState == null ?
             null :
-            ctrlStltSerializer.builder().inProgressSnapshotEvent(snapshotStates).build();
+            ctrlStltSerializer.builder().inProgressSnapshotEvent(snapshotState).build();
     }
 }

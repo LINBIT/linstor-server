@@ -269,10 +269,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
         try
         {
-            EventIdentifier eventIdentifier = new EventIdentifier(
-                ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE,
-                null, rscName, null
-            );
+            EventIdentifier eventIdentifier = EventIdentifier.resourceDefinition(
+                ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE, rscName);
             if (deleted)
             {
                 ApiCallRcImpl apiCallDelRc = new ApiCallRcImpl();
@@ -1355,21 +1353,34 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
-        EventIdentifier eventIdentifier = new EventIdentifier(
-            InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT, null, rscName, null
-        );
         if (snapshotInProgress)
         {
             List<SnapshotState> newSnapshotStates =
                 computeNewSnapshotStates(rsc, shouldSuspend, alreadySnapshotted, newlyTakenSnapshots);
 
             deploymentStateTracker.setSnapshotStates(rscName, newSnapshotStates);
-            eventBroker.openOrTriggerEvent(eventIdentifier);
+
+            for (Snapshot snapshot : rsc.getInProgressSnapshots())
+            {
+                eventBroker.openOrTriggerEvent(EventIdentifier.snapshotDefinition(
+                    InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
+                    rscName,
+                    snapshot.getSnapshotDefinition().getName()
+                ));
+            }
         }
         else
         {
             deploymentStateTracker.removeSnapshotStates(rscName);
-            eventBroker.closeEventStream(eventIdentifier);
+
+            for (Snapshot snapshot : rsc.getInProgressSnapshots())
+            {
+                eventBroker.closeEventStream(EventIdentifier.snapshotDefinition(
+                    InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
+                    rscName,
+                    snapshot.getSnapshotDefinition().getName()
+                ));
+            }
         }
     }
 

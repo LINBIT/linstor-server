@@ -104,82 +104,96 @@ public class EventStreamStoreImpl implements EventStreamStore
 
         if (eventIdentifier.getNodeName() == null)
         {
-            // No node specified
+            // Node: no
             if (eventIdentifier.getResourceName() == null)
             {
-                // No resource specified => Root
+                // Node: no, resource: no => Root
                 parents = Collections.emptySet();
             }
             else
             {
-                // Resource specified
+                // Node: no, resource: yes
                 if (eventIdentifier.getVolumeNumber() == null)
                 {
-                    // No volume specified => Resource definition
-                    parents = Collections.singleton(new EventIdentifier(
-                        eventIdentifier.getEventName(),
-                        null,
-                        null,
-                        null
-                    ));
+                    // Node: no, resource: yes, volume: no
+                    if (eventIdentifier.getSnapshotName() == null)
+                    {
+                        // Node: no, resource: yes, volume: no, snapshot: no => Resource definition
+                        parents = Collections.singleton(EventIdentifier.global(eventIdentifier.getEventName()));
+                    }
+                    else
+                    {
+                        // Node: no, resource: yes, volume: no, snapshot: yes => Snapshot definition
+                        parents = Collections.singleton(EventIdentifier.resourceDefinition(
+                            eventIdentifier.getEventName(), eventIdentifier.getResourceName()
+                        ));
+                    }
                 }
                 else
                 {
-                    // Volume specified => Volume definition
-                    parents = Collections.singleton(new EventIdentifier(
-                        eventIdentifier.getEventName(),
-                        null,
-                        eventIdentifier.getResourceName(),
-                        null
+                    // Node: no, resource: yes, volume: yes => Volume definition
+                    parents = Collections.singleton(EventIdentifier.resourceDefinition(
+                        eventIdentifier.getEventName(), eventIdentifier.getResourceName()
                     ));
                 }
             }
         }
         else
         {
-            // Node specified
+            // Node: yes
             if (eventIdentifier.getResourceName() == null)
             {
-                // No resource specified => Node
-                parents = Collections.singleton(new EventIdentifier(
-                    eventIdentifier.getEventName(),
-                    null,
-                    null,
-                    null
-                ));
+                // Node: yes, resource: no => Node
+                parents = Collections.singleton(EventIdentifier.global(eventIdentifier.getEventName()));
             }
             else
             {
-                // Resource specified
+                // Node: yes, resource: yes
                 if (eventIdentifier.getVolumeNumber() == null)
                 {
-                    // No volume specified => Resource
-                    parents = Stream.of(new EventIdentifier(
-                        eventIdentifier.getEventName(),
-                        null,
-                        eventIdentifier.getResourceName(),
-                        null
-                    ), new EventIdentifier(
-                        eventIdentifier.getEventName(),
-                        eventIdentifier.getNodeName(),
-                        null,
-                        null
-                    )).collect(Collectors.toSet());
+                    // Node: yes, resource: yes, volume: no
+                    if (eventIdentifier.getSnapshotName() == null)
+                    {
+                        // Node: yes, resource: yes, volume: no, snapshot: no => Resource
+                        parents = Stream.of(
+                            EventIdentifier.resourceDefinition(
+                                eventIdentifier.getEventName(), eventIdentifier.getResourceName()),
+                            EventIdentifier.node(
+                                eventIdentifier.getEventName(), eventIdentifier.getNodeName())
+                        ).collect(Collectors.toSet());
+                    }
+                    else
+                    {
+                        // Node: yes, resource: yes, volume: no, snapshot: yes => Snapshot
+                        parents = Stream.of(
+                            EventIdentifier.resource(
+                                eventIdentifier.getEventName(),
+                                eventIdentifier.getNodeName(),
+                                eventIdentifier.getResourceName()
+                            ),
+                            EventIdentifier.snapshotDefinition(
+                                eventIdentifier.getEventName(),
+                                eventIdentifier.getResourceName(),
+                                eventIdentifier.getSnapshotName()
+                            )
+                        ).collect(Collectors.toSet());
+                    }
                 }
                 else
                 {
-                    // Volume specified => Volume
-                    parents = Stream.of(new EventIdentifier(
-                        eventIdentifier.getEventName(),
-                        null,
-                        eventIdentifier.getResourceName(),
-                        eventIdentifier.getVolumeNumber()
-                    ), new EventIdentifier(
-                        eventIdentifier.getEventName(),
-                        eventIdentifier.getNodeName(),
-                        eventIdentifier.getResourceName(),
-                        null
-                    )).collect(Collectors.toSet());
+                    // Node: yes, resource: yes, volume: yes => Volume
+                    parents = Stream.of(
+                        EventIdentifier.volumeDefinition(
+                            eventIdentifier.getEventName(),
+                            eventIdentifier.getResourceName(),
+                            eventIdentifier.getVolumeNumber()
+                        ),
+                        EventIdentifier.resource(
+                            eventIdentifier.getEventName(),
+                            eventIdentifier.getNodeName(),
+                            eventIdentifier.getResourceName()
+                        )
+                    ).collect(Collectors.toSet());
                 }
             }
         }

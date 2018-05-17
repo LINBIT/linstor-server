@@ -42,7 +42,8 @@ public class CreateWatch implements ApiCall
             msgWatch.getEventName(),
             msgWatch.hasNodeName() ? msgWatch.getNodeName() : null,
             msgWatch.hasResourceName() ? msgWatch.getResourceName() : null,
-            msgWatch.getFilterByVolumeNumber() ? msgWatch.getVolumeNumber() : null
+            msgWatch.getFilterByVolumeNumber() ? msgWatch.getVolumeNumber() : null,
+            msgWatch.hasSnapshotName() ? msgWatch.getSnapshotName() : null
         );
 
         apiCallAnswerer.answerApiCallRc(apiCallRc);

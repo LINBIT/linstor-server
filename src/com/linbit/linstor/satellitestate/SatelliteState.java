@@ -1,7 +1,9 @@
 package com.linbit.linstor.satellitestate;
 
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.SnapshotState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +40,10 @@ public class SatelliteState
 
     public <T> void setOnResource(ResourceName resourceName, BiConsumer<SatelliteResourceState, T> setter, T value)
     {
-        resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState());
-        setter.accept(resourceStates.get(resourceName), value);
+        setter.accept(
+            resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState()),
+            value
+        );
     }
 
     public <T> void unsetOnResource(
@@ -87,8 +91,8 @@ public class SatelliteState
         T value
     )
     {
-        resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState());
-        resourceStates.get(resourceName).setOnVolume(volumeNumber, setter, value);
+        resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState())
+            .setOnVolume(volumeNumber, setter, value);
     }
 
     public <T> void unsetOnVolume(
@@ -101,6 +105,26 @@ public class SatelliteState
         if (resourceState != null)
         {
             resourceState.unsetOnVolume(volumeNumber, setter);
+
+            if (resourceState.isEmpty())
+            {
+                resourceStates.remove(resourceName);
+            }
+        }
+    }
+
+    public SnapshotState getSnapshotState(ResourceName resourceName, SnapshotName snapshotName)
+    {
+        return resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState())
+            .getSnapshotState(snapshotName);
+    }
+
+    public <T> void setSnapshotState(ResourceName resourceName, SnapshotName snapshotName, SnapshotState snapshotState)
+    {
+        SatelliteResourceState resourceState = resourceStates.get(resourceName);
+        if (resourceState != null)
+        {
+            resourceState.setSnapshotState(snapshotName, snapshotState);
 
             if (resourceState.isEmpty())
             {

@@ -468,25 +468,13 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
 
     @Override
     public void writeInProgressSnapshotEvent(
-        List<SnapshotState> snapshotStates, ByteArrayOutputStream baos
+        SnapshotState snapshotState, ByteArrayOutputStream baos
     )
         throws IOException
     {
-        List<EventInProgressSnapshotOuterClass.InProgressSnapshot> inProgressSnapshots = new ArrayList<>();
-
-        for (SnapshotState snapshotState : snapshotStates)
-        {
-            inProgressSnapshots.add(
-                EventInProgressSnapshotOuterClass.InProgressSnapshot.newBuilder()
-                    .setSnapshotName(snapshotState.getSnapshotName().displayValue)
-                    .setSuspended(snapshotState.isSuspended())
-                    .setSnapshotTaken(snapshotState.isSnapshotTaken())
-                    .build()
-            );
-        }
-
         EventInProgressSnapshotOuterClass.EventInProgressSnapshot.newBuilder()
-            .addAllSnapshots(inProgressSnapshots)
+            .setSuspended(snapshotState.isSuspended())
+            .setSnapshotTaken(snapshotState.isSnapshotTaken())
             .build()
             .writeDelimitedTo(baos);
     }

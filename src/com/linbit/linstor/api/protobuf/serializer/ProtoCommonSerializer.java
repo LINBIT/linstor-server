@@ -121,6 +121,11 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
             eventBuilder.setVolumeNumber(eventIdentifier.getVolumeNumber().value);
         }
 
+        if (eventIdentifier.getSnapshotName() != null)
+        {
+            eventBuilder.setSnapshotName(eventIdentifier.getSnapshotName().displayValue);
+        }
+
         eventBuilder.build().writeDelimitedTo(baos);
     }
 

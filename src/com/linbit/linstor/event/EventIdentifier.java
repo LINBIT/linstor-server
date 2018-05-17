@@ -2,6 +2,7 @@ package com.linbit.linstor.event;
 
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
 
 import java.util.Objects;
@@ -10,28 +11,68 @@ public class EventIdentifier
 {
     private final String eventName;
 
-    private final NodeName nodeName;
+    private final ObjectIdentifier objectIdentifier;
 
-    private final ResourceName resourceName;
+    public static EventIdentifier global(String eventName)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(null, null, null, null));
+    }
 
-    private final VolumeNumber volumeNumber;
+    public static EventIdentifier node(String eventName, NodeName nodeName)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, null, null, null));
+    }
+
+    /**
+     * When used on a satellite, the node name is implicit, so this represents a resource.
+     */
+    public static EventIdentifier resourceDefinition(String eventName, ResourceName resourceName)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(null, resourceName, null, null));
+    }
+
+    /**
+     * When used on a satellite, the node name is implicit, so this represents a volume.
+     */
+    public static EventIdentifier volumeDefinition(
+        String eventName, ResourceName resourceName, VolumeNumber volumeNumber)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(null, resourceName, volumeNumber, null));
+    }
+
+    public static EventIdentifier resource(String eventName, NodeName nodeName, ResourceName resourceName)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, resourceName, null, null));
+    }
+
+    public static EventIdentifier volume(
+        String eventName, NodeName nodeName, ResourceName resourceName, VolumeNumber volumeNumber)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, resourceName, volumeNumber, null));
+    }
+
+    /**
+     * When used on a satellite, the node name is implicit, so this represents a snapshot.
+     */
+    public static EventIdentifier snapshotDefinition(
+        String eventName, ResourceName resourceName, SnapshotName snapshotName)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(null, resourceName, null, snapshotName));
+    }
+
+    public static EventIdentifier snapshot(
+        String eventName, NodeName nodeName, ResourceName resourceName, SnapshotName snapshotName)
+    {
+        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, resourceName, null, snapshotName));
+    }
 
     public EventIdentifier(
         String eventNameRef,
-        NodeName nodeNameRef,
-        ResourceName resourceNameRef,
-        VolumeNumber volumeNumberRef
+        ObjectIdentifier objectIdentifierRef
     )
     {
-        if (volumeNumberRef != null && resourceNameRef == null)
-        {
-            throw new IllegalArgumentException("Event identifier with volume number but no resource name not allowed");
-        }
-
         eventName = eventNameRef;
-        nodeName = nodeNameRef;
-        resourceName = resourceNameRef;
-        volumeNumber = volumeNumberRef;
+        objectIdentifier = objectIdentifierRef;
     }
 
     public String getEventName()
@@ -41,22 +82,27 @@ public class EventIdentifier
 
     public NodeName getNodeName()
     {
-        return nodeName;
+        return objectIdentifier.getNodeName();
     }
 
     public ResourceName getResourceName()
     {
-        return resourceName;
+        return objectIdentifier.getResourceName();
     }
 
     public VolumeNumber getVolumeNumber()
     {
-        return volumeNumber;
+        return objectIdentifier.getVolumeNumber();
+    }
+
+    public SnapshotName getSnapshotName()
+    {
+        return objectIdentifier.getSnapshotName();
     }
 
     public ObjectIdentifier getObjectIdentifier()
     {
-        return new ObjectIdentifier(nodeName, resourceName, volumeNumber);
+        return objectIdentifier;
     }
 
     @Override
@@ -74,15 +120,13 @@ public class EventIdentifier
         }
         EventIdentifier that = (EventIdentifier) obj;
         return Objects.equals(eventName, that.eventName) &&
-            Objects.equals(nodeName, that.nodeName) &&
-            Objects.equals(resourceName, that.resourceName) &&
-            Objects.equals(volumeNumber, that.volumeNumber);
+            Objects.equals(objectIdentifier, that.objectIdentifier);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(eventName, nodeName, resourceName, volumeNumber);
+        return Objects.hash(eventName, objectIdentifier);
     }
 
     @Override

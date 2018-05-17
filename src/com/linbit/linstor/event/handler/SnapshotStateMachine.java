@@ -230,17 +230,10 @@ public class SnapshotStateMachine
     private SnapshotState getSnapshotState(Snapshot snapshot)
         throws AccessDeniedException
     {
-        List<SnapshotState> snapshotStates = snapshot.getNode().getPeer(apiCtx).getSatelliteState().getFromResource(
+        return snapshot.getNode().getPeer(apiCtx).getSatelliteState().getSnapshotState(
             snapshot.getSnapshotDefinition().getResourceDefinition().getName(),
-            SatelliteResourceState::getSnapshotStates
+            snapshot.getSnapshotDefinition().getName()
         );
-
-        return snapshotStates == null ? null :
-            snapshotStates.stream()
-                .filter(snapshotState ->
-                    snapshotState.getSnapshotName().equals(snapshot.getSnapshotDefinition().getName()))
-                .findAny()
-                .orElse(null);
     }
 
     private void updateSatellites(SnapshotDefinition snapshotDefinition)

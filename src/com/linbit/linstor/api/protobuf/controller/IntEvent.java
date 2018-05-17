@@ -42,6 +42,7 @@ public class IntEvent implements ApiCall
             msgEvent.getEventName(),
             msgEvent.hasResourceName() ? msgEvent.getResourceName() : null,
             msgEvent.hasVolumeNumber() ? msgEvent.getVolumeNumber() : null,
+            msgEvent.hasSnapshotName() ? msgEvent.getSnapshotName() : null,
             peer,
             msgDataIn
         );

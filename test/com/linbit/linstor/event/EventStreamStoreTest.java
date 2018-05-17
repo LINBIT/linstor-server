@@ -33,14 +33,12 @@ public class EventStreamStoreTest
         testResourceName = new ResourceName("TestResourceName");
         testVolumeNumber = new VolumeNumber(4);
 
-        globalEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, null, null, null);
-        resourceEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, testNodeName, testResourceName, null);
-        volumeDefinitionEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, null, testResourceName, testVolumeNumber);
-        volumeEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, testNodeName, testResourceName, testVolumeNumber);
+        globalEventIdentifier = EventIdentifier.global(TEST_EVENT_NAME);
+        resourceEventIdentifier = EventIdentifier.resource(TEST_EVENT_NAME, testNodeName, testResourceName);
+        volumeDefinitionEventIdentifier =
+            EventIdentifier.volumeDefinition(TEST_EVENT_NAME, testResourceName, testVolumeNumber);
+        volumeEventIdentifier =
+            EventIdentifier.volume(TEST_EVENT_NAME, testNodeName, testResourceName, testVolumeNumber);
 
         eventStreamStore = new EventStreamStoreImpl();
     }

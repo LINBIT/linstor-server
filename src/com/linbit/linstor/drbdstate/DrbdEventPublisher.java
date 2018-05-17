@@ -158,7 +158,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
     {
         eventBroker.closeAllEventStreams(
             ApiConsts.EVENT_VOLUME_DISK_STATE,
-            new ObjectIdentifier(null, null, null)
+            new ObjectIdentifier(null, null, null, null)
         );
     }
 
@@ -189,9 +189,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
 
     private EventIdentifier volumeDiskStateEventIdentifier(DrbdResource resource, DrbdVolume volume)
     {
-        return new EventIdentifier(
+        return EventIdentifier.volumeDefinition(
             ApiConsts.EVENT_VOLUME_DISK_STATE,
-            null,
             resource.getName(),
             volume.getVolNr()
         );
@@ -199,11 +198,9 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
 
     private EventIdentifier resourceStateEventIdentifier(DrbdResource resource)
     {
-        return new EventIdentifier(
+        return EventIdentifier.resourceDefinition(
             ApiConsts.EVENT_RESOURCE_STATE,
-            null,
-            resource.getName(),
-            null
+            resource.getName()
         );
     }
 }

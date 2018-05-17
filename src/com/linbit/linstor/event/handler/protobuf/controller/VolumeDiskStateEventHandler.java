@@ -62,11 +62,6 @@ public class VolumeDiskStateEventHandler implements EventHandler
             );
         }
 
-        eventBroker.forwardEvent(new EventIdentifier(
-            ApiConsts.EVENT_VOLUME_DISK_STATE,
-            eventIdentifier.getNodeName(),
-            eventIdentifier.getResourceName(),
-            eventIdentifier.getVolumeNumber()
-        ), eventAction);
+        eventBroker.forwardEvent(eventIdentifier, eventAction);
     }
 }

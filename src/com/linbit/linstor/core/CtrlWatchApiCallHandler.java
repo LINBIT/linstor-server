@@ -2,9 +2,9 @@ package com.linbit.linstor.core;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -12,6 +12,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.Watch;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -57,7 +58,8 @@ public class CtrlWatchApiCallHandler
         String eventName,
         String nodeNameStr,
         String resourceNameStr,
-        Integer volumeNumber
+        Integer volumeNumberInt,
+        String snapshotNameStr
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -67,7 +69,7 @@ public class CtrlWatchApiCallHandler
             eventName != null ? eventName : "<all>",
             nodeNameStr != null ? nodeNameStr : "<all>",
             resourceNameStr != null ? resourceNameStr : "<all>",
-            volumeNumber != null ? volumeNumber : "<all>"
+            volumeNumberInt != null ? volumeNumberInt : "<all>"
         );
 
         String errorMsg = null;
@@ -104,6 +106,36 @@ public class CtrlWatchApiCallHandler
             }
         }
 
+        VolumeNumber volumeNumber = null;
+        if (volumeNumberInt != null)
+        {
+            try
+            {
+                volumeNumber = new VolumeNumber(volumeNumberInt);
+            }
+            catch (ValueOutOfRangeException exc)
+            {
+                errorMsg = "Volume number out of range: " + volumeNumberInt;
+                rc = ApiConsts.FAIL_INVLD_VLM_NR;
+                errorExc = exc;
+            }
+        }
+
+        SnapshotName snapshotName = null;
+        if (snapshotNameStr != null)
+        {
+            try
+            {
+                snapshotName = new SnapshotName(snapshotNameStr);
+            }
+            catch (InvalidNameException exc)
+            {
+                errorMsg = "Invalid name: " + exc.invalidName;
+                rc = ApiConsts.FAIL_INVLD_SNAPSHOT_NAME;
+                errorExc = exc;
+            }
+        }
+
         if (errorMsg == null)
         {
             try
@@ -118,30 +150,19 @@ public class CtrlWatchApiCallHandler
                     UUID.randomUUID(), peer.getId(), peerWatchId,
                     new EventIdentifier(
                         eventName,
-                        nodeName,
-                        resourceName,
-                        volumeNumber != null ? new VolumeNumber(volumeNumber) : null
+                        new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName)
                     )
                 ));
 
                 apiCallRc.addEntry("Watch created", ApiConsts.MASK_CRT | ApiConsts.CREATED);
             }
-            catch (AccessDeniedException |
-                ValueOutOfRangeException exc)
+            catch (AccessDeniedException exc)
             {
-                if (exc instanceof AccessDeniedException)
-                {
-                    errorMsg = AbsApiCallHandler.getAccDeniedMsg(
-                        accCtx,
-                        "create a watch"
-                    );
-                    rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
-                }
-                else
-                {
-                    errorMsg = "Value out of range";
-                    rc = ApiConsts.FAIL_INVLD_VLM_NR;
-                }
+                errorMsg = AbsApiCallHandler.getAccDeniedMsg(
+                    accCtx,
+                    "create a watch"
+                );
+                rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
             }
         }
 

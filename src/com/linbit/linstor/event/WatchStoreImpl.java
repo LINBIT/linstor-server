@@ -3,6 +3,7 @@ package com.linbit.linstor.event;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
 
 import javax.inject.Inject;
@@ -158,7 +159,14 @@ public class WatchStoreImpl implements WatchStore
 
                 for (VolumeNumber volumeNumber : volumeNumbers)
                 {
-                    objectIdentifiers.add(new ObjectIdentifier(nodeName, resourceName, volumeNumber));
+                    List<SnapshotName> snapshotNames =
+                        (resourceName == null || volumeNumber != null || eventIdentifier.getSnapshotName() == null) ?
+                            Collections.singletonList(null) : Arrays.asList(null, eventIdentifier.getSnapshotName());
+
+                    for (SnapshotName snapshotName : snapshotNames)
+                    {
+                        objectIdentifiers.add(new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName));
+                    }
                 }
             }
         }

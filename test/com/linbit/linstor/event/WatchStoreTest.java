@@ -33,12 +33,10 @@ public class WatchStoreTest
         testResourceName = new ResourceName("TestResourceName");
         testVolumeNumber = new VolumeNumber(4);
 
-        globalEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, null, null, null);
-        resourceEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, testNodeName, testResourceName, null);
-        volumeEventIdentifier = new EventIdentifier(
-            TEST_EVENT_NAME, testNodeName, testResourceName, testVolumeNumber);
+        globalEventIdentifier = EventIdentifier.global(TEST_EVENT_NAME);
+        resourceEventIdentifier = EventIdentifier.resource(TEST_EVENT_NAME, testNodeName, testResourceName);
+        volumeEventIdentifier =
+            EventIdentifier.volume(TEST_EVENT_NAME, testNodeName, testResourceName, testVolumeNumber);
 
         watchStore = new WatchStoreImpl();
     }
@@ -161,7 +159,7 @@ public class WatchStoreTest
         watchStore.addWatch(volumeWatch);
 
         watchStore.removeWatchesForObject(
-            new ObjectIdentifier(testNodeName, testResourceName, null)
+            new ObjectIdentifier(testNodeName, testResourceName, null, null)
         );
 
         assertThat(watchStore.getWatchesForEvent(volumeEventIdentifier))
