@@ -23,7 +23,6 @@ public class CtrlVolumeDiskStateGenerator implements VolumeDiskStateGenerator
 
     @Override
     public String generate(ObjectIdentifier objectIdentifier)
-        throws Exception
     {
         return satelliteStateHelper.withSatelliteState(
             objectIdentifier.getNodeName(),

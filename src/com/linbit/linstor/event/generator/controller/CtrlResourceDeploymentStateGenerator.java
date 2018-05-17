@@ -24,7 +24,6 @@ public class CtrlResourceDeploymentStateGenerator implements ResourceDeploymentS
 
     @Override
     public ApiCallRc generate(ObjectIdentifier objectIdentifier)
-        throws Exception
     {
         return satelliteStateHelper.withSatelliteState(
             objectIdentifier.getNodeName(),
@@ -38,7 +37,6 @@ public class CtrlResourceDeploymentStateGenerator implements ResourceDeploymentS
 
     @Override
     public void clear(ObjectIdentifier objectIdentifier)
-        throws Exception
     {
         satelliteStateHelper.onSatelliteState(
             objectIdentifier.getNodeName(),

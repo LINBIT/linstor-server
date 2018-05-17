@@ -3,10 +3,10 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.ResourceDefinitionEventStreamTracker;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 
@@ -19,20 +19,19 @@ import java.io.InputStream;
 )
 public class ResourceStateEventHandler implements EventHandler
 {
+    private final SatelliteStateHelper satelliteStateHelper;
     private final EventBroker eventBroker;
     private final ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTracker;
-    private final Peer peer;
 
     @Inject
     public ResourceStateEventHandler(
-        EventBroker eventBrokerRef,
-        ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTrackerRef,
-        Peer peerRef
+        SatelliteStateHelper satelliteStateHelperRef, EventBroker eventBrokerRef,
+        ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTrackerRef
     )
     {
+        satelliteStateHelper = satelliteStateHelperRef;
         eventBroker = eventBrokerRef;
         resourceDefinitionEventStreamTracker = resourceDefinitionEventStreamTrackerRef;
-        peer = peerRef;
     }
 
     @Override
@@ -44,17 +43,23 @@ public class ResourceStateEventHandler implements EventHandler
             EventRscStateOuterClass.EventRscState eventRscState =
                 EventRscStateOuterClass.EventRscState.parseDelimitedFrom(eventDataIn);
 
-            peer.getSatelliteState().setOnResource(
-                eventIdentifier.getResourceName(),
-                SatelliteResourceState::setReady,
-                eventRscState.getReady()
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.setOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setReady,
+                    eventRscState.getReady()
+                )
             );
         }
         else
         {
-            peer.getSatelliteState().unsetOnResource(
-                eventIdentifier.getResourceName(),
-                SatelliteResourceState::setReady
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.unsetOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setReady
+                )
             );
         }
 

@@ -3,9 +3,9 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 
@@ -18,17 +18,17 @@ import java.io.InputStream;
 )
 public class VolumeDiskStateEventHandler implements EventHandler
 {
+    private final SatelliteStateHelper satelliteStateHelper;
     private final EventBroker eventBroker;
-    private final Peer peer;
 
     @Inject
     public VolumeDiskStateEventHandler(
-        EventBroker eventBrokerRef,
-        Peer peerRef
+        SatelliteStateHelper satelliteStateHelperRef,
+        EventBroker eventBrokerRef
     )
     {
+        satelliteStateHelper = satelliteStateHelperRef;
         eventBroker = eventBrokerRef;
-        peer = peerRef;
     }
 
     @Override
@@ -40,19 +40,25 @@ public class VolumeDiskStateEventHandler implements EventHandler
             EventVlmDiskStateOuterClass.EventVlmDiskState eventVlmDiskState =
                 EventVlmDiskStateOuterClass.EventVlmDiskState.parseDelimitedFrom(eventDataIn);
 
-            peer.getSatelliteState().setOnVolume(
-                eventIdentifier.getResourceName(),
-                eventIdentifier.getVolumeNumber(),
-                SatelliteVolumeState::setDiskState,
-                eventVlmDiskState.getDiskState()
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.setOnVolume(
+                    eventIdentifier.getResourceName(),
+                    eventIdentifier.getVolumeNumber(),
+                    SatelliteVolumeState::setDiskState,
+                    eventVlmDiskState.getDiskState()
+                )
             );
         }
         else
         {
-            peer.getSatelliteState().unsetOnVolume(
-                eventIdentifier.getResourceName(),
-                eventIdentifier.getVolumeNumber(),
-                SatelliteVolumeState::setDiskState
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.unsetOnVolume(
+                    eventIdentifier.getResourceName(),
+                    eventIdentifier.getVolumeNumber(),
+                    SatelliteVolumeState::setDiskState
+                )
             );
         }
 

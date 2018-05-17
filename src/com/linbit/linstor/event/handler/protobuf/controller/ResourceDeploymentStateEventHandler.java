@@ -5,11 +5,11 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.ResourceDefinitionEventStreamTracker;
 import com.linbit.linstor.event.handler.SnapshotStateMachine;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscDeploymentStateOuterClass;
@@ -27,23 +27,23 @@ import java.util.stream.Collectors;
 )
 public class ResourceDeploymentStateEventHandler implements EventHandler
 {
+    private final SatelliteStateHelper satelliteStateHelper;
     private final EventBroker eventBroker;
     private final ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTracker;
     private final SnapshotStateMachine snapshotStateMachine;
-    private final Peer peer;
 
     @Inject
     public ResourceDeploymentStateEventHandler(
+        SatelliteStateHelper satelliteStateHelperRef,
         EventBroker eventBrokerRef,
         ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTrackerRef,
-        SnapshotStateMachine snapshotStateMachineRef,
-        Peer peerRef
+        SnapshotStateMachine snapshotStateMachineRef
     )
     {
+        satelliteStateHelper = satelliteStateHelperRef;
         eventBroker = eventBrokerRef;
         resourceDefinitionEventStreamTracker = resourceDefinitionEventStreamTrackerRef;
         snapshotStateMachine = snapshotStateMachineRef;
-        peer = peerRef;
     }
 
     @Override
@@ -66,7 +66,9 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
             {
                 ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
                 entry.setReturnCode(apiCallResponse.getRetCode());
-                entry.setMessageFormat(decorateMessageWithPeerInfo(apiCallResponse.getMessageFormat()));
+                entry.setMessageFormat(
+                    "(" + eventIdentifier.getNodeName().displayValue + ") " + apiCallResponse.getMessageFormat()
+                );
                 entry.setCauseFormat(apiCallResponse.getCauseFormat());
                 entry.setCorrectionFormat(apiCallResponse.getCorrectionFormat());
                 entry.setDetailsFormat(apiCallResponse.getDetailsFormat());
@@ -75,10 +77,13 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
                 deploymentState.addEntry(entry);
             }
 
-            peer.getSatelliteState().setOnResource(
-                eventIdentifier.getResourceName(),
-                SatelliteResourceState::setDeploymentState,
-                deploymentState
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.setOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setDeploymentState,
+                    deploymentState
+                )
             );
 
             if (!eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED) && !ApiRcUtils.isError(deploymentState))
@@ -88,9 +93,12 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
         }
         else
         {
-            peer.getSatelliteState().unsetOnResource(
-                eventIdentifier.getResourceName(),
-                SatelliteResourceState::setDeploymentState
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.unsetOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setDeploymentState
+                )
             );
         }
 
@@ -111,10 +119,5 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
                 LinStorMapEntryOuterClass.LinStorMapEntry::getKey,
                 LinStorMapEntryOuterClass.LinStorMapEntry::getValue
             ));
-    }
-
-    private String decorateMessageWithPeerInfo(String message)
-    {
-        return "(" + peer.getNode().getName().displayValue + ") " + message;
     }
 }

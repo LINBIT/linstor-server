@@ -7,10 +7,10 @@ import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.SnapshotState;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.SnapshotStateMachine;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.EventInProgressSnapshotOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 
@@ -25,17 +25,17 @@ import java.util.List;
 )
 public class InProgressSnapshotEventHandler implements EventHandler
 {
+    private final SatelliteStateHelper satelliteStateHelper;
     private final SnapshotStateMachine snapshotStateMachine;
-    private final Peer peer;
 
     @Inject
     public InProgressSnapshotEventHandler(
-        SnapshotStateMachine snapshotStateMachineRef,
-        Peer peerRef
+        SatelliteStateHelper satelliteStateHelperRef,
+        SnapshotStateMachine snapshotStateMachineRef
     )
     {
+        satelliteStateHelper = satelliteStateHelperRef;
         snapshotStateMachine = snapshotStateMachineRef;
-        peer = peerRef;
     }
 
     @Override
@@ -62,17 +62,23 @@ public class InProgressSnapshotEventHandler implements EventHandler
                     ));
                 }
 
-                peer.getSatelliteState().setOnResource(
-                    eventIdentifier.getResourceName(),
-                    SatelliteResourceState::setSnapshotStates,
-                    snapshotStates
+                satelliteStateHelper.onSatelliteState(
+                    eventIdentifier.getNodeName(),
+                    satelliteState -> satelliteState.setOnResource(
+                        eventIdentifier.getResourceName(),
+                        SatelliteResourceState::setSnapshotStates,
+                        snapshotStates
+                    )
                 );
             }
             else
             {
-                peer.getSatelliteState().unsetOnResource(
-                    eventIdentifier.getResourceName(),
-                    SatelliteResourceState::setSnapshotStates
+                satelliteStateHelper.onSatelliteState(
+                    eventIdentifier.getNodeName(),
+                    satelliteState -> satelliteState.unsetOnResource(
+                        eventIdentifier.getResourceName(),
+                        SatelliteResourceState::setSnapshotStates
+                    )
                 );
             }
         }

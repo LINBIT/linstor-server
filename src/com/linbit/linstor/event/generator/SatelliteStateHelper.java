@@ -1,5 +1,6 @@
 package com.linbit.linstor.event.generator;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.annotation.ApiContext;
@@ -37,7 +38,6 @@ public class SatelliteStateHelper
     }
 
     public <T> T withSatelliteState(NodeName nodeName, Function<SatelliteState, T> extractor, T defaultIfNoPeer)
-        throws AccessDeniedException
     {
         T value = defaultIfNoPeer;
 
@@ -65,6 +65,10 @@ public class SatelliteStateHelper
                 }
             }
         }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("Access denied using API context", exc);
+        }
         finally
         {
             nodesMapLock.readLock().unlock();
@@ -74,7 +78,6 @@ public class SatelliteStateHelper
     }
 
     public void onSatelliteState(NodeName nodeName, Consumer<SatelliteState> consumer)
-        throws AccessDeniedException
     {
         withSatelliteState(
             nodeName,

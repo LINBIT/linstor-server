@@ -23,7 +23,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -74,9 +73,7 @@ public class EventProcessor
 
     public void connectionClosed(Peer peer)
     {
-        Lock writeLock = peer.getSatelliteStateLock().writeLock();
         eventHandlingLock.lock();
-        writeLock.lock();
         try
         {
             Node node = peer.getNode();
@@ -106,7 +103,6 @@ public class EventProcessor
         }
         finally
         {
-            writeLock.unlock();
             eventHandlingLock.unlock();
         }
     }
@@ -122,8 +118,6 @@ public class EventProcessor
     )
     {
         eventHandlingLock.lock();
-        Lock writeLock = peer.getSatelliteStateLock().writeLock();
-        writeLock.lock();
         try
         {
             EventBuffer eventBuffer = pendingEventsPerPeer.get(peer.getId());
@@ -148,7 +142,6 @@ public class EventProcessor
         }
         finally
         {
-            writeLock.unlock();
             eventHandlingLock.unlock();
         }
     }

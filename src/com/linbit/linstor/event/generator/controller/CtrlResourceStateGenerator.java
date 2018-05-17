@@ -23,7 +23,6 @@ public class CtrlResourceStateGenerator implements ResourceStateGenerator
 
     @Override
     public Boolean generate(ObjectIdentifier objectIdentifier)
-        throws Exception
     {
         return satelliteStateHelper.withSatelliteState(
             objectIdentifier.getNodeName(),

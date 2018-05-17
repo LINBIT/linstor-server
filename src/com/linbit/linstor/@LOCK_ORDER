@@ -53,3 +53,5 @@ inner-most (taken last) lock, is:
 14. Volume (class Object internal mutex)
 
 15. CoreTimer (class Object internal mutex)
+
+16. Peer#getSatelliteStateLock (ReadWriteLock)
