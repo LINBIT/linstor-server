@@ -357,15 +357,20 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         {
             nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            final List<String> upperFilterStorPools =
+                filterStorPools.stream().map(String::toUpperCase).collect(toList());
+            final List<String> upperFilterNodes =
+                filterNodes.stream().map(String::toUpperCase).collect(toList());
             storPoolDfnMap.values().stream()
-                .filter(storPoolDfn -> filterStorPools.isEmpty() || filterStorPools.contains(storPoolDfn.getName()))
+                .filter(storPoolDfn -> upperFilterStorPools.isEmpty() ||
+                    upperFilterStorPools.contains(storPoolDfn.getName().value))
                 .forEach(storPoolDfn ->
                 {
                     try
                     {
                         for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx)
-                                .filter(storPool -> filterNodes.isEmpty() ||
-                                    filterNodes.contains(storPool.getNode().getName()))
+                                .filter(storPool -> upperFilterNodes.isEmpty() ||
+                                    upperFilterNodes.contains(storPool.getNode().getName().value))
                                 .collect(toList()))
                         {
                             if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))

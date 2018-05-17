@@ -689,15 +689,20 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
             nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
 
+            final List<String> upperFilterNodes = filterNodes.stream().map(String::toUpperCase).collect(toList());
+            final List<String> upperFilterResources =
+                filterResources.stream().map(String::toUpperCase).collect(toList());
+
             rscDfnMap.values().stream()
-                .filter(rscDfn -> filterResources.isEmpty() || filterResources.contains(rscDfn.getName()))
+                .filter(rscDfn -> upperFilterResources.isEmpty() ||
+                    upperFilterResources.contains(rscDfn.getName().value))
                 .forEach(rscDfn ->
                 {
                     try
                     {
                         for (Resource rsc : rscDfn.streamResource(peerAccCtx)
-                            .filter(rsc -> filterNodes.isEmpty() ||
-                                filterNodes.contains(rsc.getAssignedNode().getName()))
+                            .filter(rsc -> upperFilterNodes.isEmpty() ||
+                                upperFilterNodes.contains(rsc.getAssignedNode().getName().value))
                             .collect(toList()))
                         {
                             rscs.add(rsc.getApiData(peerAccCtx, null, null));
