@@ -195,7 +195,7 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
     @Override
     public void writeErrorReports(Set<ErrorReport> errorReports, ByteArrayOutputStream baos) throws IOException
     {
-        for(ErrorReport errReport : errorReports)
+        for (ErrorReport errReport : errorReports)
         {
             MsgErrorReportOuterClass.MsgErrorReport.Builder msgErrorReport =
                 MsgErrorReportOuterClass.MsgErrorReport.newBuilder();

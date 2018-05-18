@@ -16,7 +16,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
-import com.linbit.InvalidNameException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
@@ -181,7 +180,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         long serializerId,
         ByteArrayOutputStream baos
     )
-        throws IOException, AccessDeniedException, InvalidNameException
+        throws IOException, AccessDeniedException
     {
         nodeSerializerHelper
             .buildNodeDataMsg(node, relatedNodes, fullSyncTimestamp, serializerId)
@@ -275,7 +274,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         long updateId,
         ByteArrayOutputStream baos
     )
-        throws IOException, AccessDeniedException, InvalidNameException
+        throws IOException, AccessDeniedException
     {
         ArrayList<MsgIntNodeData> serializedNodes = new ArrayList<>();
         ArrayList<MsgIntStorPoolData> serializedStorPools = new ArrayList<>();

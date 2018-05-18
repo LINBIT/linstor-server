@@ -169,16 +169,6 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             errorReporter.reportError(ioExc);
             exceptionOccured = true;
         }
-        catch (InvalidNameException invalidNameExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Invalid name: " + invalidNameExc.invalidName,
-                    invalidNameExc
-                )
-            );
-            exceptionOccured = true;
-        }
         return this;
     }
 
@@ -319,16 +309,6 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         catch (IOException ioExc)
         {
             errorReporter.reportError(ioExc);
-            exceptionOccured = true;
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Invalid name: " + invalidNameExc.invalidName,
-                    invalidNameExc
-                )
-            );
             exceptionOccured = true;
         }
         return this;
@@ -554,7 +534,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             long serializerId,
             ByteArrayOutputStream baos
         )
-            throws IOException, AccessDeniedException, InvalidNameException;
+            throws IOException, AccessDeniedException;
 
         void writeDeletedNodeData(
             String nodeNameStr,
@@ -604,7 +584,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             long updateId,
             ByteArrayOutputStream baos
         )
-            throws IOException, AccessDeniedException, InvalidNameException;
+            throws IOException, AccessDeniedException;
 
         /*
          * Satellite -> Controller

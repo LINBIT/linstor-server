@@ -1,43 +1,39 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeApi;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscApi;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.Node.NodeApi;
-import com.linbit.linstor.Resource.RscApi;
-import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.StorPool.StorPoolApi;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.CtrlClientSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
-import com.linbit.linstor.proto.MsgErrorReportOuterClass;
-import com.linbit.linstor.proto.MsgHeaderOuterClass;
+import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
-import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.apidata.NodeApiData;
@@ -49,9 +45,6 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
@@ -140,7 +133,11 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
     }
 
     @Override
-    public void writeRscList(List<RscApi> rscs, Map<NodeName, SatelliteState> satelliteStates, ByteArrayOutputStream baos)
+    public void writeRscList(
+        List<RscApi> rscs,
+        Map<NodeName, SatelliteState> satelliteStates,
+        ByteArrayOutputStream baos
+    )
         throws IOException
     {
         MsgLstRscOuterClass.MsgLstRsc.Builder msgListRscsBuilder = MsgLstRscOuterClass.MsgLstRsc.newBuilder();
