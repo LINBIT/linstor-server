@@ -21,8 +21,10 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
 
     String getProp(String key)
         throws InvalidKeyException;
+    String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException;
     String getProp(String key, String namespace)
         throws InvalidKeyException;
+    String getPropWithDefault(String key, String namespace, String defaultValue) throws InvalidKeyException;
 
     String setProp(String key, String value)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException;

@@ -31,9 +31,23 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException
+    {
+        final String value = propsMap.getProp(key);
+        return value == null ? defaultValue : value;
+    }
+
+    @Override
     public String getProp(String key, String namespace) throws InvalidKeyException
     {
         return propsMap.getProp(key, namespace);
+    }
+
+    @Override
+    public String getPropWithDefault(String key, String namespace, String defaultValue) throws InvalidKeyException
+    {
+        final String value = propsMap.getProp(key, namespace);
+        return value == null ? defaultValue : value;
     }
 
     @Override

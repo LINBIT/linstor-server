@@ -216,6 +216,13 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return con.isPresent() ? con.get().propMap.get(pathElements[PATH_KEY]) : null;
     }
 
+    @Override
+    public String getPropWithDefault(String key, String namespace, String defaultValue) throws InvalidKeyException
+    {
+        String value = getProp(key, namespace);
+        return value == null ? defaultValue : value;
+    }
+
     /**
      * Sets the given property.
      * Creates all necessary non-existent namespaces.
@@ -457,6 +464,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
     public String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
+    }
+
+    @Override
+    public String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException
+    {
+        return getPropWithDefault(key, null, defaultValue);
     }
 
     /**
