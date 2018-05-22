@@ -435,11 +435,13 @@ INSERT INTO SEC_DFLT_ROLES (IDENTITY_NAME, ROLE_NAME)
 -- Default NetCom services
 
 -- Default PlainConnector
+INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/enabled', 'true');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/type', 'plain');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/bindaddress', '::0');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/port', '3376');
 
 -- Default SSLConnector
+INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/enabled', 'true');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/type', 'ssl');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/bindaddress', '::0');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/port', '3377');
@@ -451,6 +453,7 @@ INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/sslProtocol
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyStore', 'ssl/keystore.jks');
 
 -- Default DebugSSLConnector
+INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/enabled', 'true');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/type', 'ssl');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/bindaddress', '::0');
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/DebugSslConnector/port', '3373');

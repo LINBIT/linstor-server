@@ -54,6 +54,7 @@ public final class ControllerNetComInitializer
     private static final String PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD = "keyStorePasswd";
     private static final String PROPSCON_KEY_NETCOM_KEY_PASSWD = "keyPasswd";
     private static final String PROPSCON_KEY_NETCOM_SSL_PROTOCOL = "sslProtocol";
+    private static final String PROPSCON_KEY_NETCOM_ENABLED = "enabled";
     private static final String PROPSCON_NETCOM_TYPE_PLAIN = "plain";
     private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
     static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
@@ -202,7 +203,7 @@ public final class ControllerNetComInitializer
                 try
                 {
                     String namespaceStr = namespaces.next();
-                    createNetComService(
+                    initNetComService(
                         namespaceStr,
                         netComProps,
                         errorLogRef,
@@ -218,46 +219,13 @@ public final class ControllerNetComInitializer
     }
 
     private void createNetComService(
-        String serviceNameStr,
-        Props netComProps,
+        ServiceName serviceName,
+        Props configProp,
         ErrorReporter errorLogRef,
         AccessContext initCtx
     )
         throws SystemServiceStartException
     {
-        ServiceName serviceName;
-        try
-        {
-            serviceName = new ServiceName(serviceNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new SystemServiceStartException(
-                String.format(
-                    "The name '%s' can not be used for a network communication service instance",
-                    serviceNameStr
-                ),
-                String.format(
-                    "The name '%s' is not a valid name for a network communication service instance",
-                    serviceNameStr
-                ),
-                null,
-                "Change the name of the network communication service instance",
-                null,
-                invalidNameExc
-            );
-        }
-        Props configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
-        if (configProp == null)
-        {
-            errorLogRef.logError(
-                "A properties container returned the key '%s' as the identifier for a namespace, " +
-                    "but using the same key to obtain a reference to the namespace generated an " +
-                    "%s",
-                serviceName
-            );
-            throw new RuntimeException();
-        }
         String bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
         Integer port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
         String type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
@@ -413,9 +381,9 @@ public final class ControllerNetComInitializer
             }
             catch (
                 KeyManagementException | UnrecoverableKeyException |
-                NoSuchAlgorithmException | KeyStoreException | CertificateException |
-                IOException exc
-            )
+                    NoSuchAlgorithmException | KeyStoreException | CertificateException |
+                    IOException exc
+                )
             {
                 String errorMsg = "Initialization of an SSL-enabled network communication service failed";
                 errorLogRef.reportError(exc);
@@ -465,6 +433,59 @@ public final class ControllerNetComInitializer
                 )
             );
         }
+
+    }
+
+    private void initNetComService(
+        String serviceNameStr,
+        Props netComProps,
+        ErrorReporter errorLogRef,
+        AccessContext initCtx
+    )
+        throws SystemServiceStartException
+    {
+        ServiceName serviceName;
+        try
+        {
+            serviceName = new ServiceName(serviceNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new SystemServiceStartException(
+                String.format(
+                    "The name '%s' can not be used for a network communication service instance",
+                    serviceNameStr
+                ),
+                String.format(
+                    "The name '%s' is not a valid name for a network communication service instance",
+                    serviceNameStr
+                ),
+                null,
+                "Change the name of the network communication service instance",
+                null,
+                invalidNameExc
+            );
+        }
+        Props configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
+        if (configProp == null)
+        {
+            errorLogRef.logError(
+                "A properties container returned the key '%s' as the identifier for a namespace, " +
+                    "but using the same key to obtain a reference to the namespace generated an " +
+                    "%s",
+                serviceName
+            );
+            throw new RuntimeException();
+        }
+
+        if (loadProp(configProp, PROPSCON_KEY_NETCOM_ENABLED, "true").equals("true"))
+        {
+            createNetComService(serviceName, configProp, errorLogRef, initCtx);
+        }
+        else
+        {
+            errorLogRef.logInfo(serviceName + " is not enabled.");
+        }
     }
 
     private String loadPropChecked(Props props, String key) throws SystemServiceStartException
@@ -488,6 +509,21 @@ public final class ControllerNetComInitializer
                 );
             }
 
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            throw new ImplementationError("Constant key is invalid " + key, invalidKeyExc);
+        }
+
+        return value;
+    }
+
+    private String loadProp(Props props, String key, String defaultValue)
+    {
+        String value;
+        try
+        {
+            value = props.getPropWithDefault(key, defaultValue);
         }
         catch (InvalidKeyException invalidKeyExc)
         {
