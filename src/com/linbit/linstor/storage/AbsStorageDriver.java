@@ -352,8 +352,6 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         catch (NoSuchFileException noSuchFileExc)
         {
-            // FIXME fileSystemWatch should be able to register on non-existent directories
-
             // following happend:
             // we successfully executed "lvremove -f pool/volume"
             // however, if the removed volume was the last volume in pool, lvm seems to
