@@ -356,23 +356,35 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
 
     @Override
     public void writeNotifyResourceApplied(
-        String resourceName,
-        UUID rscUuid,
+        Resource resource,
         Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
         )
-            throws IOException
+            throws IOException, AccessDeniedException
     {
+        List<MsgIntApplyRscSuccessOuterClass.VlmData> vlmDatas = new ArrayList<>();
+        for (Volume vlm : resource.streamVolumes().collect(toList()))
+        {
+            vlmDatas.add(
+                MsgIntApplyRscSuccessOuterClass.VlmData.newBuilder()
+                    .setVlmNr(vlm.getVolumeDefinition().getVolumeNumber().value)
+                    .setBlockDevicePath(vlm.getBlockDevicePath(serializerCtx))
+                    .setMetaDisk(vlm.getMetaDiskPath(serializerCtx))
+                    .build()
+            );
+        }
+
         MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
             .setRscId(
                 MsgIntObjectId.newBuilder()
-                    .setUuid(rscUuid.toString())
-                    .setName(resourceName)
+                    .setUuid(resource.getUuid().toString())
+                    .setName(resource.getDefinition().getName().displayValue)
                     .build()
             )
             .addAllFreeSpace(
                 ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
             )
+            .addAllVlmData(vlmDatas)
             .build()
             .writeDelimitedTo(baos);
     }

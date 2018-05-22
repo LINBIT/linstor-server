@@ -7,6 +7,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.LockSupport;
@@ -1491,6 +1492,14 @@ public class CtrlApiCallHandler
         return watchApiCallHandler.createWatch(
             peerWatchId, eventName, nodeNameStr, resourceNameStr, volumeNumber, snapshotNameStr
         );
+    }
+
+    public void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
+    {
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
+        {
+            rscApiCallHandler.updateVolumeData(satellitePeer, resourceName, vlmUpdates);
+        }
     }
 
     public void updateRealFreeSpace(Peer satellitePeer, FreeSpacePojo... freeSpacePojos)

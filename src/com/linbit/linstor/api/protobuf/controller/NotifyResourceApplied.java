@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.controller;
 import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CtrlApiCallHandler;
@@ -11,6 +12,9 @@ import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass.Msg
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_NOTIFY_RSC_APPLIED,
@@ -41,6 +45,14 @@ public class NotifyResourceApplied implements ApiCall
         // applied update was the last change the controller sent to the satellite.
         // If so, we could display to the client if a resource-adjustment is pending or if the
         // satellite is basically idle
+
+        apiCallHandler.updateVolumeData(
+            satellitePeer,
+            msgIntAppliedRsc.getRscId().getName(),
+            msgIntAppliedRsc.getVlmDataList().stream()
+                .map(v -> new VlmUpdatePojo(v.getVlmNr(), v.getBlockDevicePath(), v.getMetaDisk()))
+                .collect(Collectors.toList())
+        );
 
         apiCallHandler.updateRealFreeSpace(
             satellitePeer,

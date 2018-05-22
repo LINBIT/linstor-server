@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -42,6 +43,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -1243,5 +1245,31 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
+    }
+
+    void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
+    {
+        try
+        {
+            ResourceDefinition rscDfn = rscDfnMap.get(new ResourceName(resourceName));
+            Resource rsc = rscDfn.getResource(apiCtx, satellitePeer.getNode().getName());
+
+            for (VlmUpdatePojo vlmUpd : vlmUpdates)
+            {
+                try
+                {
+                    Volume vlm = rsc.getVolume(new VolumeNumber(vlmUpd.getVolumeNumber()));
+                    vlm.setBlockDevicePath(apiCtx, vlmUpd.getBlockDevicePath());
+                    vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
+                }
+                catch (ValueOutOfRangeException ignored)
+                {
+                }
+            }
+        }
+        catch (InvalidNameException | AccessDeniedException exc)
+        {
+            throw asImplError(exc);
+        }
     }
 }

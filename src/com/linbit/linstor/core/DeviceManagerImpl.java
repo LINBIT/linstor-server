@@ -967,17 +967,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
         if (ctrlPeer != null)
         {
-            String msgRscName = rsc.getDefinition().getName().displayValue;
-            UUID rscUuid = rsc.getUuid();
-
             byte[] data = null;
             try
             {
                 data = interComSerializer
                     .builder(InternalApiConsts.API_NOTIFY_RSC_APPLIED, 1)
                     .notifyResourceApplied(
-                        msgRscName,
-                        rscUuid,
+                        rsc,
                         apiCallHandlerUtils.getFreeSpace()
                     )
                     .build();

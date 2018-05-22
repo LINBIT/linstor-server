@@ -158,7 +158,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "ProtoInterComSerializer has not enough privileges to seriailze node",
+                    "ProtoInterComSerializer has not enough privileges to serialize node",
                     accDeniedExc
                 )
             );
@@ -211,7 +211,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "ProtoInterComSerializer has not enough privileges to seriailze resource",
+                    "ProtoInterComSerializer has not enough privileges to serialize resource",
                     accDeniedExc
                 )
             );
@@ -255,7 +255,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "ProtoInterComSerializer has not enough privileges to seriailze storage pool",
+                    "ProtoInterComSerializer has not enough privileges to serialize storage pool",
                     accDeniedExc
                 )
             );
@@ -300,7 +300,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "ProtoInterComSerializer has not enough privileges to seriailze full sync",
+                    "ProtoInterComSerializer has not enough privileges to serialize full sync",
                     accDeniedExc
                 )
             );
@@ -334,18 +334,27 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
 
     @Override
     public CtrlStltSerializerBuilder notifyResourceApplied(
-        String resourceName,
-        UUID rscUuid,
+        Resource resource,
         Map<StorPool, Long> freeSpaceMap
     )
     {
         try
         {
-            ctrlStltSerializationWriter.writeNotifyResourceApplied(resourceName, rscUuid, freeSpaceMap, baos);
+            ctrlStltSerializationWriter.writeNotifyResourceApplied(resource, freeSpaceMap, baos);
         }
         catch (IOException ioExc)
         {
             errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "ProtoInterComSerializer has not enough privileges to serialize resource",
+                    accDeniedExc
+                )
+            );
             exceptionOccured = true;
         }
         return this;
@@ -593,12 +602,11 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             throws IOException;
 
         void writeNotifyResourceApplied(
-            String resourceName,
-            UUID rscUuid,
+            Resource resource,
             Map<StorPool, Long> freeSpaceMap,
             ByteArrayOutputStream baos
         )
-            throws IOException;
+            throws IOException, AccessDeniedException;
 
         void writeNotifyResourceDeleted(
             String nodeName,

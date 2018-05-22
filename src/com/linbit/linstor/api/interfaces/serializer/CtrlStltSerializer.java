@@ -63,8 +63,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             Map<StorPool, Long> freeSpaceMap
         );
         CtrlStltSerializerBuilder notifyResourceApplied(
-            String resourceName,
-            UUID rscUuid,
+            Resource resource,
             Map<StorPool, Long> freeSpaceMap
         );
         CtrlStltSerializerBuilder notifyVolumeDeleted(
