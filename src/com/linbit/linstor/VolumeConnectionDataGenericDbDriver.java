@@ -163,7 +163,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     }
 
     public List<VolumeConnectionData> loadAll(
-        Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume> vlmMap
     )
         throws SQLException
     {

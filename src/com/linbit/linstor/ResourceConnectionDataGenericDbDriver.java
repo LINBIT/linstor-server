@@ -78,7 +78,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         transMgrProvider = transMgrProviderRef;
     }
 
-    public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ResourceData> tmpRscMap)
+    public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ? extends Resource> tmpRscMap)
         throws SQLException
     {
         errorReporter.logTrace("Loading all ResourceConnections");

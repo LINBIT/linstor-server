@@ -154,8 +154,8 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     }
 
     public Map<StorPoolData, InitMaps> loadAll(
-        Map<NodeName, NodeData> nodesMap,
-        Map<StorPoolName, StorPoolDefinitionData> storPoolDfnMap
+        Map<NodeName, ? extends Node> nodesMap,
+        Map<StorPoolName, ? extends StorPoolDefinition> storPoolDfnMap
     )
         throws SQLException
     {

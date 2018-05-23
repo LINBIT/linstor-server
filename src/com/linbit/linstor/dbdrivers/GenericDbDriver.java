@@ -8,32 +8,25 @@ import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataGenericDbDriver;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceConnectionDataGenericDbDriver;
-import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
-import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.SystemContext;
@@ -43,17 +36,17 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.utils.Triple;
 import com.linbit.utils.Pair;
+import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -147,18 +140,20 @@ public class GenericDbDriver implements DatabaseDriver
         try
         {
             // load the main objects (nodes, rscDfns, storPoolDfns)
-            Map<NodeData, Node.InitMaps> loadedNodesMap = nodeDriver.loadAll();
-            Map<ResourceDefinitionData, ResourceDefinition.InitMaps> loadedRscDfnsMap = rscDfnDriver.loadAll();
-            Map<StorPoolDefinitionData, StorPoolDefinition.InitMaps> loadedStorPoolDfnsMap =
-                storPoolDfnDriver.loadAll();
+            Map<Node, Node.InitMaps> loadedNodesMap =
+                Collections.unmodifiableMap(nodeDriver.loadAll());
+            Map<ResourceDefinition, ResourceDefinition.InitMaps> loadedRscDfnsMap =
+                Collections.unmodifiableMap(rscDfnDriver.loadAll());
+            Map<StorPoolDefinition, StorPoolDefinition.InitMaps> loadedStorPoolDfnsMap =
+                Collections.unmodifiableMap(storPoolDfnDriver.loadAll());
 
             // build temporary maps for easier restoring of the remaining objects
-            Map<NodeName, NodeData> tmpNodesMap =
+            Map<NodeName, Node> tmpNodesMap =
                 mapByName(loadedNodesMap, Node::getName);
-            Map<ResourceName, ResourceDefinitionData> tmpRscDfnMap =
-                mapByName(loadedRscDfnsMap, ResourceDefinitionData::getName);
-            Map<StorPoolName, StorPoolDefinitionData> tmpStorPoolDfnMap =
-                mapByName(loadedStorPoolDfnsMap, StorPoolDefinitionData::getName);
+            Map<ResourceName, ResourceDefinition> tmpRscDfnMap =
+                mapByName(loadedRscDfnsMap, ResourceDefinition::getName);
+            Map<StorPoolName, StorPoolDefinition> tmpStorPoolDfnMap =
+                mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
 
             // loading net interfaces
             List<NetInterfaceData> loadedNetIfs = netIfDriver.loadAll(tmpNodesMap);
@@ -185,11 +180,11 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // loading storage pools
-            Map<StorPoolData, StorPool.InitMaps> loadedStorPools = storPoolDriver.loadAll(
+            Map<StorPool, StorPool.InitMaps> loadedStorPools = Collections.unmodifiableMap(storPoolDriver.loadAll(
                 tmpNodesMap,
                 tmpStorPoolDfnMap
-            );
-            for (StorPoolData storPool : loadedStorPools.keySet())
+            ));
+            for (StorPool storPool : loadedStorPools.keySet())
             {
                 loadedNodesMap.get(storPool.getNode()).getStorPoolMap()
                     .put(storPool.getName(), storPool);
@@ -199,7 +194,7 @@ public class GenericDbDriver implements DatabaseDriver
 
 
             // temporary storPool map
-            Map<Pair<NodeName, StorPoolName>, StorPoolData> tmpStorPoolMap =
+            Map<Pair<NodeName, StorPoolName>, StorPool> tmpStorPoolMap =
                 mapByName(loadedStorPools, storPool -> new Pair<>(
                     storPool.getNode().getName(),
                     storPool.getName()
@@ -207,8 +202,9 @@ public class GenericDbDriver implements DatabaseDriver
             );
 
             // loading resources
-            Map<ResourceData, Resource.InitMaps> loadedResources = rscDriver.loadAll(tmpNodesMap, tmpRscDfnMap);
-            for (ResourceData rsc : loadedResources.keySet())
+            Map<Resource, Resource.InitMaps> loadedResources =
+                Collections.unmodifiableMap(rscDriver.loadAll(tmpNodesMap, tmpRscDfnMap));
+            for (Resource rsc : loadedResources.keySet())
             {
                 loadedNodesMap.get(rsc.getAssignedNode()).getRscMap()
                     .put(rsc.getDefinition().getName(), rsc);
@@ -217,7 +213,7 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // temporary resource map
-            Map<Pair<NodeName, ResourceName>, ResourceData> tmpRscMap =
+            Map<Pair<NodeName, ResourceName>, Resource> tmpRscMap =
                 mapByName(loadedResources, rsc -> new Pair<>(
                     rsc.getAssignedNode().getName(),
                     rsc.getDefinition().getName()
@@ -235,17 +231,17 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // loading volume definitions
-            Map<VolumeDefinitionData, VolumeDefinition.InitMaps> loadedVlmDfnMap =
-                vlmDfnDriver.loadAll(tmpRscDfnMap);
+            Map<VolumeDefinition, VolumeDefinition.InitMaps> loadedVlmDfnMap =
+                Collections.unmodifiableMap(vlmDfnDriver.loadAll(tmpRscDfnMap));
 
-            for (VolumeDefinitionData vlmDfn : loadedVlmDfnMap.keySet())
+            for (VolumeDefinition vlmDfn : loadedVlmDfnMap.keySet())
             {
                 loadedRscDfnsMap.get(vlmDfn.getResourceDefinition()).getVlmDfnMap()
                     .put(vlmDfn.getVolumeNumber(), vlmDfn);
             }
 
             // temporary volume definition map
-            Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> tmpVlmDfnMap =
+            Map<Pair<ResourceName, VolumeNumber>, VolumeDefinition> tmpVlmDfnMap =
                 mapByName(loadedVlmDfnMap, vlmDfn -> new Pair<>(
                     vlmDfn.getResourceDefinition().getName(),
                     vlmDfn.getVolumeNumber()
@@ -253,13 +249,13 @@ public class GenericDbDriver implements DatabaseDriver
             );
 
             // loading volumes
-            Map<VolumeData, Volume.InitMaps> loadedVolumes = vlmDriver.loadAll(
+            Map<Volume, Volume.InitMaps> loadedVolumes = Collections.unmodifiableMap(vlmDriver.loadAll(
                 tmpRscMap,
                 tmpVlmDfnMap,
                 tmpStorPoolMap
-            );
+            ));
 
-            for (VolumeData vlm : loadedVolumes.keySet())
+            for (Volume vlm : loadedVolumes.keySet())
             {
                 loadedStorPools.get(vlm.getStorPool(dbCtx)).getVolumeMap()
                     .put(Volume.getVolumeKey(vlm), vlm);
@@ -270,7 +266,7 @@ public class GenericDbDriver implements DatabaseDriver
             }
 
             // temporary volume map
-            Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> tmpVlmMap =
+            Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> tmpVlmMap =
                 mapByName(loadedVolumes, vlm -> new Triple<>(
                     vlm.getResource().getAssignedNode().getName(),
                     vlm.getResourceDefinition().getName(),

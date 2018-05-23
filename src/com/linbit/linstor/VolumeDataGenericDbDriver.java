@@ -153,9 +153,9 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     }
 
     public Map<VolumeData, Volume.InitMaps> loadAll(
-        Map<Pair<NodeName, ResourceName>, ResourceData> rscMap,
-        Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap,
-        Map<Pair<NodeName, StorPoolName>, StorPoolData> storPoolMap
+        Map<Pair<NodeName, ResourceName>, ? extends Resource> rscMap,
+        Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition> vlmDfnMap,
+        Map<Pair<NodeName, StorPoolName>, ? extends StorPool> storPoolMap
     )
         throws SQLException
     {
