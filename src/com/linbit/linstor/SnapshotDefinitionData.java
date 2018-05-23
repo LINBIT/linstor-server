@@ -1,11 +1,18 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+
+import javax.inject.Provider;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class SnapshotDefinitionData implements SnapshotDefinition
+public class SnapshotDefinitionData extends BaseTransactionObject implements SnapshotDefinition
 {
     // Object identifier
     private final UUID objId;
@@ -18,24 +25,42 @@ public class SnapshotDefinitionData implements SnapshotDefinition
 
     private final SnapshotName snapshotName;
 
+    // State flags
+    private final StateFlags<SnapshotDfnFlags> flags;
+
     private final Map<NodeName, Snapshot> snapshotMap;
-
-    private boolean successfullyTaken;
-
-    private boolean failedDueToDisconnect;
 
     public SnapshotDefinitionData(
         UUID objIdRef,
         ResourceDefinition resourceDfnRef,
-        SnapshotName snapshotNameRef
+        SnapshotName snapshotNameRef,
+        long initFlags,
+        SnapshotDefinitionDataDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<NodeName, Snapshot> snapshotMapRef
     )
     {
+        super(transMgrProviderRef);
         objId = objIdRef;
         resourceDfn = resourceDfnRef;
         snapshotName = snapshotNameRef;
 
         dbgInstanceId = UUID.randomUUID();
-        snapshotMap = new HashMap<>();
+        snapshotMap = snapshotMapRef;
+
+        flags = transObjFactory.createStateFlagsImpl(
+            resourceDfnRef.getObjProt(),
+            this,
+            SnapshotDfnFlags.class,
+            dbDriverRef.getStateFlagsPersistence(),
+            initFlags
+        );
+
+        transObjs = Arrays.asList(
+            resourceDfn,
+            flags
+        );
     }
 
     @Override
@@ -81,27 +106,9 @@ public class SnapshotDefinitionData implements SnapshotDefinition
     }
 
     @Override
-    public boolean isSuccessfullyTaken()
+    public StateFlags<SnapshotDfnFlags> getFlags()
     {
-        return successfullyTaken;
-    }
-
-    @Override
-    public void setSuccessfullyTaken(boolean successfullyTakenRef)
-    {
-        successfullyTaken = successfullyTakenRef;
-    }
-
-    @Override
-    public boolean isFailedDueToDisconnect()
-    {
-        return failedDueToDisconnect;
-    }
-
-    @Override
-    public void setFailedDueToDisconnect(boolean failedDueToDisconnectRef)
-    {
-        failedDueToDisconnect = failedDueToDisconnectRef;
+        return flags;
     }
 
     @Override

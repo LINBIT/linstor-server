@@ -102,30 +102,29 @@ public class SnapshotDeploymentEvent implements EventWriter
     {
         ApiCallRc apiCallRc;
 
-        ApiCallRcImpl combinedDeploymentRc = new ApiCallRcImpl();
-        for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+        if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.FAILED_DEPLOYMENT))
         {
-            ApiCallRc deploymentRc = resourceDeploymentStateGenerator.generate(new ObjectIdentifier(
-                snapshot.getNode().getName(),
-                rscDfn.getName(),
-                null,
-                snapshotDfn.getName()
-            ));
-            if (deploymentRc != null && ApiRcUtils.isError(deploymentRc))
+            ApiCallRcImpl combinedDeploymentRc = new ApiCallRcImpl();
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
             {
-                for (ApiCallRc.RcEntry rcEntry : deploymentRc.getEntries())
+                ApiCallRc deploymentRc = resourceDeploymentStateGenerator.generate(new ObjectIdentifier(
+                    snapshot.getNode().getName(),
+                    rscDfn.getName(),
+                    null,
+                    snapshotDfn.getName()
+                ));
+                if (deploymentRc != null && ApiRcUtils.isError(deploymentRc))
                 {
-                    combinedDeploymentRc.addEntry(rcEntry);
+                    for (ApiCallRc.RcEntry rcEntry : deploymentRc.getEntries())
+                    {
+                        combinedDeploymentRc.addEntry(rcEntry);
+                    }
                 }
             }
-        }
 
-        if (!combinedDeploymentRc.getEntries().isEmpty())
-        {
-            // Deployment errors
             apiCallRc = combinedDeploymentRc;
         }
-        else if (snapshotDfn.isSuccessfullyTaken())
+        else if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.SUCCESSFUL))
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(ApiConsts.CREATED | ApiConsts.MASK_SNAPSHOT);
@@ -137,7 +136,7 @@ public class SnapshotDeploymentEvent implements EventWriter
 
             apiCallRc = successRc;
         }
-        else if (snapshotDfn.isFailedDueToDisconnect())
+        else if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.FAILED_DISCONNECT))
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(ApiConsts.FAIL_NOT_CONNECTED);

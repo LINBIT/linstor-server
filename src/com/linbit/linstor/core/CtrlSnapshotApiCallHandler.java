@@ -1,13 +1,17 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotData;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
@@ -28,6 +32,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -38,6 +43,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private String currentRscName;
     private String currentSnapshotName;
 
+    private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final EventBroker eventBroker;
 
     @Inject
@@ -50,6 +56,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
         EventBroker eventBrokerRef
     )
     {
@@ -64,6 +71,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             peerRef,
             whitelistPropsRef
         );
+        snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
         eventBroker = eventBrokerRef;
     }
 
@@ -96,10 +104,11 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
             SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
-            SnapshotDefinition snapshotDfn = new SnapshotDefinitionData(
-                UUID.randomUUID(),
+            SnapshotDefinition snapshotDfn = createSnapshotDfnData(
+                peerAccCtx,
                 rscDfn,
-                snapshotName
+                snapshotName,
+                new SnapshotDfnFlags[] {}
             );
 
             ensureSnapshotsViable(rscDfn);
@@ -203,6 +212,53 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_NOT_CONNECTED
             );
         }
+    }
+
+    private SnapshotDefinitionData createSnapshotDfnData(
+        AccessContext accCtx,
+        ResourceDefinition rscDfn,
+        SnapshotName snapshotName,
+        SnapshotDfnFlags[] snapshotDfnInitFlags
+    )
+    {
+        SnapshotDefinitionData snapshotDfn;
+        try
+        {
+            snapshotDfn = snapshotDefinitionDataFactory.create(
+                accCtx,
+                rscDfn,
+                snapshotName,
+                snapshotDfnInitFlags
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "create " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw asExc(
+                dataAlreadyExistsExc,
+                String.format(
+                    "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                    snapshotName,
+                    currentRscName
+                ),
+                ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "creating " + getObjectDescriptionInline()
+            );
+        }
+        return snapshotDfn;
     }
 
     private AbsApiCallHandler setContext(

@@ -6,6 +6,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -23,6 +24,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
@@ -84,13 +86,12 @@ public class SnapshotStateMachine
                     {
                         boolean changed;
 
-                        if (satelliteDisconnected)
-                        {
-                            snapshotDefinition.setFailedDueToDisconnect(true);
-                        }
-
                         if (abort)
                         {
+                            SnapshotDfnFlags flag = satelliteDisconnected ?
+                                SnapshotDfnFlags.FAILED_DISCONNECT : SnapshotDfnFlags.FAILED_DEPLOYMENT;
+                            snapshotDefinition.getFlags().enableFlags(apiCtx, flag);
+
                             changed = abortSnapshot(snapshotDefinition);
                         }
                         else
@@ -109,6 +110,10 @@ public class SnapshotStateMachine
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError("Insufficient privileges to access resource for taking snapshot", exc);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError("Failed to continue processing snapshot", exc);
         }
         finally
         {
@@ -147,7 +152,7 @@ public class SnapshotStateMachine
      * @return true if the in-progress-snapshots have been changed.
      */
     private boolean processSnapshot(SnapshotDefinition snapshotDefinition)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         boolean allSnapshotReceived = true;
         boolean allSuspended = true;
@@ -205,7 +210,7 @@ public class SnapshotStateMachine
                         resource.removeInProgressSnapshot(snapshot.getSnapshotDefinition().getName());
                     }
 
-                    snapshotDefinition.setSuccessfullyTaken(true);
+                    snapshotDefinition.getFlags().enableFlags(apiCtx, SnapshotDfnFlags.SUCCESSFUL);
 
                     closeSnapshotDeploymentEventStream(snapshotDefinition);
 

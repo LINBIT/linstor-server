@@ -35,6 +35,7 @@ public class DbConstants
     public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
     public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
     public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
+    public static final String TBL_SNAPSHOT_DEFINITIONS    = "SNAPSHOT_DEFINITIONS";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
@@ -126,6 +127,10 @@ public class DbConstants
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
     public static final String PROP_KEY       = "PROP_KEY";
     public static final String PROP_VALUE     = "PROP_VALUE";
+
+    // SNAPSHOT_DEFINITIONS column names
+    public static final String SNAPSHOT_NAME = "SNAPSHOT_NAME";
+    public static final String SNAPSHOT_FLAGS = "SNAPSHOT_FLAGS";
 
     private DbConstants()
     {

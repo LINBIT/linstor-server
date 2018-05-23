@@ -31,6 +31,7 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotData;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataFactory;
@@ -95,6 +96,7 @@ class StltRscApiCallHandler
     private final StorPoolDataFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
 
@@ -117,7 +119,8 @@ class StltRscApiCallHandler
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
-        ResourceConnectionDataFactory resourceConnectionDataFactoryRef
+        ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
+        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -138,6 +141,7 @@ class StltRscApiCallHandler
         transMgrProvider = transMgrProviderRef;
         stltSecObjs = stltSecObjsRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
     }
 
     /**
@@ -646,7 +650,10 @@ class StltRscApiCallHandler
                     localRsc.addInProgressSnapshot(
                         snapshotName, new SnapshotData(
                             snapshotApi.getSnapshotUuid(),
-                            new SnapshotDefinitionData(snapshotApi.getSnapshotDfnUuid(), rscDfn, snapshotName),
+                            snapshotDefinitionDataFactory.getInstanceSatellite(
+                                apiCtx, snapshotApi.getSnapshotDfnUuid(), rscDfn, snapshotName,
+                                new SnapshotDefinition.SnapshotDfnFlags[]{}
+                            ),
                             localRsc.getAssignedNode()
                         )
                     );
