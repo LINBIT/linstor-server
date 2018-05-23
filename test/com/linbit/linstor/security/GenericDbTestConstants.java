@@ -109,8 +109,6 @@ public interface GenericDbTestConstants
 
     // VOLUMES column names
     String STOR_POOL_NAME    = "STOR_POOL_NAME";
-    String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
-    String META_DISK_PATH    = "META_DISK_PATH";
 
     // NODE_CONNECTIONS column names
     String NODE_NAME_SRC = "NODE_NAME_SRC";

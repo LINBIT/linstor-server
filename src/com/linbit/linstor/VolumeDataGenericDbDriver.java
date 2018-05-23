@@ -41,14 +41,11 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     private static final String VOL_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String VOL_ID = DbConstants.VLM_NR;
     private static final String VOL_STOR_POOL = DbConstants.STOR_POOL_NAME;
-    private static final String VOL_BLOCK_DEVICE = DbConstants.BLOCK_DEVICE_PATH;
-    private static final String VOL_META_DISK = DbConstants.META_DISK_PATH;
     private static final String VOL_FLAGS = DbConstants.VLM_FLAGS;
 
     private static final String SELECT_ALL =
         " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
-            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
-            VOL_META_DISK + ", " + VOL_FLAGS +
+            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_FLAGS +
         " FROM " + TBL_VOL;
     private static final String SELECT_BY_RES =
         SELECT_ALL +
@@ -62,9 +59,8 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         " INSERT INTO " + TBL_VOL +
         " (" +
             VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
-            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
-            VOL_META_DISK + ", " + VOL_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?, ?)";
     private static final String UPDATE_FLAGS =
         " UPDATE " + TBL_VOL +
         " SET " + VOL_FLAGS + " = ? " +
@@ -224,8 +220,8 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             rsc,
             vlmDfn,
             storPool,
-            resultSet.getString(VOL_BLOCK_DEVICE),
-            resultSet.getString(VOL_META_DISK),
+            null,
+            null,
             resultSet.getLong(VOL_FLAGS),
             this,
             propsContainerFactory,
@@ -286,9 +282,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             stmt.setString(3, vol.getResourceDefinition().getName().value);
             stmt.setInt(4, vol.getVolumeDefinition().getVolumeNumber().value);
             stmt.setString(5, vol.getStorPool(dbCtx).getName().value);
-            stmt.setString(6, vol.getBlockDevicePath(dbCtx));
-            stmt.setString(7, vol.getMetaDiskPath(dbCtx));
-            stmt.setLong(8, vol.getFlags().getFlagsBits(dbCtx));
+            stmt.setLong(6, vol.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
 
             errorReporter.logTrace("Volume created %s", getId(vol));

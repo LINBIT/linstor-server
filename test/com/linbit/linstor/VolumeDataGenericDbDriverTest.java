@@ -29,8 +29,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VOLS =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " +
-                     VLM_NR + ", " + BLOCK_DEVICE_PATH + ", " + META_DISK_PATH + ", " +
-                     VLM_FLAGS +
+                     VLM_NR + ", " + VLM_FLAGS +
         " FROM " + TBL_VOLUMES;
 
     private NodeName nodeName;
@@ -130,8 +129,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
 
         uuid = randomUUID();
-        blockDevicePath = "/dev/null";
-        metaDiskPath = "/dev/not-null";
+        blockDevicePath = null;
+        metaDiskPath = null;
     }
 
     @Test
@@ -142,8 +141,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
+            null,
+            null,
             VlmFlags.CLEAN.flagValue,
             driver,
             propsContainerFactory,
@@ -162,8 +161,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-        assertEquals(blockDevicePath, resultSet.getString(BLOCK_DEVICE_PATH));
-        assertEquals(metaDiskPath, resultSet.getString(META_DISK_PATH));
+        assertEquals(blockDevicePath, null);
+        assertEquals(metaDiskPath, null);
         assertEquals(VlmFlags.CLEAN.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
@@ -206,8 +205,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-        assertEquals(blockDevicePath, resultSet.getString(BLOCK_DEVICE_PATH));
-        assertEquals(metaDiskPath, resultSet.getString(META_DISK_PATH));
+        assertEquals(blockDevicePath, null);
+        assertEquals(metaDiskPath, null);
         assertEquals(VlmFlags.CLEAN.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());

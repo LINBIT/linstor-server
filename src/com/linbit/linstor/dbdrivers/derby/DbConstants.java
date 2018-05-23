@@ -117,8 +117,6 @@ public class DbConstants
 
     // VOLUMES column names
     public static final String STOR_POOL_NAME    = "STOR_POOL_NAME";
-    public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
-    public static final String META_DISK_PATH    = "META_DISK_PATH";
 
     // NODE_CONNECTIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
