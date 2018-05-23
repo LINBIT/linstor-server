@@ -8,13 +8,15 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.SnapshotState;
+import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.SatelliteStateHelper;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -39,6 +41,8 @@ public class SnapshotStateMachine
     private final ReadWriteLock rscDfnMapLock;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CtrlStltSerializer ctrlStltSerializer;
+    private final SatelliteStateHelper satelliteStateHelper;
+    private final EventBroker eventBroker;
 
     @Inject
     public SnapshotStateMachine(
@@ -46,7 +50,9 @@ public class SnapshotStateMachine
         @ApiContext AccessContext apiCtxRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CtrlStltSerializer ctrlStltSerializerRef
+        CtrlStltSerializer ctrlStltSerializerRef,
+        SatelliteStateHelper satelliteStateHelperRef,
+        EventBroker eventBrokerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -54,9 +60,11 @@ public class SnapshotStateMachine
         rscDfnMapLock = rscDfnMapLockRef;
         rscDfnMap = rscDfnMapRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
+        satelliteStateHelper = satelliteStateHelperRef;
+        eventBroker = eventBrokerRef;
     }
 
-    public void stepResourceSnapshots(EventIdentifier eventIdentifier, boolean abort)
+    public void stepResourceSnapshots(EventIdentifier eventIdentifier, boolean abort, boolean satelliteDisconnected)
     {
         rscDfnMapLock.writeLock().lock();
         try
@@ -75,6 +83,11 @@ public class SnapshotStateMachine
                     for (SnapshotDefinition snapshotDefinition : snapshotDefinitions)
                     {
                         boolean changed;
+
+                        if (satelliteDisconnected)
+                        {
+                            snapshotDefinition.setFailedDueToDisconnect(true);
+                        }
 
                         if (abort)
                         {
@@ -124,6 +137,8 @@ public class SnapshotStateMachine
                 resourcesChanged = true;
             }
         }
+
+        closeSnapshotDeploymentEventStream(snapshotDefinition);
 
         return resourcesChanged;
     }
@@ -189,6 +204,11 @@ public class SnapshotStateMachine
 
                         resource.removeInProgressSnapshot(snapshot.getSnapshotDefinition().getName());
                     }
+
+                    snapshotDefinition.setSuccessfullyTaken(true);
+
+                    closeSnapshotDeploymentEventStream(snapshotDefinition);
+
                     resourcesChanged = true;
                 }
                 else if (allSnapshotTaken && allSuspendSet)
@@ -228,11 +248,14 @@ public class SnapshotStateMachine
     }
 
     private SnapshotState getSnapshotState(Snapshot snapshot)
-        throws AccessDeniedException
     {
-        return snapshot.getNode().getPeer(apiCtx).getSatelliteState().getSnapshotState(
-            snapshot.getSnapshotDefinition().getResourceDefinition().getName(),
-            snapshot.getSnapshotDefinition().getName()
+        return satelliteStateHelper.withSatelliteState(
+            snapshot.getNode().getName(),
+            satelliteState -> satelliteState.getSnapshotState(
+                snapshot.getSnapshotDefinition().getResourceDefinition().getName(),
+                snapshot.getSnapshotDefinition().getName()
+            ),
+            null
         );
     }
 
@@ -254,5 +277,14 @@ public class SnapshotStateMachine
                     .build()
             );
         }
+    }
+
+    private void closeSnapshotDeploymentEventStream(SnapshotDefinition snapshotDefinition)
+    {
+        eventBroker.closeEventStream(EventIdentifier.snapshotDefinition(
+            ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
+            snapshotDefinition.getResourceDefinition().getName(),
+            snapshotDefinition.getName()
+        ));
     }
 }

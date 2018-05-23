@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -56,6 +57,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     // Resources defined by this ResourceDefinition
     private final TransactionMap<NodeName, Resource> resourceMap;
+
+    // Snapshots from this resource definition
+    private final Map<SnapshotName, SnapshotDefinition> snapshotDfnMap;
 
     // State flags
     private final StateFlags<RscDfnFlags> flags;
@@ -111,6 +115,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         );
         volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
+        snapshotDfnMap = new HashMap<>();
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         rscDfnProps = propsContainerFactory.getInstance(
@@ -301,6 +306,35 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getAssignedNode().getName());
+    }
+
+    @Override
+    public void addSnapshotDfn(AccessContext accCtx, SnapshotDefinition snapshotDfn)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        snapshotDfnMap.put(snapshotDfn.getName(), snapshotDfn);
+    }
+
+    @Override
+    public SnapshotDefinition getSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return snapshotDfnMap.get(snapshotName);
+    }
+
+    @Override
+    public void removeSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        snapshotDfnMap.remove(snapshotName);
     }
 
     @Override

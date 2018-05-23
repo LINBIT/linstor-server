@@ -31,6 +31,7 @@ public class VolumeDiskStateEvent implements EventWriter
         volumeDiskStateGenerator = volumeDiskStateGeneratorRef;
     }
 
+    @Override
     public byte[] writeEvent(ObjectIdentifier objectIdentifier)
         throws Exception
     {

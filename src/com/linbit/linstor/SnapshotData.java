@@ -22,12 +22,6 @@ public class SnapshotData implements Snapshot
 
     private boolean takeSnapshot;
 
-    // Only used on controller
-    private boolean resourceSuspended;
-
-    // Only used on controller
-    private boolean snapshotTaken;
-
     public SnapshotData(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
@@ -81,30 +75,6 @@ public class SnapshotData implements Snapshot
     public void setTakeSnapshot(boolean takeSnapshotRef)
     {
         takeSnapshot = takeSnapshotRef;
-    }
-
-    @Override
-    public boolean isResourceSuspended()
-    {
-        return resourceSuspended;
-    }
-
-    @Override
-    public void setResourceSuspended(boolean resourceSuspended)
-    {
-        this.resourceSuspended = resourceSuspended;
-    }
-
-    @Override
-    public boolean isSnapshotTaken()
-    {
-        return snapshotTaken;
-    }
-
-    @Override
-    public void setSnapshotTaken(boolean snapshotTaken)
-    {
-        this.snapshotTaken = snapshotTaken;
     }
 
     @Override

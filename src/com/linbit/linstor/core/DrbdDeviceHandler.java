@@ -1342,7 +1342,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     catch (VolumeException vlmExc)
                     {
                         throw new ResourceException(
-                            "Creation of snapshot for resource '" + rscName.displayValue + "' volume " +
+                            "Deployment of snapshot for resource '" + rscName.displayValue + "' volume " +
                                 vlmState.getVlmNr().value + " failed",
                             null, vlmExc.getMessage(),
                             null, null, vlmExc

@@ -104,7 +104,8 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
 
         if (!deploymentSuccess)
         {
-            snapshotStateMachine.stepResourceSnapshots(eventIdentifier, true);
+            snapshotStateMachine.stepResourceSnapshots(
+                eventIdentifier, true, eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION));
         }
 
         eventBroker.forwardEvent(eventIdentifier, eventAction);

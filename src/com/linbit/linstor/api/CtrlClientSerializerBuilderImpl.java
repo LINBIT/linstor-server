@@ -1,10 +1,5 @@
 package com.linbit.linstor.api;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
@@ -14,6 +9,11 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteState;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl implements CtrlClientSerializerBuilder
 {
@@ -152,6 +152,21 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
         return this;
     }
 
+    @Override
+    public CtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc)
+    {
+        try
+        {
+            serializationWriter.writeSnapshotDeploymentEvent(apiCallRc, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
     public interface CtrlClientSerializationWriter extends CommonSerializerWriter
     {
         void writeNodeList(List<Node.NodeApi> nodes, ByteArrayOutputStream baos)
@@ -180,6 +195,9 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
             throws IOException;
 
         void writeCtrlCfgProps(Map<String, String> map, ByteArrayOutputStream baos)
+            throws IOException;
+
+        void writeSnapshotDeploymentEvent(ApiCallRc apiCallRc, ByteArrayOutputStream baos)
             throws IOException;
     }
 }

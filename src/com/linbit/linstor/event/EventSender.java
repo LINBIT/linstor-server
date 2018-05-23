@@ -210,6 +210,12 @@ public class EventSender
             {
                 writeAndSendTo(eventIdentifier, eventStreamAction, eventWriter, watches);
             }
+
+            if (ApiConsts.EVENT_STREAM_CLOSE_REMOVED.equals(eventStreamAction) ||
+                ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION.equals(eventStreamAction))
+            {
+                clearEventData(eventIdentifier, eventWriter);
+            }
         }
     }
 
@@ -231,8 +237,6 @@ public class EventSender
         if (ApiConsts.EVENT_STREAM_CLOSE_REMOVED.equals(eventStreamAction) ||
             ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION.equals(eventStreamAction))
         {
-            clearEventData(eventIdentifier, eventWriter);
-
             // Always send close events even when the event writer doesn't produce any data
             dataToSend = eventData == null ? new byte[] {} : eventData;
         }

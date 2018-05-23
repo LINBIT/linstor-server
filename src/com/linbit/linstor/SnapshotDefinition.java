@@ -19,5 +19,13 @@ public interface SnapshotDefinition
 
     void removeSnapshot(Snapshot snapshotRef);
 
+    boolean isSuccessfullyTaken();
+
+    void setSuccessfullyTaken(boolean successfullyTakenRef);
+
+    boolean isFailedDueToDisconnect();
+
+    void setFailedDueToDisconnect(boolean failedDueToDisconnectRef);
+
     UUID debugGetVolatileUuid();
 }

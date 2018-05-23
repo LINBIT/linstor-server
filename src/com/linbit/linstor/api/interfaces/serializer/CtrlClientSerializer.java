@@ -10,6 +10,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.logging.ErrorReport;
@@ -38,5 +39,7 @@ public interface CtrlClientSerializer extends CommonSerializer
 
         CtrlClientSerializerBuilder ctrlCfgSingleProp(String namespace, String key, String value);
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
+
+        CtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc);
     }
 }

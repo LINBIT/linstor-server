@@ -20,6 +20,10 @@ public class SnapshotDefinitionData implements SnapshotDefinition
 
     private final Map<NodeName, Snapshot> snapshotMap;
 
+    private boolean successfullyTaken;
+
+    private boolean failedDueToDisconnect;
+
     public SnapshotDefinitionData(
         UUID objIdRef,
         ResourceDefinition resourceDfnRef,
@@ -74,6 +78,30 @@ public class SnapshotDefinitionData implements SnapshotDefinition
     public void removeSnapshot(Snapshot snapshotRef)
     {
         snapshotMap.remove(snapshotRef.getNode().getName());
+    }
+
+    @Override
+    public boolean isSuccessfullyTaken()
+    {
+        return successfullyTaken;
+    }
+
+    @Override
+    public void setSuccessfullyTaken(boolean successfullyTakenRef)
+    {
+        successfullyTaken = successfullyTakenRef;
+    }
+
+    @Override
+    public boolean isFailedDueToDisconnect()
+    {
+        return failedDueToDisconnect;
+    }
+
+    @Override
+    public void setFailedDueToDisconnect(boolean failedDueToDisconnectRef)
+    {
+        failedDueToDisconnect = failedDueToDisconnectRef;
     }
 
     @Override

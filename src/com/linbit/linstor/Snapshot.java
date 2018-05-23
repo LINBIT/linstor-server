@@ -20,14 +20,6 @@ public interface Snapshot
 
     void setTakeSnapshot(boolean takeSnapshot);
 
-    boolean isResourceSuspended();
-
-    void setResourceSuspended(boolean resourceSuspended);
-
-    boolean isSnapshotTaken();
-
-    void setSnapshotTaken(boolean snapshotTaken);
-
     UUID debugGetVolatileUuid();
 
     SnapshotApi getApiData(AccessContext accCtx);

@@ -211,7 +211,7 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
         }
     }
 
-    private List<MsgApiCallResponseOuterClass.MsgApiCallResponse> serializeApiCallRc(ApiCallRc apiCallRc)
+    protected List<MsgApiCallResponseOuterClass.MsgApiCallResponse> serializeApiCallRc(ApiCallRc apiCallRc)
     {
         List<MsgApiCallResponseOuterClass.MsgApiCallResponse> list = new ArrayList<>();
 

@@ -32,6 +32,7 @@ public class InProgressSnapshotEvent implements EventWriter
         ctrlStltSerializer = ctrlStltSerializerRef;
     }
 
+    @Override
     public byte[] writeEvent(ObjectIdentifier objectIdentifier)
         throws Exception
     {

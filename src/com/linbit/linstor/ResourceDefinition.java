@@ -67,6 +67,15 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
     void addResource(AccessContext accCtx, Resource resRef)
         throws AccessDeniedException;
 
+    void addSnapshotDfn(AccessContext accCtx, SnapshotDefinition snapshotDfn)
+        throws AccessDeniedException;
+
+    SnapshotDefinition getSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
+        throws AccessDeniedException;
+
+    void removeSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
+        throws AccessDeniedException;
+
     String getSecret(AccessContext accCtx)
         throws AccessDeniedException;
 

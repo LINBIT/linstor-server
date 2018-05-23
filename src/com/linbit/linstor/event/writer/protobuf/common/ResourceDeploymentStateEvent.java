@@ -32,6 +32,7 @@ public class ResourceDeploymentStateEvent implements EventWriter
         resourceDeploymentStateGenerator = resourceDeploymentStateGeneratorRef;
     }
 
+    @Override
     public byte[] writeEvent(ObjectIdentifier objectIdentifier)
         throws Exception
     {

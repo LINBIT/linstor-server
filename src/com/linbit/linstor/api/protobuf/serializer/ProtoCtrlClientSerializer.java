@@ -22,6 +22,7 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.CtrlClientSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -41,6 +42,7 @@ import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
+import com.linbit.linstor.proto.eventdata.EventSnapshotDeploymentOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -197,6 +199,16 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
             .addAllProps(
                 ProtoMapUtils.fromMap(map)
             )
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeSnapshotDeploymentEvent(ApiCallRc apiCallRc, ByteArrayOutputStream baos)
+        throws IOException
+    {
+        EventSnapshotDeploymentOuterClass.EventSnapshotDeployment.newBuilder()
+            .addAllResponses(serializeApiCallRc(apiCallRc))
             .build()
             .writeDelimitedTo(baos);
     }

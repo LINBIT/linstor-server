@@ -69,6 +69,6 @@ public class InProgressSnapshotEventHandler implements EventHandler
             );
         }
 
-        snapshotStateMachine.stepResourceSnapshots(eventIdentifier, false);
+        snapshotStateMachine.stepResourceSnapshots(eventIdentifier, false, false);
     }
 }

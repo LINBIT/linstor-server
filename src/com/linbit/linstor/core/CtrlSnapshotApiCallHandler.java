@@ -18,6 +18,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -36,6 +38,8 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private String currentRscName;
     private String currentSnapshotName;
 
+    private final EventBroker eventBroker;
+
     @Inject
     public CtrlSnapshotApiCallHandler(
         ErrorReporter errorReporterRef,
@@ -45,7 +49,8 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        EventBroker eventBrokerRef
     )
     {
         super(
@@ -59,6 +64,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             peerRef,
             whitelistPropsRef
         );
+        eventBroker = eventBrokerRef;
     }
 
     /**
@@ -98,6 +104,8 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
             ensureSnapshotsViable(rscDfn);
 
+            rscDfn.addSnapshotDfn(peerAccCtx, snapshotDfn);
+
             Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
             while (rscIterator.hasNext())
             {
@@ -115,6 +123,13 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             commit();
 
             updateSatellites(rscDfn);
+
+            eventBroker.openEventStream(EventIdentifier.snapshotDefinition(
+                ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
+                rscDfn.getName(),
+                snapshotName
+            ));
+
             reportSuccess(UUID.randomUUID());
         }
         catch (ApiCallHandlerFailedException ignore)
