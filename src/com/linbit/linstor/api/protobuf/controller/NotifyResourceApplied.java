@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
@@ -10,10 +9,10 @@ import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 
+import javax.inject.Inject;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @ProtobufApiCall(

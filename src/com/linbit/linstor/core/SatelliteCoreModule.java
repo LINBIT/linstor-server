@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -59,6 +60,10 @@ public class SatelliteCoreModule extends AbstractModule
         bind(ControllerPeerConnector.class).to(ControllerPeerConnectorImpl.class);
         bind(UpdateMonitor.class).to(UpdateMonitorImpl.class);
         bind(DeviceManager.class).to(DeviceManagerImpl.class);
+        install(new FactoryModuleBuilder()
+            .implement(DeviceManagerImpl.DeviceHandlerInvocation.class,
+                DeviceManagerImpl.DeviceHandlerInvocation.class)
+            .build(DeviceManagerImpl.DeviceHandlerInvocationFactory.class));
 
         bind(Path.class).annotatedWith(Names.named(DRBD_CONFIG_PATH)).toInstance(
             FileSystems.getDefault().getPath(CONFIG_PATH)

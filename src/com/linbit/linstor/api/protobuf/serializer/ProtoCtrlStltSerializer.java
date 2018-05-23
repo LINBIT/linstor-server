@@ -359,8 +359,8 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         Resource resource,
         Map<StorPool, Long> freeSpaceMap,
         ByteArrayOutputStream baos
-        )
-            throws IOException, AccessDeniedException
+    )
+        throws IOException, AccessDeniedException
     {
         List<MsgIntApplyRscSuccessOuterClass.VlmData> vlmDatas = new ArrayList<>();
         for (Volume vlm : resource.streamVolumes().collect(toList()))

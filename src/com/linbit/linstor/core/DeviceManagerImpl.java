@@ -35,6 +35,9 @@ import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import org.slf4j.event.Level;
 
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.assistedinject.AssistedInject;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -100,6 +103,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final Provider<TransactionMgr> transMgrProvider;
 
     private final StltSecurityObjects stltSecObj;
+    private final Provider<DeviceHandlerInvocationFactory> devHandlerInvocFactoryProvider;
 
     private static final ServiceName DEV_MGR_NAME;
     static
@@ -152,7 +156,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         LinStorScope deviceMgrScopeRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        StltSecurityObjects stltSecObjRef
+        StltSecurityObjects stltSecObjRef,
+        Provider<DeviceHandlerInvocationFactory> devHandlerInvocFactoryProviderRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -172,6 +177,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         deviceMgrScope = deviceMgrScopeRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
+        devHandlerInvocFactoryProvider = devHandlerInvocFactoryProviderRef;
 
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
@@ -189,7 +195,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
-        DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(this, drbdHnd, rsc, phaseLockRef);
+
+        DeviceHandlerInvocation devHndInv = devHandlerInvocFactoryProvider.get().create(
+            this,
+            drbdHnd,
+            rsc,
+            phaseLockRef
+        );
+        // DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(this, drbdHnd, rsc, phaseLockRef);
 
         workQ.submit(devHndInv);
     }
@@ -1067,18 +1080,25 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         private final DeviceHandler handler;
         private final Resource rsc;
         private final SyncPoint phaseLock;
+        private LinStorScope devHndInvScope;
+        private TransactionMgr transMgr;
 
+        @AssistedInject
         DeviceHandlerInvocation(
-            DeviceManagerImpl devMgrRef,
-            DeviceHandler handlerRef,
-            Resource rscRef,
-            SyncPoint phaseLockRef
+            @Assisted DeviceManagerImpl devMgrRef,
+            @Assisted DeviceHandler handlerRef,
+            @Assisted Resource rscRef,
+            @Assisted SyncPoint phaseLockRef,
+            TransactionMgr transMgrRef, // should be the one from devMgr's scope
+            LinStorScope devHndInvScopeRef
         )
         {
             devMgr = devMgrRef;
             handler = handlerRef;
             rsc = rscRef;
             phaseLock = phaseLockRef;
+            transMgr = transMgrRef;
+            devHndInvScope = devHndInvScopeRef;
             phaseLock.register();
         }
 
@@ -1089,11 +1109,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 if (!devMgr.abortDevHndFlag)
                 {
+                    devHndInvScope.enter();
+                    devHndInvScope.seed(TransactionMgr.class, transMgr);
+
                     handler.dispatchResource(rsc);
                 }
             }
             finally
             {
+                devHndInvScope.exit();
                 phaseLock.arrive();
             }
         }
@@ -1101,5 +1125,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     class SvcCondException extends Exception
     {
+    }
+
+    interface DeviceHandlerInvocationFactory
+    {
+        DeviceHandlerInvocation create(
+            DeviceManagerImpl devMgrRef,
+            DeviceHandler handlerRef,
+            Resource rscRef,
+            SyncPoint phaseLockRef
+        );
     }
 }

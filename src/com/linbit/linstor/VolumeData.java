@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -56,9 +57,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionMap<Volume, VolumeConnection> volumeConnections;
 
-    private String blockDevicePath;
+    private final TransactionSimpleObject<VolumeData, String> blockDevicePath;
 
-    private String metaDiskPath;
+    private final TransactionSimpleObject<VolumeData, String> metaDiskPath;
 
     private final VolumeDataDatabaseDriver dbDriver;
 
@@ -88,8 +89,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
         storPool = storPoolRef;
-        blockDevicePath = blockDevicePathRef;
-        metaDiskPath = metaDiskPathRef;
+        blockDevicePath = transObjFactory.createTransactionSimpleObject(this, blockDevicePathRef, null);
+        metaDiskPath = transObjFactory.createTransactionSimpleObject(this, metaDiskPathRef, null);
         dbDriver = dbDriverRef;
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -117,6 +118,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             volumeConnections,
             volumeProps,
             flags,
+            blockDevicePath,
+            metaDiskPath,
             deleted
         );
     }
@@ -236,7 +239,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return blockDevicePath;
+        return blockDevicePath.get();
     }
 
     @Override
@@ -244,7 +247,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return metaDiskPath;
+        return metaDiskPath.get();
     }
 
     @Override
@@ -252,7 +255,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        blockDevicePath = path;
+        try
+        {
+            blockDevicePath.set(path);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
@@ -260,7 +270,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        metaDiskPath = path;
+        try
+        {
+            metaDiskPath.set(path);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
