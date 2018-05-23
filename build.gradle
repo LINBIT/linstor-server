@@ -83,34 +83,34 @@ jar {
 task versionInfo() {
     String propsFile = "$projectDir/generated-resources/version-info.properties"
 
-    if (project.hasProperty('versionOverride')) {
-        logger.warn("Overriding version with $versionOverride")
-        version = versionOverride
-    } else {
-        Properties props = new Properties()
-        try {
-            props.load(new FileInputStream(propsFile))
-        } catch (Exception exc) {
-            throw new RuntimeException("Cannot read version.", exc)
-        }
-        version = props.get("version")
-    }
-
     doFirst {
-        File gitFolder = file("$projectDir/.git")
-        if (gitFolder.exists())
-        {
-            try {
-                def stdOut = new ByteArrayOutputStream()
-                def stdErr = new ByteArrayOutputStream()
-                project.exec {
-                    commandLine 'make', 'versioninfo'
-                    standardOutput = stdOut
-                    errorOutput = stdErr
+        if (project.hasProperty('versionOverride')) {
+            logger.warn("Overriding version with $versionOverride")
+            version = versionOverride
+        } else {
+            File gitFolder = file("$projectDir/.git")
+            if (gitFolder.exists())
+            {
+                try {
+                    def stdOut = new ByteArrayOutputStream()
+                    def stdErr = new ByteArrayOutputStream()
+                    project.exec {
+                        commandLine 'make', 'versioninfo'
+                        standardOutput = stdOut
+                        errorOutput = stdErr
+                    }
+                } catch (ExecException exc) {
+                    throw new RuntimeException("Cannot generate version.", exc)
                 }
-            } catch (ExecException exc) {
-                throw new RuntimeException("Cannot generate version.", exc)
             }
+
+            Properties props = new Properties()
+            try {
+                props.load(new FileInputStream(propsFile))
+            } catch (Exception exc) {
+                throw new RuntimeException("Cannot read version.", exc)
+            }
+            version = props.get("version")
         }
     }
 }
