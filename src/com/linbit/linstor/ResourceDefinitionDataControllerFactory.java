@@ -99,6 +99,7 @@ public class ResourceDefinitionDataControllerFactory
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
+            new TreeMap<>(),
             new TreeMap<>()
         );
         driver.create(resDfn);

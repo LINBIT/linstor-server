@@ -2,15 +2,21 @@ package com.linbit.linstor.event;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.event.writer.EventWriter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -24,6 +30,8 @@ public class EventSender
     private final CommonSerializer commonSerializer;
     private final CoreModule.PeerMap peerMap;
     private final Map<String, EventWriter> eventWriters;
+    private final LinStorScope apiCallScope;
+    private final Provider<TransactionMgr> transMgrGenerator;
 
     // Serialize event writing and sending.
     // This could be relaxed to allow events to be written on multiple threads, if required for performance.
@@ -36,7 +44,9 @@ public class EventSender
         WatchStore watchStoreRef,
         CommonSerializer commonSerializerRef,
         CoreModule.PeerMap peerMapRef,
-        Map<String, EventWriter> eventWritersRef
+        Map<String, EventWriter> eventWritersRef,
+        LinStorScope apiCallScopeRef,
+        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -44,6 +54,8 @@ public class EventSender
         commonSerializer = commonSerializerRef;
         peerMap = peerMapRef;
         eventWriters = eventWritersRef;
+        apiCallScope = apiCallScopeRef;
+        transMgrGenerator = trnActProviderRef;
 
         watchAndStreamLock = new ReentrantLock();
         outgoingEventStreamStore = new EventStreamStoreImpl();
@@ -264,9 +276,13 @@ public class EventSender
     )
     {
         byte[] eventData = null;
+        TransactionMgr transMgr = transMgrGenerator.get();
+        apiCallScope.enter();
         try
         {
+            apiCallScope.seed(TransactionMgr.class, transMgr);
             eventData = eventWriter.writeEvent(eventIdentifier.getObjectIdentifier());
+            transMgr.commit();
         }
         catch (Exception exc)
         {
@@ -277,6 +293,22 @@ public class EventSender
                 "Failed to write event " + eventIdentifier.getEventName()
             );
         }
+        finally
+        {
+            try
+            {
+                transMgr.rollback();
+            }
+            catch (SQLException exc)
+            {
+                errorReporter.reportError(exc);
+            }
+            if (transMgr != null)
+            {
+                transMgr.returnConnection();
+            }
+            apiCallScope.exit();
+        }
         return eventData;
     }
 
@@ -285,9 +317,13 @@ public class EventSender
         EventWriter eventWriter
     )
     {
+        TransactionMgr transMgr = transMgrGenerator.get();
+        apiCallScope.enter();
         try
         {
+            apiCallScope.seed(TransactionMgr.class, transMgr);
             eventWriter.clear(eventIdentifier.getObjectIdentifier());
+            transMgr.commit();
         }
         catch (Exception exc)
         {
@@ -297,6 +333,22 @@ public class EventSender
                 null,
                 "Failed to clear event " + eventIdentifier.getEventName()
             );
+        }
+        finally
+        {
+            try
+            {
+                transMgr.rollback();
+            }
+            catch (SQLException exc)
+            {
+                errorReporter.reportError(exc);
+            }
+            if (transMgr != null)
+            {
+                transMgr.returnConnection();
+            }
+            apiCallScope.exit();
         }
     }
 

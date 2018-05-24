@@ -259,6 +259,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
 
             Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
             Map<NodeName, Resource> rscMap = new TreeMap<>();
+            Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
 
             resDfn = new ResourceDefinitionData(
                 java.util.UUID.fromString(resultSet.getString(RD_UUID)),
@@ -274,11 +275,12 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 transObjFactory,
                 transMgrProvider,
                 vlmDfnMap,
-                rscMap
+                rscMap,
+                snapshotDfnMap
             );
 
             retPair.objA = resDfn;
-            retPair.objB = new RscDfnInitMaps(vlmDfnMap, rscMap);
+            retPair.objB = new RscDfnInitMaps(vlmDfnMap, rscMap, snapshotDfnMap);
 
             errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
         }
@@ -484,14 +486,17 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     {
         private final Map<VolumeNumber, VolumeDefinition> vlmDfnMap;
         private final Map<NodeName, Resource> rscMap;
+        private final Map<SnapshotName, SnapshotDefinition> snapshotDfnMap;
 
         RscDfnInitMaps(
             Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
-            Map<NodeName, Resource> rscMapRef
+            Map<NodeName, Resource> rscMapRef,
+            Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef
         )
         {
             this.vlmDfnMap = vlmDfnMapRef;
             this.rscMap = rscMapRef;
+            this.snapshotDfnMap = snapshotDfnMapRef;
         }
 
         @Override
@@ -506,5 +511,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             return vlmDfnMap;
         }
 
+        @Override
+        public Map<SnapshotName, SnapshotDefinition> getSnapshotDfnMap()
+        {
+            return snapshotDfnMap;
+        }
     }
 }

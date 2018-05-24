@@ -203,5 +203,6 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
     {
         Map<NodeName, Resource> getRscMap();
         Map<VolumeNumber, VolumeDefinition> getVlmDfnMap();
+        Map<SnapshotName, SnapshotDefinition> getSnapshotDfnMap();
     }
 }

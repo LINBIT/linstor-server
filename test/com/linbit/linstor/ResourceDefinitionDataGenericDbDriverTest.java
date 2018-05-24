@@ -104,6 +104,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
+            new TreeMap<>(),
             new TreeMap<>()
         );
     }

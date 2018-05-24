@@ -70,6 +70,7 @@ public class ResourceDefinitionDataSatelliteFactory
                     transObjFactory,
                     transMgrProvider,
                     new TreeMap<>(),
+                    new TreeMap<>(),
                     new TreeMap<>()
                 );
             }

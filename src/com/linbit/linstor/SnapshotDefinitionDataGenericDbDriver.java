@@ -197,13 +197,13 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     }
 
 
-    public Map<SnapshotDefinitionData, InitMaps> loadAll(
+    public Map<SnapshotDefinition, InitMaps> loadAll(
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
         throws SQLException
     {
         errorReporter.logTrace("Loading all SnapshotDefinitions");
-        Map<SnapshotDefinitionData, InitMaps> ret = new TreeMap<>();
+        Map<SnapshotDefinition, InitMaps> ret = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())

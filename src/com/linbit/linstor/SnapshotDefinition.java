@@ -2,13 +2,14 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-public interface SnapshotDefinition
+public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotDefinition>
 {
     UUID getUuid();
 
@@ -26,7 +27,16 @@ public interface SnapshotDefinition
 
     StateFlags<SnapshotDfnFlags> getFlags();
 
-    UUID debugGetVolatileUuid();
+    @Override
+    default int compareTo(SnapshotDefinition otherSnapshotDfn)
+    {
+        int eq = getResourceDefinition().compareTo(otherSnapshotDfn.getResourceDefinition());
+        if (eq == 0)
+        {
+            eq = getName().compareTo(otherSnapshotDfn.getName());
+        }
+        return eq;
+    }
 
     enum SnapshotDfnFlags implements Flags
     {

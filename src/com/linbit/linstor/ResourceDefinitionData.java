@@ -59,7 +59,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private final TransactionMap<NodeName, Resource> resourceMap;
 
     // Snapshots from this resource definition
-    private final Map<SnapshotName, SnapshotDefinition> snapshotDfnMap;
+    private final TransactionMap<SnapshotName, SnapshotDefinition> snapshotDfnMap;
 
     // State flags
     private final StateFlags<RscDfnFlags> flags;
@@ -92,7 +92,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
-        Map<NodeName, Resource> rscMapRef
+        Map<NodeName, Resource> rscMapRef,
+        Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef
     )
         throws SQLException
     {
@@ -115,7 +116,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         );
         volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
-        snapshotDfnMap = new HashMap<>();
+        snapshotDfnMap = transObjFactory.createTransactionMap(snapshotDfnMapRef, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         rscDfnProps = propsContainerFactory.getInstance(

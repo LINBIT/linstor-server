@@ -17,6 +17,9 @@ import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.SnapshotDefinitionDataGenericDbDriver;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
@@ -90,6 +93,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
     private final StorPoolDefinitionDataGenericDbDriver storPoolDfnDriver;
     private final StorPoolDataGenericDbDriver storPoolDriver;
+    private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -109,6 +113,7 @@ public class GenericDbDriver implements DatabaseDriver
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
         StorPoolDefinitionDataGenericDbDriver storPoolDefinitionDriverRef,
         StorPoolDataGenericDbDriver storPoolDriverRef,
+        SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
         @Uninitialized CoreModule.NodesMap nodesMapRef,
         @Uninitialized CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
@@ -126,6 +131,7 @@ public class GenericDbDriver implements DatabaseDriver
         vlmConnDriver = vlmConnDriverRef;
         storPoolDfnDriver = storPoolDefinitionDriverRef;
         storPoolDriver = storPoolDriverRef;
+        snapshotDefinitionDriver = snapshotDefinitionDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -281,6 +287,14 @@ public class GenericDbDriver implements DatabaseDriver
                 Volume targetVolume = vlmConn.getTargetVolume(dbCtx);
                 loadedVolumes.get(sourceVolume).getVolumeConnections().put(targetVolume, vlmConn);
                 loadedVolumes.get(targetVolume).getVolumeConnections().put(sourceVolume, vlmConn);
+            }
+
+            Map<SnapshotDefinition, SnapshotDefinition.InitMaps> loadedSnapshotDfns =
+                snapshotDefinitionDriver.loadAll(tmpRscDfnMap);
+            for (SnapshotDefinition snapshotDfn : loadedSnapshotDfns.keySet())
+            {
+                loadedRscDfnsMap.get(snapshotDfn.getResourceDefinition()).getSnapshotDfnMap()
+                    .put(snapshotDfn.getName(), snapshotDfn);
             }
 
             nodesMap.putAll(tmpNodesMap);
