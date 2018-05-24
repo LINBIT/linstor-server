@@ -130,6 +130,7 @@ public class DbConstants
 
     // SNAPSHOT_DEFINITIONS column names
     public static final String SNAPSHOT_NAME = "SNAPSHOT_NAME";
+    public static final String SNAPSHOT_DSP_NAME = "SNAPSHOT_DSP_NAME";
     public static final String SNAPSHOT_FLAGS = "SNAPSHOT_FLAGS";
 
     private DbConstants()

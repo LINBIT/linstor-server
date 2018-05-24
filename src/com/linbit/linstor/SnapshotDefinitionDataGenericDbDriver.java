@@ -41,10 +41,11 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     private static final String SD_UUID = DbConstants.UUID;
     private static final String SD_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String SD_NAME = DbConstants.SNAPSHOT_NAME;
+    private static final String SD_DSP_NAME = DbConstants.SNAPSHOT_DSP_NAME;
     private static final String SD_FLAGS = DbConstants.SNAPSHOT_FLAGS;
 
     private static final String SD_SELECT_ALL =
-        " SELECT " + SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " + SD_FLAGS +
+        " SELECT " + SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " + SD_DSP_NAME + ", " + SD_FLAGS +
         " FROM " + TBL_SNAPSHOT_DFN;
     private static final String SD_SELECT =
         SD_SELECT_ALL +
@@ -54,8 +55,8 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     private static final String SD_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT_DFN +
         " (" +
-            SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " +  SD_FLAGS +
-        ") VALUES (?, ?, ?, ?)";
+            SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " + SD_DSP_NAME + ", " +  SD_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?)";
     private static final String SD_UPDATE_FLAGS =
         " UPDATE " + TBL_SNAPSHOT_DFN +
         " SET " + SD_FLAGS + " = ? " +
@@ -99,7 +100,8 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
             stmt.setString(1, snapshotDefinition.getUuid().toString());
             stmt.setString(2, snapshotDefinition.getResourceDefinition().getName().value);
             stmt.setString(3, snapshotDefinition.getName().value);
-            stmt.setLong(4, snapshotDefinition.getFlags().getFlagsBits(dbCtx));
+            stmt.setString(4, snapshotDefinition.getName().displayValue);
+            stmt.setLong(5, snapshotDefinition.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
 
@@ -213,7 +215,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
                     try
                     {
                         rscName = new ResourceName(resultSet.getString(SD_RES_NAME));
-                        snapshotName = new SnapshotName(resultSet.getString(SD_NAME));
+                        snapshotName = new SnapshotName(resultSet.getString(SD_DSP_NAME));
                     }
                     catch (InvalidNameException exc)
                     {
