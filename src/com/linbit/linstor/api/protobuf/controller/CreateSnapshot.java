@@ -7,7 +7,7 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgCrtSnapshotOuterClass.MsgCrtSnapshot;
-import com.linbit.linstor.proto.SnapshotOuterClass.Snapshot;
+import com.linbit.linstor.proto.SnapshotDfnOuterClass.SnapshotDfn;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -34,11 +34,11 @@ public class CreateSnapshot implements ApiCall
         throws IOException
     {
         MsgCrtSnapshot msgCrtRsc = MsgCrtSnapshot.parseDelimitedFrom(msgDataIn);
-        Snapshot snapshot = msgCrtRsc.getSnapshot();
+        SnapshotDfn snapshotDfn = msgCrtRsc.getSnapshotDfn();
 
         ApiCallRc apiCallRc = apiCallHandler.createSnapshot(
-            snapshot.getRscName(),
-            snapshot.getSnapshotName()
+            snapshotDfn.getRscName(),
+            snapshotDfn.getSnapshotName()
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
