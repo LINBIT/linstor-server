@@ -1251,16 +1251,31 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         try
         {
+            NodeName nodeName = satellitePeer.getNode().getName();
             ResourceDefinition rscDfn = rscDfnMap.get(new ResourceName(resourceName));
-            Resource rsc = rscDfn.getResource(apiCtx, satellitePeer.getNode().getName());
+            Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
             for (VlmUpdatePojo vlmUpd : vlmUpdates)
             {
                 try
                 {
                     Volume vlm = rsc.getVolume(new VolumeNumber(vlmUpd.getVolumeNumber()));
-                    vlm.setBlockDevicePath(apiCtx, vlmUpd.getBlockDevicePath());
-                    vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
+                    if (vlm != null)
+                    {
+                        vlm.setBlockDevicePath(apiCtx, vlmUpd.getBlockDevicePath());
+                        vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
+                    }
+                    else
+                    {
+                        errorReporter.logWarning(
+                            String.format(
+                                "Tried to update a non existing volume. Node: %s, Resource: %s, VolumeNr: %d",
+                                nodeName.displayValue,
+                                rscDfn.getName().displayValue,
+                                vlmUpd.getVolumeNumber()
+                            )
+                        );
+                    }
                 }
                 catch (ValueOutOfRangeException ignored)
                 {
