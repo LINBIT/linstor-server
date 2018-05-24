@@ -283,6 +283,8 @@ public final class Controller
         {
             Thread.currentThread().setName("Main");
 
+            errorLog.logInfo("Loading API classes started.");
+            long startAPIClassLoadingTime = System.currentTimeMillis();
             ApiType apiType = new ProtobufApiType();
             ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
             List<String> packageSuffixes = Arrays.asList("common", "controller");
@@ -307,7 +309,13 @@ public final class Controller
                 EventHandler.class,
                 ProtobufEventHandler.class
             );
+            errorLog.logInfo(String.format(
+                "API classes loading finished: %dms",
+                (System.currentTimeMillis() - startAPIClassLoadingTime))
+            );
 
+            errorLog.logInfo("Dependency injection started.");
+            long startDepInjectionTime = System.currentTimeMillis();
             Injector injector = Guice.createInjector(
                 new GuiceConfigModule(),
                 new LoggingModule(errorLog),
@@ -334,6 +342,10 @@ public final class Controller
                 new DebugModule(),
                 new ControllerDebugModule(),
                 new ControllerTransactionMgrModule()
+            );
+            errorLog.logInfo(String.format(
+                    "Dependency injection finished: %dms",
+                    (System.currentTimeMillis() - startDepInjectionTime))
             );
 
             // Object protection loading has a hidden dependency on initializing the security objects

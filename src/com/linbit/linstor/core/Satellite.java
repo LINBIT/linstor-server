@@ -260,6 +260,8 @@ public final class Satellite
         {
             Thread.currentThread().setName("Main");
 
+            errorLog.logInfo("Loading API classes started.");
+            long startAPIClassLoadingTime = System.currentTimeMillis();
             ApiType apiType = new ProtobufApiType();
             ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
             List<String> packageSuffixes = Arrays.asList("common", "satellite");
@@ -277,7 +279,13 @@ public final class Satellite
                 EventWriter.class,
                 ProtobufEventWriter.class
             );
+            errorLog.logInfo(String.format(
+                "API classes loading finished: %dms",
+                (System.currentTimeMillis() - startAPIClassLoadingTime))
+            );
 
+            errorLog.logInfo("Dependency injection started.");
+            long startDepInjectionTime = System.currentTimeMillis();
             Injector injector = Guice.createInjector(
                 new GuiceConfigModule(),
                 new LoggingModule(errorLog),
@@ -297,6 +305,10 @@ public final class Satellite
                 new DebugModule(),
                 new SatelliteDebugModule(),
                 new SatelliteTransactionMgrModule()
+            );
+            errorLog.logInfo(String.format(
+                "Dependency injection finished: %dms",
+                (System.currentTimeMillis() - startDepInjectionTime))
             );
 
             Satellite instance = injector.getInstance(Satellite.class);
