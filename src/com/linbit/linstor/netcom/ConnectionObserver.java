@@ -28,6 +28,7 @@ public interface ConnectionObserver
      *
      * @param connPeer The peer that was disconnected
      * @param allowReconnect If true, the reconnector task will try to reconnect.
+     * @param shuttingDown True if the connections being generally shut down.
      */
-    void connectionClosed(Peer connPeer, boolean allowReconnect);
+    void connectionClosed(Peer connPeer, boolean allowReconnect, boolean shuttingDown);
 }

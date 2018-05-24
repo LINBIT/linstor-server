@@ -8,7 +8,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import javax.net.ssl.SSLException;
@@ -96,19 +95,14 @@ public interface Peer
     boolean sendMessage(byte[] data);
 
     /**
-     * calls {@link #closeConnection(boolean)} with false for <code>allowReconnect</code>
+     * Closes the connection to the peer
      */
     void closeConnection();
 
     /**
-     * Closes the connection to the peer
-     *
-     * FIXME: This said "throws SSLException", but JavaDoc complains. Check whether it actually throw SSLException
-     *        and whether it is even a good idea to do that.
-     *
-     * @param allowReconnect If false, no attempts will be made to reestablish the connection.
+     * Notifies the peer that the underlying connection is closing.
      */
-    void closeConnection(boolean allowReconnect);
+    void connectionClosing();
 
     /**
      * This is the same as calling {@code isConnected(true)}

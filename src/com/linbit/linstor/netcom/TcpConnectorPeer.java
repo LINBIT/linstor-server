@@ -258,14 +258,14 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void closeConnection()
     {
-        closeConnection(false);
+        connector.closeConnection(this);
     }
 
-    public void closeConnection(boolean allowReconnect)
+    @Override
+    public void connectionClosing()
     {
         connected = false;
         authenticated = false;
-        connector.closeConnection(this, allowReconnect);
     }
 
     @Override

@@ -934,20 +934,25 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     @Override
-    public void closeConnection(TcpConnectorPeer peerObj, boolean allowReconnect)
+    public void closeConnection(TcpConnectorPeer peerObj)
     {
-        closeConnection(peerObj.getSelectionKey(), allowReconnect);
+        closeConnection(peerObj.getSelectionKey(), false);
     }
 
     private void closeConnection(SelectionKey currentKey, boolean allowReconnect)
     {
+        closeConnection(currentKey, allowReconnect, false);
+    }
+
+    private void closeConnection(SelectionKey currentKey, boolean allowReconnect, boolean shuttingDown)
+    {
         Peer client = (TcpConnectorPeer) currentKey.attachment();
         if (client != null)
         {
-            connObserver.connectionClosed(client, allowReconnect);
+            connObserver.connectionClosed(client, allowReconnect, shuttingDown);
             if (client.isConnected(false))
             {
-                client.closeConnection(allowReconnect);
+                client.connectionClosing();
             }
         }
         try
@@ -975,7 +980,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 for (SelectionKey currentKey : serverSelector.keys())
                 {
-                    closeConnection(currentKey, false);
+                    closeConnection(currentKey, false, true);
                 }
                 serverSelector.close();
             }
@@ -1232,10 +1237,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
 
         @Override
-        public void connectionClosed(Peer connPeer, boolean allowReconnect)
+        public void connectionClosed(Peer connPeer, boolean allowReconnect, boolean shuttingDown)
         {
             performConnectionObserverCall(
-                notNullConnObserver -> notNullConnObserver.connectionClosed(connPeer, allowReconnect),
+                notNullConnObserver -> notNullConnObserver.connectionClosed(connPeer, allowReconnect, shuttingDown),
                 "connection closed"
             );
         }

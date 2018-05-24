@@ -22,6 +22,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,7 +39,8 @@ public class EventProcessor
     private final ErrorReporter errorReporter;
     private final Map<String, Provider<EventHandler>> eventHandlers;
     private final LinStorScope apiCallScope;
-    private final Provider<TransactionMgr> trnActProvider;
+    private final Provider<TransactionMgr> transMgrGenerator;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     // Synchronizes access to incomingEventStreamStore and pendingEventsPerPeer
     private final ReentrantLock eventHandlingLock;
@@ -51,13 +53,15 @@ public class EventProcessor
         ErrorReporter errorReporterRef,
         Map<String, Provider<EventHandler>> eventHandlersRef,
         LinStorScope apiCallScopeRef,
-        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef
+        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
         apiCallScope = apiCallScopeRef;
-        trnActProvider = trnActProviderRef;
+        transMgrGenerator = trnActProviderRef;
+        transMgrProvider = transMgrProviderRef;
 
         eventHandlingLock = new ReentrantLock();
         incomingEventStreamStore = new EventStreamStoreImpl();
@@ -190,6 +194,8 @@ public class EventProcessor
                         incomingEventStreamStore.removeEventStream(eventIdentifier);
                     }
                 }
+
+                transMgrProvider.get().commit();
             }
             catch (InvalidNameException | ValueOutOfRangeException exc)
             {
@@ -204,6 +210,17 @@ public class EventProcessor
             {
                 errorReporter.reportError(exc);
             }
+            finally
+            {
+                try
+                {
+                    transMgrProvider.get().rollback();
+                }
+                catch (SQLException exc)
+                {
+                    errorReporter.reportError(exc);
+                }
+            }
 
             event = eventBuffer.getNextEvent();
         }
@@ -215,7 +232,7 @@ public class EventProcessor
         Peer peer
     )
     {
-        TransactionMgr transMgr = trnActProvider.get();
+        TransactionMgr transMgr = transMgrGenerator.get();
         apiCallScope.enter();
         try
         {
@@ -223,14 +240,23 @@ public class EventProcessor
             apiCallScope.seed(TransactionMgr.class, transMgr);
             eventHandler.get().execute(
                 ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, eventIdentifier, null);
+            transMgr.commit();
         }
-        catch (IOException exc)
+        catch (Exception exc)
         {
-            throw new ImplementationError(
+            errorReporter.reportError(exc, null, null,
                 "Event handler for " + eventIdentifier + " failed on connection closed");
         }
         finally
         {
+            try
+            {
+                transMgr.rollback();
+            }
+            catch (SQLException exc)
+            {
+                errorReporter.reportError(exc);
+            }
             if (transMgr != null)
             {
                 transMgr.returnConnection();
