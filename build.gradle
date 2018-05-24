@@ -40,9 +40,8 @@ def protobufVersion = '3.2.0'
 
 dependencies
 {
-    compile group: 'com.google.inject', name: 'guice', version: '4.1.0'
-    compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '4.1.0'
-    compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.1.0'
+    compile group: 'com.google.inject', name: 'guice', version: '4.2.0'
+    compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
 
     compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
     compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
