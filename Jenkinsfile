@@ -7,7 +7,7 @@ node {
     }
 
     stage('Assemble') {
-        sh "${GRADLE_HOME}/bin/gradle clean assemble"
+        sh "${GRADLE_HOME}/bin/gradle clean getProtoc assemble"
     }
 
     stage('Check') {
