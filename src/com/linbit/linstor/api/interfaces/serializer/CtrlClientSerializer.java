@@ -2,18 +2,16 @@ package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.satellitestate.SatelliteState;
-import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.logging.ErrorReport;
 
 public interface CtrlClientSerializer extends CommonSerializer
 {
@@ -34,6 +32,7 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
         CtrlClientSerializerBuilder resourceList(
             List<Resource.RscApi> rscs, Map<NodeName, SatelliteState> satelliteStates);
+        CtrlClientSerializerBuilder snapshotDfnList(List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns);
 
         CtrlClientSerializerBuilder apiVersion(long features, String controllerInfo);
 

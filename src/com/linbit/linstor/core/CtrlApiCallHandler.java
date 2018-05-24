@@ -1563,6 +1563,16 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    public byte[] listSnapshotDefinition()
+    {
+        byte[] listSnapshotDefinitions;
+        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.readLock()))
+        {
+            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions(msgId.get());
+        }
+        return listSnapshotDefinitions;
+    }
+
     public ApiCallRc setMasterPassphrase(String newPassphrase, String oldPassphrase)
     {
         ApiCallRc apiCallRc;

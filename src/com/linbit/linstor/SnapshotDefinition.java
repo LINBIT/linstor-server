@@ -1,6 +1,9 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.TransactionObject;
 
@@ -26,6 +29,8 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
     void removeSnapshot(Snapshot snapshotRef);
 
     StateFlags<SnapshotDfnFlags> getFlags();
+
+    SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     @Override
     default int compareTo(SnapshotDefinition otherSnapshotDfn)
@@ -57,38 +62,37 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
             return flagValue;
         }
 
-        public static SnapshotDfnFlags[] valuesOfIgnoreCase(String string)
-        {
-            SnapshotDfnFlags[] flags;
-            if (string == null)
-            {
-                flags = new SnapshotDfnFlags[0];
-            }
-            else
-            {
-                String[] split = string.split(",");
-                flags = new SnapshotDfnFlags[split.length];
-
-                for (int idx = 0; idx < split.length; idx++)
-                {
-                    flags[idx] = SnapshotDfnFlags.valueOf(split[idx].toUpperCase().trim());
-                }
-            }
-            return flags;
-        }
-
-        public static SnapshotDfnFlags[] restoreFlags(long vlmDfnFlags)
+        public static SnapshotDfnFlags[] restoreFlags(long snapshotDfnFlags)
         {
             List<SnapshotDfnFlags> flagList = new ArrayList<>();
             for (SnapshotDfnFlags flag : SnapshotDfnFlags.values())
             {
-                if ((vlmDfnFlags & flag.flagValue) == flag.flagValue)
+                if ((snapshotDfnFlags & flag.flagValue) == flag.flagValue)
                 {
                     flagList.add(flag);
                 }
             }
-            return flagList.toArray(new SnapshotDfnFlags[] {});
+            return flagList.toArray(new SnapshotDfnFlags[0]);
         }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(SnapshotDfnFlags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(SnapshotDfnFlags.class, listFlags);
+        }
+    }
+
+    public interface SnapshotDfnApi
+    {
+        UUID getUuid();
+        String getSnapshotName();
+        UUID getRscDfnUuid();
+        String getRscName();
+        long getFlags();
     }
 
     public interface InitMaps

@@ -1,6 +1,9 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -109,6 +112,19 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     public StateFlags<SnapshotDfnFlags> getFlags()
     {
         return flags;
+    }
+
+    @Override
+    public SnapshotDfnApi getApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return new SnapshotDfnPojo(
+            objId,
+            snapshotName.getDisplayName(),
+            resourceDfn.getUuid(),
+            resourceDfn.getName().getDisplayName(),
+            flags.getFlagsBits(accCtx)
+        );
     }
 
     @Override

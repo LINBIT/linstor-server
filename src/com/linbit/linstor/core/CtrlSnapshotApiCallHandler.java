@@ -20,6 +20,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.event.EventBroker;
@@ -28,11 +29,16 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -43,6 +49,9 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private String currentRscName;
     private String currentSnapshotName;
 
+    private final CtrlClientSerializer clientComSerializer;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ObjectProtection rscDfnMapProt;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final EventBroker eventBroker;
 
@@ -50,7 +59,10 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     public CtrlSnapshotApiCallHandler(
         ErrorReporter errorReporterRef,
         CtrlStltSerializer interComSerializer,
+        CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
@@ -71,6 +83,9 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             peerRef,
             whitelistPropsRef
         );
+        clientComSerializer = clientComSerializerRef;
+        rscDfnMap = rscDfnMapRef;
+        rscDfnMapProt = rscDfnMapProtRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
         eventBroker = eventBrokerRef;
     }
@@ -158,6 +173,38 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    byte[] listSnapshotDefinitions(int msgId)
+    {
+        ArrayList<SnapshotDefinition.SnapshotDfnApi> snapshotDfns = new ArrayList<>();
+        try
+        {
+            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            for (ResourceDefinition rscDfn : rscDfnMap.values())
+            {
+                for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx))
+                {
+                    try
+                    {
+                        snapshotDfns.add(snapshotDfn.getApiData(peerAccCtx));
+                    }
+                    catch (AccessDeniedException accDeniedExc)
+                    {
+                        // don't add storpooldfn without access
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            // for now return an empty list.
+        }
+
+        return clientComSerializer
+            .builder(ApiConsts.API_LST_SNAPSHOT_DFN, msgId)
+            .snapshotDfnList(snapshotDfns)
+            .build();
     }
 
     private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)

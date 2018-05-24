@@ -13,6 +13,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,9 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
         throws AccessDeniedException;
 
     SnapshotDefinition getSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
+        throws AccessDeniedException;
+
+    Collection<SnapshotDefinition> getSnapshotDfns(AccessContext accCtx)
         throws AccessDeniedException;
 
     void removeSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)

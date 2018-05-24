@@ -4,6 +4,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
@@ -108,6 +109,21 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
     }
 
     @Override
+    public CtrlClientSerializerBuilder snapshotDfnList(List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns)
+    {
+        try
+        {
+            serializationWriter.writeSnapshotDfnList(snapshotDfns, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CtrlClientSerializerBuilder apiVersion(final long features, final String controllerInfo)
     {
         try
@@ -186,6 +202,9 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
             Map<NodeName, SatelliteState> satelliteStates,
             ByteArrayOutputStream baos
         )
+            throws IOException;
+
+        void writeSnapshotDfnList(List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns, ByteArrayOutputStream baos)
             throws IOException;
 
         void writeApiVersion(long features, String controllerInfo, ByteArrayOutputStream baos)

@@ -16,6 +16,7 @@ import com.linbit.linstor.Resource.RscApi;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition;
@@ -33,9 +34,11 @@ import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
+import com.linbit.linstor.proto.MsgLstSnapshotDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
 import com.linbit.linstor.proto.RscStateOuterClass;
+import com.linbit.linstor.proto.SnapshotDfnOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.proto.apidata.RscApiData;
@@ -165,6 +168,33 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
         }
 
         msgListRscsBuilder.build().writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeSnapshotDfnList(
+        List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns, ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        MsgLstSnapshotDfnOuterClass.MsgLstSnapshotDfn.Builder msgListSnapshotBuilder =
+            MsgLstSnapshotDfnOuterClass.MsgLstSnapshotDfn.newBuilder();
+
+        for (SnapshotDefinition.SnapshotDfnApi snapshotDfnApi : snapshotDfns)
+        {
+            SnapshotDfnOuterClass.SnapshotDfn.Builder snapshotDfnBuilder =
+                SnapshotDfnOuterClass.SnapshotDfn.newBuilder();
+
+            snapshotDfnBuilder
+                .setUuid(snapshotDfnApi.getUuid().toString())
+                .setSnapshotName(snapshotDfnApi.getSnapshotName())
+                .setRscDfnUuid(snapshotDfnApi.getUuid().toString())
+                .setRscName(snapshotDfnApi.getRscName())
+                .addAllSnapshotDfnFlags(SnapshotDefinition.SnapshotDfnFlags.toStringList(snapshotDfnApi.getFlags()));
+
+            msgListSnapshotBuilder.addSnapshotDfns(snapshotDfnBuilder.build());
+        }
+
+        msgListSnapshotBuilder.build().writeDelimitedTo(baos);
     }
 
     @Override

@@ -329,6 +329,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public Collection<SnapshotDefinition> getSnapshotDfns(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return snapshotDfnMap.values();
+    }
+
+    @Override
     public void removeSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
         throws AccessDeniedException
     {

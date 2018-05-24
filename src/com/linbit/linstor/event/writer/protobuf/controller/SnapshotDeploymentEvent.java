@@ -158,25 +158,4 @@ public class SnapshotDeploymentEvent implements EventWriter
 
         return apiCallRc;
     }
-
-    @Override
-    public void clear(ObjectIdentifier objectIdentifier)
-        throws Exception
-    {
-        rscDfnMapLock.readLock().lock();
-        try
-        {
-            ResourceDefinition rscDfn = rscDfnMap.get(objectIdentifier.getResourceName());
-
-            if (rscDfn != null)
-            {
-                // Snapshot definitions are (currently) only stored for in-progress snapshots
-                rscDfn.removeSnapshotDfn(apiCtx, objectIdentifier.getSnapshotName());
-            }
-        }
-        finally
-        {
-            rscDfnMapLock.readLock().unlock();
-        }
-    }
 }
