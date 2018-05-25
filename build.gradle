@@ -82,11 +82,13 @@ jar {
 task versionInfo() {
     String propsFile = "$projectDir/generated-resources/version-info.properties"
 
+    if (project.hasProperty('versionOverride')) {
+        logger.warn("Overriding version with $versionOverride")
+        version = versionOverride
+    }
+
     doFirst {
-        if (project.hasProperty('versionOverride')) {
-            logger.warn("Overriding version with $versionOverride")
-            version = versionOverride
-        } else {
+        if (!project.hasProperty('versionOverride')) {
             File gitFolder = file("$projectDir/.git")
             if (gitFolder.exists())
             {
