@@ -178,12 +178,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
      *  <li>{@link ApiConsts#CREATED} when the node was created successfully </li>
      * </ul>
      *
-     * @param accCtx
-     * @param client
      * @param nodeNameStr
      * @param nodeTypeStr
      * @param netIfs
-     * @param satelliteConnectionApis
      * @param propsMap
      * @return
      */
