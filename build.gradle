@@ -1,13 +1,40 @@
 import org.gradle.process.internal.ExecException
 
-plugins {
-    id "nebula.ospackage" version "4.6.0"
+
+ext.libs = "$projectDir/libs"
+ext.compileLib = "${libs}/compile"
+ext.runtimeLib = "${libs}/runtime"
+ext.testCompileLib = "${libs}/testCompile"
+ext.testRuntimeLib = "${libs}/testRuntime"
+//ext.pluginLib = "${libs}/plugins"
+
+
+// workaround to force gradle to download not just the dependencies for --offline use
+// but also the plugins
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        if (gradle.startParameter.isOffline()) {
+            classpath fileTree(dir: "$projectDir/libs/plugins")
+        } else {
+            classpath "com.netflix.nebula:gradle-ospackage-plugin:4.6.0" // 4.8.0 also available
+        }
+    }
 }
+
+// this type of including plugins does not work with --offline
+//plugins {
+//    id "nebula.ospackage" version "4.6.0"
+//}
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
-apply plugin: 'nebula.ospackage-base'
+apply plugin: 'nebula.ospackage'
 
 sourceCompatibility = 1.8
 
@@ -40,33 +67,35 @@ def protobufVersion = '3.2.0'
 
 dependencies
 {
-    compile group: 'com.google.inject', name: 'guice', version: '4.2.0'
-    compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
+    if (gradle.startParameter.isOffline()) {
+        compile fileTree(dir: compileLib)
+        runtime fileTree(dir: runtimeLib)
+        testCompile fileTree(dir: testCompileLib)
+        testRuntime fileTree(dir: testRuntimeLib)
+    } else {
+        compile group: 'com.google.inject', name: 'guice', version: '4.2.0'
+        compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
 
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
-    compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
-    compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-    compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
-    compile 'info.picocli:picocli:2.3.0'
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+        compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+        compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
+        compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
+        compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
+        compile 'info.picocli:picocli:2.3.0'
+        compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+        compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
 
-    runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
-
-//    runtime group: 'org.apache.derby', name: 'derby',       version: '10.14.1.0'
-//    runtime group: 'org.apache.derby', name: 'derbyclient', version: '10.14.1.0'
-//    runtime group: 'org.apache.derby', name: 'derbynet',    version: '10.14.1.0'
-//    runtime group: 'org.apache.derby', name: 'derbytools',  version: '10.14.1.0'
+        runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
 //    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
 
-    testCompile group: 'junit', name: 'junit', version: '4.+'
-    testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
+        testCompile group: 'junit', name: 'junit', version: '4.+'
+        testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
 
-    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
-    testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
+        testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
+        testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
-    testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
+        testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
+    }
 }
 
 mainClassName = 'com.linbit.linstor.core.Controller'
@@ -262,9 +291,7 @@ compileTestJava {
 
 clean {
     dependsOn cleanTestCommands, cleanCommon
-    doLast {
-        delete "${projectDir}/generated-resources"
-    }
+    delete "${projectDir}/generated-resources"
 }
 
 /////////////////////////// Dependency resolution ///////////////////////////
@@ -342,4 +369,21 @@ buildRpm {
 buildDeb {
     requires('default-jre-headless')
     requires('thin-provisioning-tools')
+}
+
+task deleteLibs(type: Delete) {
+    delete "${compileLib}", "${runtimeLib}", "${testCompileLib}", "${testRuntimeLib}", "${libs}/plugins"
+}
+
+task copyToLibs(dependsOn: 'deleteLibs') << {
+    ['compile', 'runtime', 'testCompile', 'testRuntime'].each { scope ->
+        copy {
+            from configurations.getByName(scope).files
+            into "${libs}/${scope}"
+        }
+    }
+    copy {
+        from buildscript.configurations.classpath
+        into "${libs}/plugins"
+    }
 }

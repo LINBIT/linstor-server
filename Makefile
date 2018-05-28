@@ -20,6 +20,7 @@ GITHASH := $(shell git rev-parse HEAD)
 	@[ -s .filelist ] # assert there is something in .filelist now
 	@echo $(VERSINFO) >> .filelist
 	@find $(GENSRC) -name '*.java' >> .filelist
+	@echo libs >> .filelist
 	@echo .filelist >> .filelist
 	@echo "./.filelist updated."
 
@@ -55,12 +56,17 @@ check-all-committed:
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
 
+.PHONY: getprotc
+getprotc:
+	@gradle getprotoc
+
 .PHONY: gen-java
-gen-java:
+gen-java: getprotc
 	@gradle genJava
 	@echo "generated java sources"
 
 tarball: check-all-committed check-submods versioninfo gen-java .filelist
+	@gradle copytolibs
 	$(MAKE) tgz
 
 versioninfo:
