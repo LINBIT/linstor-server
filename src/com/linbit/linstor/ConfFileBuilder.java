@@ -210,7 +210,11 @@ public class ConfFileBuilder
             // first generate all with local first
             for (final Resource peerRsc : peerRscSet)
             {
-                if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
+                // don't create a connection entry if the resource has the deleted flag
+                // or if it is a connection between two diskless nodes
+                if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE) &&
+                        !(peerRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS) &&
+                            localRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS)))
                 {
                     Node fromNode = localRsc.getAssignedNode();
                     Node toNode = peerRsc.getAssignedNode();
@@ -230,8 +234,8 @@ public class ConfFileBuilder
                         if (rscConn != null)
                         {
                             if (rscConn.getProps(accCtx)
-                                    .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
-                            )
+                                .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
+                                )
                             {
                                 appendLine("");
                                 appendLine("disk");

@@ -17,9 +17,11 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,8 +63,8 @@ public class ConfFileBuilderTest
         String confFile = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            makeMockResource(101, "testNode","1.2.3.4", false, false, false),
+            Collections.singletonList(makeMockResource(202, "testNode","5.6.7.8", false, false, false)),
             whitelistProps
         ).build();
 
@@ -80,8 +82,8 @@ public class ConfFileBuilderTest
         String confFile = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            makeMockResource(101, "testNode","1.2.3.4", false, false, false),
+            Collections.singletonList(makeMockResource(202, "testNode","5.6.7.8", false, false, false)),
             whitelistProps
         ).build();
 
@@ -107,16 +109,16 @@ public class ConfFileBuilderTest
         String confFileNormal = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            makeMockResource(101, "testNode","1.2.3.4", false, false, false),
+            Collections.singletonList(makeMockResource(202, "testNode","5.6.7.8", false, false, false)),
             whitelistProps
         ).build();
 
         String confFileDeleted = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            makeMockResource(101, "1.2.3.4", true, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", true, false)),
+            makeMockResource(101, "testNode","1.2.3.4", true, false, false),
+            Collections.singletonList(makeMockResource(202, "testNode","5.6.7.8", true, false, false)),
             whitelistProps
         ).build();
 
@@ -132,16 +134,16 @@ public class ConfFileBuilderTest
         String confFileNormal = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, false)),
+            makeMockResource(101, "testNode", "1.2.3.4", false, false, false),
+            Collections.singletonList(makeMockResource(202, "testNode", "5.6.7.8", false, false, false)),
             whitelistProps
         ).build();
 
         String confFileDeleted = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            makeMockResource(101, "1.2.3.4", false, false),
-            Collections.singletonList(makeMockResource(202, "5.6.7.8", false, true)),
+            makeMockResource(101, "testNode", "1.2.3.4", false, false, false),
+            Collections.singletonList(makeMockResource(202, "testNode", "5.6.7.8", false, true, false)),
             whitelistProps
         ).build();
 
@@ -151,12 +153,64 @@ public class ConfFileBuilderTest
         assertThat(countOccurrences(confFileDeleted, "^ *connection")).isEqualTo(0);
     }
 
+    @Test
+    public void testNoConnectionBetweenDiskless()
+        throws Exception
+    {
+        {
+            List<Resource> peerRscs = new ArrayList<>();
+            peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, true));
+            peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, true));
+            String confFileNormal = new ConfFileBuilder(
+                errorReporter,
+                accessContext,
+                makeMockResource(0, "localNode", "1.2.3.4", false, false, false),
+                peerRscs,
+                whitelistProps
+            ).build();
+
+            assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);
+        }
+
+        {
+            List<Resource> peerRscs = new ArrayList<>();
+            peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, false));
+            peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, true));
+            String confFileNormal = new ConfFileBuilder(
+                errorReporter,
+                accessContext,
+                makeMockResource(0, "localNode", "1.2.3.4", false, false, true),
+                peerRscs,
+                whitelistProps
+            ).build();
+
+            assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(1);
+        }
+
+        {
+            List<Resource> peerRscs = new ArrayList<>();
+            peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, false));
+            peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, false));
+            String confFileNormal = new ConfFileBuilder(
+                errorReporter,
+                accessContext,
+                makeMockResource(0, "localNode", "1.2.3.4", false, false, false),
+                peerRscs,
+                whitelistProps
+            ).build();
+
+            assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);
+        }
+    }
+
     @SuppressWarnings("checkstyle:magicnumber")
     private Resource makeMockResource(
         final int volumeNumber,
+        final String nodeName,
         final String ipAddr,
         final boolean volumeDeleted,
-        final boolean resourceDeleted
+        final boolean resourceDeleted,
+        final boolean diskless
     )
         throws Exception
     {
@@ -201,16 +255,24 @@ public class ConfFileBuilderTest
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
         when(volume.getStorPool(accessContext)).thenReturn(storPool);
         when(volume.getProps(accessContext)).thenReturn(vlmProps);
+        when(volume.getBlockDevicePath(accessContext)).thenReturn("/dev/mockitopath");
+        when(volume.getResource()).thenReturn(resource);
 
         when(netInterface.getAddress(any(AccessContext.class)))
             .thenReturn(new LsIpAddress(ipAddr));
 
-        when(assignedNode.getName()).thenReturn(new NodeName("testNode"));
+        when(assignedNode.getName()).thenReturn(new NodeName(nodeName));
         when(assignedNode.streamNetInterfaces(any(AccessContext.class)))
             .thenAnswer(makeStreamAnswer(netInterface));
 
         when(stateFlags.isUnset(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DELETE})))
             .thenReturn(!resourceDeleted);
+        when(
+            stateFlags.isUnset(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DISKLESS})))
+            .thenReturn(!diskless);
+        when(
+            stateFlags.isSet(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DISKLESS})))
+            .thenReturn(diskless);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
         when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);
