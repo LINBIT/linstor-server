@@ -104,7 +104,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
     @Override
     public CtrlStltSerializerBuilder builder(String apiCall)
     {
-        return builder(null, null);
+        return builder(apiCall, 1);
     }
 
     @Override
