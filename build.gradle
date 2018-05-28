@@ -199,7 +199,7 @@ task unzip(type: Copy) {
 
 task downloadProtoc {
     outputs.dir "tools"
-    def protozip = new File("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
+    def protozip = new File("${projectDir}/tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
     outputs.file protozip
 
     doLast {
