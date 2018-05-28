@@ -436,6 +436,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         }
     }
 
+    public boolean isDeleted()
+    {
+        return deleted.get();
+    }
+
     private void checkDeleted()
     {
         if (deleted.get())

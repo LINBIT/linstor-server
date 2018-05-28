@@ -775,7 +775,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 long fullSyncTimestamp = peer.get().getFullSyncId();
                 long updateId = peer.get().getNextSerializerId();
                 // TODO: check if the localResource has the same uuid as rscUuid
-                if (rsc != null)
+                if (rsc != null && !rsc.isDeleted())
                 {
                     peer.get().sendMessage(
                         internalComSerializer

@@ -67,6 +67,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    boolean isDeleted();
+
     void addInProgressSnapshot(SnapshotName snapshotName, Snapshot snapshot);
 
     Snapshot getInProgressSnapshot(SnapshotName snapshotName);
