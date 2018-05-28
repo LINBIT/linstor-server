@@ -567,7 +567,7 @@ class StltRscApiCallHandler
                                 removedList.stream()
                                     .map(rsc -> rsc.toString())
                                     .collect(Collectors.joining(",\n   ")) +
-                                "\nThis could only happend if we missed a delete resource event.",
+                                "\nThis could only happened if we missed a delete resource event.",
                             null
                         )
                     );
