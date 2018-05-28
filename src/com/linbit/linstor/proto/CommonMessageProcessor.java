@@ -329,6 +329,12 @@ public class CommonMessageProcessor implements MessageProcessor
                     }
                 }
             }
+            else
+            {
+                errorLog.logError(
+                    "Message didn't contain a header: " + msg.toString() + " from " +client.getId()
+                );
+            }
         }
         catch (IOException ioExc)
         {
