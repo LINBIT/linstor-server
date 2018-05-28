@@ -88,7 +88,7 @@ public class EventProcessor
         try
         {
             Node node = peer.getNode();
-            if (node != null)
+            if (node != null && !node.isDeleted())
             {
                 // The peer is a Satellite
                 for (Map.Entry<String, Provider<EventHandler>> eventHandlerEntry : eventHandlers.entrySet())
