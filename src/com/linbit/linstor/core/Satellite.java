@@ -164,12 +164,29 @@ public final class Satellite
 
     /**
      * Adds /var/lib/drbd.d/ include to drbd.conf and ensures the /var/lib/drbd.d directory exists
+     * and removes any *.res file from it
      */
     private void ensureDrbdConfigSetup()
     {
         try
         {
-            Files.createDirectories(Paths.get(SatelliteCoreModule.CONFIG_PATH));
+            Path varDrbdPath = Paths.get(SatelliteCoreModule.CONFIG_PATH);
+            Files.createDirectories(varDrbdPath);
+            errorReporter.logInfo("Removing res files from " + varDrbdPath);
+            Files.list(varDrbdPath).filter(p -> p.toString().endsWith(".res")).forEach(p ->
+            {
+                try
+                {
+                    Files.delete(p);
+                }
+                catch (IOException ioExc)
+                {
+                    throw new ImplementationError(
+                        "Unable to delete drbd resource file: " + p,
+                        ioExc
+                    );
+                }
+            });
         }
         catch (IOException ioExc)
         {
