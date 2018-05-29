@@ -529,6 +529,119 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
+    ApiCallRc lostNode(String nodeNameStr)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallythis = setContext(
+                ApiCallType.DELETE,
+                apiCallRc,
+                nodeNameStr
+            )
+        )
+        {
+            requireNodesMapChangeAccess();
+            NodeName nodeName = asNodeName(nodeNameStr);
+            NodeData nodeData = loadNode(nodeName, false);
+            if (nodeData == null)
+            {
+                addAnswer(
+                    "Deletion of node '" + nodeName + "' had no effect.",
+                    "Node '" + nodeName + "' does not exist.",
+                    null,
+                    null,
+                    ApiConsts.WARN_NOT_FOUND
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+            else
+            {
+                Peer nodePeer = nodeData.getPeer(apiCtx);
+                if (nodePeer != null && nodePeer.isConnected())
+                {
+                    addAnswer(
+                        String.format(
+                            "Node '%s' still connected, please use the '%s' api.",
+                            nodeNameStr,
+                            ApiConsts.API_DEL_NODE
+                        ),
+                        ApiConsts.FAIL_EXISTS_NODE_CONN
+                    );
+                    throw new ApiCallHandlerFailedException();
+                }
+
+                // set node mark deleted for updates to other satellites
+                nodeData.markDeleted(apiCtx);
+                // inform other satellites that the node is gone
+                updateSatellites(nodeData);
+
+                // gather all resources of the lost node and circumvent concurrent modification
+                List<Resource> rscToDelete = getRscStream(nodeData).collect(toList());
+
+                // delete all resources of the lost node
+                rscToDelete.forEach(this::delete);
+
+                // If the node has no resources, then there should not be any volumes referenced
+                // by the storage pool -- double check and delete storage pools
+                Iterator<StorPool> storPoolIterator = getStorPoolIterator(nodeData);
+                while (storPoolIterator.hasNext())
+                {
+                    StorPool storPool = storPoolIterator.next();
+                    if (!hasVolumes(storPool))
+                    {
+                        delete(storPool);
+                    }
+                    else
+                    {
+                        addAnswer(
+                            String.format(
+                                "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
+                                    "on this node, although the node does not reference any resources",
+                                nodeNameStr,
+                                storPool.getName().displayValue
+                            ),
+                            ApiConsts.FAIL_EXISTS_VLM
+                        );
+                        throw new ApiCallHandlerFailedException();
+                    }
+                }
+
+
+                String successMessage = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
+                UUID nodeUuid = nodeData.getUuid(); // store node uuid to avoid deleted node access
+
+                delete(nodeData);
+
+                commit();
+
+                nodesMap.remove(nodeName);
+
+                reportSuccess(
+                    successMessage,
+                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + nodeUuid.toString()
+                );
+            }
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // a report and a corresponding api-response already created. nothing to do here
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.DELETE,
+                getObjectDescriptionInline(nodeNameStr),
+                getObjRefs(nodeNameStr),
+                getVariables(nodeNameStr),
+                apiCallRc
+            );
+        }
+
+        return apiCallRc;
+    }
+
     byte[] listNodes(int msgId)
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
@@ -675,7 +788,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             NodeName nodeName = new NodeName(nodeNameStr);
 
             Node node = nodesMap.get(nodeName);
-            if (node != null)
+            if (node != null && !node.isDeleted() && node.getFlags().isUnset(apiCtx, NodeFlag.DELETE))
             {
                 if (node.getUuid().equals(nodeUuid))
                 {
@@ -995,6 +1108,22 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             storPool.delete(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw handleSqlExc(sqlExc);
+        }
+    }
+
+    private void delete(Resource rsc) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            rsc.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

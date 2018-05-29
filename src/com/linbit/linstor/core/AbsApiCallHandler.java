@@ -1,5 +1,14 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Provider;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
@@ -39,14 +48,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
-
-import javax.inject.Provider;
-import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 
@@ -1420,12 +1421,19 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    /**
-     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
-     * at construction time an {@link ImplementationError} is thrown.
-     * @return
-     */
     protected final void updateSatellites(Node node)
+    {
+        updateSatellites(node, true);
+    }
+
+    /**
+     * This method depends on a valid instance of {@link CtrlStltSerializer}. If none was given
+     * at construction time an {@link ImplementationError} is thrown.
+     *
+     * @param node Node to gather info which other nodes are to contact
+     * @param contactArgumentNode Flag to indicate if the given node should also be contacted
+     */
+    protected final void updateSatellites(Node node, boolean contactArgumentNode)
     {
         if (internalComSerializer == null)
         {
@@ -1438,7 +1446,10 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             Map<NodeName, Node> nodesToContact = new TreeMap<>();
-            nodesToContact.put(node.getName(), node);
+            if (contactArgumentNode)
+            {
+                nodesToContact.put(node.getName(), node);
+            }
             for (Resource rsc : node.streamResources(apiCtx).collect(toList()))
             {
                 ResourceDefinition rscDfn = rsc.getDefinition();

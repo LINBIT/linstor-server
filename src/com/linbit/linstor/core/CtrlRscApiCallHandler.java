@@ -770,7 +770,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             if (node != null)
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
-                Resource rsc = node.getResource(apiCtx, rscName);
+                Resource rsc = !node.isDeleted() ? node.getResource(apiCtx, rscName) : null;
 
                 long fullSyncTimestamp = peer.get().getFullSyncId();
                 long updateId = peer.get().getNextSerializerId();

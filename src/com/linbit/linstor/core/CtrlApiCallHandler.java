@@ -206,6 +206,24 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Deletes a unrecoverable {@link Node}.
+     *
+     * This call is used if a node can't reached or recovered, but has to be removed from the system.
+     *
+     * @param nodeName Nodename to be removed/lost.
+     * @return ApiCall return code.
+     */
+    public ApiCallRc lostNode(String nodeName)
+    {
+        ApiCallRc apiCallRc;
+        try (LockSupport lock = LockSupport.lock(nodesMapLock.writeLock()))
+        {
+            apiCallRc = nodeApiCallHandler.lostNode(nodeName);
+        }
+        return apiCallRc;
+    }
+
     public byte[] listNode()
     {
         byte[] listNodes;
