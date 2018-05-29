@@ -8,7 +8,6 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.utils.MathUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -927,7 +926,7 @@ public class FileSystemWatch implements Runnable, SystemService
                 long now = System.currentTimeMillis();
                 try
                 {
-                    targetTime = MathUtils.addExact(now, timeout);
+                    targetTime = Math.addExact(now, timeout);
                 }
                 catch (ArithmeticException arithExc)
                 {

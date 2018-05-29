@@ -12,7 +12,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
-import com.linbit.utils.MathUtils;
 
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -178,7 +177,7 @@ public class ApplicationLifecycleManager
             // Shutdown service threads
             stopSystemServices(systemServicesMap.values());
 
-            long exitTime = MathUtils.addExact(System.currentTimeMillis(), SVC_SHUTDOWN_WAIT_TIME);
+            long exitTime = Math.addExact(System.currentTimeMillis(), SVC_SHUTDOWN_WAIT_TIME);
             for (SystemService svc  : systemServicesMap.values())
             {
                 long now = System.currentTimeMillis();

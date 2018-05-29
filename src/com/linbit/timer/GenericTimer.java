@@ -6,7 +6,6 @@ import com.linbit.NegativeTimeException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.utils.MathUtils;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -135,7 +134,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
             long currentTime = System.currentTimeMillis();
             try
             {
-                Long wakeupTime = MathUtils.addExact(currentTime, delay);
+                Long wakeupTime = Math.addExact(currentTime, delay);
                 addScheduledAction(wakeupTime, actionObj);
             }
             catch (ArithmeticException arithExc)
