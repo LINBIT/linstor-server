@@ -13,6 +13,8 @@ import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataSatelliteFactory;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
@@ -20,12 +22,17 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -90,8 +97,15 @@ class StltNodeApiCallHandler
             NodeName nodeName = new NodeName(nodeNameStr);
 
             Node removedNode = nodesMap.remove(nodeName); // just to be sure
+            Map<ResourceName, UUID> rscToDeleteNames = new HashMap<>();
             if (removedNode != null)
             {
+                List<Resource> rscToDelete = removedNode.streamResources(apiCtx).collect(Collectors.toList());
+                for (Resource rsc : rscToDelete)
+                {
+                    rscToDeleteNames.put(rsc.getDefinition().getName(), rsc.getUuid());
+                    rsc.delete(apiCtx);
+                }
                 removedNode.delete(apiCtx);
                 transMgrProvider.get().commit();
             }
@@ -100,6 +114,7 @@ class StltNodeApiCallHandler
 
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(nodeName);
+            deviceManager.getUpdateTracker().checkMultipleResources(rscToDeleteNames);
             deviceManager.nodeUpdateApplied(updatedNodes);
         }
         catch (Exception | ImplementationError exc)
