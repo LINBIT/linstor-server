@@ -4,9 +4,11 @@ import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltApiCallHandler;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.netcom.Peer;
@@ -58,7 +60,6 @@ public class CtrlAuth implements ApiCall
         UUID disklessStorPoolDfnUuid = UUID.fromString(auth.getNodeDisklessStorPoolDfnUuid());
         UUID disklessStorPoolUuid = UUID.fromString(auth.getNodeDisklessStorPoolUuid());
 
-
         ApiCallRcImpl apiCallRc = apiCallHandler.authenticate(
             nodeUuid,
             nodeName,
@@ -66,12 +67,17 @@ public class CtrlAuth implements ApiCall
             disklessStorPoolUuid,
             controllerPeer
         );
+
         if (apiCallRc == null)
         {
             // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
             builder.setExpectedFullSyncId(updateMonitor.getNextFullSyncId());
+            int[] stltVersion = LinStor.VERSION_INFO_PROVIDER.getSemanticVersion();
+            builder.setVersionMajor(stltVersion[0]);
+            builder.setVersionMinor(stltVersion[1]);
+            builder.setVersionPatch(stltVersion[2]);
 
             builder.build().writeDelimitedTo(baos);
 

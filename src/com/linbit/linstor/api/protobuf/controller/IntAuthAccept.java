@@ -7,6 +7,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
@@ -51,36 +52,58 @@ public class IntAuthAccept implements ApiCall
     {
         MsgIntAuthSuccess msgIntAuthSuccess = MsgIntAuthSuccess.parseDelimitedFrom(msgDataIn);
         long expectedFullSyncId = msgIntAuthSuccess.getExpectedFullSyncId();
-        client.setAuthenticated(true);
 
-        // Set the satellite's access context
-        // Certain APIs called by the satellite are executed with a privileged access context by the controller,
-        // while the access context of the peer connection itself remains unprivileged
-        AccessContext curCtx = client.getAccessContext();
-        AccessContext privCtx = sysCtx.clone();
-        try
+        if (LinStor.VERSION_INFO_PROVIDER.equalsVersion(
+            msgIntAuthSuccess.getVersionMajor(),
+            msgIntAuthSuccess.getVersionMinor(),
+            msgIntAuthSuccess.getVersionPatch()))
         {
-            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            // FIXME In the absence of any means of identification, assume the system identity for the peer.
-            // Set the SYSTEM identity on the Satellite's access context
-            AccessContext newCtx = privCtx.impersonate(Identity.SYSTEM_ID, curCtx.subjectRole, curCtx.subjectDomain);
-            // Disable all privileges on the Satellite's access context permanently
-            newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
-            client.setAccessContext(privCtx, newCtx);
+            client.setAuthenticated(true);
+            client.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
+
+            // Set the satellite's access context
+            // Certain APIs called by the satellite are executed with a privileged access context by the controller,
+            // while the access context of the peer connection itself remains unprivileged
+            AccessContext curCtx = client.getAccessContext();
+            AccessContext privCtx = sysCtx.clone();
+            try
+            {
+                privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                // FIXME In the absence of any means of identification, assume the system identity for the peer.
+                // Set the SYSTEM identity on the Satellite's access context
+                AccessContext newCtx = privCtx.impersonate(Identity.SYSTEM_ID, curCtx.subjectRole, curCtx.subjectDomain);
+                // Disable all privileges on the Satellite's access context permanently
+                newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
+                client.setAccessContext(privCtx, newCtx);
+            }
+            catch (AccessDeniedException accExc)
+            {
+                errorReporter.reportError(
+                    Level.ERROR,
+                    new ImplementationError(
+                        "Creation of an access context for a Satellite by the " + privCtx.subjectRole.name.displayValue +
+                            " role failed",
+                        accExc
+                    )
+                );
+            }
+            errorReporter.logDebug("Satellite '" + client.getNode().getName() + "' authenticated");
+
+            apiCallHandler.sendFullSync(expectedFullSyncId);
         }
-        catch (AccessDeniedException accExc)
+        else
         {
-            errorReporter.reportError(
-                Level.ERROR,
-                new ImplementationError(
-                    "Creation of an access context for a Satellite by the " + privCtx.subjectRole.name.displayValue +
-                    " role failed",
-                    accExc
+            client.setConnectionStatus(Peer.ConnectionStatus.VERSION_MISMATCH);
+            errorReporter.logError(
+                String.format(
+                    "Satellite '%s' version mismatch(v%d.%d.%d).",
+                    client.getNode().getName(),
+                    msgIntAuthSuccess.getVersionMajor(),
+                    msgIntAuthSuccess.getVersionMinor(),
+                    msgIntAuthSuccess.getVersionPatch()
                 )
             );
+            client.closeConnection();
         }
-        errorReporter.logDebug("Satellite '" + client.getNode().getName() + "' authenticated");
-
-        apiCallHandler.sendFullSync(expectedFullSyncId);
     }
 }

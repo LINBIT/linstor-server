@@ -56,6 +56,7 @@ public class TcpConnectorPeer implements Peer
     private Object attachment;
 
     protected boolean connected = false;
+    protected ConnectionStatus connectionStatus = ConnectionStatus.OFFLINE;
     protected boolean authenticated = false;
     protected boolean fullSyncFailed = false;
 
@@ -272,6 +273,18 @@ public class TcpConnectorPeer implements Peer
     public boolean isConnected()
     {
         return isConnected(true);
+    }
+
+    @Override
+    public ConnectionStatus getConnectionStatus()
+    {
+        return connectionStatus;
+    }
+
+    @Override
+    public void setConnectionStatus(ConnectionStatus status)
+    {
+        connectionStatus = status;
     }
 
     @Override
@@ -542,6 +555,7 @@ public class TcpConnectorPeer implements Peer
         // just to be sure, that even if some component still sends an update, it should be
         // an invalid one. -1 will make it look like an out-dated update for the satellite.
         fullSyncId = -1;
+        connectionStatus = ConnectionStatus.FULL_SYNC_FAILED;
     }
 
     @Override

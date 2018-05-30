@@ -1,16 +1,16 @@
 package com.linbit.linstor.netcom;
 
+import javax.net.ssl.SSLException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.common.Ping;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
-import java.net.InetSocketAddress;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import javax.net.ssl.SSLException;
 
 /**
  * Represents the peer of a connection
@@ -19,6 +19,46 @@ import javax.net.ssl.SSLException;
  */
 public interface Peer
 {
+    enum ConnectionStatus
+    {
+        OFFLINE(ApiConsts.CONN_STATUS_OFFLINE),
+        CONNECTED(ApiConsts.CONN_STATUS_CONNECTED), // connection established
+        ONLINE(ApiConsts.CONN_STATUS_ONLINE), // USABLE state, after full sync
+        VERSION_MISMATCH(ApiConsts.CONN_STATUS_VERSION_MISMATCH), // Version mismatch between satellite and controller
+        FULL_SYNC_FAILED(ApiConsts.CONN_STATUS_FULL_SYNC_FAILED), // FullSync failed
+        AUTHENTICATION_ERROR(ApiConsts.CONN_STATUS_AUTHENTICATION_ERROR),
+        UNKNOWN(ApiConsts.CONN_STATUS_UNKNOWN);
+
+        private int status;
+        ConnectionStatus(int statusRef)
+        {
+            this.status = statusRef;
+        }
+
+        public int value()
+        {
+            return status;
+        }
+
+        public static ConnectionStatus fromInt(int statusType)
+        {
+            ConnectionStatus found = null;
+            for (int idx = 0; idx < values().length; idx++)
+            {
+                if (statusType == values()[idx].status)
+                {
+                    found = values()[idx];
+                }
+            }
+
+            if (found == null)
+            {
+                throw new IllegalArgumentException();
+            }
+            return found;
+        }
+    }
+
     /**
      * Returns a unique identifier for this peer object
      *
@@ -108,6 +148,10 @@ public interface Peer
      * This is the same as calling {@code isConnected(true)}
      */
     boolean isConnected();
+
+    ConnectionStatus getConnectionStatus();
+
+    void setConnectionStatus(ConnectionStatus status);
 
     /**
      * Returns false if no connection is established yet.

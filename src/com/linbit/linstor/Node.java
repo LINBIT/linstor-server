@@ -224,19 +224,19 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         }
     }
 
-    public interface NodeApi
+    interface NodeApi
     {
         String getName();
         String getType();
         UUID getUuid();
-        Boolean isConnected();
+        Peer.ConnectionStatus connectionStatus();
         Map<String, String> getProps();
         long getFlags();
         List<NetInterface.NetInterfaceApi> getNetInterfaces();
         UUID getDisklessStorPoolUuid();
     }
 
-    public interface InitMaps
+    interface InitMaps
     {
         Map<ResourceName, Resource> getRscMap();
         Map<NetInterfaceName, NetInterface> getNetIfMap();

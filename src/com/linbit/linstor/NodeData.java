@@ -643,7 +643,7 @@ public class NodeData extends BaseTransactionObject implements Node
             netInterfaces,
             nodeConns,
             getProps(accCtx).map(),
-            tmpPeer != null && tmpPeer.isConnected(),
+            tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
             disklessStorPool.getUuid(),
             fullSyncId,
             updateId

@@ -6,13 +6,14 @@ import java.util.UUID;
 
 import com.linbit.linstor.Node.NodeApi;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.netcom.Peer;
 
 public class NodePojo implements NodeApi, Comparable<NodePojo>
 {
     private final UUID nodeUuid;
     private final String nodeName;
     private final String nodeType;
-    private final Boolean isConnected;
+    private final Peer.ConnectionStatus connectionStatus;
     private final long nodeFlags;
     private final List<NetInterface.NetInterfaceApi> nodeNetInterfaces;
     private final List<NodeConnPojo> nodeConns;
@@ -29,7 +30,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final List<NetInterface.NetInterfaceApi> nodeNetInterfacesRef,
         final List<NodeConnPojo> nodeConnsRef,
         final Map<String, String> nodePropsRef,
-        final boolean connectedRef,
+        final Peer.ConnectionStatus connectionStatusRef,
         final UUID disklessStorPoolUuidRef,
         final Long fullSyncIdRef,
         final Long updateIdRef
@@ -43,7 +44,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         nodeConns = nodeConnsRef;
         nodeProps = nodePropsRef;
         disklessStorPoolUuid = disklessStorPoolUuidRef;
-        isConnected = connectedRef;
+        connectionStatus = connectionStatusRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
     }
@@ -72,9 +73,9 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     }
 
     @Override
-    public Boolean isConnected()
+    public Peer.ConnectionStatus connectionStatus()
     {
-        return isConnected;
+        return connectionStatus;
     }
 
     @Override

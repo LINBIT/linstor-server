@@ -2,6 +2,7 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.NetInterface;
@@ -60,14 +61,14 @@ public class NodeApiData implements Node.NodeApi
     }
 
     @Override
-    public Boolean isConnected()
+    public Peer.ConnectionStatus connectionStatus()
     {
-        Boolean connected = null;
-        if (node.hasConnected())
+        Peer.ConnectionStatus connectionStatus = Peer.ConnectionStatus.UNKNOWN;
+        if (node.hasConnectionStatus())
         {
-            connected = node.getConnected();
+            connectionStatus = Peer.ConnectionStatus.fromInt(node.getConnectionStatus());
         }
-        return connected;
+        return connectionStatus;
     }
 
     @Override
@@ -98,7 +99,7 @@ public class NodeApiData implements Node.NodeApi
         bld.addAllProps(ProtoMapUtils.fromMap(nodeApi.getProps()));
         bld.addAllFlags(Node.NodeFlag.toStringList(nodeApi.getFlags()));
         bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
-        bld.setConnected(nodeApi.isConnected());
+        bld.setConnectionStatus(nodeApi.connectionStatus().value());
 
         return bld.build();
     }

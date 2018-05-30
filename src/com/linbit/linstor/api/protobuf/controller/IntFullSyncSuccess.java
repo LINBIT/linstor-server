@@ -55,6 +55,7 @@ public class IntFullSyncSuccess implements ApiCall
         FreeSpacePojo[] freeSpacePojos = new FreeSpacePojo[freeSpacePojoList.size()];
         freeSpacePojoList.toArray(freeSpacePojos);
         apiCallHandler.updateRealFreeSpace(satellite, freeSpacePojos);
+        satellite.setConnectionStatus(Peer.ConnectionStatus.ONLINE);
     }
 
 }

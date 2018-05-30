@@ -10,6 +10,7 @@ import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
@@ -53,7 +54,7 @@ public class ApplyNode implements ApiCall
             extractNetIfs(nodeData.getNodeNetIfsList()),
             extractNodeConns(nodeData.getNodeConnsList()),
             ProtoMapUtils.asMap(nodeData.getNodePropsList()),
-            true, // we just assume that we are connected to the other satellite / controller
+            Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
             UUID.fromString(nodeData.getNodeDisklessStorPoolUuid()),
             nodeData.getFullSyncId(),
             nodeData.getUpdateId()

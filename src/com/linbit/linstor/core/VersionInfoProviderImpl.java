@@ -53,4 +53,17 @@ public class VersionInfoProviderImpl implements VersionInfoProvider
     {
         return buildTime;
     }
+
+    @Override
+    public int[] getSemanticVersion()
+    {
+        return VersionInfoProvider.parseVersion(version);
+    }
+
+    @Override
+    public boolean equalsVersion(int major, int minor, int patch)
+    {
+        int[] ownVersion = getSemanticVersion();
+        return ownVersion[0] == major && ownVersion[1] == minor && ownVersion[2] == patch;
+    }
 }
