@@ -626,44 +626,6 @@ class StltRscApiCallHandler
                 }
             }
 
-            // merge snapshots
-            Set<String> snapshotNames = rscRawData.getInProgressSnapshots().stream()
-                .map(Snapshot.SnapshotApi::getSnapshotName)
-                .collect(Collectors.toSet());
-            Set<SnapshotName> existingSnapshotNames = localRsc.getInProgressSnapshots().stream()
-                .map(Snapshot::getSnapshotDefinition)
-                .map(SnapshotDefinition::getName)
-                .collect(Collectors.toSet());
-            for (SnapshotName existingSnapshotName : existingSnapshotNames)
-            {
-                if (!snapshotNames.contains(existingSnapshotName.displayValue))
-                {
-                    localRsc.removeInProgressSnapshot(existingSnapshotName);
-                }
-            }
-            for (Snapshot.SnapshotApi snapshotApi : rscRawData.getInProgressSnapshots())
-            {
-                SnapshotName snapshotName = new SnapshotName(snapshotApi.getSnapshotName());
-                Snapshot existingSnapshot = localRsc.getInProgressSnapshot(snapshotName);
-                if (existingSnapshot == null)
-                {
-                    localRsc.addInProgressSnapshot(
-                        snapshotName, new SnapshotData(
-                            snapshotApi.getSnapshotUuid(),
-                            snapshotDefinitionDataFactory.getInstanceSatellite(
-                                apiCtx, snapshotApi.getSnapshotDfnUuid(), rscDfn, snapshotName,
-                                new SnapshotDefinition.SnapshotDfnFlags[]{}
-                            ),
-                            localRsc.getAssignedNode()
-                        )
-                    );
-                }
-
-                Snapshot snapshot = localRsc.getInProgressSnapshot(snapshotName);
-                snapshot.setSuspendResource(snapshotApi.getSuspendResource());
-                snapshot.setTakeSnapshot(snapshotApi.getTakeSnapshot());
-            }
-
             transMgrProvider.get().commit();
 
             Map<ResourceName, Set<NodeName>> devMgrNotifications = new TreeMap<>();

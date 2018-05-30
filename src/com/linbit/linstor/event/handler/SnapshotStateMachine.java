@@ -75,14 +75,10 @@ public class SnapshotStateMachine
 
             if (rscDfn != null)
             {
-                Resource rsc = rscDfn.getResource(apiCtx, eventIdentifier.getNodeName());
-
-                if (rsc != null)
+                for (SnapshotDefinition snapshotDefinition : rscDfn.getInProgressSnapshotDfns(apiCtx))
                 {
-                    List<SnapshotDefinition> snapshotDefinitions = rsc.getInProgressSnapshots().stream()
-                        .map(Snapshot::getSnapshotDefinition)
-                        .collect(Collectors.toList());
-                    for (SnapshotDefinition snapshotDefinition : snapshotDefinitions)
+                    Snapshot snapshot = snapshotDefinition.getSnapshot(eventIdentifier.getNodeName());
+                    if (snapshot != null)
                     {
                         boolean changed;
 
@@ -127,25 +123,16 @@ public class SnapshotStateMachine
     private boolean abortSnapshot(SnapshotDefinition snapshotDefinition)
         throws AccessDeniedException
     {
-        boolean resourcesChanged = false;
-        errorReporter.logWarning("Aborting snapshot - %s", snapshotDefinition);
-        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+        boolean snapshotsChanged = false;
+        if (snapshotDefinition.getResourceDefinition().isSnapshotInProgress(snapshotDefinition.getName()))
         {
-            Resource resource = snapshotDefinition.getResourceDefinition()
-                .getResource(apiCtx, snapshot.getNode().getName());
-
-            SnapshotName snapshotName = snapshot.getSnapshotDefinition().getName();
-            Snapshot inProgressSnapshot = resource.getInProgressSnapshot(snapshotName);
-            if (inProgressSnapshot != null)
-            {
-                resource.removeInProgressSnapshot(snapshotName);
-                resourcesChanged = true;
-            }
+            errorReporter.logWarning("Aborting snapshot - %s", snapshotDefinition);
+            snapshotDefinition.getResourceDefinition().markSnapshotInProgress(snapshotDefinition.getName(), false);
+            snapshotsChanged = true;
+            closeSnapshotDeploymentEventStream(snapshotDefinition);
         }
 
-        closeSnapshotDeploymentEventStream(snapshotDefinition);
-
-        return resourcesChanged;
+        return snapshotsChanged;
     }
 
     /**
@@ -194,7 +181,7 @@ public class SnapshotStateMachine
             }
         }
 
-        boolean resourcesChanged = false;
+        boolean snapshotsChanged = false;
         if (allSnapshotReceived)
         {
             if (allTakeSnapshotSet)
@@ -202,19 +189,14 @@ public class SnapshotStateMachine
                 if (noneSuspended)
                 {
                     errorReporter.logInfo("Finished snapshot - %s", snapshotDefinition);
-                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
-                    {
-                        Resource resource = snapshotDefinition.getResourceDefinition()
-                            .getResource(apiCtx, snapshot.getNode().getName());
-
-                        resource.removeInProgressSnapshot(snapshot.getSnapshotDefinition().getName());
-                    }
+                    snapshotDefinition.getResourceDefinition().markSnapshotInProgress(
+                        snapshotDefinition.getName(), false);
 
                     snapshotDefinition.getFlags().enableFlags(apiCtx, SnapshotDfnFlags.SUCCESSFUL);
 
                     closeSnapshotDeploymentEventStream(snapshotDefinition);
 
-                    resourcesChanged = true;
+                    snapshotsChanged = true;
                 }
                 else if (allSnapshotTaken && allSuspendSet)
                 {
@@ -223,7 +205,7 @@ public class SnapshotStateMachine
                     {
                         snapshot.setSuspendResource(false);
                     }
-                    resourcesChanged = true;
+                    snapshotsChanged = true;
                 }
             }
             else
@@ -235,7 +217,7 @@ public class SnapshotStateMachine
                     {
                         snapshot.setTakeSnapshot(true);
                     }
-                    resourcesChanged = true;
+                    snapshotsChanged = true;
                 }
                 else if (!allSuspendSet)
                 {
@@ -244,12 +226,12 @@ public class SnapshotStateMachine
                     {
                         snapshot.setSuspendResource(true);
                     }
-                    resourcesChanged = true;
+                    snapshotsChanged = true;
                 }
             }
         }
 
-        return resourcesChanged;
+        return snapshotsChanged;
     }
 
     private SnapshotState getSnapshotState(Snapshot snapshot)
@@ -269,15 +251,13 @@ public class SnapshotStateMachine
     {
         for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
         {
-            Resource resource = snapshotDefinition.getResourceDefinition()
-                .getResource(apiCtx, snapshot.getNode().getName());
-
             snapshot.getNode().getPeer(apiCtx).sendMessage(
                 ctrlStltSerializer
-                    .builder(InternalApiConsts.API_CHANGED_RSC, 0)
-                    .changedResource(
-                        resource.getUuid(),
-                        resource.getDefinition().getName().displayValue
+                    .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
+                    .changedSnapshot(
+                        snapshotDefinition.getResourceDefinition().getName().displayValue,
+                        snapshot.getUuid(),
+                        snapshot.getSnapshotDefinition().getName().displayValue
                     )
                     .build()
             );

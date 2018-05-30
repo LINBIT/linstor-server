@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotId;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -84,6 +85,20 @@ public class StltUpdateRequester
             interComSerializer
                 .builder(InternalApiConsts.API_REQUEST_STOR_POOL, 0)
                 .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
+                .build()
+        );
+    }
+
+    public void requestSnapshotUpdate(UUID snapshotUuid, SnapshotId snapshotId)
+    {
+        sendRequest(
+            interComSerializer
+                .builder(InternalApiConsts.API_REQUEST_IN_PROGRESS_SNAPSHOT, 0)
+                .requestSnapshotUpdate(
+                    snapshotId.getResourceName().getDisplayName(),
+                    snapshotUuid,
+                    snapshotId.getSnapshotName().getDisplayName()
+                )
                 .build()
         );
     }

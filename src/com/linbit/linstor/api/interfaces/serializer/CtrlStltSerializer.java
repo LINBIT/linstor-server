@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.core.SnapshotState;
 
@@ -37,6 +38,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder changedResource(UUID rscUuid, String rscName);
         CtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String storPoolName);
+        CtrlStltSerializerBuilder changedSnapshot(String rscName, UUID snapshotUuid, String snapshotName);
 
         CtrlStltSerializerBuilder controllerData(long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder nodeData(
@@ -50,6 +52,13 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder deletedResourceData(String rscNameStr, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder deletedStorPoolData(String storPoolName, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder snapshotData(Snapshot snapshot, long fullSyncId, long updateId);
+        CtrlStltSerializerBuilder endedSnapshotData(
+            String resourceNameStr,
+            String snapshotNameStr,
+            long fullSyncId,
+            long updateId
+        );
         CtrlStltSerializerBuilder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,
@@ -83,6 +92,11 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
         CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName); 
+        CtrlStltSerializerBuilder requestSnapshotUpdate(
+            String rscName,
+            UUID snapshotUuid,
+            String snapshotName
+        );
 
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
 

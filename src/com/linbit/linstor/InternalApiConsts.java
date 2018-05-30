@@ -35,6 +35,11 @@ public class InternalApiConsts
     public static final String API_APPLY_RSC         = "ApplyRsc";
     public static final String API_APPLY_RSC_DELETED = "ApplyDeletedRsc";
 
+    public static final String API_CHANGED_IN_PROGRESS_SNAPSHOT     = "ChangedInProgressSnapshot";
+    public static final String API_REQUEST_IN_PROGRESS_SNAPSHOT     = "RequestInProgressSnapshot";
+    public static final String API_APPLY_IN_PROGRESS_SNAPSHOT       = "ApplyInProgressSnapshot";
+    public static final String API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED = "ApplyEndedInProgressSnapshot";
+
     public static final String API_CHANGED_STOR_POOL       = "ChangedStorPool";
     public static final String API_REQUEST_STOR_POOL       = "RequestStorPool";
     public static final String API_APPLY_STOR_POOL         = "ApplyStorPool";

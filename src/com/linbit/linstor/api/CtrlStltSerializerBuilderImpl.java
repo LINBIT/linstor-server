@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
 import com.linbit.linstor.core.SnapshotState;
@@ -115,6 +116,21 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         try
         {
             ctrlStltSerializationWriter.writeChangedStorPool(storPoolUuid, storPoolName, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder changedSnapshot(String rscName, UUID snapshotUuid, String snapshotName)
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeChangedSnapshot(rscName, snapshotUuid, snapshotName, baos);
         }
         catch (IOException ioExc)
         {
@@ -274,6 +290,51 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         try
         {
             ctrlStltSerializationWriter.writeDeletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder snapshotData(
+        Snapshot snapshot, long fullSyncId, long updateId
+    )
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeSnapshotData(snapshot, fullSyncId, updateId, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "ProtoInterComSerializer has not enough privileges to serialize snapshot",
+                    accDeniedExc
+                )
+            );
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder endedSnapshotData(
+        String resourceNameStr, String snapshotNameStr, long fullSyncId, long updateId
+    )
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeEndedSnapshotData(
+                resourceNameStr, snapshotNameStr, fullSyncId, updateId, baos);
         }
         catch (IOException ioExc)
         {
@@ -476,6 +537,21 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
     }
 
     @Override
+    public CtrlStltSerializerBuilder requestSnapshotUpdate(String rscName, UUID snapshotUuid, String snapshotName)
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeRequestSnapshotUpdate(rscName, snapshotUuid, snapshotName, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId)
     {
         try
@@ -527,6 +603,9 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             throws IOException;
 
         void writeChangedStorPool(UUID nodeUuid, String nodeName, ByteArrayOutputStream baos)
+            throws IOException;
+
+        void writeChangedSnapshot(String rscName, UUID snapshotUuid, String snapshotName, ByteArrayOutputStream baos)
             throws IOException;
 
         void writeControllerData(
@@ -585,6 +664,18 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         )
             throws IOException;
 
+        void writeSnapshotData(Snapshot snapshot, long fullSyncId, long updateId, ByteArrayOutputStream baos)
+            throws IOException, AccessDeniedException;
+
+        void writeEndedSnapshotData(
+            String resourceNameStr,
+            String snapshotNameStr,
+            long fullSyncId,
+            long updateId,
+            ByteArrayOutputStream baos
+        )
+            throws IOException;
+
         void writeFullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,
@@ -594,10 +685,10 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             ByteArrayOutputStream baos
         )
             throws IOException, AccessDeniedException;
-
         /*
          * Satellite -> Controller
          */
+
         void writePrimaryRequest(String rscName, String rscUuid, ByteArrayOutputStream baos)
             throws IOException;
 
@@ -643,6 +734,14 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         void writeRequestStorPoolUpdate(
             UUID storPoolUuid,
             String storPoolName,
+            ByteArrayOutputStream baos
+        )
+            throws IOException;
+
+        void writeRequestSnapshotUpdate(
+            String rscName,
+            UUID snapshotUuid,
+            String snapshotName,
             ByteArrayOutputStream baos
         )
             throws IOException;

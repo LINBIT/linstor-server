@@ -1,13 +1,16 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotData;
+import com.linbit.linstor.SnapshotDataControllerFactory;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.SnapshotDefinitionData;
@@ -53,6 +56,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
+    private final SnapshotDataControllerFactory snapshotDataFactory;
     private final EventBroker eventBroker;
 
     @Inject
@@ -69,6 +73,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
+        SnapshotDataControllerFactory snapshotDataFactoryRef,
         EventBroker eventBrokerRef
     )
     {
@@ -87,6 +92,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
+        snapshotDataFactory = snapshotDataFactoryRef;
         eventBroker = eventBrokerRef;
     }
 
@@ -129,24 +135,23 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             ensureSnapshotsViable(rscDfn);
 
             rscDfn.addSnapshotDfn(peerAccCtx, snapshotDfn);
+            rscDfn.markSnapshotInProgress(snapshotName, true);
 
             Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
             while (rscIterator.hasNext())
             {
                 Resource rsc = rscIterator.next();
 
-                Snapshot snapshot = new SnapshotData(
-                    UUID.randomUUID(),
-                    snapshotDfn,
-                    rsc.getAssignedNode()
+                Snapshot snapshot = snapshotDataFactory.create(
+                    apiCtx,
+                    rsc.getAssignedNode(),
+                    snapshotDfn
                 );
                 snapshotDfn.addSnapshot(snapshot);
-
-                rsc.addInProgressSnapshot(snapshotName, snapshot);
             }
             commit();
 
-            updateSatellites(rscDfn);
+            updateSatellites(snapshotDfn);
 
             eventBroker.openEventStream(EventIdentifier.snapshotDefinition(
                 ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
@@ -173,6 +178,69 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    public void respondSnapshot(int msgId, String resourceNameStr, UUID snapshotUuid, String snapshotNameStr)
+    {
+        try
+        {
+            ResourceName resourceName = new ResourceName(resourceNameStr);
+            SnapshotName snapshotName = new SnapshotName(snapshotNameStr);
+
+            Peer currentPeer = peer.get();
+
+            Snapshot snapshot = null;
+
+            ResourceDefinition rscDefinition = rscDfnMap.get(resourceName);
+            if (rscDefinition != null)
+            {
+                SnapshotDefinition snapshotDfn = rscDefinition.getSnapshotDfn(apiCtx, snapshotName);
+                if (snapshotDfn != null && rscDefinition.isSnapshotInProgress(snapshotName))
+                {
+                    snapshot = snapshotDfn.getSnapshot(currentPeer.getNode().getName());
+                }
+            }
+
+            long fullSyncId = currentPeer.getFullSyncId();
+            long updateId = currentPeer.getNextSerializerId();
+            if (snapshot != null)
+            {
+                // TODO: check if the snapshot has the same uuid as snapshotUuid
+                currentPeer.sendMessage(
+                    internalComSerializer
+                        .builder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT, msgId)
+                        .snapshotData(snapshot, fullSyncId, updateId)
+                        .build()
+                );
+            }
+            else
+            {
+                currentPeer.sendMessage(
+                    internalComSerializer
+                        .builder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED, msgId)
+                        .endedSnapshotData(resourceNameStr, snapshotNameStr, fullSyncId, updateId)
+                        .build()
+                );
+            }
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Satellite requested data for invalid name '" + invalidNameExc.invalidName + "'.",
+                    invalidNameExc
+                )
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Controller's api context has not enough privileges to gather requested storpool data.",
+                    accDeniedExc
+                )
+            );
+        }
     }
 
     byte[] listSnapshotDefinitions(int msgId)

@@ -69,14 +69,6 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     boolean isDeleted();
 
-    void addInProgressSnapshot(SnapshotName snapshotName, Snapshot snapshot);
-
-    Snapshot getInProgressSnapshot(SnapshotName snapshotName);
-
-    Collection<Snapshot> getInProgressSnapshots();
-
-    void removeInProgressSnapshot(SnapshotName snapshotName);
-
     RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 

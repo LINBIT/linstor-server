@@ -1,8 +1,13 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.pojo.SnapshotPojo;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
+import javax.inject.Provider;
 import java.util.UUID;
 
 public class SnapshotData implements Snapshot
@@ -25,7 +30,10 @@ public class SnapshotData implements Snapshot
     public SnapshotData(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
-        Node nodeRef
+        Node nodeRef,
+        SnapshotDataDatabaseDriver snapshotDataDatabaseDriverRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         objId = objIdRef;
@@ -90,14 +98,18 @@ public class SnapshotData implements Snapshot
     }
 
     @Override
-    public SnapshotApi getApiData(AccessContext accCtx)
+    public SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException
     {
         return new SnapshotPojo(
+            snapshotDfn.getResourceDefinition().getApiData(accCtx),
             objId,
             snapshotDfn.getName().displayValue,
             snapshotDfn.getUuid(),
             suspendResource,
-            takeSnapshot
+            takeSnapshot,
+            fullSyncId,
+            updateId
         );
     }
 }

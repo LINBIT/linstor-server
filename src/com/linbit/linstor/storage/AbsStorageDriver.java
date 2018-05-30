@@ -624,6 +624,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             stopVolume(getSnapshotIdentifier(identifier, snapshotName, isEncrypted), isEncrypted);
 
             final OutputData outputData = extCommand.exec(command);
+            // TODO: Check that snapshot really exists like in deleteVolume
             checkExitCode(
                 outputData, command,
                 "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier

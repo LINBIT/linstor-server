@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -33,6 +34,7 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
@@ -70,6 +72,7 @@ public class StltApiCallHandler
     private final StltRscDfnApiCallHandler rscDfnHandler;
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
+    private final StltSnapshotApiCallHandler snapshotHandler;
 
     private final CtrlStltSerializer interComSerializer;
 
@@ -107,6 +110,7 @@ public class StltApiCallHandler
         StltRscDfnApiCallHandler rscDfnHandlerRef,
         StltRscApiCallHandler rscHandlerRef,
         StltStorPoolApiCallHandler storPoolHandlerRef,
+        StltSnapshotApiCallHandler snapshotHandlerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -136,6 +140,7 @@ public class StltApiCallHandler
         rscDfnHandler = rscDfnHandlerRef;
         rscHandler = rscHandlerRef;
         storPoolHandler = storPoolHandlerRef;
+        snapshotHandler = snapshotHandlerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
@@ -432,10 +437,10 @@ public class StltApiCallHandler
                 );
             }
 
-            Map<ResourceName, UUID> slctRsc = new TreeMap<>();
+            Set<ResourceName> slctRsc = new TreeSet<>();
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
             {
-                slctRsc.put(curRscDfn.getName(), curRscDfn.getUuid());
+                slctRsc.add(curRscDfn.getName());
             }
 
             deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
@@ -486,6 +491,16 @@ public class StltApiCallHandler
     )
     {
         applyChangedData(new ApplyStorPoolData(storPoolNameStr, fullSyncId, updateId));
+    }
+
+    public void applySnapshotChanges(SnapshotPojo snapshotRaw)
+    {
+        applyChangedData(new ApplySnapshotData(snapshotRaw));
+    }
+
+    public void applyEndedSnapshotChange(String rscName, String snapshotName, long fullSyncId, long updateId)
+    {
+        applyChangedData(new ApplyEndedSnapshotData(rscName, snapshotName, fullSyncId, updateId));
     }
 
     public void setCryptKey(byte[] key, long fullSyncId, long updateId)
@@ -763,6 +778,87 @@ public class StltApiCallHandler
                 {
                     storPoolHandler.applyDeletedStorPool(deletedStorPoolName);
                 }
+            }
+        }
+    }
+
+    private class ApplySnapshotData implements ApplyData
+    {
+        private final SnapshotPojo snapshotPojo;
+
+        public ApplySnapshotData(SnapshotPojo snapshotPojoRef)
+        {
+            snapshotPojo = snapshotPojoRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return snapshotPojo.getFullSyncId();
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return snapshotPojo.getUpdateId();
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (
+                LockSupport ls = LockSupport.lock(
+                    rscDfnMapLock.writeLock()
+                )
+            )
+            {
+                snapshotHandler.applyChanges(snapshotPojo);
+            }
+        }
+    }
+
+    private class ApplyEndedSnapshotData implements ApplyData
+    {
+        private final String rscName;
+        private final String snapshotName;
+        private final long fullSyncId;
+        private final long updateId;
+
+        public ApplyEndedSnapshotData(
+            String rscNameRef,
+            String snapshotNameRef,
+            long fullSyncIdRef,
+            long updateIdRef
+        )
+        {
+            rscName = rscNameRef;
+            snapshotName = snapshotNameRef;
+            fullSyncId = fullSyncIdRef;
+            updateId = updateIdRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return fullSyncId;
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return updateId;
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (
+                LockSupport ls = LockSupport.lock(
+                    rscDfnMapLock.writeLock()
+                )
+            )
+            {
+                snapshotHandler.applyEndedSnapshot(rscName, snapshotName);
             }
         }
     }

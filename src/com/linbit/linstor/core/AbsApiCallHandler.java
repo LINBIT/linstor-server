@@ -26,6 +26,8 @@ import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
@@ -1601,6 +1603,56 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                     null, // correction
                     ApiConsts.WARN_NOT_CONNECTED
                 );
+            }
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw asImplError(implError);
+        }
+    }
+
+    protected final void updateSatellites(SnapshotDefinition snapshotDfn)
+    {
+        try
+        {
+            // notify all peers that a snapshot has changed
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+            {
+                Peer currentPeer = snapshot.getNode().getPeer(apiCtx);
+
+                boolean connected = currentPeer.isConnected();
+                if (connected)
+                {
+                    if (!fullSyncFailed(currentPeer))
+                    {
+                        connected = currentPeer.sendMessage(
+                            internalComSerializer
+                                .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
+                                .changedSnapshot(
+                                    snapshotDfn.getResourceDefinition().getName().displayValue,
+                                    snapshot.getUuid(),
+                                    snapshot.getSnapshotDefinition().getName().displayValue
+                                )
+                                .build()
+                        );
+                    }
+                }
+                if (!connected)
+                {
+                    String nodeName = snapshot.getNode().getName().displayValue;
+                    String details = String.format(
+                            "The controller queued the %s of the snapshot and as soon the satellite is connected, " +
+                            "it will receive this update.",
+                        getAction("creation", "modification", "deletion")
+                    );
+                    addAnswer(
+                        "No active connection to satellite '" + nodeName + "'",
+                        null, // cause
+                        details,
+                        null, // correction
+                        ApiConsts.WARN_NOT_CONNECTED
+                    );
+                }
             }
         }
         catch (AccessDeniedException implError)

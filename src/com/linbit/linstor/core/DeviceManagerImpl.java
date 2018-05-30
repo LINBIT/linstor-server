@@ -16,6 +16,8 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotId;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -43,9 +45,12 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -53,6 +58,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 
 @Singleton
 class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
@@ -191,7 +197,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     /**
      * Dispatch resource to a specific handler depending on type
      */
-    void dispatchResource(Resource rsc, SyncPoint phaseLockRef)
+    void dispatchResource(Resource rsc, Collection<Snapshot> snapshots, SyncPoint phaseLockRef)
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
@@ -200,6 +206,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             this,
             drbdHnd,
             rsc,
+            snapshots,
             phaseLockRef
         );
         // DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(this, drbdHnd, rsc, phaseLockRef);
@@ -352,6 +359,22 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         synchronized (sched)
         {
             rscUpdateAppliedImpl(rscMap);
+            if (rcvPendingBundle.isEmpty())
+            {
+                sched.notify();
+            }
+        }
+    }
+
+    @Override
+    public void snapshotUpdateApplied(Set<SnapshotId> snapshotIdSet)
+    {
+        synchronized (sched)
+        {
+            for (SnapshotId snapshotId : snapshotIdSet)
+            {
+                rcvPendingBundle.updSnapshotMap.remove(snapshotId);
+            }
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -622,7 +645,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             updPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
 
             // Schedule all objects that will be updated for a device handler run
-            dispatchRscSet.addAll(updPendingBundle.chkRscMap.keySet());
+            dispatchRscSet.addAll(updPendingBundle.chkRscSet);
             dispatchRscSet.addAll(updPendingBundle.updRscDfnMap.keySet());
             dispatchRscSet.addAll(updPendingBundle.updRscMap.keySet());
 
@@ -632,6 +655,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             requestRscDfnUpdates(updPendingBundle.updRscDfnMap);
             requestRscUpdates(updPendingBundle.updRscMap);
             requestStorPoolUpdates(updPendingBundle.updStorPoolMap);
+            requestSnapshotUpdates(updPendingBundle.updSnapshotMap);
 
             updPendingBundle.clear();
         }
@@ -678,8 +702,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             // Add any check requests that were received in the meantime
             // into the dispatch set and clear the check requests
-            dispatchRscSet.addAll(updPendingBundle.chkRscMap.keySet());
-            updPendingBundle.chkRscMap.clear();
+            dispatchRscSet.addAll(updPendingBundle.chkRscSet);
+            updPendingBundle.chkRscSet.clear();
         }
 
         // BEGIN DEBUG
@@ -731,7 +755,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                             }
                             if (dispatch)
                             {
-                                dispatchResource(rsc, phaseLock);
+                                List<Snapshot> snapshots = rscDfn.getSnapshotDfns(wrkCtx).stream()
+                                    .map(snapshotDefinition -> snapshotDefinition.getSnapshot(localNode.getName()))
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toList());
+                                dispatchResource(rsc, snapshots, phaseLock);
                             }
                             else
                             {
@@ -951,6 +979,19 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    private void requestSnapshotUpdates(Map<SnapshotId, UUID> updSnapshotMap)
+    {
+        for (Entry<SnapshotId, UUID> entry : updSnapshotMap.entrySet())
+        {
+            errLog.logTrace("Requesting update for snapshot '" + entry.getKey().getSnapshotName().displayValue + "'" +
+                " of resource '" + entry.getKey().getResourceName().displayValue + "'");
+            stltUpdateRequester.requestSnapshotUpdate(
+                entry.getValue(),
+                entry.getKey()
+            );
+        }
+    }
+
     @Override
     public ServiceName getServiceName()
     {
@@ -1082,6 +1123,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         private final DeviceManagerImpl devMgr;
         private final DeviceHandler handler;
         private final Resource rsc;
+        private final Collection<Snapshot> snapshots;
         private final SyncPoint phaseLock;
         private LinStorScope devHndInvScope;
         private TransactionMgr transMgr;
@@ -1091,6 +1133,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             @Assisted DeviceManagerImpl devMgrRef,
             @Assisted DeviceHandler handlerRef,
             @Assisted Resource rscRef,
+            @Assisted Collection<Snapshot> snapshotsRef,
             @Assisted SyncPoint phaseLockRef,
             TransactionMgr transMgrRef, // should be the one from devMgr's scope
             LinStorScope devHndInvScopeRef
@@ -1099,6 +1142,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             devMgr = devMgrRef;
             handler = handlerRef;
             rsc = rscRef;
+            snapshots = snapshotsRef;
             phaseLock = phaseLockRef;
             transMgr = transMgrRef;
             devHndInvScope = devHndInvScopeRef;
@@ -1115,7 +1159,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     devHndInvScope.enter();
                     devHndInvScope.seed(TransactionMgr.class, transMgr);
 
-                    handler.dispatchResource(rsc);
+                    handler.dispatchResource(rsc, snapshots);
                 }
             }
             finally
@@ -1136,6 +1180,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             DeviceManagerImpl devMgrRef,
             DeviceHandler handlerRef,
             Resource rscRef,
+            Collection<Snapshot> snapshots,
             SyncPoint phaseLockRef
         );
     }

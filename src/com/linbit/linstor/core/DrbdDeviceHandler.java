@@ -60,6 +60,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -196,9 +197,10 @@ class DrbdDeviceHandler implements DeviceHandler
      * Entry point for the DeviceManager
      *
      * @param rsc The resource to perform changes on
+     * @param inProgressSnapshots
      */
     @Override
-    public void dispatchResource(Resource rsc)
+    public void dispatchResource(Resource rsc, Collection<Snapshot> inProgressSnapshots)
     {
         errLog.logTrace(
             "DrbdDeviceHandler: dispatchRsc() - Begin actions: Resource '" +
@@ -230,6 +232,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
                 apiCallRc.addEntry("Resource deployed", ApiConsts.CREATED);
             }
+
+            handleSnapshots(rscName, inProgressSnapshots, rscState);
         }
         catch (ResourceException rscExc)
         {
@@ -881,8 +885,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
         makePrimaryIfRequired(localNode, rscName, rsc, rscDfn, rscState);
 
-        handleSnapshots(rscName, rsc, rscState);
-
         deviceManagerProvider.get().notifyResourceApplied(rsc);
     }
 
@@ -1301,12 +1303,12 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void handleSnapshots(ResourceName rscName, Resource rsc, ResourceState rscState)
+    private void handleSnapshots(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
         throws ResourceException
     {
         boolean snapshotInProgress = false;
         boolean shouldSuspend = false;
-        for (Snapshot snapshot : rsc.getInProgressSnapshots())
+        for (Snapshot snapshot : snapshots)
         {
             snapshotInProgress = true;
 
@@ -1323,7 +1325,7 @@ class DrbdDeviceHandler implements DeviceHandler
         Set<SnapshotName> alreadySnapshotted = getAlreadySnapshotted(rscName);
 
         Set<SnapshotName> newlyTakenSnapshots = new HashSet<>();
-        for (Snapshot snapshot : rsc.getInProgressSnapshots())
+        for (Snapshot snapshot : snapshots)
         {
             SnapshotName snapshotName = snapshot.getSnapshotDefinition().getName();
 
@@ -1334,7 +1336,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     try
                     {
                         takeVolumeSnapshot(
-                            rsc.getDefinition(),
+                            snapshot.getSnapshotDefinition().getResourceDefinition(),
                             snapshotName,
                             (VolumeStateDevManager) vlmState
                         );
@@ -1356,11 +1358,11 @@ class DrbdDeviceHandler implements DeviceHandler
         if (snapshotInProgress)
         {
             List<SnapshotState> newSnapshotStates =
-                computeNewSnapshotStates(rsc, shouldSuspend, alreadySnapshotted, newlyTakenSnapshots);
+                computeNewSnapshotStates(snapshots, shouldSuspend, alreadySnapshotted, newlyTakenSnapshots);
 
             deploymentStateTracker.setSnapshotStates(rscName, newSnapshotStates);
 
-            for (Snapshot snapshot : rsc.getInProgressSnapshots())
+            for (Snapshot snapshot : snapshots)
             {
                 eventBroker.openOrTriggerEvent(EventIdentifier.snapshotDefinition(
                     InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
@@ -1373,7 +1375,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             deploymentStateTracker.removeSnapshotStates(rscName);
 
-            for (Snapshot snapshot : rsc.getInProgressSnapshots())
+            for (Snapshot snapshot : snapshots)
             {
                 eventBroker.closeEventStream(EventIdentifier.snapshotDefinition(
                     InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
@@ -1438,7 +1440,7 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private List<SnapshotState> computeNewSnapshotStates(
-        Resource rsc,
+        Collection<Snapshot> snapshots,
         boolean shouldSuspend,
         Set<SnapshotName> alreadySnapshotted,
         Set<SnapshotName> newlyTakenSnapshots
@@ -1447,7 +1449,7 @@ class DrbdDeviceHandler implements DeviceHandler
         Set<SnapshotName> allSnapshotted = Stream.concat(alreadySnapshotted.stream(), newlyTakenSnapshots.stream())
             .collect(Collectors.toSet());
 
-        return rsc.getInProgressSnapshots().stream()
+        return snapshots.stream()
             .map(snapshot -> new SnapshotState(
                 snapshot.getSnapshotDefinition().getName(),
                 shouldSuspend,

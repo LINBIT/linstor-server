@@ -11,7 +11,9 @@ import com.linbit.linstor.security.AccessContext;
 import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -95,7 +97,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                 nameMatcher = namePattern.matcher("");
             }
 
-            Map<ResourceName, UUID> slctRsc = new TreeMap<>();
+            Set<ResourceName> slctRsc = new TreeSet<>();
             try
             {
                 rscDfnRdLock.lock();
@@ -104,7 +106,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                     // Select all resources
                     for (ResourceDefinition curRscDfn : rscDfnMap.values())
                     {
-                        slctRsc.put(curRscDfn.getName(), curRscDfn.getUuid());
+                        slctRsc.add(curRscDfn.getName());
                     }
                     deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
                     debugOut.println("Device manager notified to adjust all resources.");
@@ -118,7 +120,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                         nameMatcher.reset(rscName.value);
                         if (nameMatcher.find())
                         {
-                            slctRsc.put(rscName, curRscDfn.getUuid());
+                            slctRsc.add(rscName);
                         }
                     }
                     deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
@@ -164,7 +166,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                 if (rscDfn != null)
                 {
                     ResourceName rscName = rscDfn.getName();
-                    deviceManager.getUpdateTracker().checkResource(rscDfn.getUuid(), rscName);
+                    deviceManager.getUpdateTracker().checkResource(rscName);
                     debugOut.println("Device manager notified to adjust the resource '" + rscName.displayValue + "'");
                 }
                 else

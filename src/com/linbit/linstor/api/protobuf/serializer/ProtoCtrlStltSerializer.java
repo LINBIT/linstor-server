@@ -23,6 +23,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
@@ -62,6 +63,8 @@ import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOther
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
+import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
 import com.linbit.linstor.security.AccessContext;
@@ -157,6 +160,19 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         throws IOException
     {
         appendObjectId(storPoolUuid, storPoolName, baos);
+    }
+
+    @Override
+    public void writeChangedSnapshot(
+        String rscName,
+        UUID snapshotUuid,
+        String snapshotName,
+        ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        appendObjectId(null, rscName, baos);
+        appendObjectId(snapshotUuid, snapshotName, baos);
     }
 
     @Override
@@ -260,6 +276,49 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         MsgIntStorPoolDeletedData.newBuilder()
             .setStorPoolName(storPoolNameStr)
             .setFullSyncId(fullSyncTimestamp)
+            .setUpdateId(updateId)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeSnapshotData(
+        Snapshot snapshot, long fullSyncId, long updateId, ByteArrayOutputStream baos
+    )
+        throws IOException, AccessDeniedException
+    {
+        SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
+        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+
+        MsgIntSnapshotDataOuterClass.MsgIntSnapshotData.newBuilder()
+            .setRscName(rscDfn.getName().displayValue)
+            .setRscDfnUuid(rscDfn.getUuid().toString())
+            .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
+            .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
+            .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
+            .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
+            .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfn.getProps(serializerCtx).map()))
+            .setSnapshotUuid(snapshot.getUuid().toString())
+            .setSnapshotName(snapshotDfn.getName().displayValue)
+            .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
+            .setSuspendResource(snapshot.getSuspendResource())
+            .setTakeSnapshot(snapshot.getTakeSnapshot())
+            .setFullSyncId(fullSyncId)
+            .setUpdateId(updateId)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeEndedSnapshotData(
+        String resourceNameStr, String snapshotNameStr, long fullSyncId, long updateId, ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        MsgIntSnapshotEndedDataOuterClass.MsgIntSnapshotEndedData.newBuilder()
+            .setRscName(resourceNameStr)
+            .setSnapshotName(snapshotNameStr)
+            .setFullSyncId(fullSyncId)
             .setUpdateId(updateId)
             .build()
             .writeDelimitedTo(baos);
@@ -458,6 +517,16 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         throws IOException
     {
         appendObjectId(storPoolUuid, storPoolName, baos);
+    }
+
+    @Override
+    public void writeRequestSnapshotUpdate(
+        String rscName, UUID snapshotUuid, String snapshotName, ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        appendObjectId(null, rscName, baos);
+        appendObjectId(snapshotUuid, snapshotName, baos);
     }
 
     @Override
@@ -685,9 +754,6 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                 .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
-                .addAllInProgressSnapshots(
-                    buildInProgressSnapshots(localResource)
-                )
                 .build();
             return message;
         }
@@ -846,25 +912,5 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
 
             return protoNetIfs;
         }
-    }
-
-    private Iterable<? extends MsgIntRscDataOuterClass.IntSnapshot> buildInProgressSnapshots(Resource localResource)
-    {
-        List<MsgIntRscDataOuterClass.IntSnapshot> snapshots = new ArrayList<>();
-
-        for (Snapshot snapshot : localResource.getInProgressSnapshots())
-        {
-            snapshots.add(
-                MsgIntRscDataOuterClass.IntSnapshot.newBuilder()
-                    .setSnapshotUuid(snapshot.getUuid().toString())
-                    .setSnapshotName(snapshot.getSnapshotDefinition().getName().displayValue)
-                    .setSnapshotDefinitionUuid(snapshot.getSnapshotDefinition().getUuid().toString())
-                    .setSuspendResource(snapshot.getSuspendResource())
-                    .setTakeSnapshot(snapshot.getTakeSnapshot())
-                    .build()
-            );
-        }
-
-        return snapshots;
     }
 }

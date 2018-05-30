@@ -19,7 +19,9 @@ import com.linbit.utils.Base64;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -54,7 +56,7 @@ public class StltVlmDfnApiCallHandler
     {
         try
         {
-            Map<ResourceName, UUID> rscDfnsToAdjust = new TreeMap<>();
+            Set<ResourceName> rscDfnsToAdjust = new TreeSet<>();
             boolean fail = false;
             byte[] masterKey = secObjs.getCryptKey();
             for (ResourceDefinition rscDfn : rscDfnMap.values())
@@ -66,7 +68,7 @@ public class StltVlmDfnApiCallHandler
 
                     if (isEncrypted(vlmDfn, apiCtx))
                     {
-                        rscDfnsToAdjust.put(rscDfn.getName(), rscDfn.getUuid());
+                        rscDfnsToAdjust.add(rscDfn.getName());
                         if (!decryptVlmDfnKeyImpl(vlmDfn, apiCtx, masterKey))
                         {
                             fail = true;

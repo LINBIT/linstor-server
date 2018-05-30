@@ -100,6 +100,13 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    void markSnapshotInProgress(SnapshotName snapshotName, boolean inProgress);
+
+    boolean isSnapshotInProgress(SnapshotName snapshotName);
+
+    Collection<SnapshotDefinition> getInProgressSnapshotDfns(AccessContext accCtx)
+        throws AccessDeniedException;
+
     RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     @Override

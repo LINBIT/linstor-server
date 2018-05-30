@@ -239,7 +239,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                                     null,
                                     rscConns,
                                     null,
-                                    null,
                                     null);
                                 rscs.add(filteredRscVlms);
                             }

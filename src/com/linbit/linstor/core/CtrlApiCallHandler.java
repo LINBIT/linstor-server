@@ -1352,6 +1352,23 @@ public class CtrlApiCallHandler
         }
     }
 
+    public void handleSnapshotRequest(String resourceName, UUID snapshotUuid, String snapshotName)
+    {
+        try (
+            LockSupport ls = LockSupport.lock(
+                rscDfnMapLock.readLock()
+            )
+        )
+        {
+            snapshotApiCallHandler.respondSnapshot(
+                msgId.get(),
+                resourceName,
+                snapshotUuid,
+                snapshotName
+            );
+        }
+    }
+
     public void handleControllerRequest(
         UUID nodeUuid,
         String nodeNameStr

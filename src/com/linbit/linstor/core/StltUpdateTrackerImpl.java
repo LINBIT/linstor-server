@@ -2,12 +2,16 @@ package com.linbit.linstor.core;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotId;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 
 /**
@@ -87,21 +91,31 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     }
 
     @Override
-    public void checkResource(UUID rscUuid, ResourceName name)
+    public void updateSnapshot(ResourceName resourceName, UUID snapshotUuid, SnapshotName snapshotName)
     {
         synchronized (sched)
         {
-            cachedUpdates.chkRscMap.put(name, rscUuid);
+            cachedUpdates.updSnapshotMap.put(new SnapshotId(resourceName, snapshotName), snapshotUuid);
             sched.notify();
         }
     }
 
     @Override
-    public void checkMultipleResources(Map<ResourceName, UUID> rscMap)
+    public void checkResource(ResourceName name)
     {
         synchronized (sched)
         {
-            cachedUpdates.chkRscMap.putAll(rscMap);
+            cachedUpdates.chkRscSet.add(name);
+            sched.notify();
+        }
+    }
+
+    @Override
+    public void checkMultipleResources(Set<ResourceName> rscSet)
+    {
+        synchronized (sched)
+        {
+            cachedUpdates.chkRscSet.addAll(rscSet);
             sched.notify();
         }
     }
@@ -124,7 +138,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             // Collect all queued updates
 
             cachedUpdates.copyUpdateRequestsTo(updates);
-            updates.chkRscMap.putAll(cachedUpdates.chkRscMap);
+            updates.chkRscSet.addAll(cachedUpdates.chkRscSet);
 
             // Clear queued updates
             clearImpl();
@@ -155,7 +169,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         final Map<ResourceName, UUID> updRscDfnMap = new TreeMap<>();
         final Map<ResourceName, Map<NodeName, UUID>> updRscMap = new TreeMap<>();
         final Map<StorPoolName, UUID> updStorPoolMap = new TreeMap<>();
-        final Map<ResourceName, UUID> chkRscMap = new TreeMap<>();
+        final Map<SnapshotId, UUID> updSnapshotMap = new TreeMap<>();
+        final Set<ResourceName> chkRscSet = new TreeSet<>();
 
         /**
          * Copies the update notifications, but not the check notifications, to another UpdateBundle
@@ -175,6 +190,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
                 other.updRscMap.put(entry.getKey(), new TreeMap<>(entry.getValue()));
             }
             other.updStorPoolMap.putAll(updStorPoolMap);
+            other.updSnapshotMap.putAll(updSnapshotMap);
         }
 
         /**
@@ -185,7 +201,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         boolean isEmpty()
         {
             return updControllerMap.isEmpty() && updNodeMap.isEmpty() && updRscDfnMap.isEmpty() &&
-                updRscMap.isEmpty() && updStorPoolMap.isEmpty() && chkRscMap.isEmpty();
+                updRscMap.isEmpty() && updStorPoolMap.isEmpty() && updSnapshotMap.isEmpty() && chkRscSet.isEmpty();
         }
 
         /**
@@ -199,7 +215,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             updRscDfnMap.clear();
             updRscMap.clear();
             updStorPoolMap.clear();
-            chkRscMap.clear();
+            updSnapshotMap.clear();
+            chkRscSet.clear();
         }
     }
 }

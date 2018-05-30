@@ -1,9 +1,7 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -13,7 +11,6 @@ import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
-import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -23,13 +20,12 @@ import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.IntSnapshot;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -69,7 +65,6 @@ public class ApplyRsc implements ApiCall
         List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
         List<ResourceConnection.RscConnApi> rscConns = extractRscConn(rscData.getRscConnectionsList());
-        List<Snapshot.SnapshotApi> inProgressSnapshots = extractSnapshots(rscData.getInProgressSnapshotsList());
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscData.getRscDfnUuid()),
             rscData.getRscName(),
@@ -92,8 +87,7 @@ public class ApplyRsc implements ApiCall
             otherRscList,
             rscConns,
             rscData.getFullSyncId(),
-            rscData.getUpdateId(),
-            inProgressSnapshots
+            rscData.getUpdateId()
         );
         return rscRawData;
     }
@@ -202,23 +196,5 @@ public class ApplyRsc implements ApiCall
         }
 
         return Collections.unmodifiableList(list);
-    }
-
-    private static List<Snapshot.SnapshotApi> extractSnapshots(List<IntSnapshot> inProgressSnapshotsList)
-    {
-        List<Snapshot.SnapshotApi> snapshots = new ArrayList<>();
-
-        for (IntSnapshot snapshot : inProgressSnapshotsList)
-        {
-            snapshots.add(new SnapshotPojo(
-                UUID.fromString(snapshot.getSnapshotUuid()),
-                snapshot.getSnapshotName(),
-                UUID.fromString(snapshot.getSnapshotDefinitionUuid()),
-                snapshot.getSuspendResource(),
-                snapshot.getTakeSnapshot()
-            ));
-        }
-
-        return snapshots;
     }
 }

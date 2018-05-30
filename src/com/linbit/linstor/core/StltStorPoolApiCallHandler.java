@@ -117,7 +117,7 @@ class StltStorPoolApiCallHandler
                 throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
             }
             storPool = localNode.getStorPool(apiCtx, storPoolName);
-            Map<ResourceName, UUID> changedResourcesMap = new TreeMap<>();
+            Set<ResourceName> changedResources = new TreeSet<>();
             if (storPool != null)
             {
                 checkUuid(storPool, storPoolRaw);
@@ -129,7 +129,7 @@ class StltStorPoolApiCallHandler
                 for (Volume vlm : volumes)
                 {
                     ResourceDefinition rscDfn = vlm.getResourceDefinition();
-                    changedResourcesMap.put(rscDfn.getName(), rscDfn.getUuid());
+                    changedResources.add(rscDfn.getName());
                 }
             }
             else
@@ -159,7 +159,7 @@ class StltStorPoolApiCallHandler
                 storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
             }
 
-            changedData = new ChangedData(storPoolDfnToRegister, changedResourcesMap);
+            changedData = new ChangedData(storPoolDfnToRegister);
 
             transMgrProvider.get().commit();
 
@@ -179,7 +179,7 @@ class StltStorPoolApiCallHandler
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
             deviceManager.storPoolUpdateApplied(storPoolSet);
-            deviceManager.getUpdateTracker().checkMultipleResources(changedData.changedResourcesMap);
+            deviceManager.getUpdateTracker().checkMultipleResources(changedResources);
 
         }
         catch (Exception | ImplementationError exc)
@@ -243,13 +243,11 @@ class StltStorPoolApiCallHandler
 
     public static class ChangedData
     {
-        Map<ResourceName, UUID> changedResourcesMap;
         StorPoolDefinition storPoolDfnToRegister;
 
-        ChangedData(StorPoolDefinition storPoolDfnToRegisterRef, Map<ResourceName, UUID> changedResourcesMapRef)
+        ChangedData(StorPoolDefinition storPoolDfnToRegisterRef)
         {
             storPoolDfnToRegister = storPoolDfnToRegisterRef;
-            changedResourcesMap = changedResourcesMapRef;
         }
     }
 }

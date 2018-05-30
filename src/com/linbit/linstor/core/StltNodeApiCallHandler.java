@@ -24,6 +24,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,13 +98,13 @@ class StltNodeApiCallHandler
             NodeName nodeName = new NodeName(nodeNameStr);
 
             Node removedNode = nodesMap.remove(nodeName); // just to be sure
-            Map<ResourceName, UUID> rscToDeleteNames = new HashMap<>();
+            Set<ResourceName> rscToDeleteNames = new HashSet<>();
             if (removedNode != null)
             {
                 List<Resource> rscToDelete = removedNode.streamResources(apiCtx).collect(Collectors.toList());
                 for (Resource rsc : rscToDelete)
                 {
-                    rscToDeleteNames.put(rsc.getDefinition().getName(), rsc.getUuid());
+                    rscToDeleteNames.add(rsc.getDefinition().getName());
                     rsc.delete(apiCtx);
                 }
                 removedNode.delete(apiCtx);

@@ -26,7 +26,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     private final List<ResourceConnection.RscConnApi> rscConnections;
     private final Long fullSyncId;
     private final Long updateId;
-    private final List<Snapshot.SnapshotApi> inProgressSnapshots;
 
     public RscPojo(
         final String rscNameRef,
@@ -41,8 +40,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         final List<OtherRscPojo> otherRscListRef,
         final List<ResourceConnection.RscConnApi> rscConnectionsRef,
         final Long fullSyncIdRef,
-        final Long updateIdRef,
-        final List<Snapshot.SnapshotApi> inProgressSnapshotsRef
+        final Long updateIdRef
     )
     {
         rscName = rscNameRef;
@@ -58,7 +56,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         otherRscs = otherRscListRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
-        inProgressSnapshots = inProgressSnapshotsRef;
     }
 
     @Override
@@ -182,11 +179,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     public long getUpdateId()
     {
         return updateId;
-    }
-
-    public List<Snapshot.SnapshotApi> getInProgressSnapshots()
-    {
-        return inProgressSnapshots;
     }
 
     @Override

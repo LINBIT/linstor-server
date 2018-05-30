@@ -25,9 +25,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Provider;
@@ -77,6 +81,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private final ResourceDefinitionDataDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
+
+    // Transient store of snapshots which have been requested but not yet completed
+    private final Set<SnapshotName> inProgressSnapshots;
 
     ResourceDefinitionData(
         UUID objIdRef,
@@ -146,6 +153,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             transportType,
             deleted
         );
+
+        inProgressSnapshots = new TreeSet<>();
     }
 
     @Override
@@ -422,6 +431,36 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
             deleted.set(true);
         }
+    }
+
+    @Override
+    public void markSnapshotInProgress(SnapshotName snapshotName, boolean inProgress)
+    {
+        if (inProgress)
+        {
+            inProgressSnapshots.add(snapshotName);
+        }
+        else
+        {
+            inProgressSnapshots.remove(snapshotName);
+        }
+    }
+
+    @Override
+    public boolean isSnapshotInProgress(SnapshotName snapshotName)
+    {
+        return inProgressSnapshots.contains(snapshotName);
+    }
+
+    @Override
+    public Collection<SnapshotDefinition> getInProgressSnapshotDfns(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return inProgressSnapshots.stream()
+            .map(snapshotDfnMap::get)
+            .collect(Collectors.toList());
     }
 
     private void checkDeleted()
