@@ -22,6 +22,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
@@ -1331,8 +1332,11 @@ class DrbdDeviceHandler implements DeviceHandler
 
             if (snapshot.getTakeSnapshot() && !alreadySnapshotted.contains(snapshotName))
             {
-                for (VolumeState vlmState : rscState.getVolumes())
+                for (SnapshotVolumeDefinition snapshotVolumeDefinition :
+                    snapshot.getSnapshotDefinition().getAllSnapshotVolumeDefinitions())
                 {
+                    VolumeState vlmState = rscState.getVolumeState(snapshotVolumeDefinition.getVolumeNumber());
+
                     try
                     {
                         takeVolumeSnapshot(

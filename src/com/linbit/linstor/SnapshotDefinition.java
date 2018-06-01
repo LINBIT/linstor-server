@@ -22,6 +22,14 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     SnapshotName getName();
 
+    SnapshotVolumeDefinition getSnapshotVolumeDefinition(VolumeNumber volumeNumber);
+
+    Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions();
+
+    void addSnapshotVolumeDefinition(SnapshotVolumeDefinition snapshotVolumeDefinition);
+
+    void removeSnapshotVolumeDefinition(VolumeNumber volumeNumber);
+
     Snapshot getSnapshot(NodeName clNodeName);
 
     Collection<Snapshot> getAllSnapshots();
@@ -90,15 +98,16 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     public interface SnapshotDfnApi
     {
+        ResourceDefinition.RscDfnApi getRscDfn();
         UUID getUuid();
         String getSnapshotName();
-        UUID getRscDfnUuid();
-        String getRscName();
         long getFlags();
+        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList();
     }
 
     public interface InitMaps
     {
         Map<NodeName, Snapshot> getSnapshotMap();
+        Map<VolumeNumber, SnapshotVolumeDefinition> getSnapshotVolumeDefinitionMap();
     }
 }

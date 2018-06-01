@@ -1,31 +1,39 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 
+import java.util.List;
 import java.util.UUID;
 
 public class SnapshotDfnPojo implements SnapshotDefinition.SnapshotDfnApi
 {
+    private final ResourceDefinition.RscDfnApi rscDfn;
     private final UUID uuid;
     private final String snapshotName;
-    private final UUID rscDfnUuid;
-    private final String rscName;
+    private final List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns;
     private final long flags;
 
     public SnapshotDfnPojo(
+        ResourceDefinition.RscDfnApi rscDfnRef,
         UUID uuidRef,
         String snapshotNameRef,
-        UUID rscDfnUuidRef,
-        String rscNameRef,
+        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfnsRef,
         long flagsRef
     )
     {
+        rscDfn = rscDfnRef;
         uuid = uuidRef;
         snapshotName = snapshotNameRef;
-        rscDfnUuid = rscDfnUuidRef;
-        rscName = rscNameRef;
+        snapshotVlmDfns = snapshotVlmDfnsRef;
         flags = flagsRef;
+    }
+
+    @Override
+    public ResourceDefinition.RscDfnApi getRscDfn()
+    {
+        return rscDfn;
     }
 
     @Override
@@ -41,15 +49,9 @@ public class SnapshotDfnPojo implements SnapshotDefinition.SnapshotDfnApi
     }
 
     @Override
-    public UUID getRscDfnUuid()
+    public List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList()
     {
-        return rscDfnUuid;
-    }
-
-    @Override
-    public String getRscName()
-    {
-        return rscName;
+        return snapshotVlmDfns;
     }
 
     @Override

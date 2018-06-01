@@ -1,36 +1,30 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 
 import java.util.UUID;
 
 public class SnapshotPojo implements Snapshot.SnapshotApi
 {
-    private final ResourceDefinition.RscDfnApi rscDfn;
+    private final SnapshotDefinition.SnapshotDfnApi snaphotDfn;
     private final UUID uuid;
-    private final String name;
-    private final UUID snapshotDfnUuid;
     private final boolean suspendResource;
     private final boolean takeSnapshot;
     private final Long fullSyncId;
     private final Long updateId;
 
     public SnapshotPojo(
-        ResourceDefinition.RscDfnApi rscDfnRef,
+        SnapshotDefinition.SnapshotDfnApi snaphotDfnRef,
         UUID uuidRef,
-        String nameRef,
-        UUID snapshotDfnUuidRef,
         boolean suspendResourceRef,
         boolean takeSnapshotRef,
         Long fullSyncIdRef,
         Long updateIdRef
     )
     {
-        rscDfn = rscDfnRef;
+        snaphotDfn = snaphotDfnRef;
         uuid = uuidRef;
-        name = nameRef;
-        snapshotDfnUuid = snapshotDfnUuidRef;
         suspendResource = suspendResourceRef;
         takeSnapshot = takeSnapshotRef;
         fullSyncId = fullSyncIdRef;
@@ -38,27 +32,15 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     }
 
     @Override
-    public ResourceDefinition.RscDfnApi getRscDfn()
+    public SnapshotDefinition.SnapshotDfnApi getSnaphotDfn()
     {
-        return rscDfn;
+        return snaphotDfn;
     }
 
     @Override
     public UUID getSnapshotUuid()
     {
         return uuid;
-    }
-
-    @Override
-    public String getSnapshotName()
-    {
-        return name;
-    }
-
-    @Override
-    public UUID getSnapshotDfnUuid()
-    {
-        return snapshotDfnUuid;
     }
 
     @Override

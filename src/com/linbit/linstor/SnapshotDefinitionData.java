@@ -6,14 +6,18 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class SnapshotDefinitionData extends BaseTransactionObject implements SnapshotDefinition
 {
@@ -31,6 +35,8 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     // State flags
     private final StateFlags<SnapshotDfnFlags> flags;
 
+    private final TransactionMap<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
+
     private final Map<NodeName, Snapshot> snapshotMap;
 
     public SnapshotDefinitionData(
@@ -41,6 +47,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         SnapshotDefinitionDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
+        Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMapRef,
         Map<NodeName, Snapshot> snapshotMapRef
     )
     {
@@ -60,8 +67,11 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
             initFlags
         );
 
+        snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
+
         transObjs = Arrays.asList(
             resourceDfn,
+            snapshotVolumeDefinitionMap,
             flags
         );
     }
@@ -82,6 +92,30 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     public SnapshotName getName()
     {
         return snapshotName;
+    }
+
+    @Override
+    public SnapshotVolumeDefinition getSnapshotVolumeDefinition(VolumeNumber volumeNumber)
+    {
+        return snapshotVolumeDefinitionMap.get(volumeNumber);
+    }
+
+    @Override
+    public void addSnapshotVolumeDefinition(SnapshotVolumeDefinition snapshotVolumeDefinition)
+    {
+        snapshotVolumeDefinitionMap.put(snapshotVolumeDefinition.getVolumeNumber(), snapshotVolumeDefinition);
+    }
+
+    @Override
+    public void removeSnapshotVolumeDefinition(VolumeNumber volumeNumber)
+    {
+        snapshotVolumeDefinitionMap.remove(volumeNumber);
+    }
+
+    @Override
+    public Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions()
+    {
+        return snapshotVolumeDefinitionMap.values();
     }
 
     @Override
@@ -118,11 +152,18 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     public SnapshotDfnApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
+        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns = new ArrayList<>();
+
+        for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitionMap.values())
+        {
+            snapshotVlmDfns.add(snapshotVolumeDefinition.getApiData(accCtx));
+        }
+
         return new SnapshotDfnPojo(
+            resourceDfn.getApiData(accCtx),
             objId,
             snapshotName.getDisplayName(),
-            resourceDfn.getUuid(),
-            resourceDfn.getName().getDisplayName(),
+            snapshotVlmDfns,
             flags.getFlagsBits(accCtx)
         );
     }

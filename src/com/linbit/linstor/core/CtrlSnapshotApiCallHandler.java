@@ -16,8 +16,11 @@ import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -56,6 +59,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
+    private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotDataControllerFactory snapshotDataFactory;
     private final EventBroker eventBroker;
 
@@ -73,6 +77,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
+        SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
         EventBroker eventBrokerRef
     )
@@ -92,6 +97,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
+        snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         eventBroker = eventBrokerRef;
     }
@@ -137,17 +143,28 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             rscDfn.addSnapshotDfn(peerAccCtx, snapshotDfn);
             rscDfn.markSnapshotInProgress(snapshotName, true);
 
+            Iterator<VolumeDefinition> vlmDfnIterator = rscDfn.iterateVolumeDfn(peerAccCtx);
+            while (vlmDfnIterator.hasNext())
+            {
+                VolumeDefinition vlmDfn = vlmDfnIterator.next();
+
+                snapshotVolumeDefinitionControllerFactory.create(
+                    apiCtx,
+                    snapshotDfn,
+                    vlmDfn.getVolumeNumber()
+                );
+            }
+
             Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
             while (rscIterator.hasNext())
             {
                 Resource rsc = rscIterator.next();
 
-                Snapshot snapshot = snapshotDataFactory.create(
+                snapshotDataFactory.create(
                     apiCtx,
                     rsc.getAssignedNode(),
                     snapshotDfn
                 );
-                snapshotDfn.addSnapshot(snapshot);
             }
             commit();
 

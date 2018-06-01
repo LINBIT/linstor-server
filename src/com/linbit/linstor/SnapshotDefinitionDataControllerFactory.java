@@ -57,6 +57,7 @@ public class SnapshotDefinitionDataControllerFactory
             driver,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
 

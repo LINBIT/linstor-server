@@ -37,6 +37,7 @@ public class DbConstants
     public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
     public static final String TBL_SNAPSHOT_DEFINITIONS  = "SNAPSHOT_DEFINITIONS";
     public static final String TBL_SNAPSHOTS             = "SNAPSHOTS";
+    public static final String TBL_SNAPSHOT_VOLUME_DEFINITIONS = "SNAPSHOT_VOLUME_DEFINITIONS";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";

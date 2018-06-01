@@ -24,6 +24,7 @@ import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
@@ -290,6 +291,17 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
+        List<MsgIntSnapshotDataOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
+        for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
+        {
+            snapshotVlmDfns.add(
+                MsgIntSnapshotDataOuterClass.SnapshotVlmDfn.newBuilder()
+                    .setSnapshotVlmDfnUuid(snapshotVolumeDefinition.getUuid().toString())
+                    .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
+                    .build()
+            );
+        }
+
         MsgIntSnapshotDataOuterClass.MsgIntSnapshotData.newBuilder()
             .setRscName(rscDfn.getName().displayValue)
             .setRscDfnUuid(rscDfn.getUuid().toString())
@@ -301,6 +313,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .setSnapshotUuid(snapshot.getUuid().toString())
             .setSnapshotName(snapshotDfn.getName().displayValue)
             .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
+            .addAllSnapshotVlmDfns(snapshotVlmDfns)
             .setSuspendResource(snapshot.getSuspendResource())
             .setTakeSnapshot(snapshot.getTakeSnapshot())
             .setFullSyncId(fullSyncId)

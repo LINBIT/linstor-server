@@ -14,8 +14,8 @@ import java.sql.SQLException;
 public interface SnapshotDataDatabaseDriver
 {
     /**
-     * Loads the {@link Snapshot} specified by the parameter {@code resourceName} and
-     * {@code snapshotName}
+     * Loads the {@link Snapshot} specified by the parameter {@code node} and
+     * {@code snapshotDefinition}
      *
      * @param node
      *  Part of the primary key specifying the database entry

@@ -2,10 +2,11 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.UUID;
 
-public interface Snapshot
+public interface Snapshot extends TransactionObject, DbgInstanceUuid
 {
     UUID getUuid();
 
@@ -21,17 +22,13 @@ public interface Snapshot
 
     void setTakeSnapshot(boolean takeSnapshot);
 
-    UUID debugGetVolatileUuid();
-
     SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
     public interface SnapshotApi
     {
-        ResourceDefinition.RscDfnApi getRscDfn();
+        SnapshotDefinition.SnapshotDfnApi getSnaphotDfn();
         UUID getSnapshotUuid();
-        String getSnapshotName();
-        UUID getSnapshotDfnUuid();
         boolean getSuspendResource();
         boolean getTakeSnapshot();
         Long getFullSyncId();

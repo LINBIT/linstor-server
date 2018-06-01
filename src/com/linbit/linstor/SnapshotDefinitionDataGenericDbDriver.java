@@ -164,6 +164,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
 
         if (snapshotDfn == null)
         {
+            Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMap = new TreeMap<>();
             Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
 
             snapshotDfn = new SnapshotDefinitionData(
@@ -174,9 +175,10 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
                 this,
                 transObjFactory,
                 transMgrProvider,
+                snapshotVlmDfnMap,
                 snapshotMap
             );
-            retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps(snapshotMap));
+            retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps(snapshotMap, snapshotVlmDfnMap));
 
             errorReporter.logTrace("SnapshotDefinition %s created during restore", getId(snapshotDfn));
             // restore references
@@ -347,15 +349,27 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     {
         private final Map<NodeName, Snapshot> snapshotMap;
 
-        SnapshotDefinitionInitMaps(Map<NodeName, Snapshot> snapshotMapRef)
+        private final Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
+
+        SnapshotDefinitionInitMaps(
+            Map<NodeName, Snapshot> snapshotMapRef,
+            Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMapRef
+        )
         {
             snapshotMap = snapshotMapRef;
+            snapshotVolumeDefinitionMap = snapshotVolumeDefinitionMapRef;
         }
 
         @Override
         public Map<NodeName, Snapshot> getSnapshotMap()
         {
             return snapshotMap;
+        }
+
+        @Override
+        public Map<VolumeNumber, SnapshotVolumeDefinition> getSnapshotVolumeDefinitionMap()
+        {
+            return snapshotVolumeDefinitionMap;
         }
     }
 }

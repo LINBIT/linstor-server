@@ -188,7 +188,7 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
                 .setUuid(snapshotDfnApi.getUuid().toString())
                 .setSnapshotName(snapshotDfnApi.getSnapshotName())
                 .setRscDfnUuid(snapshotDfnApi.getUuid().toString())
-                .setRscName(snapshotDfnApi.getRscName())
+                .setRscName(snapshotDfnApi.getRscDfn().getResourceName())
                 .addAllSnapshotDfnFlags(SnapshotDefinition.SnapshotDfnFlags.toStringList(snapshotDfnApi.getFlags()));
 
             msgListSnapshotBuilder.addSnapshotDfns(snapshotDfnBuilder.build());

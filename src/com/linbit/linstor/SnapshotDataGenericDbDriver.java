@@ -149,8 +149,6 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
 
         if (snapshot == null)
         {
-            Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
-
             snapshot = new SnapshotData(
                 java.util.UUID.fromString(resultSet.getString(S_UUID)),
                 snapshotDefinition,
@@ -161,7 +159,6 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             );
 
             errorReporter.logTrace("Snapshot %s created during restore", getId(snapshot));
-            // restore references
         }
         else
         {

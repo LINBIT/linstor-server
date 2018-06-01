@@ -1,6 +1,9 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
@@ -13,7 +16,10 @@ import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.SnapshotId;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -24,9 +30,13 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Singleton
 class StltSnapshotApiCallHandler
@@ -38,6 +48,7 @@ class StltSnapshotApiCallHandler
     private final ControllerPeerConnector controllerPeerConnector;
     private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
+    private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
     private final SnapshotDataSatelliteFactory snapshotDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -50,6 +61,7 @@ class StltSnapshotApiCallHandler
         ControllerPeerConnector controllerPeerConnectorRef,
         ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
         SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
+        SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
         SnapshotDataSatelliteFactory snapshotDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -61,6 +73,7 @@ class StltSnapshotApiCallHandler
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
+        snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -69,90 +82,136 @@ class StltSnapshotApiCallHandler
     {
         try
         {
-            ResourceDefinition rscDfnToRegister = null;
+            ResourceDefinition rscDfn = mergeResourceDefinition(snapshotRaw.getSnaphotDfn().getRscDfn());
 
-            SnapshotName snapshotName = new SnapshotName(snapshotRaw.getSnapshotName());
+            SnapshotDefinition snapshotDfn = mergeSnapshotDefinition(snapshotRaw.getSnaphotDfn(), rscDfn);
 
-            ResourceDefinition.RscDfnApi rscDfnApi = snapshotRaw.getRscDfn();
-            ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
-
-            String rscDfnSecret = rscDfnApi.getSecret();
-            TransportType rscDfnTransportType = TransportType.byValue(rscDfnApi.getTransportType());
-            TcpPortNumber port = new TcpPortNumber(rscDfnApi.getPort());
-            RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscDfnApi.getFlags());
-
-            ResourceDefinition rscDfn = rscDfnMap.get(rscName);
-            if (rscDfn == null)
-            {
-                rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    rscDfnApi.getUuid(),
-                    rscName,
-                    port,
-                    rscDfnFlags,
-                    rscDfnSecret,
-                    rscDfnTransportType
-                );
-
-                checkUuid(rscDfn, snapshotRaw);
-                rscDfnToRegister = rscDfn;
-            }
-            rscDfn.setPort(apiCtx, port);
-            Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
-            rscDfnProps.clear();
-            rscDfnProps.putAll(rscDfnApi.getProps());
-            rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
-
-            SnapshotDefinition snapshotDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
-            if (snapshotDfn == null)
-            {
-                snapshotDfn = snapshotDefinitionDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    snapshotRaw.getSnapshotDfnUuid(),
-                    rscDfn,
-                    snapshotName,
-                    new SnapshotDefinition.SnapshotDfnFlags[]{}
-                );
-
-                rscDfn.addSnapshotDfn(apiCtx, snapshotDfn);
-            }
-            checkUuid(snapshotDfn, snapshotRaw);
-
-            NodeData localNode = controllerPeerConnector.getLocalNode();
-            Snapshot snapshot = snapshotDfn.getSnapshot(localNode.getName());
-            if (snapshot == null)
-            {
-                snapshot = snapshotDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    snapshotRaw.getSnapshotUuid(),
-                    localNode,
-                    snapshotDfn
-                );
-            }
-            checkUuid(snapshot, snapshotRaw);
-
-            snapshot.setSuspendResource(snapshotRaw.getSuspendResource());
-            snapshot.setTakeSnapshot(snapshotRaw.getTakeSnapshot());
+            mergeSnapshot(snapshotRaw, snapshotDfn);
 
             transMgrProvider.get().commit();
 
             errorReporter.logInfo(
-                "Snapshot '%s' registered.",
-                snapshotName.displayValue
+                "Snapshot '%s' of resource '%s' registered.",
+                snapshotDfn.getName().displayValue,
+                rscDfn.getName().displayValue
             );
 
-            if (rscDfnToRegister != null)
-            {
-                rscDfnMap.put(rscName, rscDfnToRegister);
-            }
+            rscDfnMap.put(rscDfn.getName(), rscDfn);
 
-            deviceManager.getUpdateTracker().checkResource(rscName);
-            deviceManager.snapshotUpdateApplied(Collections.singleton(new SnapshotId(rscName, snapshotName)));
+            deviceManager.getUpdateTracker().checkResource(rscDfn.getName());
+            deviceManager.snapshotUpdateApplied(Collections.singleton(
+                new SnapshotId(rscDfn.getName(), snapshotDfn.getName())));
         }
         catch (Exception | ImplementationError exc)
         {
             errorReporter.reportError(exc);
         }
+    }
+
+    private ResourceDefinition mergeResourceDefinition(ResourceDefinition.RscDfnApi rscDfnApi)
+        throws InvalidNameException, ValueOutOfRangeException, DivergentUuidsException, AccessDeniedException, SQLException, ValueInUseException
+    {
+        ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
+
+        String rscDfnSecret = rscDfnApi.getSecret();
+        TransportType rscDfnTransportType = TransportType.byValue(rscDfnApi.getTransportType());
+        TcpPortNumber port = new TcpPortNumber(rscDfnApi.getPort());
+        RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscDfnApi.getFlags());
+
+        ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+        if (rscDfn == null)
+        {
+            rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
+                apiCtx,
+                rscDfnApi.getUuid(),
+                rscName,
+                port,
+                rscDfnFlags,
+                rscDfnSecret,
+                rscDfnTransportType
+            );
+
+            checkUuid(rscDfn, rscDfnApi);
+        }
+        rscDfn.setPort(apiCtx, port);
+        Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
+        rscDfnProps.clear();
+        rscDfnProps.putAll(rscDfnApi.getProps());
+        rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
+        return rscDfn;
+    }
+
+    private SnapshotDefinition mergeSnapshotDefinition(
+        SnapshotDefinition.SnapshotDfnApi snapshotDfnApi,
+        ResourceDefinition rscDfn
+    )
+        throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException
+    {
+        SnapshotName snapshotName = new SnapshotName(snapshotDfnApi.getSnapshotName());
+
+        SnapshotDefinition snapshotDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
+        if (snapshotDfn == null)
+        {
+            snapshotDfn = snapshotDefinitionDataFactory.getInstanceSatellite(
+                apiCtx,
+                snapshotDfnApi.getUuid(),
+                rscDfn,
+                snapshotName,
+                new SnapshotDefinition.SnapshotDfnFlags[]{}
+            );
+
+            rscDfn.addSnapshotDfn(apiCtx, snapshotDfn);
+        }
+        checkUuid(snapshotDfn, snapshotDfnApi);
+
+        // Merge satellite volume definitions
+        Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions().stream()
+            .map(SnapshotVolumeDefinition::getVolumeNumber)
+            .collect(Collectors.toCollection(HashSet::new));
+
+        for (SnapshotVolumeDefinition.SnapshotVlmDfnApi snapshotVlmDfnApi : snapshotDfnApi.getSnapshotVlmDfnList())
+        {
+            VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmDfnApi.getVolumeNr());
+            oldVolumeNumbers.remove(volumeNumber);
+
+            SnapshotVolumeDefinition snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
+            if (snapshotVolumeDefinition == null)
+            {
+                snapshotVolumeDefinition = snapshotVolumeDefinitionFactory.getInstanceSatellite(
+                    apiCtx,
+                    snapshotVlmDfnApi.getUuid(),
+                    snapshotDfn,
+                    volumeNumber
+                );
+            }
+        }
+
+        for (VolumeNumber oldVolumeNumber : oldVolumeNumbers)
+        {
+            snapshotDfn.removeSnapshotVolumeDefinition(oldVolumeNumber);
+        }
+
+        return snapshotDfn;
+    }
+
+    private void mergeSnapshot(SnapshotPojo snapshotRaw, SnapshotDefinition snapshotDfn)
+        throws DivergentUuidsException, AccessDeniedException
+    {
+        NodeData localNode = controllerPeerConnector.getLocalNode();
+        Snapshot snapshot = snapshotDfn.getSnapshot(localNode.getName());
+        if (snapshot == null)
+        {
+            snapshot = snapshotDataFactory.getInstanceSatellite(
+                apiCtx,
+                snapshotRaw.getSnapshotUuid(),
+                localNode,
+                snapshotDfn
+            );
+        }
+        checkUuid(snapshot, snapshotRaw);
+
+        snapshot.setSuspendResource(snapshotRaw.getSuspendResource());
+        snapshot.setTakeSnapshot(snapshotRaw.getTakeSnapshot());
     }
 
     public void applyEndedSnapshot(String rscNameStr, String snapshotNameStr)
@@ -192,27 +251,27 @@ class StltSnapshotApiCallHandler
         }
     }
 
-    private void checkUuid(ResourceDefinition rscDfn, SnapshotPojo snapshotRaw)
+    private void checkUuid(ResourceDefinition rscDfn, ResourceDefinition.RscDfnApi rscDfnApi)
         throws DivergentUuidsException
     {
         checkUuid(
             rscDfn.getUuid(),
-            snapshotRaw.getRscDfn().getUuid(),
+            rscDfnApi.getUuid(),
             "ResourceDefinition",
             rscDfn.getName().displayValue,
-            snapshotRaw.getRscDfn().getResourceName()
+            rscDfnApi.getResourceName()
         );
     }
 
-    private void checkUuid(SnapshotDefinition snapshotDfn, SnapshotPojo snapshotRaw)
+    private void checkUuid(SnapshotDefinition snapshotDfn, SnapshotDefinition.SnapshotDfnApi snapshotDfnApi)
         throws DivergentUuidsException
     {
         checkUuid(
             snapshotDfn.getUuid(),
-            snapshotRaw.getSnapshotDfnUuid(),
+            snapshotDfnApi.getUuid(),
             "SnapshotDefinition",
             snapshotDfn.getName().displayValue,
-            snapshotRaw.getSnapshotName()
+            snapshotDfnApi.getSnapshotName()
         );
     }
 
@@ -224,7 +283,7 @@ class StltSnapshotApiCallHandler
             snapshotRaw.getSnapshotUuid(),
             "Snapshot",
             snapshot.getSnapshotDefinition().getName().displayValue,
-            snapshotRaw.getSnapshotName()
+            snapshotRaw.getSnaphotDfn().getSnapshotName()
         );
     }
 

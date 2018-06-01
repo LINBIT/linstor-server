@@ -53,6 +53,7 @@ public class SnapshotDefinitionDataSatelliteFactory
                     driver,
                     transObjFactory,
                     transMgrProvider,
+                    new TreeMap<>(),
                     new TreeMap<>()
                 );
                 rscDfn.addSnapshotDfn(accCtx, snapshotDfnData);

@@ -1,7 +1,7 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.api.pojo.SnapshotPojo;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
+import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseTransactionObject;
@@ -12,7 +12,7 @@ import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class SnapshotData extends BaseTransactionObject implements Snapshot
+public class SnapshotVolumeDefinitionData extends BaseTransactionObject implements SnapshotVolumeDefinition
 {
     // Object identifier
     private final UUID objId;
@@ -22,18 +22,14 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
     private final SnapshotDefinition snapshotDfn;
 
-    // Reference to the node this resource is assigned to
-    private final Node node;
+    // DRBD volume number
+    private final VolumeNumber volumeNr;
 
-    private boolean suspendResource;
-
-    private boolean takeSnapshot;
-
-    public SnapshotData(
+    public SnapshotVolumeDefinitionData(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
-        Node nodeRef,
-        SnapshotDataDatabaseDriver snapshotDataDatabaseDriverRef,
+        VolumeNumber volNr,
+        SnapshotVolumeDefinitionDatabaseDriver snapshotVolumeDefinitionDatabaseDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -42,13 +38,12 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
         objId = objIdRef;
         snapshotDfn = snapshotDfnRef;
-        node = nodeRef;
+        volumeNr = volNr;
 
         dbgInstanceId = UUID.randomUUID();
 
         transObjs = Arrays.asList(
-            snapshotDfn,
-            node
+            snapshotDfn
         );
     }
 
@@ -65,39 +60,15 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     }
 
     @Override
-    public Node getNode()
+    public VolumeNumber getVolumeNumber()
     {
-        return node;
-    }
-
-    @Override
-    public boolean getSuspendResource()
-    {
-        return suspendResource;
-    }
-
-    @Override
-    public void setSuspendResource(boolean suspendResourceRef)
-    {
-        suspendResource = suspendResourceRef;
-    }
-
-    @Override
-    public boolean getTakeSnapshot()
-    {
-        return takeSnapshot;
-    }
-
-    @Override
-    public void setTakeSnapshot(boolean takeSnapshotRef)
-    {
-        takeSnapshot = takeSnapshotRef;
+        return volumeNr;
     }
 
     @Override
     public String toString()
     {
-        return "Node: '" + node.getName() + "', " + snapshotDfn;
+        return snapshotDfn + ", VlmNr: '" + volumeNr + "'";
     }
 
     @Override
@@ -107,16 +78,12 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     }
 
     @Override
-    public SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public SnapshotVlmDfnApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
-        return new SnapshotPojo(
-            snapshotDfn.getApiData(accCtx),
-            objId,
-            suspendResource,
-            takeSnapshot,
-            fullSyncId,
-            updateId
+        return new SnapshotVlmDfnPojo(
+            getUuid(),
+            getVolumeNumber().value
         );
     }
 }
