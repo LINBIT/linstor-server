@@ -2,17 +2,12 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.SnapshotDefinition.InitMaps;
 import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
-import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -23,7 +18,6 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.Connection;
@@ -155,7 +149,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         return ret;
     }
 
-    private Pair<SnapshotDefinitionData, InitMaps> restoreSnapshotDefinition(
+    private Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> restoreSnapshotDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
         SnapshotName snapshotName
@@ -164,7 +158,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     {
         errorReporter.logTrace("Restoring SnapshotDefinition %s", getId(resDfn, snapshotName));
         SnapshotDefinitionData snapshotDfn;
-        Pair<SnapshotDefinitionData, InitMaps> retPair;
+        Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> retPair;
 
         snapshotDfn = cacheGet(resDfn, snapshotName);
 
@@ -182,7 +176,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
                 transMgrProvider,
                 snapshotMap
             );
-            retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps());
+            retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps(snapshotMap));
 
             errorReporter.logTrace("SnapshotDefinition %s created during restore", getId(snapshotDfn));
             // restore references
@@ -197,13 +191,13 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     }
 
 
-    public Map<SnapshotDefinition, InitMaps> loadAll(
+    public Map<SnapshotDefinition, SnapshotDefinition.InitMaps> loadAll(
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
         throws SQLException
     {
         errorReporter.logTrace("Loading all SnapshotDefinitions");
-        Map<SnapshotDefinition, InitMaps> ret = new TreeMap<>();
+        Map<SnapshotDefinition, SnapshotDefinition.InitMaps> ret = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -225,7 +219,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
                         );
                     }
 
-                    Pair<SnapshotDefinitionData, InitMaps> pair = restoreSnapshotDefinition(
+                    Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> pair = restoreSnapshotDefinition(
                         resultSet,
                         rscDfnMap.get(rscName),
                         snapshotName
@@ -349,10 +343,19 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         }
     }
 
-    private class SnapshotDefinitionInitMaps implements InitMaps
+    private class SnapshotDefinitionInitMaps implements SnapshotDefinition.InitMaps
     {
-        SnapshotDefinitionInitMaps()
+        private final Map<NodeName, Snapshot> snapshotMap;
+
+        SnapshotDefinitionInitMaps(Map<NodeName, Snapshot> snapshotMapRef)
         {
+            snapshotMap = snapshotMapRef;
+        }
+
+        @Override
+        public Map<NodeName, Snapshot> getSnapshotMap()
+        {
+            return snapshotMap;
         }
     }
 }

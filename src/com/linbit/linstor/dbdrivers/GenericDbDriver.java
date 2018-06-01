@@ -17,9 +17,12 @@ import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotData;
+import com.linbit.linstor.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotDefinitionDataGenericDbDriver;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
@@ -94,6 +97,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final StorPoolDefinitionDataGenericDbDriver storPoolDfnDriver;
     private final StorPoolDataGenericDbDriver storPoolDriver;
     private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
+    private final SnapshotDataGenericDbDriver snapshotDriver;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -114,6 +118,7 @@ public class GenericDbDriver implements DatabaseDriver
         StorPoolDefinitionDataGenericDbDriver storPoolDefinitionDriverRef,
         StorPoolDataGenericDbDriver storPoolDriverRef,
         SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
+        SnapshotDataGenericDbDriver snapshotDriverRef,
         @Uninitialized CoreModule.NodesMap nodesMapRef,
         @Uninitialized CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
@@ -132,6 +137,7 @@ public class GenericDbDriver implements DatabaseDriver
         storPoolDfnDriver = storPoolDefinitionDriverRef;
         storPoolDriver = storPoolDriverRef;
         snapshotDefinitionDriver = snapshotDefinitionDriverRef;
+        snapshotDriver = snapshotDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -289,12 +295,29 @@ public class GenericDbDriver implements DatabaseDriver
                 loadedVolumes.get(targetVolume).getVolumeConnections().put(sourceVolume, vlmConn);
             }
 
+            // loading snapshot definitions
             Map<SnapshotDefinition, SnapshotDefinition.InitMaps> loadedSnapshotDfns =
                 snapshotDefinitionDriver.loadAll(tmpRscDfnMap);
             for (SnapshotDefinition snapshotDfn : loadedSnapshotDfns.keySet())
             {
                 loadedRscDfnsMap.get(snapshotDfn.getResourceDefinition()).getSnapshotDfnMap()
                     .put(snapshotDfn.getName(), snapshotDfn);
+            }
+
+            // temporary snapshot definition map
+            Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapshotDfnMap =
+                mapByName(loadedSnapshotDfns, snapshotDfn -> new Pair<>(
+                        snapshotDfn.getResourceDefinition().getName(),
+                        snapshotDfn.getName()
+                    )
+                );
+
+            // loading snapshots
+            List<Snapshot> loadedSnapshots = snapshotDriver.loadAll(tmpNodesMap, tmpSnapshotDfnMap);
+            for (Snapshot snapshot : loadedSnapshots)
+            {
+                loadedSnapshotDfns.get(snapshot.getSnapshotDefinition()).getSnapshotMap()
+                    .put(snapshot.getNode().getName(), snapshot);
             }
 
             nodesMap.putAll(tmpNodesMap);

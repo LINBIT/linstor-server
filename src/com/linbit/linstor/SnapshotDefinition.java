@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.google.protobuf.MapFieldLite;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -10,6 +11,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotDefinition>
@@ -97,5 +99,6 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     public interface InitMaps
     {
+        Map<NodeName, Snapshot> getSnapshotMap();
     }
 }
