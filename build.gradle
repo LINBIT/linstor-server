@@ -186,6 +186,10 @@ applicationDistribution.into("bin") {
     fileMode = 0755
 }
 
+applicationDistribution.into("lib/conf") {
+    from("logback.xml")
+}
+
 task showMeCache << {
   configurations.compile.each { println it }
   configurations.runtime.each { println it }
