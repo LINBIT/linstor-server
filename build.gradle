@@ -82,7 +82,7 @@ dependencies
         compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
         compile 'info.picocli:picocli:2.3.0'
         compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-        compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+        compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
 
         runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
@@ -154,7 +154,7 @@ task ControllerStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Controller'
     applicationName = "Controller"
     outputDir = new File(project.buildDir, 'scripts')
-    classpath = jar.outputs.files + project.configurations.runtime
+    classpath = jar.outputs.files + project.configurations.runtime + files('/') // last statement adds /lib folder
     doLast {
         delete windowsScript
     }
@@ -165,7 +165,7 @@ task SatelliteStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Satellite'
     applicationName = "Satellite"
     outputDir = new File(project.buildDir, 'scripts')
-    classpath = jar.outputs.files + project.configurations.runtime
+    classpath = jar.outputs.files + project.configurations.runtime + files('/') // last statement adds /lib folder
     doLast {
         delete windowsScript
     }

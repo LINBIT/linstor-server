@@ -40,10 +40,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     public static final String RPT_PREFIX = "ErrorReport-";
     public static final String RPT_SUFFIX = ".log";
 
-    private static final String RPT_ID_TRACE_DISABLED = "TRACE_LEVEL_REPORTING_DISABLED";
-
-    private volatile boolean traceEnabled = false;
-
     private final Logger mainLogger;
     private final AtomicLong errorNr;
     private final String baseLogDirectory;
@@ -75,7 +71,10 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public boolean isTraceEnabled()
     {
-        return traceEnabled;
+        ch.qos.logback.classic.Logger root =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
+                ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        return root.getLevel() == ch.qos.logback.classic.Level.TRACE;
     }
 
     @Override
@@ -83,7 +82,17 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        traceEnabled = flag;
+        ch.qos.logback.classic.Logger root =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
+                ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        if (flag)
+        {
+            root.setLevel(ch.qos.logback.classic.Level.TRACE);
+        }
+        else
+        {
+            root.setLevel(ch.qos.logback.classic.Level.DEBUG);
+        }
     }
 
     @Override
@@ -119,12 +128,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         String contextInfo
     )
     {
-        String reportId = RPT_ID_TRACE_DISABLED;
-        if (traceEnabled || logLevel != Level.TRACE)
-        {
-            reportId = reportErrorImpl(logLevel, errorInfo, accCtx, client, contextInfo);
-        }
-        return reportId;
+        return reportErrorImpl(logLevel, errorInfo, accCtx, client, contextInfo);
     }
 
     private String reportErrorImpl(
@@ -223,12 +227,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         String contextInfo
     )
     {
-        String reportId = RPT_ID_TRACE_DISABLED;
-        if (traceEnabled || logLevel != Level.TRACE)
-        {
-            reportId = reportProblemImpl(logLevel, errorInfo, accCtx, client, contextInfo);
-        }
-        return reportId;
+        return reportProblemImpl(logLevel, errorInfo, accCtx, client, contextInfo);
     }
 
     private String reportProblemImpl(
@@ -498,10 +497,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public void logTrace(String format, Object... args)
     {
-        if (traceEnabled)
-        {
-            mainLogger.trace(String.format(format, args));
-        }
+        mainLogger.trace(String.format(format, args));
     }
 
     @Override
