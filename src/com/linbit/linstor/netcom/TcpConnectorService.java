@@ -498,10 +498,13 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         connPeer.nextInMessage();
                                         break;
                                     case END_OF_STREAM:
-                                        errorReporter.logInfo(
-                                            "Remote peer %s has closed the connection.",
-                                            connPeer.peerAddress()
-                                        );
+                                        if (connPeer.getNode() != null)
+                                        {
+                                            errorReporter.logInfo(
+                                                "Remote satellite peer %s has closed the connection.",
+                                                connPeer.peerAddress()
+                                            );
+                                        }
                                         closeConnection(currentKey, true);
                                         break;
                                     default:
