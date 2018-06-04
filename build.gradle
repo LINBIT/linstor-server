@@ -152,7 +152,7 @@ task ControllerStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Controller'
     applicationName = "Controller"
     outputDir = new File(project.buildDir, 'scripts')
-    classpath = jar.outputs.files + project.configurations.runtime + files('/') // last statement adds /lib folder
+    classpath = jar.outputs.files + project.configurations.runtime + files('conf')
     doLast {
         delete windowsScript
     }
@@ -163,7 +163,7 @@ task SatelliteStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Satellite'
     applicationName = "Satellite"
     outputDir = new File(project.buildDir, 'scripts')
-    classpath = jar.outputs.files + project.configurations.runtime + files('/') // last statement adds /lib folder
+    classpath = jar.outputs.files + project.configurations.runtime + files('conf')
     doLast {
         delete windowsScript
     }
