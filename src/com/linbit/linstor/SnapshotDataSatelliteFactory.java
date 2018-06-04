@@ -9,7 +9,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.util.TreeMap;
 import java.util.UUID;
 
 public class SnapshotDataSatelliteFactory
@@ -34,7 +33,8 @@ public class SnapshotDataSatelliteFactory
         AccessContext accCtx,
         UUID snapshotUuid,
         Node node,
-        SnapshotDefinition snapshotDfn
+        SnapshotDefinition snapshotDfn,
+        Snapshot.SnapshotFlags[] flags
     )
         throws ImplementationError
     {
@@ -48,6 +48,7 @@ public class SnapshotDataSatelliteFactory
                     snapshotUuid,
                     snapshotDfn,
                     node,
+                    StateFlagsBits.getMask(flags),
                     driver,
                     transObjFactory,
                     transMgrProvider

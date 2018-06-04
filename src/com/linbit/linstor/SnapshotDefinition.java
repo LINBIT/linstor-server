@@ -8,6 +8,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.TransactionObject;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +41,9 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     StateFlags<SnapshotDfnFlags> getFlags();
 
+    void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     @Override
@@ -57,7 +61,8 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
     {
         SUCCESSFUL(1L),
         FAILED_DEPLOYMENT(2L),
-        FAILED_DISCONNECT(4L);
+        FAILED_DISCONNECT(4L),
+        DELETE(8L);
 
         public final long flagValue;
 

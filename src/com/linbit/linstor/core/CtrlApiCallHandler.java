@@ -1580,7 +1580,6 @@ public class CtrlApiCallHandler
         String snapshotName
     )
     {
-
         ApiCallRc apiCallRc;
 
         try (
@@ -1591,6 +1590,25 @@ public class CtrlApiCallHandler
         )
         {
             apiCallRc = snapshotApiCallHandler.createSnapshot(
+                rscName,
+                snapshotName
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteSnapshot(String rscName, String snapshotName)
+    {
+        ApiCallRc apiCallRc;
+
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = snapshotApiCallHandler.deleteSnapshot(
                 rscName,
                 snapshotName
             );

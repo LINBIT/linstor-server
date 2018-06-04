@@ -24,6 +24,13 @@ public class SatelliteSnapshotDriver implements SnapshotDataDatabaseDriver
         dbCtx = dbCtxRef;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public StateFlagsPersistence<Snapshot> getStateFlagsPersistence()
+    {
+        return (StateFlagsPersistence<Snapshot>) stateFlagsDriver;
+    }
+
     @Override
     public void create(Snapshot snapshot)
         throws SQLException

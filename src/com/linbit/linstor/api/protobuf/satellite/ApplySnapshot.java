@@ -90,9 +90,10 @@ public class ApplySnapshot implements ApiCall
                 UUID.fromString(snapshotData.getSnapshotDfnUuid()),
                 snapshotData.getSnapshotName(),
                 snapshotVlmDfns,
-                0
+                snapshotData.getSnapshotDfnFlags()
             ),
             UUID.fromString(snapshotData.getSnapshotUuid()),
+            snapshotData.getFlags(),
             snapshotData.getSuspendResource(),
             snapshotData.getTakeSnapshot(),
             snapshotData.getFullSyncId(),

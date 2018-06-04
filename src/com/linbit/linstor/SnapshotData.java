@@ -4,11 +4,14 @@ import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -25,6 +28,9 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     // Reference to the node this resource is assigned to
     private final Node node;
 
+    // State flags
+    private final StateFlags<SnapshotFlags> flags;
+
     private boolean suspendResource;
 
     private boolean takeSnapshot;
@@ -33,8 +39,9 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
         Node nodeRef,
-        SnapshotDataDatabaseDriver snapshotDataDatabaseDriverRef,
-        TransactionObjectFactory transObjFactoryRef,
+        long initFlags,
+        SnapshotDataDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -46,9 +53,18 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
         dbgInstanceId = UUID.randomUUID();
 
+        flags = transObjFactory.createStateFlagsImpl(
+            snapshotDfn.getResourceDefinition().getObjProt(),
+            this,
+            SnapshotFlags.class,
+            dbDriverRef.getStateFlagsPersistence(),
+            initFlags
+        );
+
         transObjs = Arrays.asList(
             snapshotDfn,
-            node
+            node,
+            flags
         );
     }
 
@@ -68,6 +84,20 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     public Node getNode()
     {
         return node;
+    }
+
+    @Override
+    public StateFlags<SnapshotFlags> getFlags()
+    {
+        return flags;
+    }
+
+    @Override
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+        getFlags().enableFlags(accCtx, SnapshotFlags.DELETE);
     }
 
     @Override
@@ -113,6 +143,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         return new SnapshotPojo(
             snapshotDfn.getApiData(accCtx),
             objId,
+            flags.getFlagsBits(accCtx),
             suspendResource,
             takeSnapshot,
             fullSyncId,

@@ -52,4 +52,9 @@ public interface SnapshotDataDatabaseDriver
      * @throws SQLException
      */
     void delete(Snapshot snapshot) throws SQLException;
+
+    /**
+     * A special sub-driver to update the persisted flags.
+     */
+    StateFlagsPersistence<Snapshot> getStateFlagsPersistence();
 }

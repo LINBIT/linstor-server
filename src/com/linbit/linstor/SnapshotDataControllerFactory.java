@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -11,7 +10,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.sql.SQLException;
-import java.util.TreeMap;
 import java.util.UUID;
 
 public class SnapshotDataControllerFactory
@@ -35,7 +33,8 @@ public class SnapshotDataControllerFactory
     public Snapshot create(
         AccessContext accCtx,
         Node node,
-        SnapshotDefinition snapshotDfn
+        SnapshotDefinition snapshotDfn,
+        Snapshot.SnapshotFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -50,6 +49,7 @@ public class SnapshotDataControllerFactory
             UUID.randomUUID(),
             snapshotDfn,
             node,
+            StateFlagsBits.getMask(initFlags),
             driver,
             transObjFactory,
             transMgrProvider

@@ -1305,12 +1305,16 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void handleSnapshots(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
-        throws ResourceException
+        throws ResourceException, AccessDeniedException
     {
         boolean snapshotInProgress = false;
         boolean shouldSuspend = false;
         for (Snapshot snapshot : snapshots)
         {
+            // TODO Actually delete
+            errLog.logInfo("### Snapshot " + snapshot.getSnapshotDefinition() +
+                " delete: " + snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE));
+
             snapshotInProgress = true;
 
             if (snapshot.getSuspendResource())

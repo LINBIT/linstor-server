@@ -9,6 +9,7 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
 {
     private final SnapshotDefinition.SnapshotDfnApi snaphotDfn;
     private final UUID uuid;
+    private final long flags;
     private final boolean suspendResource;
     private final boolean takeSnapshot;
     private final Long fullSyncId;
@@ -17,6 +18,7 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     public SnapshotPojo(
         SnapshotDefinition.SnapshotDfnApi snaphotDfnRef,
         UUID uuidRef,
+        long flagsRef,
         boolean suspendResourceRef,
         boolean takeSnapshotRef,
         Long fullSyncIdRef,
@@ -25,6 +27,7 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     {
         snaphotDfn = snaphotDfnRef;
         uuid = uuidRef;
+        flags = flagsRef;
         suspendResource = suspendResourceRef;
         takeSnapshot = takeSnapshotRef;
         fullSyncId = fullSyncIdRef;
@@ -41,6 +44,12 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     public UUID getSnapshotUuid()
     {
         return uuid;
+    }
+
+    @Override
+    public long getFlags()
+    {
+        return flags;
     }
 
     @Override

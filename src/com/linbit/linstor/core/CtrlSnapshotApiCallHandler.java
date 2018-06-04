@@ -163,7 +163,8 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 snapshotDataFactory.create(
                     apiCtx,
                     rsc.getAssignedNode(),
-                    snapshotDfn
+                    snapshotDfn,
+                    new Snapshot.SnapshotFlags[] {}
                 );
             }
             commit();
@@ -187,6 +188,59 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             reportStatic(
                 exc,
                 ApiCallType.CREATE,
+                getObjectDescriptionInline(rscNameStr, snapshotNameStr),
+                getObjRefs(rscNameStr, snapshotNameStr),
+                getVariables(rscNameStr, snapshotNameStr),
+                apiCallRc
+            );
+        }
+
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteSnapshot(String rscNameStr, String snapshotNameStr)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
+                ApiCallType.DELETE,
+                apiCallRc,
+                rscNameStr,
+                snapshotNameStr
+            )
+        )
+        {
+            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
+
+            SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
+            SnapshotDefinition snapshotDfn = loadSnapshotDfn(
+                rscDfn,
+                snapshotName
+            );
+
+            snapshotDfn.markDeleted(peerAccCtx);
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+            {
+                snapshot.markDeleted(peerAccCtx);
+            }
+
+            rscDfn.markSnapshotInProgress(snapshotName, true);
+
+            commit();
+
+            updateSatellites(snapshotDfn);
+
+            reportSuccess(UUID.randomUUID());
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // a report and a corresponding api-response already created. nothing to do here
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.DELETE,
                 getObjectDescriptionInline(rscNameStr, snapshotNameStr),
                 getObjRefs(rscNameStr, snapshotNameStr),
                 getVariables(rscNameStr, snapshotNameStr),
@@ -391,6 +445,79 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             );
         }
         return snapshotDfn;
+    }
+
+    protected final SnapshotDefinitionData loadSnapshotDfn(
+        ResourceDefinition rscDfn,
+        SnapshotName snapshotName
+    )
+        throws ApiCallHandlerFailedException
+    {
+        SnapshotDefinitionData snapshotDfn;
+        try
+        {
+            snapshotDfn = snapshotDefinitionDataFactory.load(peerAccCtx, rscDfn, snapshotName);
+
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(sqlExc, "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.");
+        }
+        return snapshotDfn;
+    }
+
+    private void markSnapshotDfnDeleted(SnapshotDefinition snapshotDfn)
+    {
+        try
+        {
+            snapshotDfn.markDeleted(peerAccCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "mark " + getObjectDescriptionInline() + " as deleted",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "deleting " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    private void markSnapshotDeleted(Snapshot snapshot)
+    {
+        try
+        {
+            snapshot.markDeleted(peerAccCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "mark " + getObjectDescriptionInline() + " as deleted",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "deleting " + getObjectDescriptionInline()
+            );
+        }
     }
 
     private AbsApiCallHandler setContext(

@@ -4,6 +4,7 @@ import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -11,6 +12,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -146,6 +148,14 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     public StateFlags<SnapshotDfnFlags> getFlags()
     {
         return flags;
+    }
+
+    @Override
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        getFlags().enableFlags(accCtx, SnapshotDfnFlags.DELETE);
     }
 
     @Override

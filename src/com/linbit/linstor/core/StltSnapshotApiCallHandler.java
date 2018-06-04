@@ -205,7 +205,8 @@ class StltSnapshotApiCallHandler
                 apiCtx,
                 snapshotRaw.getSnapshotUuid(),
                 localNode,
-                snapshotDfn
+                snapshotDfn,
+                Snapshot.SnapshotFlags.restoreFlags(snapshotRaw.getFlags())
             );
         }
         checkUuid(snapshot, snapshotRaw);

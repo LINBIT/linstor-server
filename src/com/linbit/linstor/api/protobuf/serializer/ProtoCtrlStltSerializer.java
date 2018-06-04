@@ -314,6 +314,8 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .setSnapshotName(snapshotDfn.getName().displayValue)
             .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
             .addAllSnapshotVlmDfns(snapshotVlmDfns)
+            .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
+            .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
             .setSuspendResource(snapshot.getSuspendResource())
             .setTakeSnapshot(snapshot.getTakeSnapshot())
             .setFullSyncId(fullSyncId)
