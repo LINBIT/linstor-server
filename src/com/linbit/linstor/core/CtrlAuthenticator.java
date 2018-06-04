@@ -38,7 +38,7 @@ public class CtrlAuthenticator
             if (peerNode.isDeleted())
             {
                 errorReporter.logWarning(
-                    "Unable to complete authentication with peer '%s' because the node has been deleted", peer.getId());
+                    "Unable to complete authentication with peer '%s' because the node has been deleted", peer);
             }
             else
             {

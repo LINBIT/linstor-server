@@ -69,7 +69,7 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
                            "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
                            "        Role          :" + accCtx.subjectRole.name.value
         );
-        System.err.println("Peer id: " + client.getId());
+        System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
 
@@ -89,7 +89,7 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
             "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
             "        Role          :" + accCtx.subjectRole.name.value
         );
-        System.err.println("Peer id: " + client.getId());
+        System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
 
@@ -109,7 +109,7 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
             "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
             "        Role          :" + accCtx.subjectRole.name.value
         );
-        System.err.println("Peer id: " + client.getId());
+        System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
 

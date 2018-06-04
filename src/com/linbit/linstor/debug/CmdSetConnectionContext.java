@@ -209,7 +209,7 @@ public class CmdSetConnectionContext extends BaseDebugCmd
                     AccessContext newCtx = privCtx.impersonate(idObj, rlObj, dmnObj);
                     client.setAccessContext(privCtx, newCtx);
 
-                    debugOut.println("New access conntext for connection " + client.getId() + ":");
+                    debugOut.println("New access conntext for connection to " + client + ":");
                     AutoIndent.printWithIndent(
                         debugOut, AutoIndent.DEFAULT_INDENTATION,
                         String.format(

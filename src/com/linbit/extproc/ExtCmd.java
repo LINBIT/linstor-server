@@ -26,6 +26,9 @@ public class ExtCmd extends ChildProcessHandler
     private OutputReceiver  outReceiver;
     private OutputReceiver  errReceiver;
     private ErrorReporter   errLog;
+    private long            startTime;
+
+    private String commandStr;
 
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
@@ -64,7 +67,15 @@ public class ExtCmd extends ChildProcessHandler
     public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException
     {
-        logCommandExecution(command);
+        List<String> commandElements = new ArrayList<>();
+
+        for (String commandElement : command)
+        {
+            commandElements.add(SPACE_PATTERN.matcher(commandElement).replaceAll("\\\\ "));
+        }
+        commandStr = StringUtils.join(commandElements, " ");
+
+        errLog.logDebug("Executing command: %s", commandStr);
 
         ProcessBuilder pBuilder = new ProcessBuilder();
         pBuilder.command(command);
@@ -72,6 +83,7 @@ public class ExtCmd extends ChildProcessHandler
         pBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
         pBuilder.redirectInput(stdinRedirect);
         Process child = pBuilder.start();
+        startTime = System.currentTimeMillis();
         setChild(child);
         outReceiver = new OutputReceiver(child.getInputStream(), errLog);
         errReceiver = new OutputReceiver(child.getErrorStream(), errLog);
@@ -81,24 +93,19 @@ public class ExtCmd extends ChildProcessHandler
         return child.getOutputStream();
     }
 
-    private void logCommandExecution(String... command)
-    {
-        List<String> commandElements = new ArrayList<>();
-
-        for (String commandElement : command)
-        {
-            commandElements.add(SPACE_PATTERN.matcher(commandElement).replaceAll("\\\\ "));
-        }
-
-        errLog.logDebug("Executing command: " + StringUtils.join(commandElements, " "));
-    }
-
     public OutputData syncProcess() throws IOException, ChildProcessTimeoutException
     {
         int exitCode = waitFor();
         outReceiver.finish();
         errReceiver.finish();
         OutputData outData = new OutputData(outReceiver.getData(), errReceiver.getData(), exitCode);
+
+        errLog.logTrace(
+            "External command finished in %dms: %s",
+            (System.currentTimeMillis() - startTime),
+            commandStr
+        );
+
         return outData;
     }
 

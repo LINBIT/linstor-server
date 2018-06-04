@@ -5,7 +5,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +50,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -821,7 +819,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 {
                     errorReporter.reportError(
                         new ImplementationError(
-                            "Satellite '" + currentPeer.getId() + "' requested a node with an outdated " +
+                            currentPeer + " requested a node with an outdated " +
                             "UUID. Current UUID: " + node.getUuid() + ", satellites outdated UUID: " +
                             nodeUuid,
                             null

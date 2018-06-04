@@ -99,7 +99,7 @@ public abstract class BaseErrorReporter
         String peerAddress = null;
         int peerPort = 0;
 
-        String peerId = client.getId();
+        String peerId = client.toString();
         InetSocketAddress socketAddr = client.peerAddress();
         if (socketAddr != null)
         {

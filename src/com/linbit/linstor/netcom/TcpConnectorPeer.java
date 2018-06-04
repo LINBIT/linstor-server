@@ -433,7 +433,7 @@ public class TcpConnectorPeer implements Peer
         }
         return peerAddr;
     }
-    
+
     @Override
     public InetSocketAddress localAddress()
     {
@@ -563,4 +563,20 @@ public class TcpConnectorPeer implements Peer
     {
         return fullSyncFailed;
     }
+
+    @Override
+    public String toString()
+    {
+        String ret;
+        if (node == null)
+        {
+            ret = getId();
+        }
+        else
+        {
+            ret = "Node: '" + node.getName().displayValue + "'";
+        }
+        return ret;
+    }
+
 }

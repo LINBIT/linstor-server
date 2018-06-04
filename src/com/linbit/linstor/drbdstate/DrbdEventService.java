@@ -72,7 +72,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             running = false;
             errorReporter = errorReporterRef;
             tracker = trackerRef;
-            eventsMonitor = new DrbdEventsMonitor(trackerRef);
+            eventsMonitor = new DrbdEventsMonitor(trackerRef, errorReporterRef);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -96,13 +96,20 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 else
                 if (event instanceof StdErrEvent)
                 {
+                    errorReporter.logTrace(
+                        "DRBD 'events2' returned error: %n%s",
+                        new String(((StdErrEvent) event).data)
+                    );
+                    errorReporter.logTrace("Restarting DRBD 'events2'");
                     demonHandler.stop(true);
                     demonHandler.start();
                 }
                 else
                 if (event instanceof ExceptionEvent)
                 {
-                    // FIXME: Report the exception to the controller
+                    errorReporter.logTrace("ExceptionEvent in DRBD 'events2':");
+                    errorReporter.reportError(((ExceptionEvent) event).exc);
+                // FIXME: Report the exception to the controller
                 }
                 else
                 if (event instanceof PoisonEvent)

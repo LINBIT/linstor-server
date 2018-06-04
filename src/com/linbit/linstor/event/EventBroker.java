@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 
 import javax.inject.Inject;
@@ -15,15 +16,18 @@ public class EventBroker
 {
     private final WorkQueue workQueue;
     private final EventSender eventSender;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public EventBroker(
         @Named(LinStorModule.EVENT_WRITER_WORKER_POOL_NAME) WorkQueue workQueueRef,
-        EventSender eventSenderRef
+        EventSender eventSenderRef,
+        ErrorReporter errorReporterRef
     )
     {
         workQueue = workQueueRef;
         eventSender = eventSenderRef;
+        errorReporter = errorReporterRef;
     }
 
     /**
@@ -31,12 +35,26 @@ public class EventBroker
      */
     public void createWatch(Watch watch)
     {
-        workQueue.submit(() -> eventSender.createWatch(watch));
+        errorReporter.logTrace("Submitting 'create watch' event: %s", watch.getEventIdentifier());
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'create watch' start: %s", watch.getEventIdentifier());
+                eventSender.createWatch(watch);
+                errorReporter.logTrace("Event 'create watch' end: %s", watch.getEventIdentifier());
+            }
+        );
     }
 
     public void connectionClosed(Peer peer)
     {
-        workQueue.submit(() -> eventSender.connectionClosed(peer));
+        errorReporter.logTrace("Submitting 'connection closed' event: %s", peer);
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'connection closed' start: %s", peer);
+                eventSender.connectionClosed(peer);
+                errorReporter.logTrace("Event 'connection closed' end: %s", peer);
+            }
+        );
     }
 
     public void forwardEvent(EventIdentifier eventIdentifier, String eventStreamAction)
@@ -62,17 +80,38 @@ public class EventBroker
 
     public void openEventStream(EventIdentifier eventIdentifier)
     {
-        workQueue.submit(() -> eventSender.openEventStream(eventIdentifier));
+        errorReporter.logTrace("Submitting 'open event stream' event: %s", eventIdentifier);
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'open event stream' start: %s", eventIdentifier);
+                eventSender.openEventStream(eventIdentifier);
+                errorReporter.logTrace("Event 'open event stream' end: %s", eventIdentifier);
+            }
+        );
     }
 
     public void openOrTriggerEvent(EventIdentifier eventIdentifier)
     {
-        workQueue.submit(() -> eventSender.openOrTriggerEvent(eventIdentifier));
+        errorReporter.logTrace("Submitting 'open or trigger event' event: %s", eventIdentifier);
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'open or trigger event' start: %s", eventIdentifier);
+                eventSender.openOrTriggerEvent(eventIdentifier);
+                errorReporter.logTrace("Event 'open or trigger event' end: %s", eventIdentifier);
+            }
+        );
     }
 
     public void triggerEvent(EventIdentifier eventIdentifier)
     {
-        workQueue.submit(() -> eventSender.triggerEvent(eventIdentifier, ApiConsts.EVENT_STREAM_VALUE));
+        errorReporter.logTrace("Submitting 'trigger event' event: %s", eventIdentifier);
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'trigger event' start: %s", eventIdentifier);
+                eventSender.triggerEvent(eventIdentifier, ApiConsts.EVENT_STREAM_VALUE);
+                errorReporter.logTrace("Event 'trigger event' end: %s", eventIdentifier);
+            }
+        );
     }
 
     public void closeEventStream(EventIdentifier eventIdentifier)
@@ -82,11 +121,25 @@ public class EventBroker
 
     private void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction)
     {
-        workQueue.submit(() -> eventSender.closeEventStream(eventIdentifier, eventStreamAction));
+        errorReporter.logTrace("Submitting 'close event stream' event: %s", eventIdentifier);
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'close event stream' start: %s", eventIdentifier);
+                eventSender.closeEventStream(eventIdentifier, eventStreamAction);
+                errorReporter.logTrace("Event 'close event stream' end: %s", eventIdentifier);
+            }
+        );
     }
 
     public void closeAllEventStreams(String eventName, ObjectIdentifier objectIdentifier)
     {
-        workQueue.submit(() -> eventSender.closeAllEventStreams(eventName, objectIdentifier));
+        errorReporter.logTrace("Submitting 'close all event streams' event: %s %s", eventName, objectIdentifier);
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'close all event streams' start: %s %s", eventName, objectIdentifier);
+                eventSender.closeAllEventStreams(eventName, objectIdentifier);
+                errorReporter.logTrace("Event 'close all event streams' end: %s %s", eventName, objectIdentifier);
+            }
+        );
     }
 }

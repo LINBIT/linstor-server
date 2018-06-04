@@ -20,7 +20,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -105,8 +104,8 @@ public class EventProcessor
                     }
                 }
             }
-
             pendingEventsPerPeer.remove(peer.getId());
+            errorReporter.logTrace("Removed pending events from peer '%s' ", peer);
         }
         finally
         {
@@ -131,7 +130,7 @@ public class EventProcessor
             EventBuffer eventBuffer = pendingEventsPerPeer.get(peer.getId());
             if (eventBuffer == null)
             {
-                errorReporter.logWarning("Received event for unknown peer '" + peer.getId() + "'");
+                errorReporter.logWarning("Received event for unknown peer " + peer);
             }
             else
             {
@@ -182,12 +181,15 @@ public class EventProcessor
 
                     String eventAction = event.getEventAction();
 
+
                     if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN))
                     {
                         incomingEventStreamStore.addEventStream(eventIdentifier);
                     }
 
+                    errorReporter.logTrace("Handling event '%s %s' start", eventAction, eventIdentifier);
                     eventHandlerProvider.get().execute(eventAction, eventIdentifier, event.getEventDataIn());
+                    errorReporter.logTrace("Handling event '%s %s' end", eventAction, eventIdentifier);
 
                     if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
                     {

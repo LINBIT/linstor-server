@@ -82,7 +82,7 @@ public class PingTask implements Task
             if (reconnect)
             {
                 errorReporter.logTrace(
-                    "Connection to peer " + peer.getId() + " lost. Removed from pingList, added to reconnectList."
+                    "Connection to " + peer + " lost. Removed from pingList, added to reconnectList."
                 );
                 peersToRemove.add(peer);
                 try

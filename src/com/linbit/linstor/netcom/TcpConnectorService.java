@@ -925,8 +925,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             String message = conExc.getMessage();
             errorReporter.logTrace(
-                "Outbound connection to peer ID '" + peer.getId() +
-                "' failed" +
+                "Outbound connection to " + peer +
+                " failed" +
                 (message != null ? ": " + message : "")
             );
         }

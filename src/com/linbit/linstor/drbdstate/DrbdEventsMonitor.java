@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.DrbdStateChange;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -35,9 +36,12 @@ public class DrbdEventsMonitor
     private final DrbdStateTracker tracker;
     private boolean stateAvailable = false;
 
-    public DrbdEventsMonitor(DrbdStateTracker trackerRef)
+    private final ErrorReporter errorReporter;
+
+    public DrbdEventsMonitor(DrbdStateTracker trackerRef, ErrorReporter errorReporterRef)
     {
         tracker = trackerRef;
+        errorReporter = errorReporterRef;
     }
 
     public void receiveEvent(String eventString) throws EventsSourceException
@@ -49,6 +53,7 @@ public class DrbdEventsMonitor
                 new NullPointerException()
             );
         }
+        errorReporter.logTrace("DRBD 'events2': %s", eventString);
 
         // Skip empty lines
         if (!eventString.isEmpty())

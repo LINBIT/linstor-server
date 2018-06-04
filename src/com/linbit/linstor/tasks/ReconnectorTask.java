@@ -83,7 +83,7 @@ public class ReconnectorTask implements Task
             if (peer.isConnected(false))
             {
                 errorReporter.logTrace(
-                    "Peer " + peer.getId() + " has connected. Removed from reconnectList, added to pingList."
+                    peer + " has connected. Removed from reconnectList, added to pingList."
                 );
                 peerConnected(peer);
             }

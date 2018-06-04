@@ -200,6 +200,8 @@ public class CommonMessageProcessor implements MessageProcessor
                 int msgId = header.getMsgId();
                 String apiCallName = header.getApiCall();
 
+                errorLog.logTrace("ApiCall '%s' from %s start", apiCallName, client);
+
                 Lock readLock = apiLock.readLock();
                 ApiEntry apiMapEntry;
                 try
@@ -250,6 +252,7 @@ public class CommonMessageProcessor implements MessageProcessor
                                 transMgr.returnConnection();
                             }
                             apiCallScope.exit();
+                            errorLog.logTrace("ApiCall '%s' from %s finished", apiCallName, client);
                         }
                     }
                     else
@@ -275,6 +278,14 @@ public class CommonMessageProcessor implements MessageProcessor
                             .writeDelimitedTo(outStream);
 
                         client.sendMessage(outStream.toByteArray());
+                    }
+                    else
+                    {
+                        errorLog.reportError(
+                            new ImplementationError(
+                                "Satellite's API call was rejected because it is not authorized to execute the API call"
+                            )
+                        );
                     }
                 }
                 else
