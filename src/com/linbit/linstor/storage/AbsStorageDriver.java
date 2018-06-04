@@ -516,8 +516,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void createSnapshot(
         String identifier,
-        String snapshotName,
-        String cryptKey
+        String snapshotName
     )
         throws StorageException
     {
@@ -527,7 +526,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
 
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-        final String[] command = getCreateSnapshotCommand(identifier, snapshotName, cryptKey != null);
+        final String[] command = getCreateSnapshotCommand(identifier, snapshotName);
         try
         {
             final OutputData outputData = extCommand.exec(command);
@@ -535,8 +534,6 @@ public abstract class AbsStorageDriver implements StorageDriver
                 outputData, command,
                 "Failed to create snapshot [%s] for volume [%s]", snapshotName, identifier
             );
-
-            startVolume(getSnapshotIdentifier(identifier, snapshotName, cryptKey != null), cryptKey);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -586,7 +583,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 targetIdentifier
             );
 
-            startVolume(getSnapshotIdentifier(targetIdentifier, snapshotName, cryptKey != null), cryptKey);
+            startVolume(getSnapshotIdentifier(targetIdentifier, snapshotName), cryptKey);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -609,7 +606,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void deleteSnapshot(String identifier, String snapshotName, boolean isEncrypted)
+    public void deleteSnapshot(String identifier, String snapshotName)
         throws StorageException
     {
         if (!storageDriverKind.isSnapshotSupported())
@@ -617,11 +614,10 @@ public abstract class AbsStorageDriver implements StorageDriver
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
-        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName, isEncrypted);
+        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-            stopVolume(getSnapshotIdentifier(identifier, snapshotName, isEncrypted), isEncrypted);
 
             final OutputData outputData = extCommand.exec(command);
             // TODO: Check that snapshot really exists like in deleteVolume
@@ -1005,9 +1001,9 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getDeleteCommand(String identifier);
 
-    protected abstract String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted);
+    protected abstract String getSnapshotIdentifier(String identifier, String snapshotName);
 
-    protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted);
+    protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
 
     protected abstract String[] getRestoreSnapshotCommand(
         String sourceIdentifier,
@@ -1017,5 +1013,5 @@ public abstract class AbsStorageDriver implements StorageDriver
     )
         throws StorageException;
 
-    protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted);
+    protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);
 }

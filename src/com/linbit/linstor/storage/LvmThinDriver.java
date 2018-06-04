@@ -152,29 +152,20 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    protected String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted)
+    protected String getSnapshotIdentifier(String identifier, String snapshotName)
     {
-        String path;
-        if (isEncrypted)
-        {
-            path = getCryptVolumePath(identifier + ID_SNAP_DELIMITER + snapshotName);
-        }
-        else
-        {
-            path = identifier + ID_SNAP_DELIMITER + snapshotName;
-        }
-        return path;
+        return identifier + ID_SNAP_DELIMITER + snapshotName;
     }
 
     @Override
-    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
     {
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
         {
             lvmCreateCommand,
             "--snapshot",           // -s
-            "--name", getSnapshotIdentifier(identifier, snapshotName, isEncrypted), // -n
+            "--name", getSnapshotIdentifier(identifier, snapshotName), // -n
             qualifiedIdentifier
         };
         return command;
@@ -193,15 +184,15 @@ public class LvmThinDriver extends LvmDriver
             lvmCreateCommand,
             "--snapshot",           // -s
             "--name", targetIdentifier, // -n
-            volumeGroup + File.separator + getSnapshotIdentifier(sourceIdentifier, snapshotName, isEncrypted)
+            volumeGroup + File.separator + getSnapshotIdentifier(sourceIdentifier, snapshotName)
         };
         return command;
     }
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
-        return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName, isEncrypted));
+        return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName));
     }
 
     @Override

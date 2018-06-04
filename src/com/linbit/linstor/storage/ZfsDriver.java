@@ -220,9 +220,9 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
     {
-        final String zfsSnapName = getQualifiedSnapshotPath(identifier, snapshotName, isEncrypted);
+        final String zfsSnapName = getQualifiedSnapshotPath(identifier, snapshotName);
         final String[] command = new String[]
         {
             zfsCommand,
@@ -245,20 +245,20 @@ public class ZfsDriver extends AbsStorageDriver
         {
             zfsCommand,
             "clone",
-            getQualifiedSnapshotPath(sourceIdentifier, snapshotName, isEncrypted),
+            getQualifiedSnapshotPath(sourceIdentifier, snapshotName),
             pool + File.separator + targetIdentifier
         };
     }
 
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
         return new String[]
         {
             zfsCommand,
             "destroy",
-            getQualifiedSnapshotPath(identifier, snapshotName, isEncrypted)
+            getQualifiedSnapshotPath(identifier, snapshotName)
         };
     }
 
@@ -324,13 +324,13 @@ public class ZfsDriver extends AbsStorageDriver
         }
     }
 
-    private String getQualifiedSnapshotPath(String identifier, String snapshotName, boolean isEncrypted)
+    private String getQualifiedSnapshotPath(String identifier, String snapshotName)
     {
-        return pool + File.separator + getSnapshotIdentifier(identifier, snapshotName, isEncrypted);
+        return pool + File.separator + getSnapshotIdentifier(identifier, snapshotName);
     }
 
     @Override
-    protected String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted)
+    protected String getSnapshotIdentifier(String identifier, String snapshotName)
     {
         return identifier + "@" + snapshotName;
     }

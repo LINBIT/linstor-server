@@ -79,7 +79,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName, String cryptKey)
+    public void createSnapshot(String identifier, String snapshotName)
     {
         // no-op
     }
@@ -96,7 +96,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void deleteSnapshot(String identifier, String snapshotName, boolean isEncrypted)
+    public void deleteSnapshot(String identifier, String snapshotName)
     {
         // no-op
     }

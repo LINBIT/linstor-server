@@ -1,26 +1,24 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.util.TreeMap;
 import java.util.UUID;
 
-public class SnapshotDataSatelliteFactory
+public class SnapshotVolumeDataSatelliteFactory
 {
-    private final SnapshotDataDatabaseDriver driver;
+    private final SnapshotVolumeDataDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public SnapshotDataSatelliteFactory(
-        SnapshotDataDatabaseDriver driverRef,
+    public SnapshotVolumeDataSatelliteFactory(
+        SnapshotVolumeDataDatabaseDriver driverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -30,30 +28,29 @@ public class SnapshotDataSatelliteFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public Snapshot getInstanceSatellite(
+    public SnapshotVolume getInstanceSatellite(
         AccessContext accCtx,
-        UUID snapshotUuid,
-        Node node,
-        SnapshotDefinition snapshotDfn,
-        Snapshot.SnapshotFlags[] flags
+        UUID snapshotVolumeUuid,
+        Snapshot snapshot,
+        SnapshotVolumeDefinition snapshotVolumeDefinition,
+        StorPool storPool
     )
         throws ImplementationError
     {
-        Snapshot snapshot;
+        SnapshotVolume snapshotVolume;
         try
         {
-            snapshot = driver.load(node, snapshotDfn, false);
-            if (snapshot == null)
+            snapshotVolume = driver.load(snapshot, snapshotVolumeDefinition, storPool, false);
+            if (snapshotVolume == null)
             {
-                snapshot = new SnapshotData(
-                    snapshotUuid,
-                    snapshotDfn,
-                    node,
-                    StateFlagsBits.getMask(flags),
-                    driver, transObjFactory, transMgrProvider,
-                    new TreeMap<>()
+                snapshotVolume = new SnapshotVolumeData(
+                    snapshotVolumeUuid,
+                    snapshot,
+                    snapshotVolumeDefinition,
+                    storPool,
+                    driver, transObjFactory, transMgrProvider
                 );
-                snapshotDfn.addSnapshot(snapshot);
+                snapshot.addSnapshotVolume(snapshotVolume);
             }
         }
         catch (Exception exc)
@@ -63,6 +60,6 @@ public class SnapshotDataSatelliteFactory
                 exc
             );
         }
-        return snapshot;
+        return snapshotVolume;
     }
 }

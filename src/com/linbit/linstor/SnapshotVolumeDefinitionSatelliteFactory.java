@@ -8,6 +8,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class SnapshotVolumeDefinitionSatelliteFactory
@@ -48,7 +49,8 @@ public class SnapshotVolumeDefinitionSatelliteFactory
                     volumeNumber,
                     driver,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    new TreeMap<>()
                 );
                 snapshotDfn.addSnapshotVolumeDefinition(snapshotVolumeDefinition);
             }

@@ -131,13 +131,10 @@ public interface StorageDriver
      *
      * @param identifier
      * @param snapshotName
-     * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
-     *  be encrypted)
-     *
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void createSnapshot(String identifier, String snapshotName, String cryptKey)
+    void createSnapshot(String identifier, String snapshotName)
         throws StorageException;
 
     /**
@@ -164,10 +161,9 @@ public interface StorageDriver
      * Deletes the given snapshot
      * @param identifier
      * @param snapshotName
-     * @param isEncrypted
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void deleteSnapshot(String identifier, String snapshotName, boolean isEncrypted)
+    void deleteSnapshot(String identifier, String snapshotName)
         throws StorageException;
 }

@@ -9,16 +9,24 @@ import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-public interface Snapshot extends TransactionObject, DbgInstanceUuid
+public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable<Snapshot>
 {
     UUID getUuid();
 
     SnapshotDefinition getSnapshotDefinition();
 
     Node getNode();
+
+    void addSnapshotVolume(SnapshotVolume snapshotVolume);
+
+    SnapshotVolume getSnapshotVolume(VolumeNumber volumeNumber);
+
+    Collection<SnapshotVolume> getAllSnapshotVolumes();
 
     StateFlags<SnapshotFlags> getFlags();
 
@@ -35,6 +43,19 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid
 
     SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
+
+    @Override
+    default int compareTo(Snapshot otherSnapshot)
+    {
+        int eq = getSnapshotDefinition().compareTo(
+            otherSnapshot.getSnapshotDefinition()
+        );
+        if (eq == 0)
+        {
+            eq = getNode().compareTo(otherSnapshot.getNode());
+        }
+        return eq;
+    }
 
     enum SnapshotFlags implements Flags
     {
@@ -86,5 +107,11 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid
         boolean getTakeSnapshot();
         Long getFullSyncId();
         Long getUpdateId();
+        List<? extends SnapshotVolume.SnapshotVlmApi> getSnapshotVlmList();
+    }
+
+    public interface InitMaps
+    {
+        Map<VolumeNumber, SnapshotVolume> getSnapshotVlmMap();
     }
 }

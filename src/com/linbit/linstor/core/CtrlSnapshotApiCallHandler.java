@@ -16,6 +16,7 @@ import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolumeDataControllerFactory;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.StorPool;
@@ -61,6 +62,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotDataControllerFactory snapshotDataFactory;
+    private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
     private final EventBroker eventBroker;
 
     @Inject
@@ -79,6 +81,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
+        SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
         EventBroker eventBrokerRef
     )
     {
@@ -99,6 +102,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
+        snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
         eventBroker = eventBrokerRef;
     }
 
@@ -160,12 +164,22 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 Resource rsc = rscIterator.next();
 
-                snapshotDataFactory.create(
+                Snapshot snapshot = snapshotDataFactory.create(
                     apiCtx,
                     rsc.getAssignedNode(),
                     snapshotDfn,
-                    new Snapshot.SnapshotFlags[] {}
+                    new Snapshot.SnapshotFlags[]{}
                 );
+
+                for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
+                {
+                    snapshotVolumeDataControllerFactory.create(
+                        apiCtx,
+                        snapshot,
+                        snapshotVolumeDefinition,
+                        rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx)
+                    );
+                }
             }
             commit();
 

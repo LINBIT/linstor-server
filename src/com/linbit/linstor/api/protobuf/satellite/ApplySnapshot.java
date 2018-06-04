@@ -1,12 +1,14 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
+import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -75,6 +77,17 @@ public class ApplySnapshot implements ApiCall
                 ))
                 .collect(Collectors.toList());
 
+        List<SnapshotVolume.SnapshotVlmApi> snapshotVlms =
+            snapshotData.getSnapshotVlmsList().stream()
+                .map(snapshotVlm -> new SnapshotVlmPojo(
+                    snapshotVlm.getStorPoolName(),
+                    UUID.fromString(snapshotVlm.getStorPoolUuid()),
+                    UUID.fromString(snapshotVlm.getSnapshotVlmDfnUuid()),
+                    UUID.fromString(snapshotVlm.getSnapshotVlmUuid()),
+                    snapshotVlm.getVlmNr()
+                ))
+                .collect(Collectors.toList());
+
         return new SnapshotPojo(
             new SnapshotDfnPojo(
                 new RscDfnPojo(
@@ -97,7 +110,8 @@ public class ApplySnapshot implements ApiCall
             snapshotData.getSuspendResource(),
             snapshotData.getTakeSnapshot(),
             snapshotData.getFullSyncId(),
-            snapshotData.getUpdateId()
+            snapshotData.getUpdateId(),
+            snapshotVlms
         );
     }
 }

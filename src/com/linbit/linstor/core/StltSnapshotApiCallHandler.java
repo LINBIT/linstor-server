@@ -16,8 +16,12 @@ import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.SnapshotId;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.SnapshotVolumeDataSatelliteFactory;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinitionSatelliteFactory;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -50,6 +54,7 @@ class StltSnapshotApiCallHandler
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
     private final SnapshotDataSatelliteFactory snapshotDataFactory;
+    private final SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -63,6 +68,7 @@ class StltSnapshotApiCallHandler
         SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
         SnapshotDataSatelliteFactory snapshotDataFactoryRef,
+        SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -75,6 +81,7 @@ class StltSnapshotApiCallHandler
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
+        snapshotVolumeDataFactory = snapshotVolumeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -195,7 +202,7 @@ class StltSnapshotApiCallHandler
     }
 
     private void mergeSnapshot(SnapshotPojo snapshotRaw, SnapshotDefinition snapshotDfn)
-        throws DivergentUuidsException, AccessDeniedException
+        throws DivergentUuidsException, AccessDeniedException, ValueOutOfRangeException, InvalidNameException
     {
         NodeData localNode = controllerPeerConnector.getLocalNode();
         Snapshot snapshot = snapshotDfn.getSnapshot(localNode.getName());
@@ -213,6 +220,37 @@ class StltSnapshotApiCallHandler
 
         snapshot.setSuspendResource(snapshotRaw.getSuspendResource());
         snapshot.setTakeSnapshot(snapshotRaw.getTakeSnapshot());
+
+        for (SnapshotVolume.SnapshotVlmApi snapshotVlmApi : snapshotRaw.getSnapshotVlmList())
+        {
+            mergeSnapshotVolume(snapshotVlmApi, snapshot);
+        }
+    }
+
+    private void mergeSnapshotVolume(SnapshotVolume.SnapshotVlmApi snapshotVlmApi, Snapshot snapshot)
+        throws ValueOutOfRangeException, DivergentUuidsException, InvalidNameException, AccessDeniedException
+    {
+        VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmApi.getSnapshotVlmNr());
+        SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(volumeNumber);
+        if (snapshotVolume == null)
+        {
+            StorPool storPool = snapshot.getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(snapshotVlmApi.getStorPoolName())
+            );
+            checkUuid(storPool, snapshotVlmApi);
+
+            snapshotVolume = snapshotVolumeDataFactory.getInstanceSatellite(
+                apiCtx,
+                snapshotVlmApi.getSnapshotVlmUuid(),
+                snapshot,
+                snapshot.getSnapshotDefinition().getSnapshotVolumeDefinition(volumeNumber),
+                storPool
+            );
+
+            snapshot.addSnapshotVolume(snapshotVolume);
+        }
+        checkUuid(snapshotVolume, snapshotVlmApi);
     }
 
     public void applyEndedSnapshot(String rscNameStr, String snapshotNameStr)
@@ -285,6 +323,30 @@ class StltSnapshotApiCallHandler
             "Snapshot",
             snapshot.getSnapshotDefinition().getName().displayValue,
             snapshotRaw.getSnaphotDfn().getSnapshotName()
+        );
+    }
+
+    private void checkUuid(SnapshotVolume snapshotVolume, SnapshotVolume.SnapshotVlmApi snapshotVlmApi)
+        throws DivergentUuidsException
+    {
+        checkUuid(
+            snapshotVolume.getUuid(),
+            snapshotVlmApi.getSnapshotVlmUuid(),
+            "SnapshotVolume",
+            String.valueOf(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber()),
+            String.valueOf(snapshotVlmApi.getSnapshotVlmNr())
+        );
+    }
+
+    private void checkUuid(StorPool storPool, SnapshotVolume.SnapshotVlmApi snapshotVlmApi)
+        throws DivergentUuidsException
+    {
+        checkUuid(
+            storPool.getUuid(),
+            snapshotVlmApi.getStorPoolUuid(),
+            "StorPool",
+            storPool.getName().displayValue,
+            snapshotVlmApi.getStorPoolName()
         );
     }
 

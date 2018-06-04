@@ -7,12 +7,17 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class SnapshotData extends BaseTransactionObject implements Snapshot
@@ -28,6 +33,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     // Reference to the node this resource is assigned to
     private final Node node;
 
+    private final TransactionMap<VolumeNumber, SnapshotVolume> snapshotVlmMap;
+
     // State flags
     private final StateFlags<SnapshotFlags> flags;
 
@@ -42,7 +49,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         long initFlags,
         SnapshotDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef
     )
     {
         super(transMgrProviderRef);
@@ -52,6 +60,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         node = nodeRef;
 
         dbgInstanceId = UUID.randomUUID();
+
+        snapshotVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             snapshotDfn.getResourceDefinition().getObjProt(),
@@ -64,6 +74,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         transObjs = Arrays.asList(
             snapshotDfn,
             node,
+            snapshotVlmMap,
             flags
         );
     }
@@ -84,6 +95,24 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     public Node getNode()
     {
         return node;
+    }
+
+    @Override
+    public void addSnapshotVolume(SnapshotVolume snapshotVolume)
+    {
+        snapshotVlmMap.put(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber(), snapshotVolume);
+    }
+
+    @Override
+    public SnapshotVolume getSnapshotVolume(VolumeNumber volumeNumber)
+    {
+        return snapshotVlmMap.get(volumeNumber);
+    }
+
+    @Override
+    public Collection<SnapshotVolume> getAllSnapshotVolumes()
+    {
+        return snapshotVlmMap.values();
     }
 
     @Override
@@ -140,6 +169,13 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     public SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
+        List<SnapshotVolume.SnapshotVlmApi> snapshotVlms = new ArrayList<>();
+
+        for (SnapshotVolume snapshotVolume : snapshotVlmMap.values())
+        {
+            snapshotVlms.add(snapshotVolume.getApiData(accCtx));
+        }
+
         return new SnapshotPojo(
             snapshotDfn.getApiData(accCtx),
             objId,
@@ -147,7 +183,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
             suspendResource,
             takeSnapshot,
             fullSyncId,
-            updateId
+            updateId,
+            snapshotVlms
         );
     }
 }

@@ -658,7 +658,7 @@ public abstract class NoSimDriverTest
         throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.deleteSnapshot(identifier, snapshotName, false);
+        driver.deleteSnapshot(identifier, snapshotName);
         failIf(volumeExists(identifier, snapshotName), "Failed to delete snapshot [%s]", identifier);
         log(" done%n");
     }
@@ -688,7 +688,7 @@ public abstract class NoSimDriverTest
     private void createSnapshot(String identifier, String snapshotName, String format) throws StorageException
     {
         log(format, snapshotName, identifier);
-        driver.createSnapshot(identifier, snapshotName, null); // null == not encrypted
+        driver.createSnapshot(identifier, snapshotName);
         log(" done%n");
     }
 

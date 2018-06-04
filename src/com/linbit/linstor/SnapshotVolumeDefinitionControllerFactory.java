@@ -9,6 +9,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class SnapshotVolumeDefinitionControllerFactory
@@ -50,7 +51,8 @@ public class SnapshotVolumeDefinitionControllerFactory
             volumeNumber,
             driver,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            new TreeMap<>()
         );
 
         driver.create(snapshotVolumeDefinition);

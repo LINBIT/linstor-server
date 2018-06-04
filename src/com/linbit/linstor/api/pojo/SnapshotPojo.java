@@ -2,7 +2,9 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolume;
 
+import java.util.List;
 import java.util.UUID;
 
 public class SnapshotPojo implements Snapshot.SnapshotApi
@@ -14,6 +16,7 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     private final boolean takeSnapshot;
     private final Long fullSyncId;
     private final Long updateId;
+    private final List<SnapshotVolume.SnapshotVlmApi> snapshotVlms;
 
     public SnapshotPojo(
         SnapshotDefinition.SnapshotDfnApi snaphotDfnRef,
@@ -22,7 +25,8 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
         boolean suspendResourceRef,
         boolean takeSnapshotRef,
         Long fullSyncIdRef,
-        Long updateIdRef
+        Long updateIdRef,
+        List<SnapshotVolume.SnapshotVlmApi> snapshotVlmsRef
     )
     {
         snaphotDfn = snaphotDfnRef;
@@ -32,6 +36,7 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
         takeSnapshot = takeSnapshotRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
+        snapshotVlms = snapshotVlmsRef;
     }
 
     @Override
@@ -74,5 +79,11 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     public Long getUpdateId()
     {
         return updateId;
+    }
+
+    @Override
+    public List<? extends SnapshotVolume.SnapshotVlmApi> getSnapshotVlmList()
+    {
+        return snapshotVlms;
     }
 }

@@ -19,9 +19,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDefinitionDatabaseDriver
@@ -118,7 +117,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                             resultSet,
                             snapshotDefinition,
                             volumeNumber
-                        );
+                        ).objA;
                         errorReporter.logTrace("SnapshotVolumeDefinition loaded %s", getId(snapshotDefinition, volumeNumber));
                     }
                     else
@@ -135,7 +134,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         return ret;
     }
 
-    private SnapshotVolumeDefinition restoreSnapshotVolumeDefinition(
+    private Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> restoreSnapshotVolumeDefinition(
         ResultSet resultSet,
         SnapshotDefinition snapshotDefinition,
         VolumeNumber volumeNumber
@@ -145,37 +144,31 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         errorReporter.logTrace("Restoring SnapshotVolumeDefinition %s", getId(snapshotDefinition, volumeNumber));
         SnapshotVolumeDefinition snapshotVolumeDefinition;
 
-        snapshotVolumeDefinition = cacheGet(snapshotDefinition, volumeNumber);
+        Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
-        if (snapshotVolumeDefinition == null)
-        {
-            snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
-                java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
-                snapshotDefinition,
-                volumeNumber,
-                this,
-                transObjFactory,
-                transMgrProvider
-            );
+        snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
+            java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
+            snapshotDefinition,
+            volumeNumber,
+            this,
+            transObjFactory,
+            transMgrProvider,
+            snapshotVlmMap
+        );
 
-            errorReporter.logTrace("SnapshotVolumeDefinition %s created during restore", getId(snapshotVolumeDefinition));
-        }
-        else
-        {
-            errorReporter.logTrace("SnapshotVolumeDefinition %s restored from cache", getId(snapshotVolumeDefinition));
-        }
+        errorReporter.logTrace("SnapshotVolumeDefinition %s created during restore", getId(snapshotVolumeDefinition));
 
-        return snapshotVolumeDefinition;
+        return new Pair<>(snapshotVolumeDefinition, new SnapshotVolumeDefinitionInitMaps(snapshotVlmMap));
     }
 
 
-    public List<SnapshotVolumeDefinition> loadAll(
+    public Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadAll(
         Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapshotDfnMap
     )
         throws SQLException
     {
         errorReporter.logTrace("Loading all SnapshotVolumeDefinitions");
-        List<SnapshotVolumeDefinition> ret = new ArrayList<>();
+        Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadedSnapshotVlmDfns = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SVD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -208,19 +201,18 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                         );
                     }
 
-                    SnapshotVolumeDefinition snapshotVolumeDefinition = restoreSnapshotVolumeDefinition(
-                        resultSet,
-                        snapshotDfnMap.get(new Pair<>(rscName, snapshotName)),
-                        volumeNumber
-                    );
+                    Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> pair =
+                        restoreSnapshotVolumeDefinition(
+                            resultSet,
+                            snapshotDfnMap.get(new Pair<>(rscName, snapshotName)),
+                            volumeNumber
+                        );
 
-                    ret.add(snapshotVolumeDefinition);
-
-                    errorReporter.logTrace("SnapshotVolumeDefinition created %s", getId(snapshotVolumeDefinition));
+                    loadedSnapshotVlmDfns.put(pair.objA, pair.objB);
                 }
             }
         }
-        return ret;
+        return loadedSnapshotVlmDfns;
     }
 
     @Override
@@ -268,5 +260,21 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private String getId(String resName, String snapshotName, int volumeNr)
     {
         return "(ResName=" + resName + " SnapshotName=" + snapshotName + " volumeNr=" + volumeNr + ")";
+    }
+
+    private static class SnapshotVolumeDefinitionInitMaps implements SnapshotVolumeDefinition.InitMaps
+    {
+        private final Map<NodeName, SnapshotVolume> snapshotVlmMap;
+
+        private SnapshotVolumeDefinitionInitMaps(Map<NodeName, SnapshotVolume> snapshotVlmMapRef)
+        {
+            snapshotVlmMap = snapshotVlmMapRef;
+        }
+
+        @Override
+        public Map<NodeName, SnapshotVolume> getSnapshotVlmMap()
+        {
+            return snapshotVlmMap;
+        }
     }
 }

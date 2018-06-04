@@ -10,6 +10,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.sql.SQLException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class SnapshotDataControllerFactory
@@ -50,9 +51,8 @@ public class SnapshotDataControllerFactory
             snapshotDfn,
             node,
             StateFlagsBits.getMask(initFlags),
-            driver,
-            transObjFactory,
-            transMgrProvider
+            driver, transObjFactory, transMgrProvider,
+            new TreeMap<>()
         );
 
         driver.create(snapshot);

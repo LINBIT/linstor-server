@@ -5,11 +5,13 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseD
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 
 public class SnapshotVolumeDefinitionData extends BaseTransactionObject implements SnapshotVolumeDefinition
@@ -25,13 +27,16 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     // DRBD volume number
     private final VolumeNumber volumeNr;
 
+    private final TransactionMap<NodeName, SnapshotVolume> snapshotVlmMap;
+
     public SnapshotVolumeDefinitionData(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
         VolumeNumber volNr,
         SnapshotVolumeDefinitionDatabaseDriver snapshotVolumeDefinitionDatabaseDriverRef,
-        TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        TransactionObjectFactory transObjFactory,
+        Provider<TransactionMgr> transMgrProviderRef,
+        Map<NodeName, SnapshotVolume> snapshotVlmMapRef
     )
     {
         super(transMgrProviderRef);
@@ -42,8 +47,11 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
 
         dbgInstanceId = UUID.randomUUID();
 
+        snapshotVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
+
         transObjs = Arrays.asList(
-            snapshotDfn
+            snapshotDfn,
+            snapshotVlmMap
         );
     }
 
@@ -63,6 +71,12 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     public VolumeNumber getVolumeNumber()
     {
         return volumeNr;
+    }
+
+    @Override
+    public void addSnapshotVolume(SnapshotVolume snapshotVolume)
+    {
+        snapshotVlmMap.put(snapshotVolume.getSnapshot().getNode().getName(), snapshotVolume);
     }
 
     @Override

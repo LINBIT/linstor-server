@@ -273,13 +273,13 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    protected String getSnapshotIdentifier(String identifier, String snapshotName, boolean isEncrypted)
+    protected String getSnapshotIdentifier(String identifier, String snapshotName)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
     @Override
-    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
@@ -297,7 +297,7 @@ public class LvmDriver extends AbsStorageDriver
 
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName, boolean isEncrypted)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }

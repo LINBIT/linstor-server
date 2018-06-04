@@ -24,8 +24,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -138,7 +136,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                             resultSet,
                             node,
                             snapshotDefinition
-                        );
+                        ).objA;
                         errorReporter.logTrace("Snapshot loaded %s", getId(node, snapshotDefinition));
                     }
                     else
@@ -155,7 +153,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         return ret;
     }
 
-    private Snapshot restoreSnapshot(
+    private Pair<Snapshot, Snapshot.InitMaps> restoreSnapshot(
         ResultSet resultSet,
         Node node,
         SnapshotDefinition snapshotDefinition
@@ -165,39 +163,31 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         errorReporter.logTrace("Restoring Snapshot %s", getId(node, snapshotDefinition));
         Snapshot snapshot;
 
-        snapshot = cacheGet(node, snapshotDefinition);
+        Map<VolumeNumber, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
-        if (snapshot == null)
-        {
-            snapshot = new SnapshotData(
-                java.util.UUID.fromString(resultSet.getString(S_UUID)),
-                snapshotDefinition,
-                node,
-                resultSet.getLong(S_FLAGS),
-                this,
-                transObjFactory,
-                transMgrProvider
-            );
+        snapshot = new SnapshotData(
+            java.util.UUID.fromString(resultSet.getString(S_UUID)),
+            snapshotDefinition,
+            node,
+            resultSet.getLong(S_FLAGS),
+            this, transObjFactory, transMgrProvider,
+            snapshotVlmMap
+        );
 
-            errorReporter.logTrace("Snapshot %s created during restore", getId(snapshot));
-        }
-        else
-        {
-            errorReporter.logTrace("Snapshot %s restored from cache", getId(snapshot));
-        }
+        errorReporter.logTrace("Snapshot %s created during restore", getId(snapshot));
 
-        return snapshot;
+        return new Pair<>(snapshot, new SnapshotInitMaps(snapshotVlmMap));
     }
 
 
-    public List<Snapshot> loadAll(
+    public Map<Snapshot, Snapshot.InitMaps> loadAll(
         Map<NodeName, ? extends Node> nodeMap,
         Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapshotDfnMap
     )
         throws SQLException
     {
         errorReporter.logTrace("Loading all Snapshots");
-        List<Snapshot> ret = new ArrayList<>();
+        Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(S_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -221,19 +211,17 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                         );
                     }
 
-                    Snapshot snapshot = restoreSnapshot(
+                    Pair<Snapshot, Snapshot.InitMaps> pair = restoreSnapshot(
                         resultSet,
                         nodeMap.get(nodeName),
                         snapshotDfnMap.get(new Pair<>(rscName, snapshotName))
                     );
 
-                    ret.add(snapshot);
-
-                    errorReporter.logTrace("Snapshot created %s", getId(snapshot));
+                    loadedSnapshots.put(pair.objA, pair.objB);
                 }
             }
         }
-        return ret;
+        return loadedSnapshots;
     }
 
     @Override
@@ -334,6 +322,22 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             {
                 GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
             }
+        }
+    }
+
+    private static class SnapshotInitMaps implements Snapshot.InitMaps
+    {
+        private final Map<VolumeNumber, SnapshotVolume> snapshotVlmMap;
+
+        private SnapshotInitMaps(Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef)
+        {
+            snapshotVlmMap = snapshotVlmMapRef;
+        }
+
+        @Override
+        public Map<VolumeNumber, SnapshotVolume> getSnapshotVlmMap()
+        {
+            return snapshotVlmMap;
         }
     }
 }

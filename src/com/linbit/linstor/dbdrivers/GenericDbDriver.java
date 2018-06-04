@@ -22,6 +22,8 @@ import com.linbit.linstor.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionDataGenericDbDriver;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.SnapshotVolumeDataGenericDbDriver;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinitionGenericDbDriver;
 import com.linbit.linstor.StorPool;
@@ -100,6 +102,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataGenericDbDriver snapshotDriver;
+    private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -122,6 +125,7 @@ public class GenericDbDriver implements DatabaseDriver
         SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataGenericDbDriver snapshotDriverRef,
+        SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
         @Uninitialized CoreModule.NodesMap nodesMapRef,
         @Uninitialized CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
@@ -142,6 +146,7 @@ public class GenericDbDriver implements DatabaseDriver
         snapshotDefinitionDriver = snapshotDefinitionDriverRef;
         snapshotVolumeDefinitionDriver = snapshotVolumeDefinitionDriverRef;
         snapshotDriver = snapshotDriverRef;
+        snapshotVolumeDriver = snapshotVolumeDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -317,21 +322,52 @@ public class GenericDbDriver implements DatabaseDriver
                 );
 
             // loading snapshot volume definitions
-            List<SnapshotVolumeDefinition> loadedSnapshotVolumeDefinitions =
+            Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadedSnapshotVolumeDefinitions =
                 snapshotVolumeDefinitionDriver.loadAll(tmpSnapshotDfnMap);
-            for (SnapshotVolumeDefinition snapshotVolumeDefinition : loadedSnapshotVolumeDefinitions)
+            for (SnapshotVolumeDefinition snapshotVolumeDefinition : loadedSnapshotVolumeDefinitions.keySet())
             {
                 loadedSnapshotDfns.get(snapshotVolumeDefinition.getSnapshotDefinition())
                     .getSnapshotVolumeDefinitionMap()
                     .put(snapshotVolumeDefinition.getVolumeNumber(), snapshotVolumeDefinition);
             }
 
+            Map<Triple<ResourceName, SnapshotName, VolumeNumber>, SnapshotVolumeDefinition> tmpSnapshotVlmDfnMap =
+                mapByName(loadedSnapshotVolumeDefinitions, snapshotVlmDfn -> new Triple<>(
+                    snapshotVlmDfn.getSnapshotDefinition().getResourceDefinition().getName(),
+                    snapshotVlmDfn.getSnapshotDefinition().getName(),
+                    snapshotVlmDfn.getVolumeNumber()
+                )
+            );
+
             // loading snapshots
-            List<Snapshot> loadedSnapshots = snapshotDriver.loadAll(tmpNodesMap, tmpSnapshotDfnMap);
-            for (Snapshot snapshot : loadedSnapshots)
+            Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = snapshotDriver.loadAll(tmpNodesMap, tmpSnapshotDfnMap);
+            for (Snapshot snapshot : loadedSnapshots.keySet())
             {
                 loadedSnapshotDfns.get(snapshot.getSnapshotDefinition()).getSnapshotMap()
                     .put(snapshot.getNode().getName(), snapshot);
+            }
+
+            Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot> tmpSnapshotMap =
+                mapByName(loadedSnapshots, snapshot -> new Triple<>(
+                    snapshot.getNode().getName(),
+                    snapshot.getSnapshotDefinition().getResourceDefinition().getName(),
+                    snapshot.getSnapshotDefinition().getName()
+                )
+            );
+
+            // loading snapshot volumes
+            List<SnapshotVolume> loadedSnapshotVolumes =
+                snapshotVolumeDriver.loadAll(
+                    tmpSnapshotMap,
+                    tmpSnapshotVlmDfnMap,
+                    tmpStorPoolMap
+                );
+            for (SnapshotVolume snapshotVolume : loadedSnapshotVolumes)
+            {
+                loadedSnapshots.get(snapshotVolume.getSnapshot()).getSnapshotVlmMap()
+                    .put(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber(), snapshotVolume);
+                loadedSnapshotVolumeDefinitions.get(snapshotVolume.getSnapshotVolumeDefinition()).getSnapshotVlmMap()
+                    .put(snapshotVolume.getSnapshot().getNode().getName(), snapshotVolume);
             }
 
             nodesMap.putAll(tmpNodesMap);
