@@ -28,9 +28,14 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
 
     Collection<SnapshotVolume> getAllSnapshotVolumes();
 
+    void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData);
+
     StateFlags<SnapshotFlags> getFlags();
 
     void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
     boolean getSuspendResource();

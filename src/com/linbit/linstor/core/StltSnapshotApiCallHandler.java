@@ -14,7 +14,6 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDataSatelliteFactory;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
-import com.linbit.linstor.SnapshotId;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDataSatelliteFactory;
@@ -107,7 +106,7 @@ class StltSnapshotApiCallHandler
 
             deviceManager.getUpdateTracker().checkResource(rscDfn.getName());
             deviceManager.snapshotUpdateApplied(Collections.singleton(
-                new SnapshotId(rscDfn.getName(), snapshotDfn.getName())));
+                new SnapshotDefinition.Key(rscDfn.getName(), snapshotDfn.getName())));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -281,7 +280,7 @@ class StltSnapshotApiCallHandler
                     snapshotName
                 );
 
-                deviceManager.snapshotUpdateApplied(Collections.singleton(new SnapshotId(rscName, snapshotName)));
+                deviceManager.snapshotUpdateApplied(Collections.singleton(new SnapshotDefinition.Key(rscName, snapshotName)));
             }
         }
         catch (Exception | ImplementationError exc)

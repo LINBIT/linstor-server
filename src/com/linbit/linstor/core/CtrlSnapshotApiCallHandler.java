@@ -227,10 +227,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
             SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
-            SnapshotDefinition snapshotDfn = loadSnapshotDfn(
-                rscDfn,
-                snapshotName
-            );
+            SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
 
             snapshotDfn.markDeleted(peerAccCtx);
             for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
@@ -472,6 +469,18 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         {
             snapshotDfn = snapshotDefinitionDataFactory.load(peerAccCtx, rscDfn, snapshotName);
 
+            if (snapshotDfn == null)
+            {
+                throw asExc(
+                    null, // throwable
+                    "Snapshot '" + snapshotName.displayValue +
+                        "' of resource '" + rscDfn.getName().displayValue + "' not found.", // error msg
+                    null, // cause
+                    null, // details
+                    null, // correction
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN
+                );
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {

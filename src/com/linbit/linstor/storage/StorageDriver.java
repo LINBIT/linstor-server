@@ -159,11 +159,11 @@ public interface StorageDriver
 
     /**
      * Deletes the given snapshot
-     * @param identifier
+     * @param volumeIdentifier
      * @param snapshotName
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void deleteSnapshot(String identifier, String snapshotName)
+    void deleteSnapshot(String volumeIdentifier, String snapshotName)
         throws StorageException;
 }

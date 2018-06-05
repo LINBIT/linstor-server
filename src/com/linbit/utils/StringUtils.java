@@ -2,6 +2,7 @@ package com.linbit.utils;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.StringJoiner;
 
 /**
  *
@@ -39,5 +40,30 @@ public class StringUtils
     public static String join(Collection<?> col)
     {
         return join(col, ",");
+    }
+
+    public static class ConditionalStringJoiner
+    {
+        private final StringJoiner stringJoiner;
+
+        public ConditionalStringJoiner(CharSequence delimiter)
+        {
+            stringJoiner = new StringJoiner(delimiter);
+        }
+
+        public ConditionalStringJoiner addIf(boolean condition, CharSequence charSequence)
+        {
+            if (condition)
+            {
+                stringJoiner.add(charSequence);
+            }
+            return this;
+        }
+
+        @Override
+        public String toString()
+        {
+            return stringJoiner.toString();
+        }
     }
 }

@@ -2,12 +2,10 @@ package com.linbit.linstor.event.handler;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
-import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -25,9 +23,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
 
 /**
  * Manages snapshot creation.
@@ -80,24 +78,31 @@ public class SnapshotStateMachine
                     Snapshot snapshot = snapshotDefinition.getSnapshot(eventIdentifier.getNodeName());
                     if (snapshot != null)
                     {
-                        boolean changed;
-
-                        if (abort)
+                        if (snapshot.getFlags().isSet(apiCtx, Snapshot.SnapshotFlags.DELETE))
                         {
-                            SnapshotDfnFlags flag = satelliteDisconnected ?
-                                SnapshotDfnFlags.FAILED_DISCONNECT : SnapshotDfnFlags.FAILED_DEPLOYMENT;
-                            snapshotDefinition.getFlags().enableFlags(apiCtx, flag);
-
-                            changed = abortSnapshot(snapshotDefinition);
+                            processSnapshotDeletion(snapshot);
                         }
                         else
                         {
-                            changed = processSnapshot(snapshotDefinition);
-                        }
+                            boolean changed;
 
-                        if (changed)
-                        {
-                            updateSatellites(snapshotDefinition);
+                            if (abort)
+                            {
+                                SnapshotDfnFlags flag = satelliteDisconnected ?
+                                    SnapshotDfnFlags.FAILED_DISCONNECT : SnapshotDfnFlags.FAILED_DEPLOYMENT;
+                                snapshotDefinition.getFlags().enableFlags(apiCtx, flag);
+
+                                changed = abortSnapshot(snapshotDefinition);
+                            }
+                            else
+                            {
+                                changed = processSnapshot(snapshotDefinition);
+                            }
+
+                            if (changed)
+                            {
+                                updateSatellites(snapshotDefinition);
+                            }
                         }
                     }
                 }
@@ -165,6 +170,7 @@ public class SnapshotStateMachine
                 {
                     allSuspended = false;
                 }
+
                 if (!snapshotState.isSnapshotTaken())
                 {
                     allSnapshotTaken = false;
@@ -271,5 +277,33 @@ public class SnapshotStateMachine
             snapshotDefinition.getResourceDefinition().getName(),
             snapshotDefinition.getName()
         ));
+    }
+
+    private void processSnapshotDeletion(Snapshot snapshot)
+        throws AccessDeniedException, SQLException
+    {
+        SnapshotState snapshotState = getSnapshotState(snapshot);
+
+        if (snapshotState != null && snapshotState.isSnapshotDeleted())
+        {
+            deleteSnapshot(snapshot);
+        }
+    }
+
+    private void deleteSnapshot(Snapshot snapshot)
+        throws AccessDeniedException, SQLException
+    {
+        if (snapshot.getFlags().isSet(apiCtx, Snapshot.SnapshotFlags.DELETE))
+        {
+            SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
+
+            snapshot.delete(apiCtx);
+
+            if (snapshotDefinition.getFlags().isSet(apiCtx, SnapshotDfnFlags.DELETE) &&
+                snapshotDefinition.getAllSnapshots().isEmpty())
+            {
+                snapshotDefinition.delete(apiCtx);
+            }
+        }
     }
 }

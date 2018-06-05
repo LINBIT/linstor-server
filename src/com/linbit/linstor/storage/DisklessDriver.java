@@ -96,7 +96,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void deleteSnapshot(String identifier, String snapshotName)
+    public void deleteSnapshot(String volumeIdentifier, String snapshotName)
     {
         // no-op
     }

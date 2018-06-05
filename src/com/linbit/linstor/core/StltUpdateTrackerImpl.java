@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotId;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 
@@ -95,7 +95,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         synchronized (sched)
         {
-            cachedUpdates.updSnapshotMap.put(new SnapshotId(resourceName, snapshotName), snapshotUuid);
+            cachedUpdates.updSnapshotMap.put(new SnapshotDefinition.Key(resourceName, snapshotName), snapshotUuid);
             sched.notify();
         }
     }
@@ -169,7 +169,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         final Map<ResourceName, UUID> updRscDfnMap = new TreeMap<>();
         final Map<ResourceName, Map<NodeName, UUID>> updRscMap = new TreeMap<>();
         final Map<StorPoolName, UUID> updStorPoolMap = new TreeMap<>();
-        final Map<SnapshotId, UUID> updSnapshotMap = new TreeMap<>();
+        final Map<SnapshotDefinition.Key, UUID> updSnapshotMap = new TreeMap<>();
         final Set<ResourceName> chkRscSet = new TreeSet<>();
 
         /**

@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.google.protobuf.MapFieldLite;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -13,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotDefinition>
@@ -43,6 +43,11 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
+
+    void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
+    boolean isDeleted();
 
     SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
@@ -108,6 +113,68 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         String getSnapshotName();
         long getFlags();
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList();
+    }
+
+    /**
+     * Identifies a snapshot within a node.
+     */
+    class Key implements Comparable<Key>
+    {
+        private final ResourceName resourceName;
+
+        private final SnapshotName snapshotName;
+
+        public Key(ResourceName resourceNameRef, SnapshotName snapshotNameRef)
+        {
+            resourceName = resourceNameRef;
+            snapshotName = snapshotNameRef;
+        }
+
+        public ResourceName getResourceName()
+        {
+            return resourceName;
+        }
+
+        public SnapshotName getSnapshotName()
+        {
+            return snapshotName;
+        }
+
+        @Override
+        // Code style exception: Automatically generated code
+        @SuppressWarnings({"DescendantToken", "ParameterName"})
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+            Key that = (Key) o;
+            return Objects.equals(resourceName, that.resourceName) &&
+                Objects.equals(snapshotName, that.snapshotName);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(resourceName, snapshotName);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = resourceName.compareTo(other.resourceName);
+            if (eq == 0)
+            {
+                eq = snapshotName.compareTo(other.snapshotName);
+            }
+            return eq;
+        }
     }
 
     public interface InitMaps

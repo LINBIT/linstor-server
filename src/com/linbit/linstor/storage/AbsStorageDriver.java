@@ -305,8 +305,13 @@ public abstract class AbsStorageDriver implements StorageDriver
             // probably the volume was not started anyways. at least we tried
         }
 
+        deleteStorageVolume(getDeleteCommand(identifier), identifier, "volume");
+    }
+
+    private void deleteStorageVolume(String[] command, String identifier, String volumeType)
+        throws StorageException
+    {
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-        final String[] command = getDeleteCommand(identifier);
         try
         {
 
@@ -319,7 +324,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             catch (ChildProcessTimeoutException | IOException exc)
             {
                 throw new StorageException(
-                    "Failed to delete volume",
+                    "Failed to delete " + volumeType,
                     String.format("Failed to delete volume [%s]", identifier),
                     (exc instanceof ChildProcessTimeoutException) ?
                         "External command timed out" :
@@ -340,9 +345,9 @@ public abstract class AbsStorageDriver implements StorageDriver
                 {
                     throw new StorageException(
                         String.format("Volume [%s] still exists.", identifier),
-                        String.format("Failed to delete volume [%s].", identifier),
+                        String.format("Failed to delete %s [%s].", volumeType, identifier),
                         null,
-                        String.format("Manual deletion of volume [%s] may be necessary.", identifier),
+                        String.format("Manual deletion of %s [%s] may be necessary.", volumeType, identifier),
                         null
                     );
                 }
@@ -364,7 +369,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (IOException exc)
         {
             throw new StorageException(
-                "Failed to verify volume deletion",
+                "Failed to verify " + volumeType + " deletion",
                 String.format("Failed to verify deletion of volume [%s]", identifier),
                 "IOException occured during registering file watch event listener",
                 null,
@@ -375,7 +380,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (FsWatchTimeoutException exc)
         {
             throw new StorageException(
-                "Failed to verify volume deletion",
+                "Failed to verify " + volumeType + " deletion",
                 String.format("Failed to verify deletion of volume [%s]", identifier),
                 "Registerd file watch event listener timed out",
                 null,
@@ -405,7 +410,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (InterruptedException exc)
         {
             throw new StorageException(
-                "Failed to verify volume deletion",
+                "Failed to verify " + volumeType + " deletion",
                 String.format("Failed to verify deletion of volume [%s]", identifier),
                 "Waiting for device deletion interrupted",
                 null,
@@ -606,7 +611,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void deleteSnapshot(String identifier, String snapshotName)
+    public void deleteSnapshot(String volumeIdentifier, String snapshotName)
         throws StorageException
     {
         if (!storageDriverKind.isSnapshotSupported())
@@ -614,31 +619,11 @@ public abstract class AbsStorageDriver implements StorageDriver
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
-        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
-        try
-        {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-
-            final OutputData outputData = extCommand.exec(command);
-            // TODO: Check that snapshot really exists like in deleteVolume
-            checkExitCode(
-                outputData, command,
-                "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier
-            );
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            throw new StorageException(
-                "Deleting a snapshot failed",
-                String.format("Failed to delete the snapshot [%s] of volume [%s]", snapshotName, identifier),
-                (exc instanceof ChildProcessTimeoutException) ?
-                    "External command timed out" :
-                    "External command threw an IOException",
-                null,
-                String.format("External command [%s] timed out ", glue(command, " ")),
-                exc
-            );
-        }
+        deleteStorageVolume(
+            getDeleteSnapshotCommand(volumeIdentifier, snapshotName),
+            getSnapshotIdentifier(volumeIdentifier, snapshotName),
+            "snapshot volume"
+        );
     }
 
     /**

@@ -10,11 +10,19 @@ public class SnapshotState
 
     private final boolean snapshotTaken;
 
-    public SnapshotState(SnapshotName snapshotNameRef, boolean suspendedRef, boolean snapshotTakenRef)
+    private final boolean snapshotDeleted;
+
+    public SnapshotState(
+        SnapshotName snapshotNameRef,
+        boolean suspendedRef,
+        boolean snapshotTakenRef,
+        boolean snapshotDeletedRef
+    )
     {
         snapshotName = snapshotNameRef;
         suspended = suspendedRef;
         snapshotTaken = snapshotTakenRef;
+        snapshotDeleted = snapshotDeletedRef;
     }
 
     public SnapshotName getSnapshotName()
@@ -30,5 +38,10 @@ public class SnapshotState
     public boolean isSnapshotTaken()
     {
         return snapshotTaken;
+    }
+
+    public boolean isSnapshotDeleted()
+    {
+        return snapshotDeleted;
     }
 }

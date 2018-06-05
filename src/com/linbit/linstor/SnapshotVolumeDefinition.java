@@ -4,6 +4,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
 
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,6 +18,11 @@ public interface SnapshotVolumeDefinition
     VolumeNumber getVolumeNumber();
 
     void addSnapshotVolume(SnapshotVolume snapshotVolume);
+
+    void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData);
+
+    void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 
     SnapshotVlmDfnApi getApiData(AccessContext accCtx)
         throws AccessDeniedException;

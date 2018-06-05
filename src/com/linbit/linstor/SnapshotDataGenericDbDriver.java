@@ -300,7 +300,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                     ", "
                 );
                 errorReporter.logTrace(
-                    "Updating SnapshotDefinition's flags from [%s] to [%s] %s",
+                    "Updating Snapshot's flags from [%s] to [%s] %s",
                     fromFlags,
                     toFlags,
                     getId(snapshot)
@@ -312,7 +312,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                 stmt.executeUpdate();
 
                 errorReporter.logTrace(
-                    "SnapshotDefinition's flags updated from [%s] to [%s] %s",
+                    "Snapshot's flags updated from [%s] to [%s] %s",
                     fromFlags,
                     toFlags,
                     getId(snapshot)

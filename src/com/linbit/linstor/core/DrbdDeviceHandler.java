@@ -22,6 +22,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
@@ -62,7 +63,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -75,13 +75,12 @@ import java.util.stream.Stream;
 
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.FileExistsCheck;
+import com.linbit.utils.StringUtils;
 import org.slf4j.event.Level;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import static java.util.stream.Collectors.toList;
 
 /* TODO
  *
@@ -160,16 +159,35 @@ class DrbdDeviceHandler implements DeviceHandler
         drbdMd = new MetaData();
     }
 
-    private ResourceState fillResourceState(final Resource rsc) throws AccessDeniedException
+    private ResourceState initializeResourceState(
+        final ResourceDefinition rscDfn,
+        final Collection<VolumeNumber> vlmNrs
+    )
+        throws AccessDeniedException
     {
         ResourceState rscState = new ResourceState();
+
+        Map<VolumeNumber, VolumeState> vlmStateMap = new TreeMap<>();
+        for (VolumeNumber vlmNr : vlmNrs)
+        {
+            VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr);
+            vlmState.setStorVlmName(rscDfn.getName().displayValue + "_" +
+                String.format("%05d", vlmNr.value));
+            vlmStateMap.put(vlmNr, vlmState);
+        }
+        rscState.setVolumes(vlmStateMap);
+
+        return rscState;
+    }
+
+    private ResourceState fillResourceState(final Resource rsc, final ResourceState rscState) throws AccessDeniedException
+    {
         // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
         //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
         //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
         rscState.setRequiresAdjust(true);
         rscState.setRscName(rsc.getDefinition().getName().getDisplayName());
         {
-            Map<VolumeNumber, VolumeState> vlmStateMap = new TreeMap<>();
             Iterator<Volume> vlmIter = rsc.iterateVolumes();
             while (vlmIter.hasNext())
             {
@@ -178,17 +196,15 @@ class DrbdDeviceHandler implements DeviceHandler
                 VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
 
-                VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr, vlmDfn.getVolumeSize(wrkCtx));
+                VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(vlmNr);
+
+                vlmState.setNetSize(vlmDfn.getVolumeSize(wrkCtx));
                 vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
                     vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE));
-                vlmState.setStorVlmName(rsc.getDefinition().getName().displayValue + "_" +
-                    String.format("%05d", vlmNr.value));
                 vlmState.setMinorNr(vlmDfn.getMinorNr(wrkCtx));
-                vlmStateMap.put(vlmNr, vlmState);
 
                 rscState.setRequiresAdjust(rscState.requiresAdjust() | vlmState.isMarkedForDelete());
             }
-            rscState.setVolumes(vlmStateMap);
         }
 
         return rscState;
@@ -196,45 +212,69 @@ class DrbdDeviceHandler implements DeviceHandler
 
     /**
      * Entry point for the DeviceManager
-     *
-     * @param rsc The resource to perform changes on
-     * @param inProgressSnapshots
      */
     @Override
-    public void dispatchResource(Resource rsc, Collection<Snapshot> inProgressSnapshots)
+    public void dispatchResource(
+        ResourceDefinition rscDfn,
+        Collection<Snapshot> inProgressSnapshots
+    )
     {
+        ResourceName rscName = rscDfn.getName();
         errLog.logTrace(
             "DrbdDeviceHandler: dispatchRsc() - Begin actions: Resource '" +
-            rsc.getDefinition().getName().displayValue + "'"
+                rscName.displayValue + "'"
         );
-        ResourceDefinition rscDfn = rsc.getDefinition();
-        ResourceName rscName = rscDfn.getName();
-        Node localNode = rsc.getAssignedNode();
-        NodeName localNodeName = localNode.getName();
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        boolean deleted = false;
+        ApiCallRcImpl apiCallDelRc = null;
         try
         {
-            // Volatile state information of the resource and its volumes
-            ResourceState rscState = fillResourceState(rsc);
+            Node localNode = controllerPeerConnector.getLocalNode();
+            NodeName localNodeName = localNode.getName();
 
-            // Evaluate resource & volumes state by checking the DRBD state
-            evaluateDrbdResource(rsc, rscDfn, rscState);
-
-            if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
-                rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
+            Resource rsc = rscDfn.getResource(wrkCtx, localNodeName);
+            if (rsc != null)
             {
-                deleteResource(rsc, rscDfn, localNode, rscState);
-                deleted = true;
-            }
-            else
-            {
-                createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
-                apiCallRc.addEntry("Resource deployed", ApiConsts.CREATED);
+                // Volatile state information of the resource and its volumes
+                ResourceState rscState = initializeResourceState(
+                    rscDfn,
+                    rscDfn.streamVolumeDfn(wrkCtx).map(VolumeDefinition::getVolumeNumber).collect(Collectors.toSet())
+                );
+
+                // Evaluate resource & volumes state by checking the DRBD state
+                evaluateDrbdResource(localNodeName, rscDfn, rscState);
+
+                fillResourceState(rsc, rscState);
+
+                if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
+                    rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
+                {
+                    deleteResource(rsc, rscDfn, localNode, rscState);
+                    apiCallDelRc = makeDeleteRc(rsc, rscName, localNodeName);
+                }
+                else
+                {
+                    createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
+                    apiCallRc.addEntry("Resource deployed", ApiConsts.CREATED);
+                }
             }
 
-            handleSnapshots(rscName, inProgressSnapshots, rscState);
+            {
+                // Volatile state information of the resource and its volumes
+                ResourceState rscState = initializeResourceState(
+                    rscDfn,
+                    inProgressSnapshots.stream()
+                        .map(Snapshot::getSnapshotDefinition)
+                        .flatMap(snapshotDefinition -> snapshotDefinition.getAllSnapshotVolumeDefinitions().stream())
+                        .map(SnapshotVolumeDefinition::getVolumeNumber)
+                        .collect(Collectors.toSet())
+                );
+
+                // Evaluate resource & volumes state by checking the DRBD state
+                evaluateDrbdResource(localNodeName, rscDfn, rscState);
+
+                handleSnapshots(rscName, inProgressSnapshots, rscState);
+            }
         }
         catch (ResourceException rscExc)
         {
@@ -276,34 +316,8 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             EventIdentifier eventIdentifier = EventIdentifier.resourceDefinition(
                 ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE, rscName);
-            if (deleted)
+            if (apiCallDelRc != null)
             {
-                ApiCallRcImpl apiCallDelRc = new ApiCallRcImpl();
-
-                // objrefs
-                Map<String, String> objRefs = new HashMap<>();
-                objRefs.put(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
-                objRefs.put(ApiConsts.KEY_NODE, localNodeName.displayValue);
-
-                // varRefs
-                Map<String, String> varRefs = new HashMap<>();
-                varRefs.put(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
-                objRefs.put(ApiConsts.KEY_NODE_NAME, localNodeName.displayValue);
-
-                AbsApiCallHandler.reportSuccessStatic(
-                    String.format("Resource '%s' on node '%s' successfully deleted.",
-                        rscName.displayValue,
-                        localNodeName.displayValue),
-                    String.format("Resource '%s' on node '%s' with UUID '%s' deleted.",
-                        rscName.displayValue,
-                        localNodeName.displayValue,
-                        rsc.getUuid().toString()),
-                    ApiConsts.DELETED | ApiConsts.MASK_RSC | ApiConsts.MASK_SUCCESS,
-                    apiCallDelRc,
-                    objRefs,
-                    varRefs,
-                    errLog
-                );
                 deploymentStateTracker.setDeploymentState(rscName, apiCallDelRc);
                 eventBroker.closeEventStream(eventIdentifier);
             }
@@ -326,8 +340,39 @@ class DrbdDeviceHandler implements DeviceHandler
 
         errLog.logTrace(
             "DrbdDeviceHandler: dispatchRsc() - End actions: Resource '" +
-            rsc.getDefinition().getName().displayValue + "'"
+            rscName.displayValue + "'"
         );
+    }
+
+    private ApiCallRcImpl makeDeleteRc(Resource rsc, ResourceName rscName, NodeName localNodeName)
+    {
+        ApiCallRcImpl apiCallDelRc = new ApiCallRcImpl();
+
+        // objrefs
+        Map<String, String> objRefs = new HashMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
+        objRefs.put(ApiConsts.KEY_NODE, localNodeName.displayValue);
+
+        // varRefs
+        Map<String, String> varRefs = new HashMap<>();
+        varRefs.put(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
+        objRefs.put(ApiConsts.KEY_NODE_NAME, localNodeName.displayValue);
+
+        AbsApiCallHandler.reportSuccessStatic(
+            String.format("Resource '%s' on node '%s' successfully deleted.",
+                rscName.displayValue,
+                localNodeName.displayValue),
+            String.format("Resource '%s' on node '%s' with UUID '%s' deleted.",
+                rscName.displayValue,
+                localNodeName.displayValue,
+                rsc.getUuid().toString()),
+            ApiConsts.DELETED | ApiConsts.MASK_RSC | ApiConsts.MASK_SUCCESS,
+            apiCallDelRc,
+            objRefs,
+            varRefs,
+            errLog
+        );
+        return apiCallDelRc;
     }
 
     private void sendRequestPrimaryResource(
@@ -369,7 +414,7 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void evaluateDrbdResource(
-        Resource rsc,
+        NodeName localNodeName,
         ResourceDefinition rscDfn,
         ResourceState rscState
     )
@@ -381,7 +426,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             rscState.setPresent(true);
             evaluateDrbdRole(rscState, drbdRsc);
-            evaluateDrbdConnections(rsc, rscDfn, rscState, drbdRsc);
+            evaluateDrbdConnections(localNodeName, rscDfn, rscState, drbdRsc);
             evaluateDrbdVolumes(rscState, drbdRsc);
             rscState.setSuspendedUser(drbdRsc.getSuspendedUser() == null ? false : drbdRsc.getSuspendedUser());
         }
@@ -409,7 +454,7 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void evaluateDrbdConnections(
-        Resource rsc,
+        NodeName localNodeName,
         ResourceDefinition rscDfn,
         ResourceState rscState,
         DrbdResource drbdRsc
@@ -425,11 +470,9 @@ class DrbdDeviceHandler implements DeviceHandler
             Resource peerRsc = peerRscIter.next();
 
             // Skip the local resource
-            if (peerRsc != rsc)
+            if (!peerRsc.getAssignedNode().getName().equals(localNodeName))
             {
-                Node peerNode = rsc.getAssignedNode();
-                NodeName peerNodeName = peerNode.getName();
-                DrbdConnection drbdConn = drbdRsc.getConnection(peerNodeName.displayValue);
+                DrbdConnection drbdConn = drbdRsc.getConnection(localNodeName.displayValue);
                 if (drbdConn != null)
                 {
                     DrbdConnection.State connState = drbdConn.getState();
@@ -548,7 +591,7 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void getVolumeStorageDriver(
+    private void ensureVolumeStorageDriver(
         ResourceName rscName,
         Node localNode,
         Volume vlm,
@@ -661,7 +704,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             if (!vlmState.isDriverKnown())
             {
-                getVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
+                ensureVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
             }
 
             StorageDriver storDrv = vlmState.getDriver();
@@ -923,7 +966,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                         if (!vlmState.isDriverKnown())
                         {
-                            getVolumeStorageDriver(
+                            ensureVolumeStorageDriver(
                                 rscName, localNode, vlm, vlmDfn,
                                 vlmState, nodeProps, rscProps, rscDfnProps
                             );
@@ -1215,7 +1258,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     {
                         if (!vlmState.isDriverKnown())
                         {
-                            getVolumeStorageDriver(
+                            ensureVolumeStorageDriver(
                                 rscName, localNode, vlm, vlmDfn, vlmState,
                                 nodeProps, rscProps, rscDfnProps
                             );
@@ -1305,17 +1348,42 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void handleSnapshots(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
-        throws ResourceException, AccessDeniedException
+        throws ResourceException, AccessDeniedException, StorageException
     {
+        errLog.logTrace("Handle snapshots for " + rscName.getDisplayName());
+
+        if (errLog.isTraceEnabled())
+        {
+            for (SnapshotState snapshotState : deploymentStateTracker.getSnapshotStates(rscName))
+            {
+                errLog.logTrace("Snapshot Rsc: '" + rscName.getDisplayName() + "', " +
+                    "Snapshot: '" + snapshotState.getSnapshotName().getDisplayName() + "' current state '" +
+                    new StringUtils.ConditionalStringJoiner(", ")
+                        .addIf(snapshotState.isSnapshotDeleted(), "deleted")
+                        .addIf(snapshotState.isSuspended(), "suspended")
+                        .addIf(snapshotState.isSnapshotTaken(), "taken")
+                        .toString() + "'");
+            }
+        }
+
         boolean snapshotInProgress = false;
         boolean shouldSuspend = false;
         for (Snapshot snapshot : snapshots)
         {
-            // TODO Actually delete
-            errLog.logInfo("### Snapshot " + snapshot.getSnapshotDefinition() +
-                " delete: " + snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE));
+            if (errLog.isTraceEnabled())
+            {
+                errLog.logTrace("Snapshot " + snapshot.getSnapshotDefinition() + " target state '" +
+                    new StringUtils.ConditionalStringJoiner(", ")
+                        .addIf(snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE), "delete")
+                        .addIf(snapshot.getSuspendResource(), "suspend")
+                        .addIf(snapshot.getTakeSnapshot(), "take")
+                        .toString() + "'");
+            }
 
-            snapshotInProgress = true;
+            if (!snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
+            {
+                snapshotInProgress = true;
+            }
 
             if (snapshot.getSuspendResource())
             {
@@ -1329,22 +1397,25 @@ class DrbdDeviceHandler implements DeviceHandler
 
         Set<SnapshotName> alreadySnapshotted = getAlreadySnapshotted(rscName);
 
+        Set<SnapshotName> deletedSnapshots = new HashSet<>();
         Set<SnapshotName> newlyTakenSnapshots = new HashSet<>();
         for (Snapshot snapshot : snapshots)
         {
             SnapshotName snapshotName = snapshot.getSnapshotDefinition().getName();
 
-            if (snapshot.getTakeSnapshot() && !alreadySnapshotted.contains(snapshotName))
+            if (snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
             {
-                for (SnapshotVolumeDefinition snapshotVolumeDefinition :
-                    snapshot.getSnapshotDefinition().getAllSnapshotVolumeDefinitions())
+                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
                 {
-                    VolumeState vlmState = rscState.getVolumeState(snapshotVolumeDefinition.getVolumeNumber());
+                    VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
+                        snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber());
 
                     try
                     {
-                        takeVolumeSnapshot(
-                            snapshot.getSnapshotDefinition().getResourceDefinition(),
+                        ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
+
+                        deleteVolumeSnapshot(
+                            snapshotVolume,
                             snapshotName,
                             (VolumeStateDevManager) vlmState
                         );
@@ -1352,8 +1423,41 @@ class DrbdDeviceHandler implements DeviceHandler
                     catch (VolumeException vlmExc)
                     {
                         throw new ResourceException(
-                            "Deployment of snapshot for resource '" + rscName.displayValue + "' volume " +
-                                vlmState.getVlmNr().value + " failed",
+                            "Deletion of snapshot '" + snapshotName +
+                                "' for resource '" + rscName.displayValue +
+                                "' volume " + vlmState.getVlmNr().value + " failed",
+                            null, vlmExc.getMessage(),
+                            null, null, vlmExc
+                        );
+                    }
+                }
+
+                deviceManagerProvider.get().notifySnapshotDeleted(snapshot);
+                deletedSnapshots.add(snapshotName);
+            }
+            else if (snapshot.getTakeSnapshot() && !alreadySnapshotted.contains(snapshotName))
+            {
+                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
+                {
+                    VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
+                        snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber());
+
+                    try
+                    {
+                        ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
+
+                        takeVolumeSnapshot(
+                            snapshot.getSnapshotDefinition().getResourceDefinition(),
+                            snapshotName,
+                            vlmState
+                        );
+                    }
+                    catch (VolumeException vlmExc)
+                    {
+                        throw new ResourceException(
+                            "Deployment of snapshot '" + snapshotName +
+                                "' for resource '" + rscName.displayValue +
+                                "' volume " + vlmState.getVlmNr().value + " failed",
                             null, vlmExc.getMessage(),
                             null, null, vlmExc
                         );
@@ -1363,13 +1467,18 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
+        List<SnapshotState> newSnapshotStates = computeNewSnapshotStates(
+            snapshots,
+            shouldSuspend,
+            alreadySnapshotted,
+            newlyTakenSnapshots,
+            deletedSnapshots
+        );
+
+        deploymentStateTracker.setSnapshotStates(rscName, newSnapshotStates);
+
         if (snapshotInProgress)
         {
-            List<SnapshotState> newSnapshotStates =
-                computeNewSnapshotStates(snapshots, shouldSuspend, alreadySnapshotted, newlyTakenSnapshots);
-
-            deploymentStateTracker.setSnapshotStates(rscName, newSnapshotStates);
-
             for (Snapshot snapshot : snapshots)
             {
                 eventBroker.openOrTriggerEvent(EventIdentifier.snapshotDefinition(
@@ -1381,14 +1490,14 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         else
         {
-            deploymentStateTracker.removeSnapshotStates(rscName);
-
-            for (Snapshot snapshot : snapshots)
+            for (SnapshotState snapshotState : deploymentStateTracker.getSnapshotStates(rscName))
             {
-                eventBroker.closeEventStream(EventIdentifier.snapshotDefinition(
+                // Send a 'close' event even if the stream is not open so that the controller is notified
+                // of deleted snapshots
+                eventBroker.closeEventStreamEvenIfNotOpen(EventIdentifier.snapshotDefinition(
                     InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
                     rscName,
-                    snapshot.getSnapshotDefinition().getName()
+                    snapshotState.getSnapshotName()
                 ));
             }
         }
@@ -1437,11 +1546,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
     private Set<SnapshotName> getAlreadySnapshotted(ResourceName rscName)
     {
-        List<SnapshotState> snapshotStates =
-            deploymentStateTracker.getSnapshotStates(rscName);
-
-        return snapshotStates == null ? Collections.emptySet() :
-            snapshotStates.stream()
+        return deploymentStateTracker.getSnapshotStates(rscName).stream()
                 .filter(SnapshotState::isSnapshotTaken)
                 .map(SnapshotState::getSnapshotName)
                 .collect(Collectors.toSet());
@@ -1451,7 +1556,8 @@ class DrbdDeviceHandler implements DeviceHandler
         Collection<Snapshot> snapshots,
         boolean shouldSuspend,
         Set<SnapshotName> alreadySnapshotted,
-        Set<SnapshotName> newlyTakenSnapshots
+        Set<SnapshotName> newlyTakenSnapshots,
+        Set<SnapshotName> deletedSnapshots
     )
     {
         Set<SnapshotName> allSnapshotted = Stream.concat(alreadySnapshotted.stream(), newlyTakenSnapshots.stream())
@@ -1461,9 +1567,90 @@ class DrbdDeviceHandler implements DeviceHandler
             .map(snapshot -> new SnapshotState(
                 snapshot.getSnapshotDefinition().getName(),
                 shouldSuspend,
-                allSnapshotted.contains(snapshot.getSnapshotDefinition().getName())
+                allSnapshotted.contains(snapshot.getSnapshotDefinition().getName()),
+                deletedSnapshots.contains(snapshot.getSnapshotDefinition().getName())
             ))
-            .collect(toList());
+            .collect(Collectors.toList());
+    }
+
+    private void ensureSnapshotVolumeStorageDriver(SnapshotVolume snapshotVolume, VolumeStateDevManager vlmState)
+        throws AccessDeniedException, StorageException
+    {
+        if (vlmState.getDriver() == null)
+        {
+            StorPool storagePool = snapshotVolume.getStorPool(wrkCtx);
+            if (storagePool != null)
+            {
+                StorageDriver driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer);
+                if (driver != null)
+                {
+                    storagePool.reconfigureStorageDriver(driver);
+                    vlmState.setDriver(driver);
+                    vlmState.setStorPoolName(storagePool.getName());
+                }
+                else
+                {
+                    errLog.logError(
+                        "Cannot find driver for pool '" + storagePool.getName().displayValue + "' for volume " +
+                            vlmState.getVlmNr().toString() + " on the local node"
+                    );
+                }
+            }
+            else
+            {
+                errLog.logError("Snapshot volume " + snapshotVolume + " has no storage pool");
+            }
+        }
+    }
+
+    private void deleteVolumeSnapshot(
+        SnapshotVolume snapshotVolume,
+        SnapshotName snapshotName,
+        VolumeStateDevManager vlmState
+    )
+        throws VolumeException, AccessDeniedException, StorageException
+    {
+        ResourceDefinition rscDfn = snapshotVolume.getSnapshot().getSnapshotDefinition().getResourceDefinition();
+
+        if (vlmState.getDriver() != null)
+        {
+            try
+            {
+                vlmState.getDriver().deleteSnapshot(
+                    vlmState.getStorVlmName(),
+                    snapshotName.displayValue
+                );
+            }
+            catch (StorageException storExc)
+            {
+                throw new VolumeException(
+                    "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                        vlmState.getVlmNr().value,
+                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                    "Deletion of the snapshot failed",
+                    null,
+                    null,
+                    storExc
+                );
+            }
+        }
+        else
+        {
+            String message = "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue +
+                "' volume " + vlmState.getVlmNr();
+            errLog.reportProblem(
+                Level.ERROR,
+                new StorageException(
+                    message,
+                    message,
+                    "The selected storage pool driver for the volume is unavailable",
+                    null,
+                    null,
+                    null
+                ),
+                null, null, null
+            );
+        }
     }
 
     private void takeVolumeSnapshot(
@@ -1479,8 +1666,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 vlmState.getDriver().createSnapshot(
                     vlmState.getStorVlmName(),
-                    snapshotName.displayValue,
-                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                    snapshotName.displayValue
                 );
             }
             catch (StorageException storExc)
@@ -1494,10 +1680,6 @@ class DrbdDeviceHandler implements DeviceHandler
                     null,
                     storExc
                 );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
             }
         }
         else
@@ -1588,7 +1770,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     if (!vlmState.isDriverKnown())
                     {
-                        getVolumeStorageDriver(
+                        ensureVolumeStorageDriver(
                             rscName, localNode, vlm, vlmDfn, vlmState,
                             nodeProps, rscProps, rscDfnProps
                         );
@@ -1725,7 +1907,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             try
             {
-                for (Resource curRsc : localNode.streamResources(wrkCtx).collect(toList()))
+                for (Resource curRsc : localNode.streamResources(wrkCtx).collect(Collectors.toList()))
                 {
                     System.out.printf(
                         "Assigned resource %-24s:\n",

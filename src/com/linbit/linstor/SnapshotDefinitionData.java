@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -10,6 +11,7 @@ import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
@@ -19,7 +21,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class SnapshotDefinitionData extends BaseTransactionObject implements SnapshotDefinition
 {
@@ -34,12 +35,16 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     private final SnapshotName snapshotName;
 
+    private final SnapshotDefinitionDataDatabaseDriver dbDriver;
+
     // State flags
     private final StateFlags<SnapshotDfnFlags> flags;
 
     private final TransactionMap<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
 
     private final Map<NodeName, Snapshot> snapshotMap;
+
+    private final TransactionSimpleObject<SnapshotDefinitionData, Boolean> deleted;
 
     public SnapshotDefinitionData(
         UUID objIdRef,
@@ -57,6 +62,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         objId = objIdRef;
         resourceDfn = resourceDfnRef;
         snapshotName = snapshotNameRef;
+        dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
         snapshotMap = snapshotMapRef;
@@ -71,10 +77,13 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
         snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
 
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
         transObjs = Arrays.asList(
             resourceDfn,
             snapshotVolumeDefinitionMap,
-            flags
+            flags,
+            deleted
         );
     }
 
@@ -87,66 +96,77 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     @Override
     public ResourceDefinition getResourceDefinition()
     {
+        checkDeleted();
         return resourceDfn;
     }
 
     @Override
     public SnapshotName getName()
     {
+        checkDeleted();
         return snapshotName;
     }
 
     @Override
     public SnapshotVolumeDefinition getSnapshotVolumeDefinition(VolumeNumber volumeNumber)
     {
+        checkDeleted();
         return snapshotVolumeDefinitionMap.get(volumeNumber);
     }
 
     @Override
     public void addSnapshotVolumeDefinition(SnapshotVolumeDefinition snapshotVolumeDefinition)
     {
+        checkDeleted();
         snapshotVolumeDefinitionMap.put(snapshotVolumeDefinition.getVolumeNumber(), snapshotVolumeDefinition);
     }
 
     @Override
     public void removeSnapshotVolumeDefinition(VolumeNumber volumeNumber)
     {
+        checkDeleted();
         snapshotVolumeDefinitionMap.remove(volumeNumber);
     }
 
     @Override
     public Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions()
     {
+        checkDeleted();
         return snapshotVolumeDefinitionMap.values();
     }
 
     @Override
     public Snapshot getSnapshot(NodeName clNodeName)
     {
+        checkDeleted();
         return snapshotMap.get(clNodeName);
     }
 
     @Override
     public Collection<Snapshot> getAllSnapshots()
     {
+        checkDeleted();
         return snapshotMap.values();
     }
 
     @Override
     public void addSnapshot(Snapshot snapshotRef)
     {
+        checkDeleted();
         snapshotMap.put(snapshotRef.getNode().getName(), snapshotRef);
     }
 
     @Override
     public void removeSnapshot(Snapshot snapshotRef)
     {
+        checkDeleted();
         snapshotMap.remove(snapshotRef.getNode().getName());
     }
 
     @Override
     public StateFlags<SnapshotDfnFlags> getFlags()
     {
+        checkDeleted();
         return flags;
     }
 
@@ -156,6 +176,48 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         getFlags().enableFlags(accCtx, SnapshotDfnFlags.DELETE);
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        if (!deleted.get())
+        {
+            if (!snapshotMap.isEmpty())
+            {
+                throw new ImplementationError("Cannot delete snapshot definition which contains snapshots");
+            }
+
+            resourceDfn.removeSnapshotDfn(accCtx, snapshotName);
+
+            // Shallow copy the volume collection because calling delete results in elements being removed from it
+            Collection<SnapshotVolumeDefinition> snapshotVolumeDefinitions =
+                new ArrayList<>(snapshotVolumeDefinitionMap.values());
+            for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
+            {
+                snapshotVolumeDefinition.delete(accCtx);
+            }
+
+            activateTransMgr();
+            dbDriver.delete(this);
+
+            deleted.set(true);
+        }
+    }
+
+    @Override
+    public boolean isDeleted()
+    {
+        return deleted.get();
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted.get())
+        {
+            throw new AccessToDeletedDataException("Access to deleted snapshot definition");
+        }
     }
 
     @Override

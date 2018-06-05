@@ -354,6 +354,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objProt.requireAccess(accCtx, AccessType.USE);
 
         snapshotDfnMap.remove(snapshotName);
+        inProgressSnapshots.remove(snapshotName);
     }
 
     @Override

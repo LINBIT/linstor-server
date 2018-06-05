@@ -4,11 +4,14 @@ import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -26,6 +29,10 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
 
     private final StorPool storPool;
 
+    private final SnapshotVolumeDataDatabaseDriver dbDriver;
+
+    private final TransactionSimpleObject<SnapshotVolumeData, Boolean> deleted;
+
     public SnapshotVolumeData(
         UUID objIdRef,
         Snapshot snapshotRef,
@@ -42,12 +49,16 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
         snapshot = snapshotRef;
         snapshotVolumeDefinition = snapshotVolumeDefinitionRef;
         storPool = storPoolRef;
+        dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
 
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
         transObjs = Arrays.asList(
             snapshot,
-            snapshotVolumeDefinition
+            snapshotVolumeDefinition,
+            deleted
         );
     }
 
@@ -60,12 +71,14 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
     @Override
     public Snapshot getSnapshot()
     {
+        checkDeleted();
         return snapshot;
     }
 
     @Override
     public SnapshotVolumeDefinition getSnapshotVolumeDefinition()
     {
+        checkDeleted();
         return snapshotVolumeDefinition;
     }
 
@@ -73,7 +86,35 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
     public StorPool getStorPool(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return storPool;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        if (!deleted.get())
+        {
+            snapshot.getSnapshotDefinition().getResourceDefinition()
+                .getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+
+            snapshot.removeSnapshotVolume(this);
+            snapshotVolumeDefinition.removeSnapshotVolume(this);
+
+            activateTransMgr();
+            dbDriver.delete(this);
+
+            deleted.set(true);
+        }
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted.get())
+        {
+            throw new AccessToDeletedDataException("Access to deleted snapshot volume");
+        }
     }
 
     @Override

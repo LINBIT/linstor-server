@@ -38,10 +38,9 @@ public class VolumeStateDevManager extends VolumeState
      */
     protected String storVlmName = null;
 
-    public VolumeStateDevManager(VolumeNumber volNrRef, long netSizeSpec)
+    public VolumeStateDevManager(VolumeNumber volNrRef)
     {
         vlmNr = volNrRef;
-        netSize = netSizeSpec;
     }
 
     public boolean isMarkedForDelete()

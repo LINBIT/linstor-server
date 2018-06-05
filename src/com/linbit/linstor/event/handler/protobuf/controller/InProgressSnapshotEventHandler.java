@@ -37,7 +37,8 @@ public class InProgressSnapshotEventHandler implements EventHandler
         throws IOException
     {
         if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) ||
-            eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
+            eventAction.equals(ApiConsts.EVENT_STREAM_VALUE) ||
+            eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
         {
             EventInProgressSnapshotOuterClass.EventInProgressSnapshot inProgressSnapshot =
                 EventInProgressSnapshotOuterClass.EventInProgressSnapshot.parseDelimitedFrom(eventDataIn);
@@ -45,7 +46,8 @@ public class InProgressSnapshotEventHandler implements EventHandler
             SnapshotState snapshotState = new SnapshotState(
                 eventIdentifier.getSnapshotName(),
                 inProgressSnapshot.getSuspended(),
-                inProgressSnapshot.getSnapshotTaken()
+                inProgressSnapshot.getSnapshotTaken(),
+                inProgressSnapshot.getDeleted()
             );
 
             satelliteStateHelper.onSatelliteState(
@@ -57,7 +59,11 @@ public class InProgressSnapshotEventHandler implements EventHandler
                 )
             );
         }
-        else
+
+        snapshotStateMachine.stepResourceSnapshots(eventIdentifier, false, false);
+
+        if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED) ||
+            eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION))
         {
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
@@ -68,7 +74,5 @@ public class InProgressSnapshotEventHandler implements EventHandler
                 )
             );
         }
-
-        snapshotStateMachine.stepResourceSnapshots(eventIdentifier, false, false);
     }
 }

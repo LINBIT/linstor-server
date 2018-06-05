@@ -3,8 +3,8 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotId;
-import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import java.util.Map;
@@ -17,7 +17,7 @@ public interface DeviceManager extends DrbdStateChange
     void rscDefUpdateApplied(Set<ResourceName> rscDfnSet);
     void storPoolUpdateApplied(Set<StorPoolName> storPoolSet);
     void rscUpdateApplied(Map<ResourceName, Set<NodeName>> rscMap);
-    void snapshotUpdateApplied(Set<SnapshotId> snapshotIdSet);
+    void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
     void updateApplied(
         Set<NodeName> nodeSet,
         Set<ResourceName> rscDfnSet,
@@ -28,6 +28,7 @@ public interface DeviceManager extends DrbdStateChange
     void notifyResourceApplied(Resource rsc);
     void notifyResourceDeleted(Resource rsc);
     void notifyVolumeDeleted(Volume vlm);
+    void notifySnapshotDeleted(Snapshot snapshot);
 
     void fullSyncApplied();
 

@@ -10,6 +10,7 @@ import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
@@ -33,10 +34,14 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     // Reference to the node this resource is assigned to
     private final Node node;
 
+    private final SnapshotDataDatabaseDriver dbDriver;
+
     private final TransactionMap<VolumeNumber, SnapshotVolume> snapshotVlmMap;
 
     // State flags
     private final StateFlags<SnapshotFlags> flags;
+
+    private final TransactionSimpleObject<SnapshotData, Boolean> deleted;
 
     private boolean suspendResource;
 
@@ -58,6 +63,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         objId = objIdRef;
         snapshotDfn = snapshotDfnRef;
         node = nodeRef;
+        dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
 
@@ -71,53 +77,70 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
             initFlags
         );
 
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
         transObjs = Arrays.asList(
             snapshotDfn,
             node,
             snapshotVlmMap,
-            flags
+            flags,
+            deleted
         );
     }
 
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
     @Override
     public SnapshotDefinition getSnapshotDefinition()
     {
+        checkDeleted();
         return snapshotDfn;
     }
 
     @Override
     public Node getNode()
     {
+        checkDeleted();
         return node;
     }
 
     @Override
     public void addSnapshotVolume(SnapshotVolume snapshotVolume)
     {
+        checkDeleted();
         snapshotVlmMap.put(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber(), snapshotVolume);
     }
 
     @Override
     public SnapshotVolume getSnapshotVolume(VolumeNumber volumeNumber)
     {
+        checkDeleted();
         return snapshotVlmMap.get(volumeNumber);
     }
 
     @Override
     public Collection<SnapshotVolume> getAllSnapshotVolumes()
     {
+        checkDeleted();
         return snapshotVlmMap.values();
+    }
+
+    @Override
+    public void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData)
+    {
+        checkDeleted();
+        snapshotVlmMap.remove(snapshotVolumeData.getSnapshotVolumeDefinition().getVolumeNumber());
     }
 
     @Override
     public StateFlags<SnapshotFlags> getFlags()
     {
+        checkDeleted();
         return flags;
     }
 
@@ -127,6 +150,38 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     {
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
         getFlags().enableFlags(accCtx, SnapshotFlags.DELETE);
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        if (!deleted.get())
+        {
+            snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+
+            snapshotDfn.removeSnapshot(this);
+
+            // Shallow copy the volume collection because calling delete results in elements being removed from it
+            Collection<SnapshotVolume> snapshotVolumes = new ArrayList<>(snapshotVlmMap.values());
+            for (SnapshotVolume snapshotVolume : snapshotVolumes)
+            {
+                snapshotVolume.delete(accCtx);
+            }
+
+            activateTransMgr();
+            dbDriver.delete(this);
+
+            deleted.set(true);
+        }
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted.get())
+        {
+            throw new AccessToDeletedDataException("Access to deleted snapshot");
+        }
     }
 
     @Override

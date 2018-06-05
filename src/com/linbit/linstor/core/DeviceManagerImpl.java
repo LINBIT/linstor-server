@@ -17,7 +17,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotId;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -104,6 +104,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
+    private final Set<SnapshotDefinition.Key> deletedSnapshotSet = new TreeSet<>();
 
     private final LinStorScope deviceMgrScope;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -195,9 +196,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     /**
-     * Dispatch resource to a specific handler depending on type
+     * Dispatch resource and/or snapshots to a specific handler depending on type
      */
-    void dispatchResource(Resource rsc, Collection<Snapshot> snapshots, SyncPoint phaseLockRef)
+    void dispatchResource(ResourceDefinition rscDfn, Collection<Snapshot> snapshots, SyncPoint phaseLockRef)
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
@@ -205,7 +206,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         DeviceHandlerInvocation devHndInv = devHandlerInvocFactoryProvider.get().create(
             this,
             drbdHnd,
-            rsc,
+            rscDfn,
             snapshots,
             phaseLockRef
         );
@@ -367,11 +368,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void snapshotUpdateApplied(Set<SnapshotId> snapshotIdSet)
+    public void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet)
     {
         synchronized (sched)
         {
-            for (SnapshotId snapshotId : snapshotIdSet)
+            for (SnapshotDefinition.Key snapshotId : snapshotKeySet)
             {
                 rcvPendingBundle.updSnapshotMap.remove(snapshotId);
             }
@@ -735,9 +736,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     if (rscDfn != null)
                     {
                         Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
-                        if (rsc != null)
+
+                        List<Snapshot> snapshots = rscDfn.getSnapshotDfns(wrkCtx).stream()
+                            .map(snapshotDefinition -> snapshotDefinition.getSnapshot(localNode.getName()))
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
+                        if (rsc != null || !snapshots.isEmpty())
                         {
-                            boolean dispatch = true;
+                            boolean needMasterKey = false;
                             // If the master key is not known, skip dispatching resources that
                             // have encrypted volumes
                             if (!haveMasterKey)
@@ -748,18 +755,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                                     VolumeDefinition vlmDfn = vlmDfnIter.next();
                                     if (vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
                                     {
-                                        dispatch = false;
+                                        needMasterKey = true;
                                         break;
                                     }
                                 }
                             }
-                            if (dispatch)
+                            if (!needMasterKey)
                             {
-                                List<Snapshot> snapshots = rscDfn.getSnapshotDfns(wrkCtx).stream()
-                                    .map(snapshotDefinition -> snapshotDefinition.getSnapshot(localNode.getName()))
-                                    .filter(Objects::nonNull)
-                                    .collect(Collectors.toList());
-                                dispatchResource(rsc, snapshots, phaseLock);
+                                dispatchResource(rscDfn, snapshots, phaseLock);
                             }
                             else
                             {
@@ -774,7 +777,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         {
                             errLog.logWarning(
                                 "Dispatch request for resource definition '" + rscName.displayValue +
-                                "' which has no corresponding resource object on this satellite"
+                                "' which has no corresponding resource object or snapshots on this satellite"
                             );
                         }
                     }
@@ -819,6 +822,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         final Set<NodeName> localDelNodeSet = new TreeSet<>();
         final Set<ResourceName> localDelRscSet;
         final Set<VolumeDefinition.Key> localDelVlmSet;
+        final Set<SnapshotDefinition.Key> localDelSnapshotSet;
 
         // Shallow-copy the sets to avoid having to mix locking the sched lock and
         // the satellite's reconfigurationLock, rscDfnMapLock
@@ -828,6 +832,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             deletedRscSet.clear();
             localDelVlmSet = new TreeSet<>(deletedVlmSet);
             deletedVlmSet.clear();
+            localDelSnapshotSet = new TreeSet<>(deletedSnapshotSet);
+            deletedSnapshotSet.clear();
         }
 
         Lock rcfgRdLock = reconfigurationLock.readLock();
@@ -840,6 +846,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             rscDfnMapWrLock.lock();
             try
             {
+                for (SnapshotDefinition.Key snapshotKey : localDelSnapshotSet)
+                {
+                    ResourceDefinition resourceDefinition = rscDfnMap.get(snapshotKey.getResourceName());
+                    if (resourceDefinition != null)
+                    {
+                        SnapshotDefinition snapshotDefinition =
+                            resourceDefinition.getSnapshotDfn(wrkCtx, snapshotKey.getSnapshotName());
+
+                        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+                        {
+                            snapshot.delete(wrkCtx);
+                        }
+
+                        snapshotDefinition.delete(wrkCtx);
+                    }
+                }
+
                 // From the perspective of this satellite, once a volume is deleted the corresponding peer volumes are
                 // irrelevant and we can delete our local copy of the entire volume definition.
                 for (VolumeDefinition.Key volumeKey : localDelVlmSet)
@@ -979,9 +1002,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestSnapshotUpdates(Map<SnapshotId, UUID> updSnapshotMap)
+    private void requestSnapshotUpdates(Map<SnapshotDefinition.Key, UUID> updSnapshotMap)
     {
-        for (Entry<SnapshotId, UUID> entry : updSnapshotMap.entrySet())
+        for (Entry<SnapshotDefinition.Key, UUID> entry : updSnapshotMap.entrySet())
         {
             errLog.logTrace("Requesting update for snapshot '" + entry.getKey().getSnapshotName().displayValue + "'" +
                 " of resource '" + entry.getKey().getResourceName().displayValue + "'");
@@ -1118,11 +1141,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
+    public void notifySnapshotDeleted(Snapshot snapshot)
+    {
+        // Remember the snapshot for removal after the DeviceHandler instances have finished
+        synchronized (sched)
+        {
+            SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
+            deletedSnapshotSet.add(new SnapshotDefinition.Key(
+                snapshotDefinition.getResourceDefinition().getName(), snapshotDefinition.getName()));
+        }
+    }
+
     static class DeviceHandlerInvocation implements Runnable
     {
         private final DeviceManagerImpl devMgr;
         private final DeviceHandler handler;
-        private final Resource rsc;
+        private final ResourceDefinition rscDfn;
         private final Collection<Snapshot> snapshots;
         private final SyncPoint phaseLock;
         private LinStorScope devHndInvScope;
@@ -1132,7 +1167,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         DeviceHandlerInvocation(
             @Assisted DeviceManagerImpl devMgrRef,
             @Assisted DeviceHandler handlerRef,
-            @Assisted Resource rscRef,
+            @Assisted ResourceDefinition rscDfnRef,
             @Assisted Collection<Snapshot> snapshotsRef,
             @Assisted SyncPoint phaseLockRef,
             TransactionMgr transMgrRef, // should be the one from devMgr's scope
@@ -1141,7 +1176,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             devMgr = devMgrRef;
             handler = handlerRef;
-            rsc = rscRef;
+            rscDfn = rscDfnRef;
             snapshots = snapshotsRef;
             phaseLock = phaseLockRef;
             transMgr = transMgrRef;
@@ -1159,7 +1194,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     devHndInvScope.enter();
                     devHndInvScope.seed(TransactionMgr.class, transMgr);
 
-                    handler.dispatchResource(rsc, snapshots);
+                    handler.dispatchResource(rscDfn, snapshots);
                 }
             }
             finally
@@ -1179,7 +1214,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         DeviceHandlerInvocation create(
             DeviceManagerImpl devMgrRef,
             DeviceHandler handlerRef,
-            Resource rscRef,
+            ResourceDefinition rscDfnRef,
             Collection<Snapshot> snapshots,
             SyncPoint phaseLockRef
         );

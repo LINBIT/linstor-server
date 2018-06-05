@@ -167,14 +167,14 @@ public class EventSender
         }
     }
 
-    public void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction)
+    public void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction, boolean onlyIfOpen)
     {
         watchAndStreamLock.lock();
         try
         {
             boolean wasPresent = outgoingEventStreamStore.removeEventStream(eventIdentifier);
 
-            if (wasPresent)
+            if (!onlyIfOpen || wasPresent)
             {
                 sendToWatches(eventIdentifier, eventStreamAction);
             }

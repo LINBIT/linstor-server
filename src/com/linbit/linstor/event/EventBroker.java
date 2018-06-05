@@ -71,7 +71,7 @@ public class EventBroker
                 closeEventStream(eventIdentifier);
                 break;
             case ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION:
-                closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION);
+                closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, true);
                 break;
             default:
                 throw new ImplementationError("Unknown event action '" + eventStreamAction + "'");
@@ -116,16 +116,21 @@ public class EventBroker
 
     public void closeEventStream(EventIdentifier eventIdentifier)
     {
-        closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED);
+        closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED, true);
     }
 
-    private void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction)
+    public void closeEventStreamEvenIfNotOpen(EventIdentifier eventIdentifier)
+    {
+        closeEventStream(eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED, false);
+    }
+
+    private void closeEventStream(EventIdentifier eventIdentifier, String eventStreamAction, boolean onlyIfOpen)
     {
         errorReporter.logTrace("Submitting 'close event stream' event: %s", eventIdentifier);
         workQueue.submit(() ->
             {
                 errorReporter.logTrace("Event 'close event stream' start: %s", eventIdentifier);
-                eventSender.closeEventStream(eventIdentifier, eventStreamAction);
+                eventSender.closeEventStream(eventIdentifier, eventStreamAction, onlyIfOpen);
                 errorReporter.logTrace("Event 'close event stream' end: %s", eventIdentifier);
             }
         );

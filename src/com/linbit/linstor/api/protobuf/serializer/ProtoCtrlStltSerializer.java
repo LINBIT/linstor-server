@@ -587,6 +587,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         EventInProgressSnapshotOuterClass.EventInProgressSnapshot.newBuilder()
             .setSuspended(snapshotState.isSuspended())
             .setSnapshotTaken(snapshotState.isSnapshotTaken())
+            .setDeleted(snapshotState.isSnapshotDeleted())
             .build()
             .writeDelimitedTo(baos);
     }

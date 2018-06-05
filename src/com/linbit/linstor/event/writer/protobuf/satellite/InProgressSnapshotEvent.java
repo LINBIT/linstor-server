@@ -46,4 +46,11 @@ public class InProgressSnapshotEvent implements EventWriter
             null :
             ctrlStltSerializer.builder().inProgressSnapshotEvent(snapshotState).build();
     }
+
+    @Override
+    public void clear(ObjectIdentifier objectIdentifier)
+        throws Exception
+    {
+        deploymentStateTracker.removeSnapshotStates(objectIdentifier.getResourceName());
+    }
 }
