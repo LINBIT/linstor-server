@@ -4,7 +4,6 @@ MAKE = make
 GENRES=./generated-resources
 GENSRC=generated-src
 VERSINFO=$(GENRES)/version-info.properties
-LOGBACKXML=./logback.xml
 
 # echo v0.1 to get it started
 VERSION := $(shell echo $(shell git describe --tags || echo "v0.1") | sed -e 's/^v//;s/^[^0-9]*//;s/-/./;s/\(.*\)-g/\1-/')
@@ -20,7 +19,6 @@ GITHASH := $(shell git rev-parse HEAD)
 		grep -v "gitignore\|gitmodules" >> .filelist
 	@[ -s .filelist ] # assert there is something in .filelist now
 	@echo $(VERSINFO) >> .filelist
-	@echo $(LOGBACKXML) >> .filelist
 	@find $(GENSRC) -name '*.java' >> .filelist
 	@echo libs >> .filelist
 	@echo .filelist >> .filelist
