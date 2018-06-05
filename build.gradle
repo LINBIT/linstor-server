@@ -9,6 +9,8 @@ ext.testRuntimeLib = "${libs}/testRuntime"
 //ext.pluginLib = "${libs}/plugins"
 
 
+def logbackConfig = "logback.xml"
+
 // workaround to force gradle to download not just the dependencies for --offline use
 // but also the plugins
 buildscript {
@@ -187,7 +189,7 @@ applicationDistribution.into("bin") {
 }
 
 applicationDistribution.into("lib/conf") {
-    from("logback.xml")
+    from(logbackConfig)
 }
 
 task showMeCache << {
@@ -347,6 +349,9 @@ ospackage {
     }
     from(configurations.runtime) {
         into 'lib'
+    }
+    from(logbackConfig) {
+        into 'lib/conf'
     }
     from(ControllerStartup) {
         into 'bin'
