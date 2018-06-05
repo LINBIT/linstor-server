@@ -1,4 +1,10 @@
-<configuration>
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds">
+<!-- 
+    Values for scanPeriod can be specified in units of milliseconds, seconds, minutes or hours 
+    https://logback.qos.ch/manual/configuration.html
+-->
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
@@ -7,15 +13,40 @@
         </encoder>
     </appender>
 
-    <logger name="LINSTOR/Controller" level="DEBUG" additivity="false">
+    <appender name="FILE"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/linstor-${log.module}.log</file>
+        <append>true</append>
+        <encoder
+            class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>%d{yyyy_MM_dd HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</Pattern>
+        </encoder>
+
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>logs/linstor-${log.module}.%i.log.zip</FileNamePattern>
+            <MinIndex>1</MinIndex>
+            <MaxIndex>10</MaxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy
+            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>2MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <logger name="LINSTOR/Controller" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
+        <!-- <appender-ref ref="FILE" /> -->
     </logger>
 
-    <logger name="LINSTOR/Satellite" level="DEBUG" additivity="false">
+    <logger name="LINSTOR/Satellite" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
+        <!-- <appender-ref ref="FILE" /> -->
     </logger>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
+        <!-- <appender-ref ref="FILE" /> -->
     </root>
 </configuration>

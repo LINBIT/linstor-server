@@ -265,6 +265,8 @@ public final class Controller
 
     public static void main(String[] args)
     {
+        System.setProperty("log.module", MODULE);
+
         LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
 
         System.out.printf(
