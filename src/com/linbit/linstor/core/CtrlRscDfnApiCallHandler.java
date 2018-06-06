@@ -283,6 +283,13 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     ApiConsts.WARN_NOT_FOUND
                 );
             }
+            else if (!rscDfn.getSnapshotDfns(apiCtx).isEmpty())
+            {
+                addAnswer(
+                    "Cannot delete " + getObjectDescription() + " because it has snapshots.",
+                    ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN
+                );
+            }
             else
             {
                 Iterator<Resource> rscIterator = getPrivilegedRscIterator(rscDfn);
