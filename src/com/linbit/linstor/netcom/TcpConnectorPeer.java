@@ -568,7 +568,7 @@ public class TcpConnectorPeer implements Peer
     public String toString()
     {
         String ret;
-        if (node == null)
+        if (node == null || node.isDeleted())
         {
             ret = getId();
         }
