@@ -1,7 +1,6 @@
 package com.linbit.linstor.api;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
@@ -349,13 +348,15 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
         Set<Node> nodeSet,
         Set<StorPool> storPools,
         Set<Resource> resources,
+        Set<Snapshot> snapshots,
         long timestamp,
         long updateId
     )
     {
         try
         {
-            ctrlStltSerializationWriter.writeFullSync(nodeSet, storPools, resources, timestamp, updateId, baos);
+            ctrlStltSerializationWriter.writeFullSync(
+                nodeSet, storPools, resources, snapshots, timestamp, updateId, baos);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -680,6 +681,7 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             Set<Node> nodeSet,
             Set<StorPool> storPools,
             Set<Resource> resources,
+            Set<Snapshot> snapshots,
             long timestamp,
             long updateId,
             ByteArrayOutputStream baos

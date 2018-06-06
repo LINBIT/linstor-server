@@ -251,6 +251,7 @@ public class StltApiCallHandler
         Set<NodePojo> nodes,
         Set<StorPoolPojo> storPools,
         Set<RscPojo> resources,
+        Set<SnapshotPojo> snapshots,
         long fullSyncId,
         byte[] cryptKey
     )
@@ -303,6 +304,11 @@ public class StltApiCallHandler
                     rscHandler.applyChanges(rsc);
                 }
 
+                for (SnapshotPojo snapshot : snapshots)
+                {
+                    snapshotHandler.applyChanges(snapshot);
+                }
+
                 transMgrProvider.get().commit();
 
                 for (NodePojo node : nodes)
@@ -318,6 +324,10 @@ public class StltApiCallHandler
                 for (RscPojo rsc : resources)
                 {
                     errorReporter.logTrace("Resource '" + rsc.getName() + "' created.");
+                }
+                for (SnapshotPojo snapshot : snapshots)
+                {
+                    errorReporter.logTrace("Snapshot '" + snapshot.getSnaphotDfn() + "' created.");
                 }
                 errorReporter.logTrace("Full sync with controller finished");
 

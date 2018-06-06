@@ -67,7 +67,7 @@ public class ApplySnapshot implements ApiCall
         apiCallHandler.applySnapshotChanges(snapshotRaw);
     }
 
-    private SnapshotPojo asSnapshotPojo(MsgIntSnapshotData snapshotData)
+    static SnapshotPojo asSnapshotPojo(MsgIntSnapshotData snapshotData)
     {
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns =
             snapshotData.getSnapshotVlmDfnsList().stream()

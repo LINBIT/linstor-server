@@ -12,9 +12,11 @@ import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -60,6 +62,14 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         throws AccessDeniedException;
 
     Stream<Resource> streamResources(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    void addSnapshot(AccessContext accCtx, Snapshot snapshot)
+        throws AccessDeniedException;
+
+    void removeSnapshot(SnapshotData snapshotData);
+
+    Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
         throws AccessDeniedException;
 
     void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
@@ -239,6 +249,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     interface InitMaps
     {
         Map<ResourceName, Resource> getRscMap();
+        Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap();
         Map<NetInterfaceName, NetInterface> getNetIfMap();
         Map<StorPoolName, StorPool> getStorPoolMap();
         Map<Node, NodeConnection> getNodeConnMap();

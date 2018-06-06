@@ -124,6 +124,11 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
         private final SnapshotName snapshotName;
 
+        public Key(SnapshotDefinition snapshotDefinition)
+        {
+            this(snapshotDefinition.getResourceDefinition().getName(), snapshotDefinition.getName());
+        }
+
         public Key(ResourceName resourceNameRef, SnapshotName snapshotNameRef)
         {
             resourceName = resourceNameRef;

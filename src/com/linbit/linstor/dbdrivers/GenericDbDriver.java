@@ -343,6 +343,8 @@ public class GenericDbDriver implements DatabaseDriver
             Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = snapshotDriver.loadAll(tmpNodesMap, tmpSnapshotDfnMap);
             for (Snapshot snapshot : loadedSnapshots.keySet())
             {
+                loadedNodesMap.get(snapshot.getNode()).getSnapshotMap()
+                    .put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
                 loadedSnapshotDfns.get(snapshot.getSnapshotDefinition()).getSnapshotMap()
                     .put(snapshot.getNode().getName(), snapshot);
             }

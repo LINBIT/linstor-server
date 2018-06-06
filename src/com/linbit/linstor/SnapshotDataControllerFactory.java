@@ -57,6 +57,7 @@ public class SnapshotDataControllerFactory
 
         driver.create(snapshot);
         snapshotDfn.addSnapshot(snapshot);
+        node.addSnapshot(accCtx, snapshot);
 
         return snapshot;
     }

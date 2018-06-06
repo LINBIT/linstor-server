@@ -161,6 +161,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
             snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
             snapshotDfn.removeSnapshot(this);
+            node.removeSnapshot(this);
 
             // Shallow copy the volume collection because calling delete results in elements being removed from it
             Collection<SnapshotVolume> snapshotVolumes = new ArrayList<>(snapshotVlmMap.values());

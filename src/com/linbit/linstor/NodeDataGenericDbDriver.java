@@ -209,6 +209,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             ObjectProtection objProt = getObjectProtection(nodeName);
 
             final Map<ResourceName, Resource> rscMap = new TreeMap<>();
+            final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
             final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
             final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
             final Map<Node, NodeConnection> nodeConnMap = new TreeMap<>();
@@ -224,6 +225,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
                 transObjFactory,
                 transMgrProvider,
                 rscMap,
+                snapshotMap,
                 netIfMap,
                 storPoolMap,
                 nodeConnMap
@@ -232,6 +234,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             retPair.objA = node;
             retPair.objB = new NodeInitMaps(
                 rscMap,
+                snapshotMap,
                 netIfMap,
                 storPoolMap,
                 nodeConnMap
@@ -390,18 +393,21 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private class NodeInitMaps implements Node.InitMaps
     {
         private final Map<ResourceName, Resource> rscMap;
+        private final Map<SnapshotDefinition.Key, Snapshot> snapshotMap;
         private final Map<NetInterfaceName, NetInterface> netIfMap;
         private final Map<StorPoolName, StorPool> storPoolMap;
         private final Map<Node, NodeConnection> nodeConnMap;
 
         NodeInitMaps(
             Map<ResourceName, Resource> rscMapRef,
+            Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
             Map<NetInterfaceName, NetInterface> netIfMapRef,
             Map<StorPoolName, StorPool> storPoolMapRef,
             Map<Node, NodeConnection> nodeConnMapRef
         )
         {
             rscMap = rscMapRef;
+            snapshotMap = snapshotMapRef;
             netIfMap = netIfMapRef;
             storPoolMap = storPoolMapRef;
             nodeConnMap = nodeConnMapRef;
@@ -411,6 +417,12 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         public Map<ResourceName, Resource> getRscMap()
         {
             return rscMap;
+        }
+
+        @Override
+        public Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap()
+        {
+            return snapshotMap;
         }
 
         @Override

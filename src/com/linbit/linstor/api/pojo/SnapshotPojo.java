@@ -7,7 +7,7 @@ import com.linbit.linstor.SnapshotVolume;
 import java.util.List;
 import java.util.UUID;
 
-public class SnapshotPojo implements Snapshot.SnapshotApi
+public class SnapshotPojo implements Snapshot.SnapshotApi, Comparable<SnapshotPojo>
 {
     private final SnapshotDefinition.SnapshotDfnApi snaphotDfn;
     private final UUID uuid;
@@ -85,5 +85,17 @@ public class SnapshotPojo implements Snapshot.SnapshotApi
     public List<? extends SnapshotVolume.SnapshotVlmApi> getSnapshotVlmList()
     {
         return snapshotVlms;
+    }
+
+    @Override
+    public int compareTo(SnapshotPojo otherSnapshotPojo)
+    {
+        int eq = snaphotDfn.getRscDfn().getResourceName().compareTo(
+            otherSnapshotPojo.getSnaphotDfn().getRscDfn().getResourceName());
+        if (eq == 0)
+        {
+            eq = snaphotDfn.getSnapshotName().compareTo(otherSnapshotPojo.getSnaphotDfn().getSnapshotName());
+        }
+        return eq;
     }
 }

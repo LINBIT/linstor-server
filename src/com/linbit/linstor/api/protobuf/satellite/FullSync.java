@@ -6,6 +6,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -21,6 +22,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFull
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
+import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.Base64;
@@ -76,12 +78,14 @@ public class FullSync implements ApiCall
         Set<NodePojo> nodes = new TreeSet<>(asNodes(fullSync.getNodesList()));
         Set<StorPoolPojo> storPools = new TreeSet<>(asStorPool(fullSync.getStorPoolsList()));
         Set<RscPojo> resources = new TreeSet<>(asResources(fullSync.getRscsList()));
+        Set<SnapshotPojo> snapshots = new TreeSet<>(asSnapshots(fullSync.getSnapshotsList()));
 
         apiCallHandler.applyFullSync(
             ProtoMapUtils.asMap(msgIntControllerData.getControllerPropsList()),
             nodes,
             storPools,
             resources,
+            snapshots,
             fullSync.getFullSyncTimestamp(),
             Base64.decode(fullSync.getMasterKey())
         );
@@ -148,6 +152,16 @@ public class FullSync implements ApiCall
             rscs.add(ApplyRsc.asRscPojo(rscData));
         }
         return rscs;
+    }
+
+    private ArrayList<SnapshotPojo> asSnapshots(List<MsgIntSnapshotDataOuterClass.MsgIntSnapshotData> snapshotsList)
+    {
+        ArrayList<SnapshotPojo> snapshots = new ArrayList<>(snapshotsList.size());
+        for (MsgIntSnapshotDataOuterClass.MsgIntSnapshotData snapshotData : snapshotsList)
+        {
+            snapshots.add(ApplySnapshot.asSnapshotPojo(snapshotData));
+        }
+        return snapshots;
     }
 
 }

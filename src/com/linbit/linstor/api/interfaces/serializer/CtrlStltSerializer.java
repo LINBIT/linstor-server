@@ -63,7 +63,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             Set<Node> nodeSet,
             Set<StorPool> storPools,
             Set<Resource> resources,
-            long timestamp,
+            Set<Snapshot> snapshots, long timestamp,
             long updateId
         );
 

@@ -60,12 +60,12 @@ import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgIntSnapshotData;
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
@@ -82,6 +82,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
 {
     private final CtrlSerializerHelper ctrlSerializerHelper;
     private final ResourceSerializerHelper rscSerializerHelper;
+    private final SnapshotSerializerHelper snapshotSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
     private final CtrlSecurityObjects secObjs;
 
@@ -97,6 +98,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
 
         ctrlSerializerHelper = new CtrlSerializerHelper(ctrlConfRef);
         rscSerializerHelper = new ResourceSerializerHelper();
+        snapshotSerializerHelper = new SnapshotSerializerHelper();
         nodeSerializerHelper = new NodeSerializerHelper();
     }
 
@@ -289,55 +291,8 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
     )
         throws IOException, AccessDeniedException
     {
-        SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
-        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
-
-        List<MsgIntSnapshotDataOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
-        for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
-        {
-            snapshotVlmDfns.add(
-                MsgIntSnapshotDataOuterClass.SnapshotVlmDfn.newBuilder()
-                    .setSnapshotVlmDfnUuid(snapshotVolumeDefinition.getUuid().toString())
-                    .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
-                    .build()
-            );
-        }
-
-        List<MsgIntSnapshotDataOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
-        for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
-        {
-            StorPool storPool = snapshotVolume.getStorPool(serializerCtx);
-            snapshotVlms.add(
-                MsgIntSnapshotDataOuterClass.SnapshotVlm.newBuilder()
-                    .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
-                    .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
-                    .setVlmNr(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber().value)
-                    .setStorPoolUuid(storPool.getUuid().toString())
-                    .setStorPoolName(storPool.getName().displayValue)
-                    .build()
-            );
-        }
-
-        MsgIntSnapshotDataOuterClass.MsgIntSnapshotData.newBuilder()
-            .setRscName(rscDfn.getName().displayValue)
-            .setRscDfnUuid(rscDfn.getUuid().toString())
-            .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
-            .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
-            .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
-            .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
-            .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfn.getProps(serializerCtx).map()))
-            .setSnapshotUuid(snapshot.getUuid().toString())
-            .setSnapshotName(snapshotDfn.getName().displayValue)
-            .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
-            .addAllSnapshotVlmDfns(snapshotVlmDfns)
-            .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
-            .addAllSnapshotVlms(snapshotVlms)
-            .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
-            .setSuspendResource(snapshot.getSuspendResource())
-            .setTakeSnapshot(snapshot.getTakeSnapshot())
-            .setFullSyncId(fullSyncId)
-            .setUpdateId(updateId)
-            .build()
+        snapshotSerializerHelper
+            .buildSnapshotDataMsg(snapshot, fullSyncId, updateId)
             .writeDelimitedTo(baos);
     }
 
@@ -361,6 +316,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         Set<Node> nodeSet,
         Set<StorPool> storPools,
         Set<Resource> resources,
+        Set<Snapshot> snapshots,
         long fullSyncTimestamp,
         long updateId,
         ByteArrayOutputStream baos
@@ -370,6 +326,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         ArrayList<MsgIntNodeData> serializedNodes = new ArrayList<>();
         ArrayList<MsgIntStorPoolData> serializedStorPools = new ArrayList<>();
         ArrayList<MsgIntRscData> serializedRscs = new ArrayList<>();
+        ArrayList<MsgIntSnapshotData> serializedSnapshots = new ArrayList<>();
 
         MsgIntControllerData serializedController = ctrlSerializerHelper.buildControllerDataMsg(
             fullSyncTimestamp,
@@ -413,6 +370,16 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                 );
             }
         }
+        for (Snapshot snapshot : snapshots)
+        {
+            serializedSnapshots.add(
+                snapshotSerializerHelper.buildSnapshotDataMsg(
+                    snapshot,
+                    fullSyncTimestamp,
+                    updateId
+                )
+            );
+        }
 
         String encodedMasterKey = "";
         byte[] cryptKey = secObjs.getCryptKey();
@@ -424,6 +391,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .addAllNodes(serializedNodes)
             .addAllStorPools(serializedStorPools)
             .addAllRscs(serializedRscs)
+            .addAllSnapshots(serializedSnapshots)
             .setFullSyncTimestamp(fullSyncTimestamp)
             .setMasterKey(encodedMasterKey)
             .setCtrlData(serializedController)
@@ -944,6 +912,63 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             }
 
             return protoNetIfs;
+        }
+    }
+
+    private class SnapshotSerializerHelper
+    {
+        private MsgIntSnapshotData buildSnapshotDataMsg(Snapshot snapshot, long fullSyncId, long updateId)
+            throws AccessDeniedException
+        {
+            SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
+            ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+
+            List<MsgIntSnapshotDataOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
+            for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
+            {
+                snapshotVlmDfns.add(
+                    MsgIntSnapshotDataOuterClass.SnapshotVlmDfn.newBuilder()
+                        .setSnapshotVlmDfnUuid(snapshotVolumeDefinition.getUuid().toString())
+                        .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
+                        .build()
+                );
+            }
+
+            List<MsgIntSnapshotDataOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
+            for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
+            {
+                StorPool storPool = snapshotVolume.getStorPool(serializerCtx);
+                snapshotVlms.add(
+                    MsgIntSnapshotDataOuterClass.SnapshotVlm.newBuilder()
+                        .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
+                        .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
+                        .setVlmNr(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber().value)
+                        .setStorPoolUuid(storPool.getUuid().toString())
+                        .setStorPoolName(storPool.getName().displayValue)
+                        .build()
+                );
+            }
+
+            return MsgIntSnapshotData.newBuilder()
+                .setRscName(rscDfn.getName().displayValue)
+                .setRscDfnUuid(rscDfn.getUuid().toString())
+                .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
+                .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
+                .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
+                .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
+                .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfn.getProps(serializerCtx).map()))
+                .setSnapshotUuid(snapshot.getUuid().toString())
+                .setSnapshotName(snapshotDfn.getName().displayValue)
+                .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
+                .addAllSnapshotVlmDfns(snapshotVlmDfns)
+                .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
+                .addAllSnapshotVlms(snapshotVlms)
+                .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
+                .setSuspendResource(snapshot.getSuspendResource())
+                .setTakeSnapshot(snapshot.getTakeSnapshot())
+                .setFullSyncId(fullSyncId)
+                .setUpdateId(updateId)
+                .build();
         }
     }
 }

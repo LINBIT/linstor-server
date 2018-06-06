@@ -32,12 +32,14 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -63,6 +65,9 @@ public class NodeData extends BaseTransactionObject implements Node
 
     // List of resources assigned to this cluster node
     private final TransactionMap<ResourceName, Resource> resourceMap;
+
+    // List of snapshots on this cluster node
+    private final TransactionMap<SnapshotDefinition.Key, Snapshot> snapshotMap;
 
     // List of network interfaces used for replication on this cluster node
     private final TransactionMap<NetInterfaceName, NetInterface> netInterfaceMap;
@@ -115,6 +120,7 @@ public class NodeData extends BaseTransactionObject implements Node
             new TreeMap<>(),
             new TreeMap<>(),
             new TreeMap<>(),
+            new TreeMap<>(),
             new TreeMap<>()
         );
 
@@ -131,6 +137,7 @@ public class NodeData extends BaseTransactionObject implements Node
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider,
         Map<ResourceName, Resource> rscMapRef,
+        Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
         Map<NetInterfaceName, NetInterface> netIfMapRef,
         Map<StorPoolName, StorPool> storPoolMapRef,
         Map<Node, NodeConnection> nodeConnMapRef
@@ -147,6 +154,7 @@ public class NodeData extends BaseTransactionObject implements Node
         dbDriver = dbDriverRef;
 
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
+        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
         netInterfaceMap = transObjFactory.createTransactionMap(netIfMapRef, null);
         storPoolMap = transObjFactory.createTransactionMap(storPoolMapRef, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
@@ -176,6 +184,7 @@ public class NodeData extends BaseTransactionObject implements Node
             nodeType,
             objProt,
             resourceMap,
+            snapshotMap,
             netInterfaceMap,
             storPoolMap,
             nodeConnections,
@@ -323,6 +332,35 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return resourceMap.values().stream();
+    }
+
+    @Override
+    public void addSnapshot(AccessContext accCtx, Snapshot snapshot)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        snapshotMap.put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
+    }
+
+    @Override
+    public void removeSnapshot(SnapshotData snapshotData)
+    {
+        snapshotMap.remove(new SnapshotDefinition.Key(snapshotData.getSnapshotDefinition()));
+    }
+
+    @Override
+    public Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return snapshotMap.values().stream()
+            .filter(snapshot -> snapshot.getSnapshotDefinition().getResourceDefinition().isSnapshotInProgress(
+                snapshot.getSnapshotDefinition().getName()))
+            .collect(Collectors.toSet());
     }
 
     @Override

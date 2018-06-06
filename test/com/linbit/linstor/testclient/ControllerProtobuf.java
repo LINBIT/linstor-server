@@ -3,11 +3,11 @@ package com.linbit.linstor.testclient;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.StderrErrorReporter;
-import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessContext;
 
 import java.io.IOException;
@@ -257,6 +257,7 @@ public class ControllerProtobuf extends ProtobufIO
         final Set<Node> nodeSet,
         final Set<StorPool> storPools,
         final Set<Resource> resources,
+        final Set<Snapshot> snapshots,
         final long timestamp,
         final long updateId
     )
@@ -271,6 +272,7 @@ public class ControllerProtobuf extends ProtobufIO
                 nodeSet,
                 storPools,
                 resources,
+                snapshots,
                 timestamp,
                 updateId
             )
