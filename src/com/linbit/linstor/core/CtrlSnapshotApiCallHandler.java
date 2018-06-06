@@ -229,17 +229,26 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
             SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
 
-            snapshotDfn.markDeleted(peerAccCtx);
-            for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+            if (snapshotDfn.getAllSnapshots().isEmpty())
             {
-                snapshot.markDeleted(peerAccCtx);
+                snapshotDfn.delete(peerAccCtx);
+
+                commit();
             }
+            else
+            {
+                snapshotDfn.markDeleted(peerAccCtx);
+                for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+                {
+                    snapshot.markDeleted(peerAccCtx);
+                }
 
-            rscDfn.markSnapshotInProgress(snapshotName, true);
+                rscDfn.markSnapshotInProgress(snapshotName, true);
 
-            commit();
+                commit();
 
-            updateSatellites(snapshotDfn);
+                updateSatellites(snapshotDfn);
+            }
 
             reportSuccess(UUID.randomUUID());
         }
