@@ -13,6 +13,8 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
@@ -46,12 +48,17 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.IntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
@@ -642,16 +649,18 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
-                int[] occupiedVlmNrs = new int[rscDfn.getVolumeDfnCount(accCtx)];
-                Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx);
-                int idx = 0;
-                while (vlmDfnIt.hasNext())
-                {
-                    VolumeDefinition vlmDfn = vlmDfnIt.next();
-                    occupiedVlmNrs[idx] = vlmDfn.getVolumeNumber().value;
-                    ++idx;
-                }
-                Arrays.sort(occupiedVlmNrs);
+                // Avoid using volume numbers that are already in use by active volumes or snapshots.
+                // Re-using snapshot volume numbers would result in confusion when restoring from the snapshot.
+                int[] occupiedVlmNrs = Stream.concat(
+                    rscDfn.streamVolumeDfn(accCtx).map(VolumeDefinition::getVolumeNumber),
+                    rscDfn.getSnapshotDfns(accCtx).stream()
+                        .map(SnapshotDefinition::getAllSnapshotVolumeDefinitions).flatMap(Collection::stream)
+                        .map(SnapshotVolumeDefinition::getVolumeNumber)
+                )
+                    .mapToInt(VolumeNumber::getValue)
+                    .sorted()
+                    .distinct()
+                    .toArray();
 
                 vlmNr = VolumeNumberAlloc.getFreeVolumeNumber(occupiedVlmNrs);
             }

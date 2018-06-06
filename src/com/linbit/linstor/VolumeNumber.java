@@ -30,6 +30,11 @@ public class VolumeNumber implements Comparable<VolumeNumber>
         value = number;
     }
 
+    public int getValue()
+    {
+        return value;
+    }
+
     @Override
     public int compareTo(VolumeNumber other)
     {
