@@ -42,7 +42,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     private final TransactionMap<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
 
-    private final Map<NodeName, Snapshot> snapshotMap;
+    private final TransactionMap<NodeName, Snapshot> snapshotMap;
 
     private final TransactionSimpleObject<SnapshotDefinitionData, Boolean> deleted;
 
@@ -65,7 +65,6 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
-        snapshotMap = snapshotMapRef;
 
         flags = transObjFactory.createStateFlagsImpl(
             resourceDfnRef.getObjProt(),
@@ -77,11 +76,14 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
         snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
 
+        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);;
+
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             resourceDfn,
             snapshotVolumeDefinitionMap,
+            snapshotMap,
             flags,
             deleted
         );

@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -43,9 +44,11 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
     private final TransactionSimpleObject<SnapshotData, Boolean> deleted;
 
-    private boolean suspendResource;
+    // Not persisted because we do not resume snapshot creation after a restart
+    private TransactionSimpleObject<SnapshotData, Boolean> suspendResource;
 
-    private boolean takeSnapshot;
+    // Not persisted because we do not resume snapshot creation after a restart
+    private TransactionSimpleObject<SnapshotData, Boolean> takeSnapshot;
 
     public SnapshotData(
         UUID objIdRef,
@@ -79,12 +82,17 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
+        suspendResource = transObjFactory.createTransactionSimpleObject(this, false, null);
+        takeSnapshot = transObjFactory.createTransactionSimpleObject(this, false, null);
+
         transObjs = Arrays.asList(
             snapshotDfn,
             node,
             snapshotVlmMap,
             flags,
-            deleted
+            deleted,
+            suspendResource,
+            takeSnapshot
         );
     }
 
@@ -188,25 +196,39 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     @Override
     public boolean getSuspendResource()
     {
-        return suspendResource;
+        return suspendResource.get();
     }
 
     @Override
     public void setSuspendResource(boolean suspendResourceRef)
     {
-        suspendResource = suspendResourceRef;
+        try
+        {
+            suspendResource.set(suspendResourceRef);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
     public boolean getTakeSnapshot()
     {
-        return takeSnapshot;
+        return takeSnapshot.get();
     }
 
     @Override
     public void setTakeSnapshot(boolean takeSnapshotRef)
     {
-        takeSnapshot = takeSnapshotRef;
+        try
+        {
+            takeSnapshot.set(takeSnapshotRef);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
@@ -236,8 +258,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
             snapshotDfn.getApiData(accCtx),
             objId,
             flags.getFlagsBits(accCtx),
-            suspendResource,
-            takeSnapshot,
+            suspendResource.get(),
+            takeSnapshot.get(),
             fullSyncId,
             updateId,
             snapshotVlms
