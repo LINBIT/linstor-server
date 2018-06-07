@@ -369,12 +369,26 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)
         throws AccessDeniedException
     {
+        ensureHasResource(rscDfn);
+
         Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
         while (rscIterator.hasNext())
         {
             Resource currentRsc = rscIterator.next();
             ensureDriversSupportSnapshots(currentRsc);
             ensureSatelliteConnected(currentRsc);
+        }
+    }
+
+    private void ensureHasResource(ResourceDefinitionData rscDfn)
+    {
+        if (rscDfn.getResourceCount() == 0)
+        {
+            throw asExc(
+                null,
+                "No resources found for snapshotting",
+                ApiConsts.FAIL_NOT_FOUND_RSC
+            );
         }
     }
 
