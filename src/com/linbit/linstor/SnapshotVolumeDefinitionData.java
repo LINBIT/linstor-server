@@ -91,14 +91,14 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     public void addSnapshotVolume(SnapshotVolume snapshotVolume)
     {
         checkDeleted();
-        snapshotVlmMap.put(snapshotVolume.getSnapshot().getNode().getName(), snapshotVolume);
+        snapshotVlmMap.put(snapshotVolume.getNodeName(), snapshotVolume);
     }
 
     @Override
     public void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData)
     {
         checkDeleted();
-        snapshotVlmMap.remove(snapshotVolumeData.getSnapshot().getNode().getName());
+        snapshotVlmMap.remove(snapshotVolumeData.getNodeName());
     }
 
     @Override

@@ -108,7 +108,7 @@ public class SnapshotDeploymentEvent implements EventWriter
             for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
             {
                 ApiCallRc deploymentRc = resourceDeploymentStateGenerator.generate(new ObjectIdentifier(
-                    snapshot.getNode().getName(),
+                    snapshot.getNodeName(),
                     rscDfn.getName(),
                     null,
                     snapshotDfn.getName()

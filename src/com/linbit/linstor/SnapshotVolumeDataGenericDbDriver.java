@@ -92,10 +92,10 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
 
             Snapshot snapshot = snapshotVolume.getSnapshot();
             stmt.setString(1, snapshotVolume.getUuid().toString());
-            stmt.setString(2, snapshot.getNode().getName().value);
-            stmt.setString(3, snapshot.getSnapshotDefinition().getResourceDefinition().getName().value);
-            stmt.setString(4, snapshot.getSnapshotDefinition().getName().value);
-            stmt.setInt(5, snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber().value);
+            stmt.setString(2, snapshot.getNodeName().value);
+            stmt.setString(3, snapshot.getResourceName().value);
+            stmt.setString(4, snapshot.getSnapshotName().value);
+            stmt.setInt(5, snapshotVolume.getVolumeNumber().value);
             stmt.setString(6, snapshotVolume.getStorPool(dbCtx).getName().value);
 
             stmt.executeUpdate();
@@ -123,8 +123,8 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
         {
             SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
 
-            stmt.setString(1, snapshot.getNode().getName().value);
-            stmt.setString(2, snapshotDefinition.getResourceDefinition().getName().value);
+            stmt.setString(1, snapshot.getNodeName().value);
+            stmt.setString(2, snapshotDefinition.getResourceName().value);
             stmt.setString(3, snapshotDefinition.getName().value);
             stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
             try (ResultSet resultSet = stmt.executeQuery())
@@ -259,10 +259,10 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
             Snapshot snapshot = snapshotVolume.getSnapshot();
             SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
 
-            stmt.setString(1, snapshot.getNode().getName().value);
-            stmt.setString(2, snapshotDefinition.getResourceDefinition().getName().value);
+            stmt.setString(1, snapshot.getNodeName().value);
+            stmt.setString(2, snapshotDefinition.getResourceName().value);
             stmt.setString(3, snapshotDefinition.getName().value);
-            stmt.setInt(4, snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber().value);
+            stmt.setInt(4, snapshotVolume.getVolumeNumber().value);
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotVolume deleted %s", getId(snapshotVolume));
         }
@@ -289,9 +289,9 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
     private String getId(Snapshot snapshot, SnapshotVolumeDefinition snapshotVolumeDefinition)
     {
         return getId(
-            snapshot.getNode().getName().displayValue,
-            snapshot.getSnapshotDefinition().getResourceDefinition().getName().displayValue,
-            snapshot.getSnapshotDefinition().getName().displayValue,
+            snapshot.getNodeName().displayValue,
+            snapshot.getResourceName().displayValue,
+            snapshot.getSnapshotName().displayValue,
             snapshotVolumeDefinition.getVolumeNumber().value
         );
     }

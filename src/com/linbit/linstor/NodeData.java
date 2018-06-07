@@ -358,8 +358,8 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return snapshotMap.values().stream()
-            .filter(snapshot -> snapshot.getSnapshotDefinition().getResourceDefinition().isSnapshotInProgress(
-                snapshot.getSnapshotDefinition().getName()))
+            .filter(snapshot -> snapshot.getResourceDefinition().isSnapshotInProgress(
+                snapshot.getSnapshotName()))
             .collect(Collectors.toSet());
     }
 

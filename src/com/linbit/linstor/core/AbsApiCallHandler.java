@@ -1629,9 +1629,9 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                             internalComSerializer
                                 .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
                                 .changedSnapshot(
-                                    snapshotDfn.getResourceDefinition().getName().displayValue,
+                                    snapshotDfn.getResourceName().displayValue,
                                     snapshot.getUuid(),
-                                    snapshot.getSnapshotDefinition().getName().displayValue
+                                    snapshot.getSnapshotName().displayValue
                                 )
                                 .build()
                         );
@@ -1639,7 +1639,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 }
                 if (!connected)
                 {
-                    String nodeName = snapshot.getNode().getName().displayValue;
+                    String nodeName = snapshot.getNodeName().displayValue;
                     String details = String.format(
                             "The controller queued the %s of the snapshot and as soon the satellite is connected, " +
                             "it will receive this update.",

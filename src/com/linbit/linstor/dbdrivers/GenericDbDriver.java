@@ -316,7 +316,7 @@ public class GenericDbDriver implements DatabaseDriver
             // temporary snapshot definition map
             Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapshotDfnMap =
                 mapByName(loadedSnapshotDfns, snapshotDfn -> new Pair<>(
-                        snapshotDfn.getResourceDefinition().getName(),
+                        snapshotDfn.getResourceName(),
                         snapshotDfn.getName()
                     )
                 );
@@ -333,8 +333,8 @@ public class GenericDbDriver implements DatabaseDriver
 
             Map<Triple<ResourceName, SnapshotName, VolumeNumber>, SnapshotVolumeDefinition> tmpSnapshotVlmDfnMap =
                 mapByName(loadedSnapshotVolumeDefinitions, snapshotVlmDfn -> new Triple<>(
-                    snapshotVlmDfn.getSnapshotDefinition().getResourceDefinition().getName(),
-                    snapshotVlmDfn.getSnapshotDefinition().getName(),
+                    snapshotVlmDfn.getResourceName(),
+                    snapshotVlmDfn.getSnapshotName(),
                     snapshotVlmDfn.getVolumeNumber()
                 )
             );
@@ -346,14 +346,14 @@ public class GenericDbDriver implements DatabaseDriver
                 loadedNodesMap.get(snapshot.getNode()).getSnapshotMap()
                     .put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
                 loadedSnapshotDfns.get(snapshot.getSnapshotDefinition()).getSnapshotMap()
-                    .put(snapshot.getNode().getName(), snapshot);
+                    .put(snapshot.getNodeName(), snapshot);
             }
 
             Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot> tmpSnapshotMap =
                 mapByName(loadedSnapshots, snapshot -> new Triple<>(
-                    snapshot.getNode().getName(),
-                    snapshot.getSnapshotDefinition().getResourceDefinition().getName(),
-                    snapshot.getSnapshotDefinition().getName()
+                    snapshot.getNodeName(),
+                    snapshot.getResourceName(),
+                    snapshot.getSnapshotName()
                 )
             );
 
@@ -367,9 +367,9 @@ public class GenericDbDriver implements DatabaseDriver
             for (SnapshotVolume snapshotVolume : loadedSnapshotVolumes)
             {
                 loadedSnapshots.get(snapshotVolume.getSnapshot()).getSnapshotVlmMap()
-                    .put(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber(), snapshotVolume);
+                    .put(snapshotVolume.getVolumeNumber(), snapshotVolume);
                 loadedSnapshotVolumeDefinitions.get(snapshotVolume.getSnapshotVolumeDefinition()).getSnapshotVlmMap()
-                    .put(snapshotVolume.getSnapshot().getNode().getName(), snapshotVolume);
+                    .put(snapshotVolume.getNodeName(), snapshotVolume);
             }
 
             nodesMap.putAll(tmpNodesMap);

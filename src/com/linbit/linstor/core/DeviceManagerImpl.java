@@ -1148,8 +1148,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         synchronized (sched)
         {
             SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
-            deletedSnapshotSet.add(new SnapshotDefinition.Key(
-                snapshotDefinition.getResourceDefinition().getName(), snapshotDefinition.getName()));
+            deletedSnapshotSet.add(new SnapshotDefinition.Key(snapshotDefinition));
         }
     }
 

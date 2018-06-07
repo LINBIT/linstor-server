@@ -22,6 +22,26 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
 
     Node getNode();
 
+    default ResourceDefinition getResourceDefinition()
+    {
+        return getSnapshotDefinition().getResourceDefinition();
+    }
+
+    default ResourceName getResourceName()
+    {
+        return getResourceDefinition().getName();
+    }
+
+    default SnapshotName getSnapshotName()
+    {
+        return getSnapshotDefinition().getName();
+    }
+
+    default NodeName getNodeName()
+    {
+        return getNode().getName();
+    }
+
     void addSnapshotVolume(SnapshotVolume snapshotVolume);
 
     SnapshotVolume getSnapshotVolume(VolumeNumber volumeNumber);

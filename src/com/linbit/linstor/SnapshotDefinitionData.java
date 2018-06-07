@@ -155,14 +155,14 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     public void addSnapshot(Snapshot snapshotRef)
     {
         checkDeleted();
-        snapshotMap.put(snapshotRef.getNode().getName(), snapshotRef);
+        snapshotMap.put(snapshotRef.getNodeName(), snapshotRef);
     }
 
     @Override
     public void removeSnapshot(Snapshot snapshotRef)
     {
         checkDeleted();
-        snapshotMap.remove(snapshotRef.getNode().getName());
+        snapshotMap.remove(snapshotRef.getNodeName());
     }
 
     @Override
@@ -245,7 +245,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     @Override
     public String toString()
     {
-        return "Rsc: '" + resourceDfn.getName() + "', " +
+        return "Rsc: '" + getResourceName() + "', " +
             "Snapshot: '" + snapshotName + "'";
     }
 

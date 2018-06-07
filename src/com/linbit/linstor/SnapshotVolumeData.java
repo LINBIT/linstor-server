@@ -96,7 +96,7 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
     {
         if (!deleted.get())
         {
-            snapshot.getSnapshotDefinition().getResourceDefinition()
+            getResourceDefinition()
                 .getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
             snapshot.removeSnapshotVolume(this);
@@ -120,7 +120,7 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
     @Override
     public String toString()
     {
-        return snapshot + ", VlmNr: '" + snapshotVolumeDefinition.getVolumeNumber() + "'";
+        return snapshot + ", VlmNr: '" + getVolumeNumber() + "'";
     }
 
     @Override
@@ -138,7 +138,7 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
             getStorPool(accCtx).getUuid(),
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
-            getSnapshotVolumeDefinition().getVolumeNumber().value
+            getVolumeNumber().value
         );
     }
 }

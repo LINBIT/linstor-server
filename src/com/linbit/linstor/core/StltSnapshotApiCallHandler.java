@@ -320,7 +320,7 @@ class StltSnapshotApiCallHandler
             snapshot.getUuid(),
             snapshotRaw.getSnapshotUuid(),
             "Snapshot",
-            snapshot.getSnapshotDefinition().getName().displayValue,
+            snapshot.getSnapshotName().displayValue,
             snapshotRaw.getSnaphotDfn().getSnapshotName()
         );
     }
@@ -332,7 +332,7 @@ class StltSnapshotApiCallHandler
             snapshotVolume.getUuid(),
             snapshotVlmApi.getSnapshotVlmUuid(),
             "SnapshotVolume",
-            String.valueOf(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber()),
+            String.valueOf(snapshotVolume.getVolumeNumber()),
             String.valueOf(snapshotVlmApi.getSnapshotVlmNr())
         );
     }

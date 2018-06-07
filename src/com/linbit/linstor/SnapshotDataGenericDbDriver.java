@@ -95,9 +95,9 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             errorReporter.logTrace("Creating Snapshot %s", getId(snapshot));
 
             stmt.setString(1, snapshot.getUuid().toString());
-            stmt.setString(2, snapshot.getNode().getName().value);
-            stmt.setString(3, snapshot.getSnapshotDefinition().getResourceDefinition().getName().value);
-            stmt.setString(4, snapshot.getSnapshotDefinition().getName().value);
+            stmt.setString(2, snapshot.getNodeName().value);
+            stmt.setString(3, snapshot.getResourceName().value);
+            stmt.setString(4, snapshot.getSnapshotName().value);
             stmt.setLong(5, snapshot.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
@@ -123,7 +123,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         try (PreparedStatement stmt = getConnection().prepareStatement(S_SELECT))
         {
             stmt.setString(1, node.getName().value);
-            stmt.setString(2, snapshotDefinition.getResourceDefinition().getName().value);
+            stmt.setString(2, snapshotDefinition.getResourceName().value);
             stmt.setString(3, snapshotDefinition.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
@@ -230,9 +230,9 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         errorReporter.logTrace("Deleting Snapshot %s", getId(snapshot));
         try (PreparedStatement stmt = getConnection().prepareStatement(S_DELETE))
         {
-            stmt.setString(1, snapshot.getNode().getName().value);
-            stmt.setString(2, snapshot.getSnapshotDefinition().getResourceDefinition().getName().value);
-            stmt.setString(3, snapshot.getSnapshotDefinition().getName().value);
+            stmt.setString(1, snapshot.getNodeName().value);
+            stmt.setString(2, snapshot.getResourceName().value);
+            stmt.setString(3, snapshot.getSnapshotName().value);
             stmt.executeUpdate();
             errorReporter.logTrace("Snapshot deleted %s", getId(snapshot));
         }
@@ -266,7 +266,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     {
         return getId(
             node.getName().displayValue,
-            snapshotDefinition.getResourceDefinition().getName().displayValue,
+            snapshotDefinition.getResourceName().displayValue,
             snapshotDefinition.getName().displayValue
         );
     }
@@ -306,9 +306,9 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                     getId(snapshot)
                 );
                 stmt.setLong(1, flags);
-                stmt.setString(2, snapshot.getNode().getName().value);
-                stmt.setString(3, snapshot.getSnapshotDefinition().getResourceDefinition().getName().value);
-                stmt.setString(4, snapshot.getSnapshotDefinition().getName().value);
+                stmt.setString(2, snapshot.getNodeName().value);
+                stmt.setString(3, snapshot.getResourceName().value);
+                stmt.setString(4, snapshot.getSnapshotName().value);
                 stmt.executeUpdate();
 
                 errorReporter.logTrace(

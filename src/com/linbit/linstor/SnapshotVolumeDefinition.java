@@ -17,6 +17,21 @@ public interface SnapshotVolumeDefinition
 
     VolumeNumber getVolumeNumber();
 
+    default ResourceDefinition getResourceDefinition()
+    {
+        return getSnapshotDefinition().getResourceDefinition();
+    }
+
+    default ResourceName getResourceName()
+    {
+        return getResourceDefinition().getName();
+    }
+
+    default SnapshotName getSnapshotName()
+    {
+        return getSnapshotDefinition().getName();
+    }
+
     void addSnapshotVolume(SnapshotVolume snapshotVolume);
 
     void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData);

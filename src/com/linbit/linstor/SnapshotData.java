@@ -121,7 +121,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     public void addSnapshotVolume(SnapshotVolume snapshotVolume)
     {
         checkDeleted();
-        snapshotVlmMap.put(snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber(), snapshotVolume);
+        snapshotVlmMap.put(snapshotVolume.getVolumeNumber(), snapshotVolume);
     }
 
     @Override
@@ -142,7 +142,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     public void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData)
     {
         checkDeleted();
-        snapshotVlmMap.remove(snapshotVolumeData.getSnapshotVolumeDefinition().getVolumeNumber());
+        snapshotVlmMap.remove(snapshotVolumeData.getVolumeNumber());
     }
 
     @Override
@@ -156,7 +156,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     public void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
         getFlags().enableFlags(accCtx, SnapshotFlags.DELETE);
     }
 
@@ -166,7 +166,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     {
         if (!deleted.get())
         {
-            snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+            getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
             snapshotDfn.removeSnapshot(this);
             node.removeSnapshot(this);

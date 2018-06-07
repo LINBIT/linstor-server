@@ -81,8 +81,8 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             errorReporter.logTrace("Creating SnapshotVolumeDefinition %s", getId(snapshotVolumeDefinition));
 
             stmt.setString(1, snapshotVolumeDefinition.getUuid().toString());
-            stmt.setString(2, snapshotVolumeDefinition.getSnapshotDefinition().getResourceDefinition().getName().value);
-            stmt.setString(3, snapshotVolumeDefinition.getSnapshotDefinition().getName().value);
+            stmt.setString(2, snapshotVolumeDefinition.getResourceName().value);
+            stmt.setString(3, snapshotVolumeDefinition.getSnapshotName().value);
             stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
 
             stmt.executeUpdate();
@@ -103,7 +103,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         SnapshotVolumeDefinition ret;
         try (PreparedStatement stmt = getConnection().prepareStatement(SVD_SELECT))
         {
-            stmt.setString(1, snapshotDefinition.getResourceDefinition().getName().value);
+            stmt.setString(1, snapshotDefinition.getResourceName().value);
             stmt.setString(2, snapshotDefinition.getName().value);
             stmt.setInt(3, volumeNumber.value);
             try (ResultSet resultSet = stmt.executeQuery())
@@ -222,8 +222,8 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         try (PreparedStatement stmt = getConnection().prepareStatement(SVD_DELETE))
         {
             stmt.setString(1,
-                snapshotVolumeDefinition.getSnapshotDefinition().getResourceDefinition().getName().value);
-            stmt.setString(2, snapshotVolumeDefinition.getSnapshotDefinition().getName().value);
+                snapshotVolumeDefinition.getResourceName().value);
+            stmt.setString(2, snapshotVolumeDefinition.getSnapshotName().value);
             stmt.setInt(3, snapshotVolumeDefinition.getVolumeNumber().value);
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotVolumeDefinition deleted %s", getId(snapshotVolumeDefinition));
@@ -251,7 +251,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private String getId(SnapshotDefinition snapshotDefinition, VolumeNumber volumeNumber)
     {
         return getId(
-            snapshotDefinition.getResourceDefinition().getName().displayValue,
+            snapshotDefinition.getResourceName().displayValue,
             snapshotDefinition.getName().displayValue,
             volumeNumber.value
         );

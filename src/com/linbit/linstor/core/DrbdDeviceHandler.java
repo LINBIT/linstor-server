@@ -1401,14 +1401,14 @@ class DrbdDeviceHandler implements DeviceHandler
         Set<SnapshotName> newlyTakenSnapshots = new HashSet<>();
         for (Snapshot snapshot : snapshots)
         {
-            SnapshotName snapshotName = snapshot.getSnapshotDefinition().getName();
+            SnapshotName snapshotName = snapshot.getSnapshotName();
 
             if (snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
             {
                 for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
                 {
                     VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
-                        snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber());
+                        snapshotVolume.getVolumeNumber());
 
                     try
                     {
@@ -1440,14 +1440,14 @@ class DrbdDeviceHandler implements DeviceHandler
                 for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
                 {
                     VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
-                        snapshotVolume.getSnapshotVolumeDefinition().getVolumeNumber());
+                        snapshotVolume.getVolumeNumber());
 
                     try
                     {
                         ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
 
                         takeVolumeSnapshot(
-                            snapshot.getSnapshotDefinition().getResourceDefinition(),
+                            snapshot.getResourceDefinition(),
                             snapshotName,
                             vlmState
                         );
@@ -1484,7 +1484,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 eventBroker.openOrTriggerEvent(EventIdentifier.snapshotDefinition(
                     InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
                     rscName,
-                    snapshot.getSnapshotDefinition().getName()
+                    snapshot.getSnapshotName()
                 ));
             }
         }
@@ -1565,10 +1565,10 @@ class DrbdDeviceHandler implements DeviceHandler
 
         return snapshots.stream()
             .map(snapshot -> new SnapshotState(
-                snapshot.getSnapshotDefinition().getName(),
+                snapshot.getSnapshotName(),
                 shouldSuspend,
-                allSnapshotted.contains(snapshot.getSnapshotDefinition().getName()),
-                deletedSnapshots.contains(snapshot.getSnapshotDefinition().getName())
+                allSnapshotted.contains(snapshot.getSnapshotName()),
+                deletedSnapshots.contains(snapshot.getSnapshotName())
             ))
             .collect(Collectors.toList());
     }
@@ -1610,7 +1610,7 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws VolumeException, AccessDeniedException, StorageException
     {
-        ResourceDefinition rscDfn = snapshotVolume.getSnapshot().getSnapshotDefinition().getResourceDefinition();
+        ResourceDefinition rscDfn = snapshotVolume.getResourceDefinition();
 
         if (vlmState.getDriver() != null)
         {

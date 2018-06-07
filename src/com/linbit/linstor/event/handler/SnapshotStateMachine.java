@@ -243,10 +243,10 @@ public class SnapshotStateMachine
     private SnapshotState getSnapshotState(Snapshot snapshot)
     {
         return satelliteStateHelper.withSatelliteState(
-            snapshot.getNode().getName(),
+            snapshot.getNodeName(),
             satelliteState -> satelliteState.getSnapshotState(
-                snapshot.getSnapshotDefinition().getResourceDefinition().getName(),
-                snapshot.getSnapshotDefinition().getName()
+                snapshot.getResourceName(),
+                snapshot.getSnapshotName()
             ),
             null
         );
@@ -261,9 +261,9 @@ public class SnapshotStateMachine
                 ctrlStltSerializer
                     .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
                     .changedSnapshot(
-                        snapshotDefinition.getResourceDefinition().getName().displayValue,
+                        snapshotDefinition.getResourceName().displayValue,
                         snapshot.getUuid(),
-                        snapshot.getSnapshotDefinition().getName().displayValue
+                        snapshot.getSnapshotName().displayValue
                     )
                     .build()
             );
@@ -274,7 +274,7 @@ public class SnapshotStateMachine
     {
         eventBroker.closeEventStream(EventIdentifier.snapshotDefinition(
             ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
-            snapshotDefinition.getResourceDefinition().getName(),
+            snapshotDefinition.getResourceName(),
             snapshotDefinition.getName()
         ));
     }

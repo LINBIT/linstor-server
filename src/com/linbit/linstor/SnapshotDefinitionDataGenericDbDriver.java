@@ -92,7 +92,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
             errorReporter.logTrace("Creating SnapshotDefinition %s", getId(snapshotDefinition));
 
             stmt.setString(1, snapshotDefinition.getUuid().toString());
-            stmt.setString(2, snapshotDefinition.getResourceDefinition().getName().value);
+            stmt.setString(2, snapshotDefinition.getResourceName().value);
             stmt.setString(3, snapshotDefinition.getName().value);
             stmt.setString(4, snapshotDefinition.getName().displayValue);
             stmt.setLong(5, snapshotDefinition.getFlags().getFlagsBits(dbCtx));
@@ -242,7 +242,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         errorReporter.logTrace("Deleting SnapshotDefinition %s", getId(snapshotDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(SD_DELETE))
         {
-            stmt.setString(1, snapshotDefinition.getResourceDefinition().getName().value);
+            stmt.setString(1, snapshotDefinition.getResourceName().value);
             stmt.setString(2, snapshotDefinition.getName().value);
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotDefinition deleted %s", getId(snapshotDefinition));
@@ -327,7 +327,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
                     getId(snapshotDefinition)
                 );
                 stmt.setLong(1, flags);
-                stmt.setString(2, snapshotDefinition.getResourceDefinition().getName().value);
+                stmt.setString(2, snapshotDefinition.getResourceName().value);
                 stmt.setString(3, snapshotDefinition.getName().value);
                 stmt.executeUpdate();
 

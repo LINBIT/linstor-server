@@ -23,6 +23,11 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     SnapshotName getName();
 
+    default ResourceName getResourceName()
+    {
+        return getResourceDefinition().getName();
+    }
+
     SnapshotVolumeDefinition getSnapshotVolumeDefinition(VolumeNumber volumeNumber);
 
     Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions();
@@ -126,7 +131,7 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
         public Key(SnapshotDefinition snapshotDefinition)
         {
-            this(snapshotDefinition.getResourceDefinition().getName(), snapshotDefinition.getName());
+            this(snapshotDefinition.getResourceName(), snapshotDefinition.getName());
         }
 
         public Key(ResourceName resourceNameRef, SnapshotName snapshotNameRef)
