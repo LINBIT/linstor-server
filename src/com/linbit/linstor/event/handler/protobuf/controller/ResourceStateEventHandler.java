@@ -51,6 +51,15 @@ public class ResourceStateEventHandler implements EventHandler
                     eventRscState.getReady()
                 )
             );
+
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.setOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setInUse,
+                    eventRscState.getInUse()
+                )
+            );
         }
         else
         {
@@ -59,6 +68,14 @@ public class ResourceStateEventHandler implements EventHandler
                 satelliteState -> satelliteState.unsetOnResource(
                     eventIdentifier.getResourceName(),
                     SatelliteResourceState::setReady
+                )
+            );
+
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.unsetOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setInUse
                 )
             );
         }

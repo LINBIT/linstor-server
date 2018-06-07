@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -105,6 +106,17 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
     boolean isSnapshotInProgress(SnapshotName snapshotName);
 
     Collection<SnapshotDefinition> getInProgressSnapshotDfns(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    /**
+     * Checks if any resource in the definition is currently used (mounted).
+     * Returns an Optional<Resource> object containing the resources that is mounted or an empty.
+     *
+     * @param accCtx AccessContext for checks
+     * @return The first found mounted/primary resource, if none is mounted returns empty optional.
+     * @throws AccessDeniedException
+     */
+    Optional<Resource> anyResourceInUse(AccessContext accCtx)
         throws AccessDeniedException;
 
     RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;

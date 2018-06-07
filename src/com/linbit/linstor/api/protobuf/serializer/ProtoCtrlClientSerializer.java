@@ -285,6 +285,11 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
             .setNodeName(nodeName.displayValue)
             .setRscName(resourceName.displayValue);
 
+        if (resourceState.isInUse() != null)
+        {
+            rscStateBuilder.setInUse(resourceState.isInUse());
+        }
+
         // volumes
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeEntry : resourceState.getVolumeStates().entrySet())
         {

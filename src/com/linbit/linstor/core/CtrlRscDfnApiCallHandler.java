@@ -7,6 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -52,6 +53,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -270,7 +272,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 apiCallRc,
                 rscNameStr
-            );
+            )
         )
         {
             requireRscDfnMapChangeAccess();
@@ -292,40 +294,56 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                Iterator<Resource> rscIterator = getPrivilegedRscIterator(rscDfn);
-                String successMsg;
-                String details;
-                UUID rscDfnUuid = rscDfn.getUuid();
-                if (rscIterator.hasNext())
+                Optional<Resource> rscInUse = rscDfn.anyResourceInUse(apiCtx);
+                if (rscInUse.isPresent())
                 {
-                    markDeleted(rscDfn);
-
-                    while (rscIterator.hasNext())
-                    {
-                        Resource rsc = rscIterator.next();
-                        markDeletedPrivileged(rsc);
-                    }
-
-                    commit();
-
-                    // notify satellites
-                    updateSatellites(rscDfn);
-
-                    successMsg = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
-                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscDfnUuid;
+                    NodeName nodeName = rscInUse.get().getAssignedNode().getName();
+                    addAnswer(
+                        String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue),
+                        "Resource is mounted/in use.",
+                        null,
+                        String.format("Un-mount resource '%s' on the node '%s'.",
+                            rscNameStr,
+                            nodeName.displayValue),
+                        ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL
+                    );
                 }
                 else
                 {
-                    ResourceName rscName = rscDfn.getName();
-                    delete(rscDfn);
-                    commit();
+                    Iterator<Resource> rscIterator = getPrivilegedRscIterator(rscDfn);
+                    String successMsg;
+                    String details;
+                    UUID rscDfnUuid = rscDfn.getUuid();
+                    if (rscIterator.hasNext())
+                    {
+                        markDeleted(rscDfn);
 
-                    rscDfnMap.remove(rscName);
+                        while (rscIterator.hasNext())
+                        {
+                            Resource rsc = rscIterator.next();
+                            markDeletedPrivileged(rsc);
+                        }
 
-                    successMsg = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
-                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscDfnUuid;
+                        commit();
+
+                        // notify satellites
+                        updateSatellites(rscDfn);
+
+                        successMsg = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
+                        details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscDfnUuid;
+                    } else
+                    {
+                        ResourceName rscName = rscDfn.getName();
+                        delete(rscDfn);
+                        commit();
+
+                        rscDfnMap.remove(rscName);
+
+                        successMsg = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
+                        details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscDfnUuid;
+                    }
+                    reportSuccess(successMsg, details);
                 }
-                reportSuccess(successMsg, details);
             }
         }
         catch (ApiCallHandlerFailedException ignore)

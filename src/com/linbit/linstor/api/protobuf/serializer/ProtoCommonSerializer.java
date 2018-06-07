@@ -6,6 +6,7 @@ import com.linbit.linstor.api.CommonSerializerBuilderImpl;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.ResourceStateGenerator;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
@@ -140,13 +141,20 @@ public class ProtoCommonSerializer implements CommonSerializer, CommonSerializer
     }
 
     @Override
-    public void writeResourceStateEvent(Boolean resourceReady, ByteArrayOutputStream baos)
+    public void writeResourceStateEvent(ResourceStateGenerator.UsageState usageState, ByteArrayOutputStream baos)
         throws IOException
     {
-        EventRscStateOuterClass.EventRscState.newBuilder()
-            .setReady(resourceReady)
-            .build()
-            .writeDelimitedTo(baos);
+        EventRscStateOuterClass.EventRscState.Builder builder = EventRscStateOuterClass.EventRscState.newBuilder();
+        if (usageState.getResourceReady() != null)
+        {
+            builder.setReady(usageState.getResourceReady());
+        }
+        if (usageState.getInUse() != null)
+        {
+            builder.setInUse(usageState.getInUse());
+        }
+
+        builder.build().writeDelimitedTo(baos);
     }
 
     @Override

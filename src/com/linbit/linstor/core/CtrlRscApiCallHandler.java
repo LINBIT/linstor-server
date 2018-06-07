@@ -48,6 +48,7 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -513,36 +514,52 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 true, // autoClose
                 nodeNameStr,
                 rscNameStr
-            );
+            )
         )
         {
+
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
 
-            int volumeCount = rscData.getVolumeCount();
-            String successMessage;
-            String details;
-            if (volumeCount > 0)
+            SatelliteState stltState = rscData.getAssignedNode().getPeer(apiCtx).getSatelliteState();
+            SatelliteResourceState rscState = stltState.getResourceStates().get(rscData.getDefinition().getName());
+
+            if (rscState != null && rscState.isInUse() != null && rscState.isInUse())
             {
-                successMessage = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
-                details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscData.getUuid();
-                markDeleted(rscData);
+                addAnswer(
+                    String.format("Resource '%s' is still in use.", rscNameStr),
+                    "Resource is mounted/in use.",
+                    null,
+                    String.format("Un-mount resource '%s' on the node '%s'.", rscNameStr, nodeNameStr),
+                    ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC | ApiConsts.MASK_DEL
+                );
             }
             else
             {
-                successMessage = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
-                details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscData.getUuid();
-                delete(rscData);
+                int volumeCount = rscData.getVolumeCount();
+                String successMessage;
+                String details;
+                if (volumeCount > 0)
+                {
+                    successMessage = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
+                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscData.getUuid();
+                    markDeleted(rscData);
+                } else
+                {
+                    successMessage = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
+                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscData.getUuid();
+                    delete(rscData);
+                }
+
+                commit();
+
+                if (volumeCount > 0)
+                {
+                    // notify satellites
+                    updateSatellites(rscData);
+                }
+
+                reportSuccess(successMessage, details);
             }
-
-            commit();
-
-            if (volumeCount > 0)
-            {
-                // notify satellites
-                updateSatellites(rscData);
-            }
-
-            reportSuccess(successMessage, details);
         }
         catch (ApiCallHandlerFailedException ignore)
         {

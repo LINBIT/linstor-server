@@ -4,11 +4,14 @@ import com.linbit.ErrorCheck;
 import com.linbit.ValueInUseException;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -30,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -493,6 +497,30 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             getProps(accCtx).map(),
             vlmDfnList
         );
+    }
+
+    @Override
+    public Optional<Resource> anyResourceInUse(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        Resource rscInUse = null;
+        Iterator<Resource> rscInUseIterator = iterateResource(accCtx);
+        while (rscInUseIterator.hasNext() && rscInUse == null)
+        {
+            Resource rsc = rscInUseIterator.next();
+
+            Peer nodePeer = rsc.getAssignedNode().getPeer(accCtx);
+            if (nodePeer != null)
+            {
+                SatelliteState stltState = nodePeer.getSatelliteState();
+                SatelliteResourceState rscState = stltState.getResourceStates().get(getName());
+                if (rscState.isInUse() != null && rscState.isInUse())
+                {
+                    rscInUse = rsc;
+                }
+            }
+        }
+        return Optional.ofNullable(rscInUse);
     }
 
     @Override

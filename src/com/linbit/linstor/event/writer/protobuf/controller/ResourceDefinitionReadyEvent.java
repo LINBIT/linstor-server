@@ -58,8 +58,9 @@ public class ResourceDefinitionReadyEvent implements EventWriter
             switch (eventIdentifier.getEventName())
             {
                 case ApiConsts.EVENT_RESOURCE_STATE:
-                    Boolean ready = resourceStateGenerator.generate(eventIdentifier.getObjectIdentifier());
-                    if (ready != null && ready)
+                    ResourceStateGenerator.UsageState usageState =
+                        resourceStateGenerator.generate(eventIdentifier.getObjectIdentifier());
+                    if (usageState.getResourceReady() != null && usageState.getResourceReady())
                     {
                         readyCount++;
                     }

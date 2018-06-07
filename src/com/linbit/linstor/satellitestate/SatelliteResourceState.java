@@ -16,6 +16,8 @@ public class SatelliteResourceState
 
     private ApiCallRc deploymentState;
 
+    private Boolean inUse;
+
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
 
     private final Map<SnapshotName, SnapshotState> snapshotStates = new HashMap<>();
@@ -28,6 +30,7 @@ public class SatelliteResourceState
     {
         ready = other.ready;
         deploymentState = other.deploymentState;
+        inUse = other.inUse;
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
         {
             volumeStates.put(volumeStateEntry.getKey(), new SatelliteVolumeState(volumeStateEntry.getValue()));
@@ -54,6 +57,16 @@ public class SatelliteResourceState
     public void setDeploymentState(ApiCallRc deploymentStateRef)
     {
         deploymentState = deploymentStateRef;
+    }
+
+    public Boolean isInUse()
+    {
+        return inUse;
+    }
+
+    public void setInUse(Boolean inUse)
+    {
+        this.inUse = inUse;
     }
 
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()

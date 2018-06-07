@@ -22,15 +22,17 @@ public class CtrlResourceStateGenerator implements ResourceStateGenerator
     }
 
     @Override
-    public Boolean generate(ObjectIdentifier objectIdentifier)
+    public UsageState generate(ObjectIdentifier objectIdentifier)
     {
-        return satelliteStateHelper.withSatelliteState(
+        UsageState usageState = new UsageState();
+        usageState.setResourceReady(satelliteStateHelper.withSatelliteState(
             objectIdentifier.getNodeName(),
             satelliteState -> satelliteState.getFromResource(
                 objectIdentifier.getResourceName(),
                 SatelliteResourceState::getReady
             ),
             null
-        );
+        ));
+        return usageState;
     }
 }

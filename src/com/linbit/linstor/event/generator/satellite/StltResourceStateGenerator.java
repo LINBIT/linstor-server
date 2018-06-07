@@ -31,10 +31,10 @@ public class StltResourceStateGenerator implements ResourceStateGenerator
     }
 
     @Override
-    public Boolean generate(ObjectIdentifier objectIdentifier)
+    public UsageState generate(ObjectIdentifier objectIdentifier)
         throws Exception
     {
-        Boolean resourceReady = null;
+        UsageState usageState = new UsageState();
 
         if (drbdEventService.isDrbdStateAvailable())
         {
@@ -43,12 +43,15 @@ public class StltResourceStateGenerator implements ResourceStateGenerator
             if (drbdResource != null)
             {
                 Map<VolumeNumber, DrbdVolume> volumesMap = drbdResource.getVolumesMap();
-                resourceReady = !volumesMap.isEmpty() &&
-                    volumesMap.values().stream().allMatch(this::volumeReady);
+                usageState.setResourceReady(!volumesMap.isEmpty() &&
+                    volumesMap.values().stream().allMatch(this::volumeReady)
+                );
+
+                usageState.setInUse(drbdResource.getRole() == DrbdResource.Role.PRIMARY);
             }
         }
 
-        return resourceReady;
+        return usageState;
     }
 
     private boolean volumeReady(DrbdVolume volume)

@@ -2,6 +2,7 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.ResourceStateGenerator;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -109,11 +110,11 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
     }
 
     @Override
-    public CommonSerializerBuilder resourceStateEvent(Boolean resourceReady)
+    public CommonSerializerBuilder resourceStateEvent(ResourceStateGenerator.UsageState usageState)
     {
         try
         {
-            commonSerializationWriter.writeResourceStateEvent(resourceReady, baos);
+            commonSerializationWriter.writeResourceStateEvent(usageState, baos);
         }
         catch (IOException ioExc)
         {
@@ -208,7 +209,7 @@ public class CommonSerializerBuilderImpl implements CommonSerializerBuilder
         void writeVolumeDiskState(String diskState, ByteArrayOutputStream baos)
             throws IOException;
 
-        void writeResourceStateEvent(Boolean resourceReady, ByteArrayOutputStream baos)
+        void writeResourceStateEvent(ResourceStateGenerator.UsageState usageState, ByteArrayOutputStream baos)
             throws IOException;
 
         void writeResourceDeploymentStateEvent(ApiCallRc apiCallRc, ByteArrayOutputStream baos)

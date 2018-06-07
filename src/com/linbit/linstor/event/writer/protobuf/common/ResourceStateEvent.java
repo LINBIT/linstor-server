@@ -5,7 +5,6 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.WatchableObject;
 import com.linbit.linstor.event.generator.ResourceStateGenerator;
-import com.linbit.linstor.event.generator.VolumeDiskStateGenerator;
 import com.linbit.linstor.event.writer.EventWriter;
 import com.linbit.linstor.event.writer.protobuf.ProtobufEventWriter;
 
@@ -36,8 +35,9 @@ public class ResourceStateEvent implements EventWriter
     public byte[] writeEvent(ObjectIdentifier objectIdentifier)
         throws Exception
     {
-        Boolean resourceReady = resourceStateGenerator.generate(objectIdentifier);
+        ResourceStateGenerator.UsageState usageState = resourceStateGenerator.generate(objectIdentifier);
 
-        return resourceReady == null ? null : commonSerializer.builder().resourceStateEvent(resourceReady).build();
+        return usageState.getResourceReady() == null ?
+            null : commonSerializer.builder().resourceStateEvent(usageState).build();
     }
 }

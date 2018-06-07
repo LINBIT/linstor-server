@@ -187,6 +187,12 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
         eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
     }
 
+    @Override
+    public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
+    {
+        eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+    }
+
     private EventIdentifier volumeDiskStateEventIdentifier(DrbdResource resource, DrbdVolume volume)
     {
         return EventIdentifier.volumeDefinition(

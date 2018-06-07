@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.generator.ResourceStateGenerator;
 import com.linbit.linstor.logging.ErrorReport;
 
 public interface CommonSerializer
@@ -31,7 +32,7 @@ public interface CommonSerializer
 
         CommonSerializerBuilder volumeDiskState(String diskState);
 
-        CommonSerializerBuilder resourceStateEvent(Boolean resourceReady);
+        CommonSerializerBuilder resourceStateEvent(ResourceStateGenerator.UsageState usageState);
 
         CommonSerializerBuilder resourceDeploymentStateEvent(ApiCallRc apiCallRc);
 
