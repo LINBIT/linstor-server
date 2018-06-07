@@ -431,6 +431,9 @@ INSERT INTO SEC_DFLT_ROLES (IDENTITY_NAME, ROLE_NAME)
 
 
 -- Default NetCom services
+INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'defaultDebugSslConnector', 'DebugSslConnector');
+INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'defaultSslConSvc', ''); -- '' == take first SSL connector, except $defaultDebugSslConnector
+INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'defaultPlainConSvc', ''); -- '' == take first plain connector
 
 -- Default PlainConnector
 INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/enabled', 'true');

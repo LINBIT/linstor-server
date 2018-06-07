@@ -34,13 +34,17 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public final class ControllerNetComInitializer
@@ -57,6 +61,7 @@ public final class ControllerNetComInitializer
     private static final String PROPSCON_KEY_NETCOM_ENABLED = "enabled";
     private static final String PROPSCON_NETCOM_TYPE_PLAIN = "plain";
     private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
+    static final String PROPSCON_KEY_DEFAULT_DEBUG_SSL_CON_SVC = "defaultDebugSslConnector";
     static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
 
@@ -245,7 +250,8 @@ public final class ControllerNetComInitializer
             );
             try
             {
-                if (ctrlConf.getProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC) == null)
+                String dfltPlainConSvc = ctrlConf.getProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC);
+                if (dfltPlainConSvc == null || dfltPlainConSvc.equals(""))
                 {
                     TransactionMgr transMgr = null;
                     try
@@ -305,78 +311,134 @@ public final class ControllerNetComInitializer
         {
             try
             {
-                netComSvc = new SslTcpConnectorService(
-                    errorReporter,
-                    msgProc,
-                    bindAddress,
-                    publicCtx,
-                    initCtx,
-                    ctrlConnTracker,
-                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
-                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
-                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
-                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD).toCharArray(),
-                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
-                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
-                );
-                try
+                List<String> missingPropKeys = new ArrayList<>();
+                String sslProtocol = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL, missingPropKeys);
+                String keyStoreFile = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_KEYSTORE, missingPropKeys);
+                String keyStorePw = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD, missingPropKeys);
+                String keyPw = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD, missingPropKeys);
+                String trustStoreFile = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE, missingPropKeys);
+                String trustStorPw = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD, missingPropKeys);
+
+                boolean rejectStart = false;
+                if (!missingPropKeys.isEmpty())
                 {
-                    if (ctrlConf.getProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC) == null)
+                    StringBuilder errorMsg = new StringBuilder();
+                    errorMsg.append("The SSL TCP connector '").append(serviceName.displayValue)
+                        .append("' could not be started as it is missing the following key");
+                    if (missingPropKeys.size() > 1)
                     {
+                        errorMsg.append("s");
+                    }
+                    errorMsg.append(":");
+                    for (String missingKey : missingPropKeys)
+                    {
+                        errorMsg.append("\\n\t").append(missingKey);
+                    }
+                    errorLogRef.logWarning(errorMsg.toString());
+                    rejectStart = true;
+                }
+                else
+                {
+                    boolean keyStorFileExists = Files.exists(Paths.get(keyStoreFile));
+                    boolean trustStoreFileExists = Files.exists(Paths.get(trustStoreFile));
 
-                        TransactionMgr transMgr = null;
-                        try
-                        {
-                            transMgr = new ControllerTransactionMgr(dbConnPool);
-                            initScope.enter();
-                            initScope.seed(TransactionMgr.class, transMgr);
-
-                            ctrlConf.setProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC, serviceName.displayValue);
-
-                            transMgr.commit();
-                            initScope.exit();
-                        }
-                        catch (SQLException sqlExc)
-                        {
-                            errorLogRef.reportError(
-                                sqlExc,
-                                sysCtx,
-                                null,
-                                "An SQL exception was thrown while trying to persist the default ssl connector"
-                            );
-                        }
-                        finally
-                        {
-                            if (transMgr != null)
-                            {
-                                try
-                                {
-                                    transMgr.rollback();
-                                }
-                                catch (SQLException sqlExc2)
-                                {
-                                    errorLogRef.reportError(
-                                        sqlExc2,
-                                        sysCtx,
-                                        null,
-                                        "An SQL exception was thrown while trying to rollback a transaction"
-                                    );
-                                }
-                                transMgr.returnConnection();
-                            }
-                        }
-
-
+                    if (!keyStorFileExists)
+                    {
+                        StringBuilder errorMsg = new StringBuilder();
+                        errorMsg.append("The SSL network communication service '").append(serviceName.displayValue)
+                            .append("' could not be started because the keyStore file (").append(keyStoreFile)
+                            .append(") is missing");
+                        errorLogRef.logWarning(errorMsg.toString());
+                        rejectStart = true;
+                    }
+                    else
+                    if (!trustStoreFileExists)
+                    {
+                        StringBuilder errorMsg = new StringBuilder();
+                        errorMsg.append("The SSL network communication service '").append(serviceName.displayValue)
+                            .append("' is missing the trustStor file (").append(trustStoreFile)
+                            .append(")");
+                        errorLogRef.logWarning(errorMsg.toString());
+                        rejectStart = false;
                     }
                 }
-                catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+
+                if (!rejectStart)
                 {
-                    errorLogRef.reportError(
-                        new ImplementationError(
-                            "Storing default ssl connector service caused exception",
-                            exc
-                        )
+                    netComSvc = new SslTcpConnectorService(
+                        errorReporter,
+                        msgProc,
+                        bindAddress,
+                        publicCtx,
+                        initCtx,
+                        ctrlConnTracker,
+                        sslProtocol,
+                        keyStoreFile,
+                        keyStorePw.toCharArray(),
+                        keyPw.toCharArray(),
+                        trustStoreFile,
+                        trustStorPw.toCharArray()
                     );
+                    try
+                    {
+                        String dfltDebugSslSvcName = ctrlConf.getProp(PROPSCON_KEY_DEFAULT_DEBUG_SSL_CON_SVC);
+                        String dfltSslSvcName = ctrlConf.getProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC);
+
+                        if (!serviceName.value.equals(dfltDebugSslSvcName.toUpperCase()) &&
+                            (dfltSslSvcName == null || dfltSslSvcName.equals("")))
+                        {
+                            TransactionMgr transMgr = null;
+                            try
+                            {
+                                transMgr = new ControllerTransactionMgr(dbConnPool);
+                                initScope.enter();
+                                initScope.seed(TransactionMgr.class, transMgr);
+
+                                ctrlConf.setProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC, serviceName.displayValue);
+
+                                transMgr.commit();
+                                initScope.exit();
+                            }
+                            catch (SQLException sqlExc)
+                            {
+                                errorLogRef.reportError(
+                                    sqlExc,
+                                    sysCtx,
+                                    null,
+                                    "An SQL exception was thrown while trying to persist the default ssl connector"
+                                );
+                            }
+                            finally
+                            {
+                                if (transMgr != null)
+                                {
+                                    try
+                                    {
+                                        transMgr.rollback();
+                                    }
+                                    catch (SQLException sqlExc2)
+                                    {
+                                        errorLogRef.reportError(
+                                            sqlExc2,
+                                            sysCtx,
+                                            null,
+                                            "An SQL exception was thrown while trying to rollback a transaction"
+                                        );
+                                    }
+                                    transMgr.returnConnection();
+                                }
+                            }
+                        }
+                    }
+                    catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+                    {
+                        errorLogRef.reportError(
+                            new ImplementationError(
+                                "Storing default ssl connector service caused exception",
+                                exc
+                            )
+                        );
+                    }
                 }
             }
             catch (
@@ -515,6 +577,24 @@ public final class ControllerNetComInitializer
             throw new ImplementationError("Constant key is invalid " + key, invalidKeyExc);
         }
 
+        return value;
+    }
+
+    private String loadOrAddKey(Props props, String key, List<String> missingKeys)
+    {
+        String value = null;
+        try
+        {
+            value = props.getProp(key);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Loading a hardcoded but invalid netcom-property key", exc);
+        }
+        if (value == null)
+        {
+            missingKeys.add(key);
+        }
         return value;
     }
 
