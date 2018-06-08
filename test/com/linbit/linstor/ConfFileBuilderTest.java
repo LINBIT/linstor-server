@@ -255,7 +255,7 @@ public class ConfFileBuilderTest
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
         when(volume.getStorPool(accessContext)).thenReturn(storPool);
         when(volume.getProps(accessContext)).thenReturn(vlmProps);
-        when(volume.getBlockDevicePath(accessContext)).thenReturn("/dev/mockitopath");
+        when(volume.getBackingDiskPath(accessContext)).thenReturn("/dev/mockitopath");
         when(volume.getResource()).thenReturn(resource);
 
         when(netInterface.getAddress(any(AccessContext.class)))

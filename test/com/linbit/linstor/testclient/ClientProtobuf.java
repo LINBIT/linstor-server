@@ -1393,7 +1393,7 @@ public class ClientProtobuf implements Runnable
             Vlm.newBuilder()
                 .setVlmNr(vlmNr)
                 .setStorPoolName(storPoolName)
-                .setBlockDevice(blockDevice)
+                .setBackingDisk(blockDevice)
                 .setMetaDisk(metaDisk)
                 .build();
     }

@@ -57,7 +57,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionMap<Volume, VolumeConnection> volumeConnections;
 
-    private final TransactionSimpleObject<VolumeData, String> blockDevicePath;
+    private final TransactionSimpleObject<VolumeData, String> backingDiskPath;
 
     private final TransactionSimpleObject<VolumeData, String> metaDiskPath;
 
@@ -70,7 +70,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfnRef,
         StorPool storPoolRef,
-        String blockDevicePathRef,
+        String backingDiskPathRef,
         String metaDiskPathRef,
         long initFlags,
         VolumeDataDatabaseDriver dbDriverRef,
@@ -89,7 +89,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
         storPool = storPoolRef;
-        blockDevicePath = transObjFactory.createTransactionSimpleObject(this, blockDevicePathRef, null);
+        backingDiskPath = transObjFactory.createTransactionSimpleObject(this, backingDiskPathRef, null);
         metaDiskPath = transObjFactory.createTransactionSimpleObject(this, metaDiskPathRef, null);
         dbDriver = dbDriverRef;
 
@@ -118,7 +118,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             volumeConnections,
             volumeProps,
             flags,
-            blockDevicePath,
+            backingDiskPath,
             metaDiskPath,
             deleted
         );
@@ -235,11 +235,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException
+    public String getBackingDiskPath(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return blockDevicePath.get();
+        return backingDiskPath.get();
     }
 
     @Override
@@ -251,13 +251,13 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException
+    public void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         try
         {
-            blockDevicePath.set(path);
+            backingDiskPath.set(path);
         }
         catch (SQLException exc)
         {
@@ -342,7 +342,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getStorPool(accCtx).getUuid(),
                 getVolumeDefinition().getUuid(),
                 getUuid(),
-                getBlockDevicePath(accCtx),
+                getBackingDiskPath(accCtx),
                 getMetaDiskPath(accCtx),
                 getVolumeDefinition().getVolumeNumber().value,
                 getVolumeDefinition().getMinorNr(accCtx).value,

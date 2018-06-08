@@ -1027,18 +1027,18 @@ class DrbdDeviceHandler implements DeviceHandler
                                 .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
 
                             String bdPath = vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted);
-                            vlm.setBlockDevicePath(wrkCtx, bdPath);
+                            vlm.setBackingDiskPath(wrkCtx, bdPath);
                             vlm.setMetaDiskPath(wrkCtx, "internal");
                         }
                         else
                         {
-                            vlm.setBlockDevicePath(wrkCtx, "none");
+                            vlm.setBackingDiskPath(wrkCtx, "none");
                             vlm.setMetaDiskPath(wrkCtx, null);
                         }
                         errLog.logTrace(
                             "Resource '" + rscName + "' volume " + vlmState.getVlmNr().toString() +
                                 " block device = %s, meta disk = %s",
-                            vlm.getBlockDevicePath(wrkCtx),
+                            vlm.getBackingDiskPath(wrkCtx),
                             vlm.getMetaDiskPath(wrkCtx)
                         );
                     }

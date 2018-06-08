@@ -63,7 +63,7 @@ public class VlmApiData implements VlmApi
     @Override
     public String getBlockDevice()
     {
-        return vlm.getBlockDevice();
+        return vlm.getBackingDisk();
     }
 
     @Override
@@ -156,7 +156,7 @@ public class VlmApiData implements VlmApi
         builder.setVlmMinorNr(vlmApi.getVlmMinorNr());
         if (vlmApi.getBlockDevice() != null)
         {
-            builder.setBlockDevice(vlmApi.getBlockDevice());
+            builder.setBackingDisk(vlmApi.getBlockDevice());
         }
         if (vlmApi.getMetaDisk() != null)
         {

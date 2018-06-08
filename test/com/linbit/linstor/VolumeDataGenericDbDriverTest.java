@@ -189,7 +189,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
         assertNotNull(volData);
         assertNotNull(volData.getUuid());
-        assertEquals(blockDevicePath, volData.getBlockDevicePath(SYS_CTX));
+        assertEquals(blockDevicePath, volData.getBackingDiskPath(SYS_CTX));
         assertEquals(metaDiskPath, volData.getMetaDiskPath(SYS_CTX));
         assertNotNull(volData.getFlags());
         assertTrue(volData.getFlags().isSet(SYS_CTX, VlmFlags.CLEAN));
@@ -493,7 +493,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         {
             assertEquals(uuid, loadedVol.getUuid());
         }
-        assertEquals(blockDevicePath, loadedVol.getBlockDevicePath(SYS_CTX));
+        assertEquals(blockDevicePath, loadedVol.getBackingDiskPath(SYS_CTX));
         assertEquals(metaDiskPath, loadedVol.getMetaDiskPath(SYS_CTX));
         assertNotNull(loadedVol.getFlags());
         assertTrue(loadedVol.getFlags().isSet(SYS_CTX, VlmFlags.CLEAN));

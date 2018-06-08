@@ -441,14 +441,14 @@ public class ConfFileBuilder
         if (vlm.getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE, Volume.VlmFlags.CLEAN))
         {
             final String disk;
-            if (vlm.getBlockDevicePath(localAccCtx) == null ||
+            if (vlm.getBackingDiskPath(localAccCtx) == null ||
                 vlm.getResource().getStateFlags().isSet(localAccCtx, RscFlags.DISKLESS))
             {
                 disk = "none";
             }
             else
             {
-                String tmpDisk = vlm.getBlockDevicePath(localAccCtx);
+                String tmpDisk = vlm.getBackingDiskPath(localAccCtx);
                 if (tmpDisk.trim().equals(""))
                 {
                     if (vlm.getResource().equals(localRsc))
@@ -467,7 +467,7 @@ public class ConfFileBuilder
                 }
                 else
                 {
-                    disk = vlm.getBlockDevicePath(localAccCtx);
+                    disk = vlm.getBackingDiskPath(localAccCtx);
                 }
             }
             final String metaDisk;

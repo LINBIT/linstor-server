@@ -43,13 +43,13 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
 
-    String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException;
+    String getBackingDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
     String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
-    void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
+    void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 

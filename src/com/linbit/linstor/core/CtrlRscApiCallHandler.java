@@ -42,7 +42,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -1279,7 +1278,7 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     Volume vlm = rsc.getVolume(new VolumeNumber(vlmUpd.getVolumeNumber()));
                     if (vlm != null)
                     {
-                        vlm.setBlockDevicePath(apiCtx, vlmUpd.getBlockDevicePath());
+                        vlm.setBackingDiskPath(apiCtx, vlmUpd.getBlockDevicePath());
                         vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
                     }
                     else

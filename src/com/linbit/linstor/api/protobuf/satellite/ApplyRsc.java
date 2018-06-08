@@ -122,7 +122,7 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(vol.getStorPoolUuid()),
                     UUID.fromString(vol.getVlmDfnUuid()),
                     UUID.fromString(vol.getVlmUuid()),
-                    vol.getBlockDevice(),
+                    vol.getBackingDisk(),
                     vol.getMetaDisk(),
                     vol.getVlmNr(),
                     vol.getVlmMinorNr(),

@@ -427,7 +427,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             vlmDatas.add(
                 MsgIntApplyRscSuccessOuterClass.VlmData.newBuilder()
                     .setVlmNr(vlm.getVolumeDefinition().getVolumeNumber().value)
-                    .setBlockDevicePath(vlm.getBlockDevicePath(serializerCtx))
+                    .setBlockDevicePath(vlm.getBackingDiskPath(serializerCtx))
                     .setMetaDisk(vlm.getMetaDiskPath(serializerCtx))
                     .build()
             );
@@ -840,10 +840,10 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                             vlmStorPool.getProps(serializerCtx).map())
                         )
                     .addAllVlmProps(ProtoMapUtils.fromMap(volProps));
-                String blockDev = vol.getBlockDevicePath(serializerCtx);
+                String blockDev = vol.getBackingDiskPath(serializerCtx);
                 if (blockDev != null)
                 {
-                    builder.setBlockDevice(blockDev);
+                    builder.setBackingDisk(blockDev);
                 }
                 String metaDisk = vol.getMetaDiskPath(serializerCtx);
                 if (metaDisk != null)
