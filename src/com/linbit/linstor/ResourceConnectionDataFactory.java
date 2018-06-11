@@ -66,8 +66,7 @@ public class ResourceConnectionDataFactory
         source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-
-        rscConData = dbDriver.load(source, target, false);
+        rscConData = (ResourceConnectionData) sourceResource.getResourceConnection(accCtx, targetResource);
 
         if (failIfExists && rscConData != null)
         {
@@ -121,7 +120,7 @@ public class ResourceConnectionDataFactory
 
         try
         {
-            rscConData = dbDriver.load(source, target, false);
+            rscConData = (ResourceConnectionData) sourceResource.getResourceConnection(accCtx, targetResource);
 
             if (rscConData == null)
             {

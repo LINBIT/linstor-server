@@ -50,7 +50,7 @@ public class PropsContainerFactory
             // container.setConnection(transMgr); // TODO this should not be needed, or committed at the end
             try
             {
-                Map<String, String> loadedProps = dbDriver.load(instanceName);
+                Map<String, String> loadedProps = dbDriver.loadAll(instanceName);
                 for (Map.Entry<String, String> entry : loadedProps.entrySet())
                 {
                     String key = entry.getKey();

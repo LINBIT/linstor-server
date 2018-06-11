@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.InitMaps;
 import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -79,13 +78,15 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
         resName = new ResourceName("TestResName");
         resPort = 9001;
-        resDfn = resourceDefinitionDataFactory.create(
+        resDfn = resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName,
             resPort,
             null,
             "secret",
-            TransportType.IP
+            TransportType.IP,
+            true,
+            false
         );
 
         nodeId = new NodeId(7);
@@ -119,13 +120,15 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        volDfn = volumeDefinitionDataFactory.create(
+        volDfn = volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDfn,
             volNr,
             minor,
             volSize,
-            null
+            null,
+            true,
+            false
         );
 
         uuid = randomUUID();
@@ -216,30 +219,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoad() throws Exception
-    {
-        VolumeData vol = new VolumeData(
-            uuid,
-            res,
-            volDfn,
-            storPool,
-            blockDevicePath,
-            metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
-        );
-        driver.create(vol);
-
-        VolumeData loadedVol = driver.load(res, volDfn, storPool, true);
-
-        checkLoaded(loadedVol, uuid);
-    }
-
-    @Test
     public void testLoadAll() throws Exception
     {
         VolumeData vol = new VolumeData(
@@ -292,6 +271,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             new TreeMap<>()
         );
         driver.create(vol);
+        volDfn.putVolume(SYS_CTX, vol);
+        res.putVolume(SYS_CTX, vol);
 
         VolumeData loadedVol = volumeDataFactory.getInstance(
             SYS_CTX,
@@ -324,7 +305,17 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(res, volDfn, storPool, true));
+        assertEquals(storedInstance, volumeDataFactory.getInstance(
+            SYS_CTX,
+            res,
+            volDfn,
+            null,
+            null,
+            null,
+            null,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -394,57 +385,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         map.put(testKey, testValue);
 
         testProps(PropsContainer.buildPath(nodeName, resName, volNr), map);
-    }
-
-    @Test
-    public void testPropsConLoad() throws Exception
-    {
-        VolumeData vol = new VolumeData(
-            uuid,
-            res,
-            volDfn,
-            storPool,
-            blockDevicePath,
-            metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
-        );
-        driver.create(vol);
-        commit();
-        String testKey = "TestKey";
-        String testValue = "TestValue";
-        insertProp(PropsContainer.buildPath(nodeName, resName, volNr), testKey, testValue);
-
-        /*
-         * This test is a bit hacky.
-         * In "new VolumeData(...)" the volume registered itself in volDfn, res and storPool.
-         * After that, the driver is told to insert the entry into the database, and the database is also extended with
-         * props entry for that volume.
-         *
-         * The problems start with the load. "driver.load(...)" will try to use the resource as a cache, asking it if
-         * it knows about the volume which should be loaded. As "new VolumeData(...)" registered itself, the resource
-         * does know about the volume, so the database uses that cached instance and returns.
-         * As it assumes the cached instance is valid, it does NOT load the manually inserted props.
-         *
-         * To avoid this problem, we have to "unregister" the volume.
-         */
-        res.removeVolume(SYS_CTX, vol);
-
-        VolumeData loadedVol = driver.load(res, volDfn, storPool, true);
-
-        /*
-         *  NOTE: as the "driver.load(...)" has to create a new instance of VolumeData,
-         *  the loaded volume is re-registered now.
-         */
-
-        assertNotNull(loadedVol);
-        Props props = loadedVol.getProps(SYS_CTX);
-        assertNotNull(props);
-        assertEquals(testValue, props.getProp(testKey));
     }
 
     @Test
@@ -523,6 +463,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             new TreeMap<>()
         );
         driver.create(vol);
+        volDfn.putVolume(SYS_CTX, vol);
+        res.putVolume(SYS_CTX, vol);
 
         volumeDataFactory.getInstance(
             SYS_CTX,

@@ -386,13 +386,15 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private ResourceDefinitionData createRscDfn(String rscNameStr, int tcpPort)
         throws Exception
     {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
+        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstance(
             BOB_ACC_CTX,
             new ResourceName(rscNameStr),
             tcpPort,
             null,
             "NotTellingYou",
-            ResourceDefinition.TransportType.IP
+            ResourceDefinition.TransportType.IP,
+            true,
+            true
         );
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);
@@ -476,13 +478,15 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             ResourceName rscName = new ResourceName(rscNameStrRef);
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
 
-            volumeDefinitionDataFactory.create(
+            volumeDefinitionDataFactory.getInstance(
                 BOB_ACC_CTX,
                 rscDfn,
                 new VolumeNumber(vlmNrRef),
                 MINOR_GEN.incrementAndGet(),
                 sizeRef,
-                null
+                null,
+                true,
+                true
             );
 
             return this;

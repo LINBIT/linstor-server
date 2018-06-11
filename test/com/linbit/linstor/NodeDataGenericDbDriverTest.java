@@ -197,7 +197,9 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
         commit();
 
-        NodeData loaded = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
+        Iterator<NodeData> nodeIt = dbDriver.loadAll().keySet().iterator();
+        NodeData loaded = nodeIt.next();
+        assertFalse(nodeIt.hasNext());
 
         assertNotNull(loaded);
         loaded.getFlags().enableFlags(SYS_CTX, NodeFlag.DELETE);
@@ -217,28 +219,19 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoadSimple() throws Exception
-    {
-        dbDriver.create(node);
-
-        NodeData loaded = dbDriver.load(nodeName, true);
-
-        assertEquals(nodeName.value, loaded.getName().value);
-        assertEquals(nodeName.displayValue, loaded.getName().displayValue);
-        assertEquals(NodeFlag.QIGNORE.flagValue, loaded.getFlags().getFlagsBits(SYS_CTX));
-        assertEquals(Node.NodeType.AUXILIARY, loaded.getNodeType(SYS_CTX));
-    }
-
-    @Test
     public void testLoadGetInstance() throws Exception
     {
         NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
         assertNull(loadedNode);
 
         insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
+        nodesMap.put(nodeName, node);
         commit();
 
-        loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
+        Iterator<NodeData> nodeIt = dbDriver.loadAll().keySet().iterator();
+        loadedNode = nodeIt.next();
+
+        assertFalse(nodeIt.hasNext());
 
         assertNotNull(loadedNode);
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
@@ -376,13 +369,15 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             nodesMap.put(node2.getName(), node2);
 
             // resDfn
-            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.create(
+            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 resName,
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
-                transportType
+                transportType,
+                true,
+                true
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
@@ -390,13 +385,15 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             rscDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
-            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.create(
+            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.getInstance(
                 SYS_CTX,
                 resDfn,
                 volDfnNr,
                 volDfnMinorNr,
                 volDfnSize,
-                new VlmDfnFlags[] {VlmDfnFlags.DELETE}
+                new VlmDfnFlags[] {VlmDfnFlags.DELETE},
+                true,
+                true
             );
             volDfn.getProps(SYS_CTX).setProp(volDfnTestKey, volDfnTestValue);
             volDfnUuid = volDfn.getUuid();
@@ -707,7 +704,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeName, node);
         // no clearCaches
 
-        assertEquals(node, dbDriver.load(nodeName, true));
+        assertEquals(node, nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false));
     }
 
     @Test
@@ -728,19 +725,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
 
         resultSet.close();
         stmt.close();
-    }
-
-    @Test
-    public void testHalfValidName() throws Exception
-    {
-        dbDriver.create(node);
-
-        NodeName halfValidName = new NodeName(node.getName().value);
-        NodeData loadedNode = dbDriver.load(halfValidName, true);
-
-        assertNotNull(loadedNode);
-        assertEquals(node.getName(), loadedNode.getName());
-        assertEquals(node.getUuid(), loadedNode.getUuid());
     }
 
     @Test
@@ -790,6 +774,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         dbDriver.create(node);
+        nodesMap.put(nodeName, node);
 
         nodeDataFactory.getInstance(SYS_CTX, nodeName, initialType, null, false, true);
     }

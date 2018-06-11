@@ -37,10 +37,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     private static final String SELECT_ALL =
         " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
         " FROM " + TBL_NODE_CON_DFN;
-    private static final String SELECT =
-        SELECT_ALL +
-        " WHERE " + NODE_SRC + " = ? AND " +
-                    NODE_DST + " = ?";
 
     private static final String INSERT =
         " INSERT INTO " + TBL_NODE_CON_DFN +
@@ -72,62 +68,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
-    }
-
-    @Override
-    public NodeConnectionData load(
-        Node sourceNode,
-        Node targetNode,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading NodeConnection %s", getId(sourceNode, targetNode));
-
-        NodeConnectionData ret = cacheGet(sourceNode, targetNode);
-
-        if (ret == null)
-        {
-            try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
-            {
-                stmt.setString(1, sourceNode.getName().value);
-                stmt.setString(2, targetNode.getName().value);
-
-                try (ResultSet resultSet = stmt.executeQuery())
-                {
-                    if (resultSet.next())
-                    {
-                        ret = new NodeConnectionData(
-                            java.util.UUID.fromString(resultSet.getString(UUID)),
-                            sourceNode,
-                            targetNode,
-                            this,
-                            propsContainerFactory,
-                            transObjFactory,
-                            transMgrProvider
-                        );
-                        errorReporter.logTrace("NodeConnection %s loaded from database",
-                            getId(sourceNode, targetNode)
-                        );
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "NodeConnection not found in DB %s",
-                            getId(sourceNode, targetNode)
-                        );
-                    }
-                }
-            }
-        }
-        else
-        {
-            errorReporter.logTrace("NodeConnection %s loaded from cache",
-                getId(sourceNode, targetNode)
-            );
-        }
-        return ret;
     }
 
     public List<NodeConnectionData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap)
@@ -233,20 +173,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         }
     }
 
-    private NodeConnectionData cacheGet(Node sourceNode, Node targetNode)
-    {
-        NodeConnectionData ret = null;
-        try
-        {
-            ret = (NodeConnectionData) sourceNode.getNodeConnection(dbCtx, targetNode);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
-    }
-
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
@@ -270,14 +196,6 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
             GenericDbDriver.handleAccessDeniedException(accDeniedExc);
         }
         return id;
-    }
-
-    private String getId(Node src, Node dst)
-    {
-        return getId(
-            src.getName().displayValue,
-            dst.getName().displayValue
-        );
     }
 
     private String getId(String sourceName, String targetName)

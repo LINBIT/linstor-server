@@ -17,19 +17,6 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 public interface ResourceDefinitionDataDatabaseDriver
 {
     /**
-     * Loads the {@link ResourceDefinitionData} specified by the parameter {@code resuorceName}
-     *
-     * @param resourceName
-     *  The primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    ResourceDefinitionData load(ResourceName resourceName, boolean logWarnIfNotExists)
-        throws SQLException;
-
-    /**
      * Persists the given {@link ResourceDefinitionData} into the database.
      *
      * @param resourceDefinition

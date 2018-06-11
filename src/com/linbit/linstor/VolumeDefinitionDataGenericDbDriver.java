@@ -140,48 +140,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         }
     }
 
-    @Override
-    public VolumeDefinitionData load(
-        ResourceDefinition resourceDefinition,
-        VolumeNumber volumeNumber,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading VolumeDefinition %s", getId(resourceDefinition, volumeNumber));
-        VolumeDefinitionData ret = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(VD_SELECT))
-        {
-            stmt.setString(1, resourceDefinition.getName().value);
-            stmt.setInt(2, volumeNumber.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = cacheGet(resourceDefinition, volumeNumber);
-                if (ret == null)
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreVolumeDefinition(
-                            resultSet,
-                            resourceDefinition,
-                            volumeNumber
-                        ).objA;
-                        errorReporter.logTrace("VolumeDefinition loaded %s", getId(resourceDefinition, volumeNumber));
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "Requested VolumeDefinition %s could not be found in the Database",
-                            getId(resourceDefinition, volumeNumber)
-                        );
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
     private Pair<VolumeDefinitionData, InitMaps> restoreVolumeDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
@@ -194,36 +152,26 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         Pair<VolumeDefinitionData, InitMaps> retPair;
         try
         {
-            vlmDfn = cacheGet(resDfn, volNr);
+            Map<String, Volume> vlmMap = new TreeMap<>();
 
-            if (vlmDfn == null)
-            {
-                Map<String, Volume> vlmMap = new TreeMap<>();
+            vlmDfn = new VolumeDefinitionData(
+                java.util.UUID.fromString(resultSet.getString(VD_UUID)),
+                resDfn,
+                volNr,
+                new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
+                minorNrPool,
+                resultSet.getLong(VD_SIZE),
+                resultSet.getLong(VD_FLAGS),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                vlmMap
+            );
+            retPair = new Pair<>(vlmDfn, new VolumeDefinitionInitMaps(vlmMap));
 
-                vlmDfn = new VolumeDefinitionData(
-                    java.util.UUID.fromString(resultSet.getString(VD_UUID)),
-                    resDfn,
-                    volNr,
-                    new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
-                    minorNrPool,
-                    resultSet.getLong(VD_SIZE),
-                    resultSet.getLong(VD_FLAGS),
-                    this,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider,
-                    vlmMap
-                );
-                retPair = new Pair<>(vlmDfn, new VolumeDefinitionInitMaps(vlmMap));
-
-                errorReporter.logTrace("VolumeDefinition %s created during restore", getId(vlmDfn));
-                // restore references
-            }
-            else
-            {
-                retPair = new Pair<>(vlmDfn, null);
-                errorReporter.logTrace("VolumeDefinition %s restored from cache", getId(vlmDfn));
-            }
+            errorReporter.logTrace("VolumeDefinition %s created during restore", getId(vlmDfn));
+            // restore references
         }
         catch (MdException mdExc)
         {
@@ -342,22 +290,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
     {
         return sizeDriver;
-    }
-
-    private VolumeDefinitionData cacheGet(ResourceDefinition resDfn, VolumeNumber volNr)
-    {
-        VolumeDefinitionData ret = null;
-
-        try
-        {
-            ret = (VolumeDefinitionData) resDfn.getVolumeDfn(dbCtx, volNr);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-
-        return ret;
     }
 
     private Connection getConnection()

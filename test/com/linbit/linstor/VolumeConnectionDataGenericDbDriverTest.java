@@ -103,11 +103,11 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+        resDfn = resourceDefinitionDataFactory.getInstance(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, false
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
+        volDfn = volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, true, false);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
@@ -158,25 +158,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         commit();
 
         checkDbPersist(false);
-    }
-
-    @Test
-    public void testLoad() throws Exception
-    {
-        VolumeConnectionData volCon = new VolumeConnectionData(
-            uuid,
-            volSrc,
-            volDst,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider
-        );
-        driver.create(volCon);
-
-        VolumeConnectionData loadedConDfn = driver.load(volSrc, volDst, true);
-
-        checkLoadedConDfn(loadedConDfn, true);
     }
 
     @Test
@@ -235,6 +216,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             transMgrProvider
         );
         driver.create(volCon);
+        volSrc.setVolumeConnection(SYS_CTX, volCon);
+        volDst.setVolumeConnection(SYS_CTX, volCon);
 
         VolumeConnectionData loadedConDfn = volumeConnectionDataFactory.getInstance(
             SYS_CTX,
@@ -260,7 +243,13 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(volSrc, volDst, true));
+        assertEquals(storedInstance, volumeConnectionDataFactory.getInstance(
+            SYS_CTX,
+            volSrc,
+            volDst,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -336,17 +325,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(
-            uuid,
-            volSrc,
-            volDst,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider
-        );
-        driver.create(volCon);
-
+        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, true, true);
         volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, false, true);
     }
 }

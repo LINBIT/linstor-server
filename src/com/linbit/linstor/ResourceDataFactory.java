@@ -48,7 +48,7 @@ public class ResourceDataFactory
 
     public ResourceData getInstance(
         AccessContext accCtx,
-        ResourceDefinition resDfn,
+        ResourceDefinition rscDfn,
         Node node,
         NodeId nodeId,
         Resource.RscFlags[] initFlags,
@@ -57,30 +57,27 @@ public class ResourceDataFactory
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        ResourceData resData = null;
+        rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        ResourceData rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
 
-
-        resData = dbDriver.load(node, resDfn, false);
-
-        if (failIfExists && resData != null)
+        if (failIfExists && rscData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Resource already exists");
         }
 
-        if (resData == null && createIfNotExists)
+        if (rscData == null && createIfNotExists)
         {
-            resData = new ResourceData(
+            rscData = new ResourceData(
                 UUID.randomUUID(),
                 objectProtectionFactory.getInstance(
                     accCtx,
                     ObjectProtection.buildPath(
                         node.getName(),
-                        resDfn.getName()
+                        rscDfn.getName()
                     ),
                     true
                 ),
-                resDfn,
+                rscDfn,
                 node,
                 nodeId,
                 StateFlagsBits.getMask(initFlags),
@@ -92,11 +89,11 @@ public class ResourceDataFactory
                 new TreeMap<>(),
                 new TreeMap<>()
             );
-            dbDriver.create(resData);
-            ((NodeData) node).addResource(accCtx, resData);
-            ((ResourceDefinitionData) resDfn).addResource(accCtx, resData);
+            dbDriver.create(rscData);
+            ((NodeData) node).addResource(accCtx, rscData);
+            ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
         }
-        return resData;
+        return rscData;
     }
 
     public ResourceData getInstanceSatellite(
@@ -112,7 +109,7 @@ public class ResourceDataFactory
         ResourceData rscData;
         try
         {
-            rscData = dbDriver.load(node, rscDfn, false);
+            rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
             if (rscData == null)
             {
                 rscData = new ResourceData(

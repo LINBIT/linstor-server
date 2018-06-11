@@ -41,10 +41,6 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     private static final String SD_SELECT_ALL =
         " SELECT " + SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " + SD_DSP_NAME + ", " + SD_FLAGS +
         " FROM " + TBL_SNAPSHOT_DFN;
-    private static final String SD_SELECT =
-        SD_SELECT_ALL +
-        " WHERE " + SD_RES_NAME + " = ? AND " +
-            SD_NAME + " = ?";
 
     private static final String SD_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT_DFN +
@@ -107,48 +103,6 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         }
     }
 
-    @Override
-    public SnapshotDefinitionData load(
-        ResourceDefinition resourceDefinition,
-        SnapshotName snapshotName,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading SnapshotDefinition %s", getId(resourceDefinition, snapshotName));
-        SnapshotDefinitionData ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SD_SELECT))
-        {
-            stmt.setString(1, resourceDefinition.getName().value);
-            stmt.setString(2, snapshotName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = cacheGet(resourceDefinition, snapshotName);
-                if (ret == null)
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreSnapshotDefinition(
-                            resultSet,
-                            resourceDefinition,
-                            snapshotName
-                        ).objA;
-                        errorReporter.logTrace("SnapshotDefinition loaded %s", getId(resourceDefinition, snapshotName));
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "Requested SnapshotDefinition %s could not be found in the Database",
-                            getId(resourceDefinition, snapshotName)
-                        );
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
     private Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> restoreSnapshotDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
@@ -160,34 +114,23 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         SnapshotDefinitionData snapshotDfn;
         Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> retPair;
 
-        snapshotDfn = cacheGet(resDfn, snapshotName);
+        Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMap = new TreeMap<>();
+        Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
 
-        if (snapshotDfn == null)
-        {
-            Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMap = new TreeMap<>();
-            Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
+        snapshotDfn = new SnapshotDefinitionData(
+            java.util.UUID.fromString(resultSet.getString(SD_UUID)),
+            resDfn,
+            snapshotName,
+            resultSet.getLong(SD_FLAGS),
+            this,
+            transObjFactory,
+            transMgrProvider,
+            snapshotVlmDfnMap,
+            snapshotMap
+        );
+        retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps(snapshotMap, snapshotVlmDfnMap));
 
-            snapshotDfn = new SnapshotDefinitionData(
-                java.util.UUID.fromString(resultSet.getString(SD_UUID)),
-                resDfn,
-                snapshotName,
-                resultSet.getLong(SD_FLAGS),
-                this,
-                transObjFactory,
-                transMgrProvider,
-                snapshotVlmDfnMap,
-                snapshotMap
-            );
-            retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps(snapshotMap, snapshotVlmDfnMap));
-
-            errorReporter.logTrace("SnapshotDefinition %s created during restore", getId(snapshotDfn));
-            // restore references
-        }
-        else
-        {
-            retPair = new Pair<>(snapshotDfn, null);
-            errorReporter.logTrace("SnapshotDefinition %s restored from cache", getId(snapshotDfn));
-        }
+        errorReporter.logTrace("SnapshotDefinition %s created during restore", getId(snapshotDfn));
 
         return retPair;
     }
@@ -253,22 +196,6 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     public StateFlagsPersistence<SnapshotDefinitionData> getStateFlagsPersistence()
     {
         return flagsDriver;
-    }
-
-    private SnapshotDefinitionData cacheGet(ResourceDefinition resDfn, SnapshotName snapshotName)
-    {
-        SnapshotDefinitionData ret = null;
-
-        try
-        {
-            ret = (SnapshotDefinitionData) resDfn.getSnapshotDfn(dbCtx, snapshotName);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-
-        return ret;
     }
 
     private Connection getConnection()

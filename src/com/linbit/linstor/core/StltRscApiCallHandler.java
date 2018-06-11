@@ -27,16 +27,11 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotData;
-import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
-import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
@@ -92,7 +87,7 @@ class StltRscApiCallHandler
     private final NodeDataSatelliteFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ResourceDataFactory resourceDataFactory;
-    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
@@ -114,7 +109,7 @@ class StltRscApiCallHandler
         NodeDataSatelliteFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         ResourceDataFactory resourceDataFactoryRef,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -752,7 +747,7 @@ class StltRscApiCallHandler
                         storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
                     if (storPoolDfn == null)
                     {
-                        storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
+                        storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                             apiCtx,
                             vlmApi.getStorPoolDfnUuid(),
                             new StorPoolName(vlmApi.getStorPoolName())

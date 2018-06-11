@@ -1,14 +1,19 @@
 package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -31,6 +36,8 @@ public class ResourceDefinitionDataControllerFactory
     private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final ResourceDefinitionMap rscDfnMap;
+    private final ObjectProtection rscDfnMapProt;
 
     @Inject
     public ResourceDefinitionDataControllerFactory(
@@ -39,7 +46,9 @@ public class ResourceDefinitionDataControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef
     )
     {
         driver = driverRef;
@@ -48,71 +57,89 @@ public class ResourceDefinitionDataControllerFactory
         tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        rscDfnMap = rscDfnMapRef;
+        rscDfnMapProt = rscDfnMapProtRef;
     }
 
-    public ResourceDefinitionData create(
+    public ResourceDefinitionData getInstance(
         AccessContext accCtx,
-        ResourceName resName,
+        ResourceName rscName,
         Integer port,
         ResourceDefinition.RscDfnFlags[] flags,
         String secret,
-        ResourceDefinition.TransportType transType
+        ResourceDefinition.TransportType transType,
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
+        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+        ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
 
-        ResourceDefinitionData resDfn = null;
-        resDfn = driver.load(resName, false);
-
-        if (resDfn != null)
+        if (rscDfn != null && failIfExists)
         {
             throw new LinStorDataAlreadyExistsException("The ResourceDefinition already exists");
         }
 
-        TcpPortNumber chosenTcpPort;
-        if (port == null)
+        if (rscDfn == null && createIfNotExists)
         {
-            chosenTcpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
-        }
-        else
-        {
-            chosenTcpPort = new TcpPortNumber(port);
-            tcpPortPool.allocate(port);
+            TcpPortNumber chosenTcpPort;
+            if (port == null)
+            {
+                chosenTcpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
+            }
+            else
+            {
+                chosenTcpPort = new TcpPortNumber(port);
+                tcpPortPool.allocate(port);
+            }
+
+            rscDfn = new ResourceDefinitionData(
+                UUID.randomUUID(),
+                objectProtectionFactory.getInstance(
+                    accCtx,
+                    ObjectProtection.buildPath(rscName),
+                    true
+                ),
+                rscName,
+                chosenTcpPort,
+                tcpPortPool,
+                StateFlagsBits.getMask(flags),
+                secret,
+                transType,
+                driver,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                new TreeMap<>(),
+                new TreeMap<>(),
+                new TreeMap<>()
+            );
+            driver.create(rscDfn);
         }
 
-        resDfn = new ResourceDefinitionData(
-            UUID.randomUUID(),
-            objectProtectionFactory.getInstance(
-                accCtx,
-                ObjectProtection.buildPath(resName),
-                true
-            ),
-            resName,
-            chosenTcpPort,
-            tcpPortPool,
-            StateFlagsBits.getMask(flags),
-            secret,
-            transType,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>(),
-            new TreeMap<>(),
-            new TreeMap<>()
-        );
-        driver.create(resDfn);
-
-        return resDfn;
+        return rscDfn;
     }
 
-    public ResourceDefinitionData load(ResourceName resName)
-        throws SQLException
+    public ResourceDefinitionData load(AccessContext accCtx, ResourceName resName)
+        throws AccessDeniedException
     {
-
-        ResourceDefinitionData resDfn = driver.load(resName, false);
-
-        return resDfn;
+        ResourceDefinitionData rscDfn;
+        try
+        {
+            rscDfn = getInstance(accCtx, resName, null, null, null, null, false, false);
+        }
+        catch (
+            SQLException |
+            LinStorDataAlreadyExistsException |
+            ValueOutOfRangeException |
+            ValueInUseException |
+            ExhaustedPoolException exc
+        )
+        {
+            throw new ImplementationError("Impossible exception was thrown", exc);
+        }
+        return rscDfn;
     }
 }

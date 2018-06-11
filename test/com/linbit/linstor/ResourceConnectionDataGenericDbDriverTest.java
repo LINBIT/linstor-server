@@ -71,8 +71,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+        resDfn = resourceDefinitionDataFactory.getInstance(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, true
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
@@ -114,16 +114,6 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoad() throws Exception
-    {
-        driver.create(resCon);
-
-        ResourceConnectionData loadedConDfn = driver.load(resSrc, resDst, true);
-
-        checkLoadedConDfn(loadedConDfn, true);
-    }
-
-    @Test
     public void testLoadAll() throws Exception
     {
         driver.create(resCon);
@@ -147,6 +137,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(resCon);
+        resSrc.setResourceConnection(SYS_CTX, resCon);
+        resDst.setResourceConnection(SYS_CTX, resCon);
 
         ResourceConnectionData loadedConDfn = resourceConnectionDataFactory.getInstance(
             SYS_CTX,
@@ -172,7 +164,13 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(resSrc, resDst, true));
+        assertEquals(storedInstance, resourceConnectionDataFactory.getInstance(
+            SYS_CTX,
+            resSrc,
+            resDst,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -238,6 +236,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(resCon);
+        resSrc.setResourceConnection(SYS_CTX, resCon);
+        resDst.setResourceConnection(SYS_CTX, resCon);
 
         resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, false, true);
     }

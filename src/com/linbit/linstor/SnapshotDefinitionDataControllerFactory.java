@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -32,37 +33,42 @@ public class SnapshotDefinitionDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public SnapshotDefinitionData create(
+    public SnapshotDefinitionData getInstance(
         AccessContext accCtx,
-        ResourceDefinition resDfn,
+        ResourceDefinition rscDfn,
         SnapshotName snapshotName,
-        SnapshotDefinition.SnapshotDfnFlags[] initFlags
+        SnapshotDefinition.SnapshotDfnFlags[] initFlags,
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        SnapshotDefinitionData snapshotDfnData = driver.load(resDfn, snapshotName, false);
+        SnapshotDefinitionData snapshotDfnData = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(accCtx, snapshotName);
 
-        if (snapshotDfnData != null)
+        if (snapshotDfnData != null && failIfExists)
         {
             throw new LinStorDataAlreadyExistsException("The SnapshotDefinition already exists");
         }
 
-        snapshotDfnData = new SnapshotDefinitionData(
-            UUID.randomUUID(),
-            resDfn,
-            snapshotName,
-            StateFlagsBits.getMask(initFlags),
-            driver,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>(),
-            new TreeMap<>()
-        );
+        if (snapshotDfnData == null && createIfNotExists)
+        {
+            snapshotDfnData = new SnapshotDefinitionData(
+                UUID.randomUUID(),
+                rscDfn,
+                snapshotName,
+                StateFlagsBits.getMask(initFlags),
+                driver,
+                transObjFactory,
+                transMgrProvider,
+                new TreeMap<>(),
+                new TreeMap<>()
+            );
 
-        driver.create(snapshotDfnData);
-        resDfn.addSnapshotDfn(accCtx, snapshotDfnData);
+            driver.create(snapshotDfnData);
+            rscDfn.addSnapshotDfn(accCtx, snapshotDfnData);
+        }
 
         return snapshotDfnData;
     }
@@ -72,10 +78,20 @@ public class SnapshotDefinitionDataControllerFactory
         ResourceDefinition resDfn,
         SnapshotName snapshotName
     )
-        throws SQLException, AccessDeniedException
+        throws AccessDeniedException
     {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-
-        return driver.load(resDfn, snapshotName, false);
+        SnapshotDefinitionData snapshotDfn;
+        try
+        {
+            snapshotDfn = getInstance(accCtx, resDfn, snapshotName, null, false, false);
+        }
+        catch (
+            LinStorDataAlreadyExistsException |
+            SQLException exc
+        )
+        {
+            throw new ImplementationError("Impossible Exception was thrown", exc);
+        }
+        return snapshotDfn;
     }
 }

@@ -40,8 +40,8 @@ public class VolumeDataFactory
 
     public VolumeData getInstance(
         AccessContext accCtx,
-        Resource resRef,
-        VolumeDefinition volDfn,
+        Resource rsc,
+        VolumeDefinition vlmDfn,
         StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
@@ -51,10 +51,10 @@ public class VolumeDataFactory
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
+        rsc.getObjProt().requireAccess(accCtx, AccessType.USE);
         VolumeData volData = null;
 
-        volData = driver.load(resRef, volDfn, storPool, false);
+        volData = (VolumeData) rsc.getVolume(vlmDfn.getVolumeNumber());
 
         if (failIfExists && volData != null)
         {
@@ -65,8 +65,8 @@ public class VolumeDataFactory
         {
             volData = new VolumeData(
                 UUID.randomUUID(),
-                resRef,
-                volDfn,
+                rsc,
+                vlmDfn,
                 storPool,
                 blockDevicePathRef,
                 metaDiskPathRef,
@@ -78,9 +78,9 @@ public class VolumeDataFactory
                 new TreeMap<>()
             );
             driver.create(volData);
-            ((ResourceData) resRef).putVolume(accCtx, volData);
+            ((ResourceData) rsc).putVolume(accCtx, volData);
             ((StorPoolData) storPool).putVolume(accCtx, volData);
-            ((VolumeDefinitionData) volDfn).putVolume(accCtx, volData);
+            ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
         }
         return volData;
     }
@@ -88,7 +88,7 @@ public class VolumeDataFactory
     public VolumeData getInstanceSatellite(
         AccessContext accCtx,
         UUID vlmUuid,
-        Resource rscRef,
+        Resource rsc,
         VolumeDefinition vlmDfn,
         StorPool storPoolRef,
         String blockDevicePathRef,
@@ -99,12 +99,12 @@ public class VolumeDataFactory
         VolumeData vlmData;
         try
         {
-            vlmData = driver.load(rscRef, vlmDfn, storPoolRef, false);
+            vlmData = (VolumeData) rsc.getVolume(vlmDfn.getVolumeNumber());
             if (vlmData == null)
             {
                 vlmData = new VolumeData(
                     vlmUuid,
-                    rscRef,
+                    rsc,
                     vlmDfn,
                     storPoolRef,
                     blockDevicePathRef,
@@ -116,7 +116,7 @@ public class VolumeDataFactory
                     transMgrProvider,
                     new TreeMap<>()
                 );
-                ((ResourceData) rscRef).putVolume(accCtx, vlmData);
+                ((ResourceData) rsc).putVolume(accCtx, vlmData);
                 ((StorPoolData) storPoolRef).putVolume(accCtx, vlmData);
                 ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
             }

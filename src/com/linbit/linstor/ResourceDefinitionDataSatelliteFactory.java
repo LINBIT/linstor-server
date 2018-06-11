@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -22,6 +24,7 @@ public class ResourceDefinitionDataSatelliteFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final ResourceDefinitionMap rscDfnMap;
 
     @Inject
     public ResourceDefinitionDataSatelliteFactory(
@@ -29,7 +32,8 @@ public class ResourceDefinitionDataSatelliteFactory
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef
     )
     {
         driver = driverRef;
@@ -37,6 +41,7 @@ public class ResourceDefinitionDataSatelliteFactory
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     public ResourceDefinitionData getInstanceSatellite(
@@ -50,10 +55,11 @@ public class ResourceDefinitionDataSatelliteFactory
     )
         throws ImplementationError
     {
-        ResourceDefinitionData rscDfn = null;
+        ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = driver.load(rscName, false);
+            // we should have system context anyways, so we skip the objProt-check
+            rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
             if (rscDfn == null)
             {
                 rscDfn = new ResourceDefinitionData(

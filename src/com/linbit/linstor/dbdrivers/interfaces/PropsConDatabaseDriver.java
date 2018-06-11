@@ -18,7 +18,7 @@ public interface PropsConDatabaseDriver
      *
      * @throws SQLException
      */
-    Map<String, String> load(String instanceName) throws SQLException;
+    Map<String, String> loadAll(String instanceName) throws SQLException;
 
     /**
      * Performs an insert or update for the given key/value pair

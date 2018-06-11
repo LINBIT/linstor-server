@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -23,6 +24,7 @@ public class NodeDataSatelliteFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final CoreModule.NodesMap nodesMap;
 
     @Inject
     public NodeDataSatelliteFactory(
@@ -31,7 +33,8 @@ public class NodeDataSatelliteFactory
         StorPoolDataFactory storPoolDataFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CoreModule.NodesMap nodesMapRef
     )
     {
         dbDriver = dbDriverRef;
@@ -40,6 +43,7 @@ public class NodeDataSatelliteFactory
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        nodesMap = nodesMapRef;
     }
 
     public NodeData getInstanceSatellite(
@@ -56,7 +60,8 @@ public class NodeDataSatelliteFactory
         NodeData nodeData = null;
         try
         {
-            nodeData = dbDriver.load(nameRef, false);
+            // we should have system context anyways, so we skip the objProt check
+            nodeData = (NodeData) nodesMap.get(nameRef);
             if (nodeData == null)
             {
                 nodeData = new NodeData(

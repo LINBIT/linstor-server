@@ -1,11 +1,11 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -13,25 +13,26 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class StorPoolDefinitionDataFactory
+public class StorPoolDefinitionDataSatelliteFactory
 {
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final StorPoolDefinitionMap storPoolDfnMap;
 
     @Inject
-    public StorPoolDefinitionDataFactory(
+    public StorPoolDefinitionDataSatelliteFactory(
         StorPoolDefinitionDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CoreModule.StorPoolDefinitionMap storPooDfnMapRef
     )
     {
         dbDriver = dbDriverRef;
@@ -39,52 +40,13 @@ public class StorPoolDefinitionDataFactory
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        storPoolDfnMap = storPooDfnMapRef;
     }
 
     public StorPoolDefinitionData getInstance(
         AccessContext accCtx,
-        StorPoolName nameRef,
-        boolean createIfNotExists,
-        boolean failIfExists
-    )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
-    {
-        StorPoolDefinitionData storPoolDfn = null;
-
-        storPoolDfn = dbDriver.load(nameRef, false);
-
-        if (failIfExists && storPoolDfn != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The StorPoolDefinition already exists");
-        }
-
-        if (storPoolDfn == null && createIfNotExists)
-        {
-            storPoolDfn = new StorPoolDefinitionData(
-                UUID.randomUUID(),
-                objectProtectionFactory.getInstance(
-                    accCtx,
-                    ObjectProtection.buildPathSPD(nameRef),
-                    true
-                ),
-                nameRef,
-                dbDriver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
-
-            dbDriver.create(storPoolDfn);
-        }
-
-        return storPoolDfn;
-    }
-
-    public StorPoolDefinitionData getInstanceSatellite(
-        AccessContext accCtx,
         UUID uuid,
-        StorPoolName nameRef
+        StorPoolName storPoolName
     )
         throws ImplementationError
     {
@@ -92,7 +54,8 @@ public class StorPoolDefinitionDataFactory
 
         try
         {
-            storPoolDfn = dbDriver.load(nameRef, false);
+            // we should be system-context here, so we skip the objProt-check
+            storPoolDfn = (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
             if (storPoolDfn == null)
             {
                 storPoolDfn = new StorPoolDefinitionData(
@@ -102,7 +65,7 @@ public class StorPoolDefinitionDataFactory
                         "",
                         true
                     ),
-                    nameRef,
+                    storPoolName,
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,

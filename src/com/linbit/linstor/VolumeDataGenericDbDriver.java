@@ -26,8 +26,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -47,13 +45,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
             VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_FLAGS +
         " FROM " + TBL_VOL;
-    private static final String SELECT_BY_RES =
-        SELECT_ALL +
-        " WHERE " + VOL_NODE_NAME + " = ? AND " +
-                    VOL_RES_NAME  + " = ?";
-    private static final String SELECT =
-        SELECT_BY_RES +
-        " AND " +   VOL_ID +        " = ?";
 
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
@@ -98,58 +89,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         transMgrProvider = transMgrProviderRef;
 
         flagPersistenceDriver = new VolFlagsPersistence();
-    }
-
-    @Override
-    @SuppressWarnings("checkstyle:magicnumber")
-    public VolumeData load(
-        Resource resource,
-        VolumeDefinition volumeDefintion,
-        StorPool storPool,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        VolumeData ret = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
-        {
-            errorReporter.logTrace(
-                "Loading Volume %s",
-                getId(resource)
-            );
-
-            stmt.setString(1, resource.getAssignedNode().getName().value);
-            stmt.setString(2, resource.getDefinition().getName().value);
-            stmt.setInt(3, volumeDefintion.getVolumeNumber().value);
-
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                List<VolumeData> volList = load(
-                    resultSet,
-                    resource,
-                    volumeDefintion,
-                    storPool
-                );
-
-                if (!volList.isEmpty())
-                {
-                    ret = volList.get(0);
-                    errorReporter.logTrace("Volume loaded from DB %s", getId(ret));
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning(
-                        "Volume not found in DB %s",
-                        getId(
-                            resource,
-                            volumeDefintion
-                        )
-                    );
-                }
-            }
-        }
-        return ret;
     }
 
     public Map<VolumeData, Volume.InitMaps> loadAll(
@@ -238,37 +177,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         );
     }
 
-    private List<VolumeData> load(
-        ResultSet resultSet,
-        Resource res,
-        VolumeDefinition vlmDfn,
-        StorPool storPool
-    )
-        throws SQLException
-    {
-        List<VolumeData> volList = new ArrayList<>();
-        while (resultSet.next())
-        {
-            VolumeData volData = cacheGet(
-                res.getAssignedNode(),
-                res.getDefinition(),
-                vlmDfn.getVolumeNumber()
-            );
-            if (volData == null)
-            {
-                volData = restoreVlm(resultSet, res, vlmDfn, storPool).objA;
-                errorReporter.logTrace("Volume created %s", getId(volData));
-            }
-            else
-            {
-                errorReporter.logTrace("Volume loaded from cache %s", getId(volData));
-            }
-            volList.add(volData);
-        }
-        // resultSet should be closed by caller of this method
-        return volList;
-    }
-
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     public void create(VolumeData vol) throws SQLException
@@ -316,36 +224,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         return flagPersistenceDriver;
     }
 
-    private VolumeData cacheGet(Node node, ResourceDefinition resDfn, VolumeNumber volNr)
-    {
-        VolumeData ret = null;
-        try
-        {
-            if (node != null)
-            {
-                Resource res = node.getResource(dbCtx, resDfn.getName());
-                if (res != null)
-                {
-                    ret = (VolumeData) res.getVolume(volNr);
-                }
-            }
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
-        }
-        return ret;
-    }
-
-    private String getId(Resource resource, VolumeDefinition volumeDefintion)
-    {
-        return getVolId(
-            resource.getAssignedNode().getName().displayValue,
-            resource.getDefinition().getName().displayValue,
-            volumeDefintion.getVolumeNumber()
-        );
-    }
-
     private String getId(VolumeData volume)
     {
         return getVolId(
@@ -358,19 +236,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     private String getVolId(String nodeName, String resName, VolumeNumber volNum)
     {
         return "(NodeName=" + nodeName + " ResName=" + resName + " VolNum=" + volNum.value + ")";
-    }
-
-    private String getId(Resource resRef)
-    {
-        return getResId(
-            resRef.getAssignedNode().getName().displayValue,
-            resRef.getDefinition().getName().displayValue
-        );
-    }
-
-    private String getResId(String nodeName, String resName)
-    {
-        return "(NodeName=" + nodeName + " ResName=" + resName + ")";
     }
 
     private Connection getConnection()

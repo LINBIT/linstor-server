@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -135,13 +134,15 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceDefinitionDataFactory.create(
+        resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] {RscDfnFlags.DELETE},
             secret,
-            transportType
+            transportType,
+            true,
+            true
         );
 
         commit();
@@ -164,35 +165,10 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoad() throws Exception
-    {
-        driver.create(resDfn);
-        rscDfnMap.put(resName, resDfn);
-        resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node1,
-            node1Id,
-            null,
-            true,
-            false
-        );
-
-        ResourceDefinitionData loadedResDfn = driver.load(resName, true);
-
-        assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
-        assertEquals(resDfnUuid, loadedResDfn.getUuid());
-        assertEquals(resName, loadedResDfn.getName());
-        assertEquals(port, loadedResDfn.getPort(SYS_CTX).value);
-        assertEquals(secret, loadedResDfn.getSecret(SYS_CTX));
-        assertEquals(transportType, loadedResDfn.getTransportType(SYS_CTX));
-        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(SYS_CTX));
-    }
-
-    @Test
     public void testLoadGetInstance() throws Exception
     {
         ResourceDefinitionData loadedResDfn = resourceDefinitionDataFactory.load(
+            SYS_CTX,
             resName
         );
 
@@ -213,6 +189,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         );
 
         loadedResDfn = resourceDefinitionDataFactory.load(
+            SYS_CTX,
             resName
         );
 
@@ -228,18 +205,29 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.create(
+        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName,
             port,
             null,
             secret,
-            transportType
+            transportType,
+            true,
+            true
         );
         rscDfnMap.put(resName, storedInstance);
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(resName, true));
+        assertEquals(storedInstance, resourceDefinitionDataFactory.getInstance(
+            SYS_CTX,
+            resName,
+            null,
+            null,
+            null,
+            null,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -279,72 +267,6 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         Map<String, String> testMap = new HashMap<>();
         testMap.put(testKey, testValue);
         testProps(PropsContainer.buildPath(resName), testMap);
-    }
-
-    @Test
-    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:variabledeclarationusagedistance"})
-    public void testLoadResources() throws Exception
-    {
-        driver.create(resDfn);
-        rscDfnMap.put(resDfn.getName(), resDfn);
-        NodeName testNodeName = new NodeName("TestNodeName");
-        Node node = nodeDataFactory.getInstance(SYS_CTX, testNodeName, null, null, true, false);
-        nodesMap.put(node.getName(), node);
-
-        NodeId nodeId = new NodeId(13);
-        ResourceData res = resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node,
-            nodeId,
-            new RscFlags[] {RscFlags.CLEAN},
-            true,
-            false
-        );
-
-        ResourceDefinitionData loadedResDfn = driver.load(resName, true);
-        Resource loadedRes = loadedResDfn.getResource(SYS_CTX, testNodeName);
-
-        assertNotNull(loadedRes);
-        assertEquals(testNodeName, loadedRes.getAssignedNode().getName());
-        assertEquals(loadedResDfn, loadedRes.getDefinition());
-        assertEquals(nodeId, loadedRes.getNodeId());
-        assertNotNull(loadedRes.getObjProt());
-        assertNotNull(loadedRes.getProps(SYS_CTX));
-        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
-        assertEquals(res.getUuid(), loadedRes.getUuid());
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    @Test
-    public void testLoadVolumeDefinitions() throws Exception
-    {
-        driver.create(resDfn);
-        rscDfnMap.put(resName, resDfn);
-        objProtDriver.insertOp(resDfnObjProt);
-
-        VolumeNumber volNr = new VolumeNumber(13);
-        int minor = 42;
-        long volSize = 5_000;
-        VolumeDefinitionData volDfn = volumeDefinitionDataFactory.create(
-            SYS_CTX,
-            resDfn,
-            volNr,
-            minor,
-            volSize,
-            null
-        );
-
-        ResourceDefinitionData loadedResDfn = driver.load(resName, true);
-        VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(SYS_CTX, volNr);
-
-        assertNotNull(loadedVolDfn);
-        assertEquals(volDfn.getUuid(), loadedVolDfn.getUuid());
-        assertEquals(volDfn.getFlags().getFlagsBits(SYS_CTX), loadedVolDfn.getFlags().getFlagsBits(SYS_CTX));
-        assertEquals(minor, loadedVolDfn.getMinorNr(SYS_CTX).value);
-        assertEquals(volNr, loadedVolDfn.getVolumeNumber());
-        assertEquals(volSize, loadedVolDfn.getVolumeSize(SYS_CTX));
-        assertEquals(loadedResDfn, loadedVolDfn.getResourceDefinition());
     }
 
     @Test
@@ -413,21 +335,6 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertTrue(driver.exists(resName));
     }
 
-    @Test
-    public void testHalfValidName() throws Exception
-    {
-        driver.create(resDfn);
-        objProtDriver.insertOp(resDfnObjProt);
-
-        ResourceName halfValidResName = new ResourceName(resDfn.getName().value);
-
-        ResourceDefinitionData loadedResDfn = driver.load(halfValidResName, true);
-
-        assertNotNull(loadedResDfn);
-        assertEquals(resDfn.getName(), loadedResDfn.getName());
-        assertEquals(resDfn.getUuid(), loadedResDfn.getUuid());
-    }
-
     private ResourceDefinitionData findResourceDefinitionDatabyName(
         Map<ResourceDefinitionData, InitMaps> resourceDefDataMap,
         ResourceName spName)
@@ -449,13 +356,15 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(resDfn);
         ResourceName resName2 = new ResourceName("ResName2");
-        resourceDefinitionDataFactory.create(
+        resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName2,
             port + 1, // prevent tcp-port-conflict
             null,
             "secret",
-            transportType
+            transportType,
+            true,
+            true
         );
         objProtDriver.insertOp(resDfnObjProt);
 
@@ -475,9 +384,10 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(resDfn);
         objProtDriver.insertOp(resDfnObjProt);
+        rscDfnMap.put(resName, resDfn);
 
-        resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, port, null, "secret", transportType
+        resourceDefinitionDataFactory.getInstance(
+            SYS_CTX, resName, port, null, "secret", transportType, true, true
         );
     }
 
@@ -488,13 +398,15 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         Mockito.when(tcpPortPoolMock.autoAllocate()).thenReturn(testTcpPort);
 
-        ResourceDefinitionData newRscDfn = resourceDefinitionDataFactory.create(
+        ResourceDefinitionData newRscDfn = resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName,
             null, // auto allocate
             null,
             "secret",
-            transportType
+            transportType,
+            true,
+            true
         );
 
         assertThat(newRscDfn.getPort(SYS_CTX).value).isEqualTo(testTcpPort);

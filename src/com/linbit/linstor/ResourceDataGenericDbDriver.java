@@ -195,41 +195,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         return loadedResources;
     }
 
-    @Override
-    public ResourceData load(Node node, ResourceDefinition rscDfn, boolean logWarnIfNotExists)
-        throws SQLException
-    {
-        ResourceName rscName = rscDfn.getName();
-        errorReporter.logTrace("Loading Resource %s", getId(node, rscName));
-
-        ResourceData ret = cacheGet(node, rscName);
-        if (ret == null)
-        {
-            try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
-            {
-                stmt.setString(1, node.getName().value);
-                stmt.setString(2, rscName.value);
-                try (ResultSet resultSet = stmt.executeQuery())
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreRsc(resultSet, node, rscDfn).objA;
-                        if (ret != null)
-                        {
-                            errorReporter.logTrace("Resource %s loaded from Database", getId(node, rscName));
-
-                        }
-                    }
-                    if (ret == null && logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning("Resource could not be found %s", getId(node, rscName));
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
     private Pair<ResourceData, InitMaps> restoreRsc(
         ResultSet resultSet,
         Node node,
@@ -322,20 +287,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     public StateFlagsPersistence<ResourceData> getStateFlagPersistence()
     {
         return flagDriver;
-    }
-
-    private ResourceData cacheGet(Node node, ResourceName resName)
-    {
-        ResourceData ret = null;
-        try
-        {
-            ret = (ResourceData) node.getResource(dbCtx, resName);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
     }
 
     private String getId(Node node, ResourceName resourceName)

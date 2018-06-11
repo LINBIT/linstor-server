@@ -117,89 +117,55 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             while (resultSet.next())
             {
                 nodeNameStr = resultSet.getString(NODE_NAME);
-                NodeName nodeName = new NodeName(nodeNameStr);
+                NodeName nodeName = asNodeName(nodeNameStr);
+                NetInterfaceName netName = asNetName(resultSet.getString(NET_DSP_NAME));
 
                 netIfs.add(
-                    load(tmpNodesMap.get(nodeName), resultSet)
+                    restoreInstance(
+                        tmpNodesMap.get(nodeName),
+                        netName,
+                        resultSet
+                    )
                 );
             }
             resultSet.close();
-        }
-        catch (InvalidNameException exc)
-        {
-            throw new ImplementationError(
-                TBL_NODE_NET + " contains invalid node name: '" + nodeNameStr + "'",
-                exc
-            );
         }
         errorReporter.logTrace("Loaded %d NetworkInterfaces", netIfs.size());
         return netIfs;
     }
 
-
-    @Override
-    public NetInterfaceData load(
-        Node node,
-        NetInterfaceName niName,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
+    private NodeName asNodeName(String nodeNameStr)
     {
-        errorReporter.logTrace("Loading NetInterface %s", getId(node, niName));
-
-        NetInterfaceData netIfData = null;
-
-        try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
-        {
-            stmt.setString(1, node.getName().value);
-            stmt.setString(2, niName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                if (resultSet.next())
-                {
-                    netIfData = load(node, resultSet);
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning("NetInterface not found in DB %s", getId(node, niName));
-                }
-            }
-        }
-        return netIfData;
-    }
-
-    private NetInterfaceData load(Node node, ResultSet resultSet) throws SQLException
-    {
-        NetInterfaceName loadedNiName;
+        NodeName nodeName;
         try
         {
-            loadedNiName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
+            nodeName = new NodeName(nodeNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The display name of a stored NetInterface could not be restored " +
-                        "(NodeName=%s, invalid NetInterfaceName=%s)",
-                    node.getName().displayValue,
-                    resultSet.getString(NET_DSP_NAME)
-                ),
+            throw new ImplementationError(
+                TBL_NODE_NET + " contains invalid node name: '" + nodeNameStr + "'",
                 invalidNameExc
             );
         }
+        return nodeName;
+    }
 
-        NetInterfaceData netIfData = cacheGet(node, loadedNiName);
-        if (netIfData == null)
+    private NetInterfaceName asNetName(String netNameStr)
+    {
+        NetInterfaceName netName;
+        try
         {
-            netIfData = restoreInstance(node, loadedNiName, resultSet);
+            netName = new NetInterfaceName(netNameStr);
         }
-        else
+        catch (InvalidNameException invalidNameExc)
         {
-
+            throw new ImplementationError(
+                TBL_NODE_NET + " contains invalid net interface name: '" + netNameStr + "'",
+                invalidNameExc
+            );
         }
-        // ("loaded from [DB|cache]...") msg gets logged in restoreInstance method
-        return netIfData;
+        return netName;
     }
 
     @Override
@@ -389,31 +355,9 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         return ret;
     }
 
-    private NetInterfaceData cacheGet(Node node, NetInterfaceName netName)
-    {
-        NetInterfaceData ret = null;
-        try
-        {
-            ret = (NetInterfaceData) node.getNetInterface(dbCtx, netName);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
-    }
-
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
-    }
-
-    private String getId(Node node, NetInterfaceName niName)
-    {
-        return getId(
-            node.getName().displayValue,
-            niName.displayValue
-        );
     }
 
     private String getId(NetInterfaceData netIfData)

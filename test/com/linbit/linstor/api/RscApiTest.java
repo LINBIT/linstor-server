@@ -89,13 +89,15 @@ public class RscApiTest extends ApiTestBase
         );
         nodesMap.put(testSatelliteName, testSatelliteNode);
 
-        testRscDfn = resourceDefinitionDataFactory.create(
+        testRscDfn = resourceDefinitionDataFactory.getInstance(
             BOB_ACC_CTX,
             testRscName,
             testRscDfnPort,
             testRscDfnFlags,
             testRscDfnSecret,
-            tesTRscDfnTransportType
+            tesTRscDfnTransportType,
+            true,
+            true
         );
         rscDfnMap.put(testRscName, testRscDfn);
     }

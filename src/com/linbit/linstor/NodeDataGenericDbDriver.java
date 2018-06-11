@@ -6,8 +6,6 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.annotation.Uninitialized;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -46,10 +44,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private static final String NODE_FLAGS = DbConstants.NODE_FLAGS;
     private static final String NODE_TYPE = DbConstants.NODE_TYPE;
 
-    private static final String NODE_SELECT =
-        " SELECT " + NODE_UUID + ", " + NODE_DSP_NAME + ", " + NODE_TYPE + ", " + NODE_FLAGS +
-        " FROM " + TBL_NODE +
-        " WHERE " + NODE_NAME + " = ?";
     private static final String NODE_SELECT_ALL =
         " SELECT " + NODE_UUID + ", " + NODE_DSP_NAME + ", " + NODE_TYPE + ", " + NODE_FLAGS +
         " FROM " + TBL_NODE;
@@ -72,7 +66,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         " WHERE " + NODE_NAME + " = ?";
 
 
-    private final CoreModule.NodesMap nodesMap;
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
@@ -89,7 +82,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     public NodeDataGenericDbDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        @Uninitialized CoreModule.NodesMap nodesMapRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -98,7 +90,6 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-        nodesMap = nodesMapRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
@@ -141,7 +132,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             {
                 while (resultSet.next())
                 {
-                    Pair<NodeData, Node.InitMaps> pair = load(resultSet);
+                    Pair<NodeData, Node.InitMaps> pair = restoreNode(resultSet);
                     loadedNodesMap.put(
                         pair.objA,
                         pair.objB
@@ -153,35 +144,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         return loadedNodesMap;
     }
 
-    @Override
-    public NodeData load(NodeName nodeName, boolean logWarnIfNotExists)
-        throws SQLException
-    {
-        NodeData node = null;
-        errorReporter.logTrace("Loading node %s", getId(nodeName));
-        try (PreparedStatement stmt = getConnection().prepareStatement(NODE_SELECT))
-        {
-            stmt.setString(1, nodeName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                if (resultSet.next())
-                {
-                    node = load(resultSet).objA;
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning(
-                        "Node not found in the DB %s",
-                        getId(nodeName)
-                    );
-                }
-            }
-        }
-        return node;
-    }
-
-    private Pair<NodeData, Node.InitMaps> load(ResultSet resultSet)
+    private Pair<NodeData, Node.InitMaps> restoreNode(ResultSet resultSet)
         throws SQLException, ImplementationError
     {
         Pair<NodeData, Node.InitMaps> retPair = new Pair<>();
@@ -203,50 +166,41 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             );
         }
 
-        node = (NodeData) nodesMap.get(nodeName);
-        if (node == null)
-        {
-            ObjectProtection objProt = getObjectProtection(nodeName);
+        ObjectProtection objProt = getObjectProtection(nodeName);
 
-            final Map<ResourceName, Resource> rscMap = new TreeMap<>();
-            final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
-            final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
-            final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
-            final Map<Node, NodeConnection> nodeConnMap = new TreeMap<>();
+        final Map<ResourceName, Resource> rscMap = new TreeMap<>();
+        final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
+        final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
+        final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
+        final Map<Node, NodeConnection> nodeConnMap = new TreeMap<>();
 
-            node = new NodeData(
-                java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
-                objProt,
-                nodeName,
-                Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
-                resultSet.getLong(NODE_FLAGS),
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                rscMap,
-                snapshotMap,
-                netIfMap,
-                storPoolMap,
-                nodeConnMap
-            );
+        node = new NodeData(
+            java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
+            objProt,
+            nodeName,
+            Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
+            resultSet.getLong(NODE_FLAGS),
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            rscMap,
+            snapshotMap,
+            netIfMap,
+            storPoolMap,
+            nodeConnMap
+        );
 
-            retPair.objA = node;
-            retPair.objB = new NodeInitMaps(
-                rscMap,
-                snapshotMap,
-                netIfMap,
-                storPoolMap,
-                nodeConnMap
-            );
+        retPair.objA = node;
+        retPair.objB = new NodeInitMaps(
+            rscMap,
+            snapshotMap,
+            netIfMap,
+            storPoolMap,
+            nodeConnMap
+        );
 
-            errorReporter.logTrace("Node loaded from DB %s", getId(node));
-        }
-        else
-        {
-            retPair.objA = node;
-            errorReporter.logTrace("Node loaded from cache %s", getId(node));
-        }
+        errorReporter.logTrace("Node loaded from DB %s", getId(node));
         return retPair;
     }
 

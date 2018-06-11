@@ -4,7 +4,6 @@ import java.sql.SQLException;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -16,18 +15,6 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
  */
 public interface NodeDataDatabaseDriver
 {
-    /**
-     * Loads the {@link NodeData} specified by the parameter {@code nodeName}
-     *
-     * @param nodeName
-     *  The primary key identifying the row to load
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    NodeData load(NodeName nodeName, boolean logWarnIfNotExists) throws SQLException;
-
     /**
      * Persists the given {@link NodeData} into the database.
      *

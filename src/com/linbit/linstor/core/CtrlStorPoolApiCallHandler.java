@@ -9,7 +9,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
@@ -53,7 +53,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
 
     @Inject
@@ -66,7 +66,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlObjectFactories objectFactories,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,

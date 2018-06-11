@@ -1,8 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
 
 /**
@@ -12,24 +10,6 @@ import com.linbit.linstor.VolumeConnectionData;
  */
 public interface VolumeConnectionDataDatabaseDriver
 {
-    /**
-     * Loads the {@link com.linbit.linstor.VolumeConnectionData} specified by the parameters
-     * {@code resourceName}, {@code sourceNodeName} and {@code targetNodeName}.
-     * <br>
-     * By convention the {@link NodeName} of @{@code sourceVolume} has to be
-     * alphanumerically smaller than the {@link NodeName} of {@code targetVolume}
-     * @param sourceVolume
-     *  Part of the primary key specifying the database entry
-     * @param targetVolume
-     *  Part of the primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    VolumeConnectionData load(Volume sourceVolume, Volume targetVolume, boolean logWarnIfNotExists)
-        throws SQLException;
-
     /**
      * Persists the given {@link com.linbit.linstor.VolumeConnectionData} into the database.
      *

@@ -39,19 +39,19 @@ public class StorPoolDataFactory
 
     public StorPoolData getInstance(
         AccessContext accCtx,
-        Node nodeRef,
-        StorPoolDefinition storPoolDefRef,
+        Node node,
+        StorPoolDefinition storPoolDef,
         String storDriverSimpleClassNameRef,
         boolean createIfNotExists,
         boolean failIfExists
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        nodeRef.getObjProt().requireAccess(accCtx, AccessType.USE);
-        storPoolDefRef.getObjProt().requireAccess(accCtx, AccessType.USE);
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
         StorPoolData storPoolData = null;
 
-        storPoolData = driver.load(nodeRef, storPoolDefRef, false);
+        storPoolData = (StorPoolData) node.getStorPool(accCtx, storPoolDef.getName());
 
         if (failIfExists && storPoolData != null)
         {
@@ -62,8 +62,8 @@ public class StorPoolDataFactory
         {
             storPoolData = new StorPoolData(
                 UUID.randomUUID(),
-                nodeRef,
-                storPoolDefRef,
+                node,
+                storPoolDef,
                 storDriverSimpleClassNameRef,
                 false,
                 driver,
@@ -73,8 +73,8 @@ public class StorPoolDataFactory
                 new TreeMap<>()
             );
             driver.create(storPoolData);
-            ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
-            ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, storPoolData);
+            ((NodeData) node).addStorPool(accCtx, storPoolData);
+            ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
         }
         return storPoolData;
     }
@@ -82,9 +82,9 @@ public class StorPoolDataFactory
     public StorPoolData getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
-        Node nodeRef,
-        StorPoolDefinition storPoolDefRef,
-        String storDriverSimpleClassNameRef
+        Node node,
+        StorPoolDefinition storPoolDef,
+        String storDriverSimpleClassName
     )
         throws ImplementationError
     {
@@ -92,14 +92,14 @@ public class StorPoolDataFactory
 
         try
         {
-            storPoolData = driver.load(nodeRef, storPoolDefRef, false);
+            storPoolData = (StorPoolData) node.getStorPool(accCtx, storPoolDef.getName());
             if (storPoolData == null)
             {
                 storPoolData = new StorPoolData(
                     uuid,
-                    nodeRef,
-                    storPoolDefRef,
-                    storDriverSimpleClassNameRef,
+                    node,
+                    storPoolDef,
+                    storDriverSimpleClassName,
                     true,
                     driver,
                     propsContainerFactory,
@@ -107,8 +107,8 @@ public class StorPoolDataFactory
                     transMgrProvider,
                     new TreeMap<>()
                 );
-                ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
-                ((StorPoolDefinitionData) storPoolDefRef).addStorPool(accCtx, storPoolData);
+                ((NodeData) node).addStorPool(accCtx, storPoolData);
+                ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
             }
         }
         catch (Exception exc)

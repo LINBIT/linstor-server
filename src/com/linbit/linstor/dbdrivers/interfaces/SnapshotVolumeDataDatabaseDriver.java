@@ -1,10 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotVolume;
-import com.linbit.linstor.SnapshotVolumeDefinition;
-import com.linbit.linstor.StorPool;
-
 import java.sql.SQLException;
 
 /**
@@ -12,28 +8,6 @@ import java.sql.SQLException;
  */
 public interface SnapshotVolumeDataDatabaseDriver
 {
-    /**
-     * Loads the {@link SnapshotVolume} specified by the parameter {@code node} and
-     * {@code snapshotDefinition}
-     *
-     * @param snapshot
-     *  Part of the primary key specifying the database entry
-     * @param snapshotVolumeDefinition
-     *  Part of the primary key specifying the database entry
-     * @param storPool
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    SnapshotVolume load(
-        Snapshot snapshot,
-        SnapshotVolumeDefinition snapshotVolumeDefinition,
-        StorPool storPool,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException;
-
     /**
      * Persists the given {@link SnapshotVolume} into the database.
      *

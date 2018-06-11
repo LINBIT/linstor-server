@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -499,7 +498,10 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = objectFactories.getResourceDefinitionDataFactory().load(rscName);
+            rscDfn = objectFactories.getResourceDefinitionDataFactory().load(
+                peerAccCtx,
+                rscName
+            );
 
             if (failIfNull && rscDfn == null)
             {
@@ -515,9 +517,13 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             }
 
         }
-        catch (SQLException sqlExc)
+        catch (AccessDeniedException accDeniedExc)
         {
-            throw asSqlExc(sqlExc, "loading resource definition '" + rscName.displayValue + "'.");
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
         }
         return rscDfn;
     }
@@ -1696,7 +1702,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             boolean isPropAllowed =
                 isAuxProp ||
                 propsWhiteList.isAllowed(linstorObj, key, value, true);
-
             if (isPropAllowed)
             {
                 try

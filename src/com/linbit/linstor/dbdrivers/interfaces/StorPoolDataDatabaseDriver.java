@@ -2,9 +2,7 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
 
-import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 /**
@@ -14,22 +12,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
  */
 public interface StorPoolDataDatabaseDriver
 {
-    /**
-     * Loads the {@link com.linbit.linstor.StorPool} specified by the parameters
-     * {@code node} and {@code storPoolDefinition}.
-     *
-     * @param node
-     *  Part of the primary key specifying the database entry
-     * @param storPoolDefinition
-     *  Part of the primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    StorPoolData load(Node node, StorPoolDefinition storPoolDefinition, boolean logWarnIfNotExists)
-        throws SQLException;
-
     /**
      * Persists the given {@link com.linbit.linstor.StorPoolData} into the database.
      *

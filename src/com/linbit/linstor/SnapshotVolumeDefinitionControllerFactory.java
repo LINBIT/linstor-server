@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -30,33 +31,38 @@ public class SnapshotVolumeDefinitionControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public SnapshotVolumeDefinition create(
+    public SnapshotVolumeDefinition getInstance(
         AccessContext accCtx,
         SnapshotDefinition snapshotDfn,
-        VolumeNumber volumeNumber
+        VolumeNumber volumeNumber,
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         SnapshotVolumeDefinition snapshotVolumeDefinition =
-            driver.load(snapshotDfn, volumeNumber, false);
+            snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
 
-        if (snapshotVolumeDefinition != null)
+        if (snapshotVolumeDefinition != null && failIfExists)
         {
             throw new LinStorDataAlreadyExistsException("The SnapshotVolumeDefinition already exists");
         }
 
-        snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
-            UUID.randomUUID(),
-            snapshotDfn,
-            volumeNumber,
-            driver,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
-        );
+        if (snapshotVolumeDefinition == null && createIfNotExists)
+        {
+            snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
+                UUID.randomUUID(),
+                snapshotDfn,
+                volumeNumber,
+                driver,
+                transObjFactory,
+                transMgrProvider,
+                new TreeMap<>()
+            );
 
-        driver.create(snapshotVolumeDefinition);
-        snapshotDfn.addSnapshotVolumeDefinition(snapshotVolumeDefinition);
+            driver.create(snapshotVolumeDefinition);
+            snapshotDfn.addSnapshotVolumeDefinition(snapshotVolumeDefinition);
+        }
 
         return snapshotVolumeDefinition;
     }
@@ -66,8 +72,17 @@ public class SnapshotVolumeDefinitionControllerFactory
         SnapshotDefinition snapshotDfn,
         VolumeNumber volumeNumber
     )
-        throws SQLException, AccessDeniedException
+        throws AccessDeniedException
     {
-        return driver.load(snapshotDfn, volumeNumber, false);
+        SnapshotVolumeDefinition snapshotVlmDfn;
+        try
+        {
+            snapshotVlmDfn = getInstance(accCtx, snapshotDfn, volumeNumber, false, false);
+        }
+        catch (LinStorDataAlreadyExistsException | SQLException exc)
+        {
+            throw new ImplementationError("Impossible exception was thrown", exc);
+        }
+        return snapshotVlmDfn;
     }
 }

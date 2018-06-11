@@ -65,11 +65,7 @@ public class VolumeConnectionDataFactory
         target.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
 
-        volConData = dbDriver.load(
-            source,
-            target,
-            false
-        );
+        volConData = (VolumeConnectionData) source.getVolumeConnection(accCtx, target);
 
         if (failIfExists && volConData != null)
         {
@@ -122,11 +118,7 @@ public class VolumeConnectionDataFactory
 
         try
         {
-            volConData = dbDriver.load(
-                source,
-                target,
-                false
-            );
+            volConData = (VolumeConnectionData) source.getVolumeConnection(accCtx, target);
             if (volConData == null)
             {
                 volConData = new VolumeConnectionData(

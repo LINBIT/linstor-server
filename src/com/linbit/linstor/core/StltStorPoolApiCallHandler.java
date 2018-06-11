@@ -8,7 +8,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
@@ -23,9 +23,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
@@ -37,7 +35,7 @@ class StltStorPoolApiCallHandler
     private final DeviceManager deviceManager;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
-    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -48,7 +46,7 @@ class StltStorPoolApiCallHandler
         DeviceManager deviceManagerRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -137,7 +135,7 @@ class StltStorPoolApiCallHandler
                 StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
                 if (storPoolDfn == null)
                 {
-                    storPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
+                    storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                         apiCtx,
                         storPoolRaw.getStorPoolDfnUuid(),
                         storPoolName

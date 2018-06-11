@@ -42,12 +42,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST + ", " +
             RES_NAME + ", " + VOL_NR +
         " FROM "  + TBL_VOL_CON_DFN;
-    private static final String SELECT =
-        SELECT_ALL +
-        " WHERE " + NODE_SRC + " = ? AND " +
-                    NODE_DST + " = ? AND " +
-                    RES_NAME + " = ? AND " +
-                    VOL_NR + " = ?";
 
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL_CON_DFN +
@@ -84,82 +78,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
-    }
-
-    @Override
-    @SuppressWarnings("checkstyle:magicnumber")
-    public VolumeConnectionData load(
-        Volume sourceVolume,
-        Volume targetVolume,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        ResourceDefinition resDfn = sourceVolume.getResource().getDefinition();
-        VolumeDefinition volDfn = sourceVolume.getVolumeDefinition();
-        if (volDfn != targetVolume.getVolumeDefinition() ||
-            resDfn != targetVolume.getResource().getDefinition())
-        {
-            throw new ImplementationError(
-                String.format(
-                    "Failed to load VolumeConnection between unrelated volumes. %s %s",
-                    getVolumeTraceId(sourceVolume),
-                    getVolumeTraceId(targetVolume)
-                ),
-                null
-            );
-        }
-
-        errorReporter.logTrace(
-            "Loading VolumeConnection %s",
-            getId(sourceVolume, targetVolume)
-        );
-
-        Node sourceNode = sourceVolume.getResource().getAssignedNode();
-        Node targetNode = targetVolume.getResource().getAssignedNode();
-
-        VolumeConnectionData ret = cacheGet(
-            sourceNode,
-            targetNode,
-            resDfn,
-            volDfn
-        );
-
-        if (ret == null)
-        {
-            try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
-            {
-                stmt.setString(1, sourceNode.getName().value);
-                stmt.setString(2, targetNode.getName().value);
-                stmt.setString(3, resDfn.getName().value);
-                stmt.setInt(4, volDfn.getVolumeNumber().value);
-
-                try (ResultSet resultSet = stmt.executeQuery())
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreVolumeConnectionData(
-                            resultSet,
-                            sourceVolume,
-                            targetVolume
-                        );
-                        errorReporter.logTrace(
-                            "VolumeConnection loaded %s",
-                            getId(ret)
-                        );
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "VolumeConnection not found in the DB %s",
-                            getId(sourceVolume, targetVolume)
-                        );
-                    }
-                }
-            }
-        }
-        return ret;
     }
 
     public List<VolumeConnectionData> loadAll(
@@ -275,36 +193,6 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         {
             GenericDbDriver.handleAccessDeniedException(accDeniedExc);
         }
-    }
-
-    private VolumeConnectionData cacheGet(
-        Node nodeSrc,
-        Node nodeDst,
-        ResourceDefinition resDfn,
-        VolumeDefinition volDfn
-    )
-    {
-        VolumeConnectionData ret = null;
-        try
-        {
-            Resource resSrc = resDfn.getResource(dbCtx, nodeSrc.getName());
-            Resource resDst = resDfn.getResource(dbCtx, nodeDst.getName());
-            if (resSrc != null && resDst != null)
-            {
-                Volume volSrc = resSrc.getVolume(volDfn.getVolumeNumber());
-                Volume volDst = resDst.getVolume(volDfn.getVolumeNumber());
-
-                if (volSrc != null && volDst != null)
-                {
-                    ret = (VolumeConnectionData) volSrc.getVolumeConnection(dbCtx, volDst);
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
     }
 
     private Connection getConnection()

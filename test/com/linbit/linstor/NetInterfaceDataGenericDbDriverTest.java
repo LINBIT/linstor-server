@@ -14,7 +14,9 @@ import com.linbit.linstor.security.GenericDbBase;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,8 +44,6 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     private java.util.UUID niUuid;
     private NetInterfaceData niData;
     private SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> niAddrDriver;
-
-
 
     public NetInterfaceDataGenericDbDriverTest() throws Exception
     {
@@ -158,27 +158,19 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         stmt.close();
     }
 
-    @Test
-    public void testLoadSimple() throws Exception
-    {
-        dbDriver.create(niData);
-
-        NetInterfaceData netData = dbDriver.load(node, niName, true);
-
-        assertNotNull(netData);
-        assertEquals(niUuid, netData.getUuid());
-        assertEquals(nodeName.value, netData.getNode().getName().value);
-        assertEquals(niName.value, netData.getName().value);
-        assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(SYS_CTX).getAddress());
-    }
 
     @Test
     public void testLoadRestore() throws Exception
     {
         dbDriver.create(niData);
 
-        NetInterfaceData netData = dbDriver.load(node, niName, true);
+        Map<NodeName, Node> tmpNodesMap = new HashMap<>();
+        tmpNodesMap.put(nodeName, node);
+        List<NetInterfaceData> niList = dbDriver.loadAll(tmpNodesMap);
+        assertNotNull(niList);
+        assertEquals(1, niList.size());
+
+        NetInterfaceData netData = niList.get(0);
 
         assertNotNull(netData);
         assertEquals(niUuid, netData.getUuid());
@@ -258,7 +250,16 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         );
 
         // no clearCaches
-        assertEquals(storedInstance, dbDriver.load(node, niName, true));
+        assertEquals(storedInstance, netInterfaceDataFactory.getInstance(
+            SYS_CTX,
+            node,
+            niName,
+            null,
+            null,
+            null,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -341,24 +342,11 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         stmt.close();
     }
 
-    @Test
-    public void testHalfValidName() throws Exception
-    {
-        dbDriver.create(niData);
-
-        NetInterfaceName halfValidNiName = new NetInterfaceName(niData.getName().value);
-
-        NetInterfaceData loadedNi = dbDriver.load(node, halfValidNiName, true);
-
-        assertNotNull(loadedNi);
-        assertEquals(niData.getName(), loadedNi.getName());
-        assertEquals(niData.getUuid(), loadedNi.getUuid());
-    }
-
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         dbDriver.create(niData);
+        ((NodeData) node).addNetInterface(SYS_CTX, niData);
 
         netInterfaceDataFactory.getInstance(
             SYS_CTX,

@@ -3,7 +3,6 @@ package com.linbit.linstor.dbdrivers.satellite;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -39,12 +38,6 @@ public class SatelliteNodeDriver implements NodeDataDatabaseDriver
     public void create(NodeData node)
     {
         // no-op
-    }
-
-    @Override
-    public NodeData load(NodeName nodeName, boolean logWarnIfNotExists)
-    {
-        return (NodeData) nodesMap.get(nodeName);
     }
 
     @Override

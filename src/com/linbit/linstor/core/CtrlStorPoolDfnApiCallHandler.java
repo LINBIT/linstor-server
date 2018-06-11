@@ -6,7 +6,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -43,7 +43,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
-    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -54,7 +54,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         CtrlObjectFactories objectFactories,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,

@@ -4,9 +4,7 @@ import java.sql.SQLException;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -16,26 +14,6 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
  */
 public interface VolumeDefinitionDataDatabaseDriver
 {
-    /**
-     * Loads the {@link com.linbit.linstor.VolumeDefinitionData} specified by the parameter {@code resourceName} and
-     * {@code volumeNumber}
-     *
-     * @param resourceName
-     *  Part of the primary key specifying the database entry
-     * @param volumeNumber
-     *  Part of the primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    VolumeDefinitionData load(
-        ResourceDefinition resourceDefinition,
-        VolumeNumber volumeNumber,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException;
-
     /**
      * Persists the given {@link com.linbit.linstor.VolumeDefinitionData} into the database.
      *

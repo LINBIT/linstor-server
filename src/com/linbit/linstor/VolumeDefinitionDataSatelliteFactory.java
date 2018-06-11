@@ -53,7 +53,7 @@ public class VolumeDefinitionDataSatelliteFactory
         VolumeDefinitionData vlmDfnData;
         try
         {
-            vlmDfnData = driver.load(rscDfn, vlmNr, false);
+            vlmDfnData = (VolumeDefinitionData) rscDfn.getVolumeDfn(accCtx, vlmNr);
             if (vlmDfnData == null)
             {
                 vlmDfnData = new VolumeDefinitionData(

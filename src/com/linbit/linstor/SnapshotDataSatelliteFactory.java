@@ -42,7 +42,7 @@ public class SnapshotDataSatelliteFactory
         Snapshot snapshot;
         try
         {
-            snapshot = driver.load(node, snapshotDfn, false);
+            snapshot = snapshotDfn.getSnapshot(node.getName());
             if (snapshot == null)
             {
                 snapshot = new SnapshotData(

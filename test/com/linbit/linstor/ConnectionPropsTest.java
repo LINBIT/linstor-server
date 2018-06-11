@@ -8,7 +8,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,8 +33,6 @@ public class ConnectionPropsTest extends GenericDbBase
     private String metaDisk1;
     private String blockDev2;
     private String metaDisk2;
-
-    private TransactionMgr transMgr;
 
     private NodeData node1;
     private NodeData node2;
@@ -84,8 +81,8 @@ public class ConnectionPropsTest extends GenericDbBase
         node1 = nodeDataFactory.getInstance(SYS_CTX, nodeName1, NodeType.CONTROLLER, null, true, false);
         node2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, NodeType.CONTROLLER, null, true, false);
 
-        resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType
+        resDfn = resourceDefinitionDataFactory.getInstance(
+            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, true, true
         );
 
         res1 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node1, nodeId1, null, true, false);
@@ -100,7 +97,7 @@ public class ConnectionPropsTest extends GenericDbBase
             SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
         );
 
-        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
+        volDfn = volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, true, true);
 
         vol1 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null, true, false);
         vol2 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool2, blockDev2, metaDisk2, null, true, false);

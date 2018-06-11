@@ -42,7 +42,7 @@ public class SnapshotDefinitionDataSatelliteFactory
         SnapshotDefinitionData snapshotDfnData;
         try
         {
-            snapshotDfnData = driver.load(rscDfn, snapshotName, false);
+            snapshotDfnData = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(accCtx, snapshotName);
             if (snapshotDfnData == null)
             {
                 snapshotDfnData = new SnapshotDefinitionData(

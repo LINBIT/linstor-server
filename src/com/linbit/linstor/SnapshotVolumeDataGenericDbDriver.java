@@ -42,12 +42,6 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
         " SELECT " + SV_UUID + ", " + SV_NODE_NAME + ", " + SV_RES_NAME + ", " + SV_SNAPSHOT_NAME + ", " +
             SV_VLM_NR + ", " + SV_STOR_POOL_NAME +
         " FROM " + TBL_SNAPSHOT;
-    private static final String SV_SELECT =
-        SV_SELECT_ALL +
-        " WHERE " + SV_NODE_NAME + " = ? AND " +
-            SV_RES_NAME + " = ? AND " +
-            SV_SNAPSHOT_NAME + " = ? AND " +
-            SV_VLM_NR + " = ?";
 
     private static final String SV_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT +
@@ -108,54 +102,6 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
         }
     }
 
-    @Override
-    public SnapshotVolume load(
-        Snapshot snapshot,
-        SnapshotVolumeDefinition snapshotVolumeDefinition,
-        StorPool storPool,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading SnapshotVolume %s", getId(snapshot, snapshotVolumeDefinition));
-        SnapshotVolume ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SV_SELECT))
-        {
-            SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
-
-            stmt.setString(1, snapshot.getNodeName().value);
-            stmt.setString(2, snapshotDefinition.getResourceName().value);
-            stmt.setString(3, snapshotDefinition.getName().value);
-            stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = cacheGet(snapshot, snapshotVolumeDefinition);
-                if (ret == null)
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreSnapshotVolume(
-                            resultSet,
-                            snapshot,
-                            snapshotVolumeDefinition,
-                            storPool
-                        );
-                        errorReporter.logTrace("SnapshotVolume loaded %s", getId(snapshot, snapshotVolumeDefinition));
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "Requested SnapshotVolume %s could not be found in the Database",
-                            getId(snapshot, snapshotVolumeDefinition)
-                        );
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
     private SnapshotVolume restoreSnapshotVolume(
         ResultSet resultSet,
         Snapshot snapshot,
@@ -167,24 +113,15 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
         errorReporter.logTrace("Restoring SnapshotVolume %s", getId(snapshot, snapshotVolumeDefinition));
         SnapshotVolume snapshotVolume;
 
-        snapshotVolume = cacheGet(snapshot, snapshotVolumeDefinition);
+        snapshotVolume = new SnapshotVolumeData(
+            java.util.UUID.fromString(resultSet.getString(SV_UUID)),
+            snapshot,
+            snapshotVolumeDefinition,
+            storPool,
+            this, transObjFactory, transMgrProvider
+        );
 
-        if (snapshotVolume == null)
-        {
-            snapshotVolume = new SnapshotVolumeData(
-                java.util.UUID.fromString(resultSet.getString(SV_UUID)),
-                snapshot,
-                snapshotVolumeDefinition,
-                storPool,
-                this, transObjFactory, transMgrProvider
-            );
-
-            errorReporter.logTrace("SnapshotVolume %s created during restore", getId(snapshotVolume));
-        }
-        else
-        {
-            errorReporter.logTrace("SnapshotVolume %s restored from cache", getId(snapshotVolume));
-        }
+        errorReporter.logTrace("SnapshotVolume %s created during restore", getId(snapshotVolume));
 
         return snapshotVolume;
     }
@@ -251,6 +188,7 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public void delete(SnapshotVolume snapshotVolume) throws SQLException
     {
         errorReporter.logTrace("Deleting SnapshotVolume %s", getId(snapshotVolume));
@@ -266,11 +204,6 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotVolume deleted %s", getId(snapshotVolume));
         }
-    }
-
-    private SnapshotVolume cacheGet(Snapshot snapshot, SnapshotVolumeDefinition snapshotVolumeDefinition)
-    {
-        return snapshot.getSnapshotVolume(snapshotVolumeDefinition.getVolumeNumber());
     }
 
     private Connection getConnection()

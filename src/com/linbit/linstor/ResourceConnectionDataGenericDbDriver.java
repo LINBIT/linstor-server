@@ -39,11 +39,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private static final String SELECT_ALL =
         " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  +
         " FROM " + TBL_RES_CON_DFN;
-    private static final String SELECT =
-        SELECT_ALL +
-        " WHERE " + NODE_SRC + " = ? AND " +
-                   NODE_DST + " = ? AND " +
-                   RES_NAME + " = ?";
 
     private static final String INSERT =
         " INSERT INTO " + TBL_RES_CON_DFN +
@@ -118,61 +113,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return rscConnections;
     }
 
-    @Override
-    @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceConnectionData load(
-        Resource sourceResource,
-        Resource targetResource,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading ResourceConnection %s", getId(sourceResource, targetResource));
-
-        ResourceDefinition resDfn = sourceResource.getDefinition();
-        if (resDfn != targetResource.getDefinition())
-        {
-            throw new ImplementationError(
-                String.format(
-                    "Failed to load ResourceConnection between unrelated resources. %s %s",
-                    getResourceTraceId(sourceResource),
-                    getResourceTraceId(targetResource)
-                ),
-                null
-            );
-        }
-
-        ResourceConnectionData ret = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT))
-        {
-            stmt.setString(1, sourceResource.getAssignedNode().getName().value);
-            stmt.setString(2, targetResource.getAssignedNode().getName().value);
-            stmt.setString(3, sourceResource.getDefinition().getName().value);
-
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                if (resultSet.next())
-                {
-                    ret = restoreResourceConnection(
-                        resultSet,
-                        sourceResource,
-                        targetResource
-                    );
-                    // traceLog about loaded from DB|cache in restoreConDfn method
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning(
-                        "ResourceConnection not found in DB %s",
-                        getId(sourceResource, targetResource)
-                    );
-                }
-            }
-        }
-        return ret;
-    }
-
     private ResourceConnectionData restoreResourceConnection(
         ResultSet resultSet,
         Resource sourceResource,
@@ -180,25 +120,16 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     )
         throws SQLException
     {
-
-        ResourceConnectionData resConData = cacheGet(sourceResource, targetResource);
-        if (resConData == null)
-        {
-            resConData = new ResourceConnectionData(
-                java.util.UUID.fromString(resultSet.getString(UUID)),
-                sourceResource,
-                targetResource,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider
-            );
-            errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
-        }
-        else
-        {
-            errorReporter.logTrace("ResourceConnection loaded from cache %s", getId(resConData));
-        }
+        ResourceConnectionData resConData = new ResourceConnectionData(
+            java.util.UUID.fromString(resultSet.getString(UUID)),
+            sourceResource,
+            targetResource,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
 
         return resConData;
     }
@@ -256,20 +187,6 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         }
     }
 
-    private ResourceConnectionData cacheGet(Resource sourceResource, Resource targetResource)
-    {
-        ResourceConnectionData ret = null;
-        try
-        {
-            ret = (ResourceConnectionData) sourceResource.getResourceConnection(dbCtx, targetResource);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return ret;
-    }
-
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
@@ -293,30 +210,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return id;
     }
 
-    private String getId(Resource src, Resource dst)
-    {
-        return getId(
-            src.getAssignedNode().getName().displayValue,
-            dst.getAssignedNode().getName().displayValue,
-            src.getDefinition().getName().displayValue
-        );
-    }
-
     private String getId(String sourceName, String targetName, String resName)
     {
         return "(SourceNode=" + sourceName + " TargetNode=" + targetName + " ResName=" + resName + ")";
-    }
-
-    private String getResourceTraceId(Resource resource)
-    {
-        return getResourceId(
-            resource.getAssignedNode().getName().value,
-            resource.getDefinition().getName().value
-        );
-    }
-
-    private String getResourceId(String nodeName, String resourceName)
-    {
-        return "(NodeName=" + nodeName + " ResName=" + resourceName + ")";
     }
 }

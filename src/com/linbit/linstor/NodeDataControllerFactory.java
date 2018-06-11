@@ -1,17 +1,19 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -28,6 +30,8 @@ public class NodeDataControllerFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final CoreModule.NodesMap nodesMap;
+    private final ObjectProtection nodesMapObjProt;
 
     @Inject
     public NodeDataControllerFactory(
@@ -37,7 +41,9 @@ public class NodeDataControllerFactory
         @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN) StorPoolDefinition disklessStorPoolDfnRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CoreModule.NodesMap nodesMapRef,
+        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef
     )
     {
         dbDriver = dbDriverRef;
@@ -47,6 +53,8 @@ public class NodeDataControllerFactory
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        nodesMap = nodesMapRef;
+        nodesMapObjProt = nodesMapProtRef;
     }
 
     public NodeData getInstance(
@@ -61,7 +69,8 @@ public class NodeDataControllerFactory
     {
         NodeData nodeData = null;
 
-        nodeData = dbDriver.load(nameRef, false);
+        nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
+        nodeData = (NodeData) nodesMap.get(nameRef);
 
         if (failIfExists && nodeData != null)
         {

@@ -8,7 +8,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -36,7 +35,7 @@ public class NetInterfaceDataFactory
     public NetInterfaceData getInstance(
         AccessContext accCtx,
         Node node,
-        NetInterfaceName name,
+        NetInterfaceName netName,
         LsIpAddress addr,
         TcpPortNumber port,
         EncryptionType encrType,
@@ -49,7 +48,7 @@ public class NetInterfaceDataFactory
 
         NetInterfaceData netData = null;
 
-        netData = driver.load(node, name, false);
+        netData = (NetInterfaceData) node.getNetInterface(accCtx, netName);
 
         if (failIfExists && netData != null)
         {
@@ -60,7 +59,7 @@ public class NetInterfaceDataFactory
         {
             netData = new NetInterfaceData(
                 UUID.randomUUID(),
-                name,
+                netName,
                 node,
                 addr,
                 port,
@@ -88,7 +87,7 @@ public class NetInterfaceDataFactory
         NetInterfaceData netData;
         try
         {
-            netData = driver.load(node, netName, false);
+            netData = (NetInterfaceData) node.getNetInterface(accCtx, netName);
             if (netData == null)
             {
                 /*

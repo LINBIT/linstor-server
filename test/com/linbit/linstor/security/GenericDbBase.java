@@ -24,7 +24,7 @@ import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDataFactory;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeConnectionDataFactory;
@@ -131,7 +131,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected NodeDataControllerFactory nodeDataFactory;
     @Inject protected ResourceConnectionDataFactory resourceConnectionDataFactory;
     @Inject protected ResourceDataFactory resourceDataFactory;
-    @Inject protected StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
     @Inject protected NodeConnectionDataFactory nodeConnectionDataFactory;
     @Inject protected StorPoolDataFactory storPoolDataFactory;
@@ -192,6 +192,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new TestDbModule(),
             new ControllerTransactionMgrModule(),
             new TestApiModule(),
+            new ControllerSecurityModule(),
             additionalModule,
             BoundFieldModule.of(this)
         );

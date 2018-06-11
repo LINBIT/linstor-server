@@ -1,11 +1,9 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 
 public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseDriver
@@ -16,21 +14,6 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
     public SatelliteResConDfnDriver(@SystemContext AccessContext dbCtxRef)
     {
         dbCtx = dbCtxRef;
-    }
-
-    @Override
-    public ResourceConnectionData load(Resource source, Resource target, boolean logWarnIfNotExists)
-    {
-        ResourceConnectionData resourceConnection = null;
-        try
-        {
-            resourceConnection = (ResourceConnectionData) source.getResourceConnection(dbCtx, target);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            SatelliteDbDriverExceptionHandler.handleAccessDeniedException(accDeniedExc);
-        }
-        return resourceConnection;
     }
 
     @Override

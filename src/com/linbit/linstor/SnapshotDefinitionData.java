@@ -76,7 +76,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
         snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
 
-        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);;
+        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 

@@ -41,11 +41,6 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     private static final String S_SELECT_ALL =
         " SELECT " + S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " + S_FLAGS +
         " FROM " + TBL_SNAPSHOT;
-    private static final String S_SELECT =
-        S_SELECT_ALL +
-        " WHERE " + S_NODE_NAME + " = ? AND " +
-            S_RES_NAME + " = ? AND " +
-            S_NAME + " = ?";
 
     private static final String S_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT +
@@ -108,49 +103,6 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
         }
-    }
-
-    @Override
-    public Snapshot load(
-        Node node,
-        SnapshotDefinition snapshotDefinition,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading Snapshot %s", getId(node, snapshotDefinition));
-        Snapshot ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(S_SELECT))
-        {
-            stmt.setString(1, node.getName().value);
-            stmt.setString(2, snapshotDefinition.getResourceName().value);
-            stmt.setString(3, snapshotDefinition.getName().value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = cacheGet(node, snapshotDefinition);
-                if (ret == null)
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreSnapshot(
-                            resultSet,
-                            node,
-                            snapshotDefinition
-                        ).objA;
-                        errorReporter.logTrace("Snapshot loaded %s", getId(node, snapshotDefinition));
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "Requested Snapshot %s could not be found in the Database",
-                            getId(node, snapshotDefinition)
-                        );
-                    }
-                }
-            }
-        }
-        return ret;
     }
 
     private Pair<Snapshot, Snapshot.InitMaps> restoreSnapshot(
@@ -225,6 +177,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public void delete(Snapshot snapshot) throws SQLException
     {
         errorReporter.logTrace("Deleting Snapshot %s", getId(snapshot));
@@ -242,11 +195,6 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     public StateFlagsPersistence<Snapshot> getStateFlagsPersistence()
     {
         return flagsDriver;
-    }
-
-    private Snapshot cacheGet(Node node, SnapshotDefinition snapshotDefinition)
-    {
-        return snapshotDefinition.getSnapshot(node.getName());
     }
 
     private Connection getConnection()

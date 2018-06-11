@@ -1,9 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionData;
-import com.linbit.linstor.NodeName;
 
 /**
  * Database driver for {@link NodeConnectionData}.
@@ -12,28 +10,6 @@ import com.linbit.linstor.NodeName;
  */
 public interface NodeConnectionDataDatabaseDriver
 {
-    /**
-     * Loads the {@link NodeConnectionData} specified by the parameters
-     * {@code sourceNode} and {@code targetNode}.
-     * <br>
-     * By convention the {@link NodeName} of {@code sourceNode} has to be alphanumerically
-     * smaller than the {@link NodeName} of {@code targetNode}
-     * @param sourceNode
-     *  Part of the primary key specifying the database entry
-     * @param targetNode
-     *  Part of the primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    NodeConnectionData load(
-        Node sourceNode,
-        Node targetNode,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException;
-
     /**
      * Persists the given {@link com.linbit.linstor.NodeConnectionData} into the database.
      *

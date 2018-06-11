@@ -542,7 +542,8 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                     successMessage = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
                     details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscData.getUuid();
                     markDeleted(rscData);
-                } else
+                }
+                else
                 {
                     successMessage = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
                     details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscData.getUuid();
@@ -1047,13 +1048,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
                 accDeniedExc,
                 "load " + getObjectDescriptionInline(),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "loading " + getObjectDescriptionInline()
             );
         }
         return vlmDfn;

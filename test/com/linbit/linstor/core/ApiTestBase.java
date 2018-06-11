@@ -98,7 +98,6 @@ public abstract class ApiTestBase extends GenericDbBase
         super.setUpWithoutEnteringScope(Modules.combine(
             new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule(),
-            new ControllerSecurityModule(),
             new ControllerCoreModule(),
             new ConfigModule()
         ));

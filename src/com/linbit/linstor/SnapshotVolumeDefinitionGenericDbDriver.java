@@ -3,11 +3,9 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -35,11 +33,6 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private static final String SVD_SELECT_ALL =
         " SELECT " + SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR +
         " FROM " + TBL_SNAPSHOT_VOLUME_DEFINITIONS;
-    private static final String SVD_SELECT =
-        SVD_SELECT_ALL +
-        " WHERE " + SVD_RES_NAME + " = ? AND " +
-            SVD_SNAPSHOT_NAME + " = ? AND " +
-            SVD_VLM_NR + " = ?";
 
     private static final String SVD_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
@@ -52,7 +45,6 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             SVD_SNAPSHOT_NAME + " = ? AND " +
             SVD_VLM_NR + " = ?";
 
-    private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
     private final TransactionObjectFactory transObjFactory;
@@ -60,13 +52,11 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
 
     @Inject
     public SnapshotVolumeDefinitionGenericDbDriver(
-        @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        dbCtx = accCtx;
         errorReporter = errorReporterRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -91,48 +81,6 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         }
     }
 
-    @Override
-    public SnapshotVolumeDefinition load(
-        SnapshotDefinition snapshotDefinition,
-        VolumeNumber volumeNumber,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading SnapshotVolumeDefinition %s", getId(snapshotDefinition, volumeNumber));
-        SnapshotVolumeDefinition ret;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SVD_SELECT))
-        {
-            stmt.setString(1, snapshotDefinition.getResourceName().value);
-            stmt.setString(2, snapshotDefinition.getName().value);
-            stmt.setInt(3, volumeNumber.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                ret = cacheGet(snapshotDefinition, volumeNumber);
-                if (ret == null)
-                {
-                    if (resultSet.next())
-                    {
-                        ret = restoreSnapshotVolumeDefinition(
-                            resultSet,
-                            snapshotDefinition,
-                            volumeNumber
-                        ).objA;
-                        errorReporter.logTrace("SnapshotVolumeDefinition loaded %s", getId(snapshotDefinition, volumeNumber));
-                    }
-                    else
-                    if (logWarnIfNotExists)
-                    {
-                        errorReporter.logWarning(
-                            "Requested SnapshotVolumeDefinition %s could not be found in the Database",
-                            getId(snapshotDefinition, volumeNumber)
-                        );
-                    }
-                }
-            }
-        }
-        return ret;
-    }
 
     private Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> restoreSnapshotVolumeDefinition(
         ResultSet resultSet,
@@ -216,23 +164,18 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public void delete(SnapshotVolumeDefinition snapshotVolumeDefinition) throws SQLException
     {
         errorReporter.logTrace("Deleting SnapshotVolumeDefinition %s", getId(snapshotVolumeDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(SVD_DELETE))
         {
-            stmt.setString(1,
-                snapshotVolumeDefinition.getResourceName().value);
+            stmt.setString(1, snapshotVolumeDefinition.getResourceName().value);
             stmt.setString(2, snapshotVolumeDefinition.getSnapshotName().value);
             stmt.setInt(3, snapshotVolumeDefinition.getVolumeNumber().value);
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotVolumeDefinition deleted %s", getId(snapshotVolumeDefinition));
         }
-    }
-
-    private SnapshotVolumeDefinition cacheGet(SnapshotDefinition snapshotDefinition, VolumeNumber volumeNumber)
-    {
-        return snapshotDefinition.getSnapshotVolumeDefinition(volumeNumber);
     }
 
     private Connection getConnection()

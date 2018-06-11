@@ -3,8 +3,6 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.StorPoolDefinition.InitMaps;
-import com.linbit.linstor.annotation.Uninitialized;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
@@ -53,7 +51,6 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
         " WHERE " + SPD_NAME + " = ?";
 
     private final ErrorReporter errorReporter;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
@@ -65,7 +62,6 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
     @Inject
     public StorPoolDefinitionDataGenericDbDriver(
         ErrorReporter errorReporterRef,
-        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -73,7 +69,6 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
     )
     {
         errorReporter = errorReporterRef;
-        storPoolDfnMap = storPoolDfnMapRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
@@ -96,7 +91,7 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
             {
                 if (resultSet.next())
                 {
-                    Pair<StorPoolDefinitionData, InitMaps> pair = load(resultSet);
+                    Pair<StorPoolDefinitionData, InitMaps> pair = restoreStorPoolDfn(resultSet);
                     disklessStorPoolDfn = pair.objA;
                     disklessStorPoolDfnInitMaps = pair.objB;
                 }
@@ -145,35 +140,6 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
         errorReporter.logTrace("StorPoolDefinition created %s", getId(storPoolDefinitionData));
     }
 
-    @Override
-    public StorPoolDefinitionData load(StorPoolName storPoolName, boolean logWarnIfNotExists)
-        throws SQLException
-    {
-        errorReporter.logTrace("Loading StorPoolDefinition %s", getId(storPoolName));
-
-        StorPoolDefinitionData storPoolDefinition = null;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SPD_SELECT))
-        {
-            stmt.setString(1, storPoolName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                if (resultSet.next())
-                {
-                    storPoolDefinition = load(resultSet).objA;
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning(
-                        "StorPoolDefinition was not found in the DB %s",
-                        getId(storPoolName)
-                    );
-                }
-            }
-        }
-        return storPoolDefinition;
-    }
-
     public Map<StorPoolDefinitionData, InitMaps> loadAll() throws SQLException
     {
         errorReporter.logTrace("Loading all StorPoolDefinitions");
@@ -184,7 +150,7 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
             {
                 while (resultSet.next())
                 {
-                    Pair<StorPoolDefinitionData, InitMaps> pair = load(resultSet);
+                    Pair<StorPoolDefinitionData, InitMaps> pair = restoreStorPoolDfn(resultSet);
                     storPoolMap.put(pair.objA, pair.objB);
                 }
             }
@@ -193,7 +159,7 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
         return storPoolMap;
     }
 
-    public Pair<StorPoolDefinitionData, InitMaps> load(ResultSet resultSet) throws SQLException
+    private Pair<StorPoolDefinitionData, InitMaps> restoreStorPoolDfn(ResultSet resultSet) throws SQLException
     {
         Pair<StorPoolDefinitionData, InitMaps> retPair = new Pair<>();
 
@@ -216,39 +182,26 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
             );
         }
 
-        storPoolDefinition = cacheGet(storPoolName);
-        if (storPoolDefinition == null)
-        {
-            UUID uuid = java.util.UUID.fromString(resultSet.getString(SPD_UUID));
+        UUID uuid = java.util.UUID.fromString(resultSet.getString(SPD_UUID));
 
-            ObjectProtection objProt = getObjectProtection(storPoolName);
+        ObjectProtection objProt = getObjectProtection(storPoolName);
 
-            Map<NodeName, StorPool> storPoolsMap = new TreeMap<>();
-            storPoolDefinition = new StorPoolDefinitionData(
-                uuid,
-                objProt,
-                storPoolName,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                storPoolsMap
-            );
+        Map<NodeName, StorPool> storPoolsMap = new TreeMap<>();
+        storPoolDefinition = new StorPoolDefinitionData(
+            uuid,
+            objProt,
+            storPoolName,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            storPoolsMap
+        );
 
-            retPair.objA = storPoolDefinition;
-            retPair.objB = new StorPoolDfnInitMap(storPoolsMap);
+        retPair.objA = storPoolDefinition;
+        retPair.objB = new StorPoolDfnInitMap(storPoolsMap);
 
-            errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getId(storPoolName));
-        }
-        else
-        {
-            retPair.objA = storPoolDefinition;
-            if (storPoolName.displayValue.equals(LinStor.DISKLESS_STOR_POOL_NAME))
-            {
-                retPair.objB = disklessStorPoolDfnInitMaps;
-            }
-            errorReporter.logTrace("StorPoolDefinition loaded from cache %s", getId(storPoolName));
-        }
+        errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getId(storPoolName));
         return retPair;
     }
 
@@ -279,11 +232,6 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
             stmt.executeUpdate();
         }
         errorReporter.logTrace("StorPoolDefinition deleted %s", getId(storPoolDefinitionData));
-    }
-
-    private StorPoolDefinitionData cacheGet(StorPoolName sName)
-    {
-        return (StorPoolDefinitionData) storPoolDfnMap.get(sName);
     }
 
     private Connection getConnection()

@@ -2,9 +2,7 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
 
-import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -14,22 +12,6 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
  */
 public interface ResourceDataDatabaseDriver
 {
-    /**
-     * Loads the {@link ResourceData} specified by the parameters {@code node} and
-     * {@code resourceName}.
-     *
-     * @param node
-     *  Part of the primary key specifying the database entry
-     * @param rscDfn
-     *  Part of the primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    ResourceData load(Node node, ResourceDefinition rscDfn, boolean logWarnIfNotExists)
-        throws SQLException;
-
     /**
      * Persists the given {@link ResourceData} into the database.
      *

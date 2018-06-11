@@ -507,13 +507,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_INVLD_VLM_NR
             );
         }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "loading " + getObjectDescriptionInline()
-            );
-        }
         return vlmDfn;
     }
 
@@ -574,13 +567,15 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.create(
+            vlmDfn = volumeDefinitionDataFactory.getInstance(
                 accCtx,
                 rscDfn,
                 volNr,
                 minorNr,
                 size,
-                vlmDfnInitFlags
+                vlmDfnInitFlags,
+                true,
+                true
             );
         }
         catch (AccessDeniedException accDeniedExc)

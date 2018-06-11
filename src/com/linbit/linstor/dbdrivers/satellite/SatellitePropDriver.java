@@ -14,7 +14,7 @@ public class SatellitePropDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public Map<String, String> load(String instanceName)
+    public Map<String, String> loadAll(String instanceName)
     {
         return Collections.emptyMap();
     }

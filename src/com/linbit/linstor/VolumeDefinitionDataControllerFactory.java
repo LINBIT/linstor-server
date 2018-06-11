@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
@@ -50,56 +51,60 @@ public class VolumeDefinitionDataControllerFactory
         secObjs = secObjsRef;
     }
 
-    public VolumeDefinitionData create(
+    public VolumeDefinitionData getInstance(
         AccessContext accCtx,
-        ResourceDefinition resDfn,
-        VolumeNumber volNr,
+        ResourceDefinition rscDfn,
+        VolumeNumber vlmNr,
         Integer minor,
-        Long volSize,
-        VolumeDefinition.VlmDfnFlags[] initFlags
+        Long vlmSize,
+        VolumeDefinition.VlmDfnFlags[] initFlags,
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false);
+        VolumeDefinitionData vlmDfnData = (VolumeDefinitionData) rscDfn.getVolumeDfn(accCtx, vlmNr);
 
-        if (volDfnData != null)
+        if (vlmDfnData != null && failIfExists)
         {
             throw new LinStorDataAlreadyExistsException("The VolumeDefinition already exists");
         }
 
-        MinorNumber chosenMinorNr;
-        if (minor == null)
+        if (vlmDfnData == null && createIfNotExists)
         {
-            chosenMinorNr = new MinorNumber(minorNrPool.autoAllocate());
+            MinorNumber chosenMinorNr;
+            if (minor == null)
+            {
+                chosenMinorNr = new MinorNumber(minorNrPool.autoAllocate());
+            }
+            else
+            {
+                chosenMinorNr = new MinorNumber(minor);
+                minorNrPool.allocate(minor);
+            }
+
+            vlmDfnData = new VolumeDefinitionData(
+                UUID.randomUUID(),
+                rscDfn,
+                vlmNr,
+                chosenMinorNr,
+                minorNrPool,
+                vlmSize,
+                StateFlagsBits.getMask(initFlags),
+                driver,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                new TreeMap<>()
+            );
+
+            driver.create(vlmDfnData);
+            ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
         }
-        else
-        {
-            chosenMinorNr = new MinorNumber(minor);
-            minorNrPool.allocate(minor);
-        }
-
-        volDfnData = new VolumeDefinitionData(
-            UUID.randomUUID(),
-            resDfn,
-            volNr,
-            chosenMinorNr,
-            minorNrPool,
-            volSize,
-            StateFlagsBits.getMask(initFlags),
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
-        );
-
-        driver.create(volDfnData);
-        ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfnData);
-
-        return volDfnData;
+        return vlmDfnData;
     }
 
     public VolumeDefinitionData load(
@@ -107,11 +112,24 @@ public class VolumeDefinitionDataControllerFactory
         ResourceDefinition resDfn,
         VolumeNumber volNr
     )
-        throws SQLException, AccessDeniedException
+        throws AccessDeniedException
     {
-        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-
-        VolumeDefinitionData volDfnData = driver.load(resDfn, volNr, false);
-        return volDfnData;
+        VolumeDefinitionData vlmDfn;
+        try
+        {
+            vlmDfn = getInstance(accCtx, resDfn, volNr, null, null, null, false, false);
+        }
+        catch (
+            LinStorDataAlreadyExistsException |
+            SQLException |
+            MdException |
+            ValueOutOfRangeException |
+            ValueInUseException |
+            ExhaustedPoolException exc
+        )
+        {
+            throw new ImplementationError("Impossible exception was thrown", exc);
+        }
+        return vlmDfn;
     }
 }

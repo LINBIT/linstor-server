@@ -49,12 +49,6 @@ public class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriv
     }
 
     @Override
-    public ResourceDefinitionData load(ResourceName resourceName, boolean logWarnIfNotExists)
-    {
-        return (ResourceDefinitionData) resDfnMap.get(resourceName);
-    }
-
-    @Override
     public void delete(ResourceDefinitionData data)
     {
         // no-op

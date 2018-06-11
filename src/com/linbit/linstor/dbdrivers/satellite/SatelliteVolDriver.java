@@ -1,9 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeData;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import javax.inject.Inject;
@@ -22,17 +19,6 @@ public class SatelliteVolDriver implements VolumeDataDatabaseDriver
     public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
     {
         return (StateFlagsPersistence<VolumeData>) stateFlagsDriver;
-    }
-
-    @Override
-    public VolumeData load(
-        Resource resource,
-        VolumeDefinition volumeDefinition,
-        StorPool storPool,
-        boolean logWarnIfNotExists
-    )
-    {
-        return (VolumeData) resource.getVolume(volumeDefinition.getVolumeNumber());
     }
 
     @Override

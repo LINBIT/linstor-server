@@ -8,7 +8,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -63,7 +62,7 @@ public class NodeConnectionDataFactory
         source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        nodeConData = dbDriver.load(source, target, false);
+        nodeConData = (NodeConnectionData) source.getNodeConnection(accCtx, target);
 
         if (failIfExists && nodeConData != null)
         {
@@ -114,7 +113,7 @@ public class NodeConnectionDataFactory
 
         try
         {
-            nodeConData = dbDriver.load(source, target, false);
+            nodeConData = (NodeConnectionData) source.getNodeConnection(accCtx, target);
             if (nodeConData == null)
             {
                 nodeConData = new NodeConnectionData(

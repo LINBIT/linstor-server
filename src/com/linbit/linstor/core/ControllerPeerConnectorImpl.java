@@ -7,7 +7,7 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataSatelliteFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataFactory;
+import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -41,7 +41,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     private final AccessContext sysCtx;
 
-    private final StorPoolDefinitionDataFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final NodeDataSatelliteFactory nodeDataFactory;
 
     private final Provider<TransactionMgr> transMgrProvider;
@@ -64,7 +64,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
-        StorPoolDefinitionDataFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         NodeDataSatelliteFactory nodeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -125,7 +125,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             NodeData localNode;
             try
             {
-                disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstanceSatellite(
+                disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstance(
                     tmpCtx,
                     disklessStorPoolDfnUuid,
                     new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)

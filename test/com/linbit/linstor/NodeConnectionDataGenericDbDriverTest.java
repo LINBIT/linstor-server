@@ -80,15 +80,6 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         checkDbPersist(false);
     }
 
-    @Test
-    public void testLoad() throws Exception
-    {
-        driver.create(nodeCon);
-
-        NodeConnectionData loadedConDfn = driver.load(nodeSrc, nodeDst, true);
-
-        checkLoadedConDfn(loadedConDfn, true);
-    }
 
     @Test
     public void testLoadAll() throws Exception
@@ -111,6 +102,8 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(nodeCon);
+        nodeSrc.setNodeConnection(SYS_CTX, nodeCon);
+        nodeDst.setNodeConnection(SYS_CTX, nodeCon);
 
         NodeConnectionData loadedConDfn = nodeConnectionDataFactory.getInstance(
             SYS_CTX,
@@ -136,7 +129,13 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, true));
+        assertEquals(storedInstance, nodeConnectionDataFactory.getInstance(
+            SYS_CTX,
+            nodeSrc,
+            nodeDst,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -167,6 +166,8 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(nodeCon);
+        nodeSrc.setNodeConnection(SYS_CTX, nodeCon);
+        nodeDst.setNodeConnection(SYS_CTX, nodeCon);
 
         nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, false, true);
     }

@@ -167,7 +167,7 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public Map<String, String> load(String instanceName) throws SQLException
+    public Map<String, String> loadAll(String instanceName) throws SQLException
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
         Map<String, String> ret = new TreeMap<>();

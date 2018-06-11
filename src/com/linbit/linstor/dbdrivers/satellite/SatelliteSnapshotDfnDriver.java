@@ -1,13 +1,10 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.SnapshotDefinitionData;
-import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
@@ -37,26 +34,6 @@ public class SatelliteSnapshotDfnDriver implements SnapshotDefinitionDataDatabas
         throws SQLException
     {
         // no-op
-    }
-
-    @Override
-    public SnapshotDefinitionData load(
-        ResourceDefinition resourceDefinition,
-        SnapshotName snapshotName,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        SnapshotDefinitionData snapshotDfn = null;
-        try
-        {
-            snapshotDfn = (SnapshotDefinitionData) resourceDefinition.getSnapshotDfn(dbCtx, snapshotName);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            SatelliteDbDriverExceptionHandler.handleAccessDeniedException(accDeniedExc);
-        }
-        return snapshotDfn;
     }
 
     @Override

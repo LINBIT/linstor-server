@@ -1,9 +1,7 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -36,15 +34,6 @@ public class SatelliteSnapshotDriver implements SnapshotDataDatabaseDriver
         throws SQLException
     {
         // no-op
-    }
-
-    @Override
-    public Snapshot load(
-        Node node, SnapshotDefinition snapshotDefinition, boolean logWarnIfNotExists
-    )
-        throws SQLException
-    {
-        return snapshotDefinition.getSnapshot(node.getName());
     }
 
     @Override

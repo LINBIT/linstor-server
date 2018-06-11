@@ -40,7 +40,7 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         SnapshotVolumeDefinition snapshotVolumeDefinition;
         try
         {
-            snapshotVolumeDefinition = driver.load(snapshotDfn, volumeNumber, false);
+            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
             if (snapshotVolumeDefinition == null)
             {
                 snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(

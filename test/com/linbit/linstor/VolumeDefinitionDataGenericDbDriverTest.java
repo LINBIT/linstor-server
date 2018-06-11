@@ -55,8 +55,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         resName = new ResourceName("TestResource");
         resPort = 9001;
-        resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+        resDfn = resourceDefinitionDataFactory.getInstance(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, false
         );
 
         uuid = randomUUID();
@@ -115,22 +115,26 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.create(
-                SYS_CTX,
-                new ResourceName("TestResource2"),
-                resPort + 1, // prevent tcp-port-conflict
-                null,
-                "secret",
-                TransportType.IP
+        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.getInstance(
+            SYS_CTX,
+            new ResourceName("TestResource2"),
+            resPort + 1, // prevent tcp-port-conflict
+            null,
+            "secret",
+            TransportType.IP,
+            true,
+            false
         );
 
-        volumeDefinitionDataFactory.create(
+        volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDefinitionTest,
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] {VlmDfnFlags.DELETE}
+            new VlmDfnFlags[] {VlmDfnFlags.DELETE},
+            true,
+            false
         );
         commit();
 
@@ -149,24 +153,10 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoad() throws Exception
-    {
-        driver.create(volDfn);
-
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, true);
-        assertNotNull(loadedVd);
-        assertEquals(uuid, loadedVd.getUuid());
-        assertEquals(resName, loadedVd.getResourceDefinition().getName());
-        assertEquals(volNr, loadedVd.getVolumeNumber());
-        assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX).value);
-        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
-    }
-
-    @Test
     public void testLoadGetInstance() throws Exception
     {
         driver.create(volDfn);
+        ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
 
         VolumeDefinitionData loadedVd = volumeDefinitionDataFactory.load(
             SYS_CTX,
@@ -370,8 +360,9 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(volDfn);
+        ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
 
-        volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
+        volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, true, true);
     }
 
     @Test
@@ -382,13 +373,15 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         Mockito.when(minorNrPoolMock.autoAllocate()).thenReturn(testMinorNumber);
 
-        VolumeDefinitionData newvolDfn = volumeDefinitionDataFactory.create(
+        VolumeDefinitionData newvolDfn = volumeDefinitionDataFactory.getInstance(
             SYS_CTX,
             resDfn,
             testVolumeNumber,
             null, // auto allocate
             volSize,
-            null
+            null,
+            true,
+            true
         );
 
         assertThat(newvolDfn.getMinorNr(SYS_CTX).value).isEqualTo(testMinorNumber);

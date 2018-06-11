@@ -65,8 +65,8 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
         );
 
         node = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, true, false);
-        resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+        resDfn = resourceDefinitionDataFactory.getInstance(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, true
         );
 
         resUuid = randomUUID();
@@ -142,38 +142,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoad() throws Exception
-    {
-        ResourceData res = new ResourceData(
-            resUuid,
-            objProt,
-            resDfn,
-            node,
-            nodeId,
-            initFlags,
-            driver,
-            propsContainerFactory,
-            volumeDataFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>(),
-            new TreeMap<>()
-        );
-        driver.create(res);
-
-        ResourceData loadedRes = driver.load(node, resDfn, true);
-
-        assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
-        assertEquals(resUuid, loadedRes.getUuid());
-        assertNotNull(loadedRes.getAssignedNode());
-        assertEquals(nodeName, loadedRes.getAssignedNode().getName());
-        assertNotNull(loadedRes.getDefinition());
-        assertEquals(resName, loadedRes.getDefinition().getName());
-        assertEquals(nodeId, loadedRes.getNodeId());
-        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
-    }
-
-    @Test
     public void testLoadGetInstance() throws Exception
     {
         ResourceData loadedRes = resourceDataFactory.getInstance(
@@ -203,6 +171,8 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             new TreeMap<>()
         );
         driver.create(res);
+        node.addResource(SYS_CTX, res);
+        resDfn.addResource(SYS_CTX, res);
 
         loadedRes = resourceDataFactory.getInstance(
             SYS_CTX,
@@ -279,7 +249,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(node, resDfn, true));
+        assertEquals(storedInstance, resourceDataFactory.getInstance(
+            SYS_CTX,
+            resDfn,
+            node,
+            null,
+            null,
+            false,
+            false
+        ));
     }
 
     @Test
@@ -413,6 +391,8 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             new TreeMap<>()
         );
         driver.create(res);
+        node.addResource(SYS_CTX, res);
+        resDfn.addResource(SYS_CTX, res);
 
         resourceDataFactory.getInstance(SYS_CTX, resDfn, node, nodeId, null, false, true);
     }

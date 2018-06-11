@@ -106,22 +106,11 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoad() throws Exception
-    {
-        driver.create(spdd);
-
-        StorPoolDefinitionData loadedSpdd = driver.load(spName, true);
-
-        assertNotNull(loadedSpdd);
-        assertEquals(uuid, loadedSpdd.getUuid());
-        assertEquals(spName, loadedSpdd.getName());
-        assertNotNull(loadedSpdd.getObjProt());
-    }
-
-    @Test
     public void testLoadGetInstance() throws Exception
     {
         driver.create(spdd);
+        storPoolDfnMap.put(spName, spdd);
+
 
         StorPoolDefinitionData loadedSpdd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, false, false);
         assertNotNull(loadedSpdd);
@@ -137,7 +126,7 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         super.storPoolDfnMap.put(spName, spdd);
         // no clearCaches
 
-        assertEquals(spdd, driver.load(spName, true));
+        assertEquals(spdd, storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, false, false));
     }
 
     @Test
@@ -176,20 +165,6 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         stmt.close();
     }
 
-    @Test
-    public void testHalfValidName() throws Exception
-    {
-        driver.create(spdd);
-
-        StorPoolName halfValidName = new StorPoolName(spdd.getName().value);
-
-        StorPoolDefinitionData loadedSpdd = driver.load(halfValidName, true);
-
-        assertNotNull(loadedSpdd);
-        assertEquals(spdd.getName(), loadedSpdd.getName());
-        assertEquals(spdd.getUuid(), loadedSpdd.getUuid());
-    }
-
     private StorPoolDefinitionData findStorPoolDefinitionDatabyName(
         Map<StorPoolDefinitionData, InitMaps> storPoolDfnMap,
         StorPoolName spNameRef
@@ -221,8 +196,8 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
         assertNotEquals(
-                findStorPoolDefinitionDatabyName(storpools, spName),
-                findStorPoolDefinitionDatabyName(storpools, spName2)
+            findStorPoolDefinitionDatabyName(storpools, spName),
+            findStorPoolDefinitionDatabyName(storpools, spName2)
         );
     }
 
@@ -230,7 +205,7 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(spdd);
-
-        storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, false, true);
+        storPoolDfnMap.put(spName, spdd);
+        storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, true, true);
     }
 }

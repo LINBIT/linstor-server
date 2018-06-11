@@ -5,8 +5,6 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterfaceData;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.TcpPortNumber;
 
 /**
@@ -16,26 +14,6 @@ import com.linbit.linstor.TcpPortNumber;
  */
 public interface NetInterfaceDataDatabaseDriver
 {
-    /**
-     * Loads the {@link NetInterfaceData} specified by the parameters {@code node} and
-     * {@code netInterfaceName}.
-     *
-     * @param node
-     *  Part of the primary key specifying the database entry
-     * @param netInterfaceName
-     *  Part of the primary key specifying the database entry
-     * @param logWarnIfNotExists
-     *  If true a warning is logged if the requested entry does not exist
-     *
-     * @throws SQLException
-     */
-    NetInterfaceData load(
-        Node node,
-        NetInterfaceName netInterfaceName,
-        boolean logWarnIfNotExists
-    )
-        throws SQLException;
-
     /**
      * Persists the given {@link NetInterfaceData} into the database.
      *

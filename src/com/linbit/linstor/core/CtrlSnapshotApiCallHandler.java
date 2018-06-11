@@ -152,10 +152,12 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 VolumeDefinition vlmDfn = vlmDfnIterator.next();
 
-                snapshotVolumeDefinitionControllerFactory.create(
+                snapshotVolumeDefinitionControllerFactory.getInstance(
                     apiCtx,
                     snapshotDfn,
-                    vlmDfn.getVolumeNumber()
+                    vlmDfn.getVolumeNumber(),
+                    true,
+                    true
                 );
             }
 
@@ -164,20 +166,24 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 Resource rsc = rscIterator.next();
 
-                Snapshot snapshot = snapshotDataFactory.create(
+                Snapshot snapshot = snapshotDataFactory.getInstance(
                     apiCtx,
                     rsc.getAssignedNode(),
                     snapshotDfn,
-                    new Snapshot.SnapshotFlags[]{}
+                    new Snapshot.SnapshotFlags[]{},
+                    true,
+                    true
                 );
 
                 for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
                 {
-                    snapshotVolumeDataControllerFactory.create(
+                    snapshotVolumeDataControllerFactory.getInstance(
                         apiCtx,
                         snapshot,
                         snapshotVolumeDefinition,
-                        rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx)
+                        rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx),
+                        true,
+                        true
                     );
                 }
             }
@@ -444,11 +450,13 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         SnapshotDefinitionData snapshotDfn;
         try
         {
-            snapshotDfn = snapshotDefinitionDataFactory.create(
+            snapshotDfn = snapshotDefinitionDataFactory.getInstance(
                 accCtx,
                 rscDfn,
                 snapshotName,
-                snapshotDfnInitFlags
+                snapshotDfnInitFlags,
+                true,
+                true
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -512,10 +520,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.",
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(sqlExc, "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.");
         }
         return snapshotDfn;
     }
