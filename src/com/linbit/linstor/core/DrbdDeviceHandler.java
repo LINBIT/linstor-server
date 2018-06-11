@@ -1717,6 +1717,12 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws VolumeException
     {
+        if (!DrbdVolume.DS_LABEL_UP_TO_DATE.equals(vlmState.getDiskState()))
+        {
+            throw new VolumeException("Refusing to take snapshot for non-UpToDate " +
+                "resource '" + rscDfn.getName().displayValue + "' volume " + vlmState.getVlmNr().value);
+        }
+
         if (vlmState.getDriver() != null)
         {
             try
