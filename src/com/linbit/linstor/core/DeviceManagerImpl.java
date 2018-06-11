@@ -649,6 +649,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             dispatchRscSet.addAll(updPendingBundle.chkRscSet);
             dispatchRscSet.addAll(updPendingBundle.updRscDfnMap.keySet());
             dispatchRscSet.addAll(updPendingBundle.updRscMap.keySet());
+            dispatchRscSet.addAll(
+                updPendingBundle.updSnapshotMap.keySet().stream()
+                    .map(SnapshotDefinition.Key::getResourceName)
+                    .collect(Collectors.toSet())
+            );
 
             // Request updates from the controller
             requestControllerUpdates(updPendingBundle.updControllerMap);
@@ -742,42 +747,32 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
 
-                        if (rsc != null || !snapshots.isEmpty())
+                        boolean needMasterKey = false;
+                        // If the master key is not known, skip dispatching resources that
+                        // have encrypted volumes
+                        if (!haveMasterKey)
                         {
-                            boolean needMasterKey = false;
-                            // If the master key is not known, skip dispatching resources that
-                            // have encrypted volumes
-                            if (!haveMasterKey)
+                            Iterator<VolumeDefinition> vlmDfnIter = rscDfn.iterateVolumeDfn(wrkCtx);
+                            while (vlmDfnIter.hasNext())
                             {
-                                Iterator<VolumeDefinition> vlmDfnIter = rscDfn.iterateVolumeDfn(wrkCtx);
-                                while (vlmDfnIter.hasNext())
+                                VolumeDefinition vlmDfn = vlmDfnIter.next();
+                                if (vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
                                 {
-                                    VolumeDefinition vlmDfn = vlmDfnIter.next();
-                                    if (vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
-                                    {
-                                        needMasterKey = true;
-                                        break;
-                                    }
+                                    needMasterKey = true;
+                                    break;
                                 }
                             }
-                            if (!needMasterKey)
-                            {
-                                dispatchResource(rscDfn, snapshots, phaseLock);
-                            }
-                            else
-                            {
-                                errLog.logWarning(
-                                    "Skipped actions for encrypted resource '%s' because the " +
-                                    "encryption key is not known yet",
-                                    rscDfn.getName().displayValue
-                                );
-                            }
+                        }
+                        if (!needMasterKey)
+                        {
+                            dispatchResource(rscDfn, snapshots, phaseLock);
                         }
                         else
                         {
                             errLog.logWarning(
-                                "Dispatch request for resource definition '" + rscName.displayValue +
-                                "' which has no corresponding resource object or snapshots on this satellite"
+                                "Skipped actions for encrypted resource '%s' because the " +
+                                "encryption key is not known yet",
+                                rscDfn.getName().displayValue
                             );
                         }
                     }
