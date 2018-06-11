@@ -1,9 +1,11 @@
 package com.linbit.linstor;
 
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -12,9 +14,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,6 +31,9 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     // DRBD volume number
     private final VolumeNumber volumeNr;
 
+    // Net volume size in kiB
+    private final TransactionSimpleObject<SnapshotVolumeDefinition, Long> volumeSize;
+
     private final SnapshotVolumeDefinitionDatabaseDriver dbDriver;
 
     private final TransactionMap<NodeName, SnapshotVolume> snapshotVlmMap;
@@ -41,13 +44,16 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
         VolumeNumber volNr,
+        long volSize,
         SnapshotVolumeDefinitionDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<NodeName, SnapshotVolume> snapshotVlmMapRef
     )
+        throws MdException
     {
         super(transMgrProviderRef);
+        VolumeDefinitionData.checkVolumeSize(volSize);
 
         objId = objIdRef;
         snapshotDfn = snapshotDfnRef;
@@ -57,6 +63,12 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         dbgInstanceId = UUID.randomUUID();
 
         snapshotVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
+
+        volumeSize = transObjFactory.createTransactionSimpleObject(
+            this,
+            volSize,
+            dbDriver.getVolumeSizeDriver()
+        );
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
@@ -102,6 +114,24 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     }
 
     @Override
+    public long getVolumeSize(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return volumeSize.get();
+    }
+
+    @Override
+    public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        return volumeSize.set(newVolumeSize);
+    }
+
+    @Override
     public void delete(AccessContext accCtx)
         throws SQLException
     {
@@ -142,7 +172,8 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     {
         return new SnapshotVlmDfnPojo(
             getUuid(),
-            getVolumeNumber().value
+            getVolumeNumber().value,
+            getVolumeSize(accCtx)
         );
     }
 }

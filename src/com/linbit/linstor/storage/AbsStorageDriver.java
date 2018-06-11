@@ -588,7 +588,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 targetIdentifier
             );
 
-            startVolume(getSnapshotIdentifier(targetIdentifier, snapshotName), cryptKey);
+            startVolume(targetIdentifier, cryptKey);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {

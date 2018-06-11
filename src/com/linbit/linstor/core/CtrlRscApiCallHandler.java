@@ -1,18 +1,15 @@
 package com.linbit.linstor.core;
 
-import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
@@ -54,7 +51,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -62,7 +58,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -78,7 +73,7 @@ import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 import static java.util.stream.Collectors.toList;
 
-public class CtrlRscApiCallHandler extends AbsApiCallHandler
+public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 {
     private String currentNodeName;
     private String currentRscName;
@@ -88,8 +83,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
     private final ObjectProtection nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
     private final String defaultStorPoolName;
-    private final ResourceDataFactory resourceDataFactory;
-    private final VolumeDataFactory volumeDataFactory;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
 
     @Inject
@@ -116,13 +109,14 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.RESOURCE,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
-            whitelistPropsRef
+            whitelistPropsRef,
+            resourceDataFactoryRef,
+            volumeDataFactoryRef
         );
         clientComSerializer = clientComSerializerRef;
         rscDfnMapProt = rscDfnMapProtRef;
@@ -130,8 +124,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
         defaultStorPoolName = defaultStorPoolNameRef;
-        resourceDataFactory = resourceDataFactoryRef;
-        volumeDataFactory = volumeDataFactoryRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
     }
 
@@ -397,42 +389,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             throw asImplError(implError);
         }
         return isDiskless;
-    }
-
-    private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
-    {
-        NodeId freeNodeId;
-        try
-        {
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
-            int[] occupiedIds = new int[rscDfn.getResourceCount()];
-            int idx = 0;
-            while (rscIterator.hasNext())
-            {
-                occupiedIds[idx] = rscIterator.next().getNodeId().value;
-                ++idx;
-            }
-            Arrays.sort(occupiedIds);
-
-            freeNodeId = NodeIdAlloc.getFreeNodeId(occupiedIds);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (ExhaustedPoolException exhaustedPoolExc)
-        {
-            throw asExc(
-                exhaustedPoolExc,
-                "An exception occured during generation of a node id.",
-                ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID
-            );
-        }
-        return freeNodeId;
     }
 
     public ApiCallRc modifyResource(
@@ -896,109 +852,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
         return map;
     }
 
-    private ResourceData createResource(
-        ResourceDefinitionData rscDfn,
-        NodeData node,
-        NodeId nodeId,
-        List<String> flagList
-    )
-    {
-        RscFlags[] flags = RscFlags.restoreFlags(
-            FlagsHelper.fromStringList(
-                RscFlags.class,
-                flagList
-            )
-        );
-        ResourceData rsc;
-        try
-        {
-            rsc = resourceDataFactory.getInstance(
-                peerAccCtx,
-                rscDfn,
-                node,
-                nodeId,
-                flags,
-                true, // persist this entry
-                true // throw exception if the entry exists
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "create the " + getObjectDescriptionInline() + ".",
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "creating the " + getObjectDescriptionInline()
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw asExc(
-                dataAlreadyExistsExc,
-                "A " + getObjectDescriptionInline() + " already exists.",
-                ApiConsts.FAIL_EXISTS_RSC
-            );
-        }
-        return rsc;
-    }
-
-    private VolumeData createVolume(
-        Resource rsc,
-        VolumeDefinition vlmDfn,
-        StorPool storPool,
-        VlmApi vlmApi
-    )
-    {
-        VolumeData vlm;
-        try
-        {
-            String blockDevice = vlmApi == null ? null : vlmApi.getBlockDevice();
-            String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
-
-            vlm = volumeDataFactory.getInstance(
-                peerAccCtx,
-                rsc,
-                vlmDfn,
-                storPool,
-                blockDevice,
-                metaDisk,
-                null, // flags
-                true, // persist this entry
-                true // throw exception if the entry exists
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "create " + getObjectDescriptionInline(),
-                ApiConsts.FAIL_ACC_DENIED_VLM
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw asExc(
-                dataAlreadyExistsExc,
-                "The " + getObjectDescriptionInline() + " already exists",
-                ApiConsts.FAIL_EXISTS_VLM
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
-        }
-        return vlm;
-    }
-
     protected final VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
         int vlmNr,
@@ -1051,20 +904,6 @@ public class CtrlRscApiCallHandler extends AbsApiCallHandler
             );
         }
         return vlmDfn;
-    }
-
-    private Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
-    {
-        Iterator<VolumeDefinition> iterator;
-        try
-        {
-            iterator = rscDfn.iterateVolumeDfn(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asImplError(accDeniedExc);
-        }
-        return iterator;
     }
 
     protected final Props getProps(Resource rsc) throws ApiCallHandlerFailedException

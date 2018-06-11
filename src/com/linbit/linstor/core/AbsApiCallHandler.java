@@ -27,6 +27,7 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
@@ -582,6 +583,41 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             );
         }
         return rscData;
+    }
+
+    protected final SnapshotDefinitionData loadSnapshotDfn(
+        ResourceDefinition rscDfn,
+        SnapshotName snapshotName
+    )
+        throws ApiCallHandlerFailedException
+    {
+        SnapshotDefinitionData snapshotDfn;
+        try
+        {
+            snapshotDfn = objectFactories.getSnapshotDefinitionDataFactory().load(peerAccCtx, rscDfn, snapshotName);
+
+            if (snapshotDfn == null)
+            {
+                throw asExc(
+                    null, // throwable
+                    "Snapshot '" + snapshotName.displayValue +
+                        "' of resource '" + rscDfn.getName().displayValue + "' not found.", // error msg
+                    null, // cause
+                    null, // details
+                    null, // correction
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        return snapshotDfn;
     }
 
     protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)

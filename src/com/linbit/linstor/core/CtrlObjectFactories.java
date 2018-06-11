@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 
@@ -18,6 +19,7 @@ public class CtrlObjectFactories
     private final NodeDataControllerFactory nodeDataFactory;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private final ResourceDataFactory resourceDataFactory;
+    private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
 
@@ -26,6 +28,7 @@ public class CtrlObjectFactories
         NodeDataControllerFactory nodeDataFactoryRef,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         ResourceDataFactory resourceDataFactoryRef,
+        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef
     )
@@ -33,6 +36,7 @@ public class CtrlObjectFactories
         nodeDataFactory = nodeDataFactoryRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         resourceDataFactory = resourceDataFactoryRef;
+        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
     }
@@ -50,6 +54,11 @@ public class CtrlObjectFactories
     public ResourceDataFactory getResourceDataFactory()
     {
         return resourceDataFactory;
+    }
+
+    public SnapshotDefinitionDataControllerFactory getSnapshotDefinitionDataFactory()
+    {
+        return snapshotDefinitionDataFactory;
     }
 
     public StorPoolDefinitionDataControllerFactory getStorPoolDefinitionDataFactory()

@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import com.linbit.ImplementationError;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -35,13 +35,13 @@ public class SnapshotVolumeDefinitionControllerFactory
         AccessContext accCtx,
         SnapshotDefinition snapshotDfn,
         VolumeNumber volumeNumber,
+        long volSize,
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException, MdException
     {
-        SnapshotVolumeDefinition snapshotVolumeDefinition =
-            snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
+        SnapshotVolumeDefinition snapshotVolumeDefinition = load(snapshotDfn, volumeNumber);
 
         if (snapshotVolumeDefinition != null && failIfExists)
         {
@@ -54,6 +54,7 @@ public class SnapshotVolumeDefinitionControllerFactory
                 UUID.randomUUID(),
                 snapshotDfn,
                 volumeNumber,
+                volSize,
                 driver,
                 transObjFactory,
                 transMgrProvider,
@@ -68,21 +69,10 @@ public class SnapshotVolumeDefinitionControllerFactory
     }
 
     public SnapshotVolumeDefinition load(
-        AccessContext accCtx,
         SnapshotDefinition snapshotDfn,
         VolumeNumber volumeNumber
     )
-        throws AccessDeniedException
     {
-        SnapshotVolumeDefinition snapshotVlmDfn;
-        try
-        {
-            snapshotVlmDfn = getInstance(accCtx, snapshotDfn, volumeNumber, false, false);
-        }
-        catch (LinStorDataAlreadyExistsException | SQLException exc)
-        {
-            throw new ImplementationError("Impossible exception was thrown", exc);
-        }
-        return snapshotVlmDfn;
+        return snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
     }
 }

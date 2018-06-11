@@ -36,6 +36,12 @@ public interface SnapshotVolumeDefinition
 
     void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData);
 
+    long getVolumeSize(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
+        throws AccessDeniedException, SQLException;
+
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
@@ -59,6 +65,7 @@ public interface SnapshotVolumeDefinition
     {
         UUID getUuid();
         Integer getVolumeNr();
+        long getSize();
     }
 
     public interface InitMaps

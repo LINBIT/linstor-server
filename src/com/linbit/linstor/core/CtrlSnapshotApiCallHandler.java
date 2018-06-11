@@ -156,6 +156,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                     apiCtx,
                     snapshotDfn,
                     vlmDfn.getVolumeNumber(),
+                    vlmDfn.getVolumeSize(peerAccCtx),
                     true,
                     true
                 );
@@ -197,7 +198,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 snapshotName
             ));
 
-            reportSuccess(UUID.randomUUID());
+            reportSuccess(snapshotDfn.getUuid());
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -235,6 +236,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
             SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
 
+            UUID uuid = snapshotDfn.getUuid();
             if (snapshotDfn.getAllSnapshots().isEmpty())
             {
                 snapshotDfn.delete(peerAccCtx);
@@ -256,7 +258,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 updateSatellites(snapshotDfn);
             }
 
-            reportSuccess(UUID.randomUUID());
+            reportSuccess(uuid);
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -484,41 +486,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             throw asSqlExc(
                 sqlExc,
                 "creating " + getObjectDescriptionInline()
-            );
-        }
-        return snapshotDfn;
-    }
-
-    protected final SnapshotDefinitionData loadSnapshotDfn(
-        ResourceDefinition rscDfn,
-        SnapshotName snapshotName
-    )
-        throws ApiCallHandlerFailedException
-    {
-        SnapshotDefinitionData snapshotDfn;
-        try
-        {
-            snapshotDfn = snapshotDefinitionDataFactory.load(peerAccCtx, rscDfn, snapshotName);
-
-            if (snapshotDfn == null)
-            {
-                throw asExc(
-                    null, // throwable
-                    "Snapshot '" + snapshotName.displayValue +
-                        "' of resource '" + rscDfn.getName().displayValue + "' not found.", // error msg
-                    null, // cause
-                    null, // details
-                    null, // correction
-                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN
-                );
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.",
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
         return snapshotDfn;

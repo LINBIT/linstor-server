@@ -33,7 +33,8 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         AccessContext accCtx,
         UUID snapshotVolumeDefinitionUuid,
         SnapshotDefinition snapshotDfn,
-        VolumeNumber volumeNumber
+        VolumeNumber volumeNumber,
+        long vlmSize
     )
         throws ImplementationError
     {
@@ -47,6 +48,7 @@ public class SnapshotVolumeDefinitionSatelliteFactory
                     snapshotVolumeDefinitionUuid,
                     snapshotDfn,
                     volumeNumber,
+                    vlmSize,
                     driver,
                     transObjFactory,
                     transMgrProvider,

@@ -930,6 +930,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                     MsgIntSnapshotDataOuterClass.SnapshotVlmDfn.newBuilder()
                         .setSnapshotVlmDfnUuid(snapshotVolumeDefinition.getUuid().toString())
                         .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
+                        .setVlmSize(snapshotVolumeDefinition.getVolumeSize(serializerCtx))
                         .build()
                 );
             }

@@ -195,19 +195,6 @@ public class LvmThinDriver extends LvmDriver
         return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName));
     }
 
-    @Override
-    public void restoreSnapshot(
-        String sourceIdentifier,
-        String snapshotName,
-        String targetIdentifier,
-        String cryptKey
-    )
-        throws StorageException
-    {
-        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier, cryptKey);
-        startVolume(targetIdentifier, cryptKey);
-    }
-
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException
     {
         super.checkVolumeGroupEntry(config);

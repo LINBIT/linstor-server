@@ -171,8 +171,7 @@ class DrbdDeviceHandler implements DeviceHandler
         for (VolumeNumber vlmNr : vlmNrs)
         {
             VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr);
-            vlmState.setStorVlmName(rscDfn.getName().displayValue + "_" +
-                String.format("%05d", vlmNr.value));
+            vlmState.setStorVlmName(computeVlmName(rscDfn.getName(), vlmNr));
             vlmStateMap.put(vlmNr, vlmState);
         }
         rscState.setVolumes(vlmStateMap);
@@ -180,7 +179,8 @@ class DrbdDeviceHandler implements DeviceHandler
         return rscState;
     }
 
-    private ResourceState fillResourceState(final Resource rsc, final ResourceState rscState) throws AccessDeniedException
+    private ResourceState fillResourceState(final Resource rsc, final ResourceState rscState)
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
         //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
@@ -198,6 +198,20 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(vlmNr);
 
+                String restoreFromResourceProp = vlm.getProps(wrkCtx).getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
+                String restoreFromSnapshotProp = vlm.getProps(wrkCtx).getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
+                if (restoreFromResourceProp != null && restoreFromSnapshotProp != null)
+                {
+                    // Parse into 'Name' objects in order to validate the property contents
+                    ResourceName restoreFromResourceName =
+                        new ResourceName(restoreFromResourceProp);
+                    SnapshotName restoreFromSnapshotName =
+                        new SnapshotName(vlm.getProps(wrkCtx).getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT));
+
+                    vlmState.setRestoreVlmName(computeVlmName(restoreFromResourceName, vlmNr));
+                    vlmState.setRestoreSnapshotName(restoreFromSnapshotName.displayValue);
+                }
+
                 vlmState.setNetSize(vlmDfn.getVolumeSize(wrkCtx));
                 vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
                     vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE));
@@ -208,6 +222,11 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         return rscState;
+    }
+
+    private String computeVlmName(ResourceName rscName, VolumeNumber vlmNr)
+    {
+        return rscName.displayValue + "_" + String.format("%05d", vlmNr.value);
     }
 
     /**
@@ -779,6 +798,53 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
+    private void restoreStorageVolume(
+        ResourceDefinition rscDfn,
+        VolumeStateDevManager vlmState
+    )
+        throws MdException, VolumeException
+    {
+        if (vlmState.getDriver() != null)
+        {
+            try
+            {
+                vlmState.getDriver().restoreSnapshot(
+                    vlmState.getRestoreVlmName(),
+                    vlmState.getRestoreSnapshotName(),
+                    vlmState.getStorVlmName(),
+                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                );
+            }
+            catch (StorageException storExc)
+            {
+                throw new VolumeException(
+                    "Storage volume restoration failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                        vlmState.getVlmNr().value,
+                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                    null,
+                    null,
+                    null,
+                    storExc
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        else
+        {
+            throw new VolumeException(
+                "Storage volume restoration failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr(),
+                null,
+                "The selected storage pool driver for the volume is unavailable",
+                null,
+                null
+            );
+        }
+    }
+
     private void createStorageVolume(
         ResourceDefinition rscDfn,
         VolumeStateDevManager vlmState
@@ -818,19 +884,13 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         else
         {
-            String message = "Storage volume creation failed for resource '" + rscDfn.getName().displayValue +
-                "' volume " + vlmState.getVlmNr();
-            errLog.reportProblem(
-                Level.ERROR,
-                new StorageException(
-                    message,
-                    message,
-                    "The selected storage pool driver for the volume is unavailable",
-                    null,
-                    null,
-                    null
-                ),
-                null, null, null
+            throw new VolumeException(
+                "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr(),
+                null,
+                "The selected storage pool driver for the volume is unavailable",
+                null,
+                null
             );
         }
     }
@@ -877,19 +937,13 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         else
         {
-            String message = "Storage volume deletion failed for resource '" + rscDfn.getName().displayValue +
-                "' volume " + vlmState.getVlmNr();
-            errLog.reportProblem(
-                Level.ERROR,
-                new StorageException(
-                    message,
-                    message,
-                    "The selected storage pool driver for the volume is unavailable",
-                    null,
-                    null,
-                    null
-                ),
-                null, null, null
+            throw new VolumeException(
+                "Storage volume deletion failed for resource '" + rscDfn.getName().displayValue +
+                    "' volume " + vlmState.getVlmNr(),
+                null,
+                "The selected storage pool driver for the volume is unavailable",
+                null,
+                null
             );
         }
     }
@@ -1011,9 +1065,18 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Create backend storage if required
                         if (!vlmState.hasDisk())
                         {
-                            createStorageVolume(rscDfn, vlmState);
+                            if (vlmState.getRestoreVlmName() != null && vlmState.getRestoreSnapshotName() != null)
+                            {
+                                restoreStorageVolume(rscDfn, vlmState);
+                                vlmState.setHasMetaData(true);
+                            }
+                            else
+                            {
+                                createStorageVolume(rscDfn, vlmState);
+                                vlmState.setHasMetaData(false);
+                            }
+
                             vlmState.setHasDisk(true);
-                            vlmState.setHasMetaData(false);
                         }
 
                         // TODO: Wait for the backend storage block device files to appear in the /dev directory
@@ -1636,19 +1699,13 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         else
         {
-            String message = "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue +
-                "' volume " + vlmState.getVlmNr();
-            errLog.reportProblem(
-                Level.ERROR,
-                new StorageException(
-                    message,
-                    message,
-                    "The selected storage pool driver for the volume is unavailable",
-                    null,
-                    null,
-                    null
-                ),
-                null, null, null
+            throw new VolumeException(
+                "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue +
+                    "' volume " + vlmState.getVlmNr(),
+                null,
+                "The selected storage pool driver for the volume is unavailable",
+                null,
+                null
             );
         }
     }
@@ -1684,19 +1741,13 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         else
         {
-            String message = "Snapshot creation failed for resource '" + rscDfn.getName().displayValue +
-                "' volume " + vlmState.getVlmNr();
-            errLog.reportProblem(
-                Level.ERROR,
-                new StorageException(
-                    message,
-                    message,
-                    "The selected storage pool driver for the volume is unavailable",
-                    null,
-                    null,
-                    null
-                ),
-                null, null, null
+            throw new VolumeException(
+                "Snapshot creation failed for resource '" + rscDfn.getName().displayValue +
+                    "' volume " + vlmState.getVlmNr(),
+                null,
+                "The selected storage pool driver for the volume is unavailable",
+                null,
+                null
             );
         }
     }

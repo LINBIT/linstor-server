@@ -187,7 +187,8 @@ class StltSnapshotApiCallHandler
                     apiCtx,
                     snapshotVlmDfnApi.getUuid(),
                     snapshotDfn,
-                    volumeNumber
+                    volumeNumber,
+                    snapshotVlmDfnApi.getSize()
                 );
             }
         }

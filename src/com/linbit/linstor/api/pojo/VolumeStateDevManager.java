@@ -38,6 +38,16 @@ public class VolumeStateDevManager extends VolumeState
      */
     protected String storVlmName = null;
 
+    /**
+     * Name of the backend volume to restore from
+     */
+    protected String restoreVlmName = null;
+
+    /**
+     * Name of the snapshot to restore from
+     */
+    protected String restoreSnapshotName = null;
+
     public VolumeStateDevManager(VolumeNumber volNrRef)
     {
         vlmNr = volNrRef;
@@ -103,6 +113,26 @@ public class VolumeStateDevManager extends VolumeState
         storVlmName = storVlmNameRef;
     }
 
+    public String getRestoreVlmName()
+    {
+        return restoreVlmName;
+    }
+
+    public void setRestoreVlmName(String restoreVlmNameRef)
+    {
+        restoreVlmName = restoreVlmNameRef;
+    }
+
+    public String getRestoreSnapshotName()
+    {
+        return restoreSnapshotName;
+    }
+
+    public void setRestoreSnapshotName(String restoreSnapshotNameRef)
+    {
+        restoreSnapshotName = restoreSnapshotNameRef;
+    }
+
     @Override
     public String toString()
     {
@@ -113,6 +143,8 @@ public class VolumeStateDevManager extends VolumeState
         vlmStateString.append("        driver          = ").append(getDriver()).append("\n");
         vlmStateString.append("        storPoolName    = ").append(getStorPoolName()).append("\n");
         vlmStateString.append("        storPoolVlmName = ").append(getStorVlmName()).append("\n");
+        vlmStateString.append("        restoreVlmName  = ").append(getRestoreVlmName()).append("\n");
+        vlmStateString.append("        restoreSnapshotName = ").append(getRestoreSnapshotName()).append("\n");
         return vlmStateString.toString();
     }
 }

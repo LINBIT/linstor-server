@@ -2,10 +2,16 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -29,37 +35,50 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private static final String SVD_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String SVD_SNAPSHOT_NAME = DbConstants.SNAPSHOT_NAME;
     private static final String SVD_VLM_NR = DbConstants.VLM_NR;
+    private static final String SVD_SIZE = DbConstants.VLM_SIZE;
 
     private static final String SVD_SELECT_ALL =
-        " SELECT " + SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR +
+        " SELECT " + SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR + ", " + SVD_SIZE +
         " FROM " + TBL_SNAPSHOT_VOLUME_DEFINITIONS;
 
     private static final String SVD_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
         " (" +
-            SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR +
-        ") VALUES (?, ?, ?, ?)";
+            SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR + ", " + SVD_SIZE +
+        ") VALUES (?, ?, ?, ?, ?)";
+    private static final String SVD_UPDATE_SIZE =
+        " UPDATE " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
+            " SET " + SVD_SIZE + " = ? " +
+            " WHERE " + SVD_RES_NAME + " = ? AND " +
+                SVD_SNAPSHOT_NAME + " = ? AND " +
+                SVD_VLM_NR + " = ?";
     private static final String SVD_DELETE =
         " DELETE FROM " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
         " WHERE " + SVD_RES_NAME + " = ? AND " +
             SVD_SNAPSHOT_NAME + " = ? AND " +
             SVD_VLM_NR + " = ?";
 
+    private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
+    private final SizeDriver sizeDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SnapshotVolumeDefinitionGenericDbDriver(
+        @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
+        dbCtx = accCtx;
         errorReporter = errorReporterRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+
+        sizeDriver = new SizeDriver();
     }
 
     @Override
@@ -74,10 +93,15 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             stmt.setString(2, snapshotVolumeDefinition.getResourceName().value);
             stmt.setString(3, snapshotVolumeDefinition.getSnapshotName().value);
             stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
+            stmt.setLong(5, snapshotVolumeDefinition.getVolumeSize(dbCtx));
 
             stmt.executeUpdate();
 
             errorReporter.logTrace("SnapshotVolumeDefinition created %s", getId(snapshotVolumeDefinition));
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -90,23 +114,46 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         throws SQLException
     {
         errorReporter.logTrace("Restoring SnapshotVolumeDefinition %s", getId(snapshotDefinition, volumeNumber));
-        SnapshotVolumeDefinition snapshotVolumeDefinition;
+        Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> retPair;
 
-        Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
+        long volSize = resultSet.getLong(SVD_SIZE);
+        try
+        {
+            Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
-        snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
-            java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
-            snapshotDefinition,
-            volumeNumber,
-            this,
-            transObjFactory,
-            transMgrProvider,
-            snapshotVlmMap
-        );
+            SnapshotVolumeDefinition snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
+                java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
+                snapshotDefinition,
+                volumeNumber,
+                volSize,
+                this,
+                transObjFactory,
+                transMgrProvider,
+                snapshotVlmMap
+            );
 
-        errorReporter.logTrace("SnapshotVolumeDefinition %s created during restore", getId(snapshotVolumeDefinition));
+            retPair = new Pair<>(snapshotVolumeDefinition, new SnapshotVolumeDefinitionInitMaps(snapshotVlmMap));
 
-        return new Pair<>(snapshotVolumeDefinition, new SnapshotVolumeDefinitionInitMaps(snapshotVlmMap));
+            errorReporter.logTrace(
+                "SnapshotVolumeDefinition %s created during restore", getId(snapshotVolumeDefinition));
+        }
+        catch (MdException mdExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "A VolumeSize of a stored SnapshotVolumeDefinition in table %s could not be restored. " +
+                        "(ResourceName=%s, SnapshotName=%s, VolumeNumber=%d, invalid VolumeSize=%d)",
+                    TBL_SNAPSHOT_VOLUME_DEFINITIONS,
+                    snapshotDefinition.getResourceName().value,
+                    snapshotDefinition.getName().value,
+                    volumeNumber.value,
+                    volSize
+                ),
+                mdExc
+            );
+        }
+
+        return retPair;
     }
 
 
@@ -178,6 +225,12 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         }
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long> getVolumeSizeDriver()
+    {
+        return sizeDriver;
+    }
+
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
@@ -203,6 +256,42 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private String getId(String resName, String snapshotName, int volumeNr)
     {
         return "(ResName=" + resName + " SnapshotName=" + snapshotName + " volumeNr=" + volumeNr + ")";
+    }
+
+    private class SizeDriver implements SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(SnapshotVolumeDefinition snapshotVolumeDefinition, Long size)
+            throws SQLException
+        {
+            try (PreparedStatement stmt = getConnection().prepareStatement(SVD_UPDATE_SIZE))
+            {
+                errorReporter.logTrace(
+                    "Updating VolumeDefinition's Size from [%d] to [%d] %s",
+                    snapshotVolumeDefinition.getVolumeSize(dbCtx),
+                    size,
+                    getId(snapshotVolumeDefinition)
+                );
+
+                stmt.setLong(1, size);
+                stmt.setString(2, snapshotVolumeDefinition.getResourceName().value);
+                stmt.setString(3, snapshotVolumeDefinition.getSnapshotName().value);
+                stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
+                stmt.executeUpdate();
+
+                errorReporter.logTrace(
+                    "VolumeDefinition's Size updated from [%d] to [%d] %s",
+                    snapshotVolumeDefinition.getVolumeSize(dbCtx),
+                    size,
+                    getId(snapshotVolumeDefinition)
+                );
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            }
+        }
     }
 
     private static class SnapshotVolumeDefinitionInitMaps implements SnapshotVolumeDefinition.InitMaps

@@ -41,6 +41,12 @@ public class MigrationUtils
         return statementSucceeds(connection, "SELECT 1 FROM " + tableName);
     }
 
+    public static boolean columnExists(Connection connection, String tableName, String columnName)
+        throws SQLException
+    {
+        return statementSucceeds(connection, "SELECT " + columnName + " FROM " + tableName);
+    }
+
     private MigrationUtils()
     {
     }

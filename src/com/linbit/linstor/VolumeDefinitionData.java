@@ -98,25 +98,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
 
-        try
-        {
-            Checks.genericRangeCheck(
-                volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB,
-                "Volume size value %d is out of range [%d - %d]"
-            );
-        }
-        catch (ValueOutOfRangeException valueExc)
-        {
-            String excMessage = String.format(
-                "Volume size value %d is out of range [%d - %d]",
-                volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB
-            );
-            if (valueExc.getViolationType() == ValueOutOfRangeException.ViolationType.TOO_LOW)
-            {
-                throw new MinSizeException(excMessage);
-            }
-            throw new MaxSizeException(excMessage);
-        }
+        checkVolumeSize(volSize);
 
         objId = uuid;
         dbgInstanceId = UUID.randomUUID();
@@ -163,6 +145,30 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             deleted,
             cryptKey
         );
+    }
+
+    static void checkVolumeSize(long volSize)
+        throws MinSizeException, MaxSizeException
+    {
+        try
+        {
+            Checks.genericRangeCheck(
+                volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB,
+                "Volume size value %d is out of range [%d - %d]"
+            );
+        }
+        catch (ValueOutOfRangeException valueExc)
+        {
+            String excMessage = String.format(
+                "Volume size value %d is out of range [%d - %d]",
+                volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB
+            );
+            if (valueExc.getViolationType() == ValueOutOfRangeException.ViolationType.TOO_LOW)
+            {
+                throw new MinSizeException(excMessage);
+            }
+            throw new MaxSizeException(excMessage);
+        }
     }
 
     @Override

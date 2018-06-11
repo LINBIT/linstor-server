@@ -385,6 +385,8 @@ class StltRscApiCallHandler
                         if (vlm != null)
                         {
                             checkUuid(vlm, vlmApi, localRsc.toString());
+
+                            vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
                         }
                         else
                         {
@@ -784,7 +786,7 @@ class StltRscApiCallHandler
 
             VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
-            volumeDataFactory.getInstanceSatellite(
+            VolumeData vlm = volumeDataFactory.getInstanceSatellite(
                 apiCtx,
                 vlmApi.getVlmUuid(),
                 rsc,
@@ -794,6 +796,8 @@ class StltRscApiCallHandler
                 vlmApi.getMetaDisk(),
                 Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
             );
+
+            vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
         }
     }
 

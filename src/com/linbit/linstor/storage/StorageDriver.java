@@ -138,7 +138,7 @@ public interface StorageDriver
         throws StorageException;
 
     /**
-     * Clones a given snapshot (@code{identifier} which is the volume name and {@code snapshotName})
+     * Clones a given snapshot {@code identifier} which is the volume name and {@code snapshotName}
      * into a new volume ({@code targetIdentifier})
      *
      * @param snapshotName

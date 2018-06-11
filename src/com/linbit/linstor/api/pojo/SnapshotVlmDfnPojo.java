@@ -8,11 +8,13 @@ public class SnapshotVlmDfnPojo implements SnapshotVolumeDefinition.SnapshotVlmD
 {
     private final UUID uuid;
     private final Integer volumeNr;
+    private final long size;
 
-    public SnapshotVlmDfnPojo(UUID uuidRef, Integer volumeNrRef)
+    public SnapshotVlmDfnPojo(UUID uuidRef, Integer volumeNrRef, long sizeRef)
     {
         uuid = uuidRef;
         volumeNr = volumeNrRef;
+        size = sizeRef;
     }
 
     @Override
@@ -25,5 +27,11 @@ public class SnapshotVlmDfnPojo implements SnapshotVolumeDefinition.SnapshotVlmD
     public Integer getVolumeNr()
     {
         return volumeNr;
+    }
+
+    @Override
+    public long getSize()
+    {
+        return size;
     }
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
@@ -10,6 +11,8 @@ import java.sql.SQLException;
 
 public class SatelliteSnapshotVlmDfnDriver implements SnapshotVolumeDefinitionDatabaseDriver
 {
+    private final SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long> volumeSizeDriver =
+        new SatelliteSingleColDriver<>();
     private final AccessContext dbCtx;
 
     @Inject
@@ -30,5 +33,11 @@ public class SatelliteSnapshotVlmDfnDriver implements SnapshotVolumeDefinitionDa
         throws SQLException
     {
         // no-op
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long> getVolumeSizeDriver()
+    {
+        return volumeSizeDriver;
     }
 }

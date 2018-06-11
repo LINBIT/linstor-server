@@ -42,6 +42,7 @@ public class CtrlApiCallHandler
     private final CtrlNetIfApiCallHandler netIfApiCallHandler;
     private final CtrlWatchApiCallHandler watchApiCallHandler;
     private final CtrlSnapshotApiCallHandler snapshotApiCallHandler;
+    private final CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandler;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
@@ -70,6 +71,7 @@ public class CtrlApiCallHandler
         CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
         CtrlWatchApiCallHandler watchApiCallHandlerRef,
         CtrlSnapshotApiCallHandler snapshotApiCallHandlerRef,
+        CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandlerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
@@ -95,6 +97,7 @@ public class CtrlApiCallHandler
         netIfApiCallHandler = netIfApiCallHandlerRef;
         watchApiCallHandler = watchApiCallHandlerRef;
         snapshotApiCallHandler = snapshotApiCallHandlerRef;
+        snapshotRestoreApiCallHandler = snapshotRestoreApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -1592,6 +1595,32 @@ public class CtrlApiCallHandler
             apiCallRc = snapshotApiCallHandler.createSnapshot(
                 rscName,
                 snapshotName
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc restoreSnapshot(
+        List<String> nodeNames,
+        String fromRscName,
+        String fromSnapshotName,
+        String toRscName
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = snapshotRestoreApiCallHandler.restoreSnapshot(
+                nodeNames,
+                fromRscName,
+                fromSnapshotName,
+                toRscName
             );
         }
         return apiCallRc;

@@ -73,7 +73,8 @@ public class ApplySnapshot implements ApiCall
             snapshotData.getSnapshotVlmDfnsList().stream()
                 .map(snapshotVlmDfn -> new SnapshotVlmDfnPojo(
                     UUID.fromString(snapshotVlmDfn.getSnapshotVlmDfnUuid()),
-                    snapshotVlmDfn.getVlmNr()
+                    snapshotVlmDfn.getVlmNr(),
+                    snapshotVlmDfn.getVlmSize()
                 ))
                 .collect(Collectors.toList());
 
