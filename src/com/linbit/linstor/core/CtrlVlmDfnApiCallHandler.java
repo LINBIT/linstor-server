@@ -11,6 +11,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -397,39 +399,56 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             UUID vlmDfnUuid = vlmDfn.getUuid();
             ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
 
-            // mark volumes to delete or check if all a 'CLEAN'
-            Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(peerAccCtx);
-            boolean allVlmClean = true;
-            while (itVolumes.hasNext())
+            Optional<Resource> rscInUse = rscDfn.anyResourceInUse(apiCtx);
+            if (rscInUse.isPresent())
             {
-                Volume vlm = itVolumes.next();
-                if (vlm.getFlags().isUnset(peerAccCtx, Volume.VlmFlags.CLEAN))
-                {
-                    vlm.markDeleted(peerAccCtx);
-                    allVlmClean = false;
-                }
-            }
-
-            String deleteAction;
-            if (allVlmClean)
-            {
-                vlmDfn.delete(peerAccCtx);
-                deleteAction = " was deleted.";
+                NodeName nodeName = rscInUse.get().getAssignedNode().getName();
+                String rscNameStr = rscDfn.getName().displayValue;
+                addAnswer(
+                    String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue),
+                    "Resource is mounted/in use.",
+                    null,
+                    String.format("Un-mount resource '%s' on the node '%s'.",
+                        rscNameStr,
+                        nodeName.displayValue),
+                    ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL
+                );
             }
             else
             {
-                vlmDfn.markDeleted(peerAccCtx);
-                deleteAction = " marked for deletion.";
+                // mark volumes to delete or check if all a 'CLEAN'
+                Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(peerAccCtx);
+                boolean allVlmClean = true;
+                while (itVolumes.hasNext())
+                {
+                    Volume vlm = itVolumes.next();
+                    if (vlm.getFlags().isUnset(peerAccCtx, Volume.VlmFlags.CLEAN))
+                    {
+                        vlm.markDeleted(peerAccCtx);
+                        allVlmClean = false;
+                    }
+                }
+
+                String deleteAction;
+                if (allVlmClean)
+                {
+                    vlmDfn.delete(peerAccCtx);
+                    deleteAction = " was deleted.";
+                } else
+                {
+                    vlmDfn.markDeleted(peerAccCtx);
+                    deleteAction = " marked for deletion.";
+                }
+
+                commit();
+
+                updateSatellites(rscDfn);
+
+                reportSuccess(
+                    getObjectDescriptionInlineFirstLetterCaps() + deleteAction,
+                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is:" + vlmDfnUuid
+                );
             }
-
-            commit();
-
-            updateSatellites(rscDfn);
-
-            reportSuccess(
-                getObjectDescriptionInlineFirstLetterCaps() + deleteAction,
-                getObjectDescriptionInlineFirstLetterCaps() + " UUID is:"  + vlmDfnUuid
-            );
         }
         catch (ApiCallHandlerFailedException ignore)
         {
