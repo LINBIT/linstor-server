@@ -167,27 +167,41 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 Resource rsc = rscIterator.next();
 
-                Snapshot snapshot = snapshotDataFactory.getInstance(
-                    apiCtx,
-                    rsc.getAssignedNode(),
-                    snapshotDfn,
-                    new Snapshot.SnapshotFlags[]{},
-                    true,
-                    true
-                );
-
-                for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
+                if (!isDiskless(rsc))
                 {
-                    snapshotVolumeDataControllerFactory.getInstance(
+                    Snapshot snapshot = snapshotDataFactory.getInstance(
                         apiCtx,
-                        snapshot,
-                        snapshotVolumeDefinition,
-                        rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx),
+                        rsc.getAssignedNode(),
+                        snapshotDfn,
+                        new Snapshot.SnapshotFlags[]{},
                         true,
                         true
                     );
+
+                    for (SnapshotVolumeDefinition snapshotVolumeDefinition :
+                        snapshotDfn.getAllSnapshotVolumeDefinitions())
+                    {
+                        snapshotVolumeDataControllerFactory.getInstance(
+                            apiCtx,
+                            snapshot,
+                            snapshotVolumeDefinition,
+                            rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx),
+                            true,
+                            true
+                        );
+                    }
                 }
             }
+
+            if (snapshotDfn.getAllSnapshots().isEmpty())
+            {
+                throw asExc(
+                    null,
+                    "No resources found for snapshotting",
+                    ApiConsts.FAIL_NOT_FOUND_RSC
+                );
+            }
+
             commit();
 
             updateSatellites(snapshotDfn);
@@ -377,8 +391,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)
         throws AccessDeniedException
     {
-        ensureHasResource(rscDfn);
-
         Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
         while (rscIterator.hasNext())
         {
@@ -389,36 +401,28 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void ensureHasResource(ResourceDefinitionData rscDfn)
-    {
-        if (rscDfn.getResourceCount() == 0)
-        {
-            throw asExc(
-                null,
-                "No resources found for snapshotting",
-                ApiConsts.FAIL_NOT_FOUND_RSC
-            );
-        }
-    }
-
     private void ensureDriversSupportSnapshots(Resource rsc)
         throws AccessDeniedException
     {
-        Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-        while (vlmIterator.hasNext())
+        if (!isDiskless(rsc))
         {
-            StorPool storPool = vlmIterator.next().getStorPool(apiCtx);
-
-            if (!storPool.getDriverKind(apiCtx).isSnapshotSupported())
+            Iterator<Volume> vlmIterator = rsc.iterateVolumes();
+            while (vlmIterator.hasNext())
             {
-                throw asExc(
-                    null,
-                    "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots.",
-                    null, // cause
-                    "Used for storage pool '" + storPool.getName() + "' on '" + rsc.getAssignedNode().getName() + "'.",
-                    null, // correction
-                    ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
-                );
+                StorPool storPool = vlmIterator.next().getStorPool(apiCtx);
+
+                if (!storPool.getDriverKind(apiCtx).isSnapshotSupported())
+                {
+                    throw asExc(
+                        null,
+                        "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots.",
+                        null, // cause
+                        "Used for storage pool '" + storPool.getName() + "'" +
+                            " on '" + rsc.getAssignedNode().getName() + "'.",
+                        null, // correction
+                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
+                    );
+                }
             }
         }
     }
@@ -466,6 +470,20 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_NOT_CONNECTED
             );
         }
+    }
+
+    private boolean isDiskless(Resource rsc)
+    {
+        boolean isDiskless;
+        try
+        {
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw asImplError(implError);
+        }
+        return isDiskless;
     }
 
     private SnapshotDefinitionData createSnapshotDfnData(
