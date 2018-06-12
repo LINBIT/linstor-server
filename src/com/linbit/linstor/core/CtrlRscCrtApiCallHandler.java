@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeIdAlloc;
@@ -107,7 +108,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
 
     protected ResourceData createResource(
         ResourceDefinitionData rscDfn,
-        NodeData node,
+        Node node,
         NodeId nodeId,
         List<String> flagList
     )

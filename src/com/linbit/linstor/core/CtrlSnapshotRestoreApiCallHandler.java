@@ -28,6 +28,8 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
@@ -120,61 +122,19 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
                 );
             }
 
-            for (String nodeNameStr : nodeNameStrs)
+            if (nodeNameStrs.isEmpty())
             {
-                NodeData node = loadNode(nodeNameStr, true);
-                Snapshot snapshot = loadSnapshot(node, fromSnapshotDfn);
-
-                NodeId nodeId = getNextFreeNodeId(toRscDfn);
-
-                ResourceData rsc = createResource(toRscDfn, node, nodeId, Collections.emptyList());
-
-                Iterator<VolumeDefinition> toVlmDfnIter = getVlmDfnIterator(toRscDfn);
-                while (toVlmDfnIter.hasNext())
+                for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots())
                 {
-                    VolumeDefinition toVlmDfn = toVlmDfnIter.next();
-                    VolumeNumber volumeNumber = toVlmDfn.getVolumeNumber();
-
-                    SnapshotVolumeDefinition fromSnapshotVlmDfn =
-                        fromSnapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
-
-                    if (fromSnapshotVlmDfn == null)
-                    {
-                        throw asExc(
-                            null,
-                            "Snapshot does not contain required volume number " + volumeNumber,
-                            ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_VLM_DFN
-                        );
-                    }
-
-                    long snapshotVolumeSize = fromSnapshotVlmDfn.getVolumeSize(peerAccCtx);
-                    long requiredVolumeSize = toVlmDfn.getVolumeSize(peerAccCtx);
-                    if (snapshotVolumeSize != requiredVolumeSize)
-                    {
-                        throw asExc(
-                            null,
-                            "Snapshot size does not match for volume number " + volumeNumber.value + "; " +
-                                "snapshot size: " + snapshotVolumeSize + "KiB, " +
-                                "required size: " + requiredVolumeSize + "KiB",
-                            ApiConsts.FAIL_INVLD_VLM_SIZE
-                        );
-                    }
-
-                    SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(volumeNumber);
-
-                    if (fromSnapshotVolume == null)
-                    {
-                        throw new ImplementationError("Expected snapshot volume missing");
-                    }
-
-                    StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx);
-
-                    Volume vlm = createVolume(rsc, toVlmDfn, storPool, null);
-                    vlm.getProps(peerAccCtx).setProp(ApiConsts.KEY_STOR_POOL_NAME, storPool.getName().displayValue);
-                    vlm.getProps(peerAccCtx).setProp(
-                        ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
-                    vlm.getProps(peerAccCtx).setProp(
-                        ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue);
+                    restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode());
+                }
+            }
+            else
+            {
+                for (String nodeNameStr : nodeNameStrs)
+                {
+                    NodeData node = loadNode(nodeNameStr, true);
+                    restoreOnNode(fromSnapshotDfn, toRscDfn, node);
                 }
             }
 
@@ -211,6 +171,64 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         return apiCallRc;
     }
 
+    private void restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
+        throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+    {
+        Snapshot snapshot = loadSnapshot(node, fromSnapshotDfn);
+
+        NodeId nodeId = getNextFreeNodeId(toRscDfn);
+
+        ResourceData rsc = createResource(toRscDfn, node, nodeId, Collections.emptyList());
+
+        Iterator<VolumeDefinition> toVlmDfnIter = getVlmDfnIterator(toRscDfn);
+        while (toVlmDfnIter.hasNext())
+        {
+            VolumeDefinition toVlmDfn = toVlmDfnIter.next();
+            VolumeNumber volumeNumber = toVlmDfn.getVolumeNumber();
+
+            SnapshotVolumeDefinition fromSnapshotVlmDfn =
+                fromSnapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
+
+            if (fromSnapshotVlmDfn == null)
+            {
+                throw asExc(
+                    null,
+                    "Snapshot does not contain required volume number " + volumeNumber,
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_VLM_DFN
+                );
+            }
+
+            long snapshotVolumeSize = fromSnapshotVlmDfn.getVolumeSize(peerAccCtx);
+            long requiredVolumeSize = toVlmDfn.getVolumeSize(peerAccCtx);
+            if (snapshotVolumeSize != requiredVolumeSize)
+            {
+                throw asExc(
+                    null,
+                    "Snapshot size does not match for volume number " + volumeNumber.value + "; " +
+                        "snapshot size: " + snapshotVolumeSize + "KiB, " +
+                        "required size: " + requiredVolumeSize + "KiB",
+                    ApiConsts.FAIL_INVLD_VLM_SIZE
+                );
+            }
+
+            SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(volumeNumber);
+
+            if (fromSnapshotVolume == null)
+            {
+                throw new ImplementationError("Expected snapshot volume missing");
+            }
+
+            StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx);
+
+            Volume vlm = createVolume(rsc, toVlmDfn, storPool, null);
+            vlm.getProps(peerAccCtx).setProp(ApiConsts.KEY_STOR_POOL_NAME, storPool.getName().displayValue);
+            vlm.getProps(peerAccCtx).setProp(
+                ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
+            vlm.getProps(peerAccCtx).setProp(
+                ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue);
+        }
+    }
+
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
@@ -237,7 +255,9 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Nodes: " + String.join(", ", currentNodeNames) + "; Resource: " + currentToRscName;
+        return currentNodeNames.isEmpty() ?
+            "Resource: " + currentToRscName :
+            "Nodes: " + String.join(", ", currentNodeNames) + "; Resource: " + currentToRscName;
     }
 
     @Override
@@ -248,7 +268,9 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 
     private String getObjectDescriptionInline(List<String> nodeNameStrs, String toRscNameStr)
     {
-        return "resource '" + toRscNameStr + "' on nodes '" + String.join(", ", nodeNameStrs) + "'";
+        return nodeNameStrs.isEmpty() ?
+            "resource '" + toRscNameStr + "'" :
+            "resource '" + toRscNameStr + "' on nodes '" + String.join(", ", nodeNameStrs) + "'";
     }
 
     protected final Snapshot loadSnapshot(
