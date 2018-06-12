@@ -165,6 +165,9 @@ public class VlmApiData implements VlmApi
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
         builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
 
+        // TODO for now this is "hardcoded" until we support non drbd resources/volumes
+        builder.setDevicePath(String.format("/dev/drbd%d", vlmApi.getVlmMinorNr()));
+
         return builder.build();
     }
 
