@@ -43,6 +43,7 @@ public class CtrlApiCallHandler
     private final CtrlWatchApiCallHandler watchApiCallHandler;
     private final CtrlSnapshotApiCallHandler snapshotApiCallHandler;
     private final CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandler;
+    private final CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandler;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
@@ -72,6 +73,7 @@ public class CtrlApiCallHandler
         CtrlWatchApiCallHandler watchApiCallHandlerRef,
         CtrlSnapshotApiCallHandler snapshotApiCallHandlerRef,
         CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandlerRef,
+        CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandlerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
@@ -98,6 +100,7 @@ public class CtrlApiCallHandler
         watchApiCallHandler = watchApiCallHandlerRef;
         snapshotApiCallHandler = snapshotApiCallHandlerRef;
         snapshotRestoreApiCallHandler = snapshotRestoreApiCallHandlerRef;
+        snapshotRestoreVlmDfnApiCallHandler = snapshotRestoreVlmDfnApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -1595,6 +1598,25 @@ public class CtrlApiCallHandler
             apiCallRc = snapshotApiCallHandler.createSnapshot(
                 rscName,
                 snapshotName
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc restoreVlmDfn(String fromRscName, String fromSnapshotName, String toRscName)
+    {
+        ApiCallRc apiCallRc;
+
+        try (
+            LockSupport ls = LockSupport.lock(
+                rscDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = snapshotRestoreVlmDfnApiCallHandler.restoreVlmDfn(
+                fromRscName,
+                fromSnapshotName,
+                toRscName
             );
         }
         return apiCallRc;

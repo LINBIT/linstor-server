@@ -43,11 +43,11 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
 
     CtrlRscCrtApiCallHandler(
         ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtxRef,
+        AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializer,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         ResourceDataFactory resourceDataFactoryRef,
