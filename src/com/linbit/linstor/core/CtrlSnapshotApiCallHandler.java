@@ -384,6 +384,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         {
             Resource currentRsc = rscIterator.next();
             ensureDriversSupportSnapshots(currentRsc);
+            ensureInternalMetaDisks(currentRsc);
             ensureSatelliteConnected(currentRsc);
         }
     }
@@ -416,6 +417,31 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                     null, // cause
                     "Used for storage pool '" + storPool.getName() + "' on '" + rsc.getAssignedNode().getName() + "'.",
                     null, // correction
+                    ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
+                );
+            }
+        }
+    }
+
+    private void ensureInternalMetaDisks(Resource rsc)
+        throws AccessDeniedException
+    {
+        Iterator<Volume> vlmIterator = rsc.iterateVolumes();
+        while (vlmIterator.hasNext())
+        {
+            Volume vlm = vlmIterator.next();
+
+            String metaDiskPath = vlm.getMetaDiskPath(peerAccCtx);
+            if (metaDiskPath != null && !metaDiskPath.isEmpty() && !metaDiskPath.equals("internal"))
+            {
+                throw asExc(
+                    null,
+                    "Snapshot with external meta-disk not supported.",
+                    null,
+                    "Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
+                        " on node " + rsc.getAssignedNode().getName().displayValue +
+                        " has meta disk path '" + metaDiskPath + "'",
+                    null,
                     ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
                 );
             }
