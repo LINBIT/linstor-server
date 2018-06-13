@@ -3,9 +3,14 @@ package com.linbit.linstor;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -36,6 +41,12 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
 
     private final SnapshotVolumeDefinitionDatabaseDriver dbDriver;
 
+    // Properties container for this snapshot volume definition
+    private final Props snapshotVlmDfnProps;
+
+    // State flags
+    private final StateFlags<SnapshotVlmDfnFlags> flags;
+
     private final TransactionMap<NodeName, SnapshotVolume> snapshotVlmMap;
 
     private final TransactionSimpleObject<SnapshotVolumeDefinitionData, Boolean> deleted;
@@ -45,12 +56,14 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         SnapshotDefinition snapshotDfnRef,
         VolumeNumber volNr,
         long volSize,
+        long initFlags,
         SnapshotVolumeDefinitionDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<NodeName, SnapshotVolume> snapshotVlmMapRef
     )
-        throws MdException
+        throws MdException, SQLException
     {
         super(transMgrProviderRef);
         VolumeDefinitionData.checkVolumeSize(volSize);
@@ -61,6 +74,18 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
+
+        snapshotVlmDfnProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(snapshotDfnRef.getResourceName(), snapshotDfnRef.getName(), volumeNr)
+        );
+
+        flags = transObjFactory.createStateFlagsImpl(
+            snapshotDfnRef.getResourceDefinition().getObjProt(),
+            this,
+            SnapshotVlmDfnFlags.class,
+            dbDriverRef.getStateFlagsPersistence(),
+            initFlags
+        );
 
         snapshotVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
 
@@ -132,6 +157,21 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     }
 
     @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, getResourceDefinition().getObjProt(), snapshotVlmDfnProps);
+    }
+
+    @Override
+    public StateFlags<SnapshotVlmDfnFlags> getFlags()
+    {
+        checkDeleted();
+        return flags;
+    }
+
+    @Override
     public void delete(AccessContext accCtx)
         throws SQLException
     {
@@ -173,7 +213,8 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         return new SnapshotVlmDfnPojo(
             getUuid(),
             getVolumeNumber().value,
-            getVolumeSize(accCtx)
+            getVolumeSize(accCtx),
+            flags.getFlagsBits(accCtx)
         );
     }
 }

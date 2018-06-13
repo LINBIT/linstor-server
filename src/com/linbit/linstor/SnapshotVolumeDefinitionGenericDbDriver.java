@@ -5,16 +5,21 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -36,19 +41,28 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private static final String SVD_SNAPSHOT_NAME = DbConstants.SNAPSHOT_NAME;
     private static final String SVD_VLM_NR = DbConstants.VLM_NR;
     private static final String SVD_SIZE = DbConstants.VLM_SIZE;
+    private static final String SVD_FLAGS = DbConstants.SNAPSHOT_FLAGS;
 
     private static final String SVD_SELECT_ALL =
-        " SELECT " + SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR + ", " + SVD_SIZE +
+        " SELECT " + SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR + ", " +
+            SVD_SIZE + ", " + SVD_FLAGS +
         " FROM " + TBL_SNAPSHOT_VOLUME_DEFINITIONS;
 
     private static final String SVD_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
         " (" +
-            SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR + ", " + SVD_SIZE +
-        ") VALUES (?, ?, ?, ?, ?)";
+            SVD_UUID + ", " + SVD_RES_NAME + ", " + SVD_SNAPSHOT_NAME + ", " + SVD_VLM_NR + ", " +
+            SVD_SIZE + ", " + SVD_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?, ?)";
     private static final String SVD_UPDATE_SIZE =
         " UPDATE " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
             " SET " + SVD_SIZE + " = ? " +
+            " WHERE " + SVD_RES_NAME + " = ? AND " +
+                SVD_SNAPSHOT_NAME + " = ? AND " +
+                SVD_VLM_NR + " = ?";
+    private static final String SVD_UPDATE_FLAGS =
+        " UPDATE " + TBL_SNAPSHOT_VOLUME_DEFINITIONS +
+            " SET " + SVD_FLAGS + " = ? " +
             " WHERE " + SVD_RES_NAME + " = ? AND " +
                 SVD_SNAPSHOT_NAME + " = ? AND " +
                 SVD_VLM_NR + " = ?";
@@ -60,8 +74,10 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
+    private final PropsContainerFactory propsContainerFactory;
 
     private final SizeDriver sizeDriver;
+    private final FlagDriver flagsDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -69,16 +85,19 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     public SnapshotVolumeDefinitionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
+        PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
         sizeDriver = new SizeDriver();
+        flagsDriver = new FlagDriver();
     }
 
     @Override
@@ -94,6 +113,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             stmt.setString(3, snapshotVolumeDefinition.getSnapshotName().value);
             stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
             stmt.setLong(5, snapshotVolumeDefinition.getVolumeSize(dbCtx));
+            stmt.setLong(6, snapshotVolumeDefinition.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
 
@@ -126,7 +146,9 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                 snapshotDefinition,
                 volumeNumber,
                 volSize,
+                resultSet.getLong(SVD_FLAGS),
                 this,
+                propsContainerFactory,
                 transObjFactory,
                 transMgrProvider,
                 snapshotVlmMap
@@ -231,6 +253,12 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         return sizeDriver;
     }
 
+    @Override
+    public StateFlagsPersistence<SnapshotVolumeDefinition> getStateFlagsPersistence()
+    {
+        return flagsDriver;
+    }
+
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
@@ -284,6 +312,55 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                     "VolumeDefinition's Size updated from [%d] to [%d] %s",
                     snapshotVolumeDefinition.getVolumeSize(dbCtx),
                     size,
+                    getId(snapshotVolumeDefinition)
+                );
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            }
+        }
+    }
+
+    private class FlagDriver implements StateFlagsPersistence<SnapshotVolumeDefinition>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void persist(SnapshotVolumeDefinition snapshotVolumeDefinition, long flags)
+            throws SQLException
+        {
+            try (PreparedStatement stmt = getConnection().prepareStatement(SVD_UPDATE_FLAGS))
+            {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        SnapshotVlmDfnFlags.class,
+                        snapshotVolumeDefinition.getFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        SnapshotVlmDfnFlags.class,
+                        flags
+                    ),
+                    ", "
+                );
+                errorReporter.logTrace(
+                    "Updating SnapshotVolumeDefinition's flags from [%s] to [%s] %s",
+                    fromFlags,
+                    toFlags,
+                    getId(snapshotVolumeDefinition)
+                );
+                stmt.setLong(1, flags);
+                stmt.setString(2, snapshotVolumeDefinition.getResourceName().value);
+                stmt.setString(3, snapshotVolumeDefinition.getSnapshotName().value);
+                stmt.setInt(4, snapshotVolumeDefinition.getVolumeNumber().value);
+                stmt.executeUpdate();
+
+                errorReporter.logTrace(
+                    "SnapshotVolumeDefinition's flags updated from [%s] to [%s] %s",
+                    fromFlags,
+                    toFlags,
                     getId(snapshotVolumeDefinition)
                 );
             }

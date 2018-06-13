@@ -18,6 +18,7 @@ import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolumeDataControllerFactory;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
@@ -34,6 +35,7 @@ import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -152,14 +154,34 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 VolumeDefinition vlmDfn = vlmDfnIterator.next();
 
-                snapshotVolumeDefinitionControllerFactory.getInstance(
+                SnapshotVolumeDefinition snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.getInstance(
                     apiCtx,
                     snapshotDfn,
                     vlmDfn.getVolumeNumber(),
                     vlmDfn.getVolumeSize(peerAccCtx),
+                    new SnapshotVlmDfnFlags[]{},
                     true,
                     true
                 );
+
+                boolean isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+                if (isEncrypted)
+                {
+                    Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
+                    Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+
+                    String cryptPasswd = vlmDfnPropsMap.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                    if (cryptPasswd == null)
+                    {
+                        throw new ImplementationError("Encrypted volume definition without crypt passwd found");
+                    }
+
+                    snapshotVlmDfn.getFlags().enableFlags(peerAccCtx, SnapshotVlmDfnFlags.ENCRYPTED);
+                    snapshotVlmDfnPropsMaps.put(
+                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                        cryptPasswd
+                    );
+                }
             }
 
             Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
@@ -533,6 +555,42 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             );
         }
         return snapshotDfn;
+    }
+
+    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = vlmDfn.getProps(peerAccCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access the properties of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return props;
+    }
+
+    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = snapshotVlmDfn.getProps(peerAccCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access the properties of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
+            );
+        }
+        return props;
     }
 
     private void markSnapshotDfnDeleted(SnapshotDefinition snapshotDfn)

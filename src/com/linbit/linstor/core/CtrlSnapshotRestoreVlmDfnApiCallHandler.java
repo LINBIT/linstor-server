@@ -7,6 +7,7 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
@@ -19,6 +20,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -28,6 +30,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -85,16 +88,37 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
 
             ResourceDefinitionData toRscDfn = loadRscDfn(toRscNameStr, true);
 
-            for (SnapshotVolumeDefinition snapshotVolumeDefinition : fromSnapshotDfn.getAllSnapshotVolumeDefinitions())
+            for (SnapshotVolumeDefinition snapshotVlmDfn : fromSnapshotDfn.getAllSnapshotVolumeDefinitions())
             {
                 VolumeDefinitionData vlmDfn = createVlmDfnData(
                     peerAccCtx,
                     toRscDfn,
-                    snapshotVolumeDefinition.getVolumeNumber(),
+                    snapshotVlmDfn.getVolumeNumber(),
                     null,
-                    snapshotVolumeDefinition.getVolumeSize(peerAccCtx),
+                    snapshotVlmDfn.getVolumeSize(peerAccCtx),
                     new VlmDfnFlags[] {}
                 );
+
+                boolean isEncrypted = snapshotVlmDfn.getFlags()
+                    .isSet(peerAccCtx, SnapshotVolumeDefinition.SnapshotVlmDfnFlags.ENCRYPTED);
+                if (isEncrypted)
+                {
+                    Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+                    Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
+
+                    String cryptPasswd = snapshotVlmDfnPropsMaps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                    if (cryptPasswd == null)
+                    {
+                        throw new ImplementationError(
+                            "Encrypted snapshot volume definition without crypt passwd found");
+                    }
+
+                    vlmDfn.getFlags().enableFlags(peerAccCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+                    vlmDfnPropsMap.put(
+                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                        cryptPasswd
+                    );
+                }
 
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
@@ -134,6 +158,42 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         }
 
         return apiCallRc;
+    }
+
+    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = vlmDfn.getProps(peerAccCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access the properties of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return props;
+    }
+
+    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = snapshotVlmDfn.getProps(peerAccCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access the properties of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
+            );
+        }
+        return props;
     }
 
     private Iterator<Resource> getRscIterator(ResourceDefinition rscDfn)

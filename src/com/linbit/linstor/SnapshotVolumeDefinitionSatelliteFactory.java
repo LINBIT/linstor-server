@@ -2,7 +2,9 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -14,17 +16,20 @@ import java.util.UUID;
 public class SnapshotVolumeDefinitionSatelliteFactory
 {
     private final SnapshotVolumeDefinitionDatabaseDriver driver;
+    private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SnapshotVolumeDefinitionSatelliteFactory(
         SnapshotVolumeDefinitionDatabaseDriver driverRef,
+        PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
+        propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -34,7 +39,8 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         UUID snapshotVolumeDefinitionUuid,
         SnapshotDefinition snapshotDfn,
         VolumeNumber volumeNumber,
-        long vlmSize
+        long vlmSize,
+        SnapshotVolumeDefinition.SnapshotVlmDfnFlags[] flags
     )
         throws ImplementationError
     {
@@ -49,7 +55,9 @@ public class SnapshotVolumeDefinitionSatelliteFactory
                     snapshotDfn,
                     volumeNumber,
                     vlmSize,
+                    StateFlagsBits.getMask(flags),
                     driver,
+                    propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
                     new TreeMap<>()

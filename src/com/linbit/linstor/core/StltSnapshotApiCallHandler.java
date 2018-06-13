@@ -18,6 +18,7 @@ import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDataSatelliteFactory;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.SnapshotVolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
@@ -151,7 +152,8 @@ class StltSnapshotApiCallHandler
         SnapshotDefinition.SnapshotDfnApi snapshotDfnApi,
         ResourceDefinition rscDfn
     )
-        throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException
+        throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException,
+            SQLException
     {
         SnapshotName snapshotName = new SnapshotName(snapshotDfnApi.getSnapshotName());
 
@@ -180,6 +182,8 @@ class StltSnapshotApiCallHandler
             VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmDfnApi.getVolumeNr());
             oldVolumeNumbers.remove(volumeNumber);
 
+            SnapshotVlmDfnFlags[] snapshotVlmDfnFlags = SnapshotVlmDfnFlags.restoreFlags(snapshotVlmDfnApi.getFlags());
+
             SnapshotVolumeDefinition snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
             if (snapshotVolumeDefinition == null)
             {
@@ -188,9 +192,11 @@ class StltSnapshotApiCallHandler
                     snapshotVlmDfnApi.getUuid(),
                     snapshotDfn,
                     volumeNumber,
-                    snapshotVlmDfnApi.getSize()
+                    snapshotVlmDfnApi.getSize(),
+                    snapshotVlmDfnFlags
                 );
             }
+            snapshotVolumeDefinition.getFlags().resetFlagsTo(apiCtx, snapshotVlmDfnFlags);
         }
 
         for (VolumeNumber oldVolumeNumber : oldVolumeNumbers)
@@ -202,10 +208,12 @@ class StltSnapshotApiCallHandler
     }
 
     private void mergeSnapshot(SnapshotPojo snapshotRaw, SnapshotDefinition snapshotDfn)
-        throws DivergentUuidsException, AccessDeniedException, ValueOutOfRangeException, InvalidNameException
+        throws DivergentUuidsException, AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
+            SQLException
     {
         NodeData localNode = controllerPeerConnector.getLocalNode();
         Snapshot snapshot = snapshotDfn.getSnapshot(localNode.getName());
+        Snapshot.SnapshotFlags[] snapshotFlags = Snapshot.SnapshotFlags.restoreFlags(snapshotRaw.getFlags());
         if (snapshot == null)
         {
             snapshot = snapshotDataFactory.getInstanceSatellite(
@@ -213,10 +221,11 @@ class StltSnapshotApiCallHandler
                 snapshotRaw.getSnapshotUuid(),
                 localNode,
                 snapshotDfn,
-                Snapshot.SnapshotFlags.restoreFlags(snapshotRaw.getFlags())
+                snapshotFlags
             );
         }
         checkUuid(snapshot, snapshotRaw);
+        snapshot.getFlags().resetFlagsTo(apiCtx, snapshotFlags);
 
         snapshot.setSuspendResource(snapshotRaw.getSuspendResource());
         snapshot.setTakeSnapshot(snapshotRaw.getTakeSnapshot());

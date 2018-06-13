@@ -3,6 +3,8 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
 import java.sql.SQLException;
 
 /**
@@ -34,4 +36,9 @@ public interface SnapshotVolumeDefinitionDatabaseDriver
      * A special sub-driver to update the persisted volumeSize.
      */
     SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long> getVolumeSizeDriver();
+
+    /**
+     * A special sub-driver to update the persisted flags.
+     */
+    StateFlagsPersistence<SnapshotVolumeDefinition> getStateFlagsPersistence();
 }

@@ -9,12 +9,14 @@ public class SnapshotVlmDfnPojo implements SnapshotVolumeDefinition.SnapshotVlmD
     private final UUID uuid;
     private final Integer volumeNr;
     private final long size;
+    private final long flags;
 
-    public SnapshotVlmDfnPojo(UUID uuidRef, Integer volumeNrRef, long sizeRef)
+    public SnapshotVlmDfnPojo(UUID uuidRef, Integer volumeNrRef, long sizeRef, long flagsRef)
     {
         uuid = uuidRef;
         volumeNr = volumeNrRef;
         size = sizeRef;
+        flags = flagsRef;
     }
 
     @Override
@@ -33,5 +35,11 @@ public class SnapshotVlmDfnPojo implements SnapshotVolumeDefinition.SnapshotVlmD
     public long getSize()
     {
         return size;
+    }
+
+    @Override
+    public long getFlags()
+    {
+        return flags;
     }
 }

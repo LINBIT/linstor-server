@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
@@ -59,6 +60,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
     private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
+    private static final String PATH_SNAPSHOT_VOLUME_DEFINITIONS = "/snapshotvolumedefinitions/";
 
     public static final int PATH_MAX_LENGTH = 256;
 
@@ -2349,6 +2351,16 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return PATH_VOLUME_CON_DEFINITIONS + sourceName.value +
             PATH_SEPARATOR + targetName.value +
             PATH_SEPARATOR + resName.value +
+            PATH_SEPARATOR + volNr.value;
+    }
+
+    /**
+     * PropsCon-path for SnapshotVolumeDefinitionData
+     */
+    public static String buildPath(ResourceName resName, SnapshotName snapshotName, VolumeNumber volNr)
+    {
+        return PATH_SNAPSHOT_VOLUME_DEFINITIONS + resName.value +
+            PATH_SEPARATOR + snapshotName.value +
             PATH_SEPARATOR + volNr.value;
     }
 

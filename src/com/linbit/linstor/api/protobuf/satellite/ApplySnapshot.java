@@ -74,7 +74,8 @@ public class ApplySnapshot implements ApiCall
                 .map(snapshotVlmDfn -> new SnapshotVlmDfnPojo(
                     UUID.fromString(snapshotVlmDfn.getSnapshotVlmDfnUuid()),
                     snapshotVlmDfn.getVlmNr(),
-                    snapshotVlmDfn.getVlmSize()
+                    snapshotVlmDfn.getVlmSize(),
+                    snapshotVlmDfn.getFlags()
                 ))
                 .collect(Collectors.toList());
 
