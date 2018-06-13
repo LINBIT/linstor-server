@@ -6,6 +6,9 @@ import java.security.SecureRandom;
 
 public class SecretGenerator
 {
+    // SecureRandom is multithreading-safe
+    public static final SecureRandom rnd = new SecureRandom();
+
     // Random data size for automatic DRBD shared secret generation
     // The random data will be Base64 encoded, so the length of the
     // shared secret string will be (SECRET_LEN + 2) / 3 * 4
@@ -24,9 +27,11 @@ public class SecretGenerator
     /**
      * Generates a random String.<br />
      * <br />
-     * NOTE: the size is likely to differ from the resulting String's length.
-     * The size parameter specifies the count of bytes generated which then are
-     * Base64-encoded. That encoding will very likely result in a longer String.
+     * NOTE: The {@code size} parameter specifies the number of random bytes to
+     *       generate, but the length of the String that is returned by this
+     *       method will probably not match the specified {@code size} due
+     *       to side effects of encoding a byte array into a String that is
+     *       composed of unicode characters.
      *
      * @param size
      * @return A Base64 encoded String of <code>size</code> random bytes.
@@ -44,7 +49,7 @@ public class SecretGenerator
     static byte[] generateSecret(int size)
     {
         byte[] randomBytes = new byte[size];
-        new SecureRandom().nextBytes(randomBytes);
+        rnd.nextBytes(randomBytes);
         return randomBytes;
     }
 
