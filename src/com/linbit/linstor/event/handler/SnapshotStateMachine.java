@@ -23,14 +23,13 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Manages snapshot creation.
  * <p>
- * See {@link CtrlSnapshotApiCallHandler#createSnapshot(java.lang.String, java.lang.String)} for a description of the
+ * See {@link CtrlSnapshotApiCallHandler#createSnapshot(List, String, String)} for a description of the
  * snapshot creation process.
  */
 @Singleton

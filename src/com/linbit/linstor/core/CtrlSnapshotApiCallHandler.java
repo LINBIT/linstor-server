@@ -48,13 +48,16 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
 public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 {
+    private List<String> currentNodeNames;
     private String currentRscName;
     private String currentSnapshotName;
 
@@ -122,13 +125,18 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
      * </ol>
      * This is process is implemented by {@link com.linbit.linstor.event.handler.SnapshotStateMachine}.
      */
-    public ApiCallRc createSnapshot(String rscNameStr, String snapshotNameStr)
+    public ApiCallRc createSnapshot(
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr
+    )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
                 ApiCallType.CREATE,
                 apiCallRc,
+                nodeNameStrs,
                 rscNameStr,
                 snapshotNameStr
             )
@@ -184,34 +192,43 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 }
             }
 
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
-            while (rscIterator.hasNext())
+            if (nodeNameStrs.isEmpty())
             {
-                Resource rsc = rscIterator.next();
-
-                if (!isDiskless(rsc))
+                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
+                while (rscIterator.hasNext())
                 {
-                    Snapshot snapshot = snapshotDataFactory.getInstance(
-                        apiCtx,
-                        rsc.getAssignedNode(),
-                        snapshotDfn,
-                        new Snapshot.SnapshotFlags[]{},
-                        true,
-                        true
-                    );
+                    Resource rsc = rscIterator.next();
 
-                    for (SnapshotVolumeDefinition snapshotVolumeDefinition :
-                        snapshotDfn.getAllSnapshotVolumeDefinitions())
+                    if (!isDiskless(rsc))
                     {
-                        snapshotVolumeDataControllerFactory.getInstance(
-                            apiCtx,
-                            snapshot,
-                            snapshotVolumeDefinition,
-                            rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx),
-                            true,
-                            true
+                        createSnapshotOnNode(snapshotDfn, rsc);
+                    }
+                }
+            }
+            else
+            {
+                for (String nodeNameStr : nodeNameStrs)
+                {
+                    Resource rsc = rscDfn.getResource(peerAccCtx, asNodeName(nodeNameStr));
+                    if (rsc == null)
+                    {
+                        throw asExc(
+                            null,
+                            "Resource '" + rscDfn.getName().getDisplayName() +
+                                "' on node '" + nodeNameStr + "' not found.",
+                            ApiConsts.FAIL_NOT_FOUND_RSC
                         );
                     }
+
+                    if (isDiskless(rsc))
+                    {
+                        throw asExc(
+                            null,
+                            "Cannot create snapshot from diskless resource on node '" + nodeNameStr + "'",
+                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
+                        );
+                    }
+                    createSnapshotOnNode(snapshotDfn, rsc);
                 }
             }
 
@@ -245,7 +262,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             reportStatic(
                 exc,
                 ApiCallType.CREATE,
-                getObjectDescriptionInline(rscNameStr, snapshotNameStr),
+                getObjectDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr),
                 getObjRefs(rscNameStr, snapshotNameStr),
                 getVariables(rscNameStr, snapshotNameStr),
                 apiCallRc
@@ -255,6 +272,32 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
+    private void createSnapshotOnNode(SnapshotDefinition snapshotDfn, Resource rsc)
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
+    {
+        Snapshot snapshot = snapshotDataFactory.getInstance(
+            apiCtx,
+            rsc.getAssignedNode(),
+            snapshotDfn,
+            new Snapshot.SnapshotFlags[]{},
+            true,
+            true
+        );
+
+        for (SnapshotVolumeDefinition snapshotVolumeDefinition :
+            snapshotDfn.getAllSnapshotVolumeDefinitions())
+        {
+            snapshotVolumeDataControllerFactory.getInstance(
+                apiCtx,
+                snapshot,
+                snapshotVolumeDefinition,
+                rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx),
+                true,
+                true
+            );
+        }
+    }
+
     public ApiCallRc deleteSnapshot(String rscNameStr, String snapshotNameStr)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -262,6 +305,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             AbsApiCallHandler basicallyThis = setContext(
                 ApiCallType.DELETE,
                 apiCallRc,
+                Collections.emptyList(),
                 rscNameStr,
                 snapshotNameStr
             )
@@ -305,7 +349,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             reportStatic(
                 exc,
                 ApiCallType.DELETE,
-                getObjectDescriptionInline(rscNameStr, snapshotNameStr),
+                getObjectDescriptionInline(Collections.emptyList(), rscNameStr, snapshotNameStr),
                 getObjRefs(rscNameStr, snapshotNameStr),
                 getVariables(rscNameStr, snapshotNameStr),
                 apiCallRc
@@ -642,6 +686,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private AbsApiCallHandler setContext(
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
+        List<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr
     )
@@ -653,6 +698,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             getObjRefs(rscNameStr, snapshotNameStr),
             getVariables(rscNameStr, snapshotNameStr)
         );
+        currentNodeNames = nodeNameStrs;
         currentRscName = rscNameStr;
         currentSnapshotName = snapshotNameStr;
         return this;
@@ -661,18 +707,28 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescription()
     {
-        return "Resource: " + currentRscName + ", Snapshot: " + currentSnapshotName;
+        String snapshotDescription = "Resource: " + currentRscName + ", Snapshot: " + currentSnapshotName;
+        return currentNodeNames.isEmpty() ?
+            snapshotDescription :
+            "Nodes: " + String.join(", ", currentNodeNames) + "; " + snapshotDescription;
     }
 
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentRscName, currentSnapshotName);
+        return getObjectDescriptionInline(currentNodeNames, currentRscName, currentSnapshotName);
     }
 
-    private String getObjectDescriptionInline(String rscNameStr, String snapshotNameStr)
+    private String getObjectDescriptionInline(
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr
+    )
     {
-        return "snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
+        String snapshotDescription = "snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
+        return nodeNameStrs.isEmpty() ?
+            snapshotDescription :
+            snapshotDescription + " on nodes '" + String.join(", ", nodeNameStrs) + "'";
     }
 
     private Map<String, String> getObjRefs(String rscNameStr, String snapshotNameStr)

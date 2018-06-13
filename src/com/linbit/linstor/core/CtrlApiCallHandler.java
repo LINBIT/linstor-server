@@ -1582,6 +1582,7 @@ public class CtrlApiCallHandler
     }
 
     public ApiCallRc createSnapshot(
+        List<String> nodeNames,
         String rscName,
         String snapshotName
     )
@@ -1596,6 +1597,7 @@ public class CtrlApiCallHandler
         )
         {
             apiCallRc = snapshotApiCallHandler.createSnapshot(
+                nodeNames,
                 rscName,
                 snapshotName
             );
