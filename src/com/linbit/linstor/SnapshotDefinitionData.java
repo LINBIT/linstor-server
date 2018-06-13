@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -21,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class SnapshotDefinitionData extends BaseTransactionObject implements SnapshotDefinition
 {
@@ -239,6 +241,19 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
             snapshotName.getDisplayName(),
             snapshotVlmDfns,
             flags.getFlagsBits(accCtx)
+        );
+    }
+
+    @Override
+    public SnapshotDfnListItemApi getListItemApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return new SnapshotDfnListItemPojo(
+            getApiData(accCtx),
+            snapshotMap.values().stream()
+                .map(Snapshot::getNodeName)
+                .map(NodeName::getDisplayName)
+                .collect(Collectors.toList())
         );
     }
 

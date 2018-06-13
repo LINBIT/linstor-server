@@ -109,7 +109,9 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
     }
 
     @Override
-    public CtrlClientSerializerBuilder snapshotDfnList(List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns)
+    public CtrlClientSerializerBuilder snapshotDfnList(
+        List<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns
+    )
     {
         try
         {
@@ -204,7 +206,10 @@ public class CtrlClientSerializerBuilderImpl extends CommonSerializerBuilderImpl
         )
             throws IOException;
 
-        void writeSnapshotDfnList(List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns, ByteArrayOutputStream baos)
+        void writeSnapshotDfnList(
+            List<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns,
+            ByteArrayOutputStream baos
+        )
             throws IOException;
 
         void writeApiVersion(long features, String controllerInfo, ByteArrayOutputStream baos)

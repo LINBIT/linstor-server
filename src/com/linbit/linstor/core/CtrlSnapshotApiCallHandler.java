@@ -424,7 +424,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
     byte[] listSnapshotDefinitions(int msgId)
     {
-        ArrayList<SnapshotDefinition.SnapshotDfnApi> snapshotDfns = new ArrayList<>();
+        ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns = new ArrayList<>();
         try
         {
             rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
@@ -434,11 +434,11 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 {
                     try
                     {
-                        snapshotDfns.add(snapshotDfn.getApiData(peerAccCtx));
+                        snapshotDfns.add(snapshotDfn.getListItemApiData(peerAccCtx));
                     }
                     catch (AccessDeniedException accDeniedExc)
                     {
-                        // don't add storpooldfn without access
+                        // don't add snapshot definition without access
                     }
                 }
             }

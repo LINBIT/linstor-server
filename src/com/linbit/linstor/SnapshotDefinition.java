@@ -56,6 +56,8 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
+    SnapshotDfnListItemApi getListItemApiData(AccessContext accCtx) throws AccessDeniedException;
+
     @Override
     default int compareTo(SnapshotDefinition otherSnapshotDfn)
     {
@@ -118,6 +120,11 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         String getSnapshotName();
         long getFlags();
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList();
+    }
+
+    public interface SnapshotDfnListItemApi extends SnapshotDfnApi
+    {
+        List<String> getNodeNames();
     }
 
     /**

@@ -32,7 +32,7 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
         CtrlClientSerializerBuilder resourceList(
             List<Resource.RscApi> rscs, Map<NodeName, SatelliteState> satelliteStates);
-        CtrlClientSerializerBuilder snapshotDfnList(List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns);
+        CtrlClientSerializerBuilder snapshotDfnList(List<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns);
 
         CtrlClientSerializerBuilder apiVersion(long features, String controllerInfo);
 

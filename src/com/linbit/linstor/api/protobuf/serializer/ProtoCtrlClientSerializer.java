@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeApi;
@@ -172,14 +173,15 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
 
     @Override
     public void writeSnapshotDfnList(
-        List<SnapshotDefinition.SnapshotDfnApi> snapshotDfns, ByteArrayOutputStream baos
+        List<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns,
+        ByteArrayOutputStream baos
     )
         throws IOException
     {
         MsgLstSnapshotDfnOuterClass.MsgLstSnapshotDfn.Builder msgListSnapshotBuilder =
             MsgLstSnapshotDfnOuterClass.MsgLstSnapshotDfn.newBuilder();
 
-        for (SnapshotDefinition.SnapshotDfnApi snapshotDfnApi : snapshotDfns)
+        for (SnapshotDefinition.SnapshotDfnListItemApi snapshotDfnApi : snapshotDfns)
         {
             SnapshotDfnOuterClass.SnapshotDfn.Builder snapshotDfnBuilder =
                 SnapshotDfnOuterClass.SnapshotDfn.newBuilder();
@@ -189,7 +191,16 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
                 .setSnapshotName(snapshotDfnApi.getSnapshotName())
                 .setRscDfnUuid(snapshotDfnApi.getUuid().toString())
                 .setRscName(snapshotDfnApi.getRscDfn().getResourceName())
-                .addAllSnapshotDfnFlags(SnapshotDefinition.SnapshotDfnFlags.toStringList(snapshotDfnApi.getFlags()));
+                .addAllSnapshotDfnFlags(SnapshotDefinition.SnapshotDfnFlags.toStringList(snapshotDfnApi.getFlags()))
+                .addAllSnapshots(snapshotDfnApi.getNodeNames().stream()
+                    .map(nodeName -> SnapshotDfnOuterClass.Snapshot.newBuilder().setNodeName(nodeName).build())
+                    .collect(Collectors.toList()))
+                .addAllSnapshotVlmDfns(snapshotDfnApi.getSnapshotVlmDfnList().stream()
+                    .map(snapshotVlmDfnApi -> SnapshotDfnOuterClass.SnapshotVlmDfn.newBuilder()
+                        .setVlmNr(snapshotVlmDfnApi.getVolumeNr())
+                        .setVlmSize(snapshotVlmDfnApi.getSize())
+                        .build())
+                    .collect(Collectors.toList()));
 
             msgListSnapshotBuilder.addSnapshotDfns(snapshotDfnBuilder.build());
         }
