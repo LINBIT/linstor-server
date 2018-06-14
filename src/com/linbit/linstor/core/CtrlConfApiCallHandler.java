@@ -189,14 +189,14 @@ public class CtrlConfApiCallHandler
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 if (whitelistProps.isKeyKnown(LinStorObject.CONTROLLER, fullKey))
                 {
-                    entry.setMessageFormat("The key '" + fullKey + "' is not whitelisted");
-                }
-                else
-                {
                     entry.setMessageFormat("The value '" + value + "' is not valid.");
                     entry.setDetailsFormat("The value must match: " +
                         whitelistProps.getRuleValue(LinStorObject.CONTROLLER, fullKey)
                     );
+                }
+                else
+                {
+                    entry.setMessageFormat("The key '" + fullKey + "' is not whitelisted");
                 }
                 entry.setReturnCode(ApiConsts.FAIL_INVLD_PROP | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
                 apiCallRc.addEntry(entry);
