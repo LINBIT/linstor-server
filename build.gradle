@@ -219,7 +219,7 @@ task buildTestCommands(type:Exec) {
 task generatePropRules(type:Exec) {
     workingDir 'linstor-common'
 
-    commandLine 'make', '../src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java'
+    commandLine 'make', '../generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java'
 }
 
 task unzip(type: Copy) {
