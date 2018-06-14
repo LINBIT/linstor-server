@@ -155,7 +155,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             ensureSnapshotsViable(rscDfn);
 
             rscDfn.addSnapshotDfn(peerAccCtx, snapshotDfn);
-            snapshotDfn.setInCreation(true);
+            snapshotDfn.setInCreation(peerAccCtx, true);
 
             Iterator<VolumeDefinition> vlmDfnIterator = rscDfn.iterateVolumeDfn(peerAccCtx);
             while (vlmDfnIterator.hasNext())
@@ -232,7 +232,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 }
             }
 
-            if (snapshotDfn.getAllSnapshots().isEmpty())
+            if (snapshotDfn.getAllSnapshots(peerAccCtx).isEmpty())
             {
                 throw asExc(
                     null,
@@ -285,7 +285,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         );
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition :
-            snapshotDfn.getAllSnapshotVolumeDefinitions())
+            snapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx))
         {
             snapshotVolumeDataControllerFactory.getInstance(
                 apiCtx,
@@ -317,7 +317,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
 
             UUID uuid = snapshotDfn.getUuid();
-            if (snapshotDfn.getAllSnapshots().isEmpty())
+            if (snapshotDfn.getAllSnapshots(peerAccCtx).isEmpty())
             {
                 snapshotDfn.delete(peerAccCtx);
 
@@ -326,7 +326,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             else
             {
                 snapshotDfn.markDeleted(peerAccCtx);
-                for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx))
                 {
                     snapshot.markDeleted(peerAccCtx);
                 }
@@ -374,7 +374,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 SnapshotDefinition snapshotDfn = rscDefinition.getSnapshotDfn(apiCtx, snapshotName);
                 if (snapshotDfn != null && snapshotDfn.getInProgress(apiCtx))
                 {
-                    snapshot = snapshotDfn.getSnapshot(currentPeer.getNode().getName());
+                    snapshot = snapshotDfn.getSnapshot(peerAccCtx, currentPeer.getNode().getName());
                 }
             }
 

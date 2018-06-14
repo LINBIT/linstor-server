@@ -118,58 +118,83 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     }
 
     @Override
-    public SnapshotVolumeDefinition getSnapshotVolumeDefinition(VolumeNumber volumeNumber)
+    public SnapshotVolumeDefinition getSnapshotVolumeDefinition(
+        AccessContext accCtx,
+        VolumeNumber volumeNumber
+    )
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return snapshotVolumeDefinitionMap.get(volumeNumber);
     }
 
     @Override
-    public void addSnapshotVolumeDefinition(SnapshotVolumeDefinition snapshotVolumeDefinition)
+    public void addSnapshotVolumeDefinition(
+        AccessContext accCtx,
+        SnapshotVolumeDefinition snapshotVolumeDefinition
+    )
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         snapshotVolumeDefinitionMap.put(snapshotVolumeDefinition.getVolumeNumber(), snapshotVolumeDefinition);
     }
 
     @Override
-    public void removeSnapshotVolumeDefinition(VolumeNumber volumeNumber)
+    public void removeSnapshotVolumeDefinition(
+        AccessContext accCtx,
+        VolumeNumber volumeNumber
+    )
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         snapshotVolumeDefinitionMap.remove(volumeNumber);
     }
 
     @Override
-    public Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions()
+    public Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions(AccessContext accCtx)
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return snapshotVolumeDefinitionMap.values();
     }
 
     @Override
-    public Snapshot getSnapshot(NodeName clNodeName)
+    public Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return snapshotMap.get(clNodeName);
     }
 
     @Override
-    public Collection<Snapshot> getAllSnapshots()
+    public Collection<Snapshot> getAllSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return snapshotMap.values();
     }
 
     @Override
-    public void addSnapshot(Snapshot snapshotRef)
+    public void addSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         snapshotMap.put(snapshotRef.getNodeName(), snapshotRef);
     }
 
     @Override
-    public void removeSnapshot(Snapshot snapshotRef)
+    public void removeSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         snapshotMap.remove(snapshotRef.getNodeName());
     }
 
@@ -194,6 +219,8 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     {
         if (!deleted.get())
         {
+            resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+
             if (!snapshotMap.isEmpty())
             {
                 throw new ImplementationError("Cannot delete snapshot definition which contains snapshots");
@@ -239,10 +266,11 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     }
 
     @Override
-    public void setInCreation(boolean inCreationRef)
-        throws SQLException
+    public void setInCreation(AccessContext accCtx, boolean inCreationRef)
+        throws SQLException, AccessDeniedException
     {
         checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
         inCreation.set(inCreationRef);
     }
 

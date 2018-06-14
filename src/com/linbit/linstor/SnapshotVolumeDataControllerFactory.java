@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -41,7 +42,9 @@ public class SnapshotVolumeDataControllerFactory
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(snapshotVolumeDefinition.getVolumeNumber());
+        snapshot.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(accCtx, snapshotVolumeDefinition.getVolumeNumber());
 
         if (snapshotVolume != null && failIfExists)
         {
@@ -59,8 +62,8 @@ public class SnapshotVolumeDataControllerFactory
             );
 
             driver.create(snapshotVolume);
-            snapshot.addSnapshotVolume(snapshotVolume);
-            snapshotVolumeDefinition.addSnapshotVolume(snapshotVolume);
+            snapshot.addSnapshotVolume(accCtx, snapshotVolume);
+            snapshotVolumeDefinition.addSnapshotVolume(accCtx, snapshotVolume);
         }
 
         return snapshotVolume;

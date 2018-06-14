@@ -124,7 +124,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 
             if (nodeNameStrs.isEmpty())
             {
-                for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots())
+                for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx))
                 {
                     restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode());
                 }
@@ -187,7 +187,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             VolumeNumber volumeNumber = toVlmDfn.getVolumeNumber();
 
             SnapshotVolumeDefinition fromSnapshotVlmDfn =
-                fromSnapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
+                fromSnapshotDfn.getSnapshotVolumeDefinition(peerAccCtx, volumeNumber);
 
             if (fromSnapshotVlmDfn == null)
             {
@@ -211,7 +211,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
                 );
             }
 
-            SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(volumeNumber);
+            SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(peerAccCtx, volumeNumber);
 
             if (fromSnapshotVolume == null)
             {

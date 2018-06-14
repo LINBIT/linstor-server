@@ -74,7 +74,7 @@ public class SnapshotStateMachine
             {
                 for (SnapshotDefinition snapshotDefinition : rscDfn.getSnapshotDfns(apiCtx))
                 {
-                    Snapshot snapshot = snapshotDefinition.getSnapshot(eventIdentifier.getNodeName());
+                    Snapshot snapshot = snapshotDefinition.getSnapshot(apiCtx, eventIdentifier.getNodeName());
                     if (snapshotDefinition.getInProgress(apiCtx) && snapshot != null)
                     {
                         if (snapshot.getFlags().isSet(apiCtx, Snapshot.SnapshotFlags.DELETE))
@@ -131,7 +131,7 @@ public class SnapshotStateMachine
         if (snapshotDefinition.getInProgress(apiCtx))
         {
             errorReporter.logWarning("Aborting snapshot - %s", snapshotDefinition);
-            snapshotDefinition.setInCreation(false);
+            snapshotDefinition.setInCreation(apiCtx, false);
             snapshotsChanged = true;
             closeSnapshotDeploymentEventStream(snapshotDefinition);
         }
@@ -152,7 +152,7 @@ public class SnapshotStateMachine
         boolean allSuspendSet = true;
         boolean allTakeSnapshotSet = true;
 
-        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(apiCtx))
         {
             SnapshotState snapshotState = getSnapshotState(snapshot);
             if (snapshotState == null)
@@ -176,11 +176,11 @@ public class SnapshotStateMachine
                 }
             }
 
-            if (!snapshot.getSuspendResource())
+            if (!snapshot.getSuspendResource(apiCtx))
             {
                 allSuspendSet = false;
             }
-            if (!snapshot.getTakeSnapshot())
+            if (!snapshot.getTakeSnapshot(apiCtx))
             {
                 allTakeSnapshotSet = false;
             }
@@ -194,7 +194,7 @@ public class SnapshotStateMachine
                 if (noneSuspended)
                 {
                     errorReporter.logInfo("Finished snapshot - %s", snapshotDefinition);
-                    snapshotDefinition.setInCreation(false);
+                    snapshotDefinition.setInCreation(apiCtx, false);
 
                     snapshotDefinition.getFlags().enableFlags(apiCtx, SnapshotDfnFlags.SUCCESSFUL);
 
@@ -205,9 +205,9 @@ public class SnapshotStateMachine
                 else if (allSnapshotTaken && allSuspendSet)
                 {
                     errorReporter.logInfo("Resuming after snapshot - %s", snapshotDefinition);
-                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(apiCtx))
                     {
-                        snapshot.setSuspendResource(false);
+                        snapshot.setSuspendResource(apiCtx, false);
                     }
                     snapshotsChanged = true;
                 }
@@ -217,18 +217,18 @@ public class SnapshotStateMachine
                 if (allSuspended)
                 {
                     errorReporter.logInfo("Taking snapshot - %s", snapshotDefinition);
-                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(apiCtx))
                     {
-                        snapshot.setTakeSnapshot(true);
+                        snapshot.setTakeSnapshot(apiCtx, true);
                     }
                     snapshotsChanged = true;
                 }
                 else if (!allSuspendSet)
                 {
                     errorReporter.logInfo("Suspending for snapshot - %s", snapshotDefinition);
-                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+                    for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(apiCtx))
                     {
-                        snapshot.setSuspendResource(true);
+                        snapshot.setSuspendResource(apiCtx, true);
                     }
                     snapshotsChanged = true;
                 }
@@ -253,7 +253,7 @@ public class SnapshotStateMachine
     private void updateSatellites(SnapshotDefinition snapshotDefinition)
         throws AccessDeniedException
     {
-        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(apiCtx))
         {
             snapshot.getNode().getPeer(apiCtx).sendMessage(
                 ctrlStltSerializer
@@ -298,7 +298,7 @@ public class SnapshotStateMachine
             snapshot.delete(apiCtx);
 
             if (snapshotDefinition.getFlags().isSet(apiCtx, SnapshotDfnFlags.DELETE) &&
-                snapshotDefinition.getAllSnapshots().isEmpty())
+                snapshotDefinition.getAllSnapshots(apiCtx).isEmpty())
             {
                 snapshotDefinition.delete(apiCtx);
             }

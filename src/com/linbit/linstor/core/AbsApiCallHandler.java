@@ -1658,7 +1658,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             // notify all peers that a snapshot has changed
-            for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots(apiCtx))
             {
                 Peer currentPeer = snapshot.getNode().getPeer(apiCtx);
 

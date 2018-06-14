@@ -47,7 +47,7 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         SnapshotVolumeDefinition snapshotVolumeDefinition;
         try
         {
-            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
+            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
             if (snapshotVolumeDefinition == null)
             {
                 snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
@@ -62,7 +62,7 @@ public class SnapshotVolumeDefinitionSatelliteFactory
                     transMgrProvider,
                     new TreeMap<>()
                 );
-                snapshotDfn.addSnapshotVolumeDefinition(snapshotVolumeDefinition);
+                snapshotDfn.addSnapshotVolumeDefinition(accCtx, snapshotVolumeDefinition);
             }
         }
         catch (Exception exc)

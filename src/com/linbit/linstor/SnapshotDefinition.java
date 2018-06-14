@@ -28,21 +28,35 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         return getResourceDefinition().getName();
     }
 
-    SnapshotVolumeDefinition getSnapshotVolumeDefinition(VolumeNumber volumeNumber);
+    SnapshotVolumeDefinition getSnapshotVolumeDefinition(
+        AccessContext accCtx,
+        VolumeNumber volumeNumber
+    )
+        throws AccessDeniedException;
 
-    Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions();
+    Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    void addSnapshotVolumeDefinition(SnapshotVolumeDefinition snapshotVolumeDefinition);
+    void addSnapshotVolumeDefinition(
+        AccessContext accCtx,
+        SnapshotVolumeDefinition snapshotVolumeDefinition
+    )
+        throws AccessDeniedException;
 
-    void removeSnapshotVolumeDefinition(VolumeNumber volumeNumber);
+    void removeSnapshotVolumeDefinition(AccessContext accCtx, VolumeNumber volumeNumber)
+        throws AccessDeniedException;
 
-    Snapshot getSnapshot(NodeName clNodeName);
+    Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
+        throws AccessDeniedException;
 
-    Collection<Snapshot> getAllSnapshots();
+    Collection<Snapshot> getAllSnapshots(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    void addSnapshot(Snapshot snapshotRef);
+    void addSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException;
 
-    void removeSnapshot(Snapshot snapshotRef);
+    void removeSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException;
 
     StateFlags<SnapshotDfnFlags> getFlags();
 
@@ -61,8 +75,8 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
     boolean getInProgress(AccessContext accCtx)
         throws AccessDeniedException;
 
-    void setInCreation(boolean inCreationRef)
-        throws SQLException;
+    void setInCreation(AccessContext accCtx, boolean inCreationRef)
+        throws SQLException, AccessDeniedException;
 
     SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 

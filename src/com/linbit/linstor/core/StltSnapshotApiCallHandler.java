@@ -173,7 +173,7 @@ class StltSnapshotApiCallHandler
         checkUuid(snapshotDfn, snapshotDfnApi);
 
         // Merge satellite volume definitions
-        Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions().stream()
+        Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions(apiCtx).stream()
             .map(SnapshotVolumeDefinition::getVolumeNumber)
             .collect(Collectors.toCollection(HashSet::new));
 
@@ -184,7 +184,8 @@ class StltSnapshotApiCallHandler
 
             SnapshotVlmDfnFlags[] snapshotVlmDfnFlags = SnapshotVlmDfnFlags.restoreFlags(snapshotVlmDfnApi.getFlags());
 
-            SnapshotVolumeDefinition snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(volumeNumber);
+            SnapshotVolumeDefinition snapshotVolumeDefinition =
+                snapshotDfn.getSnapshotVolumeDefinition(apiCtx, volumeNumber);
             if (snapshotVolumeDefinition == null)
             {
                 snapshotVolumeDefinition = snapshotVolumeDefinitionFactory.getInstanceSatellite(
@@ -201,7 +202,7 @@ class StltSnapshotApiCallHandler
 
         for (VolumeNumber oldVolumeNumber : oldVolumeNumbers)
         {
-            snapshotDfn.removeSnapshotVolumeDefinition(oldVolumeNumber);
+            snapshotDfn.removeSnapshotVolumeDefinition(apiCtx, oldVolumeNumber);
         }
 
         return snapshotDfn;
@@ -212,7 +213,7 @@ class StltSnapshotApiCallHandler
             SQLException
     {
         NodeData localNode = controllerPeerConnector.getLocalNode();
-        Snapshot snapshot = snapshotDfn.getSnapshot(localNode.getName());
+        Snapshot snapshot = snapshotDfn.getSnapshot(apiCtx, localNode.getName());
         Snapshot.SnapshotFlags[] snapshotFlags = Snapshot.SnapshotFlags.restoreFlags(snapshotRaw.getFlags());
         if (snapshot == null)
         {
@@ -227,8 +228,8 @@ class StltSnapshotApiCallHandler
         checkUuid(snapshot, snapshotRaw);
         snapshot.getFlags().resetFlagsTo(apiCtx, snapshotFlags);
 
-        snapshot.setSuspendResource(snapshotRaw.getSuspendResource());
-        snapshot.setTakeSnapshot(snapshotRaw.getTakeSnapshot());
+        snapshot.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
+        snapshot.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
 
         for (SnapshotVolume.SnapshotVlmApi snapshotVlmApi : snapshotRaw.getSnapshotVlmList())
         {
@@ -240,7 +241,7 @@ class StltSnapshotApiCallHandler
         throws ValueOutOfRangeException, DivergentUuidsException, InvalidNameException, AccessDeniedException
     {
         VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmApi.getSnapshotVlmNr());
-        SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(volumeNumber);
+        SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(apiCtx, volumeNumber);
         if (snapshotVolume == null)
         {
             StorPool storPool = snapshot.getNode().getStorPool(
@@ -253,11 +254,11 @@ class StltSnapshotApiCallHandler
                 apiCtx,
                 snapshotVlmApi.getSnapshotVlmUuid(),
                 snapshot,
-                snapshot.getSnapshotDefinition().getSnapshotVolumeDefinition(volumeNumber),
+                snapshot.getSnapshotDefinition().getSnapshotVolumeDefinition(apiCtx, volumeNumber),
                 storPool
             );
 
-            snapshot.addSnapshotVolume(snapshotVolume);
+            snapshot.addSnapshotVolume(apiCtx, snapshotVolume);
         }
         checkUuid(snapshotVolume, snapshotVlmApi);
     }

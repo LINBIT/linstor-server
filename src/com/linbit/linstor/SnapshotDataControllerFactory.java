@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -42,7 +43,9 @@ public class SnapshotDataControllerFactory
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        Snapshot snapshot = snapshotDfn.getSnapshot(node.getName());
+        snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        Snapshot snapshot = snapshotDfn.getSnapshot(accCtx, node.getName());
 
         if (snapshot != null && failIfExists)
         {
@@ -61,7 +64,7 @@ public class SnapshotDataControllerFactory
                 );
 
             driver.create(snapshot);
-            snapshotDfn.addSnapshot(snapshot);
+            snapshotDfn.addSnapshot(accCtx, snapshot);
             node.addSnapshot(accCtx, snapshot);
         }
 

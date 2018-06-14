@@ -42,7 +42,7 @@ public class SnapshotDataSatelliteFactory
         Snapshot snapshot;
         try
         {
-            snapshot = snapshotDfn.getSnapshot(node.getName());
+            snapshot = snapshotDfn.getSnapshot(accCtx, node.getName());
             if (snapshot == null)
             {
                 snapshot = new SnapshotData(
@@ -53,7 +53,7 @@ public class SnapshotDataSatelliteFactory
                     driver, transObjFactory, transMgrProvider,
                     new TreeMap<>()
                 );
-                snapshotDfn.addSnapshot(snapshot);
+                snapshotDfn.addSnapshot(accCtx, snapshot);
             }
         }
         catch (Exception exc)

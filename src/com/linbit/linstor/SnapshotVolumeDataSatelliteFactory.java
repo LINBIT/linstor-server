@@ -40,7 +40,7 @@ public class SnapshotVolumeDataSatelliteFactory
         SnapshotVolume snapshotVolume;
         try
         {
-            snapshotVolume = snapshot.getSnapshotVolume(snapshotVolumeDefinition.getVolumeNumber());
+            snapshotVolume = snapshot.getSnapshotVolume(accCtx, snapshotVolumeDefinition.getVolumeNumber());
             if (snapshotVolume == null)
             {
                 snapshotVolume = new SnapshotVolumeData(
@@ -50,7 +50,7 @@ public class SnapshotVolumeDataSatelliteFactory
                     storPool,
                     driver, transObjFactory, transMgrProvider
                 );
-                snapshot.addSnapshotVolume(snapshotVolume);
+                snapshot.addSnapshotVolume(accCtx, snapshotVolume);
             }
         }
         catch (Exception exc)

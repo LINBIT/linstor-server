@@ -45,6 +45,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -742,10 +743,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     {
                         Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
 
-                        List<Snapshot> snapshots = rscDfn.getSnapshotDfns(wrkCtx).stream()
-                            .map(snapshotDefinition -> snapshotDefinition.getSnapshot(localNode.getName()))
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
+                        List<Snapshot> snapshots = new ArrayList<>();
+                        for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(wrkCtx))
+                        {
+                            Snapshot snapshot = snapshotDfn.getSnapshot(wrkCtx, localNode.getName());
+                            if (snapshot != null)
+                            {
+                                snapshots.add(snapshot);
+                            }
+                        }
 
                         boolean needMasterKey = false;
                         // If the master key is not known, skip dispatching resources that
@@ -849,7 +855,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         SnapshotDefinition snapshotDefinition =
                             resourceDefinition.getSnapshotDfn(wrkCtx, snapshotKey.getSnapshotName());
 
-                        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots())
+                        for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(wrkCtx))
                         {
                             snapshot.delete(wrkCtx);
                         }

@@ -42,13 +42,17 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
         return getNode().getName();
     }
 
-    void addSnapshotVolume(SnapshotVolume snapshotVolume);
+    void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
+        throws AccessDeniedException;
 
-    SnapshotVolume getSnapshotVolume(VolumeNumber volumeNumber);
+    SnapshotVolume getSnapshotVolume(AccessContext accCtx, VolumeNumber volumeNumber)
+        throws AccessDeniedException;
 
-    Collection<SnapshotVolume> getAllSnapshotVolumes();
+    Collection<SnapshotVolume> getAllSnapshotVolumes(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData);
+    void removeSnapshotVolume(AccessContext accCtx, SnapshotVolumeData snapshotVolumeData)
+        throws AccessDeniedException;
 
     StateFlags<SnapshotFlags> getFlags();
 
@@ -58,13 +62,17 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    boolean getSuspendResource();
+    boolean getSuspendResource(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    void setSuspendResource(boolean suspendResource);
+    void setSuspendResource(AccessContext accCtx, boolean suspendResource)
+        throws AccessDeniedException;
 
-    boolean getTakeSnapshot();
+    boolean getTakeSnapshot(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    void setTakeSnapshot(boolean takeSnapshot);
+    void setTakeSnapshot(AccessContext accCtx, boolean takeSnapshot)
+        throws AccessDeniedException;
 
     SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;

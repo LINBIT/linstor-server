@@ -279,14 +279,20 @@ class DrbdDeviceHandler implements DeviceHandler
             }
 
             {
+                Set<VolumeNumber> snapshotVlmNumbers = new HashSet<>();
+                for (Snapshot snapshot : inProgressSnapshots)
+                {
+                    snapshotVlmNumbers.addAll(
+                        snapshot.getAllSnapshotVolumes(wrkCtx).stream()
+                            .map(SnapshotVolume::getVolumeNumber)
+                            .collect(Collectors.toSet())
+                    );
+                }
+
                 // Volatile state information of the resource and its volumes
                 ResourceState rscState = initializeResourceState(
                     rscDfn,
-                    inProgressSnapshots.stream()
-                        .map(Snapshot::getSnapshotDefinition)
-                        .flatMap(snapshotDefinition -> snapshotDefinition.getAllSnapshotVolumeDefinitions().stream())
-                        .map(SnapshotVolumeDefinition::getVolumeNumber)
-                        .collect(Collectors.toSet())
+                    snapshotVlmNumbers
                 );
 
                 // Evaluate resource & volumes state by checking the DRBD state
@@ -1438,8 +1444,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 errLog.logTrace("Snapshot " + snapshot.getSnapshotDefinition() + " target state '" +
                     new StringUtils.ConditionalStringJoiner(", ")
                         .addIf(snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE), "delete")
-                        .addIf(snapshot.getSuspendResource(), "suspend")
-                        .addIf(snapshot.getTakeSnapshot(), "take")
+                        .addIf(snapshot.getSuspendResource(wrkCtx), "suspend")
+                        .addIf(snapshot.getTakeSnapshot(wrkCtx), "take")
                         .toString() + "'");
             }
 
@@ -1448,7 +1454,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 snapshotInProgress = true;
             }
 
-            if (snapshot.getSuspendResource())
+            if (snapshot.getSuspendResource(wrkCtx))
             {
                 shouldSuspend = true;
             }
@@ -1468,7 +1474,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
             if (snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
             {
-                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
+                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(wrkCtx))
                 {
                     VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
                         snapshotVolume.getVolumeNumber());
@@ -1498,9 +1504,9 @@ class DrbdDeviceHandler implements DeviceHandler
                 deviceManagerProvider.get().notifySnapshotDeleted(snapshot);
                 deletedSnapshots.add(snapshotName);
             }
-            else if (snapshot.getTakeSnapshot() && !alreadySnapshotted.contains(snapshotName))
+            else if (snapshot.getTakeSnapshot(wrkCtx) && !alreadySnapshotted.contains(snapshotName))
             {
-                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
+                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(wrkCtx))
                 {
                     VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
                         snapshotVolume.getVolumeNumber());

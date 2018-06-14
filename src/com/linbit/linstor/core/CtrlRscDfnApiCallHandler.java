@@ -49,6 +49,7 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -675,11 +676,16 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             {
                 // Avoid using volume numbers that are already in use by active volumes or snapshots.
                 // Re-using snapshot volume numbers would result in confusion when restoring from the snapshot.
+
+                Set<SnapshotVolumeDefinition> snapshotVlmDfns = new HashSet<>();
+                for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(accCtx))
+                {
+                    snapshotVlmDfns.addAll(snapshotDfn.getAllSnapshotVolumeDefinitions(accCtx));
+                }
+
                 int[] occupiedVlmNrs = Stream.concat(
                     rscDfn.streamVolumeDfn(accCtx).map(VolumeDefinition::getVolumeNumber),
-                    rscDfn.getSnapshotDfns(accCtx).stream()
-                        .map(SnapshotDefinition::getAllSnapshotVolumeDefinitions).flatMap(Collection::stream)
-                        .map(SnapshotVolumeDefinition::getVolumeNumber)
+                    snapshotVlmDfns.stream().map(SnapshotVolumeDefinition::getVolumeNumber)
                 )
                     .mapToInt(VolumeNumber::getValue)
                     .sorted()

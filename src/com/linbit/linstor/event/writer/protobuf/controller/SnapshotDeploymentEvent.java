@@ -105,7 +105,7 @@ public class SnapshotDeploymentEvent implements EventWriter
         if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.FAILED_DEPLOYMENT))
         {
             ApiCallRcImpl combinedDeploymentRc = new ApiCallRcImpl();
-            for (Snapshot snapshot : snapshotDfn.getAllSnapshots())
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots(apiCtx))
             {
                 ApiCallRc deploymentRc = resourceDeploymentStateGenerator.generate(new ObjectIdentifier(
                     snapshot.getNodeName(),

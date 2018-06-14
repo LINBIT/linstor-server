@@ -87,6 +87,7 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
         throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return storPool;
     }
 
@@ -99,8 +100,8 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
             getResourceDefinition()
                 .getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            snapshot.removeSnapshotVolume(this);
-            snapshotVolumeDefinition.removeSnapshotVolume(this);
+            snapshot.removeSnapshotVolume(accCtx, this);
+            snapshotVolumeDefinition.removeSnapshotVolume(accCtx, this);
 
             activateTransMgr();
             dbDriver.delete(this);

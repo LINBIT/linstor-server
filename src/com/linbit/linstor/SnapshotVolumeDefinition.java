@@ -42,9 +42,11 @@ public interface SnapshotVolumeDefinition
         return getSnapshotDefinition().getName();
     }
 
-    void addSnapshotVolume(SnapshotVolume snapshotVolume);
+    void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
+        throws AccessDeniedException;
 
-    void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData);
+    void removeSnapshotVolume(AccessContext accCtx, SnapshotVolumeData snapshotVolumeData)
+        throws AccessDeniedException;
 
     long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException;

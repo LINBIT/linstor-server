@@ -125,16 +125,23 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
     }
 
     @Override
-    public void addSnapshotVolume(SnapshotVolume snapshotVolume)
+    public void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
+        throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
         snapshotVlmMap.put(snapshotVolume.getNodeName(), snapshotVolume);
     }
 
     @Override
-    public void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData)
+    public void removeSnapshotVolume(
+        AccessContext accCtx,
+        SnapshotVolumeData snapshotVolumeData
+    )
+        throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
         snapshotVlmMap.remove(snapshotVolumeData.getNodeName());
     }
 
@@ -173,11 +180,13 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
 
     @Override
     public void delete(AccessContext accCtx)
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         if (!deleted.get())
         {
-            snapshotDfn.removeSnapshotVolumeDefinition(volumeNr);
+            getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+
+            snapshotDfn.removeSnapshotVolumeDefinition(accCtx, volumeNr);
 
             activateTransMgr();
             dbDriver.delete(this);

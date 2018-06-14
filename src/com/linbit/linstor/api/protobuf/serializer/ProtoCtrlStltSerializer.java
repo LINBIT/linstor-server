@@ -924,7 +924,8 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
             List<MsgIntSnapshotDataOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
-            for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn.getAllSnapshotVolumeDefinitions())
+            for (SnapshotVolumeDefinition snapshotVolumeDefinition :
+                snapshotDfn.getAllSnapshotVolumeDefinitions(serializerCtx))
             {
                 snapshotVlmDfns.add(
                     MsgIntSnapshotDataOuterClass.SnapshotVlmDfn.newBuilder()
@@ -937,7 +938,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             }
 
             List<MsgIntSnapshotDataOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
-            for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes())
+            for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(serializerCtx))
             {
                 StorPool storPool = snapshotVolume.getStorPool(serializerCtx);
                 snapshotVlms.add(
@@ -966,8 +967,8 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
                 .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
                 .addAllSnapshotVlms(snapshotVlms)
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
-                .setSuspendResource(snapshot.getSuspendResource())
-                .setTakeSnapshot(snapshot.getTakeSnapshot())
+                .setSuspendResource(snapshot.getSuspendResource(serializerCtx))
+                .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
                 .setFullSyncId(fullSyncId)
                 .setUpdateId(updateId)
                 .build();

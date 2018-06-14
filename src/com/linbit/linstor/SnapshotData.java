@@ -118,30 +118,41 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     }
 
     @Override
-    public void addSnapshotVolume(SnapshotVolume snapshotVolume)
+    public void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
+        throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         snapshotVlmMap.put(snapshotVolume.getVolumeNumber(), snapshotVolume);
     }
 
     @Override
-    public SnapshotVolume getSnapshotVolume(VolumeNumber volumeNumber)
+    public SnapshotVolume getSnapshotVolume(AccessContext accCtx, VolumeNumber volumeNumber)
+        throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return snapshotVlmMap.get(volumeNumber);
     }
 
     @Override
-    public Collection<SnapshotVolume> getAllSnapshotVolumes()
+    public Collection<SnapshotVolume> getAllSnapshotVolumes(AccessContext accCtx)
+        throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return snapshotVlmMap.values();
     }
 
     @Override
-    public void removeSnapshotVolume(SnapshotVolumeData snapshotVolumeData)
+    public void removeSnapshotVolume(
+        AccessContext accCtx,
+        SnapshotVolumeData snapshotVolumeData
+    )
+        throws AccessDeniedException
     {
         checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         snapshotVlmMap.remove(snapshotVolumeData.getVolumeNumber());
     }
 
@@ -168,7 +179,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         {
             getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            snapshotDfn.removeSnapshot(this);
+            snapshotDfn.removeSnapshot(accCtx, this);
             node.removeSnapshot(this);
 
             // Shallow copy the volume collection because calling delete results in elements being removed from it
@@ -194,14 +205,18 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     }
 
     @Override
-    public boolean getSuspendResource()
+    public boolean getSuspendResource(AccessContext accCtx)
+        throws AccessDeniedException
     {
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return suspendResource.get();
     }
 
     @Override
-    public void setSuspendResource(boolean suspendResourceRef)
+    public void setSuspendResource(AccessContext accCtx, boolean suspendResourceRef)
+        throws AccessDeniedException
     {
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
         try
         {
             suspendResource.set(suspendResourceRef);
@@ -213,14 +228,18 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     }
 
     @Override
-    public boolean getTakeSnapshot()
+    public boolean getTakeSnapshot(AccessContext accCtx)
+        throws AccessDeniedException
     {
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return takeSnapshot.get();
     }
 
     @Override
-    public void setTakeSnapshot(boolean takeSnapshotRef)
+    public void setTakeSnapshot(AccessContext accCtx, boolean takeSnapshotRef)
+        throws AccessDeniedException
     {
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
         try
         {
             takeSnapshot.set(takeSnapshotRef);
