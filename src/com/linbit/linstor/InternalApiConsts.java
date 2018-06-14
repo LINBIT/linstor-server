@@ -38,6 +38,9 @@ public class InternalApiConsts
     public static final String API_CHANGED_IN_PROGRESS_SNAPSHOT     = "ChangedInProgressSnapshot";
     public static final String API_REQUEST_IN_PROGRESS_SNAPSHOT     = "RequestInProgressSnapshot";
     public static final String API_APPLY_IN_PROGRESS_SNAPSHOT       = "ApplyInProgressSnapshot";
+    // Satellites only track snapshots where something is happening - for instance, when they are being created or
+    // deleted. This API call indicates that the action is completed; the underlying snapshot volume may still be
+    // present.
     public static final String API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED = "ApplyEndedInProgressSnapshot";
 
     public static final String API_CHANGED_STOR_POOL       = "ChangedStorPool";

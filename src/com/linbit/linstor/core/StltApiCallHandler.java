@@ -796,7 +796,7 @@ public class StltApiCallHandler
     {
         private final SnapshotPojo snapshotPojo;
 
-        public ApplySnapshotData(SnapshotPojo snapshotPojoRef)
+        ApplySnapshotData(SnapshotPojo snapshotPojoRef)
         {
             snapshotPojo = snapshotPojoRef;
         }
@@ -834,7 +834,7 @@ public class StltApiCallHandler
         private final long fullSyncId;
         private final long updateId;
 
-        public ApplyEndedSnapshotData(
+        ApplyEndedSnapshotData(
             String rscNameRef,
             String snapshotNameRef,
             long fullSyncIdRef,

@@ -428,7 +428,8 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 {
                     vlmDfn.delete(peerAccCtx);
                     deleteAction = " was deleted.";
-                } else
+                }
+                else
                 {
                     vlmDfn.markDeleted(peerAccCtx);
                     deleteAction = " marked for deletion.";

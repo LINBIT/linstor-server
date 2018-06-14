@@ -6,8 +6,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
-import com.linbit.linstor.proto.MsgDelSnapshotOuterClass;
 import com.linbit.linstor.proto.MsgDelSnapshotOuterClass.MsgDelSnapshot;
 
 import javax.inject.Inject;

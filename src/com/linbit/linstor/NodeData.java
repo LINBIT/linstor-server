@@ -347,6 +347,7 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public void removeSnapshot(SnapshotData snapshotData)
     {
+        checkDeleted();
         snapshotMap.remove(new SnapshotDefinition.Key(snapshotData.getSnapshotDefinition()));
     }
 

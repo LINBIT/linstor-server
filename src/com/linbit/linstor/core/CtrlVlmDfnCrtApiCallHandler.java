@@ -10,7 +10,6 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;

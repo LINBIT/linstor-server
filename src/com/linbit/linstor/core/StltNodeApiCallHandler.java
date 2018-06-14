@@ -22,8 +22,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +30,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;

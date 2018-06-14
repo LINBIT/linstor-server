@@ -7,7 +7,6 @@ import java.util.UUID;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 

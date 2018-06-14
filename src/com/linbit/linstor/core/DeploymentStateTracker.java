@@ -50,7 +50,7 @@ public class DeploymentStateTracker
 
     public List<SnapshotState> getSnapshotStates(ResourceName resourceName)
     {
-        List<SnapshotState> snapshotStates = this.snapshotStates.get(resourceName);
-        return snapshotStates == null ? Collections.emptyList() : snapshotStates;
+        List<SnapshotState> resourceSnapshotStates = snapshotStates.get(resourceName);
+        return resourceSnapshotStates == null ? Collections.emptyList() : resourceSnapshotStates;
     }
 }

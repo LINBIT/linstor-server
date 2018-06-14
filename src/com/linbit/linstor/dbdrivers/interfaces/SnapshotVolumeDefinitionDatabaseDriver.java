@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

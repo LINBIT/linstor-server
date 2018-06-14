@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Snapshot volume definitions are stored independently of the source volume definitions so that we have accurate
+ * information about the content of the snapshots even when the source resource definition is later modified.
+ */
 public interface SnapshotVolumeDefinition
     extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotVolumeDefinition>
 {
