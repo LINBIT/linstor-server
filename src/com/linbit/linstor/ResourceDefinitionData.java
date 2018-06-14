@@ -86,9 +86,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
-    // Transient store of snapshots which have been requested but not yet completed
-    private final Set<SnapshotName> inProgressSnapshots;
-
     ResourceDefinitionData(
         UUID objIdRef,
         ObjectProtection objProtRef,
@@ -157,8 +154,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             transportType,
             deleted
         );
-
-        inProgressSnapshots = new TreeSet<>();
     }
 
     @Override
@@ -358,7 +353,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objProt.requireAccess(accCtx, AccessType.USE);
 
         snapshotDfnMap.remove(snapshotName);
-        inProgressSnapshots.remove(snapshotName);
     }
 
     @Override
@@ -436,36 +430,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
             deleted.set(true);
         }
-    }
-
-    @Override
-    public void markSnapshotInProgress(SnapshotName snapshotName, boolean inProgress)
-    {
-        if (inProgress)
-        {
-            inProgressSnapshots.add(snapshotName);
-        }
-        else
-        {
-            inProgressSnapshots.remove(snapshotName);
-        }
-    }
-
-    @Override
-    public boolean isSnapshotInProgress(SnapshotName snapshotName)
-    {
-        return inProgressSnapshots.contains(snapshotName);
-    }
-
-    @Override
-    public Collection<SnapshotDefinition> getInProgressSnapshotDfns(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
-        return inProgressSnapshots.stream()
-            .map(snapshotDfnMap::get)
-            .collect(Collectors.toList());
     }
 
     private void checkDeleted()

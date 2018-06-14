@@ -48,6 +48,9 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     private final TransactionSimpleObject<SnapshotDefinitionData, Boolean> deleted;
 
+    // Not persisted because we do not resume snapshot creation after a restart
+    private TransactionSimpleObject<SnapshotDefinitionData, Boolean> inCreation;
+
     public SnapshotDefinitionData(
         UUID objIdRef,
         ResourceDefinition resourceDfnRef,
@@ -82,12 +85,15 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
+        inCreation = transObjFactory.createTransactionSimpleObject(this, false, null);
+
         transObjs = Arrays.asList(
             resourceDfn,
             snapshotVolumeDefinitionMap,
             snapshotMap,
             flags,
-            deleted
+            deleted,
+            inCreation
         );
     }
 
@@ -222,6 +228,22 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         {
             throw new AccessToDeletedDataException("Access to deleted snapshot definition");
         }
+    }
+
+    @Override
+    public boolean getInProgress(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return inCreation.get() || flags.isSet(accCtx, SnapshotDfnFlags.DELETE);
+    }
+
+    @Override
+    public void setInCreation(boolean inCreationRef)
+        throws SQLException
+    {
+        checkDeleted();
+        inCreation.set(inCreationRef);
     }
 
     @Override

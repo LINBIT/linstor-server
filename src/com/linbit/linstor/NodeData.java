@@ -357,10 +357,15 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return snapshotMap.values().stream()
-            .filter(snapshot -> snapshot.getResourceDefinition().isSnapshotInProgress(
-                snapshot.getSnapshotName()))
-            .collect(Collectors.toSet());
+        List<Snapshot> inProgressSnapshots = new ArrayList<>();
+        for (Snapshot snapshot : snapshotMap.values())
+        {
+            if (snapshot.getSnapshotDefinition().getInProgress(accCtx))
+            {
+                inProgressSnapshots.add(snapshot);
+            }
+        }
+        return inProgressSnapshots;
     }
 
     @Override

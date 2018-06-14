@@ -72,10 +72,10 @@ public class SnapshotStateMachine
 
             if (rscDfn != null)
             {
-                for (SnapshotDefinition snapshotDefinition : rscDfn.getInProgressSnapshotDfns(apiCtx))
+                for (SnapshotDefinition snapshotDefinition : rscDfn.getSnapshotDfns(apiCtx))
                 {
                     Snapshot snapshot = snapshotDefinition.getSnapshot(eventIdentifier.getNodeName());
-                    if (snapshot != null)
+                    if (snapshotDefinition.getInProgress(apiCtx) && snapshot != null)
                     {
                         if (snapshot.getFlags().isSet(apiCtx, Snapshot.SnapshotFlags.DELETE))
                         {
@@ -125,13 +125,13 @@ public class SnapshotStateMachine
      * @return true if the in-progress-snapshots have been changed.
      */
     private boolean abortSnapshot(SnapshotDefinition snapshotDefinition)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         boolean snapshotsChanged = false;
-        if (snapshotDefinition.getResourceDefinition().isSnapshotInProgress(snapshotDefinition.getName()))
+        if (snapshotDefinition.getInProgress(apiCtx))
         {
             errorReporter.logWarning("Aborting snapshot - %s", snapshotDefinition);
-            snapshotDefinition.getResourceDefinition().markSnapshotInProgress(snapshotDefinition.getName(), false);
+            snapshotDefinition.setInCreation(false);
             snapshotsChanged = true;
             closeSnapshotDeploymentEventStream(snapshotDefinition);
         }
@@ -194,8 +194,7 @@ public class SnapshotStateMachine
                 if (noneSuspended)
                 {
                     errorReporter.logInfo("Finished snapshot - %s", snapshotDefinition);
-                    snapshotDefinition.getResourceDefinition().markSnapshotInProgress(
-                        snapshotDefinition.getName(), false);
+                    snapshotDefinition.setInCreation(false);
 
                     snapshotDefinition.getFlags().enableFlags(apiCtx, SnapshotDfnFlags.SUCCESSFUL);
 

@@ -155,7 +155,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             ensureSnapshotsViable(rscDfn);
 
             rscDfn.addSnapshotDfn(peerAccCtx, snapshotDfn);
-            rscDfn.markSnapshotInProgress(snapshotName, true);
+            snapshotDfn.setInCreation(true);
 
             Iterator<VolumeDefinition> vlmDfnIterator = rscDfn.iterateVolumeDfn(peerAccCtx);
             while (vlmDfnIterator.hasNext())
@@ -331,8 +331,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                     snapshot.markDeleted(peerAccCtx);
                 }
 
-                rscDfn.markSnapshotInProgress(snapshotName, true);
-
                 commit();
 
                 updateSatellites(snapshotDfn);
@@ -374,7 +372,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             if (rscDefinition != null)
             {
                 SnapshotDefinition snapshotDfn = rscDefinition.getSnapshotDfn(apiCtx, snapshotName);
-                if (snapshotDfn != null && rscDefinition.isSnapshotInProgress(snapshotName))
+                if (snapshotDfn != null && snapshotDfn.getInProgress(apiCtx))
                 {
                     snapshot = snapshotDfn.getSnapshot(currentPeer.getNode().getName());
                 }

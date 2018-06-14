@@ -54,6 +54,16 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     boolean isDeleted();
 
+    /**
+     * Is the snapshot in creation or deletion?
+     * @param accCtx
+     */
+    boolean getInProgress(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    void setInCreation(boolean inCreationRef)
+        throws SQLException;
+
     SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     SnapshotDfnListItemApi getListItemApiData(AccessContext accCtx) throws AccessDeniedException;
