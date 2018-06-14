@@ -514,7 +514,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             {
                 SatelliteState stltState = nodePeer.getSatelliteState();
                 SatelliteResourceState rscState = stltState.getResourceStates().get(getName());
-                if (rscState.isInUse() != null && rscState.isInUse())
+                if (rscState != null && rscState.isInUse() != null && rscState.isInUse())
                 {
                     rscInUse = rsc;
                 }
