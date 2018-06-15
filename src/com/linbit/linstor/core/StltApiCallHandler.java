@@ -411,6 +411,8 @@ public class StltApiCallHandler
             stltConf.clear();
             stltConf.map().putAll(satelliteProps);
 
+            transMgrProvider.get().commit();
+
             try (
                 FileOutputStream commonFileOut = new FileOutputStream(
                     SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"
