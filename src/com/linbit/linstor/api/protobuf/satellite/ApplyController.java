@@ -31,7 +31,9 @@ public class ApplyController implements ApiCall
     {
         MsgIntControllerData controllerData = MsgIntControllerData.parseDelimitedFrom(msgDataIn);
         apiCallHandler.applyControllerChanges(
-            ProtoMapUtils.asMap(controllerData.getControllerPropsList())
+            ProtoMapUtils.asMap(controllerData.getControllerPropsList()),
+            controllerData.getFullSyncId(),
+            controllerData.getUpdateId()
         );
     }
 }

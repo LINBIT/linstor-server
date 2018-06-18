@@ -274,7 +274,7 @@ public class StltApiCallHandler
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
 
-                applyControllerChanges(satelliteProps);
+                doApplyControllerChanges(satelliteProps);
 
                 for (NodePojo node : nodes)
                 {
@@ -404,9 +404,18 @@ public class StltApiCallHandler
         ));
     }
 
-    public void applyControllerChanges(Map<String, String> satelliteProps)
+    public void applyControllerChanges(
+        Map<String, String> satelliteProps,
+        long fullSyncId,
+        long updateId
+    )
     {
-        try (LockSupport ls = LockSupport.lock(reconfigurationLock.writeLock()))
+        applyChangedData(new ApplyControllerData(satelliteProps, fullSyncId, updateId));
+    }
+
+    private void doApplyControllerChanges(Map<String, String> satelliteProps)
+    {
+        try
         {
             stltConf.clear();
             stltConf.map().putAll(satelliteProps);
@@ -458,8 +467,10 @@ public class StltApiCallHandler
             deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
             deviceManager.controllerUpdateApplied();
         }
-        catch (AccessDeniedException | SQLException ignored)
+        catch (AccessDeniedException | SQLException exc)
         {
+            // TODO: kill connection?
+            errorReporter.reportError(exc);
         }
     }
 
@@ -525,71 +536,74 @@ public class StltApiCallHandler
     {
         synchronized (dataToApply)
         {
-            try (
-                LockSupport ls = LockSupport.lock(
-                    reconfigurationLock.readLock()
-                )
-            )
+            if (data.getFullSyncId() == updateMonitor.getCurrentFullSyncId())
             {
-                if (data.getFullSyncId() == updateMonitor.getCurrentFullSyncId())
+                try
                 {
-                    try
+                    ApplyData overriddenData = dataToApply.put(data.getUpdateId(), data);
+                    if (overriddenData != null)
                     {
-                        ApplyData overriddenData = dataToApply.put(data.getUpdateId(), data);
-                        if (overriddenData != null)
-                        {
-                            errorReporter.reportError(
-                                new ImplementationError(
-                                    "We have overridden data which we did not update yet.",
-                                    null
-                                )
-                            );
-                            // critical error. shutdown and fix this implementation error
-                            applicationLifecycleManager.shutdown(apiCtx);
-                        }
+                        errorReporter.reportError(
+                            new ImplementationError(
+                                "We have overridden data which we did not update yet.",
+                                null
+                            )
+                        );
+                        // critical error. shutdown and fix this implementation error
+                        applicationLifecycleManager.shutdown(apiCtx);
+                    }
 
-                        Entry<Long, ApplyData> nextEntry;
-                        nextEntry = dataToApply.firstEntry();
-                        while (
-                            nextEntry != null &&
-                            nextEntry.getKey() == updateMonitor.getCurrentAwaitedUpdateId()
+                    Entry<Long, ApplyData> nextEntry;
+                    nextEntry = dataToApply.firstEntry();
+                    while (
+                        nextEntry != null &&
+                        nextEntry.getKey() == updateMonitor.getCurrentAwaitedUpdateId()
+                    )
+                    {
+                        errorReporter.logTrace("Applying update " + nextEntry.getKey());
+
+                        ApplyData applyData = nextEntry.getValue();
+                        try (
+                            LockSupport ls = LockSupport.lock(
+                                applyData.needReconfigurationWriteLock() ?
+                                    reconfigurationLock.writeLock() : reconfigurationLock.readLock()
+                            )
                         )
                         {
-                            nextEntry.getValue().applyChange();
-                            errorReporter.logTrace("Applying update " + nextEntry.getKey());
-
-                            dataToApply.remove(nextEntry.getKey());
-                            updateMonitor.awaitedUpdateApplied();
-
-                            nextEntry = dataToApply.firstEntry();
+                            applyData.applyChange();
                         }
-                        for (Entry<Long, ApplyData> remainingDataToApply : dataToApply.entrySet())
-                        {
-                            errorReporter.logDebug("Update " + remainingDataToApply.getKey() +
-                                " queued until update " + updateMonitor.getCurrentAwaitedUpdateId() + " received");
-                        }
+
+                        dataToApply.remove(nextEntry.getKey());
+                        updateMonitor.awaitedUpdateApplied();
+
+                        nextEntry = dataToApply.firstEntry();
                     }
-                    catch (ImplementationError | Exception exc)
+                    for (Entry<Long, ApplyData> remainingDataToApply : dataToApply.entrySet())
                     {
-                        errorReporter.reportError(exc);
-                        try
-                        {
-                            controllerPeerConnector.getLocalNode().getPeer(apiCtx).closeConnection();
-                            // there is nothing else we can safely do.
-                            // skipping the update might cause data-corruption
-                            // not skipping will queue the new data packets but will not apply those as the
-                            // awaitedUpdateId will never increment.
-                        }
-                        catch (AccessDeniedException exc1)
-                        {
-                            errorReporter.reportError(new ImplementationError(exc));
-                        }
+                        errorReporter.logDebug("Update " + remainingDataToApply.getKey() +
+                            " queued until update " + updateMonitor.getCurrentAwaitedUpdateId() + " received");
                     }
                 }
-                else
+                catch (ImplementationError | Exception exc)
                 {
-                    errorReporter.logWarning("Ignoring received outdated update. ");
+                    errorReporter.reportError(exc);
+                    try
+                    {
+                        controllerPeerConnector.getLocalNode().getPeer(apiCtx).closeConnection();
+                        // there is nothing else we can safely do.
+                        // skipping the update might cause data-corruption
+                        // not skipping will queue the new data packets but will not apply those as the
+                        // awaitedUpdateId will never increment.
+                    }
+                    catch (AccessDeniedException exc1)
+                    {
+                        errorReporter.reportError(new ImplementationError(exc));
+                    }
                 }
+            }
+            else
+            {
+                errorReporter.logWarning("Ignoring received outdated update. ");
             }
         }
     }
@@ -632,7 +646,50 @@ public class StltApiCallHandler
         long getFullSyncId();
         long getUpdateId();
 
+        default boolean needReconfigurationWriteLock()
+        {
+            return false;
+        }
+
         void applyChange();
+    }
+
+    private class ApplyControllerData implements ApplyData
+    {
+        private final Map<String, String> satelliteProps;
+        private long fullSyncId;
+        private long updateId;
+
+        ApplyControllerData(Map<String, String> satellitePropsRef, long fullSyncIdRef, long updateIdRef)
+        {
+            satelliteProps = satellitePropsRef;
+            fullSyncId = fullSyncIdRef;
+            updateId = updateIdRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return fullSyncId;
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return updateId;
+        }
+
+        @Override
+        public boolean needReconfigurationWriteLock()
+        {
+            return true;
+        }
+
+        @Override
+        public void applyChange()
+        {
+            doApplyControllerChanges(satelliteProps);
+        }
     }
 
     private class ApplyNodeData implements ApplyData
