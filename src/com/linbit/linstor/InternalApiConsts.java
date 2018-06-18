@@ -59,6 +59,9 @@ public class InternalApiConsts
 
     public static final int EXIT_CODE_NETCOM_ERROR = 20;
 
+    // Number of peer slots for DRBD meta data if not specified in the corresponding property for the resource
+    // definition or system-wide
+    public static final short DEFAULT_PEER_SLOTS = 7;
 
     private InternalApiConsts()
     {

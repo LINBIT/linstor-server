@@ -48,6 +48,11 @@ public class VolumeStateDevManager extends VolumeState
      */
     protected String restoreSnapshotName = null;
 
+    /**
+     * Number of peer slots
+     */
+    private short peerSlots;
+
     public VolumeStateDevManager(VolumeNumber volNrRef)
     {
         vlmNr = volNrRef;
@@ -133,6 +138,16 @@ public class VolumeStateDevManager extends VolumeState
         restoreSnapshotName = restoreSnapshotNameRef;
     }
 
+    public short getPeerSlots()
+    {
+        return peerSlots;
+    }
+
+    public void setPeerSlots(short peerSlotsRef)
+    {
+        this.peerSlots = peerSlotsRef;
+    }
+
     @Override
     public String toString()
     {
@@ -145,6 +160,7 @@ public class VolumeStateDevManager extends VolumeState
         vlmStateString.append("        storPoolVlmName = ").append(getStorVlmName()).append("\n");
         vlmStateString.append("        restoreVlmName  = ").append(getRestoreVlmName()).append("\n");
         vlmStateString.append("        restoreSnapshotName = ").append(getRestoreSnapshotName()).append("\n");
+        vlmStateString.append("        peerSlots       = ").append(getPeerSlots()).append("\n");
         return vlmStateString.toString();
     }
 }

@@ -23,7 +23,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
-import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
@@ -109,10 +108,6 @@ class DrbdDeviceHandler implements DeviceHandler
     private final DeploymentStateTracker deploymentStateTracker;
     private final EventBroker eventBroker;
 
-    // Number of peer slots for DRBD meta data; this should be replaced with a property of the
-    // resource definition or otherwise a system-wide default
-    private static final short FIXME_PEERS = 7;
-
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
     private static final int FIXME_STRIPES = 1;
@@ -182,6 +177,9 @@ class DrbdDeviceHandler implements DeviceHandler
     private ResourceState fillResourceState(final Resource rsc, final ResourceState rscState)
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
+        String peerSlotsProp = rsc.getProps(wrkCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+        short peerSlots = peerSlotsProp == null ? InternalApiConsts.DEFAULT_PEER_SLOTS : Short.valueOf(peerSlotsProp);
+
         // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
         //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
         //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
@@ -216,6 +214,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
                     vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE));
                 vlmState.setMinorNr(vlmDfn.getMinorNr(wrkCtx));
+                vlmState.setPeerSlots(peerSlots);
 
                 rscState.setRequiresAdjust(rscState.requiresAdjust() | vlmState.isMarkedForDelete());
             }
@@ -739,7 +738,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 long netSize = vlmDfn.getVolumeSize(wrkCtx);
                 vlmState.setNetSize(netSize);
                 long expectedSize = drbdMd.getGrossSize(
-                    netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
+                    netSize, vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
                 );
 
                 try
@@ -862,7 +861,7 @@ class DrbdDeviceHandler implements DeviceHandler
             try
             {
                 vlmState.setGrossSize(drbdMd.getGrossSize(
-                    vlmState.getNetSize(), FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
+                    vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
                 ));
                 vlmState.getDriver().createVolume(
                     vlmState.getStorVlmName(),
@@ -961,7 +960,7 @@ class DrbdDeviceHandler implements DeviceHandler
         throws ExtCmdFailedException
     {
         ResourceName rscName = rscDfn.getName();
-        drbdUtils.createMd(rscName, vlmState.getVlmNr(), FIXME_PEERS);
+        drbdUtils.createMd(rscName, vlmState.getVlmNr(), vlmState.getPeerSlots());
     }
 
     private void createResource(

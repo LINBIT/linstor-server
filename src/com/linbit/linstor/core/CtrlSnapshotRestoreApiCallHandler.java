@@ -30,6 +30,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
@@ -67,6 +68,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef
@@ -81,6 +83,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef,
+            stltConfRef,
             resourceDataFactoryRef,
             volumeDataFactoryRef
         );

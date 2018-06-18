@@ -97,6 +97,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         CtrlObjectFactories objectFactories,
+        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
@@ -115,6 +116,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef,
+            stltConfRef,
             resourceDataFactoryRef,
             volumeDataFactoryRef
         );

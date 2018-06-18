@@ -1,10 +1,12 @@
 package com.linbit.linstor.core;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeIdAlloc;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataFactory;
@@ -19,6 +21,9 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -35,6 +40,7 @@ import java.util.List;
  */
 abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
 {
+    private final Props stltConf;
     private final ResourceDataFactory resourceDataFactory;
     private final VolumeDataFactory volumeDataFactory;
 
@@ -47,6 +53,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef
     )
@@ -63,6 +70,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             whitelistPropsRef
         );
 
+        stltConf = stltConfRef;
         resourceDataFactory = resourceDataFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
     }
@@ -119,6 +127,9 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         ResourceData rsc;
         try
         {
+            checkPeerSlotsForNewPeer(rscDfn);
+            short peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn);
+
             rsc = resourceDataFactory.getInstance(
                 peerAccCtx,
                 rscDfn,
@@ -128,6 +139,8 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
                 true, // persist this entry
                 true // throw exception if the entry exists
             );
+
+            rsc.getProps(peerAccCtx).setProp(ApiConsts.KEY_PEER_SLOTS, Integer.toString(peerSlots));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -152,7 +165,63 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_EXISTS_RSC
             );
         }
+        catch (InvalidValueException | InvalidKeyException exc)
+        {
+            throw asImplError(exc);
+        }
         return rsc;
+    }
+
+    private void checkPeerSlotsForNewPeer(ResourceDefinitionData rscDfn)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        int resourceCount = rscDfn.getResourceCount();
+        Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx);
+        while (rscIter.hasNext())
+        {
+            Resource otherRsc = rscIter.next();
+
+            String peerSlotsProp = otherRsc.getProps(peerAccCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+            short peerSlots = peerSlotsProp == null ?
+                InternalApiConsts.DEFAULT_PEER_SLOTS :
+                Short.valueOf(peerSlotsProp);
+
+            if (peerSlots < resourceCount)
+            {
+                throw asExc(
+                    null,
+                    "Resource on node " + otherRsc.getAssignedNode().getName().displayValue +
+                        " has insufficient peer slots to add another peer",
+                    ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS
+                );
+            }
+        }
+    }
+
+    private short getAndCheckPeerSlotsForNewResource(ResourceDefinitionData rscDfn)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        int resourceCount = rscDfn.getResourceCount();
+
+        String peerSlotsNewResourceProp = new PriorityProps(rscDfn.getProps(peerAccCtx), stltConf)
+            .getProp(ApiConsts.KEY_PEER_SLOTS_NEW_RESOURCE);
+        short peerSlots = peerSlotsNewResourceProp == null ?
+            InternalApiConsts.DEFAULT_PEER_SLOTS :
+            Short.valueOf(peerSlotsNewResourceProp);
+
+        if (peerSlots < resourceCount)
+        {
+            throw asExc(
+                null,
+                "Insufficient peer slots to create resource",
+                null,
+                (peerSlotsNewResourceProp == null ? "Default" : "Configured") +
+                    " peer slot count " + peerSlots + " too low",
+                "Configure a higher peer slot count on the resource definition or controller",
+                ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS
+            );
+        }
+        return peerSlots;
     }
 
     protected VolumeData createVolume(
