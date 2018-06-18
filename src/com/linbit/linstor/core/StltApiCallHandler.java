@@ -556,10 +556,17 @@ public class StltApiCallHandler
                         )
                         {
                             nextEntry.getValue().applyChange();
+                            errorReporter.logTrace("Applying update " + nextEntry.getKey());
+
                             dataToApply.remove(nextEntry.getKey());
                             updateMonitor.awaitedUpdateApplied();
 
                             nextEntry = dataToApply.firstEntry();
+                        }
+                        for (Entry<Long, ApplyData> remainingDataToApply : dataToApply.entrySet())
+                        {
+                            errorReporter.logDebug("Update " + remainingDataToApply.getKey() +
+                                " queued until update " + updateMonitor.getCurrentAwaitedUpdateId() + " received");
                         }
                     }
                     catch (ImplementationError | Exception exc)
