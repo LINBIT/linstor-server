@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -21,13 +22,15 @@ public interface StorageDriverKind
 
     /**
      * Constructs a storage driver.
+     * @param stltCfgAccessor
      *
      * @return The new storage driver instance
      */
     StorageDriver makeStorageDriver(
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
-        CoreTimer timer
+        CoreTimer timer,
+        StltConfigAccessor stltCfgAccessor
     );
 
     /**

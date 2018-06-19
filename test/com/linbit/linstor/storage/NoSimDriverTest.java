@@ -16,6 +16,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -57,9 +58,13 @@ public abstract class NoSimDriverTest
     protected boolean noCleanUp;
     protected boolean inCleanUp = false;
 
+    protected boolean useDmStats = false;
+
     private final Path baseMountPath = Paths.get("/mnt", "linstorTests");
 
     private boolean baseMountPathExisted;
+
+    private StltConfigAccessor stltCfgAccessor;
 
     public NoSimDriverTest(StorageDriverKind driverKind) throws IOException
     {
@@ -67,8 +72,17 @@ public abstract class NoSimDriverTest
         fileSystemWatch = new FileSystemWatch(errorReporter);
         timer = new CoreTimerImpl();
 
+        stltCfgAccessor = new StltConfigAccessor(null)
+        {
+            @Override
+            public boolean useDmStats()
+            {
+                return useDmStats;
+            }
+        };
+
         extCommand = new DebugExtCmd(timer, errorReporter);
-        driver = driverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer);
+        driver = driverKind.makeStorageDriver(errorReporter, fileSystemWatch, timer, stltCfgAccessor);
     }
 
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")

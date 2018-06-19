@@ -22,6 +22,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.linstor.timer.CoreTimer;
@@ -44,18 +45,21 @@ public abstract class AbsStorageDriver implements StorageDriver
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
+    protected StltConfigAccessor stltCfgAccessor;
 
     public AbsStorageDriver(
         ErrorReporter errorReporterRef,
         FileSystemWatch fileSystemWatchRef,
         CoreTimer timerRef,
-        StorageDriverKind storageDriverKindRef
+        StorageDriverKind storageDriverKindRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         errorReporter = errorReporterRef;
         fileSystemWatch = fileSystemWatchRef;
         timer = timerRef;
         storageDriverKind = storageDriverKindRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     @Override

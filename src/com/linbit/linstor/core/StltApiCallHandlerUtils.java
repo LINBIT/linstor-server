@@ -31,6 +31,7 @@ public class StltApiCallHandlerUtils
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final StltConfigAccessor stltCfgAccessor;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -40,7 +41,8 @@ public class StltApiCallHandlerUtils
         CoreTimer timerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -50,6 +52,7 @@ public class StltApiCallHandlerUtils
         controllerPeerConnector = controllerPeerConnectorRef;
         nodesMapLock = nodesMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     public Map<StorPool, Long> getFreeSpace() throws StorageException
@@ -66,7 +69,13 @@ public class StltApiCallHandlerUtils
 
             for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
-                StorageDriver storageDriver = storPool.getDriver(apiCtx, errorReporter, fileSystemWatch, timer);
+                StorageDriver storageDriver = storPool.getDriver(
+                    apiCtx,
+                    errorReporter,
+                    fileSystemWatch,
+                    timer,
+                    stltCfgAccessor
+                );
                 if (storageDriver != null)
                 {
                     storPool.reconfigureStorageDriver(storageDriver);

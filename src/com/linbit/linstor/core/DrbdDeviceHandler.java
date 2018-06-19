@@ -118,6 +118,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
     // DRBD configuration file suffix; this should be replaced by a meaningful constant
     private static final String DRBD_CONFIG_SUFFIX = ".res";
+    private StltConfigAccessor stltCfgAccessor;
 
     @Inject
     DrbdDeviceHandler(
@@ -134,7 +135,8 @@ class DrbdDeviceHandler implements DeviceHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         WhitelistProps whitelistPropsRef,
         DeploymentStateTracker deploymentStateTrackerRef,
-        EventBroker eventBrokerRef
+        EventBroker eventBrokerRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         errLog = errLogRef;
@@ -151,6 +153,7 @@ class DrbdDeviceHandler implements DeviceHandler
         whitelistProps = whitelistPropsRef;
         deploymentStateTracker = deploymentStateTrackerRef;
         eventBroker = eventBrokerRef;
+        stltCfgAccessor = stltCfgAccessorRef;
         drbdMd = new MetaData();
     }
 
@@ -648,7 +651,7 @@ class DrbdDeviceHandler implements DeviceHandler
             StorPool storagePool = localNode.getStorPool(wrkCtx, spName);
             if (storagePool != null)
             {
-                driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer);
+                driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor);
                 if (driver != null)
                 {
                     storagePool.reconfigureStorageDriver(driver);
@@ -1485,7 +1488,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         deleteVolumeSnapshot(
                             snapshotVolume,
                             snapshotName,
-                            (VolumeStateDevManager) vlmState
+                            vlmState
                         );
                     }
                     catch (VolumeException vlmExc)
@@ -1649,7 +1652,13 @@ class DrbdDeviceHandler implements DeviceHandler
             StorPool storagePool = snapshotVolume.getStorPool(wrkCtx);
             if (storagePool != null)
             {
-                StorageDriver driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer);
+                StorageDriver driver = storagePool.getDriver(
+                    wrkCtx,
+                    errLog,
+                    fileSystemWatch,
+                    timer,
+                    stltCfgAccessor
+                );
                 if (driver != null)
                 {
                     storagePool.reconfigureStorageDriver(driver);

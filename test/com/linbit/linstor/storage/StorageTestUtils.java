@@ -34,6 +34,7 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 
@@ -82,11 +83,15 @@ public class StorageTestUtils
 
         ErrorReporter errRep = new EmptyErrorReporter();
         CoreTimer timer = new CoreTimerImpl();
+        StltConfigAccessor mockedStltCfgAccessor = Mockito.mock(StltConfigAccessor.class);
+        Mockito.when(mockedStltCfgAccessor.useDmStats()).thenReturn(false);
+
 
         driver = driverKind.makeStorageDriver(
             errRep,
             Mockito.mock(FileSystemWatch.class),
-            timer
+            timer,
+            mockedStltCfgAccessor
         );
     }
 

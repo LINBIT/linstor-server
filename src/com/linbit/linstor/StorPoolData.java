@@ -6,6 +6,7 @@ import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
 import com.linbit.ImplementationError;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -141,7 +142,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         AccessContext accCtx,
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
-        CoreTimer timer
+        CoreTimer timer,
+        StltConfigAccessor stltCfgAccessor
     )
         throws AccessDeniedException
     {
@@ -154,7 +156,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 storageDriver = storageDriverKind.makeStorageDriver(
                     errorReporter,
                     fileSystemWatch,
-                    timer
+                    timer,
+                    stltCfgAccessor
                 );
             }
         }

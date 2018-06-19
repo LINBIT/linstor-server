@@ -3,9 +3,12 @@ package com.linbit.linstor.storage;
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -36,10 +39,11 @@ public class LvmDriver extends AbsStorageDriver
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
         CoreTimer timer,
-        StorageDriverKind storageDriverKind
+        StorageDriverKind storageDriverKind,
+        StltConfigAccessor stltCfgAccessor
     )
     {
-        super(errorReporter, fileSystemWatch, timer, storageDriverKind);
+        super(errorReporter, fileSystemWatch, timer, storageDriverKind, stltCfgAccessor);
     }
 
     @Override
@@ -69,6 +73,15 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
+    public String createVolume(String identifier, long size, String cryptKey)
+        throws StorageException, MaxSizeException, MinSizeException
+    {
+        String devPath = super.createVolume(identifier, size, cryptKey);
+        callDmStat("dmstats", "create", devPath);
+        return devPath;
+    }
+
+    @Override
     protected String[] getDeleteCommand(String identifier)
     {
         return new String[]
@@ -77,6 +90,42 @@ public class LvmDriver extends AbsStorageDriver
             "-f", // skip the "are you sure?"
             volumeGroup + File.separator + identifier
         };
+    }
+
+    @Override
+    public void deleteVolume(String identifier, boolean isEncrypted) throws StorageException
+    {
+        final VolumeInfo info = getVolumeInfo(identifier);
+        callDmStat("dmstats", "delete", info.getPath(), "--allregions");
+        super.deleteVolume(identifier, isEncrypted);
+    }
+
+    private void callDmStat(String... command) throws StorageException
+    {
+        if (stltCfgAccessor.useDmStats())
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            OutputData output;
+            try
+            {
+                output = extCommand.exec(command);
+            }
+            catch (ChildProcessTimeoutException | IOException exc)
+            {
+                throw new StorageException(
+                    "Failed to call dmstat",
+                    null,
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(command, " ")),
+                    exc
+                );
+            }
+
+            checkExitCode(output, command);
+        }
     }
 
     /**

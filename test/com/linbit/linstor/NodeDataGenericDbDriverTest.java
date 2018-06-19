@@ -674,7 +674,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
-                StorageDriver storageDriver = storPool.getDriver(SYS_CTX, null, null, null);
+                StorageDriver storageDriver = storPool.getDriver(SYS_CTX, null, null, null, null);
                 assertNull(storageDriver);
                 // in controller storDriver HAS to be null (as we are testing database, we
                 // have to be testing the controller)

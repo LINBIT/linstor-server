@@ -11,6 +11,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -36,10 +37,11 @@ public class LvmThinDriver extends LvmDriver
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
         CoreTimer timer,
-        StorageDriverKind storageDriverKind
+        StorageDriverKind storageDriverKind,
+        StltConfigAccessor stltCfgAccessor
     )
     {
-        super(errorReporter, fileSystemWatch, timer, storageDriverKind);
+        super(errorReporter, fileSystemWatch, timer, storageDriverKind, stltCfgAccessor);
     }
 
     @Override

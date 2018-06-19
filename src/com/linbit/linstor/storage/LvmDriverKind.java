@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -21,10 +22,11 @@ public class LvmDriverKind implements StorageDriverKind
     public StorageDriver makeStorageDriver(
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
-        CoreTimer timer
+        CoreTimer timer,
+        StltConfigAccessor stltCfgAccessor
     )
     {
-        return new LvmDriver(errorReporter, fileSystemWatch, timer, this);
+        return new LvmDriver(errorReporter, fileSystemWatch, timer, this, stltCfgAccessor);
     }
 
     @Override
