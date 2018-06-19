@@ -178,4 +178,15 @@ public class CtrlWatchApiCallHandler
         }
         return apiCallRc;
     }
+
+    public ApiCallRc deleteWatch(int peerWatchId)
+    {
+        eventBroker.deleteWatch(peer.getId(), peerWatchId);
+
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        apiCallRc.addEntry("Watch deleted", ApiConsts.MASK_DEL | ApiConsts.DELETED);
+
+        return apiCallRc;
+    }
 }

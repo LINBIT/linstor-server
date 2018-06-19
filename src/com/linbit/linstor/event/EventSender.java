@@ -107,6 +107,19 @@ public class EventSender
         }
     }
 
+    public void deleteWatch(String peerId, int peerWatchId)
+    {
+        watchAndStreamLock.lock();
+        try
+        {
+            watchStore.removeWatchForPeerAndId(peerId, peerWatchId);
+        }
+        finally
+        {
+            watchAndStreamLock.unlock();
+        }
+    }
+
     public void connectionClosed(Peer peer)
     {
         watchAndStreamLock.lock();

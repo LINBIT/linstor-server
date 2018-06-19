@@ -45,6 +45,18 @@ public class EventBroker
         );
     }
 
+    public void deleteWatch(String peerId, int peerWatchId)
+    {
+        errorReporter.logTrace("Submitting 'delete watch' event");
+        workQueue.submit(() ->
+            {
+                errorReporter.logTrace("Event 'delete watch' start");
+                eventSender.deleteWatch(peerId, peerWatchId);
+                errorReporter.logTrace("Event 'delete watch' end");
+            }
+        );
+    }
+
     public void connectionClosed(Peer peer)
     {
         errorReporter.logTrace("Submitting 'connection closed' event: %s", peer);

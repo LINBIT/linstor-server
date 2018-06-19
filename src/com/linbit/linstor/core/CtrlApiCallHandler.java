@@ -1535,6 +1535,13 @@ public class CtrlApiCallHandler
         );
     }
 
+    public ApiCallRc deleteWatch(int peerWatchId)
+    {
+        return watchApiCallHandler.deleteWatch(
+            peerWatchId
+        );
+    }
+
     public void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
     {
         try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
