@@ -140,7 +140,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
                 true // throw exception if the entry exists
             );
 
-            rsc.getProps(peerAccCtx).setProp(ApiConsts.KEY_PEER_SLOTS, Integer.toString(peerSlots));
+            rsc.getProps(peerAccCtx).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));
         }
         catch (AccessDeniedException accDeniedExc)
         {
