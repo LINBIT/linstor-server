@@ -1,9 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.InvalidNameException;
-import com.linbit.GenericName;
-
 import com.linbit.Checks;
+import com.linbit.GenericName;
 
 /**
  * Valid name of a linstor resource

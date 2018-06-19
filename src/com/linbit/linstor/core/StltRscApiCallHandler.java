@@ -49,6 +49,9 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.drbdstate.DrbdEventPublisher;
+import com.linbit.linstor.drbdstate.DrbdResource;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -94,6 +97,8 @@ class StltRscApiCallHandler
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
+    private final DrbdStateTracker drbdStateTracker;
+    private DrbdEventPublisher drbdEventPublisher;
 
     @Inject
     StltRscApiCallHandler(
@@ -115,7 +120,9 @@ class StltRscApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
-        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef
+        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
+        DrbdStateTracker drbdStateTrackerRef,
+        DrbdEventPublisher drbdEventPublisherRef
     )
     {
         errorReporter = errorReporterRef;
@@ -137,6 +144,8 @@ class StltRscApiCallHandler
         stltSecObjs = stltSecObjsRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
+        drbdStateTracker = drbdStateTrackerRef;
+        drbdEventPublisher = drbdEventPublisherRef;
     }
 
     /**
@@ -659,6 +668,33 @@ class StltRscApiCallHandler
 
             devMgrNotifications.putAll(createdRscMap);
             devMgrNotifications.putAll(updatedRscMap);
+
+            {
+                /*
+                 *  in rare cases (e.g. migration) it is possible that a DRBD-resource already
+                 *  exists and we receive the "create drbd resource" from the "events2"-stream
+                 *  before the controller tells us about that resource.
+                 *
+                 *  In this case we have to update that DrbdResource that from now on we know
+                 *  it and are interested in the changes, and send the controller the initial
+                 *  "resource created" event.
+                 */
+
+                /*
+                 * In cases where this resource has nothing to do with DRBD (or is not deployed yet)
+                 * the drbdStateTracker will simply return null and this block results in a no-op.
+                 *
+                 * If later drbd fires the "create drbd resource" in its "events2" stream, there is
+                 * also a check if we already know this resource, so that way is also covered.
+                 */
+
+                DrbdResource drbdResource = drbdStateTracker.getResource(rscRawData.getName());
+                if (drbdResource != null && !drbdResource.isKnownByLinstor())
+                {
+                    drbdResource.setKnownByLinstor(true);
+                    drbdEventPublisher.resourceCreated(drbdResource);
+                }
+            }
 
             deviceManager.rscUpdateApplied(devMgrNotifications);
         }

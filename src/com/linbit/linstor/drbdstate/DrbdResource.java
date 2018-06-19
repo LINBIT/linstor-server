@@ -2,8 +2,10 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -65,23 +67,44 @@ public class DrbdResource
     }
 
     protected final ResourceName resName;
+    protected final String resNameStr;
     protected Role resRole;
     protected Boolean suspendedUser;
     private final Map<String, DrbdConnection> connList;
     private final Map<VolumeNumber, DrbdVolume> volList;
+    protected boolean isLinstorDrbdResource;
 
-    protected DrbdResource(ResourceName name)
+    protected DrbdResource(String nameStr)
     {
-        resName = name;
+        resName = asRscName(nameStr);
+        resNameStr = nameStr;
         resRole = Role.UNKNOWN;
         suspendedUser = null;
         connList = new TreeMap<>();
         volList = new TreeMap<>();
     }
 
-    public ResourceName getName()
+    private ResourceName asRscName(String nameStr)
+    {
+        ResourceName rscName = null;
+        try
+        {
+            rscName = new ResourceName(nameStr);
+        }
+        catch (InvalidNameException ignored)
+        {
+        }
+        return rscName;
+    }
+
+    public ResourceName getResName()
     {
         return resName;
+    }
+
+    public String getNameString()
+    {
+        return resNameStr;
     }
 
     public Role getRole()
@@ -94,7 +117,10 @@ public class DrbdResource
         return suspendedUser;
     }
 
-    protected static DrbdResource newFromProps(Map<String, String> props)
+    protected static DrbdResource newFromProps(
+        Map<String, String> props,
+        ResourceDefinitionMap rscDfnMap
+    )
         throws EventsSourceException
     {
         String name = props.get(PROP_KEY_RES_NAME);
@@ -104,21 +130,19 @@ public class DrbdResource
                 "Create resource event without a resource name"
             );
         }
-
-        DrbdResource newResource;
-        try
+        DrbdResource drbdResource = new DrbdResource(name);
+        if (drbdResource.resName != null)
         {
-            newResource = new DrbdResource(new ResourceName(name));
+            ResourceDefinition rscDfn = rscDfnMap.get(drbdResource.resName);
+            if (rscDfn != null)
+            {
+                drbdResource.setKnownByLinstor(
+                    rscDfn.getName().displayValue
+                        .equals(name)
+                );
+            }
         }
-        catch (InvalidNameException exc)
-        {
-            throw new EventsSourceException(
-                "Create resource event with an invalid resource name",
-                exc
-            );
-        }
-
-        return newResource;
+        return drbdResource;
     }
 
     protected void update(Map<String, String> props, ResourceObserver obs)
@@ -241,5 +265,15 @@ public class DrbdResource
             removedVol = volList.remove(volNr);
         }
         return removedVol;
+    }
+
+    public boolean isKnownByLinstor()
+    {
+        return isLinstorDrbdResource;
+    }
+
+    public void setKnownByLinstor(boolean knownByLinstor)
+    {
+        isLinstorDrbdResource = knownByLinstor;
     }
 }

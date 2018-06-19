@@ -120,13 +120,19 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
     @Override
     public void resourceCreated(DrbdResource resource)
     {
-        eventBroker.openEventStream(resourceStateEventIdentifier(resource));
+        if (resource.isKnownByLinstor())
+        {
+            eventBroker.openEventStream(resourceStateEventIdentifier(resource));
+        }
     }
 
     @Override
     public void resourceDestroyed(DrbdResource resource)
     {
-        eventBroker.closeEventStream(resourceStateEventIdentifier(resource));
+        if (resource.isKnownByLinstor())
+        {
+            eventBroker.closeEventStream(resourceStateEventIdentifier(resource));
+        }
     }
 
     @Override
@@ -134,7 +140,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
         DrbdResource resource, DrbdConnection connection, DrbdVolume volume
     )
     {
-        if (connection == null)
+        if (connection == null && resource.isKnownByLinstor())
         {
             eventBroker.openEventStream(volumeDiskStateEventIdentifier(resource, volume));
         }
@@ -147,7 +153,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
         DrbdVolume volume
     )
     {
-        if (connection == null)
+        if (resource.isKnownByLinstor())
         {
             eventBroker.closeEventStream(volumeDiskStateEventIdentifier(resource, volume));
         }
@@ -171,8 +177,11 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
         DrbdVolume.DiskState current
     )
     {
-        eventBroker.triggerEvent(volumeDiskStateEventIdentifier(resource, volume));
-        eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+        if (resource.isKnownByLinstor())
+        {
+            eventBroker.triggerEvent(volumeDiskStateEventIdentifier(resource, volume));
+            eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+        }
     }
 
     @Override
@@ -184,20 +193,26 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
         DrbdVolume.ReplState current
     )
     {
-        eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+        if (resource.isKnownByLinstor())
+        {
+            eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+        }
     }
 
     @Override
     public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
     {
-        eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+        if (resource.isKnownByLinstor())
+        {
+            eventBroker.triggerEvent(resourceStateEventIdentifier(resource));
+        }
     }
 
     private EventIdentifier volumeDiskStateEventIdentifier(DrbdResource resource, DrbdVolume volume)
     {
         return EventIdentifier.volumeDefinition(
             ApiConsts.EVENT_VOLUME_DISK_STATE,
-            resource.getName(),
+            resource.getResName(),
             volume.getVolNr()
         );
     }
@@ -206,7 +221,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
     {
         return EventIdentifier.resourceDefinition(
             ApiConsts.EVENT_RESOURCE_STATE,
-            resource.getName()
+            resource.getResName()
         );
     }
 }

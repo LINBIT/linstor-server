@@ -16,6 +16,7 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -61,7 +62,8 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     @Inject
     public DrbdEventService(
         final ErrorReporter errorReporterRef,
-        final DrbdStateTracker trackerRef
+        final DrbdStateTracker trackerRef,
+        final CoreModule.ResourceDefinitionMap rscDfnMap
     )
     {
         try
@@ -72,7 +74,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             running = false;
             errorReporter = errorReporterRef;
             tracker = trackerRef;
-            eventsMonitor = new DrbdEventsMonitor(trackerRef, errorReporterRef);
+            eventsMonitor = new DrbdEventsMonitor(trackerRef, errorReporterRef, rscDfnMap);
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -109,7 +111,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 {
                     errorReporter.logTrace("ExceptionEvent in DRBD 'events2':");
                     errorReporter.reportError(((ExceptionEvent) event).exc);
-                // FIXME: Report the exception to the controller
+                    // FIXME: Report the exception to the controller
                 }
                 else
                 if (event instanceof PoisonEvent)

@@ -159,7 +159,7 @@ public class DrbdStateTracker
     {
         synchronized (resList)
         {
-            resList.put(resource.resName.displayValue, resource);
+            resList.put(resource.getNameString(), resource);
         }
     }
 

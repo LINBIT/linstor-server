@@ -169,7 +169,7 @@ class DrbdDeviceHandler implements DeviceHandler
         for (VolumeNumber vlmNr : vlmNrs)
         {
             VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr);
-            vlmState.setStorVlmName(computeVlmName(rscDfn.getName(), vlmNr));
+            vlmState.setStorVlmName(computeVlmName(rscDfn, vlmNr));
             vlmStateMap.put(vlmNr, vlmState);
         }
         rscState.setVolumes(vlmStateMap);
@@ -195,7 +195,6 @@ class DrbdDeviceHandler implements DeviceHandler
                 Volume vlm = vlmIter.next();
                 VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                 VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-
 
                 VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(vlmNr);
 
@@ -224,6 +223,26 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         return rscState;
+    }
+
+    private String computeVlmName(ResourceDefinition rscDfn, VolumeNumber vlmNr)
+    {
+        String identifier;
+        try
+        {
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmNr);
+            String overrideId = vlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+
+            identifier =
+                overrideId != null ?
+                overrideId :
+                computeVlmName(rscDfn.getName(), vlmNr);
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return identifier;
     }
 
     private String computeVlmName(ResourceName rscName, VolumeNumber vlmNr)

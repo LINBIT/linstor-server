@@ -3,6 +3,7 @@ package com.linbit.linstor.drbdstate;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -37,11 +38,17 @@ public class DrbdEventsMonitor
     private boolean stateAvailable = false;
 
     private final ErrorReporter errorReporter;
+    private final ResourceDefinitionMap rscDfnMap;
 
-    public DrbdEventsMonitor(DrbdStateTracker trackerRef, ErrorReporter errorReporterRef)
+    public DrbdEventsMonitor(
+        DrbdStateTracker trackerRef,
+        ErrorReporter errorReporterRef,
+        ResourceDefinitionMap rscDfnMapRef
+    )
     {
         tracker = trackerRef;
         errorReporter = errorReporterRef;
+        rscDfnMap = rscDfnMapRef;
     }
 
     public void receiveEvent(String eventString) throws EventsSourceException
@@ -207,7 +214,7 @@ public class DrbdEventsMonitor
 
     private void createResource(Map<String, String> props) throws EventsSourceException
     {
-        DrbdResource resource = DrbdResource.newFromProps(props);
+        DrbdResource resource = DrbdResource.newFromProps(props, rscDfnMap);
         tracker.putResource(resource);
         tracker.multiplexer.resourceCreated(resource);
         resource.update(props, tracker.multiplexer);
