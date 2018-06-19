@@ -37,7 +37,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public boolean volumesExists(String identifier)
+    public boolean volumesExists(String identifier, AbsStorageDriver.VolumeType volumeType)
     {
         return true;
     }

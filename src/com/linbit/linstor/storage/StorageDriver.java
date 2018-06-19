@@ -67,9 +67,10 @@ public interface StorageDriver
      * Checks wheter a volume exists.
      *
      * @param identifier Unique name of the volume
+     * @param volumeType
      * @return true if exists, otherwise false
      */
-    boolean volumesExists(String identifier) throws StorageException;
+    boolean volumesExists(String identifier, AbsStorageDriver.VolumeType volumeType) throws StorageException;
 
     /**
      * Checks whether a volume exists and has the appropriate size

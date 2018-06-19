@@ -305,10 +305,10 @@ public abstract class AbsStorageDriver implements StorageDriver
             // probably the volume was not started anyways. at least we tried
         }
 
-        deleteStorageVolume(getDeleteCommand(identifier), identifier, "volume");
+        deleteStorageVolume(getDeleteCommand(identifier), identifier, VolumeType.VOLUME);
     }
 
-    private void deleteStorageVolume(String[] command, String identifier, String volumeType)
+    private void deleteStorageVolume(String[] command, String identifier, VolumeType volumeType)
         throws StorageException
     {
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
@@ -324,7 +324,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             catch (ChildProcessTimeoutException | IOException exc)
             {
                 throw new StorageException(
-                    "Failed to delete " + volumeType,
+                    "Failed to delete " + volumeType.getName(),
                     String.format("Failed to delete volume [%s]", identifier),
                     (exc instanceof ChildProcessTimeoutException) ?
                         "External command timed out" :
@@ -341,13 +341,14 @@ public abstract class AbsStorageDriver implements StorageDriver
                 // we will just verify if the volume is still available.
                 // if it is, we shout, if not, we say everything is fine
 
-                if (volumesExists(identifier))
+                if (volumesExists(identifier, volumeType))
                 {
                     throw new StorageException(
                         String.format("Volume [%s] still exists.", identifier),
-                        String.format("Failed to delete %s [%s].", volumeType, identifier),
+                        String.format("Failed to delete %s [%s].", volumeType.getName(), identifier),
                         null,
-                        String.format("Manual deletion of %s [%s] may be necessary.", volumeType, identifier),
+                        String.format("Manual deletion of %s [%s] may be necessary.",
+                            volumeType.getName(), identifier),
                         null
                     );
                 }
@@ -369,7 +370,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (IOException exc)
         {
             throw new StorageException(
-                "Failed to verify " + volumeType + " deletion",
+                "Failed to verify " + volumeType.getName() + " deletion",
                 String.format("Failed to verify deletion of volume [%s]", identifier),
                 "IOException occured during registering file watch event listener",
                 null,
@@ -380,7 +381,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (FsWatchTimeoutException exc)
         {
             throw new StorageException(
-                "Failed to verify " + volumeType + " deletion",
+                "Failed to verify " + volumeType.getName() + " deletion",
                 String.format("Failed to verify deletion of volume [%s]", identifier),
                 "Registerd file watch event listener timed out",
                 null,
@@ -410,7 +411,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (InterruptedException exc)
         {
             throw new StorageException(
-                "Failed to verify " + volumeType + " deletion",
+                "Failed to verify " + volumeType.getName() + " deletion",
                 String.format("Failed to verify deletion of volume [%s]", identifier),
                 "Waiting for device deletion interrupted",
                 null,
@@ -622,7 +623,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         deleteStorageVolume(
             getDeleteSnapshotCommand(volumeIdentifier, snapshotName),
             getSnapshotIdentifier(volumeIdentifier, snapshotName),
-            "snapshot volume"
+            VolumeType.SNAPSHOT
         );
     }
 
@@ -999,4 +1000,22 @@ public abstract class AbsStorageDriver implements StorageDriver
         throws StorageException;
 
     protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);
+
+    protected enum VolumeType
+    {
+        VOLUME("volume"),
+        SNAPSHOT("snapshot volume");
+
+        private final String name;
+
+        VolumeType(String nameRef)
+        {
+            name = nameRef;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+    }
 }

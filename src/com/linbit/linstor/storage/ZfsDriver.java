@@ -53,7 +53,7 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    public boolean volumesExists(String identifier) throws StorageException
+    public boolean volumesExists(String identifier, VolumeType volumeType) throws StorageException
     {
         boolean exists;
 
@@ -63,7 +63,7 @@ public class ZfsDriver extends AbsStorageDriver
                 zfsCommand,
                 "list",
                 "-Hp",
-                "-t", "volume", // only volume types
+                "-t", volumeType == VolumeType.VOLUME ? "volume" : "snapshot", // specify type
                 pool + File.separator + identifier
             };
 

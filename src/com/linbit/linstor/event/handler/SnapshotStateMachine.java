@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -72,7 +73,9 @@ public class SnapshotStateMachine
 
             if (rscDfn != null)
             {
-                for (SnapshotDefinition snapshotDefinition : rscDfn.getSnapshotDfns(apiCtx))
+                // Shallow copy the collection because elements may be removed from the original collection
+                List<SnapshotDefinition> snapshotDefinitions = new ArrayList<>(rscDfn.getSnapshotDfns(apiCtx));
+                for (SnapshotDefinition snapshotDefinition : snapshotDefinitions)
                 {
                     Snapshot snapshot = snapshotDefinition.getSnapshot(apiCtx, eventIdentifier.getNodeName());
                     if (snapshotDefinition.getInProgress(apiCtx) && snapshot != null)

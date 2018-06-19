@@ -43,21 +43,24 @@ public class InProgressSnapshotEventHandler implements EventHandler
             EventInProgressSnapshotOuterClass.EventInProgressSnapshot inProgressSnapshot =
                 EventInProgressSnapshotOuterClass.EventInProgressSnapshot.parseDelimitedFrom(eventDataIn);
 
-            SnapshotState snapshotState = new SnapshotState(
-                eventIdentifier.getSnapshotName(),
-                inProgressSnapshot.getSuspended(),
-                inProgressSnapshot.getSnapshotTaken(),
-                inProgressSnapshot.getDeleted()
-            );
-
-            satelliteStateHelper.onSatelliteState(
-                eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.setSnapshotState(
-                    eventIdentifier.getResourceName(),
+            if (inProgressSnapshot != null)
+            {
+                SnapshotState snapshotState = new SnapshotState(
                     eventIdentifier.getSnapshotName(),
-                    snapshotState
-                )
-            );
+                    inProgressSnapshot.getSuspended(),
+                    inProgressSnapshot.getSnapshotTaken(),
+                    inProgressSnapshot.getDeleted()
+                );
+
+                satelliteStateHelper.onSatelliteState(
+                    eventIdentifier.getNodeName(),
+                    satelliteState -> satelliteState.setSnapshotState(
+                        eventIdentifier.getResourceName(),
+                        eventIdentifier.getSnapshotName(),
+                        snapshotState
+                    )
+                );
+            }
         }
 
         snapshotStateMachine.stepResourceSnapshots(eventIdentifier, false, false);

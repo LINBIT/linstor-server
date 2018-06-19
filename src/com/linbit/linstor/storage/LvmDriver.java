@@ -206,7 +206,7 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public boolean volumesExists(String identifier) throws StorageException
+    public boolean volumesExists(String identifier, VolumeType volumeType) throws StorageException
     {
         boolean exists;
 
