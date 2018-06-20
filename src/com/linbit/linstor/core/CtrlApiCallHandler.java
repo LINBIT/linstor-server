@@ -1563,7 +1563,9 @@ public class CtrlApiCallHandler
         int placeCount,
         String storPoolName,
         List<String> notPlaceWithRscList,
-        String notPlaceWithRscRegex
+        String notPlaceWithRscRegex,
+        List<String> replicasOnDifferentPropList,
+        List<String> replicasOnSamePropList
     )
     {
         ApiCallRc apiCallRc;
@@ -1582,7 +1584,9 @@ public class CtrlApiCallHandler
                 placeCount,
                 storPoolName,
                 notPlaceWithRscList,
-                notPlaceWithRscRegex
+                notPlaceWithRscRegex,
+                replicasOnDifferentPropList,
+                replicasOnSamePropList
             );
         }
         return apiCallRc;

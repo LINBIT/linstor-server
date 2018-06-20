@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -87,29 +89,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         int placeCount,
         String storPoolNameStr,
         List<String> notPlaceWithRscListRef,
-        String notPlaceWithRscRegexStr
+        String notPlaceWithRscRegexStr,
+        List<String> replicasOnDifferentPropList,
+        List<String> replicasOnSamePropList
     )
     {
         // TODO extract this method into an own interface implementation
         // that the controller can choose between different auto-place strategies
-        List<String> notPlaceWithRscList = notPlaceWithRscListRef.stream()
-            .map(String::toUpperCase)
-            .collect(Collectors.toList());
-
-        if (notPlaceWithRscRegexStr != null)
-        {
-            Pattern notPlaceWithRscRegexPattern = Pattern.compile(
-                notPlaceWithRscRegexStr,
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-            );
-            notPlaceWithRscList.addAll(
-                rscDfnMap.keySet().stream()
-                    .map(rscName -> rscName.value)
-                    .filter(rscName -> notPlaceWithRscRegexPattern.matcher(rscName).find())
-                    .collect(Collectors.toList())
-            );
-        }
-
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
             AbsApiCallHandler basicallyThis = setContext(
@@ -119,106 +105,96 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             );
         )
         {
+            List<String> notPlaceWithRscList = toUpperList(notPlaceWithRscListRef);
+            if (notPlaceWithRscRegexStr != null)
+            {
+                notPlaceWithRscList.addAll(getRscNameUpperStrFromRegex(notPlaceWithRscRegexStr));
+            }
+
             // calculate the estimated size of the given resource
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
 
-            // build a map of storage pools the user has access to and have enough free space
-            // and are not diskless
+            /*
+             * build a map of storage pools
+             * * where the user has access to
+             * * that have enough free space
+             * * that are not diskless
+             */
             Map<StorPoolName, List<StorPool>> storPools = storPoolDfnMap.values().stream()
+                // filter for user access on storPoolDfn
                 .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
                 .flatMap(this::getStorPoolStream)
+                // filter for diskless
                 .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
+                // filter for user access on node
                 .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
+                // filter for enough free space
                 .filter(storPool -> getFreeSpace(storPool).orElse(0L) >= rscSize)
-                .collect(
-                    Collectors.groupingBy(StorPool::getName)
-                );
+                .collect(Collectors.groupingBy(StorPool::getName));
 
-            // apply the storage pool filter
-            if (storPoolNameStr != null)
+            filterByStorPoolName(storPoolNameStr, storPools);
+            if (storPools.isEmpty())
             {
-                StorPoolName storPoolName = asStorPoolName(storPoolNameStr);
-                storPools.keySet().retainAll(Arrays.asList(storPoolName));
+                failNotEnoughCandidates(storPoolNameStr, rscSize);
             }
 
-            List<Candidate> candidates;
-            // try to consider the "do not place with resource" argument
-            candidates = filterCandidates(placeCount, notPlaceWithRscList, storPools);
+            Map<StorPoolName, List<Node>> candidates =
+                filterByDoNotPlaceWithResource(notPlaceWithRscList, storPools);
             if (candidates.isEmpty())
             {
-                // if that didn't work, try to ignore the "do not place with resource" argument
-                // but we have to avoid the storage pools used by the given set of resources.
-                for (Entry<StorPoolName, List<StorPool>> entry : storPools.entrySet())
-                {
-                    List<StorPool> storPoolsToRemove = new ArrayList<>();
-                    for (StorPool storPool : entry.getValue())
-                    {
-                        Collection<Volume> volumes = storPool.getVolumes(apiCtx);
-                        for (Volume vlm : volumes)
-                        {
-                            if (notPlaceWithRscList.contains(vlm.getResourceDefinition().getName().value))
-                            {
-                                storPoolsToRemove.add(storPool);
-                                break;
-                            }
-                        }
-                    }
-                    entry.getValue().removeAll(storPoolsToRemove);
-                }
-
-                // retry with the reduced storPools but without "do not place with resource" limitation
-                candidates = filterCandidates(placeCount, Collections.emptyList(), storPools);
+                failNotEnoughCandidates(storPoolNameStr, rscSize);
             }
 
-            if (candidates.isEmpty())
+            List<Candidate> candidateList = filterByReplicasOn(
+                replicasOnSamePropList,
+                replicasOnDifferentPropList,
+                candidates,
+                this::mostRemainingSpaceStrategy
+            );
+            if (candidateList.isEmpty())
             {
-                addAnswer(
-                    "Not enough available nodes",
-                    null, // cause
-                    "Not enough nodes fulfilling the following auto-place criteria:\n" +
-                    " * has a deployed storage pool named '" + storPoolNameStr + "'\n" +
-                    " * the storage pool '" + storPoolNameStr + "' has to have at least '" +
-                    rscSize + "' free space\n" +
-                    " * the current access context has enough privileges to use the node and the storage pool",
-                    null, // correction.... "you must construct additional servers"
-                    ApiConsts.FAIL_NOT_ENOUGH_NODES
-                );
-                throw new ApiCallHandlerFailedException();
+                failNotEnoughCandidates(storPoolNameStr, rscSize);
             }
-            else
+
+            // candidates still can be of arbitrary length. we have to make sure
+            // all candidates have the length of placeCount
+            candidateList = filterCandidates(candidateList, placeCount, this::mostRemainingSpaceStrategy);
+            if (candidateList.isEmpty())
             {
-                // we might have a list of candidates and have to choose.
-                Collections.sort(
-                    candidates,
-                    this::mostRemainingSpaceStrategy
-                );
+                failNotEnoughCandidates(storPoolNameStr, rscSize);
+            }
 
-                Candidate candidate = candidates.get(0);
+            // we might have a list of candidates and have to choose.
+            Collections.sort(
+                candidateList,
+                this::mostRemainingSpaceStrategy
+            );
 
-                Map<String, String> rscPropsMap = new TreeMap<>();
-                rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, candidate.storPoolName.displayValue);
+            Candidate bestCandidate = candidateList.get(0);
 
-                for (Node node : candidate.nodes)
-                {
-                    rscApiCallHandler.createResource(
-                        node.getName().displayValue,
-                        rscNameStr,
-                        Collections.emptyList(),
-                        rscPropsMap,
-                        Collections.emptyList(),
-                        false, // createResource api should NOT autoClose the current transaction
-                        // we will close it when we are finished with the autoPlace
-                        apiCallRc
-                    );
-                }
-                reportSuccess(
-                    "Resource '" + rscNameStr + "' successfully autoplaced on " + placeCount + " nodes",
-                    "Used storage pool: '" + candidate.storPoolName.displayValue + "'\n" +
-                    "Used nodes: '" + candidate.nodes.stream()
-                        .map(node -> node.getName().displayValue)
-                        .collect(Collectors.joining("', '")) + "'"
+            Map<String, String> rscPropsMap = new TreeMap<>();
+            rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, bestCandidate.storPoolName.displayValue);
+
+            for (Node node : bestCandidate.nodes)
+            {
+                rscApiCallHandler.createResource(
+                    node.getName().displayValue,
+                    rscNameStr,
+                    Collections.emptyList(),
+                    rscPropsMap,
+                    Collections.emptyList(),
+                    false, // createResource api should NOT autoClose the current transaction
+                    // we will close it when we are finished with the autoPlace
+                    apiCallRc
                 );
             }
+            reportSuccess(
+                "Resource '" + rscNameStr + "' successfully autoplaced on " + placeCount + " nodes",
+                "Used storage pool: '" + bestCandidate.storPoolName.displayValue + "'\n" +
+                "Used nodes: '" + bestCandidate.nodes.stream()
+                    .map(node -> node.getName().displayValue)
+                    .collect(Collectors.joining("', '")) + "'"
+            );
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -238,65 +214,23 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    private StorageDriverKind getDriverKind(StorPool storPool)
+    private List<String> toUpperList(List<String> list)
     {
-        StorageDriverKind driverKind;
-        try
-        {
-            driverKind = storPool.getDriverKind(apiCtx);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw asImplError(exc);
-        }
-        return driverKind;
+        return list.stream()
+            .map(String::toUpperCase)
+            .collect(Collectors.toList());
     }
 
-    private List<Candidate> filterCandidates(
-        final int placeCount,
-        List<String> notPlaceWithRscList,
-        Map<StorPoolName, List<StorPool>> storPools
-    )
+    private List<String> getRscNameUpperStrFromRegex(String rscRegexStr)
     {
-        List<Candidate> ret = new ArrayList<>();
-        for (Entry<StorPoolName, List<StorPool>> entry: storPools.entrySet())
-        {
-            List<Node> nodeCandidates = entry.getValue().stream()
-                .sorted((sp1, sp2) -> getFreeSpace(sp1).orElse(0L).compareTo(getFreeSpace(sp2).orElse(0L)))
-                .map(StorPool::getNode)
-                .filter(node -> hasNoResourceOf(node, notPlaceWithRscList))
-                .limit(placeCount)
-                .collect(Collectors.toList());
-
-            if (nodeCandidates.size() == placeCount)
-            {
-                ret.add(new Candidate(entry.getKey(), nodeCandidates));
-            }
-        }
-        return ret;
-    }
-
-    private int mostRemainingSpaceStrategy(Candidate cand1, Candidate cand2)
-    {
-        // the node-lists are already sorted by their storPools.
-        // that means, we only have to compare the freeSpace of the first nodes of cand1 and cand2
-        int cmp = 0;
-        try
-        {
-            cmp = Long.compare(
-                cand2.nodes.get(0).getStorPool(peerAccCtx, cand2.storPoolName)
-                    .getFreeSpace(peerAccCtx).orElse(0L),
-                cand1.nodes.get(0).getStorPool(peerAccCtx, cand1.storPoolName)
-                    .getFreeSpace(peerAccCtx).orElse(0L)
-            );
-            // compare(cand2, cand1) so that the candidate with more free space comes before the other
-        }
-        catch (AccessDeniedException exc)
-        {
-            // this exception should have been thrown long ago
-            throw asImplError(exc);
-        }
-        return cmp;
+        Pattern rscRegexPattern = Pattern.compile(
+            rscRegexStr,
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+        );
+        return rscDfnMap.keySet().stream()
+            .map(rscName -> rscName.value)
+            .filter(rscName -> rscRegexPattern.matcher(rscName).find())
+            .collect(Collectors.toList());
     }
 
     private long calculateResourceDefinitionSize(String rscNameStr)
@@ -342,6 +276,20 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         return stream;
     }
 
+    private StorageDriverKind getDriverKind(StorPool storPool)
+    {
+        StorageDriverKind driverKind;
+        try
+        {
+            driverKind = storPool.getDriverKind(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asImplError(exc);
+        }
+        return driverKind;
+    }
+
     private Optional<Long> getFreeSpace(StorPool storPool)
     {
         Optional<Long> freeSpace;
@@ -358,6 +306,300 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             );
         }
         return freeSpace;
+    }
+
+    private void filterByStorPoolName(String storPoolNameStr, Map<StorPoolName, List<StorPool>> storPools)
+    {
+        if (storPoolNameStr != null)
+        {
+            StorPoolName storPoolName = asStorPoolName(storPoolNameStr);
+            storPools.keySet().retainAll(Arrays.asList(storPoolName));
+        }
+    }
+
+    private Map<StorPoolName, List<Node>> filterByDoNotPlaceWithResource(
+        List<String> notPlaceWithRscList, Map<StorPoolName, List<StorPool>> storPools
+    ) throws AccessDeniedException
+    {
+        Map<StorPoolName, List<Node>> candidates;
+        // try to consider the "do not place with resource" argument on node level.
+        candidates = filterByRscNameStr(storPools, notPlaceWithRscList);
+        if (candidates.isEmpty())
+        {
+            // if that didn't work, try to consider the "do not place with resource" argument on storPool level
+            for (Entry<StorPoolName, List<StorPool>> entry : storPools.entrySet())
+            {
+                // build a list of storPools that have at least one of the "do not place with resource" resources.
+                List<StorPool> storPoolsToRemove = new ArrayList<>();
+                for (StorPool storPool : entry.getValue())
+                {
+                    Collection<Volume> volumes = storPool.getVolumes(apiCtx);
+                    for (Volume vlm : volumes)
+                    {
+                        if (notPlaceWithRscList.contains(vlm.getResourceDefinition().getName().value))
+                        {
+                            storPoolsToRemove.add(storPool);
+                            break;
+                        }
+                    }
+                }
+                // remove that storPools
+                entry.getValue().removeAll(storPoolsToRemove);
+            }
+    
+            // We already applied the filtering on storPool level. That means we can re-run the
+            // filterCandidates with no "do not place with resource" restriction on node-level, as we are
+            // already only considering the filtered storPools.
+            candidates = filterByRscNameStr(storPools, Collections.emptyList());
+        }
+        return candidates;
+    }
+
+    private List<Candidate> filterByReplicasOn(
+        List<String> replicasOnSamePropList,
+        List<String> replicasOnDiffParamList,
+        Map<StorPoolName, List<Node>> candidatesIn,
+        NodeSelectionStrategy nodeSelectionStartegy
+    )
+    {
+        List<Candidate> candidatesOut = new ArrayList<>();
+        try
+        {
+            for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesIn.entrySet())
+            {
+                Map<String, Collection<Node>> buckets = new HashMap<>();
+                buckets.put("", candidateEntry.getValue());
+
+                /*
+                 * Example:
+                 *
+                 * Let's assume that we have in replicasOnSamePropList the node-property-keys "A" and "B"
+                 * with values "x","y" and "z" for key "A"
+                 * and values "1", "2", "3" for "B"
+                 *
+                 * In the first iteration we have a map with one entry
+                 *  key: ""
+                 *  value: all nodes from the current storPoolName
+                 * In each iteration we extend the key with the current node's property-value (delimited with ":").
+                 * That means after the first iteration we will have 3 buckets ":x", ":y" and ":z"
+                 *  (the "" bucket is removed by not adding it to the nextSameBuckets reference and
+                 *  overriding the "buckets"-map with nextSameBuckets)
+                 * After the second iteration, we will have 9 buckets with the following keys:
+                 *  ":x:1"
+                 *  ":x:2"
+                 *  ":x:3"
+                 *  ":y:1"
+                 *  ...
+                 *  ":z:3"
+                 * Every node is only in the list of one of those buckets.
+                 */
+                for (String samePropKey : replicasOnSamePropList)
+                {
+                    Map<String, Collection<Node>> nextSameBuckets = new HashMap<>();
+                    for (Entry<String, Collection<Node>> bucketEntry : buckets.entrySet())
+                    {
+                        for (Node bucketEntryNode : bucketEntry.getValue())
+                        {
+                            String propValue =
+                                bucketEntry.getKey() +
+                                ":" +
+                                bucketEntryNode.getProps(peerAccCtx).getProp(samePropKey);
+                            Collection<Node> nextSameBucketNodes  = nextSameBuckets.get(propValue);
+                            if (nextSameBucketNodes == null)
+                            {
+                                nextSameBucketNodes = new ArrayList<>();
+                                nextSameBuckets.put(propValue, nextSameBucketNodes);
+                            }
+                            nextSameBucketNodes.add(bucketEntryNode);
+                        }
+                    }
+                    buckets = nextSameBuckets;
+                }
+
+                /*
+                 * Now we have grouped all nodes by the "same" criteria.
+                 * Next, for each bucket, we remove the nodes such that each of the
+                 * property-values from "replicasOnDiffParamList"-keys are distinct.
+                 *
+                 * When two nodes have the same value, we will have to choose which node to delete.
+                 * For this, we already have to use a "candidate-pre-selection". This is done by the
+                 * functional-interface-argument "nodePreSelectionStartegy"
+                 */
+                for (String diffPropKey : replicasOnDiffParamList)
+                {
+                    // although we do not care about the key, we need to iterate over the entrySet
+                    // as we will have to call setValue after this loop
+                    for (Entry<String, Collection<Node>> bucketEntry : buckets.entrySet())
+                    {
+                        HashMap<String, Node> usedValues = new HashMap<>();
+                        for (Node bucketNode : bucketEntry.getValue())
+                        {
+                            String nodeValue = bucketNode.getProps(peerAccCtx).getProp(diffPropKey);
+                            Node sameValueNode = usedValues.get(nodeValue);
+
+                            Node selectedNode;
+                            if (sameValueNode == null)
+                            {
+                                selectedNode = bucketNode;
+                            }
+                            else
+                            {
+                                int cmp = nodeSelectionStartegy.compare(
+                                    bucketNode,
+                                    sameValueNode,
+                                    candidateEntry.getKey()
+                                );
+                                selectedNode = cmp > 0 ? bucketNode : sameValueNode;
+                            }
+
+                            usedValues.put(nodeValue, selectedNode);
+                        }
+                        bucketEntry.setValue(usedValues.values());
+                    }
+                }
+
+                /*
+                 * Currently we have a list of candidates for the current storPoolName.
+                 * As we don't know how many nodes a "valid" candidate has to contain, we
+                 * simply emit all of our candidates:)
+                 */
+                for (Collection<Node> nodeList : buckets.values())
+                {
+                    candidatesOut.add(
+                        new Candidate(
+                            candidateEntry.getKey(),
+                            new ArrayList<>(nodeList)
+                        )
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asImplError(exc); // should have been thrown long ago
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw asExc(
+                exc,
+                "The property key '" + exc.invalidKey + "' is invalid.",
+                ApiConsts.FAIL_INVLD_PROP
+            );
+        }
+        return candidatesOut;
+    }
+
+    private List<Candidate> filterCandidates(
+        List<Candidate> candidateList,
+        int placeCount,
+        NodeSelectionStrategy nodeSelectionStartegy
+    )
+    {
+        List<Candidate> filteredCandidateList = new ArrayList<>();
+        for (Candidate candidate : candidateList)
+        {
+            int nodeCount = candidate.nodes.size();
+            if (nodeCount >= placeCount)
+            {
+                if (nodeCount > placeCount)
+                {
+                    Collections.sort(
+                        candidate.nodes,
+                        (node1, node2) ->
+                            nodeSelectionStartegy.compare(node1, node2, candidate.storPoolName)
+                    );
+                    filteredCandidateList.add(
+                        new Candidate(
+                            candidate.storPoolName,
+                            candidate.nodes.subList(0, placeCount)
+                        )
+                    );
+                }
+                else
+                {
+                    filteredCandidateList.add(candidate);
+                }
+            }
+        }
+        return filteredCandidateList;
+    }
+
+    private void failNotEnoughCandidates(String storPoolNameStr, final long rscSize)
+    {
+        addAnswer(
+            "Not enough available nodes",
+            null, // cause
+            "Not enough nodes fulfilling the following auto-place criteria:\n" +
+            " * has a deployed storage pool named '" + storPoolNameStr + "'\n" +
+            " * the storage pool '" + storPoolNameStr + "' has to have at least '" +
+            rscSize + "' free space\n" +
+            " * the current access context has enough privileges to use the node and the storage pool",
+            null, // correction.... "you must construct additional servers"
+            ApiConsts.FAIL_NOT_ENOUGH_NODES
+        );
+        throw new ApiCallHandlerFailedException();
+    }
+
+    private int mostRemainingSpaceStrategy(Candidate cand1, Candidate cand2)
+    {
+        // the node-lists are already sorted by their storPools.
+        // that means, we only have to compare the freeSpace of the first nodes of cand1 and cand2
+        int cmp = 0;
+        try
+        {
+            cmp = Long.compare(
+                cand2.nodes.get(0).getStorPool(peerAccCtx, cand2.storPoolName)
+                    .getFreeSpace(peerAccCtx).orElse(0L),
+                cand1.nodes.get(0).getStorPool(peerAccCtx, cand1.storPoolName)
+                    .getFreeSpace(peerAccCtx).orElse(0L)
+            );
+            // compare(cand2, cand1) so that the candidate with more free space comes before the other
+        }
+        catch (AccessDeniedException exc)
+        {
+            // this exception should have been thrown long ago
+            throw asImplError(exc);
+        }
+        return cmp;
+    }
+
+    private int mostRemainingSpaceStrategy(Node nodeA, Node nodeB, StorPoolName storPoolName)
+    {
+        int cmp = 0;
+        try
+        {
+            cmp = Long.compare(
+                nodeA.getStorPool(peerAccCtx, storPoolName).getFreeSpace(peerAccCtx).orElse(0L),
+                nodeB.getStorPool(peerAccCtx, storPoolName).getFreeSpace(peerAccCtx).orElse(0L)
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw asImplError(exc);
+        }
+        return cmp;
+    }
+
+    private Map<StorPoolName, List<Node>> filterByRscNameStr(
+        Map<StorPoolName, List<StorPool>> storPools,
+        List<String> notPlaceWithRscList
+    )
+    {
+        Map<StorPoolName, List<Node>> ret = new HashMap<>();
+        for (Entry<StorPoolName, List<StorPool>> entry: storPools.entrySet())
+        {
+            List<Node> nodeCandidates = entry.getValue().stream()
+                .sorted((sp1, sp2) -> getFreeSpace(sp1).orElse(0L).compareTo(getFreeSpace(sp2).orElse(0L)))
+                .map(StorPool::getNode)
+                .filter(node -> hasNoResourceOf(node, notPlaceWithRscList))
+                .collect(Collectors.toList());
+
+            if (!nodeCandidates.isEmpty())
+            {
+                ret.put(entry.getKey(), nodeCandidates);
+            }
+        }
+        return ret;
     }
 
     private boolean hasNoResourceOf(Node node, List<String> notPlaceWithRscList)
@@ -434,5 +676,17 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             storPoolName = storPoolNameRef;
             nodes = nodesRef;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Candidate [storPoolName=" + storPoolName + ", nodes=" + nodes + "]";
+        }
+    }
+
+    @FunctionalInterface
+    private interface NodeSelectionStrategy
+    {
+        int compare(Node nodeA, Node nodeB, StorPoolName storPoolName);
     }
 }

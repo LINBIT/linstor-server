@@ -18,12 +18,18 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LvmDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
 import javax.inject.Provider;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,9 +38,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -346,6 +355,102 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         );
     }
 
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void replicasCombinedTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt.A1.B1.1")
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A1.B1.2")
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A1.B2.1")
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A1.B2.2")
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A1.B3.1")
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "3")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A1.B3.2")
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "3")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A2.B1.1")
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A2.B1.2")
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A2.B2.1")
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A2.B2.2")
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A2.B3.1")
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "3")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("stlt.A2.B3.2")
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "3")
+                .addStorPool("stor", 10 * GB)
+                .build()
+
+            .addReplicasOnSameNodeProp("Aux/A")
+            .addReplicasOnDfifferentNodeProp("Aux/B")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        Props firstNodeProps = deployedNodes.get(0).getProps(SYS_CTX);
+        Props secondNodeProps = deployedNodes.get(1).getProps(SYS_CTX);
+
+        assertEquals(firstNodeProps.getProp("Aux/A"), secondNodeProps.getProp("Aux/A"));
+        assertNotEquals(firstNodeProps.getProp("Aux/B"), secondNodeProps.getProp("Aux/B"));
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,
@@ -402,6 +507,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         return rscDfn;
     }
 
+    private Stream<Resource> streamResources(Node node)
+    {
+        Stream<Resource> ret;
+        try
+        {
+            ret = node.streamResources(SYS_CTX);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new RuntimeException(exc);
+        }
+        return ret;
+    }
+
     private class RscAutoPlaceApiCall extends AbsApiCallTester
     {
         private final String rscNameStr;
@@ -410,6 +529,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
         private String forceStorPool = null;
         private String doNotPlaceWithRscRegexStr = null;
+
+        private final List<String> replicasOnSameNodePropList = new ArrayList<>();
+        private final List<String> replicasOnDifferentNodePropList = new ArrayList<>();
 
         RscAutoPlaceApiCall(
             String rscNameStrRef,
@@ -426,9 +548,21 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             placeCount = placeCountRef;
         }
 
-        public RscAutoPlaceApiCall setDoNotPlaceWithRegex(String doNotPlaceWithRscRegexStrRef)
+        RscAutoPlaceApiCall setDoNotPlaceWithRegex(String doNotPlaceWithRscRegexStrRef)
         {
             doNotPlaceWithRscRegexStr = doNotPlaceWithRscRegexStrRef;
+            return this;
+        }
+
+        RscAutoPlaceApiCall addReplicasOnSameNodeProp(String nodePropKey)
+        {
+            replicasOnSameNodePropList.add(nodePropKey);
+            return this;
+        }
+
+        RscAutoPlaceApiCall addReplicasOnDfifferentNodeProp(String nodePropKey)
+        {
+            replicasOnDifferentNodePropList.add(nodePropKey);
             return this;
         }
 
@@ -452,7 +586,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 placeCount,
                 forceStorPool,
                 doNotPlaceWithRscList,
-                doNotPlaceWithRscRegexStr
+                doNotPlaceWithRscRegexStr,
+                replicasOnDifferentNodePropList,
+                replicasOnSameNodePropList
             );
         }
 
@@ -527,6 +663,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             parent = parentRef;
             stlt = stltRef;
+        }
+
+        public SatelliteBuilder setNodeProp(String key, String value) throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+        {
+            stlt.getProps(BOB_ACC_CTX).setProp(key, value);
+            return this;
         }
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize) throws Exception
