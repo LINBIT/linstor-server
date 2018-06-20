@@ -310,7 +310,9 @@ public class LvmDriverTest extends StorageTestUtils
     public void testDeleteVolume() throws Exception
     {
         final String identifier = "testVolume";
+        final int volumeSize = 102400;
 
+        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
         expectLvmDeleteVolumeBehavior(LVM_REMOVE_DEFAULT, identifier, LVM_VOLUME_GROUP_DEFAULT, true);
 
         final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
@@ -336,7 +338,9 @@ public class LvmDriverTest extends StorageTestUtils
     public void testDeleteVolumeTimeout() throws Exception
     {
         final String identifier = "testVolume";
+        final int volumeSize = 102400;
 
+        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
         expectLvmDeleteVolumeBehavior(LVM_REMOVE_DEFAULT, identifier, LVM_VOLUME_GROUP_DEFAULT, true);
 
         final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
