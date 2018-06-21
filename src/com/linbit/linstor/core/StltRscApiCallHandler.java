@@ -547,7 +547,31 @@ class StltRscApiCallHandler
                         // otherwise the resource never gets deleted, which will cause a
                         // divergent UUID exception when the "same" remote resource gets
                         // recreated
+                        Node remoteNode = remoteRsc.getAssignedNode();
                         remoteRsc.delete(apiCtx);
+
+                        /*
+                         *  Bugfix: if the remoteRsc was the last resource of the remote node
+                         *  we will no longer receive updates about the remote node (why should we?)
+                         *  The problem is, that if the remote node gets completely deleted
+                         *  on the controller, and later recreated, and that "new" node deploys
+                         *  a resource we are also interested in, we will receive the "new" node's UUID.
+                         *  However, we will still find our old node-reference when looking up the
+                         *  "new" node's name and therefor we will find the old node's UUID and check it
+                         *  against the "new" node's UUID.
+                         *  This will cause a UUID mismatch upon resource-creation on the other node
+                         *  (which will trigger an update to us as we also need to know about the new resource
+                         *  and it's node)
+                         *
+                         *  Therefore, we have to remove the remoteNode completely if it has no
+                         *  resources left
+                         */
+
+                        if (!remoteNode.iterateResources(apiCtx).hasNext())
+                        {
+                            nodesMap.remove(remoteNode.getName());
+                            remoteNode.delete(apiCtx);
+                        }
                     }
                     else
                     {
