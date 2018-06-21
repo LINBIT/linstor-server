@@ -22,12 +22,14 @@ public class LvmDriver extends AbsStorageDriver
     public static final String LVM_VOLUME_GROUP_DEFAULT = "drbdpool";
 
     public static final String LVM_CREATE_DEFAULT = "lvcreate";
+    public static final String LVM_RESIZE_DEFAULT = "lvresize";
     public static final String LVM_REMOVE_DEFAULT = "lvremove";
     public static final String LVM_CHANGE_DEFAULT = "lvchange";
     public static final String LVM_LVS_DEFAULT = "lvs";
     public static final String LVM_VGS_DEFAULT = "vgs";
 
     protected String lvmCreateCommand = LVM_CREATE_DEFAULT;
+    protected String lvmResizeCommand = LVM_RESIZE_DEFAULT;
     protected String lvmLvsCommand = LVM_LVS_DEFAULT;
     protected String lvmVgsCommand = LVM_VGS_DEFAULT;
     protected String lvmRemoveCommand = LVM_REMOVE_DEFAULT;
@@ -69,6 +71,17 @@ public class LvmDriver extends AbsStorageDriver
             "-n", identifier,
             "-y", // force, skip "wipe signature question"
             volumeGroup
+        };
+    }
+
+    @Override
+    protected String[] getResizeCommand(final String identifier, final long size)
+    {
+        return new String[]
+        {
+            lvmResizeCommand,
+            "--size", size + "k",
+            volumeGroup + File.separator + identifier
         };
     }
 
@@ -255,7 +268,7 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public boolean volumesExists(String identifier, VolumeType volumeType) throws StorageException
+    protected boolean storageVolumeExists(String identifier, VolumeType volumeType) throws StorageException
     {
         boolean exists;
 
@@ -298,6 +311,7 @@ public class LvmDriver extends AbsStorageDriver
     protected void checkConfiguration(Map<String, String> config) throws StorageException
     {
         checkCommand(config, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
+        checkCommand(config, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY);
         checkCommand(config, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
         checkCommand(config, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
         checkCommand(config, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
@@ -310,6 +324,7 @@ public class LvmDriver extends AbsStorageDriver
     protected void applyConfiguration(Map<String, String> config)
     {
         lvmCreateCommand = getAsString(config, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY, lvmCreateCommand);
+        lvmResizeCommand = getAsString(config, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY, lvmResizeCommand);
         lvmRemoveCommand = getAsString(config, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY, lvmRemoveCommand);
         lvmChangeCommand = getAsString(config, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
         lvmLvsCommand = getLvmLvsCommandFromConfig(config);

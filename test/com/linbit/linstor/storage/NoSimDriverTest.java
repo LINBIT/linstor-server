@@ -583,7 +583,7 @@ public abstract class NoSimDriverTest
     private void checkVolume(String identifier, long size, String format) throws StorageException
     {
         log(format, identifier, size);
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
         log(" done %n");
     }
 

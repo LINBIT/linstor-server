@@ -45,6 +45,7 @@ public class LvmDriverKind implements StorageDriverKind
         final HashSet<String> keySet = new HashSet<>();
 
         keySet.add(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY);
         keySet.add(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
         keySet.add(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
         keySet.add(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);

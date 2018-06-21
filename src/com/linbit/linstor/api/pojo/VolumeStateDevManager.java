@@ -53,6 +53,11 @@ public class VolumeStateDevManager extends VolumeState
      */
     private short peerSlots;
 
+    /**
+     * Indicates whether the disk needs resizing
+     */
+    private Boolean diskNeedsResize = false;
+
     public VolumeStateDevManager(VolumeNumber volNrRef)
     {
         vlmNr = volNrRef;
@@ -146,6 +151,16 @@ public class VolumeStateDevManager extends VolumeState
     public void setPeerSlots(short peerSlotsRef)
     {
         this.peerSlots = peerSlotsRef;
+    }
+
+    public Boolean diskNeedsResize()
+    {
+        return diskNeedsResize;
+    }
+
+    public void setDiskNeedsResize(Boolean diskNeedsResizeRef)
+    {
+        diskNeedsResize = diskNeedsResizeRef;
     }
 
     @Override

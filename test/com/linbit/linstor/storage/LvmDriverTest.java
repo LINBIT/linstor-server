@@ -141,7 +141,7 @@ public class LvmDriverTest extends StorageTestUtils
         );
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, "4096.00k");
 
-        driver.checkVolume(volumeIdentifier, TEST_SIZE_100MB);
+        driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
 
         expectLvsInfoBehavior(
             LVM_LVS_DEFAULT,
@@ -152,7 +152,7 @@ public class LvmDriverTest extends StorageTestUtils
 
         try
         {
-            driver.checkVolume(volumeIdentifier, TEST_SIZE_100MB);
+            driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
             fail("volume size should be higher than tolerated");
         }
         catch (StorageException storExc)
@@ -377,7 +377,7 @@ public class LvmDriverTest extends StorageTestUtils
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, size);
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
     }
 
     @Test(expected = StorageException.class)
@@ -386,7 +386,7 @@ public class LvmDriverTest extends StorageTestUtils
         final String identifier = "testVolume";
         final long size = MetaData.DRBD_MAX_kiB + 1;
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
     }
 
     @Test(expected = StorageException.class)
@@ -403,7 +403,7 @@ public class LvmDriverTest extends StorageTestUtils
             size - 10); // user wanted at least 100 MB, but we give him a little bit less
         // should trigger exception
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
     }
 
     @Test

@@ -133,7 +133,7 @@ public class ZfsDriverTest extends StorageTestUtils
         );
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
 
         expectZfsVolumeInfoBehavior(
             ZFS_COMMAND_DEFAULT,
@@ -145,7 +145,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         try
         {
-            driver.checkVolume(identifier, size);
+            driver.compareVolumeSize(identifier, size);
             fail("volume size should be higher than tolerated");
         }
         catch (StorageException storExc)
@@ -403,7 +403,7 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size);
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
     }
 
     @Test(expected = StorageException.class)
@@ -412,7 +412,7 @@ public class ZfsDriverTest extends StorageTestUtils
         String identifier = "testVolume";
         long size = MetaData.DRBD_MAX_kiB + 1;
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
     }
 
     @Test(expected = StorageException.class)
@@ -426,7 +426,7 @@ public class ZfsDriverTest extends StorageTestUtils
         // user wanted at least 100 MB, but we give him a little bit less
         // should trigger exception
 
-        driver.checkVolume(identifier, size);
+        driver.compareVolumeSize(identifier, size);
     }
 
     @Test

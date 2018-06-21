@@ -55,7 +55,7 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    public boolean volumesExists(String identifier, VolumeType volumeType) throws StorageException
+    protected boolean storageVolumeExists(String identifier, VolumeType volumeType) throws StorageException
     {
         boolean exists;
 
@@ -204,6 +204,18 @@ public class ZfsDriver extends AbsStorageDriver
             zfsCommand,
             "create",
             "-V", size + "KB",
+            pool + File.separator + identifier
+        };
+    }
+
+    @Override
+    protected String[] getResizeCommand(String identifier, long size)
+    {
+        return new String[]
+        {
+            zfsCommand, //zfs set volsize=new_size tank/name_of_the_zvol
+            "set",
+            "volsize=" + size + "KB",
             pool + File.separator + identifier
         };
     }

@@ -253,6 +253,8 @@ class StltRscApiCallHandler
                         vlmDfnPropsMap.clear();
                         vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
 
+                        vlmDfn.setVolumeSize(apiCtx, vlmDfnRaw.getSize());
+
                         // corresponding volumes will be created later when iterating over (local|remote)vlmApis
 
                         if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))

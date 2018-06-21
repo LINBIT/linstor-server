@@ -18,6 +18,7 @@ public class StorageConstants
     public static final String CONFIG_LVM_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_THIN_POOL;
 
     public static final String CONFIG_LVM_CREATE_COMMAND_KEY = "lvmCreate";
+    public static final String CONFIG_LVM_RESIZE_COMMAND_KEY = "lvmResize";
     public static final String CONFIG_LVM_REMOVE_COMMAND_KEY = "lvmRemove";
     public static final String CONFIG_LVM_CHANGE_COMMAND_KEY = "lvmChange";
     public static final String CONFIG_LVM_CONVERT_COMMAND_KEY = "lvmConvert";
@@ -40,6 +41,7 @@ public class StorageConstants
     {
         KEY_DESCRIPTION.put(CONFIG_LVM_VOLUME_GROUP_KEY, "The volume group the driver should use");
         KEY_DESCRIPTION.put(CONFIG_LVM_CREATE_COMMAND_KEY, "Command to the 'lvcreate' executable");
+        KEY_DESCRIPTION.put(CONFIG_LVM_RESIZE_COMMAND_KEY, "Command to the 'lvresize' executable");
         KEY_DESCRIPTION.put(CONFIG_LVM_REMOVE_COMMAND_KEY, "Command to the 'lvremove' executable");
         KEY_DESCRIPTION.put(CONFIG_LVM_CHANGE_COMMAND_KEY, "Command to the 'lvchange' executable");
         KEY_DESCRIPTION.put(CONFIG_LVM_LVS_COMMAND_KEY, "Command to the 'lvs' executable");

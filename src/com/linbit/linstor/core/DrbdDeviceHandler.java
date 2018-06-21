@@ -727,82 +727,101 @@ class DrbdDeviceHandler implements DeviceHandler
             "volume " + vlmState.getVlmNr().toString()
         );
 
-        if (!vlmState.hasDisk())
+        if (!vlmState.isDriverKnown())
         {
-            if (!vlmState.isDriverKnown())
-            {
-                ensureVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
-            }
+            ensureVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
+        }
 
-            StorageDriver storDrv = vlmState.getDriver();
-            if (storDrv != null)
+        StorageDriver storDrv = vlmState.getDriver();
+        if (storDrv != null)
+        {
+            try
             {
-                // Calculate the backend storage volume's size
-                long netSize = vlmDfn.getVolumeSize(wrkCtx);
-                vlmState.setNetSize(netSize);
-                long expectedSize = drbdMd.getGrossSize(
-                    netSize, vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
-                );
-
-                try
+                if (!vlmState.hasDisk())
                 {
-                    // Check whether the backend storage device is present, and if it is not,
-                    // attempt to start the backend storage volume
-                    FileExistsCheck backendVlmChk = new FileExistsCheck(
-                        storDrv.getVolumePath(
-                            vlmState.getStorVlmName(),
-                            vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED)
-                        ),
-                        false
-                    );
-                    // Perform an asynchronous check, so that this thread can continue and
-                    // attempt to report an error in the case that the operating system
-                    // gets stuck forever on I/O, e.g. because the backend storage driver
-                    // ran into an implementation error
-                    AsyncOps.Builder chkBld = new AsyncOps.Builder();
-                    chkBld.register(backendVlmChk);
-                    AsyncOps asyncExistChk = chkBld.create();
-                    asyncExistChk.await(FileExistsCheck.DFLT_CHECK_TIMEOUT);
+                    boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+                    vlmState.setHasDisk(storDrv.volumeExists(
+                        vlmState.getStorVlmName(), isEncrypted, StorageDriver.VolumeType.VOLUME));
 
-                    if (!backendVlmChk.fileExists())
+                    if (!vlmState.hasDisk())
                     {
-                        storDrv.startVolume(vlmState.getStorVlmName(), vlmDfn.getKey(wrkCtx));
+                        attemptVolumeStart(vlmDfn, vlmState, storDrv);
+
+                        vlmState.setHasDisk(storDrv.volumeExists(
+                            vlmState.getStorVlmName(), isEncrypted, StorageDriver.VolumeType.VOLUME));
+                    }
+                }
+
+                if (vlmState.hasDisk())
+                {
+                    // Calculate the backend storage volume's size
+                    long netSize = vlmDfn.getVolumeSize(wrkCtx);
+                    vlmState.setNetSize(netSize);
+                    long requiredSize = drbdMd.getGrossSize(
+                        netSize, vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
+                    );
+
+                    // Check the size of the backend storage
+                    StorageDriver.SizeComparison sizeComparison =
+                        storDrv.compareVolumeSize(vlmState.getStorVlmName(), requiredSize);
+
+                    if (sizeComparison == StorageDriver.SizeComparison.TOO_SMALL)
+                    {
+                        errLog.logDebug("Need to resize volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                            rscDfn.getName().displayValue);
+                        vlmState.setDiskNeedsResize(true);
+                    }
+                    else if (sizeComparison == StorageDriver.SizeComparison.TOO_LARGE)
+                    {
+                        throw new VolumeException(
+                            "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                                rscDfn.getName().displayValue + "' too large. Expected " + sizeComparison + "KiB."
+                        );
                     }
 
-                    // Check the state of the backend storage for the DRBD volume
-                    storDrv.checkVolume(vlmState.getStorVlmName(), expectedSize);
-                    vlmState.setHasDisk(true);
                     errLog.logTrace(
                         "Existing storage volume found for resource '" +
-                        rscDfn.getName().displayValue + "' " + "volume " + vlmState.getVlmNr().toString()
-                    );
-                }
-                catch (TimeoutException timeoutExc)
-                {
-                    throw new VolumeException(
-                        "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                        rscDfn.getName().displayValue + "' aborted due to an I/O timeout",
-                        "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                        rscDfn.getName().displayValue + " aborted",
-                        "The check for existance of the volume's backend storage timed out",
-                        "- Check whether the system's performance is within acceptable limits\n" +
-                        "- Check whether the operating system's I/O subsystems work flawlessly\n",
-                        "The filesystem path used by the check that timed out was: " +
-                        vlmState.getStorVlmName(),
-                        timeoutExc
-                    );
-                }
-                catch (StorageException ignored)
-                {
-                    // FIXME: The driver should return a boolean indicating whether the volume exists
-                    //        and throw an exception only if the check failed, but not to indicate
-                    //        that the volume does not exist
-                    errLog.logTrace(
-                        "Storage volume for resource '" + rscDfn.getName().displayValue + "' " +
-                        "volume " + vlmState.getVlmNr().toString() + " does not exist"
+                            rscDfn.getName().displayValue + "' " + "volume " + vlmState.getVlmNr().toString()
                     );
                 }
             }
+            catch (TimeoutException timeoutExc)
+            {
+                throw new VolumeException(
+                    "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                    rscDfn.getName().displayValue + "' aborted due to an I/O timeout",
+                    "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                    rscDfn.getName().displayValue + " aborted",
+                    "The check for existance of the volume's backend storage timed out",
+                    "- Check whether the system's performance is within acceptable limits\n" +
+                    "- Check whether the operating system's I/O subsystems work flawlessly\n",
+                    "The filesystem path used by the check that timed out was: " +
+                    vlmState.getStorVlmName(),
+                    timeoutExc
+                );
+            }
+            catch (StorageException exc)
+            {
+                throw new VolumeException(
+                    "Storage error for volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                        rscDfn.getName().displayValue + "'",
+                    exc
+                );
+            }
+        }
+    }
+
+    private void attemptVolumeStart(VolumeDefinition vlmDfn, VolumeStateDevManager vlmState, StorageDriver storDrv)
+        throws AccessDeniedException, TimeoutException
+    {
+        try
+        {
+            storDrv.startVolume(vlmState.getStorVlmName(), vlmDfn.getKey(wrkCtx));
+        }
+        catch (StorageException exc)
+        {
+            // This can occur when the backend volume has not been created yet and the driver attempts to start
+            // the encryption layer
         }
     }
 
@@ -894,6 +913,56 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             throw new VolumeException(
                 "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr(),
+                null,
+                "The selected storage pool driver for the volume is unavailable",
+                null,
+                null
+            );
+        }
+    }
+
+    private void resizeStorageVolume(
+        ResourceDefinition rscDfn,
+        VolumeStateDevManager vlmState
+    )
+        throws MdException, VolumeException
+    {
+        if (vlmState.getDriver() != null)
+        {
+            try
+            {
+                vlmState.setGrossSize(drbdMd.getGrossSize(
+                    vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
+                ));
+                vlmState.getDriver().resizeVolume(
+                    vlmState.getStorVlmName(),
+                    vlmState.getGrossSize(),
+                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                );
+            }
+            catch (StorageException storExc)
+            {
+                throw new VolumeException(
+                    "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr().value,
+                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                    "Creation of the storage volume failed",
+                    "- Check whether there is sufficient space in the storage pool selected for the volume\n" +
+                    "- Check whether the storage pool is operating flawlessly\n",
+                    null,
+                    storExc
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        else
+        {
+            throw new VolumeException(
+                "Storage volume resize failed for resource '" + rscDfn.getName().displayValue + "' volume " +
                     vlmState.getVlmNr(),
                 null,
                 "The selected storage pool driver for the volume is unavailable",
@@ -1089,6 +1158,12 @@ class DrbdDeviceHandler implements DeviceHandler
 
                         // TODO: Wait for the backend storage block device files to appear in the /dev directory
                         //       if the volume is supposed to have backend storage
+
+                        if (vlmState.diskNeedsResize())
+                        {
+                            resizeStorageVolume(rscDfn, vlmState);
+                            vlmState.setDiskNeedsResize(false);
+                        }
 
                         // Set block device paths
                         if (vlmState.hasDisk())

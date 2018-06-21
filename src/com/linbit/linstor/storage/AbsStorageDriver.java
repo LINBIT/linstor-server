@@ -8,10 +8,13 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+
+import com.linbit.AsyncOps;
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.NegativeTimeException;
+import com.linbit.TimeoutException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MetaData;
@@ -26,6 +29,7 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.utils.FileExistsCheck;
 
 public abstract class AbsStorageDriver implements StorageDriver
 {
@@ -141,25 +145,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public String createVolume(final String identifier, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException
     {
-        final long extent = getExtentSize();
-        // Calculate effective size from requested size
-        long effSize = size;
-        if (effSize % extent != 0)
-        {
-            long origSize = effSize;
-            effSize = ((effSize / extent) + 1) * extent; // rounding up needed for zfs
-            errorReporter.logInfo(
-                String.format(
-                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
-                    origSize,
-                    effSize,
-                    extent
-                )
-            );
-        }
-
-        MetaData.checkMinDrbdSizeNet(effSize);
-        MetaData.checkMaxDrbdSize(effSize);
+        long effSize = calculateEffectiveSize(size);
 
         String volumePath = null;
 
@@ -298,6 +284,94 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
+    public void resizeVolume(String identifier, long size, String cryptKey)
+        throws StorageException, MaxSizeException, MinSizeException
+    {
+        long effSize = calculateEffectiveSize(size);
+
+        String[] command = getResizeCommand(identifier, effSize);
+
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+        OutputData output;
+        try
+        {
+            output = extCommand.exec(command);
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to resize volume",
+                String.format("Failed to resize volume [%s] to size %d", identifier, effSize),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+
+        checkExitCode(output, command);
+
+        if (cryptKey != null)
+        {
+            try
+            {
+                // init
+                command = new String[]{
+                    "cryptsetup",
+                    "-q",
+                    "resize",
+                    getCryptVolumePath(identifier)
+                };
+                OutputData cryptSetupOutput = extCommand.exec(command);
+
+                checkExitCode(cryptSetupOutput, command);
+            }
+            catch (IOException ioExc)
+            {
+                throw new StorageException(
+                    "Failed to resize crypt device",
+                    ioExc
+                );
+            }
+            catch (ChildProcessTimeoutException exc)
+            {
+                throw new StorageException(
+                    "Resizing dm-crypt device timed out",
+                    exc
+                );
+            }
+        }
+    }
+
+    private long calculateEffectiveSize(long size)
+        throws StorageException, MinSizeException, MaxSizeException
+    {
+        final long extent = getExtentSize();
+        // Calculate effective size from requested size
+        long effSize = size;
+        if (effSize % extent != 0)
+        {
+            long origSize = effSize;
+            effSize = ((effSize / extent) + 1) * extent; // rounding up needed for zfs
+            errorReporter.logInfo(
+                String.format(
+                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    origSize,
+                    effSize,
+                    extent
+                )
+            );
+        }
+
+        MetaData.checkMinDrbdSizeNet(effSize);
+        MetaData.checkMaxDrbdSize(effSize);
+
+        return effSize;
+    }
+
+    @Override
     public void deleteVolume(final String identifier, boolean isEncrypted) throws StorageException
     {
         try
@@ -345,7 +419,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 // we will just verify if the volume is still available.
                 // if it is, we shout, if not, we say everything is fine
 
-                if (volumesExists(identifier, volumeType))
+                if (volumeExists(identifier, false, volumeType))
                 {
                     throw new StorageException(
                         String.format("Volume [%s] still exists.", identifier),
@@ -429,66 +503,72 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void checkVolume(String identifier, long size) throws StorageException
+    public boolean volumeExists(String identifier, boolean isEncrypted, VolumeType volumeType) throws StorageException
+    {
+        boolean exists;
+        if (isEncrypted)
+        {
+            try
+            {
+                FileExistsCheck backendVlmChk = new FileExistsCheck(
+                    getCryptVolumePath(identifier),
+                    false
+                );
+                // Perform an asynchronous check, so that this thread can continue and
+                // attempt to report an error in the case that the operating system
+                // gets stuck forever on I/O
+                AsyncOps.Builder chkBld = new AsyncOps.Builder();
+                chkBld.register(backendVlmChk);
+                AsyncOps asyncExistChk = chkBld.create();
+                    asyncExistChk.await(FileExistsCheck.DFLT_CHECK_TIMEOUT);
+
+                exists = backendVlmChk.fileExists();
+            }
+            catch (TimeoutException exc)
+            {
+                throw new StorageException("Timed out checking whether encrypted volume exists");
+            }
+        }
+        else
+        {
+            exists = storageVolumeExists(identifier, volumeType);
+        }
+        return exists;
+    }
+
+    @Override
+    public SizeComparison compareVolumeSize(String identifier, long requiredSize) throws StorageException
     {
         try
         {
-            MetaData.checkMaxDrbdSize(size);
+            MetaData.checkMaxDrbdSize(requiredSize);
         }
         catch (MaxSizeException exc)
         {
             throw new StorageException(
                 "CheckVolume failed",
                 null,
-                String.format("The size to check [%d] exceeds the current maximum device size: %d KiB",
-                    size,
+                String.format("The required size [%d] exceeds the current maximum device size: %d KiB",
+                    requiredSize,
                     MetaData.DRBD_MAX_kiB
                 ),
-                "Specify a valid size for check",
+                "Specify a valid required size",
                 null
             );
         }
 
         final VolumeInfo info = getVolumeInfo(identifier);
 
-        if (info.getSize() < size)
-        {
-            throw new StorageException(
-                "CheckVolume failed",
-                String.format("CheckVolume failed for volume [%s]", identifier),
-                "Volume does not have the required size",
-                null,
-                String.format(
-                    "Volume [%s] has size %d (KiB) but check required at least %d (KiB)",
-                    identifier,
-                    info.getSize(),
-                    size
-                )
-            );
-        }
-
         final long extentSize = getExtentSize();
-        final long floorSize = (size / extentSize) * extentSize;
+        final long floorSize = (requiredSize / extentSize) * extentSize;
 
         final long toleratedSize = floorSize + extentSize * sizeAlignmentToleranceFactor;
-        if (info.getSize() > toleratedSize)
-        {
-            throw new StorageException(
-                "CheckVolume failed",
-                String.format("CheckVolume failed for volume [%s]", identifier),
-                "Volume is larger than tolerated",
-                String.format(
-                    "Note: it is possible to increase the tolerance factor. Configuration key: %s",
-                    StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY
-                ),
-                String.format(
-                    "Volume [%s] is larger size [%d] than tolerated [%d]",
-                    identifier,
-                    info.getSize(),
-                    toleratedSize
-                )
-            );
-        }
+
+        return info.getSize() < requiredSize ?
+            SizeComparison.TOO_SMALL :
+            info.getSize() > toleratedSize ?
+                SizeComparison.TOO_LARGE :
+                SizeComparison.WITHIN_TOLERANCE;
     }
 
     @Override
@@ -987,7 +1067,11 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract void applyConfiguration(Map<String, String> config);
 
+    protected abstract boolean storageVolumeExists(String identifier, VolumeType volumeType) throws StorageException;
+
     protected abstract String[] getCreateCommand(String identifier, long size);
+
+    protected abstract String[] getResizeCommand(String identifier, long size);
 
     protected abstract String[] getDeleteCommand(String identifier);
 
@@ -1005,21 +1089,4 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);
 
-    protected enum VolumeType
-    {
-        VOLUME("volume"),
-        SNAPSHOT("snapshot volume");
-
-        private final String name;
-
-        VolumeType(String nameRef)
-        {
-            name = nameRef;
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-    }
 }

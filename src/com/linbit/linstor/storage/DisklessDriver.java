@@ -37,7 +37,14 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public boolean volumesExists(String identifier, AbsStorageDriver.VolumeType volumeType)
+    public void resizeVolume(String identifier, long size, String cryptKey)
+        throws StorageException
+    {
+        // no-op
+    }
+
+    @Override
+    public boolean volumeExists(String identifier, boolean isEncrypted, VolumeType volumeType)
     {
         return true;
     }
@@ -49,9 +56,9 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void checkVolume(String identifier, long size)
+    public SizeComparison compareVolumeSize(String identifier, long requiredSize)
     {
-        // no-op
+        return SizeComparison.WITHIN_TOLERANCE;
     }
 
     @Override

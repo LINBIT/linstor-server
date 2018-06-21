@@ -43,7 +43,7 @@ public interface StorageDriver
      * Creates a new volume
      *
      * @param identifier Unique name of the volume
-     * @param size Size of the volume in kiB
+     * @param size Size of the volume in KiB
      * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
      *  be encrypted)
      *
@@ -51,6 +51,19 @@ public interface StorageDriver
      * @throws StorageException If an operation on the storage fails
      */
     String createVolume(String identifier, long size, String cryptKey)
+        throws StorageException, MaxSizeException, MinSizeException;
+
+    /**
+     * Resizes a volume
+     *
+     * @param identifier Unique name of the volume
+     * @param size Size of the volume in KiB
+     * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
+     *  be encrypted)
+     *
+     * @throws StorageException If an operation on the storage fails
+     */
+    void resizeVolume(String identifier, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException;
 
     /**
@@ -64,22 +77,23 @@ public interface StorageDriver
     void deleteVolume(String identifier, boolean isEncrypted) throws StorageException;
 
     /**
-     * Checks wheter a volume exists.
+     * Checks whether a volume exists.
      *
      * @param identifier Unique name of the volume
+     * @param isEncrypted
      * @param volumeType
      * @return true if exists, otherwise false
      */
-    boolean volumesExists(String identifier, AbsStorageDriver.VolumeType volumeType) throws StorageException;
+    boolean volumeExists(String identifier, boolean isEncrypted, VolumeType volumeType) throws StorageException;
 
     /**
      * Checks whether a volume exists and has the appropriate size
      *
      * @param identifier Unique name of the volume
-     * @param size Expected size of the volume in kiB
+     * @param requiredSize Expected size of the volume in kiB
      * @throws StorageException If the check fails
      */
-    void checkVolume(String identifier, long size) throws StorageException;
+    SizeComparison compareVolumeSize(String identifier, long requiredSize) throws StorageException;
 
     /**
      * Returns the path of the volume's block device file
@@ -167,4 +181,29 @@ public interface StorageDriver
      */
     void deleteSnapshot(String volumeIdentifier, String snapshotName)
         throws StorageException;
+
+    enum SizeComparison
+    {
+        TOO_SMALL,
+        WITHIN_TOLERANCE,
+        TOO_LARGE
+    }
+
+    enum VolumeType
+    {
+        VOLUME("volume"),
+        SNAPSHOT("snapshot volume");
+
+        private final String name;
+
+        VolumeType(String nameRef)
+        {
+            name = nameRef;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+    }
 }
