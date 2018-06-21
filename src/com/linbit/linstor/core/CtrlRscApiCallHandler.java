@@ -1,5 +1,20 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
@@ -21,7 +36,6 @@ import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmApi;
@@ -43,6 +57,8 @@ import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -53,24 +69,12 @@ import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
+import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
+import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
+import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 import static java.util.stream.Collectors.toList;
 
 public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
@@ -148,6 +152,127 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         );
     }
 
+    private void checkStorPoolLoaded(
+        final Resource rsc,
+        StorPool storPool,
+        String storPoolNameStr,
+        final VolumeDefinition vlmDfn
+    )
+    {
+        if (storPool == null)
+        {
+            throw asExc(
+                new LinStorException("Dependency not found"),
+                "The default storage pool '" + storPoolNameStr + "' " +
+                    "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
+                    "for volume number '" +  vlmDfn.getVolumeNumber().value + "' " +
+                    "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.",
+                null, // cause
+                "The resource which should be deployed had at least one volume definition " +
+                    "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
+                    "tried to automatically create. " +
+                    "The default storage pool's name for this new volume was looked for in " +
+                    "its volume definition's properties, its resource's properties, its node's " +
+                    "properties and finally in a system wide default storage pool name defined by " +
+                    "the LinStor controller.",
+                null, // correction
+                FAIL_NOT_FOUND_DFLT_STOR_POOL
+            );
+        }
+    }
+
+    private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
+        throws AccessDeniedException
+    {
+        if (storPool != null && storPool.getDriverKind(apiCtx).hasBackingStorage())
+        {
+            throw asExc(
+                new LinStorException("Incorrect storage pool used."),
+                "Storage pool with backing disk not allowed with diskless resource.",
+                String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
+                        "with backing disk was specified.",
+                    rsc.getDefinition().getName().displayValue,
+                    storPool.getName().displayValue),
+                null,
+                "Use a storage pool with a diskless driver or remove the diskless flag.",
+                FAIL_INVLD_STOR_POOL_NAME
+            );
+        }
+    }
+
+    private void warnAndFladDiskless(Resource rsc, final StorPool storPool)
+        throws AccessDeniedException, SQLException
+    {
+        if (storPool != null && !storPool.getDriverKind(apiCtx).hasBackingStorage())
+        {
+            addAnswer(
+                "Resource will be automatically flagged diskless.",
+                String.format("Used storage pool '%s' is diskless, " +
+                    "but resource was not flagged diskless", storPool.getName().displayValue),
+                null,
+                null,
+                MASK_WARN | MASK_STOR_POOL
+            );
+            rsc.getStateFlags().enableFlags(apiCtx, RscFlags.DISKLESS);
+        }
+    }
+
+    /**
+     * Resolves the correct storage pool and also handles error/warnings in diskless modes.
+     *
+     * @param rsc
+     * @param prioProps
+     * @param vlmDfn
+     * @return
+     * @throws InvalidKeyException
+     * @throws AccessDeniedException
+     * @throws InvalidValueException
+     * @throws SQLException
+     */
+    private StorPool resolveStorPool(Resource rsc, final PriorityProps prioProps, final VolumeDefinition vlmDfn)
+        throws InvalidKeyException, AccessDeniedException, InvalidValueException, SQLException
+    {
+        final boolean isRscDiskless = isDiskless(rsc);
+        Props rscProps = getProps(rsc);
+        String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+        StorPool storPool;
+        if (isRscDiskless)
+        {
+            if (storPoolNameStr == null || "".equals(storPoolNameStr))
+            {
+                rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+                storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
+                storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
+            }
+            else
+            {
+                storPool = rsc.getAssignedNode().getStorPool(
+                    apiCtx,
+                    asStorPoolName(storPoolNameStr)
+                );
+            }
+
+            checkBackingDiskWithDiskless(rsc, storPool);
+        }
+        else
+        {
+            if (storPoolNameStr == null || "".equals(storPoolNameStr))
+            {
+                storPoolNameStr = defaultStorPoolName;
+            }
+            storPool = rsc.getAssignedNode().getStorPool(
+                apiCtx,
+                asStorPoolName(storPoolNameStr)
+            );
+
+            warnAndFladDiskless(rsc, storPool);
+        }
+
+        checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
+
+        return storPool;
+    }
+
     public ApiCallRc createResource(
         String nodeNameStr,
         String rscNameStr,
@@ -171,7 +296,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 autoCloseCurrentTransMgr,
                 nodeNameStr,
                 rscNameStr
-            );
+            )
         )
         {
             NodeData node = loadNode(nodeNameStr, true);
@@ -186,11 +311,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             boolean isRscDiskless = isDiskless(rsc);
 
-            if (isRscDiskless)
-            {
-                rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-            }
-
             Props rscDfnProps = getProps(rscDfn);
             Props nodeProps = getProps(node);
 
@@ -199,31 +319,36 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             {
                 VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
-                StorPoolData storPool;
-                if (isRscDiskless)
+                PriorityProps prioProps = new PriorityProps(
+                    rscProps,
+                    getProps(vlmDfn),
+                    rscDfnProps,
+                    nodeProps
+                );
+
+                StorPool storPool;
+
+                String storPoolNameStr;
+                storPoolNameStr = vlmApi.getStorPoolName();
+                if (storPoolNameStr != null && !storPoolNameStr.isEmpty())
                 {
-                    storPool = (StorPoolData) node.getDisklessStorPool(peerAccCtx);
+                    StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
+                    storPool = loadStorPool(storPoolDfn, node, true);
+
+                    if (isRscDiskless)
+                    {
+                        checkBackingDiskWithDiskless(rsc, storPool);
+                    }
+                    else
+                    {
+                        warnAndFladDiskless(rsc, storPool);
+                    }
+
+                    checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
                 }
                 else
                 {
-                    String storPoolNameStr;
-                    storPoolNameStr = vlmApi.getStorPoolName();
-                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                    {
-                        PriorityProps prioProps = new PriorityProps(
-                            rscProps,
-                            getProps(vlmDfn),
-                            rscDfnProps,
-                            nodeProps
-                        );
-                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                    }
-                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                    {
-                        storPoolNameStr = defaultStorPoolName;
-                    }
-                    StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
-                    storPool = loadStorPool(storPoolDfn, node, true);
+                    storPool = resolveStorPool(rsc, prioProps, vlmDfn);
                 }
 
                 VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
@@ -254,52 +379,12 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                         nodeProps
                     );
 
-                    String storPoolNameStr;
-                    StorPool storPool;
-                    if (isRscDiskless)
-                    {
-                        storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
-                        storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
-                    }
-                    else
-                    {
-                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                        if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                        {
-                            storPoolNameStr = defaultStorPoolName;
-                        }
-                        storPool = rsc.getAssignedNode().getStorPool(
-                            apiCtx,
-                            asStorPoolName(storPoolNameStr)
-                        );
-                    }
+                    StorPool storPool = resolveStorPool(rsc, prioProps, vlmDfn);
 
-                    if (storPool == null)
-                    {
-                        throw asExc(
-                            new LinStorException("Dependency not found"),
-                            "The default storage pool '" + storPoolNameStr + "' " +
-                            "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
-                            "for volume number '" +  vlmDfn.getVolumeNumber().value + "' " +
-                            "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.",
-                            null, // cause
-                            "The resource which should be deployed had at least one volume definition " +
-                            "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
-                            "tried to automatically create. " +
-                            "The default storage pool's name for this new volume was looked for in " +
-                            "its volume definition's properties, its resource's properties, its node's " +
-                            "properties and finally in a system wide default storage pool name defined by " +
-                            "the LinStor controller.",
-                            null, // correction
-                            FAIL_NOT_FOUND_DFLT_STOR_POOL
-                        );
-                    }
-                    else
-                    {
-                        // create missing vlm with default values
-                        VolumeData vlm = createVolume(rsc, vlmDfn, storPool, null);
-                        vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
-                    }
+                    // storPool is guaranteed to be != null
+                    // create missing vlm with default values
+                    VolumeData vlm = createVolume(rsc, vlmDfn, storPool, null);
+                    vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
                 }
             }
 
@@ -379,7 +464,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         return apiCallRc;
     }
 
-    private boolean isDiskless(ResourceData rsc)
+    private boolean isDiskless(Resource rsc)
     {
         boolean isDiskless;
         try
