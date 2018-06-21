@@ -665,7 +665,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             stlt = stltRef;
         }
 
-        public SatelliteBuilder setNodeProp(String key, String value) throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+        public SatelliteBuilder setNodeProp(String key, String value)
+            throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
         {
             stlt.getProps(BOB_ACC_CTX).setProp(key, value);
             return this;

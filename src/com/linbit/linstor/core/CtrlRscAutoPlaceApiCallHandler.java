@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
@@ -346,7 +347,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 // remove that storPools
                 entry.getValue().removeAll(storPoolsToRemove);
             }
-    
+
             // We already applied the filtering on storPool level. That means we can re-run the
             // filterCandidates with no "do not place with resource" restriction on node-level, as we are
             // already only considering the filtered storPools.
@@ -367,8 +368,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         {
             for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesIn.entrySet())
             {
-                Map<String, Collection<Node>> buckets = new HashMap<>();
-                buckets.put("", candidateEntry.getValue());
+                Map<BucketId, Collection<Node>> buckets = new HashMap<>();
+                buckets.put(new BucketId(), candidateEntry.getValue());
 
                 /*
                  * Example:
@@ -395,20 +396,19 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                  */
                 for (String samePropKey : replicasOnSamePropList)
                 {
-                    Map<String, Collection<Node>> nextSameBuckets = new HashMap<>();
-                    for (Entry<String, Collection<Node>> bucketEntry : buckets.entrySet())
+                    Map<BucketId, Collection<Node>> nextSameBuckets = new HashMap<>();
+                    for (Entry<BucketId, Collection<Node>> bucketEntry : buckets.entrySet())
                     {
                         for (Node bucketEntryNode : bucketEntry.getValue())
                         {
-                            String propValue =
-                                bucketEntry.getKey() +
-                                ":" +
-                                bucketEntryNode.getProps(peerAccCtx).getProp(samePropKey);
-                            Collection<Node> nextSameBucketNodes  = nextSameBuckets.get(propValue);
+                            BucketId entryNodeId = bucketEntry.getKey().extend(
+                                bucketEntryNode.getProps(peerAccCtx).getProp(samePropKey)
+                            );
+                            Collection<Node> nextSameBucketNodes  = nextSameBuckets.get(entryNodeId);
                             if (nextSameBucketNodes == null)
                             {
                                 nextSameBucketNodes = new ArrayList<>();
-                                nextSameBuckets.put(propValue, nextSameBucketNodes);
+                                nextSameBuckets.put(entryNodeId, nextSameBucketNodes);
                             }
                             nextSameBucketNodes.add(bucketEntryNode);
                         }
@@ -429,7 +429,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 {
                     // although we do not care about the key, we need to iterate over the entrySet
                     // as we will have to call setValue after this loop
-                    for (Entry<String, Collection<Node>> bucketEntry : buckets.entrySet())
+                    for (Entry<BucketId, Collection<Node>> bucketEntry : buckets.entrySet())
                     {
                         HashMap<String, Node> usedValues = new HashMap<>();
                         for (Node bucketNode : bucketEntry.getValue())
@@ -688,5 +688,62 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     private interface NodeSelectionStrategy
     {
         int compare(Node nodeA, Node nodeB, StorPoolName storPoolName);
+    }
+
+    private class BucketId
+    {
+        BucketId parent;
+        String id;
+
+        /**
+         * Root bucket constructor
+         */
+        BucketId()
+        {
+        }
+
+        /**
+         * Child bucket Constructor
+         */
+        BucketId(BucketId parentRef, String idRef)
+        {
+            parent = parentRef;
+            id = idRef;
+        }
+
+        BucketId extend(String idRef)
+        {
+            return new BucketId(this, idRef);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((id == null) ? 0 : id.hashCode());
+            result = prime * result + ((parent == null) ? 0 : parent.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean eq = false;
+            if (obj != null && obj instanceof BucketId)
+            {
+                BucketId other = (BucketId) obj;
+                eq = Objects.equals(other.id, this.id) && Objects.equals(other.parent, this.parent);
+            }
+            return eq;
+        }
+
+        @Override
+        public String toString()
+        {
+            return parent == null ?
+                id :
+                parent.toString() + ", " + id;
+        }
     }
 }
