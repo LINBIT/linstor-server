@@ -51,7 +51,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -105,6 +104,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
+    private final Set<VolumeDefinition.Key> drbdResizedVlmSet = new TreeSet<>();
     private final Set<SnapshotDefinition.Key> deletedSnapshotSet = new TreeSet<>();
 
     private final LinStorScope deviceMgrScope;
@@ -823,6 +823,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         final Set<NodeName> localDelNodeSet = new TreeSet<>();
         final Set<ResourceName> localDelRscSet;
         final Set<VolumeDefinition.Key> localDelVlmSet;
+        final Set<VolumeDefinition.Key> localDrbdResizedVlmSet;
         final Set<SnapshotDefinition.Key> localDelSnapshotSet;
 
         // Shallow-copy the sets to avoid having to mix locking the sched lock and
@@ -833,6 +834,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             deletedRscSet.clear();
             localDelVlmSet = new TreeSet<>(deletedVlmSet);
             deletedVlmSet.clear();
+            localDrbdResizedVlmSet = new TreeSet<>(drbdResizedVlmSet);
+            drbdResizedVlmSet.clear();
             localDelSnapshotSet = new TreeSet<>(deletedSnapshotSet);
             deletedSnapshotSet.clear();
         }
@@ -861,6 +864,24 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         }
 
                         snapshotDefinition.delete(wrkCtx);
+                    }
+                }
+
+                for (VolumeDefinition.Key volumeKey : localDrbdResizedVlmSet)
+                {
+                    ResourceDefinition curRscDfn = rscDfnMap.get(volumeKey.rscName);
+                    if (curRscDfn != null)
+                    {
+                        Resource curRsc = curRscDfn.getResource(
+                            wrkCtx, controllerPeerConnector.getLocalNode().getName());
+                        if (curRsc != null)
+                        {
+                            Volume curVlm = curRsc.getVolume(volumeKey.vlmNr);
+                            if (curVlm != null)
+                            {
+                                curVlm.getFlags().disableFlags(wrkCtx, Volume.VlmFlags.DRBD_RESIZE);
+                            }
+                        }
                     }
                 }
 
@@ -1068,6 +1089,62 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 ctrlPeer.sendMessage(data);
             }
+        }
+    }
+
+    @Override
+    public void notifyVolumeResized(Volume vlm)
+    {
+        try
+        {
+            Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+            if (ctrlPeer != null)
+            {
+                String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
+                String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
+
+                ctrlPeer.sendMessage(interComSerializer
+                    .builder(InternalApiConsts.API_NOTIFY_VLM_RESIZED)
+                    .notifyVolumeResized(
+                        msgNodeName,
+                        msgRscName,
+                        vlm.getVolumeDefinition().getVolumeNumber().value,
+                        vlm.getVolumeDefinition().getVolumeSize(wrkCtx)
+                    )
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    @Override
+    public void notifyDrbdVolumeResized(Volume vlm)
+    {
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
+            String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
+
+            ctrlPeer.sendMessage(interComSerializer
+                .builder(InternalApiConsts.API_NOTIFY_VLM_DRBD_RESIZED)
+                .notifyDrbdVolumeResized(
+                    msgNodeName,
+                    msgRscName,
+                    vlm.getVolumeDefinition().getVolumeNumber().value
+                )
+                .build()
+            );
+        }
+
+        // Remember the resize to clear the flag after DeviceHandler instances have finished
+        synchronized (sched)
+        {
+            drbdResizedVlmSet.add(new VolumeDefinition.Key(vlm));
         }
     }
 

@@ -93,7 +93,9 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     enum VlmFlags implements Flags
     {
         CLEAN(1L),
-        DELETE(2L);
+        DELETE(2L),
+        RESIZE(4L),
+        DRBD_RESIZE(8L);
 
         public final long flagValue;
 

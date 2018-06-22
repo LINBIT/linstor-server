@@ -691,6 +691,47 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    public ApiCallRc volumeResized(String nodeName, String rscName, int volumeNr, long vlmSize)
+    {
+        ApiCallRc apiCallRc;
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = vlmApiCallHandler.volumeResized(
+                nodeName,
+                rscName,
+                volumeNr,
+                vlmSize
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc volumeDrbdResized(String nodeName, String rscName, int volumeNr)
+    {
+        ApiCallRc apiCallRc;
+        try (
+            LockSupport ls = LockSupport.lock(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.writeLock(),
+                storPoolDfnMapLock.writeLock()
+            )
+        )
+        {
+            apiCallRc = vlmApiCallHandler.volumeDrbdResized(
+                nodeName,
+                rscName,
+                volumeNr
+            );
+        }
+        return apiCallRc;
+    }
+
     /**
      * Called if a satellite deleted the volume.
      *

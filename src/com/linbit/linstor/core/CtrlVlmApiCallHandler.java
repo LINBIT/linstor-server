@@ -30,6 +30,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -59,6 +60,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     @Inject
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
+        CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
@@ -76,7 +78,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             LinStorObject.VOLUME,
-            null, // interComSerializer
+            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -88,6 +90,141 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
+    }
+
+    ApiCallRc volumeResized(
+        String nodeNameStr,
+        String rscNameStr,
+        int volumeNr,
+        long vlmSize
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
+                ApiCallType.MODIFY,
+                apiCallRc,
+                nodeNameStr,
+                rscNameStr,
+                volumeNr
+            )
+        )
+        {
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
+            VolumeNumber volumeNumber = asVlmNr(volumeNr);
+
+            Volume vlm = rscData.getVolume(volumeNumber);
+
+            boolean updateSatellites = false;
+
+            boolean resizeExpected = vlm.getFlags().isSet(apiCtx, VlmFlags.RESIZE);
+
+            if (resizeExpected)
+            {
+                // Verify that this resize matches the current target size
+                long expectedSize = vlm.getVolumeDefinition().getVolumeSize(apiCtx);
+                if (vlmSize == expectedSize)
+                {
+                    errorReporter.logDebug("Volume %s resized to %d.", vlm, vlmSize);
+
+                    vlm.getFlags().disableFlags(apiCtx, VlmFlags.RESIZE);
+
+                    // If all volumes have been resized, can resize DRBD
+                    boolean allResized = true;
+                    Iterator<Volume> vlmIter = vlm.getVolumeDefinition().iterateVolumes(apiCtx);
+                    while (vlmIter.hasNext())
+                    {
+                        Volume otherVlm = vlmIter.next();
+
+                        if (otherVlm.getFlags().isSet(apiCtx, VlmFlags.RESIZE))
+                        {
+                            allResized = false;
+                            break;
+                        }
+                    }
+
+                    if (allResized)
+                    {
+                        vlm.getFlags().enableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
+                        updateSatellites = true;
+                    }
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "Volume %s resized to %d, awaiting resize to %d.", vlm, vlmSize, expectedSize);
+                }
+            }
+
+            commit();
+
+            if (updateSatellites)
+            {
+                updateSatellites(rscData);
+            }
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // a report and a corresponding api-response already created. nothing to do here
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.MODIFY,
+                getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
+                getObjRefs(nodeNameStr, rscNameStr, volumeNr),
+                getVariables(nodeNameStr, rscNameStr, volumeNr),
+                apiCallRc
+            );
+        }
+
+        return apiCallRc;
+    }
+
+    ApiCallRc volumeDrbdResized(
+        String nodeNameStr,
+        String rscNameStr,
+        int volumeNr
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
+                ApiCallType.MODIFY,
+                apiCallRc,
+                nodeNameStr,
+                rscNameStr,
+                volumeNr
+            )
+        )
+        {
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
+            VolumeNumber volumeNumber = asVlmNr(volumeNr);
+
+            Volume vlm = rscData.getVolume(volumeNumber);
+
+            vlm.getFlags().disableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
+
+            commit();
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // a report and a corresponding api-response already created. nothing to do here
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.MODIFY,
+                getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
+                getObjRefs(nodeNameStr, rscNameStr, volumeNr),
+                getVariables(nodeNameStr, rscNameStr, volumeNr),
+                apiCallRc
+            );
+        }
+
+        return apiCallRc;
     }
 
     ApiCallRc volumeDeleted(
@@ -434,5 +571,4 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             );
         }
     }
-
 }

@@ -60,6 +60,8 @@ import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntResizedDrbdVlmOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntResizedVlmOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
@@ -469,6 +471,35 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
             .addAllFreeSpace(
                 ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
             )
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeNotifyVolumeResized(
+        String nodeName, String resourceName, int volumeNr, long vlmSize, ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        MsgIntResizedVlmOuterClass.MsgIntResizedVlm.newBuilder()
+            .setNodeName(nodeName)
+            .setRscName(resourceName)
+            .setVlmNr(volumeNr)
+            .setVlmSize(vlmSize)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeNotifyDrbdVolumeResized(
+        String nodeName, String resourceName, int volumeNr, ByteArrayOutputStream baos
+    )
+        throws IOException
+    {
+        MsgIntResizedDrbdVlmOuterClass.MsgIntResizedDrbdVlm.newBuilder()
+            .setNodeName(nodeName)
+            .setRscName(resourceName)
+            .setVlmNr(volumeNr)
             .build()
             .writeDelimitedTo(baos);
     }

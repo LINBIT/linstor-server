@@ -80,6 +80,17 @@ public interface CtrlStltSerializer extends CommonSerializer
             Resource resource,
             Map<StorPool, Long> freeSpaceMap
         );
+        CtrlStltSerializerBuilder notifyVolumeResized(
+            String nodeName,
+            String resourceName,
+            int volumeNr,
+            long vlmSize
+        );
+        CtrlStltSerializerBuilder notifyDrbdVolumeResized(
+            String nodeName,
+            String resourceName,
+            int volumeNr
+        );
         CtrlStltSerializerBuilder notifyVolumeDeleted(
             String nodeName,
             String resourceName,

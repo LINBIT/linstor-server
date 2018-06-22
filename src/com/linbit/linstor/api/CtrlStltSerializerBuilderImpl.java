@@ -443,6 +443,39 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
     }
 
     @Override
+    public CtrlStltSerializerBuilder notifyVolumeResized(
+        String nodeName, String resourceName, int volumeNr, long vlmSize
+    )
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeNotifyVolumeResized(
+                nodeName, resourceName, volumeNr, vlmSize, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyDrbdVolumeResized(String nodeName, String resourceName, int volumeNr)
+    {
+        try
+        {
+            ctrlStltSerializationWriter.writeNotifyDrbdVolumeResized(nodeName, resourceName, volumeNr, baos);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(ioExc);
+            exceptionOccured = true;
+        }
+        return this;
+    }
+
+    @Override
     public CtrlStltSerializerBuilder notifyVolumeDeleted(
         String nodeName,
         String resourceName,
@@ -706,6 +739,23 @@ public class CtrlStltSerializerBuilderImpl extends CommonSerializerBuilderImpl i
             String resourceName,
             UUID rscUuid,
             Map<StorPool, Long> freeSpaceMap,
+            ByteArrayOutputStream baos
+        )
+            throws IOException;
+
+        void writeNotifyVolumeResized(
+            String nodeName,
+            String resourceName,
+            int volumeNr,
+            long vlmSize,
+            ByteArrayOutputStream baos
+        )
+            throws IOException;
+
+        void writeNotifyDrbdVolumeResized(
+            String nodeName,
+            String resourceName,
+            int volumeNr,
             ByteArrayOutputStream baos
         )
             throws IOException;

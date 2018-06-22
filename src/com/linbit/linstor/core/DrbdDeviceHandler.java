@@ -1051,7 +1051,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         createResourceMetaData(rscName, rscDfn, rscState);
 
-        adjustResource(rscName, rscState);
+        adjustResource(rsc, rscState);
 
         deleteResourceVolumes(localNode, rscName, rsc, rscDfn, rscState);
         // TODO: Notify the controller of successful deletion of volumes
@@ -1163,6 +1163,13 @@ class DrbdDeviceHandler implements DeviceHandler
                         {
                             resizeStorageVolume(rscDfn, vlmState);
                             vlmState.setDiskNeedsResize(false);
+                        }
+
+                        if (vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.RESIZE))
+                        {
+                            // Notify the controller that the volume was resized even if we haven't actually changed the
+                            // size, because notification may have been missed when it was actually resized.
+                            deviceManagerProvider.get().notifyVolumeResized(vlm);
                         }
 
                         // Set block device paths
@@ -1341,9 +1348,11 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void adjustResource(ResourceName rscName, ResourceState rscState)
-        throws ResourceException
+    private void adjustResource(Resource rsc, ResourceState rscState)
+        throws ResourceException, AccessDeniedException
     {
+        ResourceName rscName = rsc.getDefinition().getName();
+
         if (rscState.requiresAdjust())
         {
             errLog.logTrace(
@@ -1368,6 +1377,39 @@ class DrbdDeviceHandler implements DeviceHandler
                     cmdExc
                 );
             }
+        }
+
+        Iterator<Volume> vlmIter = rsc.iterateVolumes();
+        while (vlmIter.hasNext())
+        {
+            Volume vlm = vlmIter.next();
+
+            if (vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DRBD_RESIZE))
+            {
+                resizeDrbdResource(rscName, vlm.getVolumeDefinition().getVolumeNumber());
+
+                deviceManagerProvider.get().notifyDrbdVolumeResized(vlm);
+            }
+        }
+    }
+
+    private void resizeDrbdResource(ResourceName rscName, VolumeNumber vlmNr)
+        throws ResourceException
+    {
+        try
+        {
+            drbdUtils.resize(rscName, vlmNr, false);
+        }
+        catch (ExtCmdFailedException cmdExc)
+        {
+            throw new ResourceException(
+                "Resizing DRBD volume " + vlmNr + " of resource '" + rscName.displayValue + "' failed",
+                getAbortMsg(rscName, vlmNr),
+                "The external command for resizing the DRBD state of the resource failed",
+                null,
+                null,
+                cmdExc
+            );
         }
     }
 

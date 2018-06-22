@@ -389,6 +389,7 @@ class StltRscApiCallHandler
                             checkUuid(vlm, vlmApi, localRsc.toString());
 
                             vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
+                            vlm.getFlags().resetFlagsTo(apiCtx, Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
                         }
                         else
                         {

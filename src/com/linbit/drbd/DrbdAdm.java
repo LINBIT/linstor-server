@@ -113,7 +113,7 @@ public class DrbdAdm
             command.add("--");
             command.add("--assume-clean");
         }
-        String resName = resourceName.value;
+        String resName = resourceName.displayValue;
         // Using -c disables /etc/drbd.d/global_common.conf
         // command.addAll(asConfigParameter(resName)); // basically just adds the -c <rscName.conf> as parameter
         command.add("resize");
