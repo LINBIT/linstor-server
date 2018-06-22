@@ -205,6 +205,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             Volume vlm = rscData.getVolume(volumeNumber);
 
             vlm.getFlags().disableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
+            vlm.getVolumeDefinition().getFlags().disableFlags(peerAccCtx, VlmDfnFlags.RESIZE);
 
             commit();
         }

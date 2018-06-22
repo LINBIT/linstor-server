@@ -77,7 +77,9 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
 
     enum VlmDfnFlags implements Flags
     {
-        DELETE(1L), ENCRYPTED(2L);
+        DELETE(1L),
+        ENCRYPTED(2L),
+        RESIZE(4L);
 
         public final long flagValue;
 

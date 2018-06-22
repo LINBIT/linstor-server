@@ -322,6 +322,12 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                     setVlmDfnSize(vlmDfn, size);
 
                     Iterator<Volume> vlmIter = vlmDfn.iterateVolumes(peerAccCtx);
+
+                    if (vlmIter.hasNext())
+                    {
+                        vlmDfn.getFlags().enableFlags(peerAccCtx, VlmDfnFlags.RESIZE);
+                    }
+
                     while (vlmIter.hasNext())
                     {
                         Volume vlm = vlmIter.next();
