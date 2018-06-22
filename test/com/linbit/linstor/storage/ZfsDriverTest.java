@@ -133,7 +133,14 @@ public class ZfsDriverTest extends StorageTestUtils
         );
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
 
-        driver.compareVolumeSize(identifier, size);
+        {
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, TEST_SIZE_100MB);
+            assertEquals(
+                "volume size should be in tolerance",
+                StorageDriver.SizeComparison.WITHIN_TOLERANCE,
+                sizeComparison
+            );
+        }
 
         expectZfsVolumeInfoBehavior(
             ZFS_COMMAND_DEFAULT,
@@ -145,8 +152,12 @@ public class ZfsDriverTest extends StorageTestUtils
 
         try
         {
-            driver.compareVolumeSize(identifier, size);
-            fail("volume size should be higher than tolerated");
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, TEST_SIZE_100MB);
+            assertEquals(
+                "volume size should be higher than tolerated",
+                StorageDriver.SizeComparison.TOO_LARGE,
+                sizeComparison
+            );
         }
         catch (StorageException storExc)
         {
@@ -415,18 +426,23 @@ public class ZfsDriverTest extends StorageTestUtils
         driver.compareVolumeSize(identifier, size);
     }
 
-    @Test(expected = StorageException.class)
+    @Test
     @SuppressWarnings("checkstyle:magicnumber")
     public void testCheckVolumeTooSmall() throws StorageException
     {
         String identifier = "testVolume";
         long size = TEST_SIZE_100MB; // size in KiB => 100MB
 
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size - 10);
         // user wanted at least 100 MB, but we give him a little bit less
-        // should trigger exception
 
-        driver.compareVolumeSize(identifier, size);
+        StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, size);
+        assertEquals(
+            "volume size should be too small",
+            StorageDriver.SizeComparison.TOO_SMALL,
+            sizeComparison
+        );
     }
 
     @Test

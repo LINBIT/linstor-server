@@ -141,7 +141,14 @@ public class LvmDriverTest extends StorageTestUtils
         );
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, "4096.00k");
 
-        driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
+        {
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
+            assertEquals(
+                "volume size should be in tolerance",
+                StorageDriver.SizeComparison.WITHIN_TOLERANCE,
+                sizeComparison
+            );
+        }
 
         expectLvsInfoBehavior(
             LVM_LVS_DEFAULT,
@@ -152,8 +159,12 @@ public class LvmDriverTest extends StorageTestUtils
 
         try
         {
-            driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
-            fail("volume size should be higher than tolerated");
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
+            assertEquals(
+                "volume size should be higher than tolerated",
+                StorageDriver.SizeComparison.TOO_LARGE,
+                sizeComparison
+            );
         }
         catch (StorageException storExc)
         {
@@ -389,21 +400,26 @@ public class LvmDriverTest extends StorageTestUtils
         driver.compareVolumeSize(identifier, size);
     }
 
-    @Test(expected = StorageException.class)
+    @Test
     @SuppressWarnings("checkstyle:magicnumber")
     public void testCheckVolumeTooSmall() throws StorageException
     {
         final String identifier = "testVolume";
         final long size = 102_400;
 
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, "4096.00k");
         expectLvsInfoBehavior(
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             identifier,
             size - 10); // user wanted at least 100 MB, but we give him a little bit less
-        // should trigger exception
 
-        driver.compareVolumeSize(identifier, size);
+        StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, size);
+        assertEquals(
+            "volume size should be too small",
+            StorageDriver.SizeComparison.TOO_SMALL,
+            sizeComparison
+        );
     }
 
     @Test
@@ -475,6 +491,7 @@ public class LvmDriverTest extends StorageTestUtils
         final HashSet<String> keys = new HashSet<>(driver.getKind().getConfigurationKeys());
 
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY));
