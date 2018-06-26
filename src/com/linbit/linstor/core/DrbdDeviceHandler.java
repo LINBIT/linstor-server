@@ -50,6 +50,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.DriverTraits;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import java.io.File;
@@ -1046,12 +1047,57 @@ class DrbdDeviceHandler implements DeviceHandler
 
     private void createVolumeMetaData(
         ResourceDefinition rscDfn,
+        Resource rsc,
         VolumeStateDevManager vlmState
     )
-        throws ExtCmdFailedException
+        throws ExtCmdFailedException, StorageException, ResourceException, VolumeException, AccessDeniedException
     {
         ResourceName rscName = rscDfn.getName();
         drbdUtils.createMd(rscName, vlmState.getVlmNr(), vlmState.getPeerSlots());
+
+        if (isThinVlm(rscName, vlmState))
+        {
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
+            boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+
+            String currentGi = null;
+            try
+            {
+                currentGi = vlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
+            }
+            catch (InvalidKeyException invKeyExc)
+            {
+                throw new ImplementationError(
+                    "API constant contains an invalid key",
+                    invKeyExc
+                );
+            }
+            if (currentGi == null)
+            {
+                VolumeNumber vlmNr = vlmState.getVlmNr();
+                throw new VolumeException(
+                    "Meta data creation for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmNr.value + " failed",
+                    getAbortMsg(rscName, vlmState.getVlmNr()),
+                    "Volume " + vlmNr.value + " of the resource uses a thin provisioning storage driver,\n" +
+                    "but no initial value for the DRBD current generation is set on the volume definition",
+                    "- Ensure that the initial DRBD current generation is set on the volume definition\n" +
+                    "or\n" +
+                    "- Recreate the volume definition",
+                    "The key of the initial DRBD current generation property is:\n" +
+                    ApiConsts.KEY_DRBD_CURRENT_GI,
+                    null
+                );
+            }
+            drbdUtils.setGi(
+                rsc.getNodeId(),
+                vlmState.getMinorNr(),
+                vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted),
+                currentGi,
+                null,
+                false
+            );
+        }
     }
 
     private void createResource(
@@ -1068,7 +1114,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         createResourceConfiguration(rscName, rsc, rscDfn);
 
-        createResourceMetaData(rscName, rscDfn, rscState);
+        createResourceMetaData(rscName, rsc, rscDfn , rscState);
 
         adjustResource(rsc, rscState);
 
@@ -1077,7 +1123,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         // TODO: Wait for the DRBD resource to reach the target state
 
-        makePrimaryIfRequired(localNode, rscName, rsc, rscDfn, rscState);
+        condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
 
         deviceManagerProvider.get().notifyResourceApplied(rsc);
     }
@@ -1327,8 +1373,13 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void createResourceMetaData(ResourceName rscName, ResourceDefinition rscDfn, ResourceState rscState)
-        throws ResourceException
+    private void createResourceMetaData(
+        ResourceName rscName,
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        ResourceState rscState
+    )
+        throws ResourceException, AccessDeniedException
     {
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
@@ -1344,8 +1395,33 @@ class DrbdDeviceHandler implements DeviceHandler
                             "Creating resource " + rscName.displayValue + " Volume " +
                             vlmState.getVlmNr().value + " meta data"
                         );
-                        createVolumeMetaData(rscDfn, vlmState);
+                        createVolumeMetaData(rscDfn, rsc, vlmState);
                     }
+                }
+                catch (StorageException storExc)
+                {
+                    throw new ResourceException(
+                        "Meta data creation for resource '" + rscName.displayValue + "' volume " +
+                        vlmState.getVlmNr().value + " failed",
+                        getAbortMsg(rscName),
+                        "Meta data creation failed due to an error of the storage driver",
+                        "Check the configuration of the storage pool associated with the volume",
+                        null,
+                        storExc
+                    );
+                }
+                catch (VolumeException vlmExc)
+                {
+                    throw new ResourceException(
+                        "Meta data creation for resource '" + rscName.displayValue + "' volume " +
+                        vlmState.getVlmNr().value + " failed",
+                        getAbortMsg(rscName),
+                        "Meta data creation for volume " + vlmState.getVlmNr().value + " +" +
+                        "failed",
+                        null,
+                        null,
+                        vlmExc
+                    );
                 }
                 catch (ExtCmdFailedException cmdExc)
                 {
@@ -1353,7 +1429,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         "Meta data creation for resource '" + rscName.displayValue + "' volume " +
                         vlmState.getVlmNr().value + " failed",
                         getAbortMsg(rscName),
-                        "Meta data creation failed because the execution of an external command failed",
+                        "Meta data creation for volume " + vlmState.getVlmNr().value + " +" +
+                        "failed because the execution of an external command failed",
                         "- Check whether the required software is installed\n" +
                         "- Check whether the application's search path includes the location\n" +
                         "  of the external software\n" +
@@ -1488,7 +1565,7 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void makePrimaryIfRequired(
+    private void condInitialOrSkipSync(
         Node localNode,
         ResourceName rscName,
         Resource rsc,
@@ -1512,10 +1589,32 @@ class DrbdDeviceHandler implements DeviceHandler
             else
             if (rsc.isCreatePrimary() && !rscState.isPrimary())
             {
-                // set primary
-                errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
+                // First, skip the resync on all thinly provisioned volumes
+                boolean haveFatVlm = false;
+                Iterator<Volume> vlmIter = rsc.iterateVolumes();
+                while (vlmIter.hasNext())
+                {
+                    Volume vlm = vlmIter.next();
+                    VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+                    VolumeState vlmState = rscState.getVolumeState(vlmNr);
+                    if (isThinVlm(rscName, (VolumeStateDevManager) vlmState))
+                    {
+                        skipSync(rscName, vlmNr);
+                    }
+                    else
+                    {
+                        haveFatVlm = true;
+                    }
+                }
+
+                // Set the resource primary (--force) to trigger an initial sync of all
+                // fat provisioned volumes
                 ((ResourceData) rsc).unsetCreatePrimary();
-                setResourcePrimary(rsc);
+                if (haveFatVlm)
+                {
+                    errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
+                    setResourcePrimary(rsc);
+                }
             }
         }
         catch (InvalidKeyException exc)
@@ -1541,9 +1640,36 @@ class DrbdDeviceHandler implements DeviceHandler
         catch (ExtCmdFailedException cmdExc)
         {
             throw new ResourceException(
-                "Setting primary on the DRBD resource '" + rscName.getDisplayName() + " failed",
+                "Starting the initial resync of the DRBD resource '" + rscName.getDisplayName() + " failed",
                 getAbortMsg(rscName),
-                "The external command for stopping the DRBD resource failed",
+                "The external command for changing the DRBD resource's role failed",
+                "- Check whether the required software is installed\n" +
+                "- Check whether the application's search path includes the location\n" +
+                "  of the external software\n" +
+                "- Check whether the application has execute permission for the external command\n",
+                null,
+                cmdExc
+            );
+        }
+    }
+
+    private void skipSync(
+        ResourceName rscName,
+        VolumeNumber vlmNr
+    )
+        throws ResourceException
+    {
+        try
+        {
+            drbdUtils.newCurrentUuid(rscName, vlmNr);
+        }
+        catch (ExtCmdFailedException cmdExc)
+        {
+            throw new ResourceException(
+                "Skipping the initial resync of the DRBD resource '" + rscName.getDisplayName() + " volume " +
+                vlmNr.value + " failed",
+                getAbortMsg(rscName),
+                "The external command for adjusting the state of the DRBD resource's generation identifiers failed",
                 "- Check whether the required software is installed\n" +
                 "- Check whether the application's search path includes the location\n" +
                 "  of the external software\n" +
@@ -2062,6 +2188,37 @@ class DrbdDeviceHandler implements DeviceHandler
                 ioExc
             );
         }
+    }
+
+    private boolean isThinVlm(ResourceName rscName, VolumeStateDevManager vlmState)
+        throws ResourceException
+    {
+        boolean isThin = false;
+        StorageDriver storDrv = vlmState.getDriver();
+        try
+        {
+            Map<String, String> drvTraits = storDrv.getTraits();
+            String provisioning = drvTraits.get(DriverTraits.KEY_PROV);
+            if (provisioning != null && provisioning.equals(DriverTraits.PROV_THIN))
+            {
+                isThin = true;
+            }
+        }
+        catch (StorageException storExc)
+        {
+            VolumeNumber vlmNr = vlmState.getVlmNr();
+            throw new ResourceException(
+                "Determining the provisioning scheme of resource '" + rscName + "' volume " +
+                vlmNr.value + " failed",
+                getAbortMsg(rscName),
+                "Determining the provision scheme of volume " + vlmNr.value + " failed due to an\n" +
+                "error of the storage driver for the volume",
+                null,
+                null,
+                storExc
+            );
+        }
+        return isThin;
     }
 
     private String getAbortMsg(ResourceName rscName)
