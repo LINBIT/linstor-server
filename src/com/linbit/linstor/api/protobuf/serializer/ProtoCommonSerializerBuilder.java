@@ -22,6 +22,7 @@ import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
 import com.linbit.linstor.proto.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.MsgEventOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
+import com.linbit.linstor.proto.MsgHostnameOuterClass.MsgHostname;
 import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.eventdata.EventRscDeploymentStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscDfnReadyOuterClass;
@@ -299,6 +300,21 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 }
                 msgErrorReport.build().writeDelimitedTo(baos);
             }
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder hostName(String hostName)
+    {
+        try
+        {
+            MsgHostname msgHostname = MsgHostname.newBuilder().setHostname(hostName).build();
+            msgHostname.writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

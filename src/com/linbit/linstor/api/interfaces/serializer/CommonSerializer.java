@@ -47,5 +47,7 @@ public interface CommonSerializer
         );
 
         CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports);
+
+        CommonSerializerBuilder hostName(String hostName);
     }
 }

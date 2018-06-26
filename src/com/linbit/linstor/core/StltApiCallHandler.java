@@ -168,26 +168,14 @@ public class StltApiCallHandler
         UUID disklessStorPoolUuid,
         Peer controllerPeer
     )
-        throws IOException
     {
         ApiCallRcImpl apiCallRc = null;
 
         // get satellites current hostname
-        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-        String hostName = "";
-        try
-        {
-            final ExtCmd.OutputData output = extCommand.exec("uname", "-n");
-            final String stdOut = new String(output.stdoutData);
-            hostName = stdOut.trim();
-        }
-        catch (ChildProcessTimeoutException ex)
-        {
-            errorReporter.reportError(ex);
-        }
+        final String hostName = getHostname();
 
         // Check if satellite hostname is equal to the given nodename
-        if (hostName == null || !hostName.toLowerCase().equals(nodeName))
+        if (!hostName.toLowerCase().equals(nodeName))
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);
@@ -639,6 +627,23 @@ public class StltApiCallHandler
 
         return interComSerializer.builder(ApiConsts.API_LST_ERROR_REPORTS, msgId.get())
             .errorReports(errorReports).build();
+    }
+
+    public String getHostname()
+    {
+        String hostName = "";
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final ExtCmd.OutputData output = extCommand.exec("uname", "-n");
+            final String stdOut = new String(output.stdoutData);
+            hostName = stdOut.trim();
+        }
+        catch (ChildProcessTimeoutException | IOException ex)
+        {
+            errorReporter.reportError(ex);
+        }
+        return hostName;
     }
 
     private interface ApplyData
