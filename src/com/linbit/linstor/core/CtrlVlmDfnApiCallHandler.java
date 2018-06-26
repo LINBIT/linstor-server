@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
+import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeName;
@@ -232,6 +233,10 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
 
                 fillProperties(vlmDfnApi.getProps(), getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+
+                // Set an initial DRBD current generation identifier for use when creating volumes
+                // in a setup that includes thin provisioning storage pools
+                propsMap.put(ApiConsts.KEY_DRBD_CURRENT_GI, GidGenerator.generateRandomGid());
 
                 if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
                 {
