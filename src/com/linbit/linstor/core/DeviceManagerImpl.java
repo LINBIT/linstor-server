@@ -39,6 +39,7 @@ import org.slf4j.event.Level;
 
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import com.linbit.linstor.StorPool;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -1159,28 +1160,27 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = rsc.getDefinition().getName().displayValue;
             UUID rscUuid = rsc.getUuid();
 
-            byte[] data = null;
+            Map<StorPool, Long> freeSpaceMap = null;
             try
             {
-                data = interComSerializer
-                    .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
-                    .notifyResourceDeleted(
-                        msgNodeName,
-                        msgRscName,
-                        rscUuid,
-                        apiCallHandlerUtils.getFreeSpace()
-                    )
-                    .build();
+                freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
             }
             catch (StorageException exc)
             {
                 errLog.reportError(exc);
+                // If free space reporting failed, send an empty map
+                freeSpaceMap = new TreeMap();
             }
-
-            if (data != null)
-            {
-                ctrlPeer.sendMessage(data);
-            }
+            byte[] data = interComSerializer
+                .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
+                .notifyResourceDeleted(
+                    msgNodeName,
+                    msgRscName,
+                    rscUuid,
+                    freeSpaceMap
+                )
+                .build();
+            ctrlPeer.sendMessage(data);
         }
 
         // Remember the resource for removal after the DeviceHandler instances have finished
