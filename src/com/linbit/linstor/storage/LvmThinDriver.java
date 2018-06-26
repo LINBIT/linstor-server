@@ -120,6 +120,7 @@ public class LvmThinDriver extends LvmDriver
 
         final String size = Long.toString(extentSize);
         traits.put(DriverTraits.KEY_ALLOC_UNIT, size);
+        traits.put(DriverTraits.KEY_PROV, DriverTraits.PROV_THIN);
 
         return traits;
     }
