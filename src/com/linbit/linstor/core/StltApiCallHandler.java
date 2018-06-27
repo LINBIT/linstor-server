@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -39,6 +40,10 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
 import com.linbit.linstor.core.StltStorPoolApiCallHandler.ChangedData;
+import com.linbit.linstor.drbdstate.DrbdEventPublisher;
+import com.linbit.linstor.drbdstate.DrbdResource;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
+import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.Watch;
@@ -96,6 +101,8 @@ public class StltApiCallHandler
     private WhitelistProps whitelistProps;
 
     private final Provider<Integer> msgId;
+    private DrbdStateTracker drbdStateTracker;
+    private DrbdEventPublisher drbdEventPublisher;
 
     @Inject
     public StltApiCallHandler(
@@ -126,7 +133,9 @@ public class StltApiCallHandler
         EventBroker eventBrokerRef,
         WhitelistProps whiteListPropsRef,
         WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef
+        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef,
+        DrbdStateTracker drbdStateTrackerRef,
+        DrbdEventPublisher drbdEventPublisherRef
     )
     {
         errorReporter = errorReporterRef;
@@ -157,6 +166,8 @@ public class StltApiCallHandler
         whitelistProps = whiteListPropsRef;
         whiteListPropsReconfigurator = whiteListPropsReconfiguratorRef;
         msgId = msgIdRef;
+        drbdStateTracker = drbdStateTrackerRef;
+        drbdEventPublisher = drbdEventPublisherRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -349,6 +360,45 @@ public class StltApiCallHandler
                 // There are no explicit controller - satellite watches.
                 // FullSync implicitly creates a watch for all events.
                 createWatchForPeer();
+
+                {
+                    /*
+                     *  in rare cases (e.g. migration) it is possible that a DRBD-resource already
+                     *  exists and we receive "create drbd resource" from the "events2"-stream
+                     *  before the controller tells us about that resource.
+                     *
+                     *  In this case we have to update the corresponding DrbdResources that from now
+                     *  on we know them and are interested in the changes, and send the controller
+                     *  the initial "resource created" event.
+                     */
+
+                    /*
+                     * In cases where a resource has nothing to do with DRBD (or is not deployed yet)
+                     * the drbdStateTracker will simply return null and this block results in a no-op.
+                     *
+                     * If later drbd fires the "create drbd resource" in its "events2" stream, there is
+                     * also a check if we already know this resource, so that way is also covered.
+                     */
+
+                    for (RscPojo rsc : resources)
+                    {
+                        DrbdResource drbdResource = drbdStateTracker.getResource(rsc.getName());
+                        if (drbdResource != null && !drbdResource.isKnownByLinstor())
+                        {
+                            drbdResource.setKnownByLinstor(true);
+                            drbdEventPublisher.resourceCreated(drbdResource);
+
+                            Iterator<DrbdVolume> itVlm = drbdResource.iterateVolumes();
+                            while (itVlm.hasNext())
+                            {
+                                DrbdVolume drbdVlm = itVlm.next();
+                                drbdEventPublisher.volumeCreated(drbdResource, null, drbdVlm);
+
+                            }
+                        }
+                    }
+                }
+
             }
             else
             {

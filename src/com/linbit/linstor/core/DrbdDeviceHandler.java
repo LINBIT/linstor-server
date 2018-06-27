@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.linbit.AsyncOps;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TimeoutException;
@@ -74,7 +73,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.utils.FileExistsCheck;
 import com.linbit.utils.StringUtils;
 import org.slf4j.event.Level;
 
@@ -795,7 +793,8 @@ class DrbdDeviceHandler implements DeviceHandler
                     {
                         throw new VolumeException(
                             "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                                rscDfn.getName().displayValue + "' too large. Expected " + sizeComparison + "KiB."
+                                rscDfn.getName().displayValue + "' too large. Expected " + requiredSize +
+                                "KiB, but was : " + storDrv.getSize(vlmState.getStorVlmName()) + "KiB."
                         );
                     }
 
