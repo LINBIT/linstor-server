@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 

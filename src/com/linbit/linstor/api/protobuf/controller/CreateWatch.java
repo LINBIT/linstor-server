@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgCrtWatchOuterClass;
 
 import javax.inject.Inject;

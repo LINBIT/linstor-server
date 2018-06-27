@@ -2,7 +2,7 @@ package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
-import com.linbit.linstor.core.StltApiCallHandlerUtils;
+import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.storage.StorageException;
 

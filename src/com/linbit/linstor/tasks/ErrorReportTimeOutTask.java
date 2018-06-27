@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.core.ControllerCoreModule;
-import com.linbit.linstor.core.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.LockSupport;

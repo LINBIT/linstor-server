@@ -6,6 +6,7 @@ import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 
 import javax.inject.Inject;
 

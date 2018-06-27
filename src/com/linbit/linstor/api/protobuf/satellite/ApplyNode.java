@@ -9,7 +9,7 @@ import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;

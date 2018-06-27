@@ -15,7 +15,7 @@ import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;

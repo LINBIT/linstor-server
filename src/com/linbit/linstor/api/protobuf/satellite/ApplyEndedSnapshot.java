@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.StltApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass.MsgIntSnapshotEndedData;
 
 import javax.inject.Inject;

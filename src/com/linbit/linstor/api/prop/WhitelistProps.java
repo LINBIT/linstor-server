@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.prop;
 
 import com.linbit.linstor.LinStorRuntimeException;
-import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.util.Arrays;

@@ -19,7 +19,7 @@ public class SecretGenerator
      *
      * @return a 20 character long random String
      */
-    static String generateSharedSecret()
+    public static String generateSharedSecret()
     {
         return generateSecretString(DRBD_SHARED_SECRET_SIZE);
     }
@@ -36,7 +36,7 @@ public class SecretGenerator
      * @param size
      * @return A Base64 encoded String of <code>size</code> random bytes.
      */
-    static String generateSecretString(int size)
+    public static String generateSecretString(int size)
     {
         String secret = Base64.encode(generateSecret(size));
         return secret;
@@ -46,7 +46,7 @@ public class SecretGenerator
      * @param size
      * @return An array of random bytes with the length of the <code>size</code> parameter
      */
-    static byte[] generateSecret(int size)
+    public static byte[] generateSecret(int size)
     {
         byte[] randomBytes = new byte[size];
         rnd.nextBytes(randomBytes);

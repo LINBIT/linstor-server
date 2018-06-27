@@ -21,6 +21,8 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;

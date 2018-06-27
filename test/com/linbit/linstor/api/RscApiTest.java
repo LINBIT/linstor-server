@@ -13,7 +13,8 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
-import com.linbit.linstor.core.CtrlRscApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
+
 import junitparams.JUnitParamsRunner;
 import org.junit.Before;
 import org.junit.Test;

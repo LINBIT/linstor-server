@@ -15,6 +15,7 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;

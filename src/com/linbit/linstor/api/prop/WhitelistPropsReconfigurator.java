@@ -5,7 +5,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.AbsApiCallHandler.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 

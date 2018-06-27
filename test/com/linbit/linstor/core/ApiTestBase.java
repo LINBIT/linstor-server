@@ -16,6 +16,8 @@ import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;

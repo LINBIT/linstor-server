@@ -24,6 +24,8 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
+import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -90,10 +92,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private StltUpdateTrackerImpl updTracker;
 
     // Tracks objects that require requesting updates from the controller
-    private final StltUpdateTrackerImpl.UpdateBundle updPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
+    private final UpdateBundle updPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
 
     // Tracks objects that are waiting to be updated with data received from the controller
-    private final StltUpdateTrackerImpl.UpdateBundle rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
+    private final UpdateBundle rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
 
     private Thread svcThr;
 
