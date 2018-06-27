@@ -24,6 +24,9 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected String pool = ZFS_POOL_DEFAULT;
 
+    // zfs allows sub datasets to be specified and therefore '/' is needed
+    public static final byte[] VALID_INNER_CHARS = {'_', '-', '/'};
+
     public ZfsDriver(
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,
