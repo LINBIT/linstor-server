@@ -49,9 +49,9 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public Map<String, String> getTraits() throws StorageException
+    public Map<String, String> getTraits(final String identifier) throws StorageException
     {
-        long extentSize = getExtentSize();
+        long extentSize = getExtentSize("unused");
 
         final HashMap<String, String> traits = new HashMap<>();
 
@@ -211,7 +211,7 @@ public class LvmDriver extends AbsStorageDriver
      * @throws StorageException
      */
     @Override
-    protected long getExtentSize() throws StorageException
+    protected long getExtentSize(final String identifier) throws StorageException
     {
         long extentSize = 0;
         final String[] command = new String[]

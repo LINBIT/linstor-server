@@ -112,9 +112,9 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public Map<String, String> getTraits() throws StorageException
+    public Map<String, String> getTraits(final String identifier) throws StorageException
     {
-        final long extentSize = getExtentSize();
+        final long extentSize = getExtentSize("unused");
 
         final HashMap<String, String> traits = new HashMap<>();
 

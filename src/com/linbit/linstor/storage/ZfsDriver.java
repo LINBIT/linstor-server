@@ -24,6 +24,8 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected String pool = ZFS_POOL_DEFAULT;
 
+    public static final long ZFS_VOLBLOCKSIZE = 8; // 8K
+
     // zfs allows sub datasets to be specified and therefore '/' is needed
     public static final byte[] VALID_INNER_CHARS = {'_', '-', '/'};
 
@@ -39,11 +41,11 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    public Map<String, String> getTraits() throws StorageException
+    public Map<String, String> getTraits(final String identifier) throws StorageException
     {
         final HashMap<String, String> traits = new HashMap<>();
 
-        traits.put(DriverTraits.KEY_ALLOC_UNIT, String.valueOf(getExtentSize()));
+        traits.put(DriverTraits.KEY_ALLOC_UNIT, String.valueOf(getExtentSize(identifier)));
 
         return traits;
     }
@@ -142,40 +144,42 @@ public class ZfsDriver extends AbsStorageDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    protected long getExtentSize() throws StorageException
+    protected long getExtentSize(String identifier) throws StorageException
     {
-        final String[] command = new String[]
+        long extentSize = ZFS_VOLBLOCKSIZE;
+        if (storageVolumeExists(identifier, VolumeType.VOLUME))
         {
-            zfsCommand,
-            "get", "recordsize", //TODO check if recordsize really is the extent size
-            "-o", "value",
-            "-Hp",
-            pool
-        };
+            final String[] command = new String[]
+                {
+                    zfsCommand,
+                    "get", "volblocksize",
+                    "-o", "value",
+                    "-Hp",
+                    pool + '/' + identifier
+                };
 
-        long extentSize;
-        try
-        {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-            OutputData outputData = extCommand.exec(command);
+            try
+            {
+                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+                OutputData outputData = extCommand.exec(command);
 
-            checkExitCode(outputData, command);
+                checkExitCode(outputData, command);
 
-            String strBlockSize = new String(outputData.stdoutData);
-            extentSize = Long.parseLong(strBlockSize.trim()) >> 10; // we have to return extent size in KiB
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            throw new StorageException(
-                "Failed to get the extent size (zfs 'recordsize')",
-                String.format("Failed to get the extent size for volume: %s", pool),
-                (exc instanceof ChildProcessTimeoutException) ?
-                    "External command timed out" :
-                    "External command threw an IOException",
-                null,
-                String.format("External command: %s", glue(command, " ")),
-                exc
-            );
+                String strBlockSize = new String(outputData.stdoutData);
+                extentSize = Long.parseLong(strBlockSize.trim()) >> 10; // we have to return extent size in KiB
+            } catch (ChildProcessTimeoutException | IOException exc)
+            {
+                throw new StorageException(
+                    "Failed to get the extent size (zfs 'volblocksize')",
+                    String.format("Failed to get the extent size for volume: %s", pool),
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(command, " ")),
+                    exc
+                );
+            }
         }
         return extentSize;
     }

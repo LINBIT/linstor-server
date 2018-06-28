@@ -145,7 +145,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public String createVolume(final String identifier, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException
     {
-        long effSize = calculateEffectiveSize(size);
+        long effSize = calculateEffectiveSize(identifier, size);
 
         String volumePath = null;
 
@@ -287,7 +287,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public void resizeVolume(String identifier, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException
     {
-        long effSize = calculateEffectiveSize(size);
+        long effSize = calculateEffectiveSize(identifier, size);
 
         String[] command = getResizeCommand(identifier, effSize);
 
@@ -345,10 +345,10 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
     }
 
-    private long calculateEffectiveSize(long size)
+    private long calculateEffectiveSize(final String identifier, long size)
         throws StorageException, MinSizeException, MaxSizeException
     {
-        final long extent = getExtentSize();
+        final long extent = getExtentSize(identifier);
         // Calculate effective size from requested size
         long effSize = size;
         if (effSize % extent != 0)
@@ -559,7 +559,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
         final VolumeInfo info = getVolumeInfo(identifier);
 
-        final long extentSize = getExtentSize();
+        final long extentSize = getExtentSize(identifier);
         final long floorSize = (requiredSize / extentSize) * extentSize;
 
         final long toleratedSize = floorSize + extentSize * sizeAlignmentToleranceFactor;
@@ -1061,7 +1061,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException;
 
-    protected abstract long getExtentSize() throws StorageException;
+    protected abstract long getExtentSize(String identifier) throws StorageException;
 
     protected abstract void checkConfiguration(Map<String, String> config) throws StorageException;
 

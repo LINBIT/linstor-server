@@ -2196,7 +2196,7 @@ class DrbdDeviceHandler implements DeviceHandler
         StorageDriver storDrv = vlmState.getDriver();
         try
         {
-            Map<String, String> drvTraits = storDrv.getTraits();
+            Map<String, String> drvTraits = storDrv.getTraits(vlmState.getStorVlmName());
             String provisioning = drvTraits.get(DriverTraits.KEY_PROV);
             if (provisioning != null && provisioning.equals(DriverTraits.PROV_THIN))
             {

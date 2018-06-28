@@ -470,7 +470,7 @@ public class LvmDriverTest extends StorageTestUtils
     public void testTraits() throws StorageException
     {
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
-        Map<String, String> traits = driver.getTraits();
+        Map<String, String> traits = driver.getTraits("unused");
 
         final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
         assertEquals("4096", size);

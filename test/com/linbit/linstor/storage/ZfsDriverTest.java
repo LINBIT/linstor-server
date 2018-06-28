@@ -5,6 +5,7 @@ import static com.linbit.linstor.storage.StorageConstants.CONFIG_ZFS_COMMAND_KEY
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_ZFS_POOL_KEY;
 import static com.linbit.linstor.storage.ZfsDriver.ZFS_COMMAND_DEFAULT;
 import static com.linbit.linstor.storage.ZfsDriver.ZFS_POOL_DEFAULT;
+import static com.linbit.linstor.storage.ZfsDriver.ZFS_VOLBLOCKSIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -41,7 +42,7 @@ public class ZfsDriverTest extends StorageTestUtils
 {
     private static final long MB = 1024;
     private static final long TEST_SIZE_100MB = 100 * MB;
-    private static final long TEST_EXTENT_SIZE = 128;
+    private static final long TEST_EXTENT_SIZE = ZFS_VOLBLOCKSIZE;
     private static final long TEST_TOLERANCE_FACTOR = 4;
     private static final long CREATE_VOL_WAIT_TIME = 2000;
 
@@ -131,7 +132,7 @@ public class ZfsDriverTest extends StorageTestUtils
             identifier,
             size + zfsExtent * TEST_TOLERANCE_FACTOR
         );
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, zfsExtent);
 
         {
             StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, TEST_SIZE_100MB);
@@ -201,7 +202,7 @@ public class ZfsDriverTest extends StorageTestUtils
         long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, volumeSize);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier);
 
@@ -251,7 +252,7 @@ public class ZfsDriverTest extends StorageTestUtils
         long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, volumeSize);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier);
 
@@ -281,7 +282,7 @@ public class ZfsDriverTest extends StorageTestUtils
         long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier);
 
         String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
@@ -306,7 +307,7 @@ public class ZfsDriverTest extends StorageTestUtils
         long volumeSize = TEST_SIZE_100MB; // size in KiB => 100MB
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier, true);
         driver.createVolume(identifier, volumeSize, null); // null == not encrypted
     }
@@ -319,7 +320,7 @@ public class ZfsDriverTest extends StorageTestUtils
         long correctedSize = TEST_SIZE_100MB + TEST_EXTENT_SIZE;
         String identifier = "testVolume";
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, correctedSize, identifier);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, correctedSize);
 
@@ -412,7 +413,7 @@ public class ZfsDriverTest extends StorageTestUtils
         long zfsExtent = TEST_EXTENT_SIZE;
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size);
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, zfsExtent);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, zfsExtent);
 
         driver.compareVolumeSize(identifier, size);
     }
@@ -433,7 +434,7 @@ public class ZfsDriverTest extends StorageTestUtils
         String identifier = "testVolume";
         long size = TEST_SIZE_100MB; // size in KiB => 100MB
 
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size - 10);
         // user wanted at least 100 MB, but we give him a little bit less
 
@@ -500,7 +501,7 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testFreeSize() throws StorageException
     {
         final long size = 1 * 1024 * 1024 * 1024; // 1TB
-        expectZfsFreeSizeCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, size, true);
+        expectZfsFreeSizeCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, null, size, true);
 
         assertEquals(size, driver.getFreeSize());
     }
@@ -508,11 +509,11 @@ public class ZfsDriverTest extends StorageTestUtils
     @Test
     public void testTraits() throws StorageException
     {
-        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, TEST_EXTENT_SIZE);
-        Map<String, String> traits = driver.getTraits();
+        expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, "testVolume", TEST_EXTENT_SIZE);
+        Map<String, String> traits = driver.getTraits("testVolume");
 
         final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
-        assertEquals("128", size);
+        assertEquals(String.valueOf(ZFS_VOLBLOCKSIZE), size);
     }
 
     @Test
@@ -639,46 +640,81 @@ public class ZfsDriverTest extends StorageTestUtils
     protected void expectZfsExtentCommand(
         String zfsCommand,
         String pool,
+        final String identifier,
         long size
     )
     {
-        expectZfsExtentCommand(zfsCommand, pool, size, true);
+        expectZfsExtentCommand(zfsCommand, pool, identifier, size, true);
     }
 
     protected void expectZfsExtentCommand(
         String zfsCommand,
         String pool,
+        final String identifier,
         long size,
         boolean poolExists
     )
     {
-        expectZfsSizeCommand(zfsCommand, "recordsize", pool, size, poolExists);
+        expectZfsStorageVolumeExistsCommand(zfsCommand, pool, identifier, poolExists);
+        if (poolExists)
+        {
+            expectZfsSizeCommand(zfsCommand, "volblocksize", pool, identifier, size, poolExists);
+        }
     }
 
     protected void expectZfsFreeSizeCommand(
         String zfsCommand,
         String pool,
+        final String identifier,
         long size,
         boolean poolExists
     )
     {
-        expectZfsSizeCommand(zfsCommand, "available", pool, size, poolExists);
+        expectZfsSizeCommand(zfsCommand, "available", pool, null, size, poolExists);
+    }
+
+    protected void expectZfsStorageVolumeExistsCommand(
+        final String zfsCommand,
+        final String pool,
+        final String identifier,
+        boolean exists
+    )
+    {
+        Command command = new Command(
+            zfsCommand,
+            "list",
+            "-Hp",
+            "-t", "volume",
+            pool + '/' + identifier
+        );
+        OutputData outData = new TestOutputData(
+            "",
+            "",
+            exists ? 0 : 1
+        );
+        ec.setExpectedBehavior(command, outData);
     }
 
     protected void expectZfsSizeCommand(
         final String zfsCommand,
         final String property,
         final String pool,
+        final String identifier,
         long size,
         boolean poolExists
     )
     {
+        String poolId = pool;
+        if (identifier != null)
+        {
+            poolId += '/' + identifier;
+        }
         Command command = new Command(
             zfsCommand,
             "get", property,
             "-o", "value",
             "-Hp",
-            pool
+            poolId
         );
         OutputData outData;
         if (poolExists)

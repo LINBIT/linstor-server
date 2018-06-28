@@ -129,7 +129,7 @@ public interface StorageDriver
      * @return Map of key/value strings describing the driver's characteristics
      * @throws StorageException If determining the extent size of the volume group fails
      */
-    Map<String, String> getTraits() throws StorageException;
+    Map<String, String> getTraits(String identifier) throws StorageException;
 
     /**
      * Sets the driver's configuration options

@@ -74,7 +74,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public Map<String, String> getTraits()
+    public Map<String, String> getTraits(final String identifier)
     {
         return Collections.emptyMap();
     }
