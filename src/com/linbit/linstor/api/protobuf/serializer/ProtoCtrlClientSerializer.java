@@ -30,7 +30,7 @@ public class ProtoCtrlClientSerializer extends ProtoCommonSerializer
     @Override
     public CtrlClientSerializerBuilder builder(String apiCall)
     {
-        return builder(null, null);
+        return builder(apiCall, null);
     }
 
     @Override

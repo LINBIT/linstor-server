@@ -1753,4 +1753,28 @@ public class CtrlApiCallHandler
         }
         return apiCallRc;
     }
+
+    public byte[] queryMaxVlmSize(
+        int placeCount,
+        String storPoolNameStr,
+        List<String> notPlaceWithRscList,
+        String notPlaceWithRscRegex,
+        List<String> replicasOnDifferentPropList,
+        List<String> replicasOnSamePropList
+    )
+    {
+        byte[] response;
+        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()))
+        {
+            response = storPoolDfnApiCallHandler.getMaxVlmSizeForReplicaCount(
+                placeCount,
+                storPoolNameStr,
+                notPlaceWithRscList,
+                notPlaceWithRscRegex,
+                replicasOnDifferentPropList,
+                replicasOnSamePropList
+            );
+        }
+        return response;
+    }
 }

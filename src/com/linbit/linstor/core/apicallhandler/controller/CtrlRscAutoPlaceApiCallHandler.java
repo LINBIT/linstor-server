@@ -116,6 +116,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                     notPlaceWithRscRegexStr,
                     replicasOnDifferentPropList,
                     replicasOnSamePropList,
+                    CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy,
                     CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy
                 );
 

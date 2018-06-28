@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.serializer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,17 +21,21 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
+import com.linbit.linstor.proto.MsgRespQryMaxVlmSizesOuterClass.MsgRespQryMaxVlmSizes;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstSnapshotDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
+import com.linbit.linstor.proto.MsgRespQryMaxVlmSizesOuterClass;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.SnapshotDfnOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
@@ -285,6 +290,41 @@ public class ProtoCtrlClientSerializerBuilder
         {
             EventSnapshotDeploymentOuterClass.EventSnapshotDeployment.newBuilder()
                 .addAllResponses(serializeApiCallRc(apiCallRc))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+
+    @Override
+    public CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Candidate> candidateList)
+    {
+        try
+        {
+            List<MsgRespQryMaxVlmSizesOuterClass.Candidate> protoCandidates = new ArrayList<>();
+
+            for (Candidate candidate : candidateList)
+            {
+                protoCandidates.add(
+                    MsgRespQryMaxVlmSizesOuterClass.Candidate.newBuilder()
+                        .setMaxVlmSize(candidate.getSizeAfterDeployment())
+                        .addAllNodeNames(
+                            candidate.getNodes().stream()
+                                .map(node -> node.getName().displayValue)
+                                .collect(Collectors.toList())
+                            )
+                        .setStorPoolName(candidate.getStorPoolName().displayValue)
+                        .build()
+                );
+            }
+
+            MsgRespQryMaxVlmSizes.newBuilder()
+                .addAllCandidates(protoCandidates)
                 .build()
                 .writeDelimitedTo(baos);
         }

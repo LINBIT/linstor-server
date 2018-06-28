@@ -13,16 +13,18 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -37,6 +39,7 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -49,6 +52,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final CtrlAutoStorPoolSelector autoStorPoolSelector;
+    private final Provider<Integer> msgIdProvider;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -63,7 +68,9 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext AccessContext peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whiteListProps
+        WhitelistProps whiteListProps,
+        CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
+        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef
     )
     {
         super(
@@ -81,6 +88,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         storPoolDfnMap = storPoolDfnMapRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        autoStorPoolSelector = autoStorPoolSelectorRef;
+        msgIdProvider = msgIdProviderRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -255,6 +264,84 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    public byte[] getMaxVlmSizeForReplicaCount(
+        int placeCount,
+        String storPoolNameStr,
+        List<String> notPlaceWithRscListRef,
+        String notPlaceWithRscRegexStr,
+        List<String> replicasOnDifferentPropList,
+        List<String> replicasOnSamePropList
+    )
+    {
+        byte[] result;
+        try
+        {
+            List<Candidate> candidateList = null;
+            StorPoolName storPoolName = null;
+            if (storPoolNameStr != null && storPoolNameStr.length() > 0)
+            {
+                storPoolName = asStorPoolName(storPoolNameStr);
+            }
+            candidateList = autoStorPoolSelector.getCandidateList(
+                0L,
+                placeCount,
+                storPoolName,
+                notPlaceWithRscListRef,
+                notPlaceWithRscRegexStr,
+                replicasOnDifferentPropList,
+                replicasOnSamePropList,
+                CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy
+            );
+            if (candidateList.isEmpty())
+            {
+                ApiCallRcImpl errRc = new ApiCallRcImpl();
+                if (storPoolName != null && storPoolDfnMap.get(storPoolName) == null)
+                {
+                    // check if storpooldfn exists (storPoolName is known)
+                    errRc.addEntry(
+                        "Unknown storage pool name",
+                        ApiConsts.MASK_ERROR | ApiConsts.FAIL_INVLD_STOR_POOL_NAME
+                    );
+                }
+                else
+                {
+                    // else we simply have not enough nodes
+                    errRc.addEntry(
+                        "Not enough nodes",
+                        ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES
+                    );
+
+                }
+                result = clientComSerializer
+                    .builder(ApiConsts.API_REPLY, msgIdProvider.get())
+                    .apiCallRcSeries(errRc)
+                    .build();
+            }
+            else
+            {
+                candidateList.sort((c1, c2) -> Long.compare(c1.sizeAfterDeployment, c2.sizeAfterDeployment));
+
+                result = clientComSerializer
+                    .builder(ApiConsts.API_RSP_MAX_VLM_SIZE, msgIdProvider.get())
+                    .maxVlmSizeCandidateList(candidateList)
+                    .build();
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            apiCallRc.addEntry(
+                "The property key '" + exc.invalidKey + "' is invalid.",
+                ApiConsts.MASK_STOR_POOL_DFN | ApiConsts.FAIL_INVLD_PROP
+            );
+            result = clientComSerializer
+                .builder(ApiConsts.API_REPLY, msgIdProvider.get())
+                .apiCallRcSeries(apiCallRc)
+                .build();
+        }
+        return result;
     }
 
     private void delete(StorPoolDefinitionData storPoolDfn)

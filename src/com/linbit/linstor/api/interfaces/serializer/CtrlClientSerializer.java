@@ -11,14 +11,18 @@ import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.satellitestate.SatelliteState;
 
 public interface CtrlClientSerializer extends CommonSerializer
 {
+    @Override
     CtrlClientSerializerBuilder builder();
 
+    @Override
     CtrlClientSerializerBuilder builder(String apiCall);
 
+    @Override
     CtrlClientSerializerBuilder builder(String apiCall, Integer msgId);
 
     public interface CtrlClientSerializerBuilder extends CommonSerializerBuilder
@@ -40,5 +44,6 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
 
         CtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc);
+        CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Candidate> candidateList);
     }
 }

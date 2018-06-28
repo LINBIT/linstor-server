@@ -64,9 +64,45 @@ public class CtrlAutoStorPoolSelector
         final String notPlaceWithRscRegexStr,
         final List<String> replicasOnDifferentPropList,
         final List<String> replicasOnSamePropList,
+        final NodeSelectionStrategy nodeSelectionStrategy,
+        final CandidateSelectionStrategy candidateSelectionStrategy
+    )
+        throws NotEnoughFreeNodesException, InvalidKeyException
+    {
+        List<Candidate> candidateList = getCandidateList(
+            rscSize,
+            placeCount,
+            forcedStorPoolName,
+            notPlaceWithRscListRef,
+            notPlaceWithRscRegexStr,
+            replicasOnDifferentPropList,
+            replicasOnSamePropList,
+            nodeSelectionStrategy
+        );
+
+        if (candidateList.isEmpty())
+        {
+            failNotEnoughCandidates(forcedStorPoolName, rscSize);
+        }
+        Collections.sort(
+            candidateList,
+            (c1, c2) ->
+                candidateSelectionStrategy.compare(c1, c2, peerAccCtx)
+        );
+        return candidateList.get(0);
+    }
+
+    public List<Candidate> getCandidateList(
+        final long rscSize,
+        final int placeCount,
+        final StorPoolName forcedStorPoolName,
+        final List<String> notPlaceWithRscListRef,
+        final String notPlaceWithRscRegexStr,
+        final List<String> replicasOnDifferentPropList,
+        final List<String> replicasOnSamePropList,
         final NodeSelectionStrategy nodeSelectionStrategy
     )
-        throws AccessDeniedException, NotEnoughFreeNodesException, InvalidKeyException
+        throws InvalidKeyException
     {
         List<String> notPlaceWithRscList = toUpperList(notPlaceWithRscListRef);
         if (notPlaceWithRscRegexStr != null)
@@ -93,45 +129,24 @@ public class CtrlAutoStorPoolSelector
             .collect(Collectors.groupingBy(StorPool::getName));
 
         filterByStorPoolName(forcedStorPoolName, storPools);
-        if (storPools.isEmpty())
-        {
-            failNotEnoughCandidates(forcedStorPoolName, rscSize);
-        }
 
         Map<StorPoolName, List<Node>> candidates =
             filterByDoNotPlaceWithResource(notPlaceWithRscList, storPools);
-        if (candidates.isEmpty())
-        {
-            failNotEnoughCandidates(forcedStorPoolName, rscSize);
-        }
 
+        // this method already trims the node-list to placeCount.
         List<Candidate> candidateList = filterByReplicasOn(
             replicasOnSamePropList,
             replicasOnDifferentPropList,
             candidates,
-            nodeSelectionStrategy
+            nodeSelectionStrategy,
+            placeCount
         );
-        if (candidateList.isEmpty())
-        {
-            failNotEnoughCandidates(forcedStorPoolName, rscSize);
-        }
 
         // candidates still can be of arbitrary length. we have to make sure
         // all candidates have the length of placeCount
-        candidateList = filterCandidates(candidateList, placeCount, nodeSelectionStrategy);
-        if (candidateList.isEmpty())
-        {
-            failNotEnoughCandidates(forcedStorPoolName, rscSize);
-        }
+        //        candidateList = filterCandidates(candidateList, placeCount, nodeSelectionStrategy);
 
-        // we might have a list of candidates and have to choose.
-        Collections.sort(
-            candidateList,
-            this::mostRemainingSpaceStrategy
-        );
-
-        Candidate bestCandidate = candidateList.get(0);
-        return bestCandidate;
+        return candidateList;
     }
 
     private List<String> toUpperList(List<String> list)
@@ -194,58 +209,87 @@ public class CtrlAutoStorPoolSelector
         }
     }
 
-    private Optional<Long> getFreeSpace(StorPool storPool)
+    private StorPool getStorPoolPrivileged(Node node, StorPoolName storPoolName)
     {
-        Optional<Long> freeSpace;
+        StorPool storPool;
         try
         {
-            freeSpace = storPool.getFreeSpace(peerAccCtx);
+            storPool = node.getStorPool(apiAccCtx, storPoolName);
         }
         catch (AccessDeniedException exc)
         {
-            throw new RuntimeAccessDeniedException(
-                exc,
-                "query free space of " + CtrlStorPoolApiCallHandler.getObjectDescriptionInline(storPool),
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-            );
+            throw new ImplementationError(exc);
+        }
+        return storPool;
+    }
+
+    private Optional<Long> getFreeSpace(StorPool storPool)
+    {
+        Optional<Long> freeSpace;
+        if (storPool == null)
+        {
+            freeSpace = Optional.empty();
+        }
+        else
+        {
+            try
+            {
+                freeSpace = storPool.getFreeSpace(peerAccCtx);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new RuntimeAccessDeniedException(
+                    exc,
+                    "query free space of " + CtrlStorPoolApiCallHandler.getObjectDescriptionInline(storPool),
+                    ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+                );
+            }
         }
         return freeSpace;
     }
 
     private Map<StorPoolName, List<Node>> filterByDoNotPlaceWithResource(
-        List<String> notPlaceWithRscList, Map<StorPoolName, List<StorPool>> storPools
-    ) throws AccessDeniedException
+        List<String> notPlaceWithRscList,
+        Map<StorPoolName, List<StorPool>> storPools
+    )
     {
-        Map<StorPoolName, List<Node>> candidates;
-        // try to consider the "do not place with resource" argument on node level.
-        candidates = filterByRscNameStr(storPools, notPlaceWithRscList);
-        if (candidates.isEmpty())
+        Map<StorPoolName, List<Node>> candidates = null;
+        try
         {
-            // if that didn't work, try to consider the "do not place with resource" argument on storPool level
-            for (Entry<StorPoolName, List<StorPool>> entry : storPools.entrySet())
+            // try to consider the "do not place with resource" argument on node level.
+            candidates = filterByRscNameStr(storPools, notPlaceWithRscList);
+            if (candidates.isEmpty())
             {
-                // build a list of storPools that have at least one of the "do not place with resource" resources.
-                List<StorPool> storPoolsToRemove = new ArrayList<>();
-                for (StorPool storPool : entry.getValue())
+                // if that didn't work, try to consider the "do not place with resource" argument on storPool level
+                for (Entry<StorPoolName, List<StorPool>> entry : storPools.entrySet())
                 {
-                    Collection<Volume> volumes = storPool.getVolumes(apiAccCtx);
-                    for (Volume vlm : volumes)
+                    // build a list of storPools that have at least one of the "do not place with resource" resources.
+                    List<StorPool> storPoolsToRemove = new ArrayList<>();
+                    for (StorPool storPool : entry.getValue())
                     {
-                        if (notPlaceWithRscList.contains(vlm.getResourceDefinition().getName().value))
+                        Collection<Volume> volumes = storPool.getVolumes(apiAccCtx);
+                        for (Volume vlm : volumes)
                         {
-                            storPoolsToRemove.add(storPool);
-                            break;
+                            if (notPlaceWithRscList.contains(vlm.getResourceDefinition().getName().value))
+                            {
+                                storPoolsToRemove.add(storPool);
+                                break;
+                            }
                         }
                     }
+                    // remove that storPools
+                    entry.getValue().removeAll(storPoolsToRemove);
                 }
-                // remove that storPools
-                entry.getValue().removeAll(storPoolsToRemove);
-            }
 
-            // We already applied the filtering on storPool level. That means we can re-run the
-            // filterCandidates with no "do not place with resource" restriction on node-level, as we are
-            // already only considering the filtered storPools.
-            candidates = filterByRscNameStr(storPools, Collections.emptyList());
+                // We already applied the filtering on storPool level. That means we can re-run the
+                // filterCandidates with no "do not place with resource" restriction on node-level, as we are
+                // already only considering the filtered storPools.
+                candidates = filterByRscNameStr(storPools, Collections.emptyList());
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
         }
         return candidates;
     }
@@ -254,7 +298,8 @@ public class CtrlAutoStorPoolSelector
         List<String> replicasOnSamePropList,
         List<String> replicasOnDiffParamList,
         Map<StorPoolName, List<Node>> candidatesIn,
-        NodeSelectionStrategy nodeSelectionStartegy
+        NodeSelectionStrategy nodeSelectionStartegy,
+        int placeCount
     )
         throws InvalidKeyException
     {
@@ -357,12 +402,7 @@ public class CtrlAutoStorPoolSelector
                  */
                 for (Collection<Node> nodeList : buckets.values())
                 {
-                    candidatesOut.add(
-                        new Candidate(
-                            candidateEntry.getKey(),
-                            new ArrayList<>(nodeList)
-                        )
-                    );
+                    addCandidate(candidatesOut, candidateEntry.getKey(), nodeList, placeCount);
                 }
             }
         }
@@ -371,6 +411,39 @@ public class CtrlAutoStorPoolSelector
             throw new ImplementationError(exc); // should have been thrown long ago
         }
         return candidatesOut;
+    }
+
+    private void addCandidate(
+        List<Candidate> targetList,
+        StorPoolName storPoolName,
+        Collection<Node> nodeListRef,
+        int nodeCount
+    )
+    {
+
+        if (nodeListRef.size() >= nodeCount)
+        {
+            List<Node> nodeList = new ArrayList<>(nodeListRef);
+            if (nodeListRef.size() > nodeCount)
+            {
+                nodeList = nodeList.subList(0, nodeCount);
+            }
+
+            targetList.add(
+                new Candidate(
+                    storPoolName,
+                    nodeList,
+                    nodeList.stream()
+                        .map(node -> getFreeSpace(
+                                getStorPoolPrivileged(node, storPoolName)
+                            )
+                            .orElse(0L)
+                        )
+                        .min(Long::compare)
+                        .orElse(0L)
+                )
+            );
+        }
     }
 
     private List<Candidate> filterCandidates(
@@ -396,10 +469,19 @@ public class CtrlAutoStorPoolSelector
                                 candidate.storPoolName,
                                 peerAccCtx)
                     );
+                    List<Node> nodeList = candidate.nodes.subList(0, placeCount);
                     filteredCandidateList.add(
                         new Candidate(
                             candidate.storPoolName,
-                            candidate.nodes.subList(0, placeCount)
+                            nodeList,
+                            nodeList.stream()
+                                .map(node -> getFreeSpace(
+                                        getStorPoolPrivileged(node, candidate.storPoolName)
+                                    )
+                                    .orElse(0L)
+                                )
+                                .min(Long::compare)
+                                .orElse(0L)
                         )
                     );
                 }
@@ -432,7 +514,7 @@ public class CtrlAutoStorPoolSelector
         );
     }
 
-    private int mostRemainingSpaceStrategy(Candidate cand1, Candidate cand2)
+    public static int mostRemainingSpaceStrategy(Candidate cand1, Candidate cand2, AccessContext accCtx)
     {
         // the node-lists are already sorted by their storPools.
         // that means, we only have to compare the freeSpace of the first nodes of cand1 and cand2
@@ -440,10 +522,10 @@ public class CtrlAutoStorPoolSelector
         try
         {
             cmp = Long.compare(
-                cand2.nodes.get(0).getStorPool(peerAccCtx, cand2.storPoolName)
-                    .getFreeSpace(peerAccCtx).orElse(0L),
-                cand1.nodes.get(0).getStorPool(peerAccCtx, cand1.storPoolName)
-                    .getFreeSpace(peerAccCtx).orElse(0L)
+                cand2.nodes.get(0).getStorPool(accCtx, cand2.storPoolName)
+                    .getFreeSpace(accCtx).orElse(0L),
+                cand1.nodes.get(0).getStorPool(accCtx, cand1.storPoolName)
+                    .getFreeSpace(accCtx).orElse(0L)
             );
             // compare(cand2, cand1) so that the candidate with more free space comes before the other
         }
@@ -519,17 +601,39 @@ public class CtrlAutoStorPoolSelector
     {
         StorPoolName storPoolName;
         List<Node> nodes;
+        long sizeAfterDeployment;
 
-        Candidate(StorPoolName storPoolNameRef, List<Node> nodesRef)
+        Candidate(
+            StorPoolName storPoolNameRef,
+            List<Node> nodesRef,
+            long sizeAfterDeploymentRef
+        )
         {
             storPoolName = storPoolNameRef;
             nodes = nodesRef;
+            sizeAfterDeployment = sizeAfterDeploymentRef;
+        }
+
+        public StorPoolName getStorPoolName()
+        {
+            return storPoolName;
+        }
+
+        public List<Node> getNodes()
+        {
+            return nodes;
+        }
+
+        public long getSizeAfterDeployment()
+        {
+            return sizeAfterDeployment;
         }
 
         @Override
         public String toString()
         {
-            return "Candidate [storPoolName=" + storPoolName + ", nodes=" + nodes + "]";
+            return "Candidate [storPoolName=" + storPoolName + ", nodes=" + nodes +
+                ", sizeAfterDeployment=" + sizeAfterDeployment + "]";
         }
     }
 
@@ -537,6 +641,12 @@ public class CtrlAutoStorPoolSelector
     public interface NodeSelectionStrategy
     {
         int compare(Node nodeA, Node nodeB, StorPoolName storPoolName, AccessContext accCtx);
+    }
+
+    @FunctionalInterface
+    public interface CandidateSelectionStrategy
+    {
+        int compare(Candidate candidate1, Candidate candidate2, AccessContext accCtx);
     }
 
     private class BucketId
