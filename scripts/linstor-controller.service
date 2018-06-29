@@ -5,8 +5,8 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/linstor-server
-ExecStart=/opt/linstor-server/bin/Controller
+WorkingDirectory=/usr/share/linstor-server
+ExecStart=/usr/share/linstor-server/bin/Controller
 # if killed by signal 143 -> SIGTERM, 129 -> SIGHUP
 SuccessExitStatus=0 143 129
 User=root

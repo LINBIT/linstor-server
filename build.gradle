@@ -343,7 +343,7 @@ ospackage {
         fileMode 0644
     }
 
-    into '/opt/linstor-server'
+    into '/usr/share/linstor-server'
     from(jar.outputs.files) {
         into 'lib'
     }

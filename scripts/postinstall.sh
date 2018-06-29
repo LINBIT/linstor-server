@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DEF_LOCATION="/opt/linstor-server"
+DEF_LOCATION="/usr/share/linstor-server"
 # DEF_USER="linstor"
 # DEF_PWD="linstor"
 DEF_DB="${DEF_LOCATION}/linstordb" # this is actually a directory
