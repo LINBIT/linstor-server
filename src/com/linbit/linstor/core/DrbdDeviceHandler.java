@@ -2200,30 +2200,14 @@ class DrbdDeviceHandler implements DeviceHandler
         throws ResourceException
     {
         boolean isThin = false;
-        StorageDriver storDrv = vlmState.getDriver();
-        try
+
+        Map<String, String> drvTraits = vlmState.getDriver().getKind().getStaticTraits();
+        String provisioning = drvTraits.get(DriverTraits.KEY_PROV);
+        if (provisioning != null && provisioning.equals(DriverTraits.PROV_THIN))
         {
-            Map<String, String> drvTraits = storDrv.getTraits(vlmState.getStorVlmName());
-            String provisioning = drvTraits.get(DriverTraits.KEY_PROV);
-            if (provisioning != null && provisioning.equals(DriverTraits.PROV_THIN))
-            {
-                isThin = true;
-            }
+            isThin = true;
         }
-        catch (StorageException storExc)
-        {
-            VolumeNumber vlmNr = vlmState.getVlmNr();
-            throw new ResourceException(
-                "Determining the provisioning scheme of resource '" + rscName + "' volume " +
-                vlmNr.value + " failed",
-                getAbortMsg(rscName),
-                "Determining the provision scheme of volume " + vlmNr.value + " failed due to an\n" +
-                "error of the storage driver for the volume",
-                null,
-                null,
-                storExc
-            );
-        }
+
         return isThin;
     }
 
