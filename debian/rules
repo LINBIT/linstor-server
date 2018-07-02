@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+JAVA_HOME=/usr/lib/jvm/default-java
+
+GRADLE_TASKS = installdist
+GRADLE_FLAGS = --offline --gradle-user-home debian/.gradlehome --no-daemon
+LS_PREFIX=/usr/share
+
+%:
+	dh $@ --with javahelper,systemd
+
+.PHONY: override_dh_auto_build
+
+override_dh_install:
+	dh_install
+	rm -rf $(CURDIR)/build/install
+	gradle $(GRADLE_TASKS) $(GRADLE_FLAGS)
+	rm -rf $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
+	mkdir -p $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
+	cp -r $(CURDIR)/build/install/linstor-server $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
+	mkdir -p $(CURDIR)/debian/linstor-server/lib/systemd/system
+	cp $(CURDIR)/scripts/*.service $(CURDIR)/debian/linstor-server/lib/systemd/system
+
+.PHONY: override_jh_depends

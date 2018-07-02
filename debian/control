@@ -1,0 +1,21 @@
+Source: linstor-server
+Maintainer: LINBIT HA Solutions GmbH <drbd-user@lists.linbit.com>
+Uploaders: Roland Kammerer <roland.kammerer@linbit.com>
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>= 9),
+               default-jdk-headless,
+               dh-systemd,
+               gradle,
+               javahelper
+Standards-Version: 3.9.6
+
+Package: linstor-server
+Architecture: all
+Depends: ${misc:Depends},
+         default-jre-headless,
+         thin-provisioning-tools
+Description: DRBD distributed resource management utility
+ This is the linstor server.
+ .
+ TODO: provide more information.

@@ -14,6 +14,7 @@ GITHASH := $(shell git rev-parse HEAD)
 	@set -e ; submodules=`$(GIT) submodule foreach --quiet 'echo $$path'`; \
 		$(GIT) ls-files | \
 		grep -vxF -e "$$submodules" | \
+		sed '$(if $(PRESERVE_DEBIAN),,/^debian/d)' | \
 		grep -v "gitignore\|gitmodules" > .filelist
 	@$(GIT) submodule foreach --quiet 'git ls-files | sed -e "s,^,$$path/,"' | \
 		grep -v "gitignore\|gitmodules" >> .filelist
@@ -48,13 +49,19 @@ check-submods:
 	fi
 
 prepare_release: tarball
-debrelease: tarball
+debrelease:
+	make tarball PRESERVE_DEBIAN=1 KEEPNAME=1
 
 .PHONY: check-all-committed
 check-all-committed:
 	if ! tmp=$$(git diff --name-status HEAD 2>&1) || test -n "$$tmp" ; then \
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
+ifneq ($(FORCE),1)
+	if ! grep -q "^linstor-server ($(VERSION)" debian/changelog ; then \
+		echo >&2 "debian/changelog needs update"; exit 1; \
+	fi
+endif
 
 .PHONY: getprotc
 getprotc:
