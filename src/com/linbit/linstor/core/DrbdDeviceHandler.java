@@ -1481,19 +1481,22 @@ class DrbdDeviceHandler implements DeviceHandler
 
             if (vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DRBD_RESIZE))
             {
-                resizeDrbdResource(rscName, vlm.getVolumeDefinition().getVolumeNumber());
+                VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+                VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(vlmNr);
+                resizeDrbdResource(rscName, vlmNr, vlmState);
 
                 deviceManagerProvider.get().notifyDrbdVolumeResized(vlm);
             }
         }
     }
 
-    private void resizeDrbdResource(ResourceName rscName, VolumeNumber vlmNr)
+    private void resizeDrbdResource(ResourceName rscName, VolumeNumber vlmNr, VolumeStateDevManager vlmState)
         throws ResourceException
     {
         try
         {
-            drbdUtils.resize(rscName, vlmNr, false);
+            boolean assumeCleanFlag = isThinVlm(rscName, vlmState);
+            drbdUtils.resize(rscName, vlmNr, assumeCleanFlag);
         }
         catch (ExtCmdFailedException cmdExc)
         {
