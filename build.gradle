@@ -383,7 +383,7 @@ task deleteLibs(type: Delete) {
 }
 
 task copyToLibs(dependsOn: 'deleteLibs') << {
-    ['compile', 'runtime', 'testCompile', 'testRuntime'].each { scope ->
+    ['compile', 'runtime'].each { scope ->
         copy {
             from configurations.getByName(scope).files
             into "${libs}/${scope}"
