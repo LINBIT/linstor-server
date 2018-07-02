@@ -36,9 +36,9 @@ public class MaxVlmSize implements ApiCall
         client.sendMessage(
             apiCallHandler.queryMaxVlmSize(
                 msgQuery.getPlaceCount(),
-                msgQuery.getStoragePool(),
+                msgQuery.hasStoragePool() ? msgQuery.getStoragePool() : null,
                 msgQuery.getNotPlaceWithRscList(),
-                msgQuery.getNotPlaceWithRscRegex(),
+                msgQuery.hasNotPlaceWithRscRegex() ? msgQuery.getNotPlaceWithRscRegex() : null,
                 msgQuery.getReplicasOnDifferentList(),
                 msgQuery.getReplicasOnSameList()
             )
