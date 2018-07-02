@@ -30,12 +30,12 @@ import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
-import com.linbit.linstor.proto.MsgRespQryMaxVlmSizesOuterClass.MsgRespQryMaxVlmSizes;
+import com.linbit.linstor.proto.MsgRspMaxVlmSizesOuterClass;
+import com.linbit.linstor.proto.MsgRspMaxVlmSizesOuterClass.MsgRspMaxVlmSizes;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstSnapshotDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
-import com.linbit.linstor.proto.MsgRespQryMaxVlmSizesOuterClass;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.SnapshotDfnOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
@@ -306,12 +306,12 @@ public class ProtoCtrlClientSerializerBuilder
     {
         try
         {
-            List<MsgRespQryMaxVlmSizesOuterClass.Candidate> protoCandidates = new ArrayList<>();
+            List<MsgRspMaxVlmSizesOuterClass.Candidate> protoCandidates = new ArrayList<>();
 
             for (Candidate candidate : candidateList)
             {
                 protoCandidates.add(
-                    MsgRespQryMaxVlmSizesOuterClass.Candidate.newBuilder()
+                    MsgRspMaxVlmSizesOuterClass.Candidate.newBuilder()
                         .setMaxVlmSize(candidate.getSizeAfterDeployment())
                         .addAllNodeNames(
                             candidate.getNodes().stream()
@@ -323,7 +323,7 @@ public class ProtoCtrlClientSerializerBuilder
                 );
             }
 
-            MsgRespQryMaxVlmSizes.newBuilder()
+            MsgRspMaxVlmSizes.newBuilder()
                 .addAllCandidates(protoCandidates)
                 .build()
                 .writeDelimitedTo(baos);
