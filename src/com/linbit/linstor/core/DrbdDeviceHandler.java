@@ -181,7 +181,10 @@ class DrbdDeviceHandler implements DeviceHandler
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         String peerSlotsProp = rsc.getProps(wrkCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-        short peerSlots = peerSlotsProp == null ? InternalApiConsts.DEFAULT_PEER_SLOTS : Short.valueOf(peerSlotsProp);
+        // Property is checked when the API sets it; if it still throws for whatever reason, it is logged as an
+        // unexpected exception in dispatchResource()
+        short peerSlots = peerSlotsProp == null ?
+            InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
 
         // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
         //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
