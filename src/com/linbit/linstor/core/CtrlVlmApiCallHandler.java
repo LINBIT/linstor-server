@@ -151,7 +151,10 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 }
                 else
                 {
-                    errorReporter.logDebug(
+                    // This can occur when multiple resize commands are being executed concurrently.
+                    // E.g. when the controller receives a command to resize a volume to size X and then one to resize
+                    // to size Y, the first resize notification will have size X while the expected size will be Y.
+                    errorReporter.logWarning(
                         "Volume %s resized to %d, awaiting resize to %d.", vlm, vlmSize, expectedSize);
                 }
             }
