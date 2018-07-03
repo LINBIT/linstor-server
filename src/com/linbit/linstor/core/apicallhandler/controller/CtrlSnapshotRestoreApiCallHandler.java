@@ -146,7 +146,21 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 
             commit();
 
-            updateSatellites(toRscDfn);
+            if (toRscDfn.getVolumeDfnCount(peerAccCtx) > 0)
+            {
+                updateSatellites(toRscDfn);
+            }
+            else
+            {
+                addAnswer(
+                    "No volumes to restore.",
+                    null, // cause
+                    "The target resource definition has no volume definitions. " +
+                        "The restored resources will be empty.",
+                    "Restore the volume definitions to the target resource definition.",
+                    ApiConsts.WARN_NOT_FOUND
+                );
+            }
 
             reportSuccess(
                 getObjectDescriptionInlineFirstLetterCaps() + " restored " +
@@ -168,8 +182,8 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
                 exc,
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeNameStrs, toRscNameStr),
-                new HashMap(),
-                new HashMap(),
+                new HashMap<>(),
+                new HashMap<>(),
                 apiCallRc
             );
         }
@@ -248,8 +262,8 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             type,
             apiCallRc,
             true,
-            new HashMap(),
-            new HashMap()
+            new HashMap<>(),
+            new HashMap<>()
         );
         currentNodeNames = nodeNameStrs;
         currentFromRscName = fromRscNameStr;
