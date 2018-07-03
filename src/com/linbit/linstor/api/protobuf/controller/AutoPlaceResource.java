@@ -42,7 +42,8 @@ public class AutoPlaceResource implements ApiCall
 
         ApiCallRc rc = apiCallHandler.createResourcesAutoPlace(
             msgAutoPlace.getRscName(),
-            filter
+            filter,
+            msgAutoPlace.hasDisklessOnRemaining() ? msgAutoPlace.getDisklessOnRemaining() : false
         );
         apiCallAnswerer.answerApiCallRc(rc);
     }

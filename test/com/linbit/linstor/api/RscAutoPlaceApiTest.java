@@ -1,10 +1,13 @@
 package com.linbit.linstor.api;
 
 import javax.inject.Inject;
+
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
@@ -514,6 +517,69 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertNotEquals(firstNodeProps.getProp("Aux/B"), secondNodeProps.getProp("Aux/B"));
     }
 
+    @Test
+    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
+    public void disklessRemainingTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // sttl2 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt3
+                ApiConsts.CREATED, // stlt3, rsc (diskless)
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt3, rsc, vlm (diskless)
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // sttl2 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt3 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt4
+                ApiConsts.CREATED, // stlt4, rsc (diskless)
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt4, rsc, vlm (diskless)
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt2").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt3").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt4").addStorPool("stor", 10 * GB).build()
+            .disklessOnRemaining(true)
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(4, deployedNodes.size());
+
+        long disklessNodes = deployedNodes.stream().filter(
+            node ->
+            {
+                assertEquals(1, node.getResourceCount()); // just to be sure
+                try
+                {
+                    return node.getResource(SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
+                        .isSet(SYS_CTX, RscFlags.DISKLESS);
+                }
+                catch (AccessDeniedException | InvalidNameException exc)
+                {
+                    throw new RuntimeException(exc);
+                }
+            }
+        ).count();
+        long diskfullNodes = deployedNodes.size() - disklessNodes;
+
+        assertEquals(2, disklessNodes);
+        assertEquals(2, diskfullNodes);
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,
@@ -595,6 +661,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         private final List<String> replicasOnSameNodePropList = new ArrayList<>();
         private final List<String> replicasOnDifferentNodePropList = new ArrayList<>();
+        private boolean disklessOnRemaining;
 
         RscAutoPlaceApiCall(
             String rscNameStrRef,
@@ -641,6 +708,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
+        RscAutoPlaceApiCall disklessOnRemaining(boolean disklessOnRemainingRef)
+        {
+            disklessOnRemaining = disklessOnRemainingRef;
+            return this;
+        }
+
         @Override
         public ApiCallRc executeApiCall()
         {
@@ -684,7 +757,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     {
                         return doNotPlaceWithRscList;
                     }
-                }
+                },
+                disklessOnRemaining
             );
         }
 

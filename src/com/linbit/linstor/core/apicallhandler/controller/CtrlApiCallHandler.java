@@ -1605,7 +1605,8 @@ public class CtrlApiCallHandler
 
     public ApiCallRc createResourcesAutoPlace(
         String rscName,
-        AutoSelectFilterApi selectFilter
+        AutoSelectFilterApi selectFilter,
+        boolean disklessOnRemainingNodes
     )
     {
         ApiCallRc apiCallRc;
@@ -1621,7 +1622,8 @@ public class CtrlApiCallHandler
         {
             apiCallRc = rscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
-                selectFilter
+                selectFilter,
+                disklessOnRemainingNodes
             );
         }
         return apiCallRc;

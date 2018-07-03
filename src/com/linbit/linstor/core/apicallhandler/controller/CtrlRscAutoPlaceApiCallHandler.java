@@ -2,15 +2,19 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -20,10 +24,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.NotEnoughFreeNodesException;
@@ -39,8 +42,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
     private String currentRscName;
 
-    private final ResourceDefinitionMap rscDfnMap;
-    private final StorPoolDefinitionMap storPoolDfnMap;
+    private final NodesMap nodesMap;
+
     private final CtrlRscApiCallHandler rscApiCallHandler;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
 
@@ -50,8 +53,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         // @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        NodesMap nodesMapRef,
         CtrlObjectFactories objectFactories,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -72,15 +74,15 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             peerRef,
             whitelistPropsRef
         );
-        rscDfnMap = rscDfnMapRef;
-        storPoolDfnMap = storPoolDfnMapRef;
+        nodesMap = nodesMapRef;
         rscApiCallHandler = rscApiCallHandlerRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
     }
 
     public ApiCallRc autoPlace(
         String rscNameStr,
-        AutoSelectFilterApi selectFilter
+        AutoSelectFilterApi selectFilter,
+        boolean disklessOnRemainingNodes
     )
     {
         // TODO extract this method into an own interface implementation
@@ -98,12 +100,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             // change wit the api-rework :)
             try
             {
-                StorPoolName storPoolName = null;
-                String storPoolNameStr = selectFilter.getStorPoolNameStr();
-                if (storPoolNameStr != null)
-                {
-                    storPoolName = asStorPoolName(storPoolNameStr);
-                }
                 Candidate bestCandidate = autoStorPoolSelector.findBestCandidate(
                     calculateResourceDefinitionSize(rscNameStr),
                     selectFilter,
@@ -127,6 +123,33 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                         apiCallRc
                     );
                 }
+
+                if (disklessOnRemainingNodes)
+                {
+                    ArrayList<Node> disklessNodeList = new ArrayList<>(nodesMap.values()); // copy
+                    disklessNodeList.removeAll(bestCandidate.nodes); // remove all selected nodes
+
+                    // TODO: allow other diskless storage pools
+                    rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+
+                    List<String> flagList = new ArrayList<>();
+                    flagList.add(RscFlags.DISKLESS.name());
+
+                    // deploy resource disklessly on remaining nodes
+                    for (Node disklessNode : disklessNodeList)
+                    {
+                        rscApiCallHandler.createResource(
+                            disklessNode.getName().displayValue,
+                            rscNameStr,
+                            flagList,
+                            rscPropsMap,
+                            Collections.emptyList(),
+                            false,
+                            apiCallRc
+                        );
+                    }
+                }
+
                 reportSuccess(
                     "Resource '" + rscNameStr + "' successfully autoplaced on " +
                         selectFilter.getPlaceCount() + " nodes",

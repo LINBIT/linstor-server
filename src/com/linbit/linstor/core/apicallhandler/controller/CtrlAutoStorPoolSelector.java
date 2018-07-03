@@ -454,7 +454,7 @@ public class CtrlAutoStorPoolSelector
         }
     }
 
-    private void failNotEnoughCandidates(StorPoolName storPoolName, final long rscSize)
+    private void failNotEnoughCandidates(String storPoolName, final long rscSize)
         throws NotEnoughFreeNodesException
     {
         throw new NotEnoughFreeNodesException(
