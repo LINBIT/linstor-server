@@ -49,6 +49,9 @@ check-submods:
 	fi
 
 prepare_release: tarball
+
+release: prepare_release
+
 debrelease:
 	make tarball PRESERVE_DEBIAN=1 KEEPNAME=1
 
