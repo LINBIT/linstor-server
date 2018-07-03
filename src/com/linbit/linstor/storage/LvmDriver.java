@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -56,7 +57,7 @@ public class LvmDriver extends AbsStorageDriver
         final HashMap<String, String> traits = new HashMap<>();
 
         final String size = Long.toString(extentSize);
-        traits.put(DriverTraits.KEY_ALLOC_UNIT, size);
+        traits.put(ApiConsts.KEY_STOR_POOL_ALLOCATION_UNIT, size);
 
         return traits;
      }
@@ -462,9 +463,9 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public long getFreeSize() throws StorageException
+    public Long getFreeSpace() throws StorageException
     {
-        long freeSize;
+        long freeSpace;
         final String[] command = new String[]
             {
                 lvmVgsCommand,
@@ -493,7 +494,7 @@ public class LvmDriver extends AbsStorageDriver
             {
                 rawOut = rawOut.substring(0, indexOf);
             }
-            freeSize = Long.parseLong(rawOut.trim());
+            freeSpace = Long.parseLong(rawOut.trim());
         }
         catch (NumberFormatException nfexc)
         {
@@ -520,7 +521,7 @@ public class LvmDriver extends AbsStorageDriver
             );
         }
 
-        return freeSize;
+        return freeSpace;
     }
 
     protected String getVolumeGroupFromConfig(Map<String, String> config)

@@ -444,9 +444,9 @@ public class StorageTestUtils
         expectVgsPropCommand(vgsCommand, "vg_extent_size", volumeGroup, extentSize);
     }
 
-    protected void expectVgsFreeSizeCommand(final String vgsCommand, final String volumeGroup, final long freeSize)
+    protected void expectVgsFreeSpaceCommand(final String vgsCommand, final String volumeGroup, final long freeSpace)
     {
-        expectVgsPropCommand(vgsCommand, "vg_free", volumeGroup, Long.toString(freeSize) + ".00");
+        expectVgsPropCommand(vgsCommand, "vg_free", volumeGroup, Long.toString(freeSpace) + ".00");
     }
 
     protected void expectVgsPropCommand(

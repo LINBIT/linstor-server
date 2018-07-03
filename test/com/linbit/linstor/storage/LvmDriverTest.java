@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
+import com.linbit.linstor.api.ApiConsts;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -447,12 +449,12 @@ public class LvmDriverTest extends StorageTestUtils
     }
 
     @Test
-    public void testFreeSize() throws StorageException
+    public void testFreeSpace() throws StorageException
     {
-        final long size = 1 * 1024 * 1024 * 1024;
-        expectVgsFreeSizeCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
+        final Long size = 1L * 1024 * 1024 * 1024;
+        expectVgsFreeSpaceCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
 
-        assertEquals(size, driver.getFreeSize());
+        assertEquals(size, driver.getFreeSpace());
     }
 
     @Test(expected = StorageException.class)
@@ -472,7 +474,7 @@ public class LvmDriverTest extends StorageTestUtils
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
         Map<String, String> traits = driver.getTraits("unused");
 
-        final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
+        final String size = traits.get(ApiConsts.KEY_STOR_POOL_ALLOCATION_UNIT);
         assertEquals("4096", size);
     }
 
@@ -481,8 +483,8 @@ public class LvmDriverTest extends StorageTestUtils
     {
         Map<String, String> traits = driver.getKind().getStaticTraits();
 
-        final String traitProv = traits.get(DriverTraits.KEY_PROV);
-        assertEquals(DriverTraits.PROV_FAT, traitProv);
+        final String traitProv = traits.get(ApiConsts.KEY_STOR_POOL_PROVISIONING);
+        assertEquals(ApiConsts.VAL_STOR_POOL_PROVISIONING_FAT, traitProv);
     }
 
     @Test

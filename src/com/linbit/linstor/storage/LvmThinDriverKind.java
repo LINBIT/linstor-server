@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -34,7 +35,7 @@ public class LvmThinDriverKind implements StorageDriverKind
     {
         final HashMap<String, String> traits = new HashMap<>();
 
-        traits.put(DriverTraits.KEY_PROV, DriverTraits.PROV_THIN);
+        traits.put(ApiConsts.KEY_STOR_POOL_PROVISIONING, ApiConsts.VAL_STOR_POOL_PROVISIONING_THIN);
 
         return traits;
     }

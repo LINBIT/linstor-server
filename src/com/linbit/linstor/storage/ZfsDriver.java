@@ -11,6 +11,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -45,7 +46,7 @@ public class ZfsDriver extends AbsStorageDriver
     {
         final HashMap<String, String> traits = new HashMap<>();
 
-        traits.put(DriverTraits.KEY_ALLOC_UNIT, String.valueOf(getExtentSize(identifier)));
+        traits.put(ApiConsts.KEY_STOR_POOL_ALLOCATION_UNIT, String.valueOf(getExtentSize(identifier)));
 
         return traits;
     }
@@ -358,14 +359,14 @@ public class ZfsDriver extends AbsStorageDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public long getFreeSize() throws StorageException
+    public Long getFreeSpace() throws StorageException
     {
         final String[] command = new String[]
         {
             zfsCommand, "get", "available", "-o", "value", "-Hp", pool
         };
 
-        long freeSize;
+        long freeSpace;
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
@@ -373,8 +374,8 @@ public class ZfsDriver extends AbsStorageDriver
 
             checkExitCode(outputData, command);
 
-            String strFreeSize = new String(outputData.stdoutData);
-            freeSize = Long.parseLong(strFreeSize.trim()) >> 10; // we have to return free size in KiB
+            String strFreeSpace = new String(outputData.stdoutData);
+            freeSpace = Long.parseLong(strFreeSpace.trim()) >> 10; // we have to return free size in KiB
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -389,7 +390,7 @@ public class ZfsDriver extends AbsStorageDriver
                 exc
             );
         }
-        return freeSize;
+        return freeSpace;
     }
 
     private String getPoolFromConfig(Map<String, String> config)

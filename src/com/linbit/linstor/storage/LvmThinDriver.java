@@ -11,6 +11,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -112,6 +113,12 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
+    public Long getFreeSpace()
+    {
+        return null;
+    }
+
+    @Override
     public Map<String, String> getTraits(final String identifier) throws StorageException
     {
         final long extentSize = getExtentSize("unused");
@@ -119,7 +126,7 @@ public class LvmThinDriver extends LvmDriver
         final HashMap<String, String> traits = new HashMap<>();
 
         final String size = Long.toString(extentSize);
-        traits.put(DriverTraits.KEY_ALLOC_UNIT, size);
+        traits.put(ApiConsts.KEY_STOR_POOL_ALLOCATION_UNIT, size);
 
         return traits;
     }

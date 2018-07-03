@@ -14,6 +14,7 @@ import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VGS_COMMAND
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY;
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -334,12 +335,9 @@ public class LvmThinDriverTest extends StorageTestUtils
     }
 
     @Test
-    public void testFreeSize() throws StorageException
+    public void testFreeSpace() throws StorageException
     {
-        final long size = 1 * 1024 * 1024 * 1024;
-        expectVgsFreeSizeCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
-
-        assertEquals(size, driver.getFreeSize());
+        assertNull(driver.getFreeSpace());
     }
 
     @Test(expected = StorageException.class)

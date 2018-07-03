@@ -50,7 +50,6 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.DriverTraits;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import java.io.File;
@@ -2202,8 +2201,8 @@ class DrbdDeviceHandler implements DeviceHandler
         boolean isThin = false;
 
         Map<String, String> drvTraits = vlmState.getDriver().getKind().getStaticTraits();
-        String provisioning = drvTraits.get(DriverTraits.KEY_PROV);
-        if (provisioning != null && provisioning.equals(DriverTraits.PROV_THIN))
+        String provisioning = drvTraits.get(ApiConsts.KEY_STOR_POOL_PROVISIONING);
+        if (provisioning != null && provisioning.equals(ApiConsts.VAL_STOR_POOL_PROVISIONING_THIN))
         {
             isThin = true;
         }

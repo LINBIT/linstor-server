@@ -117,9 +117,10 @@ public interface StorageDriver
     long getSize(String identifier) throws StorageException;
 
     /**
-     * Returns the free size of the pool.
+     * Returns the free space in the pool. null if the pool does not have a clearly defined free space (e.g. thinly
+     * provisioned).
      */
-    long getFreeSize() throws StorageException;
+    Long getFreeSpace() throws StorageException;
 
     /**
      * Returns a map of this driver's characteristics, such as what minimum unit of allocation

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import com.linbit.linstor.api.ApiConsts;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -498,12 +499,12 @@ public class ZfsDriverTest extends StorageTestUtils
     }
 
     @Test
-    public void testFreeSize() throws StorageException
+    public void testFreeSpace() throws StorageException
     {
-        final long size = 1 * 1024 * 1024 * 1024; // 1TB
-        expectZfsFreeSizeCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, null, size, true);
+        final Long size = 1L * 1024 * 1024 * 1024; // 1TB
+        expectZfsFreeSpaceCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, null, size, true);
 
-        assertEquals(size, driver.getFreeSize());
+        assertEquals(size, driver.getFreeSpace());
     }
 
     @Test
@@ -512,7 +513,7 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, "testVolume", TEST_EXTENT_SIZE);
         Map<String, String> traits = driver.getTraits("testVolume");
 
-        final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
+        final String size = traits.get(ApiConsts.KEY_STOR_POOL_ALLOCATION_UNIT);
         assertEquals(String.valueOf(ZFS_VOLBLOCKSIZE), size);
     }
 
@@ -521,8 +522,8 @@ public class ZfsDriverTest extends StorageTestUtils
     {
         Map<String, String> traits = driver.getKind().getStaticTraits();
 
-        final String traitProv = traits.get(DriverTraits.KEY_PROV);
-        assertEquals(DriverTraits.PROV_FAT, traitProv);
+        final String traitProv = traits.get(ApiConsts.KEY_STOR_POOL_PROVISIONING);
+        assertEquals(ApiConsts.VAL_STOR_POOL_PROVISIONING_FAT, traitProv);
     }
 
     @Test
@@ -662,7 +663,7 @@ public class ZfsDriverTest extends StorageTestUtils
         }
     }
 
-    protected void expectZfsFreeSizeCommand(
+    protected void expectZfsFreeSpaceCommand(
         String zfsCommand,
         String pool,
         final String identifier,
