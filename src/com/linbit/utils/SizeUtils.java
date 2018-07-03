@@ -22,14 +22,12 @@ public class SizeUtils
         final BigInteger maxRemainder = BigInteger.valueOf(1 << 10);
         BigInteger magnitude = BigInteger.valueOf(1);
         int unitIdx = 0;
-        while (unitIdx < UNITS.length)
+        final int maxUnitIdx = UNITS.length - 1;
+        // If the size value in the current unit is less than 1024, then
+        // use the current unit, otherwise increase the magnitude and use
+        // the next larger unit
+        while (kib.divide(magnitude).compareTo(maxRemainder) >= 0 && unitIdx < maxUnitIdx)
         {
-            // If the size value in the current unit is less than 1024, then
-            // use the current unit
-            if (kib.divide(magnitude).compareTo(maxRemainder) < 0)
-            {
-                break;
-            }
             magnitude = magnitude.shiftLeft(10);
             ++unitIdx;
         }
