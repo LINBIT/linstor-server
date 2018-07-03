@@ -6,6 +6,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgQryMaxVlmSizesOuterClass.MsgQryMaxVlmSizes;
+import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
 
 import javax.inject.Inject;
 
@@ -35,12 +36,9 @@ public class MaxVlmSize implements ApiCall
         MsgQryMaxVlmSizes msgQuery = MsgQryMaxVlmSizes.parseDelimitedFrom(msgDataIn);
         client.sendMessage(
             apiCallHandler.queryMaxVlmSize(
-                msgQuery.getPlaceCount(),
-                msgQuery.hasStoragePool() ? msgQuery.getStoragePool() : null,
-                msgQuery.getNotPlaceWithRscList(),
-                msgQuery.hasNotPlaceWithRscRegex() ? msgQuery.getNotPlaceWithRscRegex() : null,
-                msgQuery.getReplicasOnDifferentList(),
-                msgQuery.getReplicasOnSameList()
+                new AutoSelectFilterApiData(
+                    msgQuery.getSelectFilter()
+                )
             )
         );
     }

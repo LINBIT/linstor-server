@@ -6,6 +6,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.core.ControllerCoreModule;
@@ -1604,12 +1605,7 @@ public class CtrlApiCallHandler
 
     public ApiCallRc createResourcesAutoPlace(
         String rscName,
-        int placeCount,
-        String storPoolName,
-        List<String> notPlaceWithRscList,
-        String notPlaceWithRscRegex,
-        List<String> replicasOnDifferentPropList,
-        List<String> replicasOnSamePropList
+        AutoSelectFilterApi selectFilter
     )
     {
         ApiCallRc apiCallRc;
@@ -1625,12 +1621,7 @@ public class CtrlApiCallHandler
         {
             apiCallRc = rscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
-                placeCount,
-                storPoolName,
-                notPlaceWithRscList,
-                notPlaceWithRscRegex,
-                replicasOnDifferentPropList,
-                replicasOnSamePropList
+                selectFilter
             );
         }
         return apiCallRc;
@@ -1754,25 +1745,13 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] queryMaxVlmSize(
-        int placeCount,
-        String storPoolNameStr,
-        List<String> notPlaceWithRscList,
-        String notPlaceWithRscRegex,
-        List<String> replicasOnDifferentPropList,
-        List<String> replicasOnSamePropList
-    )
+    public byte[] queryMaxVlmSize(AutoSelectFilterApi selectFilter)
     {
         byte[] response;
         try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()))
         {
             response = storPoolDfnApiCallHandler.getMaxVlmSizeForReplicaCount(
-                placeCount,
-                storPoolNameStr,
-                notPlaceWithRscList,
-                notPlaceWithRscRegex,
-                replicasOnDifferentPropList,
-                replicasOnSamePropList
+                selectFilter
             );
         }
         return response;

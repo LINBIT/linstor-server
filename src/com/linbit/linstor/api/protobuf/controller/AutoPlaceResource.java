@@ -8,10 +8,14 @@ import javax.inject.Inject;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.proto.AutoSelectFilterOuterClass;
+import com.linbit.linstor.proto.AutoSelectFilterOuterClass.AutoSelectFilter;
 import com.linbit.linstor.proto.MsgAutoPlaceRscOuterClass.MsgAutoPlaceRsc;
+import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
 
 @ProtobufApiCall(
     name = ApiConsts.API_AUTO_PLACE_RSC,
@@ -34,15 +38,11 @@ public class AutoPlaceResource implements ApiCall
         throws IOException
     {
         MsgAutoPlaceRsc msgAutoPlace = MsgAutoPlaceRsc.parseDelimitedFrom(msgDataIn);
+        AutoSelectFilterApi filter = new AutoSelectFilterApiData(msgAutoPlace.getSelectFilter());
 
         ApiCallRc rc = apiCallHandler.createResourcesAutoPlace(
             msgAutoPlace.getRscName(),
-            msgAutoPlace.getPlaceCount(),
-            msgAutoPlace.hasStoragePool() ? msgAutoPlace.getStoragePool() : null,
-            msgAutoPlace.getNotPlaceWithRscList(),
-            msgAutoPlace.hasNotPlaceWithRscRegex() ? msgAutoPlace.getNotPlaceWithRscRegex() : null,
-            msgAutoPlace.getReplicasOnDifferentList(),
-            msgAutoPlace.getReplicasOnSameList()
+            filter
         );
         apiCallAnswerer.answerApiCallRc(rc);
     }

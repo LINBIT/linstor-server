@@ -13,6 +13,7 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
@@ -645,12 +646,45 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             return rscAutoPlaceApiCallHandlerProvider.get().autoPlace(
                 rscNameStr,
-                placeCount,
-                forceStorPool,
-                doNotPlaceWithRscList,
-                doNotPlaceWithRscRegexStr,
-                replicasOnDifferentNodePropList,
-                replicasOnSameNodePropList
+                new AutoSelectFilterApi()
+                {
+
+                    @Override
+                    public String getStorPoolNameStr()
+                    {
+                        return forceStorPool;
+                    }
+
+                    @Override
+                    public List<String> getReplicasOnSameList()
+                    {
+                        return replicasOnSameNodePropList;
+                    }
+
+                    @Override
+                    public List<String> getReplicasOnDifferentList()
+                    {
+                        return replicasOnDifferentNodePropList;
+                    }
+
+                    @Override
+                    public int getPlaceCount()
+                    {
+                        return placeCount;
+                    }
+
+                    @Override
+                    public String getNotPlaceWithRscRegex()
+                    {
+                        return doNotPlaceWithRscRegexStr;
+                    }
+
+                    @Override
+                    public List<String> getNotPlaceWithRscList()
+                    {
+                        return doNotPlaceWithRscList;
+                    }
+                }
             );
         }
 

@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -18,6 +17,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
@@ -80,12 +80,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 
     public ApiCallRc autoPlace(
         String rscNameStr,
-        int placeCount,
-        String storPoolNameStr,
-        List<String> notPlaceWithRscListRef,
-        String notPlaceWithRscRegexStr,
-        List<String> replicasOnDifferentPropList,
-        List<String> replicasOnSamePropList
+        AutoSelectFilterApi selectFilter
     )
     {
         // TODO extract this method into an own interface implementation
@@ -104,18 +99,14 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             try
             {
                 StorPoolName storPoolName = null;
+                String storPoolNameStr = selectFilter.getStorPoolNameStr();
                 if (storPoolNameStr != null)
                 {
                     storPoolName = asStorPoolName(storPoolNameStr);
                 }
                 Candidate bestCandidate = autoStorPoolSelector.findBestCandidate(
                     calculateResourceDefinitionSize(rscNameStr),
-                    placeCount,
-                    storPoolName,
-                    notPlaceWithRscListRef,
-                    notPlaceWithRscRegexStr,
-                    replicasOnDifferentPropList,
-                    replicasOnSamePropList,
+                    selectFilter,
                     CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy,
                     CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy
                 );
@@ -137,7 +128,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                     );
                 }
                 reportSuccess(
-                    "Resource '" + rscNameStr + "' successfully autoplaced on " + placeCount + " nodes",
+                    "Resource '" + rscNameStr + "' successfully autoplaced on " +
+                        selectFilter.getPlaceCount() + " nodes",
                     "Used storage pool: '" + bestCandidate.storPoolName.displayValue + "'\n" +
                     "Used nodes: '" + bestCandidate.nodes.stream()
                         .map(node -> node.getName().displayValue)
@@ -148,7 +140,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             catch (NotEnoughFreeNodesException nefnExc)
             {
                 throw asExc(
-                    null,
+                    nefnExc,
                     nefnExc.getMessage(),
                     nefnExc.getCauseText(),
                     nefnExc.getDetailsText(),

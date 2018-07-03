@@ -10,6 +10,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -58,12 +59,7 @@ public class CtrlAutoStorPoolSelector
 
     public Candidate findBestCandidate(
         final long rscSize,
-        final int placeCount,
-        final StorPoolName forcedStorPoolName,
-        final List<String> notPlaceWithRscListRef,
-        final String notPlaceWithRscRegexStr,
-        final List<String> replicasOnDifferentPropList,
-        final List<String> replicasOnSamePropList,
+        final AutoSelectFilterApi selectFilter,
         final NodeSelectionStrategy nodeSelectionStrategy,
         final CandidateSelectionStrategy candidateSelectionStrategy
     )
@@ -71,18 +67,13 @@ public class CtrlAutoStorPoolSelector
     {
         List<Candidate> candidateList = getCandidateList(
             rscSize,
-            placeCount,
-            forcedStorPoolName,
-            notPlaceWithRscListRef,
-            notPlaceWithRscRegexStr,
-            replicasOnDifferentPropList,
-            replicasOnSamePropList,
+            selectFilter,
             nodeSelectionStrategy
         );
 
         if (candidateList.isEmpty())
         {
-            failNotEnoughCandidates(forcedStorPoolName, rscSize);
+            failNotEnoughCandidates(selectFilter.getStorPoolNameStr(), rscSize);
         }
         candidateList.sort((c1, c2) ->
             candidateSelectionStrategy.compare(c1, c2, peerAccCtx));
@@ -91,17 +82,13 @@ public class CtrlAutoStorPoolSelector
 
     public List<Candidate> getCandidateList(
         final long rscSize,
-        final int placeCount,
-        final StorPoolName forcedStorPoolName,
-        final List<String> notPlaceWithRscListRef,
-        final String notPlaceWithRscRegexStr,
-        final List<String> replicasOnDifferentPropList,
-        final List<String> replicasOnSamePropList,
+        final AutoSelectFilterApi selectFilter,
         final NodeSelectionStrategy nodeSelectionStrategy
     )
         throws InvalidKeyException
     {
-        List<String> notPlaceWithRscList = toUpperList(notPlaceWithRscListRef);
+        List<String> notPlaceWithRscList = toUpperList(selectFilter.getNotPlaceWithRscList());
+        String notPlaceWithRscRegexStr = selectFilter.getNotPlaceWithRscRegex();
         if (notPlaceWithRscRegexStr != null)
         {
             notPlaceWithRscList.addAll(getRscNameUpperStrFromRegex(notPlaceWithRscRegexStr));
@@ -123,20 +110,26 @@ public class CtrlAutoStorPoolSelector
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
             // filter for enough free space
             .filter(storPool -> getFreeSpace(storPool).orElse(0L) >= rscSize)
-            .collect(Collectors.groupingBy(StorPool::getName));
+            .collect(
+                Collectors.groupingBy(
+                    StorPool::getName,
+                    HashMap::new, // enforce HashMap-implementation,
+                    Collectors.toList()
+                )
+            );
 
-        filterByStorPoolName(forcedStorPoolName, storPools);
+        filterByStorPoolName(selectFilter.getStorPoolNameStr(), storPools);
 
         Map<StorPoolName, List<Node>> candidates =
             filterByDoNotPlaceWithResource(notPlaceWithRscList, storPools);
 
         // this method already trims the node-list to placeCount.
         List<Candidate> candidateList = filterByReplicasOn(
-            replicasOnSamePropList,
-            replicasOnDifferentPropList,
+            selectFilter.getReplicasOnSameList(),
+            selectFilter.getReplicasOnDifferentList(),
             candidates,
             nodeSelectionStrategy,
-            placeCount
+            selectFilter.getPlaceCount()
         );
 
         // candidates still can be of arbitrary length. we have to make sure
@@ -198,11 +191,31 @@ public class CtrlAutoStorPoolSelector
         return driverKind;
     }
 
-    private void filterByStorPoolName(StorPoolName storPoolName, Map<StorPoolName, List<StorPool>> storPools)
+    private void filterByStorPoolName(String forcedStorPoolName, Map<StorPoolName, List<StorPool>> storPools)
     {
-        if (storPoolName != null)
+        if (forcedStorPoolName != null)
         {
-            storPools.keySet().retainAll(Arrays.asList(storPoolName));
+            // As the statement "new StorPoolName(forcedStorPoolName)" could throw an
+            // InvalidNameException (which we want to avoid, as we should then handle the exception
+            // but not here, ... things get complicated) (should be better after api-rework :) )
+            // Therefore we search manually if we find the displayName somewhere and retain on that
+            StorPoolName storPoolName = null;
+            for (StorPoolName spn : storPools.keySet())
+            {
+                if (forcedStorPoolName.equals(spn.displayValue))
+                {
+                    storPoolName = spn;
+                    break;
+                }
+            }
+            if (storPoolName == null)
+            {
+                storPools.clear();
+            }
+            else
+            {
+                storPools.keySet().retainAll(Arrays.asList(storPoolName));
+            }
         }
     }
 
@@ -450,8 +463,8 @@ public class CtrlAutoStorPoolSelector
             (
                 storPoolName == null ?
                 "" :
-                " * has a deployed storage pool named '" + storPoolName.displayValue + "'\n" +
-                " * the storage pool '" + storPoolName.displayValue + "' has to have at least '" +
+                " * has a deployed storage pool named '" + storPoolName + "'\n" +
+                " * the storage pool '" + storPoolName + "' has to have at least '" +
                 rscSize + "' free space\n"
             ) +
             " * the current access context has enough privileges to use the node and the storage pool", // description
@@ -725,7 +738,5 @@ public class CtrlAutoStorPoolSelector
         {
             return rc;
         }
-
-
     }
 }

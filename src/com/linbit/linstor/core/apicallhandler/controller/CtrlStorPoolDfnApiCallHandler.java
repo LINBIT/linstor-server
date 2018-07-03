@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -267,32 +268,21 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] getMaxVlmSizeForReplicaCount(
-        int placeCount,
-        String storPoolNameStr,
-        List<String> notPlaceWithRscListRef,
-        String notPlaceWithRscRegexStr,
-        List<String> replicasOnDifferentPropList,
-        List<String> replicasOnSamePropList
-    )
+    public byte[] getMaxVlmSizeForReplicaCount(AutoSelectFilterApi selectFilter)
     {
         byte[] result;
         try
         {
             List<Candidate> candidateList = null;
             StorPoolName storPoolName = null;
+            String storPoolNameStr = selectFilter.getStorPoolNameStr();
             if (storPoolNameStr != null && storPoolNameStr.length() > 0)
             {
                 storPoolName = asStorPoolName(storPoolNameStr);
             }
             candidateList = autoStorPoolSelector.getCandidateList(
                 0L,
-                placeCount,
-                storPoolName,
-                notPlaceWithRscListRef,
-                notPlaceWithRscRegexStr,
-                replicasOnDifferentPropList,
-                replicasOnSamePropList,
+                selectFilter,
                 CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy
             );
             if (candidateList.isEmpty())
