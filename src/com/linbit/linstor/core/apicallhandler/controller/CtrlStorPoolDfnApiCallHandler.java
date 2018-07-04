@@ -38,6 +38,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -321,7 +322,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                candidateList.sort((c1, c2) -> Long.compare(c1.sizeAfterDeployment, c2.sizeAfterDeployment));
+                candidateList.sort(Comparator.comparingLong(c -> c.sizeAfterDeployment));
 
                 result = clientComSerializer
                     .builder(ApiConsts.API_RSP_MAX_VLM_SIZE, msgIdProvider.get())

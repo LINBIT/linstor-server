@@ -84,11 +84,8 @@ public class CtrlAutoStorPoolSelector
         {
             failNotEnoughCandidates(forcedStorPoolName, rscSize);
         }
-        Collections.sort(
-            candidateList,
-            (c1, c2) ->
-                candidateSelectionStrategy.compare(c1, c2, peerAccCtx)
-        );
+        candidateList.sort((c1, c2) ->
+            candidateSelectionStrategy.compare(c1, c2, peerAccCtx));
         return candidateList.get(0);
     }
 
@@ -308,7 +305,7 @@ public class CtrlAutoStorPoolSelector
         {
             for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesIn.entrySet())
             {
-                Map<BucketId, Collection<Node>> buckets = new HashMap<>();
+                Map<BucketId, List<Node>> buckets = new HashMap<>();
                 buckets.put(new BucketId(), candidateEntry.getValue());
 
                 /*
@@ -336,15 +333,15 @@ public class CtrlAutoStorPoolSelector
                  */
                 for (String samePropKey : replicasOnSamePropList)
                 {
-                    Map<BucketId, Collection<Node>> nextSameBuckets = new HashMap<>();
-                    for (Entry<BucketId, Collection<Node>> bucketEntry : buckets.entrySet())
+                    Map<BucketId, List<Node>> nextSameBuckets = new HashMap<>();
+                    for (Entry<BucketId, List<Node>> bucketEntry : buckets.entrySet())
                     {
                         for (Node bucketEntryNode : bucketEntry.getValue())
                         {
                             BucketId entryNodeId = bucketEntry.getKey().extend(
                                 bucketEntryNode.getProps(peerAccCtx).getProp(samePropKey)
                             );
-                            Collection<Node> nextSameBucketNodes  = nextSameBuckets.get(entryNodeId);
+                            List<Node> nextSameBucketNodes  = nextSameBuckets.get(entryNodeId);
                             if (nextSameBucketNodes == null)
                             {
                                 nextSameBucketNodes = new ArrayList<>();
@@ -354,6 +351,19 @@ public class CtrlAutoStorPoolSelector
                         }
                     }
                     buckets = nextSameBuckets;
+                }
+
+                /*
+                 * Sort the nodes within each bucket so that the most preferred nodes are chosen first.
+                 */
+                for (List<Node> bucketNodes : buckets.values())
+                {
+                    bucketNodes.sort((node1, node2) -> nodeSelectionStartegy.compare(
+                        node1,
+                        node2,
+                        candidateEntry.getKey(),
+                        peerAccCtx
+                    ));
                 }
 
                 /*
@@ -369,20 +379,10 @@ public class CtrlAutoStorPoolSelector
                 {
                     // although we do not care about the key, we need to iterate over the entrySet
                     // as we will have to call setValue after this loop
-                    for (Entry<BucketId, Collection<Node>> bucketEntry : buckets.entrySet())
+                    for (Entry<BucketId, List<Node>> bucketEntry : buckets.entrySet())
                     {
                         HashMap<String, Node> usedValues = new HashMap<>();
-                        List<Node> bucketNodes = new ArrayList<>(bucketEntry.getValue());
-                        Collections.sort(
-                            bucketNodes,
-                            (node1, node2) -> nodeSelectionStartegy.compare(
-                                node1,
-                                node2,
-                                candidateEntry.getKey(),
-                                peerAccCtx
-                            )
-                        );
-                        for (Node bucketNode : bucketNodes)
+                        for (Node bucketNode : bucketEntry.getValue())
                         {
                             String nodeValue = bucketNode.getProps(peerAccCtx).getProp(diffPropKey);
                             Node selectedNode = usedValues.get(nodeValue);
@@ -391,7 +391,7 @@ public class CtrlAutoStorPoolSelector
                                 usedValues.put(nodeValue, bucketNode);
                             }
                         }
-                        bucketEntry.setValue(usedValues.values());
+                        bucketEntry.setValue(new ArrayList<>(usedValues.values()));
                     }
                 }
 
@@ -420,14 +420,9 @@ public class CtrlAutoStorPoolSelector
         int nodeCount
     )
     {
-
         if (nodeListRef.size() >= nodeCount)
         {
-            List<Node> nodeList = new ArrayList<>(nodeListRef);
-            if (nodeListRef.size() > nodeCount)
-            {
-                nodeList = nodeList.subList(0, nodeCount);
-            }
+            List<Node> nodeList = new ArrayList<>(nodeListRef).subList(0, nodeCount);
 
             targetList.add(
                 new Candidate(
@@ -444,54 +439,6 @@ public class CtrlAutoStorPoolSelector
                 )
             );
         }
-    }
-
-    private List<Candidate> filterCandidates(
-        List<Candidate> candidateList,
-        int placeCount,
-        NodeSelectionStrategy nodeSelectionStartegy
-    )
-    {
-        List<Candidate> filteredCandidateList = new ArrayList<>();
-        for (Candidate candidate : candidateList)
-        {
-            int nodeCount = candidate.nodes.size();
-            if (nodeCount >= placeCount)
-            {
-                if (nodeCount > placeCount)
-                {
-                    Collections.sort(
-                        candidate.nodes,
-                        (node1, node2) ->
-                            nodeSelectionStartegy.compare(
-                                node1,
-                                node2,
-                                candidate.storPoolName,
-                                peerAccCtx)
-                    );
-                    List<Node> nodeList = candidate.nodes.subList(0, placeCount);
-                    filteredCandidateList.add(
-                        new Candidate(
-                            candidate.storPoolName,
-                            nodeList,
-                            nodeList.stream()
-                                .map(node -> getFreeSpace(
-                                        getStorPoolPrivileged(node, candidate.storPoolName)
-                                    )
-                                    .orElse(0L)
-                                )
-                                .min(Long::compare)
-                                .orElse(0L)
-                        )
-                    );
-                }
-                else
-                {
-                    filteredCandidateList.add(candidate);
-                }
-            }
-        }
-        return filteredCandidateList;
     }
 
     private void failNotEnoughCandidates(StorPoolName storPoolName, final long rscSize)
@@ -521,13 +468,13 @@ public class CtrlAutoStorPoolSelector
         int cmp = 0;
         try
         {
+            // compare the arguments in reverse order so that the candidate with more free space comes first
             cmp = Long.compare(
                 cand2.nodes.get(0).getStorPool(accCtx, cand2.storPoolName)
                     .getFreeSpace(accCtx).orElse(0L),
                 cand1.nodes.get(0).getStorPool(accCtx, cand1.storPoolName)
                     .getFreeSpace(accCtx).orElse(0L)
             );
-            // compare(cand2, cand1) so that the candidate with more free space comes before the other
         }
         catch (AccessDeniedException exc)
         {
@@ -547,9 +494,10 @@ public class CtrlAutoStorPoolSelector
         int cmp = 0;
         try
         {
+            // compare the arguments in reverse order so that the node with more free space comes first
             cmp = Long.compare(
-                nodeA.getStorPool(accCtx, storPoolName).getFreeSpace(accCtx).orElse(0L),
-                nodeB.getStorPool(accCtx, storPoolName).getFreeSpace(accCtx).orElse(0L)
+                nodeB.getStorPool(accCtx, storPoolName).getFreeSpace(accCtx).orElse(0L),
+                nodeA.getStorPool(accCtx, storPoolName).getFreeSpace(accCtx).orElse(0L)
             );
         }
         catch (AccessDeniedException exc)

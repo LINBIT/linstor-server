@@ -111,6 +111,68 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
     @Test
     @SuppressWarnings("checkstyle:magicnumber")
+    public void chooseLargerSatelliteTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                1,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            // Name and order the options so that the expected choice is in the middle in terms of creation sequence
+            // and lexicographic order in order to minimize the chances of choosing correctly by accident
+            .stltBuilder("stlt1")
+                .addStorPool("pool", 10 * MB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("pool", 30 * MB)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("pool", 20 * MB)
+                .build()
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * MB)
+        );
+        expectDeployed(
+            "pool",
+            TEST_RSC_NAME,
+            "stlt2"
+        );
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void chooseLargerPoolTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                1,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .stltBuilder("stlt")
+                // Name and order the options so that the expected choice is in the middle in terms of creation sequence
+                // and lexicographic order in order to minimize the chances of choosing correctly by accident
+                .addStorPool("pool1", 10 * MB)
+                .addStorPool("pool2", 30 * MB)
+                .addStorPool("pool3", 20 * MB)
+                .build()
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * MB)
+        );
+        expectDeployed(
+            "pool2",
+            TEST_RSC_NAME,
+            "stlt"
+        );
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
     public void preferredStorPoolNotEnoughSpaceTest() throws Exception
     {
         evaluateTest(
