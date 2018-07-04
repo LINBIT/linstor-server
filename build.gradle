@@ -371,6 +371,19 @@ ospackage {
 buildRpm {
     requires('jre-headless', "1.8.0", GREATER | EQUAL)
     requires('lvm2')
+
+    from('scripts/firewalld/drbd.xml') {
+        into '/usr/lib/firewalld/services'
+        fileMode 0644
+    }
+    from('scripts/firewalld/linstor-controller.xml') {
+        into '/usr/lib/firewalld/services'
+        fileMode 0644
+    }
+    from('scripts/firewalld/linstor-satellite.xml') {
+        into '/usr/lib/firewalld/services'
+        fileMode 0644
+    }
 }
 
 buildDeb {

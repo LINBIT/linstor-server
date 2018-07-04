@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+    <short>Linstor satellite service</short>
+    <description>Linstor Controller to Satellite connection</description>
+    <port protocol="tcp" port="3366"/>
+    <port protocol="tcp" port="3367"/><!-- SSL port -->
+</service>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+    <short>Drbd Service</short>
+    <description>Distributed block data replication for Linstor.</description>
+    <port protocol="tcp" port="7000-7999"/>
+</service>

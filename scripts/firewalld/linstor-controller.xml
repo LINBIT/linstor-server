@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+    <short>Linstor controller service</short>
+    <description>Linstor Controller client api port</description>
+    <port protocol="tcp" port="3376"/>
+    <port protocol="tcp" port="3377"/><!-- SSL port -->
+</service>
