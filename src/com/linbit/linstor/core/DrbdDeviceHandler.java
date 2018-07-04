@@ -1057,7 +1057,7 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceName rscName = rscDfn.getName();
         drbdUtils.createMd(rscName, vlmState.getVlmNr(), vlmState.getPeerSlots());
 
-        if (isThinVlm(rscName, vlmState))
+        if (isThinVlm(vlmState))
         {
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
@@ -1498,7 +1498,7 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         try
         {
-            boolean assumeCleanFlag = isThinVlm(rscName, vlmState);
+            boolean assumeCleanFlag = isThinVlm(vlmState);
             drbdUtils.resize(rscName, vlmNr, assumeCleanFlag);
         }
         catch (ExtCmdFailedException cmdExc)
@@ -1602,7 +1602,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     Volume vlm = vlmIter.next();
                     VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
                     VolumeState vlmState = rscState.getVolumeState(vlmNr);
-                    if (isThinVlm(rscName, (VolumeStateDevManager) vlmState))
+                    if (isThinVlm((VolumeStateDevManager) vlmState))
                     {
                         skipSync(rscName, vlmNr);
                     }
@@ -2195,19 +2195,10 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private boolean isThinVlm(ResourceName rscName, VolumeStateDevManager vlmState)
+    private boolean isThinVlm(VolumeStateDevManager vlmState)
         throws ResourceException
     {
-        boolean isThin = false;
-
-        Map<String, String> drvTraits = vlmState.getDriver().getKind().getStaticTraits();
-        String provisioning = drvTraits.get(ApiConsts.KEY_STOR_POOL_PROVISIONING);
-        if (provisioning != null && provisioning.equals(ApiConsts.VAL_STOR_POOL_PROVISIONING_THIN))
-        {
-            isThin = true;
-        }
-
-        return isThin;
+        return vlmState.getDriver().getKind().usesThinProvisioning();
     }
 
     private String getAbortMsg(ResourceName rscName)

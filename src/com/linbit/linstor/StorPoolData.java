@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
 
-import com.linbit.ImplementationError;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -165,8 +164,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorageDriverKind getDriverKind(AccessContext accCtx)
-        throws AccessDeniedException
+    public StorageDriverKind getDriverKind()
     {
         return storageDriverKind;
     }

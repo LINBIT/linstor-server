@@ -63,8 +63,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     )
         throws AccessDeniedException;
 
-    StorageDriverKind getDriverKind(AccessContext accCtx)
-        throws AccessDeniedException;
+    StorageDriverKind getDriverKind();
 
     /**
      * Returns the simple class name of the used driver (not null on both, {@link Controller} and {@link Satellite})

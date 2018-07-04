@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
@@ -39,6 +40,24 @@ public interface StorageDriverKind
      * @return Map of key/value strings describing the driver's general characteristics
      */
     Map<String, String> getStaticTraits();
+
+    /**
+     * Returns whether this driver type uses thin provisioning.
+     *
+     * @return true if the provisioning trait is thin.
+     */
+    default boolean usesThinProvisioning()
+    {
+        boolean usesThinProvisioning = false;
+
+        String provisioning = getStaticTraits().get(ApiConsts.KEY_STOR_POOL_PROVISIONING);
+        if (provisioning != null && provisioning.equals(ApiConsts.VAL_STOR_POOL_PROVISIONING_THIN))
+        {
+            usesThinProvisioning = true;
+        }
+
+        return usesThinProvisioning;
+    }
 
     /**
      * Returns a set of this driver type's configuration keys.

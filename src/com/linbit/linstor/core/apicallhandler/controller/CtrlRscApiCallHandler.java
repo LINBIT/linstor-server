@@ -60,8 +60,6 @@ import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -192,7 +190,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
         throws AccessDeniedException
     {
-        if (storPool != null && storPool.getDriverKind(apiCtx).hasBackingStorage())
+        if (storPool != null && storPool.getDriverKind().hasBackingStorage())
         {
             throw asExc(
                 new LinStorException("Incorrect storage pool used."),
@@ -211,7 +209,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     private void warnAndFladDiskless(Resource rsc, final StorPool storPool)
         throws AccessDeniedException, SQLException
     {
-        if (storPool != null && !storPool.getDriverKind(apiCtx).hasBackingStorage())
+        if (storPool != null && !storPool.getDriverKind().hasBackingStorage())
         {
             addAnswer(
                 "Resource will be automatically flagged diskless.",

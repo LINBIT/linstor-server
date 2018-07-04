@@ -33,7 +33,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
@@ -479,7 +478,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 StorPool storPool = vlmIterator.next().getStorPool(apiCtx);
 
-                if (!storPool.getDriverKind(apiCtx).isSnapshotSupported())
+                if (!storPool.getDriverKind().isSnapshotSupported())
                 {
                     throw asExc(
                         null,

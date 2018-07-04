@@ -319,6 +319,7 @@ public class ProtoCtrlClientSerializerBuilder
                                 .collect(Collectors.toList())
                             )
                         .setStorPoolName(candidate.getStorPoolName().displayValue)
+                        .setAllThin(candidate.allThin())
                         .build()
                 );
             }

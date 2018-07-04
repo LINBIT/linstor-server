@@ -18,7 +18,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.DisklessDriverKind;
-import com.linbit.linstor.storage.StorageDriverKind;
 
 import javax.inject.Inject;
 
@@ -105,7 +104,7 @@ public class CtrlAutoStorPoolSelector
             .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
             .flatMap(this::getStorPoolStream)
             // filter for diskless
-            .filter(storPool -> !(getDriverKind(storPool) instanceof DisklessDriverKind))
+            .filter(storPool -> !(storPool.getDriverKind() instanceof DisklessDriverKind))
             // filter for user access on node
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
             // filter for enough free space
@@ -175,20 +174,6 @@ public class CtrlAutoStorPoolSelector
             );
         }
         return stream;
-    }
-
-    private StorageDriverKind getDriverKind(StorPool storPool)
-    {
-        StorageDriverKind driverKind;
-        try
-        {
-            driverKind = storPool.getDriverKind(apiAccCtx);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return driverKind;
     }
 
     private void filterByStorPoolName(String forcedStorPoolName, Map<StorPoolName, List<StorPool>> storPools)
@@ -448,7 +433,10 @@ public class CtrlAutoStorPoolSelector
                             .orElse(0L)
                         )
                         .min(Long::compare)
-                        .orElse(0L)
+                        .orElse(0L),
+                    nodeList.stream()
+                        .allMatch(node ->
+                            getStorPoolPrivileged(node, storPoolName).getDriverKind().usesThinProvisioning())
                 )
             );
         }
@@ -560,19 +548,22 @@ public class CtrlAutoStorPoolSelector
 
     public static class Candidate
     {
-        StorPoolName storPoolName;
-        List<Node> nodes;
-        long sizeAfterDeployment;
+        final StorPoolName storPoolName;
+        final List<Node> nodes;
+        final long sizeAfterDeployment;
+        final boolean allThin;
 
         Candidate(
             StorPoolName storPoolNameRef,
             List<Node> nodesRef,
-            long sizeAfterDeploymentRef
+            long sizeAfterDeploymentRef,
+            boolean allThinRef
         )
         {
             storPoolName = storPoolNameRef;
             nodes = nodesRef;
             sizeAfterDeployment = sizeAfterDeploymentRef;
+            allThin = allThinRef;
         }
 
         public StorPoolName getStorPoolName()
@@ -588,6 +579,11 @@ public class CtrlAutoStorPoolSelector
         public long getSizeAfterDeployment()
         {
             return sizeAfterDeployment;
+        }
+
+        public boolean allThin()
+        {
+            return allThin;
         }
 
         @Override
