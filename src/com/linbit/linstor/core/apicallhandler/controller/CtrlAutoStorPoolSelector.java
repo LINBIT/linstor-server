@@ -108,7 +108,7 @@ public class CtrlAutoStorPoolSelector
             // filter for user access on node
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
             // filter for enough free space
-            .filter(storPool -> getFreeSpace(storPool).orElse(0L) >= rscSize)
+            .filter(storPool -> poolHasSpaceFor(storPool, rscSize))
             .collect(
                 Collectors.groupingBy(
                     StorPool::getName,
@@ -136,6 +136,13 @@ public class CtrlAutoStorPoolSelector
         //        candidateList = filterCandidates(candidateList, placeCount, nodeSelectionStrategy);
 
         return candidateList;
+    }
+
+    private boolean poolHasSpaceFor(StorPool storPool, long rscSize)
+    {
+        return storPool.getDriverKind().usesThinProvisioning() ?
+            true :
+            getFreeSpace(storPool).orElse(0L) >= rscSize;
     }
 
     private List<String> toUpperList(List<String> list)
