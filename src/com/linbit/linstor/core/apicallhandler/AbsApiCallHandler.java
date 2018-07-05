@@ -476,7 +476,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asSqlExc(
                 sqlExc,
-                getAction("creating", "modifying", "deleting") + " node '" + nodeName.displayValue + "'"
+                "loading node '" + nodeName.displayValue + "'"
             );
         }
         return node;
