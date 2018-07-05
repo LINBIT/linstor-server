@@ -23,15 +23,10 @@ buildscript {
         if (gradle.startParameter.isOffline()) {
             classpath fileTree(dir: "$projectDir/libs/plugins")
         } else {
-            classpath "com.netflix.nebula:gradle-ospackage-plugin:4.6.0" // 4.8.0 also available
+            classpath "com.netflix.nebula:gradle-ospackage-plugin:4.9.3"
         }
     }
 }
-
-// this type of including plugins does not work with --offline
-//plugins {
-//    id "nebula.ospackage" version "4.6.0"
-//}
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
@@ -153,7 +148,7 @@ startScripts.enabled = false
 task ControllerStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Controller'
     applicationName = "Controller"
-    outputDir = new File(project.buildDir, 'scripts')
+    outputDir = new File(project.buildDir, 'bin')
     classpath = jar.outputs.files + project.configurations.runtime + files('conf')
     doLast {
         delete windowsScript
@@ -164,7 +159,7 @@ task ControllerStartup(type: CreateStartScripts) {
 task SatelliteStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Satellite'
     applicationName = "Satellite"
-    outputDir = new File(project.buildDir, 'scripts')
+    outputDir = new File(project.buildDir, 'bin')
     classpath = jar.outputs.files + project.configurations.runtime + files('conf')
     doLast {
         delete windowsScript
@@ -174,18 +169,11 @@ task SatelliteStartup(type: CreateStartScripts) {
 task LinstorConfigStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.LinstorConfig'
     applicationName = "linstor-config"
-    outputDir = new File(project.buildDir, 'scripts')
+    outputDir = new File(project.buildDir, 'bin')
     classpath = jar.outputs.files + project.configurations.runtime
     doLast {
         delete windowsScript
     }
-}
-
-applicationDistribution.into("bin") {
-    from(ControllerStartup)
-    from(SatelliteStartup)
-    from(LinstorConfigStartup)
-    fileMode = 0755
 }
 
 applicationDistribution.into("lib/conf") {
