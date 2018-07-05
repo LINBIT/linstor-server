@@ -90,12 +90,9 @@ public class CmdDisplayNodes extends BaseDebugCmd
     private class NodeHandler implements FilteredObjectLister.ObjectHandler<Node>
     {
         @Override
-        public List<Lock> getRequiredLocks()
+        public Lock[] getRequiredLocks()
         {
-            return Arrays.asList(
-                reconfigurationLock.readLock(),
-                nodesMapLock.readLock()
-            );
+            return new Lock[] {reconfigurationLock.readLock(), nodesMapLock.readLock()};
         }
 
         @Override

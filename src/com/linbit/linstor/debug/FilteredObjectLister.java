@@ -3,12 +3,11 @@ package com.linbit.linstor.debug;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.MultiLock;
+import com.linbit.locks.LockGuard;
 
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.regex.Matcher;
@@ -52,16 +51,12 @@ public class FilteredObjectLister<SearchType>
 
         try
         {
-            MultiLock lock = new MultiLock(objectHandler.getRequiredLocks());
-
             if (prmName != null)
             {
                 if (prmFilter == null)
                 {
-                    try
+                    try (LockGuard scopeLock = LockGuard.createLocked(objectHandler.getRequiredLocks()))
                     {
-                        lock.lock();
-
                         objectHandler.ensureSearchAccess(accCtx);
 
                         SearchType objectRef = objectHandler.getByName(prmName);
@@ -75,10 +70,6 @@ public class FilteredObjectLister<SearchType>
                         {
                             debugOut.printf("The " + objectTypeName + " '%s' does not exist\n", prmName);
                         }
-                    }
-                    finally
-                    {
-                        lock.unlock();
                     }
                 }
                 else
@@ -103,10 +94,8 @@ public class FilteredObjectLister<SearchType>
 
                 int count = 0;
                 int total = 0;
-                try
+                try (LockGuard scopeLock = LockGuard.createLocked(objectHandler.getRequiredLocks()))
                 {
-                    lock.lock();
-
                     boolean first = true;
 
                     Collection<SearchType> objects = objectHandler.getAll();
@@ -156,10 +145,6 @@ public class FilteredObjectLister<SearchType>
                             }
                         }
                     }
-                }
-                finally
-                {
-                    lock.unlock();
                 }
 
                 String totalFormat;
@@ -245,7 +230,7 @@ public class FilteredObjectLister<SearchType>
 
     public interface ObjectHandler<SearchType>
     {
-        List<Lock> getRequiredLocks();
+        Lock[] getRequiredLocks();
 
         void ensureSearchAccess(AccessContext accCtx)
             throws AccessDeniedException;

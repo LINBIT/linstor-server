@@ -92,12 +92,9 @@ public class CmdDisplayStorPool extends BaseDebugCmd
     private class StorPoolHandler implements FilteredObjectLister.ObjectHandler<StorPoolDefinition>
     {
         @Override
-        public List<Lock> getRequiredLocks()
+        public Lock[] getRequiredLocks()
         {
-            return Arrays.asList(
-                reconfigurationLock.readLock(),
-                storPoolDfnMapLock.readLock()
-            );
+            return new Lock[] {reconfigurationLock.readLock(), storPoolDfnMapLock.readLock()};
         }
 
         @Override

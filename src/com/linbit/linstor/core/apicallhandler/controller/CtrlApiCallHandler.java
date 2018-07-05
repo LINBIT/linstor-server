@@ -14,7 +14,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.utils.LockSupport;
+import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -117,7 +117,7 @@ public class CtrlApiCallHandler
     public void sendFullSync(long expectedFullSyncId)
     {
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
                 storPoolDfnMapLock.readLock(),
@@ -152,7 +152,7 @@ public class CtrlApiCallHandler
         {
             props = Collections.emptyMap();
         }
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeApiCallHandler.createNode(
                 nodeNameStr,
@@ -184,7 +184,7 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeApiCallHandler.modifyNode(
                 nodeUuid,
@@ -209,7 +209,7 @@ public class CtrlApiCallHandler
     public ApiCallRc deleteNode(String nodeName)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport lock = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard lock = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeApiCallHandler.deleteNode(nodeName);
         }
@@ -227,7 +227,7 @@ public class CtrlApiCallHandler
     public ApiCallRc lostNode(String nodeName)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport lock = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard lock = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeApiCallHandler.lostNode(nodeName);
         }
@@ -237,7 +237,7 @@ public class CtrlApiCallHandler
     public byte[] listNode()
     {
         byte[] listNodes;
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
         {
             listNodes = nodeApiCallHandler.listNodes(msgId.get());
         }
@@ -253,7 +253,7 @@ public class CtrlApiCallHandler
         final Set<String> ids
     )
     {
-        try (LockSupport ls = LockSupport.lock(ctrlErrorListLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlErrorListLock.writeLock()))
         {
             nodeApiCallHandler.listErrorReports(
                 client,
@@ -272,7 +272,7 @@ public class CtrlApiCallHandler
         Set<ErrorReport> errorReports
     )
     {
-        try (LockSupport ls = LockSupport.lock(ctrlErrorListLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlErrorListLock.writeLock()))
         {
             nodeApiCallHandler.appendErrorReports(
                 client,
@@ -317,7 +317,7 @@ public class CtrlApiCallHandler
         {
             vlmDescrMap = Collections.emptyList();
         }
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
                 resourceName,
@@ -352,7 +352,7 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
                 rscDfnUuid,
@@ -379,7 +379,7 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(resourceName);
         }
@@ -389,7 +389,7 @@ public class CtrlApiCallHandler
     public byte[] listResourceDefinition()
     {
         byte[] listResourceDefinitions;
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.readLock()))
         {
             listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId.get());
         }
@@ -414,7 +414,7 @@ public class CtrlApiCallHandler
         {
             vlmDfnApiList = Collections.emptyList();
         }
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
                 rscName,
@@ -458,7 +458,7 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             apiCallRc = vlmDfnApiCallHandler.modifyVlmDfn(
                 vlmDfnUuid,
@@ -486,7 +486,7 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             apiCallRc = vlmDfnApiCallHandler.deleteVolumeDefinition(
                 rscName,
@@ -525,7 +525,7 @@ public class CtrlApiCallHandler
             vlmApiDataList = Collections.emptyList();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -573,7 +573,7 @@ public class CtrlApiCallHandler
             deletePropKeys = Collections.emptySet();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -607,7 +607,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -626,7 +626,7 @@ public class CtrlApiCallHandler
     {
         byte[] listResources;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock()
             )
@@ -680,7 +680,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -699,7 +699,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
@@ -720,7 +720,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
@@ -753,7 +753,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
@@ -787,7 +787,7 @@ public class CtrlApiCallHandler
         {
             storPoolDfnProps = Collections.emptyMap();
         }
-        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.writeLock()))
         {
             apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
                 storPoolName,
@@ -825,7 +825,7 @@ public class CtrlApiCallHandler
         {
             deletePropKeys = Collections.emptySet();
         }
-        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.writeLock()))
         {
             apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
                 storPoolDfnUuid,
@@ -849,7 +849,7 @@ public class CtrlApiCallHandler
     public ApiCallRc deleteStoragePoolDefinition(String storPoolName)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.writeLock()))
         {
             apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
                 storPoolName
@@ -861,7 +861,7 @@ public class CtrlApiCallHandler
     public byte[] listStorPoolDefinition()
     {
         byte[] listStorPoolDefinitions;
-        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.readLock()))
         {
             listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId.get());
         }
@@ -871,7 +871,7 @@ public class CtrlApiCallHandler
     public byte[] listStorPool(List<String> filterNodes, List<String> filterStorPools)
     {
         byte[] listStorPools;
-        try (LockSupport ls = LockSupport.lock(storPoolDfnMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.readLock()))
         {
             listStorPools = storPoolApiCallHandler.listStorPools(
                 msgId.get(),
@@ -905,7 +905,7 @@ public class CtrlApiCallHandler
             storPoolProps = Collections.emptyMap();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
             )
@@ -953,7 +953,7 @@ public class CtrlApiCallHandler
             deletePropKeys = Collections.emptySet();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
             )
@@ -987,7 +987,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 storPoolDfnMapLock.writeLock()
             )
@@ -1022,7 +1022,7 @@ public class CtrlApiCallHandler
         {
             nodeConnProps = Collections.emptyMap();
         }
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeConnApiCallHandler.createNodeConnection(
                 nodeName1,
@@ -1062,7 +1062,7 @@ public class CtrlApiCallHandler
             deletePropKeys = Collections.emptySet();
         }
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeConnApiCallHandler.modifyNodeConnection(
                 nodeConnUuid,
@@ -1088,7 +1088,7 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
         {
             apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
                 nodeName1,
@@ -1121,7 +1121,7 @@ public class CtrlApiCallHandler
             rscConnProps = Collections.emptyMap();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1169,7 +1169,7 @@ public class CtrlApiCallHandler
             deletePropKeys = Collections.emptySet();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1203,7 +1203,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1243,7 +1243,7 @@ public class CtrlApiCallHandler
             vlmConnProps = Collections.emptyMap();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1294,7 +1294,7 @@ public class CtrlApiCallHandler
             deletePropKeys = Collections.emptySet();
         }
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1331,7 +1331,7 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1363,7 +1363,7 @@ public class CtrlApiCallHandler
     )
     {
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
                 storPoolDfnMapLock.readLock()
@@ -1389,7 +1389,7 @@ public class CtrlApiCallHandler
     )
     {
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 storPoolDfnMapLock.readLock()
             )
@@ -1406,7 +1406,7 @@ public class CtrlApiCallHandler
     public void handleSnapshotRequest(String resourceName, UUID snapshotUuid, String snapshotName)
     {
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 rscDfnMapLock.readLock()
             )
         )
@@ -1425,7 +1425,7 @@ public class CtrlApiCallHandler
         String nodeNameStr
     )
     {
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
         {
             ctrlConfApiCallHandler.respondController(
                 msgId.get(),
@@ -1440,7 +1440,7 @@ public class CtrlApiCallHandler
         String nodeNameStr
     )
     {
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
         {
             nodeApiCallHandler.respondNode(
                 msgId.get(),
@@ -1455,7 +1455,7 @@ public class CtrlApiCallHandler
         UUID rscUuid
     )
     {
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             rscDfnApiCallHandler.handlePrimaryResourceRequest(msgId.get(), rscName, rscUuid);
         }
@@ -1464,7 +1464,7 @@ public class CtrlApiCallHandler
     public ApiCallRc setCtrlCfgProp(String key, String namespace, String value)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.writeLock()))
         {
             apiCallRc  = ctrlConfApiCallHandler.setProp(key, namespace, value);
         }
@@ -1474,7 +1474,7 @@ public class CtrlApiCallHandler
     public byte[] listCtrlCfg()
     {
         byte[] data;
-        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.readLock()))
         {
             data  = ctrlConfApiCallHandler.listProps(msgId.get());
         }
@@ -1484,7 +1484,7 @@ public class CtrlApiCallHandler
     public ApiCallRc deleteCtrlCfgProp(String key, String namespace)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.writeLock()))
         {
             apiCallRc  = ctrlConfApiCallHandler.deleteProp(key, namespace);
         }
@@ -1502,7 +1502,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 ctrlConfigLock.readLock(),
                 nodesMapLock.readLock()
             )
@@ -1530,7 +1530,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 ctrlConfigLock.readLock(),
                 nodesMapLock.readLock()
             )
@@ -1555,7 +1555,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 ctrlConfigLock.readLock(),
                 nodesMapLock.readLock()
             )
@@ -1589,7 +1589,7 @@ public class CtrlApiCallHandler
 
     public void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
     {
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
         {
             rscApiCallHandler.updateVolumeData(satellitePeer, resourceName, vlmUpdates);
         }
@@ -1597,7 +1597,7 @@ public class CtrlApiCallHandler
 
     public void updateRealFreeSpace(Peer satellitePeer, FreeSpacePojo... freeSpacePojos)
     {
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
         {
             storPoolApiCallHandler.updateRealFreeSpace(satellitePeer, freeSpacePojos);
         }
@@ -1612,7 +1612,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 ctrlConfigLock.writeLock(),
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
@@ -1638,7 +1638,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1658,7 +1658,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 rscDfnMapLock.writeLock()
             )
         )
@@ -1682,7 +1682,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1703,7 +1703,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
 
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.writeLock()
             )
@@ -1720,7 +1720,7 @@ public class CtrlApiCallHandler
     public byte[] listSnapshotDefinition()
     {
         byte[] listSnapshotDefinitions;
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.readLock()))
         {
             listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions(msgId.get());
         }
@@ -1730,7 +1730,7 @@ public class CtrlApiCallHandler
     public ApiCallRc setMasterPassphrase(String newPassphrase, String oldPassphrase)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.writeLock()))
         {
             apiCallRc = ctrlConfApiCallHandler.setPassphrase(newPassphrase, oldPassphrase);
         }
@@ -1740,7 +1740,7 @@ public class CtrlApiCallHandler
     public ApiCallRc enterPassphrase(String passphrase)
     {
         ApiCallRc apiCallRc;
-        try (LockSupport ls = LockSupport.lock(ctrlConfigLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.writeLock()))
         {
             apiCallRc = ctrlConfApiCallHandler.enterPassphrase(passphrase);
         }
@@ -1750,7 +1750,7 @@ public class CtrlApiCallHandler
     public byte[] queryMaxVlmSize(AutoSelectFilterApi selectFilter)
     {
         byte[] response;
-        try (LockSupport ls = LockSupport.lock(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()))
         {
             response = storPoolDfnApiCallHandler.getMaxVlmSizeForReplicaCount(
                 selectFilter

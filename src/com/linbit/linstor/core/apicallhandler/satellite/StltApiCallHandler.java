@@ -47,7 +47,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.utils.LockSupport;
+import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -266,7 +266,7 @@ public class StltApiCallHandler
     )
     {
         try (
-            LockSupport ls = LockSupport.lock(
+            LockGuard ls = LockGuard.createLocked(
                 reconfigurationLock.writeLock(),
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
@@ -616,7 +616,7 @@ public class StltApiCallHandler
 
                         ApplyData applyData = nextEntry.getValue();
                         try (
-                            LockSupport ls = LockSupport.lock(
+                            LockGuard ls = LockGuard.createLocked(
                                 applyData.needReconfigurationWriteLock() ?
                                     reconfigurationLock.writeLock() : reconfigurationLock.readLock()
                             )
@@ -665,7 +665,7 @@ public class StltApiCallHandler
         UUID rscUuid
     )
     {
-        try (LockSupport ls = LockSupport.lock(rscDfnMapLock.writeLock()))
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             rscDfnHandler.primaryResource(rscNameStr, rscUuid);
         }
@@ -799,7 +799,7 @@ public class StltApiCallHandler
         @Override
         public void applyChange()
         {
-            try (LockSupport ls = LockSupport.lock(nodesMapLock.writeLock()))
+            try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
             {
                 if (nodePojo != null)
                 {
@@ -854,7 +854,7 @@ public class StltApiCallHandler
         public void applyChange()
         {
             try (
-                LockSupport ls = LockSupport.lock(
+                LockGuard ls = LockGuard.createLocked(
                     nodesMapLock.writeLock(),
                     rscDfnMapLock.writeLock()
                 )
@@ -909,7 +909,7 @@ public class StltApiCallHandler
         public void applyChange()
         {
             try (
-                LockSupport ls = LockSupport.lock(
+                LockGuard ls = LockGuard.createLocked(
                     nodesMapLock.writeLock(),
                     storPoolDfnMapLock.writeLock()
                 )
@@ -952,7 +952,7 @@ public class StltApiCallHandler
         public void applyChange()
         {
             try (
-                LockSupport ls = LockSupport.lock(
+                LockGuard ls = LockGuard.createLocked(
                     rscDfnMapLock.writeLock()
                 )
             )
@@ -998,7 +998,7 @@ public class StltApiCallHandler
         public void applyChange()
         {
             try (
-                LockSupport ls = LockSupport.lock(
+                LockGuard ls = LockGuard.createLocked(
                     rscDfnMapLock.writeLock()
                 )
             )
@@ -1037,7 +1037,7 @@ public class StltApiCallHandler
         public void applyChange()
         {
             try (
-                LockSupport ls = LockSupport.lock(
+                LockGuard ls = LockGuard.createLocked(
                     nodesMapLock.writeLock(),
                     rscDfnMapLock.writeLock(),
                     storPoolDfnMapLock.writeLock()

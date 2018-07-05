@@ -91,12 +91,9 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
     private class ResourceDefinitionHandler implements FilteredObjectLister.ObjectHandler<ResourceDefinition>
     {
         @Override
-        public List<Lock> getRequiredLocks()
+        public Lock[] getRequiredLocks()
         {
-            return Arrays.asList(
-                reconfigurationLock.readLock(),
-                rscDfnMapLock.readLock()
-            );
+            return new Lock[] {reconfigurationLock.readLock(), rscDfnMapLock.readLock()};
         }
 
         @Override

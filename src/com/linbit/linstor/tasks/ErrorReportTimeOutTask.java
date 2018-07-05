@@ -8,7 +8,7 @@ import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.utils.LockSupport;
+import com.linbit.locks.LockGuard;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
-public class ErrorReportTimeOutTask implements TaskScheduleService.Task {
+public class ErrorReportTimeOutTask implements TaskScheduleService.Task
+{
 
     private final int TIMEOUT_SECS = 3;
 
@@ -40,19 +41,25 @@ public class ErrorReportTimeOutTask implements TaskScheduleService.Task {
     }
 
     @Override
-    public long run() {
-        try (LockSupport ls = LockSupport.lock(ctrlErrorListLock.writeLock())) {
+    public long run()
+    {
+        try (LockGuard ls = LockGuard.createLocked(ctrlErrorListLock.writeLock()))
+        {
             List<Pair<Peer, Integer>> deleteList = new ArrayList<>();
             for (Map.Entry<Pair<Peer, Integer>, CtrlNodeApiCallHandler.ErrorReportRequest> entry :
-                CtrlNodeApiCallHandler.errorReportMap.entrySet()) {
+                 CtrlNodeApiCallHandler.errorReportMap.entrySet())
+            {
                 CtrlNodeApiCallHandler.ErrorReportRequest errorReportRequest = entry.getValue();
 
-                // if request timed out, send error apicallrc
+                // If request timed out, send error apicallrc
                 if (errorReportRequest.requestTime.plusSeconds(TIMEOUT_SECS).isBefore(LocalDateTime.now()) &&
-                    !errorReportRequest.requestNodes.isEmpty()) {
-
+                    !errorReportRequest.requestNodes.isEmpty())
+                {
                     ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                    apiCallRc.addEntry("No error reports received from: " + errorReportRequest.requestNodes, ApiConsts.MASK_ERROR);
+                    apiCallRc.addEntry(
+                        "No error reports received from: " +
+                        errorReportRequest.requestNodes, ApiConsts.MASK_ERROR
+                    );
                     ApiCallAnswerer apiCallAnswerer = new ApiCallAnswerer(
                         errorReporter,
                         commonSerializer,
@@ -64,7 +71,7 @@ public class ErrorReportTimeOutTask implements TaskScheduleService.Task {
                 }
             }
 
-            // remove timed out requests
+            // Remove timed out requests
             deleteList.forEach(peer -> CtrlNodeApiCallHandler.errorReportMap.remove(peer));
         }
         return 1000;
