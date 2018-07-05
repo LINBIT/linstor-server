@@ -2,6 +2,7 @@ package com.linbit.linstor.proto;
 
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.linbit.WorkQueue;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.LinStorScope;
@@ -234,6 +235,33 @@ public class CommonMessageProcessor implements MessageProcessor
                             apiCallScope.seed(TransactionMgr.class, transMgr);
                             ApiCall apiObj = apiMapEntry.provider.get();
                             apiObj.execute(msgDataIn);
+                        }
+                        catch (InvalidProtocolBufferException exc)
+                        {
+                            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+                            MsgHeader.newBuilder()
+                                .setApiCall(ApiConsts.API_REPLY)
+                                .setMsgId(msgId)
+                                .build()
+                                .writeDelimitedTo(outStream);
+
+                            MsgApiCallResponse.newBuilder()
+                                .setMessageFormat("Controller couldn't parse message.")
+                                .setCauseFormat(exc.getMessage())
+                                .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                                .setRetCode(ApiConsts.API_CALL_PARSE_ERROR)
+                                .build()
+                                .writeDelimitedTo(outStream);
+
+                            client.sendMessage(outStream.toByteArray());
+
+                            errorLog.reportError(
+                                Level.ERROR,
+                                exc,
+                                client.getAccessContext(),
+                                client,
+                                "Unable to parse protobuf protocol for '" + apiCallName + "'"
+                            );
                         }
                         catch (Exception | ImplementationError exc)
                         {
