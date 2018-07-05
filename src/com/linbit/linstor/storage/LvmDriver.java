@@ -109,9 +109,12 @@ public class LvmDriver extends AbsStorageDriver
     @Override
     public void deleteVolume(String identifier, boolean isEncrypted) throws StorageException
     {
-        final VolumeInfo info = getVolumeInfo(identifier);
-        callDmStat("dmstats", "delete", info.getPath(), "--allregions");
-        super.deleteVolume(identifier, isEncrypted);
+        final VolumeInfo info = getVolumeInfo(identifier, false);
+        if (info != null)
+        {
+            callDmStat("dmstats", "delete", info.getPath(), "--allregions");
+            super.deleteVolume(identifier, isEncrypted);
+        }
     }
 
     private void callDmStat(String... command) throws StorageException
