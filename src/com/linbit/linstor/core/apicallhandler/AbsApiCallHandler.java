@@ -882,26 +882,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * {@link ApiCallRc}.
      *
      * @param throwable
-     * @param errorMessage
-     * @param retCode
-     */
-    protected final void report(Throwable throwable, String errorMessage, long retCode)
-    {
-        report(
-            throwable,
-            errorMessage,
-            throwable == null ? null : throwable.getMessage(),
-            null,
-            null,
-            retCode
-        );
-    }
-
-    /**
-     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the current
-     * {@link ApiCallRc}.
-     *
-     * @param throwable
      * @param errorMsg
      * @param causeMsg
      * @param detailsMsg
@@ -948,23 +928,20 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * @param cause
      * @param detailsRef
      * @param correction
-     * @param retCode
+     * @param retCodeRef
      */
     protected final void addAnswer(
         String msg,
         String cause,
         String detailsRef,
         String correction,
-        long retCode
+        long retCodeRef
     )
     {
         ApiCallRcImpl apiCallRcImpl = apiCallRc.get();
         if (apiCallRcImpl != null)
         {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(retCode | apiCallType.get().opMask | linstorObj.objMask);
-            entry.setMessageFormat(msg);
-            entry.setCauseFormat(cause);
+            long retCode = retCodeRef | apiCallType.get().opMask | linstorObj.objMask;
 
             String objDescription = getObjectDescription();
 
@@ -978,20 +955,16 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 details += "\n" + objDescription;
             }
 
-            entry.setDetailsFormat(details);
-            entry.setCorrectionFormat(correction);
-
-            Map<String, String> objsRef = objRefs.get();
-            if (objsRef != null)
-            {
-                entry.putAllObjRef(objsRef);
-            }
-            if (variables != null)
-            {
-                entry.putAllVariables(variables.get());
-            }
-
-            apiCallRcImpl.addEntry(entry);
+            addAnswerStatic(
+                msg,
+                cause,
+                details,
+                correction,
+                retCode,
+                objRefs.get(),
+                variables.get(),
+                apiCallRcImpl
+            );
         }
     }
 
@@ -1047,11 +1020,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     /**
      * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
      * {@link ApiCallRcImpl}.
-     * The only difference between this method and {@link #report(Throwable, String, long)}
-     * is that this method does not access non-static variables. This method also calls
-     * {@link #addAnswerStatic(String, String, String, String, long, Map, Map, ApiCallRcImpl)} for
-     * adding an answer to the {@link ApiCallRcImpl} (cause, details and correction messages are filled
-     * with null values).
+     * Cause, details and correction messages are left empty.
      *  @param throwable
      * @param objRefs,
      * @param apiCallRc,
@@ -1075,18 +1044,8 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         Peer peer
     )
     {
-        Throwable throwable = throwableRef;
-        if (throwable == null)
-        {
-            throwable = new LinStorException(errorMsg);
-        }
-        errorReporter.reportError(
-            throwable,
-            accCtx,
-            peer,
-            errorMsg
-        );
-        addAnswerStatic(
+        reportStatic(
+            throwableRef,
             errorMsg,
             null,
             null,
@@ -1094,7 +1053,10 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             retCode,
             objRefsRef,
             variablesRef,
-            apiCallRcRef
+            apiCallRcRef,
+            errorReporter,
+            accCtx,
+            peer
         );
     }
 
@@ -1246,18 +1208,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     /**
-     * Similar to
-     * <pre>
-     *    reportSuccess(msg, null);
-     * </pre>
-     * @param msg
-     */
-    protected final void reportSuccess(String msg)
-    {
-        reportSuccess(msg, null);
-    }
-
-    /**
      * Adds a success {@link ApiCallRcEntry} to the current {@link ApiCallRc} and reports
      * to the controller's {@link ErrorReporter}.
      * @param msg
@@ -1312,21 +1262,16 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     {
         if (apiCallRcRef != null)
         {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-
-            entry.setReturnCodeBit(retCode);
-            entry.setMessageFormat(msg);
-            entry.setDetailsFormat(details);
-
-            if (objsRef != null)
-            {
-                entry.putAllObjRef(objsRef);
-            }
-            if (variablesRef != null)
-            {
-                entry.putAllVariables(variablesRef);
-            }
-            apiCallRcRef.addEntry(entry);
+            addAnswerStatic(
+                msg,
+                null,
+                details,
+                null,
+                retCode,
+                objsRef,
+                variablesRef,
+                apiCallRcRef
+            );
         }
         if (errorReporter != null)
         {
@@ -1391,24 +1336,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         );
     }
 
-    /**
-     * Basically the same as {@link #asExc(Throwable, String, long)}, but with a
-     * {@link SQLException}-specific template message. Uses {@link ApiConsts#FAIL_SQL_ROLLBACK}
-     * as return code.
-
-     * @param sqlExc
-     * @param action
-     * @return
-     */
-    protected final ApiCallHandlerFailedException asSqlRollbackExc(SQLException sqlExc, String action)
-    {
-        return asExc(
-            sqlExc,
-            getSqlMsg(action),
-            ApiConsts.FAIL_SQL_ROLLBACK
-        );
-    }
-
     protected final ApiCallHandlerFailedException asImplError(Throwable throwableRef)
     {
         Throwable throwable = throwableRef;
@@ -1457,8 +1384,11 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                     report(
                         sqlExc,
                         "A database error occured while trying to rollback the " +
-                        getAction("creation", "modification", "deletion") +
-                        " of " + getObjectDescriptionInline() + ".",
+                                    getAction("creation", "modification", "deletion") +
+                                    " of " + getObjectDescriptionInline() + ".",
+                        sqlExc.getMessage(),
+                        null,
+                        null,
                         ApiConsts.FAIL_SQL_ROLLBACK
                     );
                 }
