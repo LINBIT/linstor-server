@@ -333,24 +333,23 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 MsgApiCallResponseOuterClass.MsgApiCallResponse.newBuilder();
 
             msgApiCallResponseBuilder.setRetCode(apiCallEntry.getReturnCode());
-            if (apiCallEntry.getCauseFormat() != null)
+            if (apiCallEntry.getCause() != null)
             {
-                msgApiCallResponseBuilder.setCauseFormat(apiCallEntry.getCauseFormat());
+                msgApiCallResponseBuilder.setCause(apiCallEntry.getCause());
             }
-            if (apiCallEntry.getCorrectionFormat() != null)
+            if (apiCallEntry.getCorrection() != null)
             {
-                msgApiCallResponseBuilder.setCorrectionFormat(apiCallEntry.getCorrectionFormat());
+                msgApiCallResponseBuilder.setCorrection(apiCallEntry.getCorrection());
             }
-            if (apiCallEntry.getDetailsFormat() != null)
+            if (apiCallEntry.getDetails() != null)
             {
-                msgApiCallResponseBuilder.setDetailsFormat(apiCallEntry.getDetailsFormat());
+                msgApiCallResponseBuilder.setDetails(apiCallEntry.getDetails());
             }
-            if (apiCallEntry.getMessageFormat() != null)
+            if (apiCallEntry.getMessage() != null)
             {
-                msgApiCallResponseBuilder.setMessageFormat(apiCallEntry.getMessageFormat());
+                msgApiCallResponseBuilder.setMessage(apiCallEntry.getMessage());
             }
             msgApiCallResponseBuilder.addAllObjRefs(ProtoMapUtils.fromMap(apiCallEntry.getObjRefs()));
-            msgApiCallResponseBuilder.addAllVariables(ProtoMapUtils.fromMap(apiCallEntry.getVariables()));
 
             MsgApiCallResponseOuterClass.MsgApiCallResponse protoMsg = msgApiCallResponseBuilder.build();
 

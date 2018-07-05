@@ -17,7 +17,7 @@ public class ApiCallRcImpl implements ApiCallRc
     public void addEntry(String message, long returnCode)
     {
         ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setMessageFormat(message);
+        entry.setMessage(message);
         entry.setReturnCode(returnCode);
 
         addEntry(entry);
@@ -33,11 +33,10 @@ public class ApiCallRcImpl implements ApiCallRc
     {
         private long returnCode = 0;
         private Map<String, String> objRefs = new HashMap<>();
-        private String messageFormat;
-        private String causeFormat;
-        private String correctionFormat;
-        private String detailsFormat;
-        private Map<String, String> variables = new HashMap<>();
+        private String message;
+        private String cause;
+        private String correction;
+        private String details;
 
         public void setReturnCode(long returnCodeRef)
         {
@@ -49,24 +48,24 @@ public class ApiCallRcImpl implements ApiCallRc
             returnCode |= bitMask;
         }
 
-        public void setMessageFormat(String messageFormatRef)
+        public void setMessage(String messageRef)
         {
-            messageFormat = messageFormatRef;
+            message = messageRef;
         }
 
-        public void setCauseFormat(String causeFormatRef)
+        public void setCause(String causeRef)
         {
-            causeFormat = causeFormatRef;
+            cause = causeRef;
         }
 
-        public void setCorrectionFormat(String correctionFormatRef)
+        public void setCorrection(String correctionRef)
         {
-            correctionFormat = correctionFormatRef;
+            correction = correctionRef;
         }
 
-        public void setDetailsFormat(String detailsFormatRef)
+        public void setDetails(String detailsRef)
         {
-            detailsFormat = detailsFormatRef;
+            details = detailsRef;
         }
 
         public void putObjRef(String key, String value)
@@ -77,16 +76,6 @@ public class ApiCallRcImpl implements ApiCallRc
         public void putAllObjRef(Map<String, String> map)
         {
             objRefs.putAll(map);
-        }
-
-        public void putVariable(String key, String value)
-        {
-            variables.put(key, value);
-        }
-
-        public void putAllVariables(Map<String, String> map)
-        {
-            variables.putAll(map);
         }
 
         @Override
@@ -102,33 +91,27 @@ public class ApiCallRcImpl implements ApiCallRc
         }
 
         @Override
-        public String getMessageFormat()
+        public String getMessage()
         {
-            return messageFormat;
+            return message;
         }
 
         @Override
-        public String getCauseFormat()
+        public String getCause()
         {
-            return causeFormat;
+            return cause;
         }
 
         @Override
-        public String getCorrectionFormat()
+        public String getCorrection()
         {
-            return correctionFormat;
+            return correction;
         }
 
         @Override
-        public String getDetailsFormat()
+        public String getDetails()
         {
-            return detailsFormat;
-        }
-
-        @Override
-        public Map<String, String> getVariables()
-        {
-            return variables;
+            return details;
         }
 
         @Override

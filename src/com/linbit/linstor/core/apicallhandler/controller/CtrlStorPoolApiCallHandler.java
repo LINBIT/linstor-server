@@ -24,7 +24,6 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -144,7 +143,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
-                getVariables(nodeNameStr, storPoolNameStr),
                 apiCallRc
             );
         }
@@ -207,7 +205,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
-                getVariables(nodeNameStr, storPoolNameStr),
                 apiCallRc
             );
         }
@@ -295,7 +292,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
                 getObjRefs(nodeNameStr, storPoolNameStr),
-                getVariables(nodeNameStr, storPoolNameStr),
                 apiCallRc
             );
         }
@@ -475,8 +471,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr, storPoolNameStr),
-            getVariables(nodeNameStr, storPoolNameStr)
+            getObjRefs(nodeNameStr, storPoolNameStr)
         );
         currentNodeNameStr = nodeNameStr;
         currentStorPoolNameStr = storPoolNameStr;
@@ -644,14 +639,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         map.put(ApiConsts.KEY_NODE, nodeNameStr);
         map.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
         return map;
-    }
-
-    private Map<String, String> getVariables(String nodeNameStr, String storPoolNameStr)
-    {
-        Map<String, String> vars = new TreeMap<>();
-        vars.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-        vars.put(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
-        return vars;
     }
 
     private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)

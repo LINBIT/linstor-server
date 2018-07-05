@@ -35,13 +35,13 @@ public class ProtobufIO
     public interface MessageCallback
     {
         void error(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
         void warn(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
         void info(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
         void success(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
     }
 
     protected Socket sock;
@@ -190,8 +190,7 @@ public class ProtobufIO
         String cause,
         String correction,
         String details,
-        Map<String, String> objRefsMap,
-        Map<String, String> variablesMap
+        Map<String, String> objRefsMap
     )
     {
         StringBuilder sb;
@@ -246,18 +245,6 @@ public class ProtobufIO
             }
 
         }
-        if (variablesMap != null && !variablesMap.isEmpty())
-        {
-            sb.append("\n      Variables: ");
-            for (Entry<String, String> entry : variablesMap.entrySet())
-            {
-                sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
-            }
-        }
-        else
-        {
-            sb.append("\n      No Variables");
-        }
     }
 
     private String format(String msg)
@@ -301,8 +288,7 @@ public class ProtobufIO
         String cause,
         String correction,
         String details,
-        Map<String, String> objRefsMap,
-        Map<String, String> variablesMap
+        Map<String, String> objRefsMap
     )
     {
         synchronized (CALLBACK_LOCK)
@@ -311,7 +297,7 @@ public class ProtobufIO
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -319,7 +305,7 @@ public class ProtobufIO
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -327,14 +313,14 @@ public class ProtobufIO
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
         }
@@ -449,15 +435,14 @@ public class ProtobufIO
                         {
                             MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
                             long retCode = response.getRetCode();
-                            String message = response.getMessageFormat();
-                            String cause = response.getCauseFormat();
-                            String correction = response.getCorrectionFormat();
-                            String details = response.getDetailsFormat();
+                            String message = response.getMessage();
+                            String cause = response.getCause();
+                            String correction = response.getCorrection();
+                            String details = response.getDetails();
                             Map<String, String> objRefsMap = asMap(response.getObjRefsList());
-                            Map<String, String> variablesMap = asMap(response.getVariablesList());
 
                             callback(protoHeader.getMsgId(), retCode, message, cause, correction,
-                                details, objRefsMap, variablesMap);
+                                details, objRefsMap);
 
                             formatMessage(
                                 sb,
@@ -468,8 +453,7 @@ public class ProtobufIO
                                 cause,
                                 correction,
                                 details,
-                                objRefsMap,
-                                variablesMap
+                                objRefsMap
                             );
                             sb.append("\n");
                         }

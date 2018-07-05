@@ -16,16 +16,6 @@ public interface ApiCallRc
 
     /**
      * Return code entry
-     *
-     * Format strings and variables
-     *
-     * A format string can include the keys of variables that are included
-     * in the return codes. Such a variable key must be prefixed by
-     * a dollar sign and enclosed in curly braces (e.g., "${key}").
-     * The backslash is reserved as an escape character.
-     * To include a literal backslash in a message, use double backslashes.
-     * To escape the special meaning of "${" as the initiator of a variable
-     * in the message, escape the dollar sign with a backslash (e.g. "\${").
      */
     public interface RcEntry
     {
@@ -50,46 +40,23 @@ public interface ApiCallRc
         Map<String, String> getObjRefs();
 
         /**
-         * The client-localizable format string of the output message
-         *
-         * See the description of format strings and variables in the interface's documentation
-         *
-         * @return Reply message format string
+         * @return Reply message
          */
-        String getMessageFormat();
+        String getMessage();
 
         /**
-         * The client-localizable format string of the cause information of an error
-         *
-         * See the description of format strings and variables in the interface's documentation
-         *
-         * @return Cause information format string
+         * @return Cause information
          */
-        String getCauseFormat();
+        String getCause();
 
         /**
-         * The client-localizable format string of the correction hint of an error
-         *
-         * See the description of format strings and variables in the interface's documentation
-         *
-         * @return Correction hint format string
+         * @return Correction hint
          */
-        String getCorrectionFormat();
+        String getCorrection();
 
         /**
-         * The client-localizable format string of additional details information
-         *
-         * See the description of format strings and variables in the interface's documentation
-         *
-         * @return Details information format string
+         * @return Details information
          */
-        String getDetailsFormat();
-
-        /**
-         * The keys and values for variable replacement in format strings
-         *
-         * @return Key/value map for variable replacement in format strings
-         */
-        Map<String, String> getVariables();
+        String getDetails();
     }
 }

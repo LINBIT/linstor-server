@@ -267,7 +267,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr),
                 getObjRefs(rscNameStr, snapshotNameStr),
-                getVariables(rscNameStr, snapshotNameStr),
                 apiCallRc
             );
         }
@@ -352,7 +351,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(Collections.emptyList(), rscNameStr, snapshotNameStr),
                 getObjRefs(rscNameStr, snapshotNameStr),
-                getVariables(rscNameStr, snapshotNameStr),
                 apiCallRc
             );
         }
@@ -696,8 +694,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true,
-            getObjRefs(rscNameStr, snapshotNameStr),
-            getVariables(rscNameStr, snapshotNameStr)
+            getObjRefs(rscNameStr, snapshotNameStr)
         );
         currentNodeNames = nodeNameStrs;
         currentRscName = rscNameStr;
@@ -737,14 +734,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
         map.put(ApiConsts.KEY_SNAPSHOT, snapshotNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String rscNameStr, String snapshotNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
-        map.put(ApiConsts.KEY_SNAPSHOT_NAME, snapshotNameStr);
         return map;
     }
 }

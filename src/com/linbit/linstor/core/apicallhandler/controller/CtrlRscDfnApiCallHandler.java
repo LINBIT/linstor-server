@@ -33,7 +33,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -52,7 +51,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -148,12 +146,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     vlmDfn.getVolumeNumber().value,
                     rscNameStr
                 );
-                volSuccessEntry.setMessageFormat(successMessage);
-                volSuccessEntry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
-                volSuccessEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-                volSuccessEntry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
+                volSuccessEntry.setMessage(successMessage);
                 volSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
                 volSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                volSuccessEntry.putObjRef(ApiConsts.KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
 
                 apiCallRc.addEntry(volSuccessEntry);
 
@@ -173,7 +169,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
-                getVariables(rscNameStr),
                 apiCallRc
             );
         }
@@ -254,7 +249,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
-                getVariables(rscNameStr),
                 apiCallRc
             );
         }
@@ -359,7 +353,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
-                getVariables(rscNameStr),
                 apiCallRc
             );
         }
@@ -472,8 +465,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(rscNameStr),
-            getVariables(rscNameStr)
+            getObjRefs(rscNameStr)
         );
 
         currentRscName = rscNameStr;
@@ -742,13 +734,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String rscNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
         return map;
     }
 }

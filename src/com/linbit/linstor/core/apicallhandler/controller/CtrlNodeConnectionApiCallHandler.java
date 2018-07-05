@@ -103,7 +103,6 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str),
                 getObjRefs(nodeName1Str, nodeName2Str),
-                getVariables(nodeName1Str, nodeName2Str),
                 apiCallRc
             );
         }
@@ -167,7 +166,6 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeName1, nodeName2),
                 getObjRefs(nodeName1, nodeName2),
-                getVariables(nodeName1, nodeName2),
                 apiCallRc
             );
         }
@@ -224,7 +222,6 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str),
                 getObjRefs(nodeName1Str, nodeName2Str),
-                getVariables(nodeName1Str, nodeName2Str),
                 apiCallRc
             );
         }
@@ -243,8 +240,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1, nodeName2),
-            getVariables(nodeName1, nodeName2)
+            getObjRefs(nodeName1, nodeName2)
         );
 
         currentNodeName1 = nodeName1;
@@ -259,14 +255,6 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         objRefs.put(ApiConsts.KEY_1ST_NODE, nodeName1Str);
         objRefs.put(ApiConsts.KEY_2ND_NODE, nodeName2Str);
         return objRefs;
-    }
-
-    private Map<String, String> getVariables(String nodeName1Str, String nodeName2Str)
-    {
-        Map<String, String> vars = new TreeMap<>();
-        vars.put(ApiConsts.KEY_1ST_NODE_NAME, nodeName1Str);
-        vars.put(ApiConsts.KEY_2ND_NODE_NAME, nodeName2Str);
-        return vars;
     }
 
     @Override

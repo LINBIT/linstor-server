@@ -195,14 +195,14 @@ public class CtrlConfApiCallHandler
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 if (whitelistProps.isKeyKnown(LinStorObject.CONTROLLER, fullKey))
                 {
-                    entry.setMessageFormat("The value '" + value + "' is not valid.");
-                    entry.setDetailsFormat("The value must match: " +
+                    entry.setMessage("The value '" + value + "' is not valid.");
+                    entry.setDetails("The value must match: " +
                         whitelistProps.getRuleValue(LinStorObject.CONTROLLER, fullKey)
                     );
                 }
                 else
                 {
-                    entry.setMessageFormat("The key '" + fullKey + "' is not whitelisted");
+                    entry.setMessage("The key '" + fullKey + "' is not whitelisted");
                 }
                 entry.setReturnCode(ApiConsts.FAIL_INVLD_PROP | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
                 apiCallRc.addEntry(entry);
@@ -387,7 +387,6 @@ public class CtrlConfApiCallHandler
                     null, // correction
                     ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                     null, // objRefs
-                    null, // variables
                     apiCallRc,
                     errorReporter,
                     accCtx,
@@ -407,7 +406,6 @@ public class CtrlConfApiCallHandler
                         ApiConsts.MASK_CTRL_CONF | ApiConsts.PASSPHRASE_ACCEPTED,
                         apiCallRc,
                         null,
-                        null,
                         errorReporter
                     );
                 } // else: report added in getDecryptedMasterKey method
@@ -422,7 +420,6 @@ public class CtrlConfApiCallHandler
                 null, // correction
                 ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objRefs
-                null, // variables
                 apiCallRc
             );
         }
@@ -436,7 +433,6 @@ public class CtrlConfApiCallHandler
                 "Hardcoded namespace or property key invalid",
                 ApiConsts.FAIL_IMPL_ERROR,
                 null,
-                null,
                 apiCallRc,
                 errorReporter,
                 accCtx,
@@ -449,7 +445,6 @@ public class CtrlConfApiCallHandler
                 exc,
                 "Unknown error occured while validating the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
-                null,
                 null,
                 apiCallRc,
                 errorReporter,
@@ -490,7 +485,6 @@ public class CtrlConfApiCallHandler
                          mask | ApiConsts.CREATED,
                          apiCallRc,
                          null, // objectRefs
-                         null, // variables
                          errorReporter
                     );
                 }
@@ -502,7 +496,6 @@ public class CtrlConfApiCallHandler
                         null,
                         "Use the crypt-modify-passphrase command instead of crypt-create-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
-                        new HashMap<>(),
                         new HashMap<>(),
                         apiCallRc
                     );
@@ -519,7 +512,6 @@ public class CtrlConfApiCallHandler
                         null,
                         "Use the crypt-create-passphrase command instead of crypt-modify-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
-                        new HashMap<>(),
                         new HashMap<>(),
                         apiCallRc
                     );
@@ -540,7 +532,6 @@ public class CtrlConfApiCallHandler
                             mask | ApiConsts.MODIFIED,
                             apiCallRc,
                             null, // objectRefs
-                            null, // variables
                             errorReporter
                        );
                     } // else: error was already reported in getDecryptedMasterKey method
@@ -558,7 +549,6 @@ public class CtrlConfApiCallHandler
                 "Hardcoded namespace or property key invalid",
                 ApiConsts.FAIL_IMPL_ERROR,
                 null,
-                null,
                 apiCallRc,
                 errorReporter,
                 accCtx,
@@ -572,7 +562,6 @@ public class CtrlConfApiCallHandler
                 AbsApiCallHandler.getAccDeniedMsg(accCtx, "access the controller properties"),
                 ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objects
-                null, // variables
                 apiCallRc,
                 errorReporter,
                 accCtx,
@@ -585,7 +574,6 @@ public class CtrlConfApiCallHandler
                 new ImplementationError(exc),
                 "Generated key could not be stored as property",
                 ApiConsts.FAIL_IMPL_ERROR,
-                null,
                 null,
                 apiCallRc,
                 errorReporter,
@@ -600,7 +588,6 @@ public class CtrlConfApiCallHandler
                 AbsApiCallHandler.getSqlMsg("storing the generated and encrypted master key"),
                 ApiConsts.FAIL_SQL,
                 null,
-                null,
                 apiCallRc,
                 errorReporter,
                 accCtx,
@@ -613,7 +600,6 @@ public class CtrlConfApiCallHandler
                 exc,
                 "An unknown exception occured while setting the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
-                null,
                 null,
                 apiCallRc,
                 errorReporter,
@@ -670,7 +656,6 @@ public class CtrlConfApiCallHandler
                 null, // correction
                 ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                 null, // objectRefs
-                null, // variables
                 apiCallRc
             );
         }
@@ -704,7 +689,6 @@ public class CtrlConfApiCallHandler
                     "Enter the correct passphrase", // correction
                     ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                     null, // objectRefs
-                    null, // variables
                     apiCallRc
                 );
             }

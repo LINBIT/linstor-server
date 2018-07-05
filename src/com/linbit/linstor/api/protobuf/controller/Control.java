@@ -72,7 +72,7 @@ public class Control implements ApiCall
                     }
                     applicationLifecycleManager.requireShutdownAccess(privCtx);
                     ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
-                    rcEntry.setMessageFormat("Controller will shutdown now.");
+                    rcEntry.setMessage("Controller will shutdown now.");
                     apiCallRc.addEntry(rcEntry);
 
                     // FIXME: The success message may not arrive at the client,
@@ -85,7 +85,7 @@ public class Control implements ApiCall
                 {
                     ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
                     rcEntry.setReturnCode(ApiConsts.MASK_ERROR | ApiConsts.UNKNOWN_API_CALL);
-                    rcEntry.setMessageFormat(
+                    rcEntry.setMessage(
                         String.format(
                             "API Controller command '%s' is unknown.",
                             msgControlCtrl.getCommand()
@@ -100,7 +100,7 @@ public class Control implements ApiCall
         {
             ApiCallRcImpl.ApiCallRcEntry rcEntry = new ApiCallRcImpl.ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.MASK_ERROR | ApiConsts.FAIL_ACC_DENIED_COMMAND);
-            rcEntry.setMessageFormat(
+            rcEntry.setMessage(
                 String.format(
                     "Role '%s' is not authorized for command '%s'.",
                     accCtx.subjectRole.name.displayValue,

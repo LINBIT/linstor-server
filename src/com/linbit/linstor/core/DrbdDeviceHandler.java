@@ -328,7 +328,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             AbsApiCallHandler.reportStatic(
                 rscExc, rscExc.getMessage(), rscExc.getCauseText(), rscExc.getDetailsText(), rscExc.getCorrectionText(),
-                ApiConsts.FAIL_UNKNOWN_ERROR, null, null, apiCallRc, errLog, null, null
+                ApiConsts.FAIL_UNKNOWN_ERROR, null, apiCallRc, errLog, null, null
             );
         }
         catch (AccessDeniedException accExc)
@@ -336,7 +336,7 @@ class DrbdDeviceHandler implements DeviceHandler
             AbsApiCallHandler.reportStatic(
                 accExc, "Satellite worker access context not authorized to perform a required operation",
                 ApiConsts.FAIL_IMPL_ERROR,
-                null, null, apiCallRc, errLog, null, null
+                null, apiCallRc, errLog, null, null
             );
         }
         catch (NoInitialStateException drbdStateExc)
@@ -349,14 +349,14 @@ class DrbdDeviceHandler implements DeviceHandler
                 "DRBD state tracking is unavailable",
                 "Operations will continue automatically when DRBD state tracking is recovered",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
-                null, null, apiCallRc, errLog, null, null
+                null, apiCallRc, errLog, null, null
             );
         }
         catch (Exception | ImplementationError exc)
         {
             AbsApiCallHandler.reportStatic(
                 exc, exc.getMessage() == null ? exc.getClass().getSimpleName() : exc.getMessage(),
-                ApiConsts.FAIL_UNKNOWN_ERROR, null, null, apiCallRc, errLog, null, null
+                ApiConsts.FAIL_UNKNOWN_ERROR, null, apiCallRc, errLog, null, null
             );
         }
 
@@ -417,7 +417,6 @@ class DrbdDeviceHandler implements DeviceHandler
             ApiConsts.DELETED | ApiConsts.MASK_RSC | ApiConsts.MASK_SUCCESS,
             apiCallDelRc,
             objRefs,
-            varRefs,
             errLog
         );
         return apiCallDelRc;

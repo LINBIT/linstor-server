@@ -123,7 +123,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeNameStr, netIfNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr, netIfNameStr),
                 apiCallRc
             );
         }
@@ -187,7 +186,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr, netIfNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr, netIfNameStr),
                 apiCallRc
             );
         }
@@ -300,7 +298,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr, netIfNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr, netIfNameStr),
                 apiCallRc
             );
         }
@@ -514,8 +511,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr),
-            getVariables(nodeNameStr, netIfNameStr)
+            getObjRefs(nodeNameStr)
         );
         currentNodeName = nodeNameStr;
         currentNetIfName = netIfNameStr;
@@ -527,14 +523,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_NODE, nodeNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String nodeNameStr, String netIfNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-        map.put(ApiConsts.KEY_NET_IF_NAME, netIfNameStr);
         return map;
     }
 

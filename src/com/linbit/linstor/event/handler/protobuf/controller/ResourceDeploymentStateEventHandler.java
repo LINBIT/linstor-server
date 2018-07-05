@@ -66,14 +66,13 @@ public class ResourceDeploymentStateEventHandler implements EventHandler
             {
                 ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
                 entry.setReturnCode(apiCallResponse.getRetCode());
-                entry.setMessageFormat(
-                    "(" + eventIdentifier.getNodeName().displayValue + ") " + apiCallResponse.getMessageFormat()
+                entry.setMessage(
+                    "(" + eventIdentifier.getNodeName().displayValue + ") " + apiCallResponse.getMessage()
                 );
-                entry.setCauseFormat(apiCallResponse.getCauseFormat());
-                entry.setCorrectionFormat(apiCallResponse.getCorrectionFormat());
-                entry.setDetailsFormat(apiCallResponse.getDetailsFormat());
+                entry.setCause(apiCallResponse.getCause());
+                entry.setCorrection(apiCallResponse.getCorrection());
+                entry.setDetails(apiCallResponse.getDetails());
                 entry.putAllObjRef(readLinStorMap(apiCallResponse.getObjRefsList()));
-                entry.putAllVariables(readLinStorMap(apiCallResponse.getVariablesList()));
                 deploymentState.addEntry(entry);
             }
 

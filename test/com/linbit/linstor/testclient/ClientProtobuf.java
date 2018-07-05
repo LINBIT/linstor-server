@@ -73,13 +73,13 @@ public class ClientProtobuf implements Runnable
     public interface MessageCallback
     {
         void error(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
         void warn(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
         void info(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
         void success(int msgId, long retCode, String message, String cause, String correction,
-            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+            String details, Map<String, String> objRefsMap);
     }
 
     public static final Map<Long, String> RET_CODES_TYPE;
@@ -349,15 +349,14 @@ public class ClientProtobuf implements Runnable
                     {
                         MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
                         long retCode = response.getRetCode();
-                        String message = response.getMessageFormat();
-                        String cause = response.getCauseFormat();
-                        String correction = response.getCorrectionFormat();
-                        String details = response.getDetailsFormat();
+                        String message = response.getMessage();
+                        String cause = response.getCause();
+                        String correction = response.getCorrection();
+                        String details = response.getDetails();
                         Map<String, String> objRefsMap = asMap(response.getObjRefsList());
-                        Map<String, String> variablesMap = asMap(response.getVariablesList());
 
                         callback(protoHeader.getMsgId(), retCode, message, cause, correction,
-                            details, objRefsMap, variablesMap);
+                            details, objRefsMap);
 
                         formatMessage(
                             sb,
@@ -368,8 +367,7 @@ public class ClientProtobuf implements Runnable
                             cause,
                             correction,
                             details,
-                            objRefsMap,
-                            variablesMap
+                            objRefsMap
                         );
                         sb.append("\n");
                     }
@@ -404,8 +402,7 @@ public class ClientProtobuf implements Runnable
         String cause,
         String correction,
         String details,
-        Map<String, String> objRefsMap,
-        Map<String, String> variablesMap
+        Map<String, String> objRefsMap
     )
     {
         StringBuilder sb;
@@ -460,18 +457,6 @@ public class ClientProtobuf implements Runnable
             }
 
         }
-        if (variablesMap != null && !variablesMap.isEmpty())
-        {
-            sb.append("\n      Variables: ");
-            for (Entry<String, String> entry : variablesMap.entrySet())
-            {
-                sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
-            }
-        }
-        else
-        {
-            sb.append("\n      No Variables");
-        }
     }
 
     public void registerCallback(MessageCallback callback)
@@ -486,7 +471,7 @@ public class ClientProtobuf implements Runnable
 
     private void callback(
         int msgId, long retCode, String message, String cause, String correction, String details,
-        Map<String, String> objRefsMap, Map<String, String> variablesMap
+        Map<String, String> objRefsMap
     )
     {
         synchronized (CALLBACK_LOCK)
@@ -495,7 +480,7 @@ public class ClientProtobuf implements Runnable
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -503,7 +488,7 @@ public class ClientProtobuf implements Runnable
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -511,14 +496,14 @@ public class ClientProtobuf implements Runnable
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
         }

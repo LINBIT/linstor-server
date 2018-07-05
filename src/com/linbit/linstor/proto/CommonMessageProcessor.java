@@ -246,9 +246,9 @@ public class CommonMessageProcessor implements MessageProcessor
                                 .writeDelimitedTo(outStream);
 
                             MsgApiCallResponse.newBuilder()
-                                .setMessageFormat("Controller couldn't parse message.")
-                                .setCauseFormat(exc.getMessage())
-                                .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                                .setMessage("Controller couldn't parse message.")
+                                .setCause(exc.getMessage())
+                                .setDetails("The requested function call name was '" + apiCallName + "'.")
                                 .setRetCode(ApiConsts.API_CALL_PARSE_ERROR)
                                 .build()
                                 .writeDelimitedTo(outStream);
@@ -296,11 +296,11 @@ public class CommonMessageProcessor implements MessageProcessor
                             .writeDelimitedTo(outStream);
 
                         MsgApiCallResponse.newBuilder()
-                            .setMessageFormat("The client is not authorized to execute the requested function call")
-                            .setCauseFormat(
+                            .setMessage("The client is not authorized to execute the requested function call")
+                            .setCause(
                                 "The requested function call can only be executed by an authenticated identity"
                             )
-                            .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                            .setDetails("The requested function call name was '" + apiCallName + "'.")
                             .setRetCode(ApiConsts.API_CALL_AUTH_REQ)
                             .build()
                             .writeDelimitedTo(outStream);
@@ -345,15 +345,15 @@ public class CommonMessageProcessor implements MessageProcessor
                             .writeDelimitedTo(outStream);
 
                         MsgApiCallResponseOuterClass.MsgApiCallResponse.newBuilder()
-                            .setMessageFormat("The requested function call cannot be executed.")
-                            .setCauseFormat(
+                            .setMessage("The requested function call cannot be executed.")
+                            .setCause(
                                 "Common causes of this error are:\n" +
                                 "   - The function call name specified by the caller\n" +
                                 "     (client side) is incorrect\n" +
                                 "   - The requested function call was not loaded into\n" +
                                 "     the system (server side)"
                             )
-                            .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                            .setDetails("The requested function call name was '" + apiCallName + "'.")
                             .setRetCode(ApiConsts.UNKNOWN_API_CALL)
                             .build()
                             .writeDelimitedTo(outStream);

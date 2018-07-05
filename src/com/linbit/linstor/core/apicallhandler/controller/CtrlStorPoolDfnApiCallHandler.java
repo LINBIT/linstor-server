@@ -129,7 +129,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(storPoolNameStr),
                 getObjRefs(storPoolNameStr),
-                getVariables(storPoolNameStr),
                 apiCallRc
             );
         }
@@ -192,7 +191,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(storPoolNameStr),
                 getObjRefs(storPoolNameStr),
-                getVariables(storPoolNameStr),
                 apiCallRc
             );
         }
@@ -260,7 +258,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(storPoolNameStr),
                 getObjRefs(storPoolNameStr),
-                getVariables(storPoolNameStr),
                 apiCallRc
             );
         }
@@ -414,8 +411,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(storPoolNameStr),
-            getVariables(storPoolNameStr)
+            getObjRefs(storPoolNameStr)
         );
 
         currentStorPoolNameStr = storPoolNameStr;
@@ -466,13 +462,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
         return objRefs;
-    }
-
-    private Map<String, String> getVariables(String storPoolNameStr)
-    {
-        Map<String, String> vars = new TreeMap<>();
-        vars.put(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
-        return vars;
     }
 
     private void requireStorPoolDfnChangeAccess()

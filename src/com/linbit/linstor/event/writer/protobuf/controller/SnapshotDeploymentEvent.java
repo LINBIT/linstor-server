@@ -128,7 +128,7 @@ public class SnapshotDeploymentEvent implements EventWriter
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(ApiConsts.CREATED | ApiConsts.MASK_SNAPSHOT);
-            entry.setMessageFormat(String.format("Snapshot '%s' of resource '%s' successfully taken.",
+            entry.setMessage(String.format("Snapshot '%s' of resource '%s' successfully taken.",
                 snapshotDfn.getName().displayValue,
                 rscDfn.getName().displayValue));
             ApiCallRcImpl successRc = new ApiCallRcImpl();
@@ -140,7 +140,7 @@ public class SnapshotDeploymentEvent implements EventWriter
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(ApiConsts.FAIL_NOT_CONNECTED);
-            entry.setMessageFormat(String.format(
+            entry.setMessage(String.format(
                 "Snapshot '%s' of resource '%s' failed due to satellite disconnection.",
                 snapshotDfn.getName().displayValue,
                 rscDfn.getName().displayValue

@@ -72,10 +72,10 @@ public class SignIn implements ApiCall
             peerSignIn(idName, password);
 
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setMessageFormat("Sign-in successful");
-            rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, clientCtx.subjectId.name.displayValue);
-            rcEntry.putVariable(ApiConsts.KEY_SEC_ROLE, clientCtx.subjectRole.name.displayValue);
-            rcEntry.putVariable(ApiConsts.KEY_SEC_DOMAIN, clientCtx.subjectDomain.name.displayValue);
+            rcEntry.setMessage("Sign-in successful");
+            rcEntry.putObjRef(ApiConsts.KEY_SEC_IDENTITY, clientCtx.subjectId.name.displayValue);
+            rcEntry.putObjRef(ApiConsts.KEY_SEC_ROLE, clientCtx.subjectRole.name.displayValue);
+            rcEntry.putObjRef(ApiConsts.KEY_SEC_DOMAIN, clientCtx.subjectDomain.name.displayValue);
             reply.addEntry(rcEntry);
         }
         catch (IOException ioExc)
@@ -83,15 +83,15 @@ public class SignIn implements ApiCall
             String reportId = errorReporter.reportError(ioExc, clientCtx, client, "Sign-in");
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
-            rcEntry.setMessageFormat("Sgn-in failed");
-            rcEntry.setCauseFormat("The sign-in request could not be processed due to an I/O error");
-            rcEntry.setCorrectionFormat(
+            rcEntry.setMessage("Sgn-in failed");
+            rcEntry.setCause("The sign-in request could not be processed due to an I/O error");
+            rcEntry.setCorrection(
                 "If this problem persists, refer to the problem report on the server system for more detailed " +
                 "information about the problem and possible solutions"
             );
             if (reportId != null)
             {
-                rcEntry.setDetailsFormat("A problem report was filed under report ID " + reportId);
+                rcEntry.setDetails("A problem report was filed under report ID " + reportId);
             }
             reply.addEntry(rcEntry);
         }
@@ -99,10 +99,10 @@ public class SignIn implements ApiCall
         {
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
-            rcEntry.setMessageFormat(nameExc.getMessage());
+            rcEntry.setMessage(nameExc.getMessage());
             if (idNameText != null)
             {
-                rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
+                rcEntry.putObjRef(ApiConsts.KEY_SEC_IDENTITY, idNameText);
             }
             reply.addEntry(rcEntry);
         }
@@ -110,13 +110,13 @@ public class SignIn implements ApiCall
         {
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
-            rcEntry.setMessageFormat(signInExc.getDescriptionText());
-            rcEntry.setCauseFormat(signInExc.getCauseText());
-            rcEntry.setCorrectionFormat(signInExc.getCorrectionText());
-            rcEntry.setDetailsFormat(signInExc.getDetailsText());
+            rcEntry.setMessage(signInExc.getDescriptionText());
+            rcEntry.setCause(signInExc.getCauseText());
+            rcEntry.setCorrection(signInExc.getCorrectionText());
+            rcEntry.setDetails(signInExc.getDetailsText());
             if (idNameText != null)
             {
-                rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
+                rcEntry.putObjRef(ApiConsts.KEY_SEC_IDENTITY, idNameText);
             }
             reply.addEntry(rcEntry);
         }

@@ -199,7 +199,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(rscNameStr),
                 getObjRefs(rscNameStr),
-                getVariables(rscNameStr),
                 apiCallRc
             );
         }
@@ -241,8 +240,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true,
-            getObjRefs(rscNameStr),
-            getVariables(rscNameStr)
+            getObjRefs(rscNameStr)
         );
         currentRscName = rscNameStr;
         return this;
@@ -252,13 +250,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     {
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String rscNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
         return map;
     }
 

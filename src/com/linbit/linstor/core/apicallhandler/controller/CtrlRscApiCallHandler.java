@@ -372,7 +372,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 VolumeDefinition vlmDfn = iterateVolumeDfn.next();
 
                 objRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-                variables.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
                 // first check if we probably just deployed a vlm for this vlmDfn
                 if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
@@ -413,20 +412,18 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             for (Entry<Integer, Volume> entry : vlmMap.entrySet())
             {
                 ApiCallRcEntry vlmCreatedRcEntry = new ApiCallRcEntry();
-                vlmCreatedRcEntry.setMessageFormat(
+                vlmCreatedRcEntry.setMessage(
                     "Volume with number '" + entry.getKey() + "' on resource '" +
                         entry.getValue().getResourceDefinition().getName().displayValue + "' on node '" +
                         entry.getValue().getResource().getAssignedNode().getName().displayValue +
                         "' successfully created"
                 );
-                vlmCreatedRcEntry.setDetailsFormat(
+                vlmCreatedRcEntry.setDetails(
                     "Volume UUID is: " + entry.getValue().getUuid().toString()
                 );
                 vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
                 vlmCreatedRcEntry.putAllObjRef(objRefs.get());
                 vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
-                vlmCreatedRcEntry.putAllVariables(variables.get());
-                vlmCreatedRcEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
 
                 apiCallRc.addEntry(vlmCreatedRcEntry);
             }
@@ -461,7 +458,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                     ApiCallType.CREATE,
                     getObjectDescriptionInline(nodeNameStr, rscNameStr),
                     getObjRefs(nodeNameStr, rscNameStr),
-                    getVariables(nodeNameStr, rscNameStr),
                     apiCallRc
                 );
             }
@@ -540,7 +536,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
-                getVariables(nodeNameStr, rscNameStr),
                 apiCallRc
             );
         }
@@ -621,7 +616,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
-                getVariables(nodeNameStr, rscNameStr),
                 apiCallRc
             );
         }
@@ -736,7 +730,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
-                getVariables(nodeNameStr, rscNameStr),
                 apiCallRc
             );
         }
@@ -904,8 +897,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             type,
             apiCallRc,
             autoCloseCurrentTransMgr,
-            getObjRefs(nodeNameStr, rscNameStr),
-            getVariables(nodeNameStr, rscNameStr)
+            getObjRefs(nodeNameStr, rscNameStr)
         );
         currentNodeName = nodeNameStr;
         currentRscName = rscNameStr;
@@ -934,14 +926,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_NODE, nodeNameStr);
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String nodeNameStr, String rscNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
         return map;
     }
 
@@ -1163,11 +1147,10 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         String rscDeletedMsg = CtrlRscDfnApiCallHandler.getObjectDescriptionInline(rscName.displayValue) +
             " deleted.";
         rscDeletedMsg = rscDeletedMsg.substring(0, 1).toUpperCase() + rscDeletedMsg.substring(1);
-        entry.setMessageFormat(rscDeletedMsg);
+        entry.setMessage(rscDeletedMsg);
         entry.setReturnCode(ApiConsts.MASK_RSC_DFN | ApiConsts.DELETED);
         entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
         entry.putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString());
-        entry.putVariable(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
 
         apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
@@ -1179,11 +1162,10 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
         String rscDeletedMsg = CtrlNodeApiCallHandler.getObjectDescriptionInline(nodeName.displayValue) +
             " deleted.";
-        entry.setMessageFormat(rscDeletedMsg);
+        entry.setMessage(rscDeletedMsg);
         entry.setReturnCode(ApiConsts.MASK_NODE | ApiConsts.DELETED);
         entry.putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue);
         entry.putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString());
-        entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeName.displayValue);
 
         apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);

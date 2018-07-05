@@ -155,7 +155,6 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(toRscNameStr),
                 new HashMap(),
-                new HashMap(),
                 apiCallRc
             );
         }
@@ -229,7 +228,6 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
             apiCallType,
             apiCallRc,
             true, // autoClose
-            new HashMap(),
             new HashMap()
         );
 

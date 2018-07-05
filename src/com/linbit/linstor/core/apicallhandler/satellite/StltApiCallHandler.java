@@ -200,13 +200,13 @@ public class StltApiCallHandler
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);
-            entry.setMessageFormat("Satellite node name doesn't match hostname.");
+            entry.setMessage("Satellite node name doesn't match hostname.");
             String cause = String.format(
                 "Satellite node name '%s' doesn't match nodes hostname '%s'.",
                 nodeName,
                 hostName
             );
-            entry.setCauseFormat(cause);
+            entry.setCause(cause);
             apiCallRc = new ApiCallRcImpl();
             apiCallRc.addEntry(entry);
 

@@ -107,7 +107,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
-                getVariables(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 apiCallRc
             );
         }
@@ -175,7 +174,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
-                getVariables(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 apiCallRc
             );
         }
@@ -231,7 +229,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
-                getVariables(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
                 apiCallRc
             );
         }
@@ -252,8 +249,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1, nodeName2, rscNameStr, vlmNr),
-            getVariables(nodeName1, nodeName2, rscNameStr, vlmNr)
+            getObjRefs(nodeName1, nodeName2, rscNameStr, vlmNr)
         );
 
         currentNodeName1 = nodeName1;
@@ -280,24 +276,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
         }
         return objRefs;
-    }
-
-    private Map<String, String> getVariables(
-        String nodeName1Str,
-        String nodeName2Str,
-        String rscNameStr,
-        Integer vlmNr
-    )
-    {
-        Map<String, String> vars = new TreeMap<>();
-        vars.put(ApiConsts.KEY_1ST_NODE_NAME, nodeName1Str);
-        vars.put(ApiConsts.KEY_2ND_NODE_NAME, nodeName2Str);
-        vars.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
-        if (vlmNr != null)
-        {
-            vars.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
-        }
-        return vars;
     }
 
     @Override

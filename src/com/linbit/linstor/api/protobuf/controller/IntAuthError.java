@@ -40,7 +40,7 @@ public class IntAuthError implements ApiCall
         client.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
         MsgApiCallResponse msgApiCallRc = MsgApiCallResponse.parseDelimitedFrom(msgDataIn);
 
-        errorReporter.logError("Satellite authentication error: " + msgApiCallRc.getCauseFormat());
+        errorReporter.logError("Satellite authentication error: " + msgApiCallRc.getCause());
     }
 
 }

@@ -111,7 +111,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     protected static ThreadLocal<ApiCallRcImpl> apiCallRc = new ThreadLocal<>();
     private static ThreadLocal<Boolean> transMgrAutoClose = new ThreadLocal<>();
     protected static ThreadLocal<Map<String, String>> objRefs = new ThreadLocal<>();
-    protected static ThreadLocal<Map<String, String>> variables = new ThreadLocal<>();
 
 
     protected AbsApiCallHandler(
@@ -141,15 +140,13 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         ApiCallType type,
         ApiCallRcImpl apiCallRcRef,
         boolean autoCloseTransMgr,
-        Map<String, String> objRefsRef,
-        Map<String, String> vars
+        Map<String, String> objRefsRef
     )
     {
         apiCallType.set(type);
         apiCallRc.set(apiCallRcRef);
         transMgrAutoClose.set(autoCloseTransMgr);
         objRefs.set(objRefsRef);
-        variables.set(vars);
         return this;
     }
 
@@ -962,7 +959,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 correction,
                 retCode,
                 objRefs.get(),
-                variables.get(),
                 apiCallRcImpl
             );
         }
@@ -977,7 +973,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * @param type
      * @param objDescr
      * @param objRefsRef
-     * @param variablesRef
      * @param apiCallRcRef
      */
     protected void reportStatic(
@@ -985,7 +980,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         ApiCallType type,
         String objDescr,
         Map<String, String> objRefsRef,
-        Map<String, String> variablesRef,
         ApiCallRcImpl apiCallRcRef
     )
     {
@@ -1008,7 +1002,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             errorType + ".",
             retCode,
             objRefsRef,
-            variablesRef,
             apiCallRcRef,
             errorReporter,
             peerAccCtx,
@@ -1028,7 +1021,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * @param accCtx,
      * @param errorMsg
      * @param retCode
-     * @param variablesRef
      * @param errorReporter
      * @param peer
      */
@@ -1037,7 +1029,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         String errorMsg,
         long retCode,
         Map<String, String> objRefsRef,
-        Map<String, String> variablesRef,
         ApiCallRcImpl apiCallRcRef,
         ErrorReporter errorReporter,
         AccessContext accCtx,
@@ -1052,7 +1043,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             null,
             retCode,
             objRefsRef,
-            variablesRef,
             apiCallRcRef,
             errorReporter,
             accCtx,
@@ -1065,7 +1055,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * {@link ApiCallRcImpl}.
      * The only difference between this method and {@link #report(Throwable, String, String, String, String, long)}
      * is that this method does not access non-static variables. This method also calls
-     * {@link #addAnswerStatic(String, String, String, String, long, Map, Map, ApiCallRcImpl)} for
+     * {@link #addAnswerStatic(String, String, String, String, long, Map} for
      * adding an answer to the {@link ApiCallRcImpl}.
      *
      * @param throwable
@@ -1075,7 +1065,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * @param correctionMsg
      * @param retCode
      * @param objRefsRef
-     * @param variablesRef
      * @param apiCallRcRef
      * @param controller
      * @param accCtx
@@ -1089,7 +1078,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         String correctionMsg,
         long retCode,
         Map<String, String> objRefsRef,
-        Map<String, String> variablesRef,
         ApiCallRcImpl apiCallRcRef,
         ErrorReporter errorReporter,
         AccessContext accCtx,
@@ -1114,7 +1102,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             correctionMsg,
             retCode,
             objRefsRef,
-            variablesRef,
             apiCallRcRef
         );
     }
@@ -1137,7 +1124,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * @param correction
      * @param retCode
      * @param objRefsRef
-     * @param variablesRef
      */
     public static final void addAnswerStatic(
         String msg,
@@ -1146,25 +1132,20 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         String correction,
         long retCode,
         Map<String, String> objRefsRef,
-        Map<String, String> variablesRef,
         ApiCallRcImpl apiCallRcRef
     )
     {
 
         ApiCallRcEntry entry = new ApiCallRcEntry();
         entry.setReturnCodeBit(retCode);
-        entry.setMessageFormat(msg);
-        entry.setCauseFormat(cause);
-        entry.setDetailsFormat(details);
-        entry.setCorrectionFormat(correction);
+        entry.setMessage(msg);
+        entry.setCause(cause);
+        entry.setDetails(details);
+        entry.setCorrection(correction);
 
         if (objRefsRef != null)
         {
             entry.putAllObjRef(objRefsRef);
-        }
-        if (variablesRef != null)
-        {
-            entry.putAllVariables(variablesRef);
         }
 
         apiCallRcRef.addEntry(entry);
@@ -1244,7 +1225,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             retCode,
             apiCallRc.get(),
             objRefs.get(),
-            variables.get(),
             errorReporter
         );
     }
@@ -1256,7 +1236,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         long retCode,
         ApiCallRcImpl apiCallRcRef,
         Map<String, String> objsRef,
-        Map<String, String> variablesRef,
         ErrorReporter errorReporter
     )
     {
@@ -1269,7 +1248,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 null,
                 retCode,
                 objsRef,
-                variablesRef,
                 apiCallRcRef
             );
         }

@@ -104,7 +104,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr),
-                getVariables(nodeName1Str, nodeName2Str, rscNameStr),
                 apiCallRc
             );
         }
@@ -170,7 +169,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeName1, nodeName2, rscNameStr),
                 getObjRefs(nodeName1, nodeName2, rscNameStr),
-                getVariables(nodeName1, nodeName2, rscNameStr),
                 apiCallRc
             );
         }
@@ -216,7 +214,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
                 getObjRefs(nodeName1Str, nodeName2Str, rscNameStr),
-                getVariables(nodeName1Str, nodeName2Str, rscNameStr),
                 apiCallRc
             );
         }
@@ -235,8 +232,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeName1, nodeName2, rscNameStr),
-            getVariables(nodeName1, nodeName2, rscNameStr)
+            getObjRefs(nodeName1, nodeName2, rscNameStr)
         );
 
         currentNodeName1 = nodeName1;
@@ -276,15 +272,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         map.put(ApiConsts.KEY_1ST_NODE, nodeName1);
         map.put(ApiConsts.KEY_2ND_NODE, nodeName2);
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String nodeName1, String nodeName2, String rscNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_1ST_NODE_NAME, nodeName1);
-        map.put(ApiConsts.KEY_2ND_NODE_NAME, nodeName2);
-        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
         return map;
     }
 

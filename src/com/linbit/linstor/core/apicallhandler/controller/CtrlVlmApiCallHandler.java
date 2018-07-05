@@ -35,8 +35,6 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -182,7 +180,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
                 getObjRefs(nodeNameStr, rscNameStr, volumeNr),
-                getVariables(nodeNameStr, rscNameStr, volumeNr),
                 apiCallRc
             );
         }
@@ -228,7 +225,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
                 getObjRefs(nodeNameStr, rscNameStr, volumeNr),
-                getVariables(nodeNameStr, rscNameStr, volumeNr),
                 apiCallRc
             );
         }
@@ -308,7 +304,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
                 getObjRefs(nodeNameStr, rscNameStr, volumeNr),
-                getVariables(nodeNameStr, rscNameStr, volumeNr),
                 apiCallRc
             );
         }
@@ -445,8 +440,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             type,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr, rscNameStr, vlmNr),
-            getVariables(nodeNameStr, rscNameStr, vlmNr)
+            getObjRefs(nodeNameStr, rscNameStr, vlmNr)
         );
         currentNodeName = nodeNameStr;
         currentRscName = rscNameStr;
@@ -479,18 +473,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_NODE, nodeNameStr);
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        if (vlmNr != null)
-        {
-            map.put(ApiConsts.KEY_VLM_NR, rscNameStr);
-        }
-        return map;
-    }
-
-    private Map<String, String> getVariables(String nodeNameStr, String rscNameStr, Integer vlmNr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
         if (vlmNr != null)
         {
             map.put(ApiConsts.KEY_VLM_NR, rscNameStr);

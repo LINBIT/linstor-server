@@ -56,7 +56,6 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
-import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -279,7 +278,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr),
                 apiCallRc
             );
         }
@@ -385,7 +383,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr),
                 apiCallRc
             );
         }
@@ -524,7 +521,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr),
                 apiCallRc
             );
         }
@@ -637,7 +633,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(nodeNameStr),
                 getObjRefs(nodeNameStr),
-                getVariables(nodeNameStr),
                 apiCallRc
             );
         }
@@ -1221,8 +1216,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             apiCallType,
             apiCallRc,
             true, // autoClose
-            getObjRefs(nodeNameStr),
-            getVariables(nodeNameStr)
+            getObjRefs(nodeNameStr)
         );
         currentNodeName = nodeNameStr;
         return this;
@@ -1232,13 +1226,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         Map<String, String> map = new TreeMap<>();
         map.put(ApiConsts.KEY_NODE, nodeNameStr);
-        return map;
-    }
-
-    private Map<String, String> getVariables(String nodeNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
         return map;
     }
 

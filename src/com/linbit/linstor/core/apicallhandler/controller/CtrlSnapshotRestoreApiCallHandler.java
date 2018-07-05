@@ -183,7 +183,6 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
                 ApiCallType.CREATE,
                 getObjectDescriptionInline(nodeNameStrs, toRscNameStr),
                 new HashMap<>(),
-                new HashMap<>(),
                 apiCallRc
             );
         }
@@ -262,7 +261,6 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             type,
             apiCallRc,
             true,
-            new HashMap<>(),
             new HashMap<>()
         );
         currentNodeNames = nodeNameStrs;

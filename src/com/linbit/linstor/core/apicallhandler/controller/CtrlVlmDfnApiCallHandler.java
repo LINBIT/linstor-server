@@ -31,7 +31,6 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -108,15 +107,15 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
     private void updateCurrentKeyNumber(final String key, Integer number)
     {
         String intStringOrNull = null;
-        Map<String, String> localVariables = variables.get();
+        Map<String, String> localObjRefs = objRefs.get();
         if (number != null)
         {
             intStringOrNull = number.toString();
-            localVariables.put(key, intStringOrNull);
+            localObjRefs.put(key, intStringOrNull);
         }
         else
         {
-            localVariables.remove(key);
+            localObjRefs.remove(key);
         }
     }
 
@@ -161,8 +160,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnApiList);
 
             objRefs.get().remove(ApiConsts.KEY_VLM_NR);
-            variables.get().remove(ApiConsts.KEY_VLM_NR);
-            variables.get().remove(ApiConsts.KEY_MINOR_NR);
+            objRefs.get().remove(ApiConsts.KEY_MINOR_NR);
 
             for (Resource rsc : rscList)
             {
@@ -190,7 +188,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 ApiCallType.CREATE,
                 "a volume definition of resource definition '" + rscNameStr + "'",
                 getObjRefs(rscNameStr, null),
-                getVariables(rscNameStr, null),
                 apiCallRc
             );
         }
@@ -390,7 +387,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 ApiCallType.MODIFY,
                 getObjectDescriptionInline(rscName, vlmNr),
                 getObjRefs(rscName, vlmNr),
-                getVariables(rscName, vlmNr),
                 apiCallRc
             );
         }
@@ -482,7 +478,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 ApiCallType.DELETE,
                 getObjectDescriptionInline(rscName, vlmNr),
                 getObjRefs(rscName, vlmNr),
-                getVariables(rscName, vlmNr),
                 apiCallRc
             );
         }
@@ -644,18 +639,13 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 vlmDfn.getVolumeNumber().value,
                 rscNameStr
             );
-            vlmDfnCrtSuccessEntry.setMessageFormat(successMessage);
-            vlmDfnCrtSuccessEntry.putVariable(
-                ApiConsts.KEY_RSC_DFN,
-                vlmDfn.getResourceDefinition().getName().displayValue
-            );
-            vlmDfnCrtSuccessEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-            vlmDfnCrtSuccessEntry.putVariable(
+            vlmDfnCrtSuccessEntry.setMessage(successMessage);
+            vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+            vlmDfnCrtSuccessEntry.putObjRef(
                 ApiConsts.KEY_MINOR_NR,
                 Integer.toString(vlmDfn.getMinorNr(apiCtx).value)
             );
-            vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
-            vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
             errorReporter.logInfo(successMessage);
         }
@@ -769,8 +759,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             apiCallType,
             apiCallRc,
             true, // autoClose
-            getObjRefs(rscNameStr, vlmNr),
-            getVariables(rscNameStr, vlmNr)
+            getObjRefs(rscNameStr, vlmNr)
         );
 
         ensureRscMapProtAccess(accCtx);
@@ -791,17 +780,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             objRefs.put(ApiConsts.KEY_VLM_NR, vlmNr.toString());
         }
         return objRefs;
-    }
-
-    private Map<String, String> getVariables(String rscName, Integer vlmNr)
-    {
-        Map<String, String> vars = new TreeMap<>();
-        vars.put(ApiConsts.KEY_RSC_NAME, rscName);
-        if (vlmNr != null)
-        {
-            vars.put(ApiConsts.KEY_VLM_NR, vlmNr.toString());
-        }
-        return vars;
     }
 
     @Override
