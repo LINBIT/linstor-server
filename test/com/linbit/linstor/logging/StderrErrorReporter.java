@@ -6,6 +6,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.event.Level;
 
@@ -266,5 +267,11 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
             output.println("\nEND OF ERROR REPORT.\n");
         }
         return logName;
+    }
+
+    @Override
+    public Path getLogDirectory()
+    {
+        return null;
     }
 }

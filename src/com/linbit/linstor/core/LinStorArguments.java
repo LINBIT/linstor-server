@@ -2,7 +2,7 @@ package com.linbit.linstor.core;
 
 public class LinStorArguments
 {
-    private String workingDirectory;
+    private String configurationDirectory;
 
     private boolean startDebugConsole;
 
@@ -10,24 +10,26 @@ public class LinStorArguments
     private int inMemoryDbPort;
     private String inMemoryDbAddress;
     private boolean printStacktraces;
+    private String logDirectory;
 
     public LinStorArguments()
     {
-        workingDirectory = "";
+        configurationDirectory = "";
         inMemoryDbType = null;
         inMemoryDbAddress = null;
         inMemoryDbPort = 0;
         printStacktraces = false;
+        logDirectory = "";
     }
 
-    public void setWorkingDirectory(final String workingDirectoryRef)
+    public void setConfigurationDirectory(final String workingDirectoryRef)
     {
-        workingDirectory = workingDirectoryRef;
+        configurationDirectory = workingDirectoryRef;
     }
 
-    public String getWorkingDirectory()
+    public String getConfigurationDirectory()
     {
-        return workingDirectory;
+        return configurationDirectory;
     }
 
     public void setStartDebugConsole(final boolean startDebugConsoleRef)
@@ -78,5 +80,15 @@ public class LinStorArguments
     public void setPrintStacktraces(boolean printStacktracesRef)
     {
         printStacktraces = printStacktracesRef;
+    }
+
+    public String getLogDirectory()
+    {
+        return logDirectory;
+    }
+
+    public void setLogDirectory(String logDirectory)
+    {
+        this.logDirectory = logDirectory;
     }
 }

@@ -688,7 +688,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         if (nodes.isEmpty() || nodes.stream().anyMatch("controller"::equalsIgnoreCase)) {
             Set<ErrorReport> errorReports = StdErrorReporter.listReports(
                 "Controller",
-                Paths.get(StdErrorReporter.LOG_DIRECTORY),
+                errorReporter.getLogDirectory(),
                 withContent,
                 since,
                 to,

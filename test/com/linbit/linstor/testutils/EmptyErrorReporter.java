@@ -1,5 +1,7 @@
 package com.linbit.linstor.testutils;
 
+import java.nio.file.Path;
+
 import org.slf4j.event.Level;
 
 import com.linbit.linstor.LinStorException;
@@ -122,5 +124,11 @@ public class EmptyErrorReporter implements ErrorReporter
     public boolean isTraceEnabled()
     {
         return true;
+    }
+
+    @Override
+    public Path getLogDirectory()
+    {
+        return null;
     }
 }

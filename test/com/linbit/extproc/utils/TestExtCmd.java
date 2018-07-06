@@ -4,6 +4,7 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,7 +23,9 @@ public class TestExtCmd extends ExtCmd
 
     public TestExtCmd()
     {
-        super(new GenericTimer<String, Action<String>>(), new StdErrorReporter("LINSTOR-UNITTESTS", "", true));
+        super(new GenericTimer<String, Action<String>>(),
+            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get(""), true)
+        );
     }
 
     public void clearBehaviors()

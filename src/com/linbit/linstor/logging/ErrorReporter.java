@@ -1,5 +1,7 @@
 package com.linbit.linstor.logging;
 
+import java.nio.file.Path;
+
 import org.slf4j.event.Level;
 
 import com.linbit.linstor.LinStorException;
@@ -151,4 +153,6 @@ public interface ErrorReporter
         // Information about the context in which the problem occured, e.g., the API call being performed
         String contextInfo
     );
+
+    Path getLogDirectory();
 }

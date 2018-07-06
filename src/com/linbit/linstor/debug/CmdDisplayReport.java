@@ -84,7 +84,7 @@ public class CmdDisplayReport extends BaseDebugCmd
                     formattedErrorId = getErrorId(prmErrorId);
                     reportFile = String.format(
                         "%s/ErrorReport-%s-%s.log",
-                        StdErrorReporter.LOG_DIRECTORY, instanceId, formattedErrorId
+                        errorReporter.getLogDirectory(), instanceId, formattedErrorId
                     );
                 }
                 catch (NumberFormatException nfExc)

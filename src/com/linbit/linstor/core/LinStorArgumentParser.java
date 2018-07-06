@@ -6,8 +6,10 @@ import picocli.CommandLine;
 
 public class LinStorArgumentParser
 {
-    @CommandLine.Option(names = {"-c", "--controller-directory"}, description = "Working directory for the controller")
-    private String controllerDirectory = null;
+    @CommandLine.Option(names = {"-c", "--config-directory"},
+        description = "Configuration directory for the controller"
+    )
+    private String configurationDirectory = "./";
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
     private boolean debugConsole = false;
     @CommandLine.Option(
@@ -21,6 +23,9 @@ public class LinStorArgumentParser
         description = "print error stack traces on standard error"
     )
     private boolean printStackTrace = false;
+
+    @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
+    private String logDirectory = "./logs";
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
@@ -49,15 +54,20 @@ public class LinStorArgumentParser
         }
 
         LinStorArguments cArgs = new LinStorArguments();
-        if (linArgParser.controllerDirectory != null)
+        if (linArgParser.configurationDirectory != null)
         {
-                cArgs.setWorkingDirectory(linArgParser.controllerDirectory + "/");
-                File workingDir = new File(cArgs.getWorkingDirectory());
+                cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
+                File workingDir = new File(cArgs.getConfigurationDirectory());
                 if (!workingDir.exists() || !workingDir.isDirectory())
                 {
-                    System.err.println("Error: Given controller runtime directory does not exist or is no directory");
+                    System.err.println("Error: Given configuration directory does not exist or is no directory");
                     System.exit(2);
                 }
+        }
+
+        if (linArgParser.logDirectory != null)
+        {
+            cArgs.setLogDirectory(linArgParser.logDirectory);
         }
 
         if (linArgParser.memoryDB != null)

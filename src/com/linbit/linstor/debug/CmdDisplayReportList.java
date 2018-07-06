@@ -110,7 +110,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
             if (slctInst == InstanceSelector.ALL || slctInst == InstanceSelector.CURRENT)
             {
                 String matchPattern = parameters.get(PRM_FILTER_NAME);
-                File reportDir = new File(StdErrorReporter.LOG_DIRECTORY);
+                File reportDir = errorReporter.getLogDirectory().toFile();
                 File[] reportFileList;
                 if (slctInst == InstanceSelector.CURRENT)
                 {

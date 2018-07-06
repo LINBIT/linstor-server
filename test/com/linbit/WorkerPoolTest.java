@@ -1,5 +1,6 @@
 package com.linbit;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -324,6 +325,12 @@ public class WorkerPoolTest
         public boolean isTraceEnabled()
         {
             return true;
+        }
+
+        @Override
+        public Path getLogDirectory()
+        {
+            return null;
         }
     }
 

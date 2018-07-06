@@ -25,6 +25,8 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import javax.inject.Provider;
@@ -58,7 +60,7 @@ public class ResourceDefinitionDataSatelliteTest
     {
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
-            new LoggingModule(new StdErrorReporter("TESTS", "", true)),
+            new LoggingModule(new StdErrorReporter("TESTS", Paths.get(""), true)),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
             new TestCoreModule(),

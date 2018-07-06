@@ -14,6 +14,8 @@ import javax.inject.Singleton;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -75,7 +77,8 @@ public class DbConnectionPoolModule extends AbstractModule
         Properties dbProps = new Properties();
         if (args.getInMemoryDbType() == null)
         {
-            try (InputStream dbPropsIn = new FileInputStream(args.getWorkingDirectory() + DB_CONF_FILE))
+            Path dbConfigFile = Paths.get(args.getConfigurationDirectory(), DB_CONF_FILE);
+            try (InputStream dbPropsIn = new FileInputStream(dbConfigFile.toFile()))
             {
                 dbProps.loadFromXML(dbPropsIn);
             }

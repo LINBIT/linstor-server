@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -76,15 +77,16 @@ public final class SatelliteNetComInitializer
         systemServicesMap = systemServicesMapRef;
     }
 
-    public boolean initMainNetComService(AccessContext initCtx)
+    public boolean initMainNetComService(AccessContext initCtx, Path configurationDirectory)
     {
         boolean success = false;
         try
         {
             Properties netComProps = new Properties();
-            if (Files.exists(Paths.get(NET_COM_CONF_FILE)))
+            Path stltNetComConfFile = configurationDirectory.resolve(NET_COM_CONF_FILE);
+            if (Files.exists(stltNetComConfFile))
             {
-                try (InputStream propsIn = new FileInputStream(NET_COM_CONF_FILE))
+                try (InputStream propsIn = new FileInputStream(stltNetComConfFile.toFile()))
                 {
                     netComProps.loadFromXML(propsIn);
                 }

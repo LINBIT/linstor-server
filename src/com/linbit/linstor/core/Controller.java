@@ -62,6 +62,7 @@ import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
 import javax.inject.Named;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -279,7 +280,7 @@ public final class Controller
 
         ErrorReporter errorLog = new StdErrorReporter(
             Controller.MODULE,
-            cArgs.getWorkingDirectory(),
+            Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces()
         );
 

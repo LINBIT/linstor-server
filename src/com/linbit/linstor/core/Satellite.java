@@ -91,6 +91,8 @@ public final class Satellite
 
     private final SatelliteNetComInitializer satelliteNetComInitializer;
 
+    private final LinStorArguments linStorArguments;
+
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
@@ -104,7 +106,8 @@ public final class Satellite
         DebugConsoleCreator debugConsoleCreatorRef,
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
-        SatelliteNetComInitializer satelliteNetComInitializerRef
+        SatelliteNetComInitializer satelliteNetComInitializerRef,
+        LinStorArguments linStorArgumentsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -119,6 +122,7 @@ public final class Satellite
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
+        linStorArguments = linStorArgumentsRef;
     }
 
     public void start()
@@ -143,7 +147,10 @@ public final class Satellite
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             errorReporter.logInfo("Initializing main network communications service");
-            if (!satelliteNetComInitializer.initMainNetComService(initCtx))
+            if (!satelliteNetComInitializer.initMainNetComService(
+                initCtx,
+                Paths.get(linStorArguments.getConfigurationDirectory()))
+            )
             {
                 reconfigurationLock.writeLock().unlock();
                 System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
@@ -272,7 +279,7 @@ public final class Satellite
 
         ErrorReporter errorLog = new StdErrorReporter(
             Satellite.MODULE,
-            cArgs.getWorkingDirectory(),
+            Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces()
         );
 

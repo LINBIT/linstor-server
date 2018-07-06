@@ -682,7 +682,7 @@ public class StltApiCallHandler
     {
         Set<ErrorReport> errorReports = StdErrorReporter.listReports(
             controllerPeerConnector.getLocalNode().getName().getDisplayName(),
-            Paths.get(StdErrorReporter.LOG_DIRECTORY),
+            errorReporter.getLogDirectory(),
             withContent,
             since,
             to,

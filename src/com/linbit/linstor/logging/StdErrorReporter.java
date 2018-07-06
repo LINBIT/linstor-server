@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 import java.util.List;
@@ -36,15 +37,14 @@ import java.util.stream.Collectors;
  */
 public final class StdErrorReporter extends BaseErrorReporter implements ErrorReporter
 {
-    public static final String LOG_DIRECTORY = "logs";
     public static final String RPT_PREFIX = "ErrorReport-";
     public static final String RPT_SUFFIX = ".log";
 
     private final Logger mainLogger;
     private final AtomicLong errorNr;
-    private final String baseLogDirectory;
+    private final Path baseLogDirectory;
 
-    public StdErrorReporter(String moduleName, String logDirectory, boolean printStackTraces)
+    public StdErrorReporter(String moduleName, Path logDirectory, boolean printStackTraces)
     {
         super(moduleName, printStackTraces);
         this.baseLogDirectory = logDirectory;
@@ -54,12 +54,14 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
         // Generate a unique instance ID based on the creation time of this instance
 
-        // check if the log directory exists
-        File logDir = new File(baseLogDirectory + LOG_DIRECTORY);
+        // check if the log directory exists, generate if not
+        File logDir = baseLogDirectory.toFile();
         if (!logDir.exists())
         {
             logDir.mkdirs();
         }
+
+        logInfo("Log directory set to: '" + logDir + "'");
     }
 
     @Override
@@ -375,11 +377,13 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
     private PrintStream openReportFile(String logName)
     {
-        OutputStream reportStream = null;
         PrintStream reportPrinter = null;
         try
         {
-            reportStream = new FileOutputStream(LOG_DIRECTORY + "/" + RPT_PREFIX + logName + RPT_SUFFIX);
+            Path f = getLogDirectory().resolve(RPT_PREFIX + logName + RPT_SUFFIX);
+            OutputStream reportStream = new FileOutputStream(
+                f.toFile()
+            );
             reportPrinter = new PrintStream(reportStream);
         }
         catch (IOException ioExc)
@@ -492,6 +496,12 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
 
         return errors;
+    }
+
+    @Override
+    public Path getLogDirectory()
+    {
+        return baseLogDirectory;
     }
 
     @Override
