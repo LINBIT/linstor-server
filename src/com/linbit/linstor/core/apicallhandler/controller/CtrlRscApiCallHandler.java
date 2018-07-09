@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 
@@ -780,23 +781,40 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             // get resource states of all nodes
             for (final Node node : nodesMap.values())
             {
-                final Peer peer = node.getPeer(peerAccCtx);
-                if (peer != null)
+                if (upperFilterNodes.isEmpty() || upperFilterNodes.contains(node.getName().value))
                 {
-                    Lock readLock = peer.getSatelliteStateLock().readLock();
-                    readLock.lock();
-                    try
+                    final Peer peer = node.getPeer(peerAccCtx);
+                    if (peer != null)
                     {
-                        final SatelliteState satelliteState = peer.getSatelliteState();
-
-                        if (satelliteState != null)
+                        Lock readLock = peer.getSatelliteStateLock().readLock();
+                        readLock.lock();
+                        try
                         {
-                            satelliteStates.put(node.getName(), new SatelliteState(satelliteState));
+                            final SatelliteState satelliteState = peer.getSatelliteState();
+
+                            if (satelliteState != null)
+                            {
+                                final SatelliteState filterStates = new SatelliteState(satelliteState);
+
+                                // states are already complete, we remove all resource that are not interesting from
+                                // our clone
+                                Set<ResourceName> removeSet = new TreeSet<>();
+                                for (ResourceName rscName : filterStates.getResourceStates().keySet())
+                                {
+                                    if (!(upperFilterResources.isEmpty() ||
+                                          upperFilterResources.contains(rscName.value)))
+                                    {
+                                        removeSet.add(rscName);
+                                    }
+                                }
+                                removeSet.forEach(rscName -> filterStates.getResourceStates().remove(rscName));
+                                satelliteStates.put(node.getName(), filterStates);
+                            }
                         }
-                    }
-                    finally
-                    {
-                        readLock.unlock();
+                        finally
+                        {
+                            readLock.unlock();
+                        }
                     }
                 }
             }
