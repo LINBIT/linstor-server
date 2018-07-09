@@ -15,4 +15,5 @@ public interface AutoSelectFilterApi
     List<String> getReplicasOnSameList();
 
     List<String> getReplicasOnDifferentList();
+
 }

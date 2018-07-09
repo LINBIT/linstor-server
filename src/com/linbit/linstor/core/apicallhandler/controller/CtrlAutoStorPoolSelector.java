@@ -58,7 +58,7 @@ public class CtrlAutoStorPoolSelector
 
     public Candidate findBestCandidate(
         final long rscSize,
-        final AutoSelectFilterApi selectFilter,
+        final AutoStorPoolSelectorConfig selectFilter,
         final NodeSelectionStrategy nodeSelectionStrategy,
         final CandidateSelectionStrategy candidateSelectionStrategy
     )
@@ -81,7 +81,7 @@ public class CtrlAutoStorPoolSelector
 
     public List<Candidate> getCandidateList(
         final long rscSize,
-        final AutoSelectFilterApi selectFilter,
+        final AutoStorPoolSelectorConfig selectFilter,
         final NodeSelectionStrategy nodeSelectionStrategy
     )
         throws InvalidKeyException
@@ -194,7 +194,7 @@ public class CtrlAutoStorPoolSelector
     }
 
     private Map<StorPoolName, List<Node>> filterByStorPoolName(
-        final AutoSelectFilterApi selectFilter,
+        final AutoStorPoolSelectorConfig selectFilter,
         Map<StorPoolName, List<Node>> nodes
     )
     {
@@ -279,7 +279,7 @@ public class CtrlAutoStorPoolSelector
     }
 
     private Map<StorPoolName, List<Node>> filterByDoNotPlaceWithResource(
-        final AutoSelectFilterApi selectFilter,
+        final AutoStorPoolSelectorConfig selectFilter,
         Map<StorPoolName, List<Node>> nodes
     )
     {
@@ -342,7 +342,7 @@ public class CtrlAutoStorPoolSelector
      * Map<StorPoolName, List<List<Node>>>.
      */
     private List<Candidate> filterByReplicasOn(
-        final AutoSelectFilterApi selectFilter,
+        final AutoStorPoolSelectorConfig selectFilter,
         Map<StorPoolName, List<Node>> candidatesIn,
         NodeSelectionStrategy nodeSelectionStartegy
     )
@@ -511,7 +511,11 @@ public class CtrlAutoStorPoolSelector
         );
     }
 
-    public static int mostRemainingSpaceStrategy(Candidate cand1, Candidate cand2, AccessContext accCtx)
+    public static int mostRemainingSpaceCandidateStrategy(
+        Candidate cand1,
+        Candidate cand2,
+        AccessContext accCtx
+    )
     {
         // the node-lists are already sorted by their storPools.
         // that means, we only have to compare the freeSpace of the first nodes of cand1 and cand2
@@ -534,7 +538,7 @@ public class CtrlAutoStorPoolSelector
         return cmp;
     }
 
-    public static int mostRemainingSpaceStrategy(
+    public static int mostRemainingSpaceNodeStrategy(
         Node nodeA,
         Node nodeB,
         StorPoolName storPoolName,
@@ -644,6 +648,92 @@ public class CtrlAutoStorPoolSelector
         {
             return "Candidate [storPoolName=" + storPoolName + ", nodes=" + nodes +
                 ", sizeAfterDeployment=" + sizeAfterDeployment + "]";
+        }
+    }
+
+    public static class AutoStorPoolSelectorConfig
+    {
+        private AutoSelectFilterApi selectFilter;
+
+        private int placeCount;
+        private List<String> replicasOnDifferentList;
+        private List<String> replicasOnSameList;
+        private String notPlaceWithRscRegex;
+        private List<String> notPlaceWithRscList;
+        private String storPoolNameStr;
+
+        public AutoStorPoolSelectorConfig()
+        {
+            // no not use Collections.emptyList() as these lists might get additional values
+            // in the future.
+            placeCount = 0;
+            replicasOnDifferentList = new ArrayList<>();
+            replicasOnSameList = new ArrayList<>();
+            notPlaceWithRscRegex = "";
+            notPlaceWithRscList = new ArrayList<>();
+            storPoolNameStr = null;
+
+        }
+
+        public AutoStorPoolSelectorConfig(AutoSelectFilterApi selectFilterRef)
+        {
+            selectFilter = selectFilterRef;
+            placeCount = selectFilterRef.getPlaceCount();
+            replicasOnDifferentList = new ArrayList<>(selectFilterRef.getReplicasOnDifferentList());
+            replicasOnSameList = new ArrayList<>(selectFilterRef.getReplicasOnSameList());
+            notPlaceWithRscRegex = selectFilterRef.getNotPlaceWithRscRegex();
+            notPlaceWithRscList = new ArrayList<>(selectFilterRef.getNotPlaceWithRscList());
+            storPoolNameStr = selectFilterRef.getStorPoolNameStr();
+        }
+
+        public int getPlaceCount()
+        {
+            return placeCount;
+        }
+
+        public int getPlaceCountOrig()
+        {
+            return selectFilter.getPlaceCount();
+        }
+
+        public void overridePlaceCount(int placeCountRef)
+        {
+            placeCount = placeCountRef;
+        }
+
+        public List<String> getReplicasOnDifferentList()
+        {
+            return replicasOnDifferentList;
+        }
+
+        public List<String> getReplicasOnSameList()
+        {
+            return replicasOnSameList;
+        }
+
+        public String getNotPlaceWithRscRegex()
+        {
+            return notPlaceWithRscRegex;
+        }
+
+        public List<String> getNotPlaceWithRscList()
+        {
+            return notPlaceWithRscList;
+        }
+
+        public String getStorPoolNameStr()
+        {
+            return storPoolNameStr;
+        }
+
+        public String getStorPoolNameStrOrig()
+        {
+            return selectFilter.getStorPoolNameStr();
+        }
+
+        public void overrideStorPoolNameStr(String storPoolNameStrRef)
+        {
+            storPoolNameStr = storPoolNameStrRef;
         }
     }
 

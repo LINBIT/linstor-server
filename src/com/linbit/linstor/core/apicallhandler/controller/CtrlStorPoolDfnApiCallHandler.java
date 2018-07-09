@@ -22,6 +22,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -279,8 +280,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             }
             candidateList = autoStorPoolSelector.getCandidateList(
                 0L,
-                selectFilter,
-                CtrlAutoStorPoolSelector::mostRemainingSpaceStrategy
+                new AutoStorPoolSelectorConfig(selectFilter),
+                CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy
             );
             if (candidateList.isEmpty())
             {

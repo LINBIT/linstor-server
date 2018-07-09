@@ -65,6 +65,8 @@ public class InternalApiConsts
     // definition or system-wide
     public static final short DEFAULT_PEER_SLOTS = 7;
 
+    public static final String RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME = "AutoSelectedStorPoolName";
+
     private InternalApiConsts()
     {
     }

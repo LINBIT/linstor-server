@@ -555,7 +555,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 diskfull and 2 diskless nodes
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -578,6 +578,234 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         assertEquals(2, disklessNodes);
         assertEquals(2, diskfullNodes);
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
+    public void idempotencyTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt2").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt3").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt4").addStorPool("stor", 10 * GB).build()
+            .disklessOnRemaining(false)
+        );
+
+        // we should now have some resources deployed. We do not really care where they are
+        // but still make sure that they are 2.
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        // rerun the same apiCall, but this time we should receive a different RC
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.MASK_CRT | ApiConsts.MASK_RSC | ApiConsts.WARN_RSC_ALREADY_DEPLOYED // rsc autoplace
+            )
+            // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
+            // should still know about the previously configured objects
+        );
+
+        // recheck
+        deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
+    public void extendAutoPlacedRscTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt2").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt3").addStorPool("stor", 10 * GB).build()
+            .stltBuilder("stlt4").addStorPool("stor", 10 * GB).build()
+            .disklessOnRemaining(false)
+        );
+
+        // we should now have some resources deployed. We do not really care where they are
+        // but still make sure that they are 2.
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        // rerun the same apiCall, but this time with +1 replicas
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                3,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.WARN_NOT_CONNECTED, // stlt3
+                ApiConsts.CREATED, // stlt3, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt3, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.WARN_NOT_CONNECTED, // stlt3
+                ApiConsts.WARN_NOT_CONNECTED, // stlt4 (diskless)
+                ApiConsts.CREATED, // stlt4, rsc (diskless)
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt4, rsc, vlm (diskless)
+                ApiConsts.CREATED // rsc autoplace
+            )
+            // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
+            // should still know about the previously configured objects
+            .disklessOnRemaining(true)
+        );
+
+        // recheck
+        deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(4, deployedNodes.size());
+
+        long disklessNodes = deployedNodes.stream().filter(
+            node ->
+            {
+                assertEquals(1, node.getResourceCount()); // just to be sure
+                try
+                {
+                    return node.getResource(SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
+                        .isSet(SYS_CTX, RscFlags.DISKLESS);
+                }
+                catch (AccessDeniedException | InvalidNameException exc)
+                {
+                    throw new RuntimeException(exc);
+                }
+            }
+        ).count();
+        long diskfullNodes = deployedNodes.size() - disklessNodes;
+
+        assertEquals(1, disklessNodes);
+        assertEquals(3, diskfullNodes);
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
+    public void extendAutoPlacedRscOnDifferentStorPoolsTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.CREATED, // stlt1, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.CREATED, // stlt2, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1").addStorPool("stor", 100 * GB).build()
+            .stltBuilder("stlt2").addStorPool("stor", 100 * GB).build()
+            .stltBuilder("stlt3").addStorPool("stor", 10 * GB).addStorPool("stor2", 10 * GB).build()
+            .stltBuilder("stlt4").addStorPool("stor", 10 * GB).addStorPool("stor2", 10 * GB).build()
+            .disklessOnRemaining(false)
+        );
+
+        // we should now have some resources deployed, namely on stlt1 and stlt2 (size of storpools)
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        assertThat(deployedNodes.stream().map(node -> node.getName().displayValue).collect(Collectors.toList()))
+            .contains("stlt1", "stlt2");
+
+        // rerun the same apiCall, but this time with +1 replicas
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                4,
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.WARN_NOT_CONNECTED, // stlt3
+                ApiConsts.CREATED, // stlt3, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt3, rsc, vlm
+                ApiConsts.WARN_NOT_CONNECTED, // stlt1
+                ApiConsts.WARN_NOT_CONNECTED, // stlt2
+                ApiConsts.WARN_NOT_CONNECTED, // stlt3
+                ApiConsts.WARN_NOT_CONNECTED, // stlt4
+                ApiConsts.CREATED, // stlt4, rsc
+                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt4, rsc, vlm
+                ApiConsts.CREATED // rsc autoplace
+            )
+            // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
+            // should still know about the previously configured objects
+            .setStorPool("stor2")
+            .disklessOnRemaining(true)
+        );
+
+        // recheck
+        deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(4, deployedNodes.size());
+
+        ResourceName rscName = new ResourceName(TEST_RSC_NAME);
+        assertEquals(
+            "stor",
+            nodesMap.get(new NodeName("stlt1")).getResource(SYS_CTX, rscName)
+                .iterateVolumes().next().getStorPool(SYS_CTX).getName().displayValue
+        );
+        assertEquals(
+            "stor",
+            nodesMap.get(new NodeName("stlt2")).getResource(SYS_CTX, rscName)
+                .iterateVolumes().next().getStorPool(SYS_CTX).getName().displayValue
+        );
+        assertEquals(
+            "stor2",
+            nodesMap.get(new NodeName("stlt3")).getResource(SYS_CTX, rscName)
+                .iterateVolumes().next().getStorPool(SYS_CTX).getName().displayValue
+        );
+        assertEquals(
+            "stor2",
+            nodesMap.get(new NodeName("stlt4")).getResource(SYS_CTX, rscName)
+                .iterateVolumes().next().getStorPool(SYS_CTX).getName().displayValue
+        );
     }
 
     private void expectDeployed(
