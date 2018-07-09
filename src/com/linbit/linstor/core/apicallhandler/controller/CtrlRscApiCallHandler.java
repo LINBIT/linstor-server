@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -189,7 +188,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     }
 
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
-        throws AccessDeniedException
     {
         if (storPool != null && storPool.getDriverKind().hasBackingStorage())
         {
@@ -207,8 +205,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
     }
 
-    private void warnAndFladDiskless(Resource rsc, final StorPool storPool)
-        throws AccessDeniedException, SQLException
+    private void warnAndFlagDiskless(Resource rsc, final StorPool storPool)
     {
         if (storPool != null && !storPool.getDriverKind().hasBackingStorage())
         {
@@ -220,7 +217,20 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 null,
                 MASK_WARN | MASK_STOR_POOL
             );
-            rsc.getStateFlags().enableFlags(apiCtx, RscFlags.DISKLESS);
+            try
+            {
+                rsc.getStateFlags().enableFlags(apiCtx, RscFlags.DISKLESS);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw asImplError(exc);
+            }
+            catch (SQLException exc)
+            {
+                throw asSqlExc(exc, "setting diskless flag for resource '" +
+                    rsc.getDefinition().getName().displayValue + "'"
+                );
+            }
         }
     }
 
@@ -237,45 +247,55 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
      * @throws SQLException
      */
     private StorPool resolveStorPool(Resource rsc, final PriorityProps prioProps, final VolumeDefinition vlmDfn)
-        throws InvalidKeyException, AccessDeniedException, InvalidValueException, SQLException
     {
-        final boolean isRscDiskless = isDiskless(rsc);
-        Props rscProps = getProps(rsc);
-        String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
         StorPool storPool;
-        if (isRscDiskless)
+        try
         {
-            if (storPoolNameStr == null || "".equals(storPoolNameStr))
+            final boolean isRscDiskless = isDiskless(rsc);
+            Props rscProps = getProps(rsc);
+            String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+            if (isRscDiskless)
             {
-                rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-                storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
-                storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
+                if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                {
+                    rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+                    storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
+                    storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
+                }
+                else
+                {
+                    storPool = rsc.getAssignedNode().getStorPool(
+                        apiCtx,
+                        asStorPoolName(storPoolNameStr)
+                    );
+                }
+
+                checkBackingDiskWithDiskless(rsc, storPool);
             }
             else
             {
+                if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                {
+                    storPoolNameStr = defaultStorPoolName;
+                }
                 storPool = rsc.getAssignedNode().getStorPool(
                     apiCtx,
                     asStorPoolName(storPoolNameStr)
                 );
+
+                warnAndFlagDiskless(rsc, storPool);
             }
 
-            checkBackingDiskWithDiskless(rsc, storPool);
+            checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
         }
-        else
+        catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
         {
-            if (storPoolNameStr == null || "".equals(storPoolNameStr))
-            {
-                storPoolNameStr = defaultStorPoolName;
-            }
-            storPool = rsc.getAssignedNode().getStorPool(
-                apiCtx,
-                asStorPoolName(storPoolNameStr)
-            );
-
-            warnAndFladDiskless(rsc, storPool);
+            throw asImplError(exc);
         }
-
-        checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
+        catch (SQLException exc)
+        {
+            throw asSqlExc(exc, "settting storage pool name in resource-props");
+        }
 
         return storPool;
     }
@@ -306,93 +326,13 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             )
         )
         {
-            NodeData node = loadNode(nodeNameStr, true);
-            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
-
-            NodeId nodeId = getNextFreeNodeId(rscDfn);
-
-            ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
-            Props rscProps = getProps(rsc);
-
-            fillProperties(rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
-
-            boolean isRscDiskless = isDiskless(rsc);
-
-            Props rscDfnProps = getProps(rscDfn);
-            Props nodeProps = getProps(node);
-
-            Map<Integer, Volume> vlmMap = new TreeMap<>();
-            for (VlmApi vlmApi : vlmApiList)
-            {
-                VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
-
-                PriorityProps prioProps = new PriorityProps(
-                    rscProps,
-                    getProps(vlmDfn),
-                    rscDfnProps,
-                    nodeProps
-                );
-
-                StorPool storPool;
-
-                String storPoolNameStr;
-                storPoolNameStr = vlmApi.getStorPoolName();
-                if (storPoolNameStr != null && !storPoolNameStr.isEmpty())
-                {
-                    StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
-                    storPool = loadStorPool(storPoolDfn, node, true);
-
-                    if (isRscDiskless)
-                    {
-                        checkBackingDiskWithDiskless(rsc, storPool);
-                    }
-                    else
-                    {
-                        warnAndFladDiskless(rsc, storPool);
-                    }
-
-                    checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
-                }
-                else
-                {
-                    storPool = resolveStorPool(rsc, prioProps, vlmDfn);
-                }
-
-                VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
-
-                Props vlmProps = getProps(vlmData);
-
-                fillProperties(vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
-
-                vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
-            }
-
-            Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);
-            while (iterateVolumeDfn.hasNext())
-            {
-                VolumeDefinition vlmDfn = iterateVolumeDfn.next();
-
-                objRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-
-                // first check if we probably just deployed a vlm for this vlmDfn
-                if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
-                {
-                    // not deployed yet.
-
-                    PriorityProps prioProps = new PriorityProps(
-                        getProps(vlmDfn),
-                        rscProps,
-                        nodeProps
-                    );
-
-                    StorPool storPool = resolveStorPool(rsc, prioProps, vlmDfn);
-
-                    // storPool is guaranteed to be != null
-                    // create missing vlm with default values
-                    VolumeData vlm = createVolume(rsc, vlmDfn, storPool, null);
-                    vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
-                }
-            }
+            ResourceData rsc = createResource0(
+                nodeNameStr,
+                rscNameStr,
+                flagList,
+                rscPropsMap,
+                vlmApiList
+            );
 
             commit();
 
@@ -410,21 +350,25 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             reportSuccess(rsc.getUuid());
 
-            for (Entry<Integer, Volume> entry : vlmMap.entrySet())
+            Iterator<Volume> vlmIt = rsc.iterateVolumes();
+            while (vlmIt.hasNext())
             {
+                Volume vlm = vlmIt.next();
+                int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
+
                 ApiCallRcEntry vlmCreatedRcEntry = new ApiCallRcEntry();
                 vlmCreatedRcEntry.setMessage(
-                    "Volume with number '" + entry.getKey() + "' on resource '" +
-                        entry.getValue().getResourceDefinition().getName().displayValue + "' on node '" +
-                        entry.getValue().getResource().getAssignedNode().getName().displayValue +
+                    "Volume with number '" + vlmNr + "' on resource '" +
+                        vlm.getResourceDefinition().getName().displayValue + "' on node '" +
+                        vlm.getResource().getAssignedNode().getName().displayValue +
                         "' successfully created"
-                );
+                    );
                 vlmCreatedRcEntry.setDetails(
-                    "Volume UUID is: " + entry.getValue().getUuid().toString()
+                    "Volume UUID is: " + vlm.getUuid().toString()
                 );
                 vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
                 vlmCreatedRcEntry.putAllObjRef(objRefs.get());
-                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
+                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
 
                 apiCallRc.addEntry(vlmCreatedRcEntry);
             }
@@ -465,6 +409,120 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    /**
+     * This method really creates the resource and its volumes.
+     *
+     * This method does NOT:
+     * * commit any transaction
+     * * update satellites
+     * * create success-apiCallRc entries (only error RC in case of exception)
+     *
+     * @param nodeNameStr
+     * @param rscNameStr
+     * @param flagList
+     * @param rscPropsMap
+     * @param vlmApiList
+     *
+     * @return the newly created resource
+     */
+    ResourceData createResource0(
+        String nodeNameStr,
+        String rscNameStr,
+        List<String> flagList,
+        Map<String, String> rscPropsMap,
+        List<VlmApi> vlmApiList
+    )
+    {
+        NodeData node = loadNode(nodeNameStr, true);
+        ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
+
+        NodeId nodeId = getNextFreeNodeId(rscDfn);
+
+        ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
+        Props rscProps = getProps(rsc);
+
+        fillProperties(rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
+
+        boolean isRscDiskless = isDiskless(rsc);
+
+        Props rscDfnProps = getProps(rscDfn);
+        Props nodeProps = getProps(node);
+
+        Map<Integer, Volume> vlmMap = new TreeMap<>();
+        for (VlmApi vlmApi : vlmApiList)
+        {
+            VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
+
+            PriorityProps prioProps = new PriorityProps(
+                rscProps,
+                getProps(vlmDfn),
+                rscDfnProps,
+                nodeProps
+            );
+
+            StorPool storPool;
+
+            String storPoolNameStr;
+            storPoolNameStr = vlmApi.getStorPoolName();
+            if (storPoolNameStr != null && !storPoolNameStr.isEmpty())
+            {
+                StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
+                storPool = loadStorPool(storPoolDfn, node, true);
+
+                if (isRscDiskless)
+                {
+                    checkBackingDiskWithDiskless(rsc, storPool);
+                }
+                else
+                {
+                    warnAndFlagDiskless(rsc, storPool);
+                }
+
+                checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
+            }
+            else
+            {
+                storPool = resolveStorPool(rsc, prioProps, vlmDfn);
+            }
+
+            VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
+
+            Props vlmProps = getProps(vlmData);
+
+            fillProperties(vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
+
+            vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
+        }
+
+        Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);
+        while (iterateVolumeDfn.hasNext())
+        {
+            VolumeDefinition vlmDfn = iterateVolumeDfn.next();
+
+            objRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+
+            // first check if we probably just deployed a vlm for this vlmDfn
+            if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
+            {
+                // not deployed yet.
+
+                PriorityProps prioProps = new PriorityProps(
+                    getProps(vlmDfn),
+                    rscProps,
+                    nodeProps
+                );
+
+                StorPool storPool = resolveStorPool(rsc, prioProps, vlmDfn);
+
+                // storPool is guaranteed to be != null
+                // create missing vlm with default values
+                VolumeData vlm = createVolume(rsc, vlmDfn, storPool, null);
+                vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
+            }
+        }
+        return rsc;
     }
 
     private boolean isDiskless(Resource rsc)

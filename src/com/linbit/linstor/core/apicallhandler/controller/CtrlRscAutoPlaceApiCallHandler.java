@@ -17,8 +17,8 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -207,22 +207,19 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                     String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
                     rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
 
-                    ResourceName rscName = asRscName(rscNameStr);
+                    List<ResourceData> deployedResources = new ArrayList<>();
                     for (Node node : bestCandidate.nodes)
                     {
-                        rscApiCallHandler.createResource(
+                        ResourceData rsc = rscApiCallHandler.createResource0(
                             node.getName().displayValue,
                             rscNameStr,
                             Collections.emptyList(),
                             rscPropsMap,
-                            Collections.emptyList(),
-                            false, // createResource api should NOT autoClose the current transaction
-                            // we will close it when we are finished with the autoPlace
-                            apiCallRc
+                            Collections.emptyList()
                         );
+                        deployedResources.add(rsc);
 
                         // bypass the whilteList
-                        Resource rsc = node.getResource(apiCtx, rscName);
                         rsc.getProps(apiCtx).setProp(
                             InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME,
                             selectedStorPoolName
@@ -233,7 +230,8 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                     {
                         ArrayList<Node> disklessNodeList = new ArrayList<>(nodesMap.values()); // copy
                         disklessNodeList.removeAll(bestCandidate.nodes); // remove all selected nodes
-                        disklessNodeList.removeAll( // remove all nodes the rsc is already deployed
+                        disklessNodeList.removeAll(
+                            // remove all nodes the rsc is already deployed
                             alreadyPlaced.stream().map(Resource::getAssignedNode).collect(Collectors.toList())
                         );
 
@@ -246,16 +244,23 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                         // deploy resource disklessly on remaining nodes
                         for (Node disklessNode : disklessNodeList)
                         {
-                            rscApiCallHandler.createResource(
-                                disklessNode.getName().displayValue,
-                                rscNameStr,
-                                flagList,
-                                rscPropsMap,
-                                Collections.emptyList(),
-                                false,
-                                apiCallRc
+                            deployedResources.add(
+                                rscApiCallHandler.createResource0(
+                                    disklessNode.getName().displayValue,
+                                    rscNameStr,
+                                    flagList,
+                                    rscPropsMap,
+                                    Collections.emptyList()
+                                )
                             );
                         }
+                    }
+
+                    commit();
+
+                    if (!deployedResources.isEmpty())
+                    {
+                        updateSatellites(deployedResources.get(0).getDefinition());
                     }
 
                     reportSuccess(

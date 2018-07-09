@@ -88,12 +88,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -122,8 +117,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 1,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             // Name and order the options so that the expected choice is in the middle in terms of creation sequence
@@ -155,8 +148,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 1,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
@@ -208,12 +199,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -244,12 +230,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -338,12 +319,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -384,12 +360,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -430,12 +401,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -526,23 +492,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
-                ApiConsts.WARN_NOT_CONNECTED, // sttl2 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt3
-                ApiConsts.CREATED, // stlt3, rsc (diskless)
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt3, rsc, vlm (diskless)
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
-                ApiConsts.WARN_NOT_CONNECTED, // sttl2 (still...)
-                ApiConsts.WARN_NOT_CONNECTED, // stlt3 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt4
-                ApiConsts.CREATED, // stlt4, rsc (diskless)
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt4, rsc, vlm (diskless)
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -589,12 +541,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -642,12 +589,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -675,14 +617,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.WARN_NOT_CONNECTED, // stlt3
-                ApiConsts.CREATED, // stlt3, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt3, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.WARN_NOT_CONNECTED, // stlt3
                 ApiConsts.WARN_NOT_CONNECTED, // stlt4 (diskless)
-                ApiConsts.CREATED, // stlt4, rsc (diskless)
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt4, rsc, vlm (diskless)
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -727,12 +662,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.CREATED, // stlt1, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt1, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // sttl1 (still...)
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.CREATED, // stlt2, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt2, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -762,14 +692,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.WARN_NOT_CONNECTED, // stlt1
                 ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.WARN_NOT_CONNECTED, // stlt3
-                ApiConsts.CREATED, // stlt3, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt3, rsc, vlm
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.WARN_NOT_CONNECTED, // stlt3
                 ApiConsts.WARN_NOT_CONNECTED, // stlt4
-                ApiConsts.CREATED, // stlt4, rsc
-                ApiConsts.MASK_VLM | ApiConsts.CREATED, // stlt4, rsc, vlm
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
