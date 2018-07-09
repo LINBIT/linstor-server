@@ -20,5 +20,6 @@ override_dh_install:
 	cp -r $(CURDIR)/build/install/linstor-server $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
 	mkdir -p $(CURDIR)/debian/linstor-server/lib/systemd/system
 	cp $(CURDIR)/scripts/*.service $(CURDIR)/debian/linstor-server/lib/systemd/system
+	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-server.postinst
 
 .PHONY: override_jh_depends
