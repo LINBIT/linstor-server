@@ -10,12 +10,30 @@ Build-Depends: debhelper (>= 9),
                javahelper
 Standards-Version: 3.9.6
 
-Package: linstor-server
+Package: linstor-common
 Architecture: all
 Depends: ${misc:Depends},
-         default-jre-headless,
+         default-jre-headless
+Description: DRBD distributed resource management utility
+ This is the linstor common packages containing shared deps.
+ .
+ TODO: provide more information.
+
+Package: linstor-controller
+Architecture: all
+Depends: ${misc:Depends},
+         linstor-common (= ${binary:Version}),
+Description: DRBD distributed resource management utility
+ This is the linstor controller.
+ .
+ TODO: provide more information.
+
+Package: linstor-satellite
+Architecture: all
+Depends: ${misc:Depends},
+         linstor-common (= ${binary:Version}),
          thin-provisioning-tools
 Description: DRBD distributed resource management utility
- This is the linstor server.
+ This is the linstor satellite.
  .
  TODO: provide more information.

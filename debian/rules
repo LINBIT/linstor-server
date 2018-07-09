@@ -4,22 +4,30 @@ JAVA_HOME=/usr/lib/jvm/default-java
 
 GRADLE_TASKS = installdist
 GRADLE_FLAGS = --offline --gradle-user-home debian/.gradlehome --no-daemon
-LS_PREFIX=/usr/share
+LS_PREFIX=/usr/share/linstor-server
 
 %:
 	dh $@ --with javahelper,systemd
 
-.PHONY: override_dh_auto_build
-
-override_dh_install:
-	dh_install
+override_dh_auto_build:
 	rm -rf $(CURDIR)/build/install
 	gradle $(GRADLE_TASKS) $(GRADLE_FLAGS)
-	rm -rf $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
-	mkdir -p $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
-	cp -r $(CURDIR)/build/install/linstor-server $(CURDIR)/debian/linstor-server/$(LS_PREFIX)
-	mkdir -p $(CURDIR)/debian/linstor-server/lib/systemd/system
-	cp $(CURDIR)/scripts/*.service $(CURDIR)/debian/linstor-server/lib/systemd/system
-	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-server.postinst
+
+override_dh_install:
+	# common
+	mkdir -p $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
+	cp -r $(CURDIR)/build/install/linstor-server/lib $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
+	# controller
+	cp $(CURDIR)/scripts/linstor-controller.service $(CURDIR)/debian/
+	mkdir -p $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin
+	cp $(CURDIR)/build/install/linstor-server/bin/Controller $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin
+	cp $(CURDIR)/build/install/linstor-server/bin/linstor-config $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin
+	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-controller.postinst
+	# satellite
+	cp $(CURDIR)/scripts/linstor-satellite.service $(CURDIR)/debian/
+	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
+	cp $(CURDIR)/build/install/linstor-server/bin/Satellite $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
+	# dh_install
+	dh_install
 
 .PHONY: override_jh_depends
