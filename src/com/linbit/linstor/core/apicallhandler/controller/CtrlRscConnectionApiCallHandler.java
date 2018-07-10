@@ -16,6 +16,13 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -25,18 +32,18 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+@Singleton
 class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private String currentNodeName1;
-    private String currentNodeName2;
-    private String currentRscName;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlRscConnectionApiCallHandler(
@@ -46,15 +53,15 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.RSC_CONN,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -63,6 +70,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             whitelistPropsRef
         );
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc createResourceConnection(
@@ -72,43 +80,34 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Map<String, String> rscConnPropsMap
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeResourceConnectionContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            nodeName1Str,
+            nodeName2Str,
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                nodeName1Str,
-                nodeName2Str,
-                rscNameStr
-            );
-        )
+        try
         {
             ResourceConnectionData rscConn = createRscConn(nodeName1Str, nodeName2Str, rscNameStr);
 
-            fillProperties(rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
+            fillProperties(
+                LinStorObject.RSC_CONN, rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
             commit();
 
-            updateSatellites(rscConn);
-            reportSuccess(rscConn.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithDetail(responses, context, updateSatellites(rscConn));
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                rscConn.getUuid(), getResourceConnectionDescriptionInline(apiCtx, rscConn)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
-                getObjRefs(nodeName1Str, nodeName2Str, rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc modifyRscConnection(
@@ -120,33 +119,32 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Set<String> deletePropKeys
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeResourceConnectionContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            nodeName1,
+            nodeName2,
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                nodeName1,
-                nodeName2,
-                rscNameStr
-            );
-        )
+        try
         {
             ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr, true);
 
             if (rscConnUuid != null && !rscConnUuid.equals(rscConn.getUuid()))
             {
-                addAnswer(
-                    "UUID-check failed",
-                    ApiConsts.FAIL_UUID_RSC_CONN
-                );
-                throw new ApiCallHandlerFailedException();
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UUID_RSC_CONN,
+                    "UUID-check failed"
+                ));
             }
 
             Props props = getProps(rscConn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(overrideProps, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
+            fillProperties(
+                LinStorObject.RSC_CONN, overrideProps, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
             for (String delKey : deletePropKeys)
             {
@@ -155,25 +153,16 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            reportSuccess(rscConn.getUuid());
-            updateSatellites(rscConn);
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+                rscConn.getUuid(), getResourceConnectionDescriptionInline(apiCtx, rscConn)));
+            responseConverter.addWithDetail(responses, context, updateSatellites(rscConn));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeName1, nodeName2, rscNameStr),
-                getObjRefs(nodeName1, nodeName2, rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc deleteResourceConnection(
@@ -182,17 +171,16 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeResourceConnectionContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            nodeName1Str,
+            nodeName2Str,
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                nodeName1Str,
-                nodeName2Str,
-                rscNameStr
-            );
-        )
+        try
         {
             ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr, false);
             UUID rscConnUuid = rscConn.getUuid();
@@ -200,79 +188,16 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            updateSatellites(rscConn);
-            reportSuccess(rscConnUuid);
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithDetail(responses, context, updateSatellites(rscConn));
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                rscConnUuid, getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
-                getObjRefs(nodeName1Str, nodeName2Str, rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
-        return apiCallRc;
-    }
 
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        String nodeName1,
-        String nodeName2,
-        String rscNameStr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(nodeName1, nodeName2, rscNameStr)
-        );
-
-        currentNodeName1 = nodeName1;
-        currentNodeName2 = nodeName2;
-        currentRscName = rscNameStr;
-
-        return this;
-    }
-
-    @Override
-    protected String getObjectDescription()
-    {
-        return "Resource connection between nodes " + currentNodeName1 + " and " +
-            currentNodeName2 + " for resource " + currentRscName;
-    }
-
-    @Override
-    protected String getObjectDescriptionInline()
-    {
-        return getObjectDescriptionInline(
-            currentNodeName1,
-            currentNodeName2,
-            currentRscName
-        );
-    }
-
-
-    private String getObjectDescriptionInline(String nodeName1, String nodeName2, String rscName)
-    {
-        return "resource connection between nodes '" + nodeName1 + "' and '" +
-            nodeName2 + "' for resource '" + rscName + "'";
-    }
-
-    private Map<String, String> getObjRefs(String nodeName1, String nodeName2, String rscNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_1ST_NODE, nodeName1);
-        map.put(ApiConsts.KEY_2ND_NODE, nodeName2);
-        map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
+        return responses;
     }
 
     private ResourceConnectionData createRscConn(
@@ -292,7 +217,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             rscConn = resourceConnectionDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rsc1,
                 rsc2,
                 true,
@@ -301,26 +226,23 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "creating " + getObjectDescription(),
+                "create " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw asExc(
-                dataAlreadyExistsExc,
-                "The " + getObjectDescriptionInline() + " already exists.",
-                ApiConsts.FAIL_EXISTS_RSC_CONN
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_RSC_CONN,
+                "The " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr) +
+                    " already exists."
+            ), dataAlreadyExistsExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescription()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return rscConn;
     }
@@ -331,7 +253,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         String rscNameStr,
         boolean createIfNotExists
     )
-        throws ApiCallHandlerFailedException
     {
         NodeData node1 = loadNode(nodeName1, true);
         NodeData node2 = loadNode(nodeName2, true);
@@ -344,7 +265,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         try
         {
             rscConn = resourceConnectionDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rsc1,
                 rsc2,
                 createIfNotExists,
@@ -353,98 +274,149 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading " + getObjectDescription(),
+                "load " + getResourceConnectionDescriptionInline(nodeName1, nodeName2, rscNameStr),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw asImplError(dataAlreadyExistsExc);
+            throw new ImplementationError(dataAlreadyExistsExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "loading " + getObjectDescription()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return rscConn;
     }
 
-    private Resource loadRsc(NodeData node, ResourceName rscName) throws ApiCallHandlerFailedException
+    private Resource loadRsc(NodeData node, ResourceName rscName)
     {
         Resource rsc;
         try
         {
             rsc = node.getResource(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscName
             );
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading resource '" + rscName.displayValue + "' from node '" + node.getName().displayValue + "'.",
+                "load resource '" + rscName.displayValue + "' from node '" + node.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         return rsc;
     }
 
-    private Props getProps(ResourceConnectionData rscConn) throws ApiCallHandlerFailedException
+    private Props getProps(ResourceConnectionData rscConn)
     {
         Props props;
         try
         {
-            props = rscConn.getProps(peerAccCtx);
+            props = rscConn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "accessing properties of " + getObjectDescriptionInline(),
+                "access properties of " + getResourceConnectionDescriptionInline(apiCtx, rscConn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
         return props;
     }
 
-    private void updateSatellites(ResourceConnectionData rscConn)
+    private ApiCallRc updateSatellites(ResourceConnectionData rscConn)
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         try
         {
-            updateSatellites(rscConn.getSourceResource(apiCtx));
-            updateSatellites(rscConn.getTargetResource(apiCtx));
+            responses.addEntries(updateSatellites(rscConn.getSourceResource(apiCtx)));
+            responses.addEntries(updateSatellites(rscConn.getTargetResource(apiCtx)));
         }
         catch (AccessDeniedException implErr)
         {
-            throw asImplError(implErr);
+            throw new ImplementationError(implErr);
         }
+
+        return responses;
     }
 
     private void delete(ResourceConnectionData rscConn)
     {
         try
         {
-            rscConn.delete(peerAccCtx);
+            rscConn.delete(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "delete " + getObjectDescriptionInline(),
+                "delete " + getResourceConnectionDescriptionInline(apiCtx, rscConn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    public static String getResourceConnectionDescription(String nodeName1, String nodeName2, String rscName)
+    {
+        return "Resource connection between nodes " + nodeName1 + " and " +
+            nodeName2 + " for resource " + rscName;
+    }
+
+    public static String getResourceConnectionDescriptionInline(AccessContext accCtx, ResourceConnectionData rscConn)
+    {
+        String descriptionInline;
+        try
+        {
+            descriptionInline = getResourceConnectionDescriptionInline(
+                rscConn.getSourceResource(accCtx).getAssignedNode().getName().displayValue,
+                rscConn.getTargetResource(accCtx).getAssignedNode().getName().displayValue,
+                rscConn.getSourceResource(accCtx).getDefinition().getName().displayValue
             );
         }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return descriptionInline;
+    }
+
+    public static String getResourceConnectionDescriptionInline(String nodeName1, String nodeName2, String rscName)
+    {
+        return "resource connection between nodes '" + nodeName1 + "' and '" +
+            nodeName2 + "' for resource '" + rscName + "'";
+    }
+
+    private static ResponseContext makeResourceConnectionContext(
+        Peer peer,
+        ApiOperation operation,
+        String nodeName1Str,
+        String nodeName2Str,
+        String rscNameStr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_1ST_NODE, nodeName1Str);
+        objRefs.put(ApiConsts.KEY_2ND_NODE, nodeName2Str);
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getResourceConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr),
+            getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
+            ApiConsts.MASK_RSC_CONN,
+            objRefs
+        );
     }
 }

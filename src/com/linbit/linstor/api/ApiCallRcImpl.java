@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class ApiCallRcImpl implements ApiCallRc
 {
@@ -23,10 +24,32 @@ public class ApiCallRcImpl implements ApiCallRc
         addEntry(entry);
     }
 
+    public void addEntries(ApiCallRc apiCallRc)
+    {
+        entries.addAll(apiCallRc.getEntries());
+    }
+
     @Override
     public List<RcEntry> getEntries()
     {
         return entries;
+    }
+
+    public static ApiCallRcImpl singletonApiCallRc(RcEntry entry)
+    {
+        ApiCallRcImpl apiCallRcImpl = new ApiCallRcImpl();
+        apiCallRcImpl.addEntry(entry);
+        return apiCallRcImpl;
+    }
+
+    public static EntryBuilder entryBuilder(long returnCodeRef, String messageRef)
+    {
+        return new EntryBuilder(returnCodeRef, messageRef);
+    }
+
+    public static ApiCallRcEntry simpleEntry(long returnCodeRef, String messageRef)
+    {
+        return entryBuilder(returnCodeRef, messageRef).build();
     }
 
     public static class ApiCallRcEntry implements ApiCallRc.RcEntry
@@ -120,6 +143,69 @@ public class ApiCallRcImpl implements ApiCallRc
             StringBuilder sb = new StringBuilder();
             ApiRcUtils.appendReadableRetCode(sb, returnCode);
             return sb.toString();
+        }
+    }
+
+    public static class EntryBuilder
+    {
+        private final long returnCode;
+
+        private final String message;
+
+        private String cause;
+
+        private String correction;
+
+        private String details;
+
+        private Map<String, String> objRefs = new TreeMap<>();
+
+        private EntryBuilder(long returnCodeRef, String messageRef)
+        {
+            returnCode = returnCodeRef;
+            message = messageRef;
+        }
+
+        public EntryBuilder setCause(String causeRef)
+        {
+            cause = causeRef;
+            return this;
+        }
+
+        public EntryBuilder setCorrection(String correctionRef)
+        {
+            correction = correctionRef;
+            return this;
+        }
+
+        public EntryBuilder setDetails(String detailsRef)
+        {
+            details = detailsRef;
+            return this;
+        }
+
+        public EntryBuilder putObjRef(String key, String value)
+        {
+            objRefs.put(key, value);
+            return this;
+        }
+
+        public EntryBuilder putAllObjRefs(Map<String, String> objRefsRef)
+        {
+            objRefs.putAll(objRefsRef);
+            return this;
+        }
+
+        public ApiCallRcEntry build()
+        {
+            ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
+            entry.setReturnCode(returnCode);
+            entry.setMessage(message);
+            entry.setCause(cause);
+            entry.setCorrection(correction);
+            entry.setDetails(details);
+            entry.putAllObjRef(objRefs);
+            return entry;
         }
     }
 }

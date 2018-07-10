@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
@@ -16,11 +17,15 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -37,6 +42,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
+
 /**
  * Common API call handler base class for operations that create resources.
  */
@@ -52,7 +60,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
-        AccessContext peerAccCtxRef,
+        Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         Props stltConfRef,
@@ -63,7 +71,6 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.RESOURCE,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -82,7 +89,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         NodeId freeNodeId;
         try
         {
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
             int[] occupiedIds = new int[rscDfn.getResourceCount()];
             int idx = 0;
             while (rscIterator.hasNext())
@@ -96,7 +103,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
@@ -104,11 +111,10 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         }
         catch (ExhaustedPoolException exhaustedPoolExc)
         {
-            throw asExc(
-                exhaustedPoolExc,
-                "An exception occured during generation of a node id.",
-                ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID,
+                "An exception occured during generation of a node id."
+            ), exhaustedPoolExc);
         }
         return freeNodeId;
     }
@@ -133,7 +139,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             short peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn);
 
             rsc = resourceDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscDfn,
                 node,
                 nodeId,
@@ -142,34 +148,30 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
                 true // throw exception if the entry exists
             );
 
-            rsc.getProps(peerAccCtx).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));
+            rsc.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create the " + getObjectDescriptionInline() + ".",
+                "create the " + getRscDescriptionInline(node, rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating the " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw asExc(
-                dataAlreadyExistsExc,
-                "A " + getObjectDescriptionInline() + " already exists.",
-                ApiConsts.FAIL_EXISTS_RSC
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_RSC,
+                "A " + getRscDescriptionInline(node, rscDfn) + " already exists."
+            ), dataAlreadyExistsExc);
         }
         catch (InvalidValueException | InvalidKeyException exc)
         {
-            throw asImplError(exc);
+            throw new ImplementationError(exc);
         }
         return rsc;
     }
@@ -178,24 +180,23 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         throws AccessDeniedException, InvalidKeyException
     {
         int resourceCount = rscDfn.getResourceCount();
-        Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx);
+        Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx.get());
         while (rscIter.hasNext())
         {
             Resource otherRsc = rscIter.next();
 
-            String peerSlotsProp = otherRsc.getProps(peerAccCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+            String peerSlotsProp = otherRsc.getProps(peerAccCtx.get()).getProp(ApiConsts.KEY_PEER_SLOTS);
             short peerSlots = peerSlotsProp == null ?
                 InternalApiConsts.DEFAULT_PEER_SLOTS :
                 Short.valueOf(peerSlotsProp);
 
             if (peerSlots < resourceCount)
             {
-                throw asExc(
-                    null,
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
                     "Resource on node " + otherRsc.getAssignedNode().getName().displayValue +
-                        " has insufficient peer slots to add another peer",
-                    ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS
-                );
+                        " has insufficient peer slots to add another peer"
+                ));
             }
         }
     }
@@ -205,7 +206,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
     {
         int resourceCount = rscDfn.getResourceCount();
 
-        String peerSlotsNewResourceProp = new PriorityProps(rscDfn.getProps(peerAccCtx), stltConf)
+        String peerSlotsNewResourceProp = new PriorityProps(rscDfn.getProps(peerAccCtx.get()), stltConf)
             .getProp(ApiConsts.KEY_PEER_SLOTS_NEW_RESOURCE);
         short peerSlots = peerSlotsNewResourceProp == null ?
             InternalApiConsts.DEFAULT_PEER_SLOTS :
@@ -213,14 +214,13 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
 
         if (peerSlots < resourceCount)
         {
-            throw asExc(
-                null,
-                "Insufficient peer slots to create resource",
-                null,
-                (peerSlotsNewResourceProp == null ? "Default" : "Configured") +
-                    " peer slot count " + peerSlots + " too low",
-                "Configure a higher peer slot count on the resource definition or controller",
-                ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS
+            String detailsMsg = (peerSlotsNewResourceProp == null ? "Default" : "Configured") +
+                " peer slot count " + peerSlots + " too low";
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS, "Insufficient peer slots to create resource")
+                .setDetails(detailsMsg)
+                .setCorrection("Configure a higher peer slot count on the resource definition or controller")
+                .build()
             );
         }
         return peerSlots;
@@ -240,7 +240,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
 
             vlm = volumeDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rsc,
                 vlmDfn,
                 storPool,
@@ -253,26 +253,22 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getVlmDescriptionInline(rsc, vlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw asExc(
-                dataAlreadyExistsExc,
-                "The " + getObjectDescriptionInline() + " already exists",
-                ApiConsts.FAIL_EXISTS_VLM
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_VLM,
+                "The " + getVlmDescriptionInline(rsc, vlmDfn) + " already exists"
+            ), dataAlreadyExistsExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return vlm;
     }
@@ -286,7 +282,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return iterator;
     }

@@ -34,6 +34,13 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -49,6 +56,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,14 +69,17 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+@Singleton
+public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
-    private String currentRscName;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private CtrlVlmDfnApiCallHandler vlmDfnHandler;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlRscDfnApiCallHandler(
@@ -81,16 +92,16 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlVlmDfnApiCallHandler vlmDfnHandlerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.RESOURCE_DEFINITION,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -104,6 +115,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         rscDfnMapProt = rscDfnMapProtRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         vlmDfnHandler = vlmDfnHandlerRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -115,20 +127,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         List<VlmDfnApi> volDescrMap
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeResourceDefinitionContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                rscNameStr
-            );
-        )
+        try
         {
             requireRscDfnMapChangeAccess();
             ResourceDefinitionData rscDfn = createRscDfn(rscNameStr, transportTypeStr, portInt, secret);
 
-            fillProperties(props, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+            fillProperties(
+                LinStorObject.RESOURCE_DEFINITION, props, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
             List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
@@ -151,29 +163,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 volSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
                 volSuccessEntry.putObjRef(ApiConsts.KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
 
-                apiCallRc.addEntry(volSuccessEntry);
+                responses.addEntry(volSuccessEntry);
 
                 errorReporter.logInfo(successMessage);
             }
 
-            reportSuccess(rscDfn.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                rscDfn.getUuid(), getRscDfnDescriptionInline(rscDfn)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(rscNameStr),
-                getObjRefs(rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc modifyRscDfn(
@@ -184,14 +187,14 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         Set<String> deletePropKeys
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeResourceDefinitionContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            rscNameStr
+        );
 
-        try (AbsApiCallHandler basicallyThis = setContext(
-            ApiCallType.MODIFY,
-                apiCallRc,
-                rscNameStr
-            )
-        )
+        try
         {
             requireRscDfnMapChangeAccess();
 
@@ -199,93 +202,85 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
-                addAnswer(
-                    "UUID-check failed",
-                    null,
-                    "local UUID: " + rscDfn.getUuid().toString() + ", received UUID: " + rscDfnUuid.toString(),
-                    null,
-                    ApiConsts.FAIL_UUID_RSC_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_UUID_RSC_DFN,
+                        "UUID-check failed"
+                    )
+                    .setDetails("local UUID: " + rscDfn.getUuid().toString() +
+                        ", received UUID: " + rscDfnUuid.toString())
+                    .build()
                 );
-                throw new ApiCallHandlerFailedException();
             }
             if (portInt != null)
             {
                 TcpPortNumber port = asTcpPortNumber(portInt);
-                rscDfn.setPort(peerAccCtx, port);
+                rscDfn.setPort(peerAccCtx.get(), port);
             }
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
                 Map<String, String> map = getProps(rscDfn).map();
 
-                fillProperties(overrideProps, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+                fillProperties(
+                    LinStorObject.RESOURCE_DEFINITION, overrideProps, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
                 for (String delKey : deletePropKeys)
                 {
                     String oldValue = map.remove(delKey);
                     if (oldValue == null)
                     {
-                        addAnswer(
+                        responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
+                            ApiConsts.WARN_DEL_UNSET_PROP,
                             "Could not delete property '" + delKey + "' as it did not exist. " +
-                                "This operation had no effect.",
-                            ApiConsts.WARN_DEL_UNSET_PROP
-                        );
+                                                "This operation had no effect."
+                        ));
                     }
                 }
             }
 
             commit();
 
-            reportSuccess(rscDfn.getUuid());
-            updateSatellites(rscDfn);
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+                rscDfn.getUuid(), getRscDfnDescriptionInline(rscDfn)));
+            responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(rscNameStr),
-                getObjRefs(rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc deleteResourceDefinition(
         String rscNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeResourceDefinitionContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                rscNameStr
-            )
-        )
+        try
         {
             requireRscDfnMapChangeAccess();
 
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, false);
             if (rscDfn == null)
             {
-                addAnswer(
-                    getObjectDescription() + " not found.",
-                    ApiConsts.WARN_NOT_FOUND
-                );
+                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NOT_FOUND,
+                    getRscDfnDescription(rscNameStr) + " not found."
+                ));
             }
             else if (!rscDfn.getSnapshotDfns(apiCtx).isEmpty())
             {
-                addAnswer(
-                    "Cannot delete " + getObjectDescription() + " because it has snapshots.",
-                    ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN
-                );
+                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
+                    "Cannot delete " + getRscDfnDescriptionInline(rscNameStr) + " because it has snapshots."
+                ));
             }
             else
             {
@@ -293,14 +288,17 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 if (rscInUse.isPresent())
                 {
                     NodeName nodeName = rscInUse.get().getAssignedNode().getName();
-                    addAnswer(
-                        String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue),
-                        "Resource is mounted/in use.",
-                        null,
-                        String.format("Un-mount resource '%s' on the node '%s'.",
-                            rscNameStr,
-                            nodeName.displayValue),
-                        ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL
+                    responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_IN_USE,
+                            String.format("Resource '%s' on node '%s' is still in use.",
+                                rscNameStr, nodeName.displayValue)
+                        )
+                        .setCause("Resource is mounted/in use.")
+                        .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.",
+                                        rscNameStr,
+                                        nodeName.displayValue))
+                        .build()
                     );
                 }
                 else
@@ -309,6 +307,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     String successMsg;
                     String details;
                     UUID rscDfnUuid = rscDfn.getUuid();
+                    String descriptionFirstLetterCaps = firstLetterCaps(getRscDfnDescriptionInline(rscNameStr));
                     if (rscIterator.hasNext())
                     {
                         markDeleted(rscDfn);
@@ -322,10 +321,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                         commit();
 
                         // notify satellites
-                        updateSatellites(rscDfn);
+                        responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
 
-                        successMsg = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
-                        details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscDfnUuid;
+                        successMsg = descriptionFirstLetterCaps + " marked for deletion.";
+                        details = descriptionFirstLetterCaps + " UUID is: " + rscDfnUuid;
                     }
                     else
                     {
@@ -335,29 +334,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                         rscDfnMap.remove(rscName);
 
-                        successMsg = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
-                        details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscDfnUuid;
+                        successMsg = descriptionFirstLetterCaps + " deleted.";
+                        details = descriptionFirstLetterCaps + " UUID was: " + rscDfnUuid;
                     }
-                    reportSuccess(successMsg, details);
+                    responseConverter.addWithOp(responses, context,
+                        ApiCallRcImpl.entryBuilder(ApiConsts.DELETED, successMsg).setDetails(details).build());
                 }
             }
         }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
-        }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(rscNameStr),
-                getObjRefs(rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     void handlePrimaryResourceRequest(
@@ -367,13 +357,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     )
     {
         Peer currentPeer = peer.get();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                null, // apiCallRc
-                rscNameStr
-            )
-        )
+        try
         {
             Resource res = loadRsc(
                 currentPeer.getNode().getName().displayValue,
@@ -418,7 +402,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
             errorReporter.reportError(
                 sqlExc,
-                peerAccCtx,
+                peerAccCtx.get(),
                 currentPeer,
                 errorMessage
             );
@@ -430,12 +414,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
             for (ResourceDefinition rscdfn : rscDfnMap.values())
             {
                 try
                 {
-                    rscdfns.add(rscdfn.getApiData(peerAccCtx));
+                    rscdfns.add(rscdfn.getApiData(peerAccCtx.get()));
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
@@ -454,39 +438,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             .build();
     }
 
-
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        String rscNameStr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(rscNameStr)
-        );
-
-        currentRscName = rscNameStr;
-
-        return this;
-    }
-
     private void requireRscDfnMapChangeAccess()
     {
         try
         {
             rscDfnMapProt.requireAccess(
-                peerAccCtx,
+                peerAccCtx.get(),
                 AccessType.CHANGE
             );
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "change any resource definitions.",
+                "change any resource definitions",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
@@ -512,11 +477,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             }
             catch (IllegalArgumentException unknownValueExc)
             {
-                throw asExc(
-                    unknownValueExc,
-                    "The given transport type '" + transportTypeStr + "' is invalid.",
-                    ApiConsts.FAIL_INVLD_TRANSPORT_TYPE
-                );
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_TRANSPORT_TYPE,
+                    "The given transport type '" + transportTypeStr + "' is invalid."
+                ), unknownValueExc);
             }
         }
         ResourceName rscName = asRscName(rscNameStr);
@@ -525,7 +489,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             rscDfn = resourceDefinitionDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscName,
                 portInt,
                 null, // RscDfnFlags
@@ -537,45 +501,36 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
         {
-            throw asExc(
-                exc,
-                String.format(
-                    "The specified TCP port '%d' is invalid.",
-                    portInt
-                ),
-                ApiConsts.FAIL_INVLD_RSC_PORT
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_RSC_PORT, String.format(
+                "The specified TCP port '%d' is invalid.",
+                portInt
+            )), exc);
         }
         catch (ExhaustedPoolException exc)
         {
-            throw asExc(
-                exc,
-                "Could not find free tcp port",
-                ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
+                "Could not find free tcp port"
+            ), exc);
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getRscDfnDescriptionInline(rscNameStr),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         catch (LinStorDataAlreadyExistsException exc)
         {
-            throw asExc(
-                exc,
-                getObjectDescription() + " already exists.",
-                ApiConsts.FAIL_EXISTS_RSC_DFN
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_RSC_DFN,
+                firstLetterCaps(getRscDfnDescriptionInline(rscNameStr)) + " already exists."
+            ), exc);
         }
         return rscDfn;
     }
@@ -585,22 +540,19 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscDfn.delete(peerAccCtx);
+            rscDfn.delete(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "delete " + getObjectDescriptionInline(),
+                "delete " + getRscDfnDescriptionInline(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -608,22 +560,19 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscDfn.markDeleted(peerAccCtx);
+            rscDfn.markDeleted(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "mark " + getObjectDescriptionInline() + " as deleted",
+                "mark " + getRscDfnDescriptionInline(rscDfn) + " as deleted",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -635,15 +584,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "marking resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
-                    rsc.getAssignedNode().getName().displayValue + "'"
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -656,7 +601,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return iterator;
     }
@@ -713,27 +658,37 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return vlmNr;
     }
 
-    @Override
-    protected String getObjectDescription()
+    public static String getRscDfnDescription(String rscName)
     {
-        return "Resource definition: " + currentRscName;
+        return "Resource definition: " + rscName;
     }
 
-    @Override
-    protected String getObjectDescriptionInline()
+    public static String getRscDfnDescriptionInline(ResourceDefinition rscDfn)
     {
-        return getObjectDescriptionInline(currentRscName);
+        return getRscDfnDescriptionInline(rscDfn.getName().displayValue);
     }
 
-    static String getObjectDescriptionInline(String rscName)
+    public static String getRscDfnDescriptionInline(String rscName)
     {
         return "resource definition '" + rscName + "'";
     }
 
-    private Map<String, String> getObjRefs(String rscNameStr)
+    private static ResponseContext makeResourceDefinitionContext(
+        Peer peer,
+        ApiOperation operation,
+        String rscNameStr
+    )
     {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getRscDfnDescription(rscNameStr),
+            getRscDfnDescriptionInline(rscNameStr),
+            ApiConsts.MASK_RSC_DFN,
+            objRefs
+        );
     }
 }

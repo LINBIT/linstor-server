@@ -31,7 +31,13 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -46,6 +52,7 @@ import com.linbit.utils.Base64;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,16 +64,18 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+@Singleton
 class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 {
     private static final int SECRET_KEY_BYTES = 20;
-    private String currentRscName;
-    private VlmDfnApi currentVlmDfnApi;
-    private Integer currentVlmNr;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     private final CtrlSecurityObjects secObjs;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -79,10 +88,11 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         CtrlObjectFactories objectFactories,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSecurityObjects secObjsRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
@@ -102,21 +112,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         rscDfnMapProt = rscDfnMapProtRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
         secObjs = secObjsRef;
-    }
-
-    private void updateCurrentKeyNumber(final String key, Integer number)
-    {
-        String intStringOrNull = null;
-        Map<String, String> localObjRefs = objRefs.get();
-        if (number != null)
-        {
-            intStringOrNull = number.toString();
-            localObjRefs.put(key, intStringOrNull);
-        }
-        else
-        {
-            localObjRefs.remove(key);
-        }
+        responseConverter = responseConverterRef;
     }
 
     ApiCallRc createVolumeDefinitions(
@@ -124,28 +120,34 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         List<VlmDfnApi> vlmDfnApiList
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                peerAccCtx,
-                ApiCallType.CREATE,
-                apiCallRc,
-                rscNameStr,
-                null // no vlmNr
-            )
-        )
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+        ResponseContext context = new ResponseContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            "Volume definitions for " + getRscDfnDescriptionInline(rscNameStr),
+            "volume definitions for " + getRscDfnDescriptionInline(rscNameStr),
+            ApiConsts.MASK_VLM_DFN,
+            objRefs
+        );
+
+        try
         {
+            ensureRscMapProtAccess(peerAccCtx.get());
+
             if (vlmDfnApiList.isEmpty())
             {
-                addAnswer(
-                    "Volume definition list to create is empty.",
-                    null,
-                    "Volume definition list that should be added to the resource is empty.",
-                    null,
-                    ApiConsts.MASK_WARN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.MASK_WARN,
+                        "Volume definition list to create is empty."
+                    )
+                    .setDetails("Volume definition list that should be added to the resource is empty.")
+                    .build()
                 );
-                throw new ApiCallHandlerFailedException();
             }
 
             ResourceDefinition rscDfn = loadRscDfn(rscNameStr, true);
@@ -159,9 +161,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
             List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnApiList);
 
-            objRefs.get().remove(ApiConsts.KEY_VLM_NR);
-            objRefs.get().remove(ApiConsts.KEY_MINOR_NR);
-
             for (Resource rsc : rscList)
             {
                 adjustRscVolumes(rsc);
@@ -173,26 +172,16 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
-                apiCallRc.addEntry(createVlmDfnCrtSuccessEntry(vlmDfn, rscNameStr));
+                responseConverter.addWithOp(responses, context, createVlmDfnCrtSuccessEntry(vlmDfn, rscNameStr));
             }
-            updateSatellites(rscDfn);
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                "a volume definition of resource definition '" + rscNameStr + "'",
-                getObjRefs(rscNameStr, null),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     List<VolumeDefinitionData> createVlmDfns(
@@ -200,86 +189,91 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         List<VlmDfnApi> vlmDfnApis
     )
     {
-        List<VolumeDefinitionData> createVlmDfns = new ArrayList<>();
+        List<VolumeDefinitionData> vlmDfns = new ArrayList<>();
+        for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApis)
+        {
+            vlmDfns.add(createVlmDfn(rscDfn, vlmDfnApi));
+        }
+        return vlmDfns;
+    }
 
+    /**
+     * Throws contextualized exceptions.
+     */
+    VolumeDefinitionData createVlmDfn(
+        ResourceDefinition rscDfn,
+        VlmDfnApi vlmDfnApi
+    )
+    {
+        VolumeNumber volNr = getOrGenerateVlmNr(
+            vlmDfnApi,
+            rscDfn,
+            apiCtx
+        );
+
+        ResponseContext context = makeVlmDfnContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            rscDfn.getName().displayValue,
+            volNr.value
+        );
+
+        VolumeDefinitionData vlmDfn;
         try
         {
-            for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApis)
+            long size = vlmDfnApi.getSize();
+
+            VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
+
+            vlmDfn = createVlmDfnData(
+                peerAccCtx.get(),
+                rscDfn,
+                volNr,
+                vlmDfnApi.getMinorNr(),
+                size,
+                vlmDfnInitFlags
+            );
+            Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
+
+            fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApi.getProps(), getVlmDfnProps(vlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+
+            // Set an initial DRBD current generation identifier for use when creating volumes
+            // in a setup that includes thin provisioning storage pools
+            propsMap.put(ApiConsts.KEY_DRBD_CURRENT_GI, GidGenerator.generateRandomGid());
+
+            if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
             {
+                byte[] masterKey = secObjs.getCryptKey();
+                if (masterKey == null || masterKey.length == 0)
                 {
-                    currentVlmDfnApi = vlmDfnApi;
-
-                    updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, vlmDfnApi.getVolumeNr());
-                    updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfnApi.getMinorNr());
-                }
-                VolumeNumber volNr = null;
-
-                volNr = getOrGenerateVlmNr(
-                    vlmDfnApi,
-                    rscDfn,
-                    apiCtx
-                );
-                updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, volNr.value);
-                currentVlmNr = volNr.value; // set vlmNr for exception error reporting
-
-                long size = vlmDfnApi.getSize();
-
-                VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
-
-                VolumeDefinitionData vlmDfn = createVlmDfnData(
-                    peerAccCtx,
-                    rscDfn,
-                    volNr,
-                    vlmDfnApi.getMinorNr(),
-                    size,
-                    vlmDfnInitFlags
-                );
-                Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
-
-                fillProperties(vlmDfnApi.getProps(), getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
-
-                // Set an initial DRBD current generation identifier for use when creating volumes
-                // in a setup that includes thin provisioning storage pools
-                propsMap.put(ApiConsts.KEY_DRBD_CURRENT_GI, GidGenerator.generateRandomGid());
-
-                if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
-                {
-                    byte[] masterKey = secObjs.getCryptKey();
-                    if (masterKey == null || masterKey.length == 0)
-                    {
-                        throw asExc(
-                            null,
-                            "Unable to create an encrypted volume definition without having a master key",
-                            "The masterkey was not initialized yet",
-                            null, // details
-                            "Create or enter the master passphrase",
-                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY
-                        );
-                    }
-
-                    String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
-                    SymmetricKeyCipher cipher;
-                    cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
-
-                    byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
-
-                    propsMap.put(
-                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
-                        Base64.encode(encryptedVlmDfnKey)
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                            "Unable to create an encrypted volume definition without having a master key")
+                        .setCause("The masterkey was not initialized yet")
+                        .setCorrection("Create or enter the master passphrase")
+                        .build()
                     );
                 }
 
-                updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfn.getMinorNr(peerAccCtx).value);
+                String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
+                SymmetricKeyCipher cipher;
+                cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
 
-                createVlmDfns.add(vlmDfn);
+                byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
+
+                propsMap.put(
+                    ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                    Base64.encode(encryptedVlmDfnKey)
+                );
             }
         }
-        catch (LinStorException exc)
+        catch (Exception | ImplementationError exc)
         {
-            throw asExc(exc, "Unknown exception", ApiConsts.FAIL_UNKNOWN_ERROR);
+            throw new ApiRcException(responseConverter.exceptionToResponse(exc, context), exc, true);
         }
 
-        return createVlmDfns;
+        return vlmDfn;
     }
 
     ApiCallRc modifyVlmDfn(
@@ -292,31 +286,32 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         Set<String> deletePropKeys
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeVlmDfnContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            rscName,
+            vlmNr
+        );
 
-        try (AbsApiCallHandler basicallyThis = setContext(
-            peerAccCtx,
-            ApiCallType.MODIFY,
-                apiCallRc,
-                rscName,
-                vlmNr
-            )
-        )
+        try
         {
+            ensureRscMapProtAccess(peerAccCtx.get());
+
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
 
             if (vlmDfnUuid != null && !vlmDfnUuid.equals(vlmDfn.getUuid()))
             {
-                throw asExc(
-                    null,
-                    "UUID check failed. Given UUID: " + vlmDfnUuid + ". Persisted UUID: " + vlmDfn.getUuid(),
-                    ApiConsts.FAIL_UUID_VLM_DFN
-                );
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UUID_VLM_DFN,
+                    "UUID check failed. Given UUID: " + vlmDfnUuid + ". Persisted UUID: " + vlmDfn.getUuid()
+                ));
             }
             Props props = getVlmDfnProps(vlmDfn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(overrideProps, getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+            fillProperties(LinStorObject.VOLUME_DEFINITION, overrideProps, getVlmDfnProps(vlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
             for (String delKey : deletePropKeys)
             {
@@ -330,18 +325,18 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 {
                     setVlmDfnSize(vlmDfn, size);
 
-                    Iterator<Volume> vlmIter = vlmDfn.iterateVolumes(peerAccCtx);
+                    Iterator<Volume> vlmIter = vlmDfn.iterateVolumes(peerAccCtx.get());
 
                     if (vlmIter.hasNext())
                     {
-                        vlmDfn.getFlags().enableFlags(peerAccCtx, VlmDfnFlags.RESIZE);
+                        vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VlmDfnFlags.RESIZE);
                     }
 
                     while (vlmIter.hasNext())
                     {
                         Volume vlm = vlmIter.next();
 
-                        vlm.getFlags().enableFlags(peerAccCtx, Volume.VlmFlags.RESIZE);
+                        vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.VlmFlags.RESIZE);
                     }
                 }
                 else
@@ -352,14 +347,14 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                     }
                     else
                     {
-                        throw asExc(
-                            null,
-                            "Deployed volumes can only grow in size, not shrink.",
-                            null,
-                            null,
-                            "If you want to shrink the volume definition, you have to remove all volumes of " +
-                            "this volume definition first.",
-                            ApiConsts.FAIL_INVLD_VLM_SIZE
+                        throw new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.FAIL_INVLD_VLM_SIZE,
+                                "Deployed volumes can only grow in size, not shrink."
+                            )
+                            .setCorrection("If you want to shrink the volume definition, you have to remove all " +
+                                "volumes of this volume definition first.")
+                            .build()
                         );
                     }
                 }
@@ -372,26 +367,17 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
             commit();
 
-            reportSuccess(vlmDfn.getUuid());
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+                vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
-            updateSatellites(vlmDfn.getResourceDefinition());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithDetail(responses, context, updateSatellites(vlmDfn.getResourceDefinition()));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(rscName, vlmNr),
-                getObjRefs(rscName, vlmNr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     ApiCallRc deleteVolumeDefinition(
@@ -399,18 +385,18 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         int vlmNr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeVlmDfnContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            rscName,
+            vlmNr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                peerAccCtx,
-                ApiCallType.DELETE,
-                apiCallRc,
-                rscName,
-                vlmNr
-            );
-        )
+        try
         {
+            ensureRscMapProtAccess(peerAccCtx.get());
+
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
             UUID vlmDfnUuid = vlmDfn.getUuid();
             ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
@@ -420,27 +406,29 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             {
                 NodeName nodeName = rscInUse.get().getAssignedNode().getName();
                 String rscNameStr = rscDfn.getName().displayValue;
-                addAnswer(
-                    String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue),
-                    "Resource is mounted/in use.",
-                    null,
-                    String.format("Un-mount resource '%s' on the node '%s'.",
+                responses.addEntry(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_IN_USE,
+                        String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue)
+                    )
+                    .setCause("Resource is mounted/in use.")
+                    .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.",
                         rscNameStr,
-                        nodeName.displayValue),
-                    ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL
+                        nodeName.displayValue))
+                    .build()
                 );
             }
             else
             {
                 // mark volumes to delete or check if all a 'CLEAN'
-                Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(peerAccCtx);
+                Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(peerAccCtx.get());
                 boolean allVlmClean = true;
                 while (itVolumes.hasNext())
                 {
                     Volume vlm = itVolumes.next();
-                    if (vlm.getFlags().isUnset(peerAccCtx, Volume.VlmFlags.CLEAN))
+                    if (vlm.getFlags().isUnset(peerAccCtx.get(), Volume.VlmFlags.CLEAN))
                     {
-                        vlm.markDeleted(peerAccCtx);
+                        vlm.markDeleted(peerAccCtx.get());
                         allVlmClean = false;
                     }
                 }
@@ -448,41 +436,35 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 String deleteAction;
                 if (allVlmClean)
                 {
-                    vlmDfn.delete(peerAccCtx);
+                    vlmDfn.delete(peerAccCtx.get());
                     deleteAction = " was deleted.";
                 }
                 else
                 {
-                    vlmDfn.markDeleted(peerAccCtx);
+                    vlmDfn.markDeleted(peerAccCtx.get());
                     deleteAction = " marked for deletion.";
                 }
 
                 commit();
 
-                updateSatellites(rscDfn);
+                responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
 
-                reportSuccess(
-                    getObjectDescriptionInlineFirstLetterCaps() + deleteAction,
-                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is:" + vlmDfnUuid
+                responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.DELETED,
+                        firstLetterCaps(getVlmDfnDescriptionInline(rscName, vlmNr)) + deleteAction
+                    )
+                    .setDetails(firstLetterCaps(getVlmDfnDescriptionInline(rscName, vlmNr)) + " UUID is:" + vlmDfnUuid)
+                    .build()
                 );
             }
         }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
-        }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(rscName, vlmNr),
-                getObjRefs(rscName, vlmNr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     private void ensureRscMapProtAccess(AccessContext accCtx)
@@ -493,7 +475,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "change any existing resource definition",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
@@ -508,39 +490,39 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         try
         {
             vlmDfn = volumeDefinitionDataFactory.load(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscDfn,
                 new VolumeNumber(vlmNr)
             );
 
             if (vlmDfn == null)
             {
-                throw asExc(
-                    null, // throwable
-                    "Volume definition '" + rscName + "' with volume number '" + vlmNr + "' not found.",
-                    "The specified volume definition '" + rscName +
-                        "' with volume number '" + vlmNr + "' could not be found in the database", // cause
-                    null, // details
-                    "Create a volume definition with the name '" + rscName + "' first.", // correction
-                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
+                        "Volume definition '" + rscName + "' with volume number '" + vlmNr + "' not found."
+                    )
+                    .setCause("The specified volume definition '" + rscName +
+                        "' with volume number '" + vlmNr + "' could not be found in the database")
+                    .setCorrection("Create a volume definition with the name '" + rscName + "' first.")
+                    .build()
                 );
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading volume definition '" + vlmNr + "' from resource definition '" + rscName + "'",
+                "load volume definition '" + vlmNr + "' from resource definition '" + rscName + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         catch (ValueOutOfRangeException valueOutOfRangeExc)
         {
-            throw asExc(
-                valueOutOfRangeExc,
-                "The given volume number '" + vlmNr + "' is invalid.",
-                ApiConsts.FAIL_INVLD_VLM_NR
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_VLM_NR,
+                "The given volume number '" + vlmNr + "' is invalid."
+            ), valueOutOfRangeExc);
         }
         return vlmDfn;
     }
@@ -554,7 +536,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return iterator;
     }
@@ -568,24 +550,19 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         }
         catch (ValueOutOfRangeException valOORangeExc)
         {
-            throw asExc(
-                valOORangeExc,
-                String.format(
-                    "The specified volume number '%d' is invalid. Volume numbers have to be in range of %d - %d.",
-                    vlmDfnApi.getVolumeNr(),
-                    VolumeNumber.VOLUME_NR_MIN,
-                    VolumeNumber.VOLUME_NR_MAX
-                ),
-                ApiConsts.FAIL_INVLD_VLM_NR
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_VLM_NR, String.format(
+                "The specified volume number '%d' is invalid. Volume numbers have to be in range of %d - %d.",
+                vlmDfnApi.getVolumeNr(),
+                VolumeNumber.VOLUME_NR_MIN,
+                VolumeNumber.VOLUME_NR_MAX
+            )), valOORangeExc);
         }
         catch (LinStorException linStorExc)
         {
-            throw asExc(
-                linStorExc,
-                "An exception occured during generation of a volume number.",
-                ApiConsts.FAIL_POOL_EXHAUSTED_VLM_NR
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_POOL_EXHAUSTED_VLM_NR,
+                "An exception occured during generation of a volume number."
+            ), linStorExc);
         }
         return vlmNr;
     }
@@ -595,13 +572,13 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         Props props;
         try
         {
-            props = vlmDfn.getProps(peerAccCtx);
+            props = vlmDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the properties of " + getObjectDescriptionInline(),
+                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
@@ -614,11 +591,11 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
         try
         {
-            isSet = vlmDfn.getFlags().isSet(peerAccCtx, flag);
+            isSet = vlmDfn.getFlags().isSet(peerAccCtx.get(), flag);
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
                 "access volume definitions flags",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
@@ -633,7 +610,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         ApiCallRcEntry vlmDfnCrtSuccessEntry = new ApiCallRcEntry();
         try
         {
-            vlmDfnCrtSuccessEntry.setReturnCode(ApiConsts.MASK_VLM_DFN | ApiConsts.MASK_CRT | ApiConsts.CREATED);
+            vlmDfnCrtSuccessEntry.setReturnCode(ApiConsts.CREATED);
             String successMessage = String.format(
                 "New volume definition with number '%d' of resource definition '%s' created.",
                 vlmDfn.getVolumeNumber().value,
@@ -651,7 +628,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return vlmDfnCrtSuccessEntry;
     }
@@ -661,13 +638,13 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         long volumeSize;
         try
         {
-            volumeSize = vlmDfn.getVolumeSize(peerAccCtx);
+            volumeSize = vlmDfn.getVolumeSize(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "accessing Volume definition's size",
+                "access Volume definition's size",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
@@ -678,19 +655,19 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
     {
         try
         {
-            vlmDfn.setVolumeSize(peerAccCtx, size);
+            vlmDfn.setVolumeSize(peerAccCtx.get(), size);
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "updating Volume definition's size",
+                "update Volume definition's size",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(sqlExc, "updating volume definition's size");
+            throw new ApiSQLException(sqlExc);
         }
 
     }
@@ -700,13 +677,13 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         boolean hasVolumes;
         try
         {
-            hasVolumes = vlmDfn.iterateVolumes(peerAccCtx).hasNext();
+            hasVolumes = vlmDfn.iterateVolumes(peerAccCtx.get()).hasNext();
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "accessing volume definition",
+                "access volume definition",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
@@ -718,84 +695,75 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         try
         {
             vlmDfn.setMinorNr(
-                peerAccCtx,
+                peerAccCtx.get(),
                 new MinorNumber(minorNr)
             );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
         {
-            throw asExc(
-                exc,
-                String.format(
-                    "The specified minor number '%d' is invalid.",
-                    minorNr
-                ),
-                ApiConsts.FAIL_INVLD_MINOR_NR
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_MINOR_NR, String.format(
+                "The specified minor number '%d' is invalid.",
+                minorNr
+            )), exc);
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "setting the minor number",
+                "set the minor number",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(sqlExc, "updating minor number");
+            throw new ApiSQLException(sqlExc);
         }
-    }
-
-    private AbsApiCallHandler setContext(
-        AccessContext accCtx,
-        ApiCallType apiCallType,
-        ApiCallRcImpl apiCallRc,
-        String rscNameStr,
-        Integer vlmNr
-    )
-    {
-        super.setContext(
-            apiCallType,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(rscNameStr, vlmNr)
-        );
-
-        ensureRscMapProtAccess(accCtx);
-
-        currentRscName = rscNameStr;
-        currentVlmDfnApi = null;
-        currentVlmNr = vlmNr;
-
-        return this;
     }
 
     private Map<String, String> getObjRefs(String rscName, Integer vlmNr)
     {
         Map<String, String> objRefs = new TreeMap<>();
-        objRefs.put(ApiConsts.KEY_RSC_DFN, rscName);
-        if (vlmNr != null)
-        {
-            objRefs.put(ApiConsts.KEY_VLM_NR, vlmNr.toString());
-        }
         return objRefs;
     }
 
-    @Override
-    protected String getObjectDescription()
+    public static String getVlmDfnDescription(String rscName, Integer vlmNr)
     {
-        return "Resource definition: " + currentRscName + ", Volume number: " + currentVlmNr;
+        return "Resource definition: " + rscName + ", Volume number: " + vlmNr;
     }
 
-    @Override
-    protected String getObjectDescriptionInline()
+    public static String getVlmDfnDescriptionInline(VolumeDefinition vlmDfn)
     {
-        return getObjectDescriptionInline(currentRscName, currentVlmNr);
+        return getVlmDfnDescriptionInline(vlmDfn.getResourceDefinition(), vlmDfn.getVolumeNumber());
     }
 
-    public static String getObjectDescriptionInline(String rscName, Integer vlmNr)
+    public static String getVlmDfnDescriptionInline(ResourceDefinition rscDfn, VolumeNumber volNr)
+    {
+        return getVlmDfnDescriptionInline(rscDfn.getName().displayValue, volNr.value);
+    }
+
+    public static String getVlmDfnDescriptionInline(String rscName, Integer vlmNr)
     {
         return "volume definition with number '" + vlmNr + "' of resource definition '" + rscName + "'";
+    }
+
+    private static ResponseContext makeVlmDfnContext(
+        Peer peer,
+        ApiOperation operation,
+        String rscNameStr,
+        int volumeNr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(volumeNr));
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getVlmDfnDescription(rscNameStr, volumeNr),
+            getVlmDfnDescriptionInline(rscNameStr, volumeNr),
+            ApiConsts.MASK_VLM_DFN,
+            objRefs
+        );
     }
 }

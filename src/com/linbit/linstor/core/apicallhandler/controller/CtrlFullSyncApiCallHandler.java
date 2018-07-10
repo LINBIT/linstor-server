@@ -14,12 +14,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 
+@Singleton
 class CtrlFullSyncApiCallHandler
 {
     private final ErrorReporter errorReporter;

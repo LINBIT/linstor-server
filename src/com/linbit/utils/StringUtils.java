@@ -42,6 +42,11 @@ public class StringUtils
         return join(col, ",");
     }
 
+    public static String firstLetterCaps(String string)
+    {
+        return string.substring(0, 1).toUpperCase() + string.substring(1);
+    }
+
     public static class ConditionalStringJoiner
     {
         private final StringJoiner stringJoiner;

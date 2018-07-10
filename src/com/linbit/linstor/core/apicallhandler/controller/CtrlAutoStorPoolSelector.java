@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPool;
@@ -10,10 +9,13 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -21,6 +23,8 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.DisklessDriverKind;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,18 +39,19 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Singleton
 public class CtrlAutoStorPoolSelector
 {
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final ResourceDefinitionMap rscDfnMap;
-    private final AccessContext peerAccCtx;
+    private final Provider<AccessContext> peerAccCtx;
     private final AccessContext apiAccCtx;
 
     @Inject
     public CtrlAutoStorPoolSelector(
         ResourceDefinitionMap rscDfnMapRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         @SystemContext AccessContext apiAccCtxRef
     )
     {
@@ -62,7 +67,6 @@ public class CtrlAutoStorPoolSelector
         final NodeSelectionStrategy nodeSelectionStrategy,
         final CandidateSelectionStrategy candidateSelectionStrategy
     )
-        throws NotEnoughFreeNodesException, InvalidKeyException
     {
         List<Candidate> candidateList = getCandidateList(
             rscSize,
@@ -75,7 +79,7 @@ public class CtrlAutoStorPoolSelector
             failNotEnoughCandidates(selectFilter.getStorPoolNameStr(), rscSize);
         }
         candidateList.sort((c1, c2) ->
-            candidateSelectionStrategy.compare(c1, c2, peerAccCtx));
+            candidateSelectionStrategy.compare(c1, c2, peerAccCtx.get()));
         return candidateList.get(0);
     }
 
@@ -84,7 +88,6 @@ public class CtrlAutoStorPoolSelector
         final AutoStorPoolSelectorConfig selectFilter,
         final NodeSelectionStrategy nodeSelectionStrategy
     )
-        throws InvalidKeyException
     {
         Map<StorPoolName, List<Node>> nodes = buildInitialCandidateList(rscSize);
 
@@ -112,12 +115,12 @@ public class CtrlAutoStorPoolSelector
           */
          HashMap<StorPoolName, List<StorPool>> tmpMap = storPoolDfnMap.values().stream()
             // filter for user access on storPoolDfn
-            .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
+            .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             .flatMap(this::getStorPoolStream)
             // filter for diskless
             .filter(storPool -> !(storPool.getDriverKind() instanceof DisklessDriverKind))
             // filter for user access on node
-            .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE))
+            .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             // filter for enough free space
             .filter(storPool -> poolHasSpaceFor(storPool, rscSize))
             .collect(
@@ -146,7 +149,7 @@ public class CtrlAutoStorPoolSelector
         {
             hasSpace = storPool.getDriverKind().usesThinProvisioning() ?
                 true :
-                storPool.getFreeSpace(peerAccCtx).orElse(0L) >= rscSize;
+                storPool.getFreeSpace(peerAccCtx.get()).orElse(0L) >= rscSize;
         }
         catch (AccessDeniedException exc)
         {
@@ -179,14 +182,14 @@ public class CtrlAutoStorPoolSelector
         Stream<StorPool> stream;
         try
         {
-            stream = storPoolDefinition.streamStorPools(peerAccCtx);
+            stream = storPoolDefinition.streamStorPools(peerAccCtx.get());
         }
         catch (AccessDeniedException exc)
         {
-            throw new RuntimeAccessDeniedException(
+            throw new ApiAccessDeniedException(
                 exc,
                 "stream storage pools of storage pool definition '" +
-                    storPoolDefinition.getName().displayValue + "'.",
+                    storPoolDefinition.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
@@ -252,7 +255,7 @@ public class CtrlAutoStorPoolSelector
         {
             try
             {
-                freeSpace = node.getStorPool(peerAccCtx, storPoolName).getFreeSpace(peerAccCtx);
+                freeSpace = node.getStorPool(peerAccCtx.get(), storPoolName).getFreeSpace(peerAccCtx.get());
             }
             catch (AccessDeniedException exc)
             {
@@ -262,15 +265,15 @@ public class CtrlAutoStorPoolSelector
         return freeSpace;
     }
 
-    private RuntimeAccessDeniedException queryFreeSpaceAccDenied(
+    private ApiAccessDeniedException queryFreeSpaceAccDenied(
         AccessDeniedException exc,
         NodeName nodeName,
         StorPoolName storPoolName
     )
     {
-        return new RuntimeAccessDeniedException(
+        return new ApiAccessDeniedException(
             exc,
-            "query free space of " + CtrlStorPoolApiCallHandler.getObjectDescriptionInline(
+            "query free space of " + CtrlStorPoolApiCallHandler.getStorPoolDescriptionInline(
                 nodeName.displayValue,
                 storPoolName.displayValue
             ),
@@ -346,7 +349,6 @@ public class CtrlAutoStorPoolSelector
         Map<StorPoolName, List<Node>> candidatesIn,
         NodeSelectionStrategy nodeSelectionStartegy
     )
-        throws InvalidKeyException
     {
         List<String> replicasOnSamePropList = selectFilter.getReplicasOnSameList();
         List<String> replicasOnDiffParamList = selectFilter.getReplicasOnDifferentList();
@@ -391,9 +393,9 @@ public class CtrlAutoStorPoolSelector
                         for (Node bucketEntryNode : bucketEntry.getValue())
                         {
                             BucketId entryNodeId = bucketEntry.getKey().extend(
-                                bucketEntryNode.getProps(peerAccCtx).getProp(samePropKey)
+                                bucketEntryNode.getProps(peerAccCtx.get()).getProp(samePropKey)
                             );
-                            List<Node> nextSameBucketNodes  = nextSameBuckets.get(entryNodeId);
+                            List<Node> nextSameBucketNodes = nextSameBuckets.get(entryNodeId);
                             if (nextSameBucketNodes == null)
                             {
                                 nextSameBucketNodes = new ArrayList<>();
@@ -414,7 +416,7 @@ public class CtrlAutoStorPoolSelector
                         node1,
                         node2,
                         candidateEntry.getKey(),
-                        peerAccCtx
+                        peerAccCtx.get()
                     ));
                 }
 
@@ -436,7 +438,7 @@ public class CtrlAutoStorPoolSelector
                         HashMap<String, Node> usedValues = new HashMap<>();
                         for (Node bucketNode : bucketEntry.getValue())
                         {
-                            String nodeValue = bucketNode.getProps(peerAccCtx).getProp(diffPropKey);
+                            String nodeValue = bucketNode.getProps(peerAccCtx.get()).getProp(diffPropKey);
                             if (!usedValues.containsKey(nodeValue))
                             {
                                 usedValues.put(nodeValue, bucketNode);
@@ -456,6 +458,13 @@ public class CtrlAutoStorPoolSelector
                     addCandidate(candidatesOut, candidateEntry.getKey(), nodeList, placeCount);
                 }
             }
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_PROP,
+                "The property key '" + invalidKeyExc.invalidKey + "' is invalid."
+            ), invalidKeyExc);
         }
         catch (AccessDeniedException exc)
         {
@@ -492,22 +501,24 @@ public class CtrlAutoStorPoolSelector
     }
 
     private void failNotEnoughCandidates(String storPoolName, final long rscSize)
-        throws NotEnoughFreeNodesException
     {
-        throw new NotEnoughFreeNodesException(
-            "Not enough available nodes", // message
-            "Not enough nodes fulfilling the following auto-place criteria:\n" +
-            (
-                storPoolName == null ?
-                "" :
-                " * has a deployed storage pool named '" + storPoolName + "'\n" +
-                " * the storage pool '" + storPoolName + "' has to have at least '" +
-                rscSize + "' free space\n"
-            ) +
-            " * the current access context has enough privileges to use the node and the storage pool", // description
-            null, // cause
-            null, // correction.... "you must construct additional servers"
-            null // details
+        throw new ApiRcException(ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.FAIL_NOT_ENOUGH_NODES,
+                "Not enough available nodes"
+            )
+            .setDetails(
+                "Not enough nodes fulfilling the following auto-place criteria:\n" +
+                    (
+                        storPoolName == null ?
+                            "" :
+                            " * has a deployed storage pool named '" + storPoolName + "'\n" +
+                                " * the storage pool '" + storPoolName + "' has to have at least '" +
+                                rscSize + "' free space\n"
+                    ) +
+                    " * the current access context has enough privileges to use the node and the storage pool"
+            )
+            .build()
         );
     }
 
@@ -592,7 +603,7 @@ public class CtrlAutoStorPoolSelector
         boolean hasNoResourceOf = false;
         try
         {
-            hasNoResourceOf = node.streamResources(peerAccCtx)
+            hasNoResourceOf = node.streamResources(peerAccCtx.get())
                 .map(rsc -> rsc.getDefinition().getName().value)
                 .noneMatch(notPlaceWithRscList::contains);
         }
@@ -803,79 +814,6 @@ public class CtrlAutoStorPoolSelector
             return parent == null ?
                 id :
                 parent.toString() + ", " + id;
-        }
-    }
-
-    public static class NotEnoughFreeNodesException extends LinStorException
-    {
-        private static final long serialVersionUID = -4782970173136200037L;
-
-        public NotEnoughFreeNodesException(String message)
-        {
-            super(message);
-        }
-
-        public NotEnoughFreeNodesException(String message, Throwable cause)
-        {
-            super(message, cause);
-        }
-
-        public NotEnoughFreeNodesException(
-            String message,
-            String descriptionText,
-            String causeText,
-            String correctionText,
-            String detailsText
-        )
-        {
-            super(message, descriptionText, causeText, correctionText, detailsText);
-        }
-
-        public NotEnoughFreeNodesException(
-            String message,
-            String descriptionText,
-            String causeText,
-            String correctionText,
-            String detailsText,
-            Throwable cause
-        )
-        {
-            super(message, descriptionText, causeText, correctionText, detailsText, cause);
-        }
-    }
-
-    public class RuntimeAccessDeniedException extends RuntimeException
-    {
-        private static final long serialVersionUID = 8412239561692378539L;
-
-        private AccessDeniedException exc;
-        private String msg;
-        private long rc;
-
-        RuntimeAccessDeniedException(
-            AccessDeniedException excRef,
-            String msgRef,
-            long rcRef
-        )
-        {
-            exc = excRef;
-            msg = msgRef;
-            rc = rcRef;
-        }
-
-        public AccessDeniedException getExc()
-        {
-            return exc;
-        }
-
-        public String getMsg()
-        {
-            return msg;
-        }
-
-        public long getRc()
-        {
-            return rc;
         }
     }
 }

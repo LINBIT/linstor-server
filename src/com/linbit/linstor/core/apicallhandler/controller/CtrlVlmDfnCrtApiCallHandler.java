@@ -14,11 +14,15 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -27,6 +31,8 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
 /**
  * Common API call handler base class for operations that create volume definitions.
@@ -42,7 +48,7 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer interComSerializer,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
-        AccessContext peerAccCtxRef,
+        Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         String defaultStorPoolNameRef,
@@ -52,7 +58,6 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtx,
-            LinStorObject.VOLUME_DEFINITION,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -90,63 +95,47 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getVlmDfnDescriptionInline(rscDfn, volNr),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw asExc(
-                dataAlreadyExistsExc,
-                String.format(
-                    "A volume definition with the number %d already exists in resource definition '%s'.",
-                    volNr.value,
-                    rscDfn.getName().getDisplayName()
-                ),
-                ApiConsts.FAIL_EXISTS_VLM_DFN
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_VLM_DFN, String.format(
+                "A volume definition with the number %d already exists in resource definition '%s'.",
+                volNr.value,
+                rscDfn.getName().getDisplayName()
+            )), dataAlreadyExistsExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         catch (MdException mdExc)
         {
-            throw asExc(
-                mdExc,
-                String.format(
-                    "The " + getObjectDescriptionInline() + " has an invalid size of '%d'. " +
-                        "Valid sizes range from %d to %d.",
-                    size,
-                    MetaData.DRBD_MIN_NET_kiB,
-                    MetaData.DRBD_MAX_kiB
-                ),
-                ApiConsts.FAIL_INVLD_VLM_SIZE
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_VLM_SIZE, String.format(
+                "The " + getVlmDfnDescriptionInline(rscDfn, volNr) + " has an invalid size of '%d'. " +
+                    "Valid sizes range from %d to %d.",
+                size,
+                MetaData.DRBD_MIN_NET_kiB,
+                MetaData.DRBD_MAX_kiB
+            )), mdExc);
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
         {
-            throw asExc(
-                exc,
-                String.format(
-                    "The specified minor number '%d' is invalid.",
-                    minorNr
-                ),
-                ApiConsts.FAIL_INVLD_MINOR_NR
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_MINOR_NR, String.format(
+                "The specified minor number '%d' is invalid.",
+                minorNr
+            )), exc);
         }
         catch (ExhaustedPoolException exhaustedPoolExc)
         {
-            throw asExc(
-                exhaustedPoolExc,
-                "Could not find free minor number",
-                ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR,
+                "Could not find free minor number"
+            ), exhaustedPoolExc);
         }
         return vlmDfn;
     }
@@ -159,20 +148,17 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw asExc(
-                invalidNameExc,
-                "The given stor pool name '" + invalidNameExc.invalidName + "' is invalid",
-                ApiConsts.FAIL_INVLD_STOR_POOL_NAME
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                "The given stor pool name '" + invalidNameExc.invalidName + "' is invalid"
+            ), invalidNameExc);
         }
         catch (LinStorException linStorExc)
         {
-            throw asExc(
-                linStorExc,
-                "An exception occured while adjusting resources.",
-                ApiConsts.FAIL_UNKNOWN_ERROR // TODO somehow find out if the exception is caused
-                // by a missing storpool (not deployed yet?), and return a more meaningful RC
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_UNKNOWN_ERROR,
+                "An exception occured while adjusting resources."
+            ), linStorExc);
         }
     }
 

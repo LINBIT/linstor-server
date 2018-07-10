@@ -25,6 +25,14 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -38,6 +46,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,18 +56,20 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.linbit.linstor.api.ApiCallRcImpl.singletonApiCallRc;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
-class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
+@Singleton
+public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
-    private String currentNodeNameStr;
-    private String currentStorPoolNameStr;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlStorPoolApiCallHandler(
@@ -73,15 +84,15 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.STORAGEPOOL,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -97,6 +108,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         clientComSerializer = clientComSerializerRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc createStorPool(
@@ -106,16 +118,15 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Map<String, String> storPoolPropsMap
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            nodeNameStr,
+            storPoolNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                nodeNameStr,
-                storPoolNameStr
-            );
-        )
+        try
         {
             // as the storage pool definition is implicitly created if it doesn't exist
             // we always will update the storPoolDfnMap even if not necessary
@@ -123,31 +134,23 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             requireStorPoolDfnMapChangeAccess();
 
             StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver);
-            fillProperties(storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
+            fillProperties(
+                LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
             commit();
 
             updateStorPoolDfnMap(storPool);
-            updateSatellite(storPool);
+            responseConverter.addWithDetail(responses, context, updateSatellite(storPool));
 
-            reportSuccess(storPool.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
-                getObjRefs(nodeNameStr, storPoolNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc modifyStorPool(
@@ -158,31 +161,31 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Set<String> deletePropKeys
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                nodeNameStr,
-                storPoolNameStr
-            );
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            storPoolNameStr
+        );
+
+        try
         {
             StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, true);
 
             if (storPoolUuid != null && !storPoolUuid.equals(storPool.getUuid()))
             {
-                addAnswer(
-                    "UUID-check failed",
-                    ApiConsts.FAIL_UUID_STOR_POOL
-                );
-                throw new ApiCallHandlerFailedException();
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UUID_STOR_POOL,
+                    "UUID-check failed"
+                ));
             }
 
             Props props = getProps(storPool);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(overrideProps, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
+            fillProperties(
+                LinStorObject.STORAGEPOOL, overrideProps, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
             for (String delKey : deletePropKeys)
             {
@@ -191,25 +194,16 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            reportSuccess(storPool.getUuid());
-            updateSatellite(storPool);
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+                storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
+            responseConverter.addWithDetail(responses, context, updateSatellite(storPool));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
-                getObjRefs(nodeNameStr, storPoolNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc deleteStorPool(
@@ -217,29 +211,29 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         String storPoolNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            nodeNameStr,
+            storPoolNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                nodeNameStr,
-                storPoolNameStr
-            );
-        )
+        try
         {
             StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
 
             if (storPool == null)
             {
-                addAnswer(
-                    "Deletion of " + getObjectDescriptionInline() + " had no effect.",
-                    getObjectDescriptionInlineFirstLetterCaps() + " does not exist.",
-                    null,
-                    null,
-                    ApiConsts.WARN_NOT_FOUND
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.WARN_NOT_FOUND,
+                        "Deletion of " + getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr) + " had no effect."
+                    )
+                    .setCause(firstLetterCaps(getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr)) +
+                        " does not exist.")
+                    .build()
                 );
-                throw new ApiCallHandlerFailedException();
             }
             Collection<Volume> volumes = getVolumes(storPool);
             if (!volumes.isEmpty())
@@ -255,22 +249,23 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                              .append(vol.getVolumeDefinition().getVolumeNumber().value);
                 }
 
-                addAnswer(
-                    String.format(
-                        "The specified storage pool '%s' on node '%s' can not be deleted as " +
-                            "volumes are still using it.",
-                        storPoolNameStr,
-                        nodeNameStr
-                    ),
-                    null,
-                    "Volumes that are still using the storage pool: " + volListSb.toString(),
-                    volumes.size() == 1 ?
-                        "Delete the listed volume first." :
-                        "Delete the listed volumes first.",
-                    ApiConsts.FAIL_IN_USE
+                String correction = volumes.size() == 1 ?
+                    "Delete the listed volume first." :
+                    "Delete the listed volumes first.";
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        String.format(
+                                "The specified storage pool '%s' on node '%s' can not be deleted as " +
+                                    "volumes are still using it.",
+                                storPoolNameStr,
+                                nodeNameStr
+                            )
+                    )
+                    .setDetails("Volumes that are still using the storage pool: " + volListSb.toString())
+                    .setCorrection(correction)
+                    .build()
                 );
-
-                throw new ApiCallHandlerFailedException();
             }
             else
             {
@@ -278,25 +273,16 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 delete(storPool);
                 commit();
 
-                reportSuccess(storPoolUuid);
+                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                    storPoolUuid, getStorPoolDescription(nodeNameStr, storPoolNameStr)));
             }
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(nodeNameStr, storPoolNameStr),
-                getObjRefs(nodeNameStr, storPoolNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public void respondStorPool(int msgId, UUID storPoolUuid, String storPoolNameStr)
@@ -356,8 +342,8 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
         try
         {
-            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
-            storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
+            storPoolDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
             final List<String> upperFilterStorPools =
                 filterStorPools.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterNodes =
@@ -369,14 +355,14 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 {
                     try
                     {
-                        for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx)
+                        for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx.get())
                                 .filter(storPool -> upperFilterNodes.isEmpty() ||
                                     upperFilterNodes.contains(storPool.getNode().getName().value))
                                 .collect(toList()))
                         {
                             if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
                             {
-                                storPools.add(storPool.getApiData(peerAccCtx, null, null));
+                                storPools.add(storPool.getApiData(peerAccCtx.get(), null, null));
                             }
                             // fullSyncId and updateId null, as they are not going to be serialized anyways
                         }
@@ -403,41 +389,52 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         if (!peer.getNode().isDeleted())
         {
-            try (
-                AbsApiCallHandler basicallyThis = setContext(
-                    ApiCallType.MODIFY,
-                    null, // apiCallRc
-                    peer.getNode().getName().displayValue,
-                    null // storPoolName
-                );
-            )
-            {
-                String nodeName = peer.getNode().getName().displayValue;
+            String nodeName = peer.getNode().getName().displayValue;
 
+            try
+            {
                 for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
                 {
-                    currentStorPoolNameStr = freeSpacePojo.getStorPoolName();
+                    ResponseContext context = makeStorPoolContext(
+                        peer,
+                        ApiOperation.makeModifyOperation(),
+                        peer.getNode().getName().displayValue,
+                        freeSpacePojo.getStorPoolName()
+                    );
 
-                    StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
-                    if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
+                    try
                     {
-                        setRealFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                        StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
+                        if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
+                        {
+                            setRealFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                        }
+                        else
+                        {
+                            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_UUID_STOR_POOL,
+                                "UUIDs mismatched when updating free space of " + getStorPoolDescriptionInline(storPool)
+                            ));
+                        }
                     }
-                    else
+                    catch (Exception | ImplementationError exc)
                     {
-                        throw asExc(
-                            null,
-                            "UUIDs mismatched when updating free space of " + getObjectDescriptionInline(),
-                            ApiConsts.FAIL_UUID_STOR_POOL
-                        );
+                        // Add context to exception
+                        throw new ApiRcException(responseConverter.exceptionToResponse(exc, context), exc, true);
                     }
                 }
 
                 commit();
             }
-            catch (ApiCallHandlerFailedException ignored)
+            catch (ApiRcException exc)
             {
-                // already reported
+                ApiCallRc.RcEntry entry = exc.getRcEntry();
+                errorReporter.reportError(
+                    exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
+                    peer.getAccessContext(),
+                    peer,
+                    entry.getMessage()
+                );
             }
         }
         // else: the node is deleted, thus if it still has any storpools left, those will
@@ -448,35 +445,12 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPool.setRealFreeSpace(peerAccCtx, freeSpace);
+            storPool.setRealFreeSpace(peerAccCtx.get(), freeSpace);
         }
-        catch (AccessDeniedException accDeniedExc)
+        catch (AccessDeniedException | SQLException exc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(exc);
         }
-        catch (SQLException exc)
-        {
-            throw asImplError(exc);
-        }
-    }
-
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        String nodeNameStr,
-        String storPoolNameStr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(nodeNameStr, storPoolNameStr)
-        );
-        currentNodeNameStr = nodeNameStr;
-        currentStorPoolNameStr = storPoolNameStr;
-
-        return this;
     }
 
     private void requireStorPoolDfnMapChangeAccess()
@@ -484,15 +458,15 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         try
         {
             storPoolDfnMapProt.requireAccess(
-                peerAccCtx,
+                peerAccCtx.get(),
                 AccessType.CHANGE
             );
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "change any storage pools.",
+                "change any storage pools",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
@@ -510,7 +484,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             {
                 // implicitly create storage pool definition if it doesn't exist
                 storPoolDef = storPoolDefinitionDataFactory.getInstance(
-                    peerAccCtx,
+                    peerAccCtx.get(),
                     asStorPoolName(storPoolNameStr),
                     true,  // create and persist if not exists
                     false  // do not throw exception if exists
@@ -518,7 +492,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
 
             storPool = storPoolDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 node,
                 storPoolDef,
                 driver,
@@ -528,26 +502,26 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
         catch (LinStorDataAlreadyExistsException alreadyExistsExc)
         {
-            throw asExc(
-                alreadyExistsExc,
-                getObjectDescription() + " already exists.",
-                ApiConsts.FAIL_EXISTS_STOR_POOL
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_EXISTS_STOR_POOL,
+                    getStorPoolDescription(nodeNameStr, storPoolNameStr) + " already exists."
+                )
+                .build(),
+                alreadyExistsExc
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return storPool;
     }
@@ -563,7 +537,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
     }
 
@@ -572,13 +546,13 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Collection<Volume> volumes;
         try
         {
-            volumes = storPool.getVolumes(peerAccCtx);
+            volumes = storPool.getVolumes(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the volumes of " + getObjectDescriptionInline(),
+                "access the volumes of " + getStorPoolDescriptionInline(storPool),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
@@ -589,56 +563,46 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPool.delete(peerAccCtx);
+            storPool.delete(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "delete " + getObjectDescriptionInline(),
+                "delete " + getStorPoolDescriptionInline(storPool),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
-    @Override
-    protected String getObjectDescription()
+    public static String getStorPoolDescription(String nodeNameStr, String storPoolNameStr)
     {
-        return "Node: " + currentNodeNameStr + ", Storage pool name: " + currentStorPoolNameStr;
+        return "Node: " + nodeNameStr + ", Storage pool name: " + storPoolNameStr;
     }
 
-    @Override
-    protected String getObjectDescriptionInline()
+    public static String getStorPoolDescriptionInline(StorPool storPool)
     {
-        return getObjectDescriptionInline(currentNodeNameStr, currentStorPoolNameStr);
-    }
-
-    public static String getObjectDescriptionInline(StorPool storPool)
-    {
-        return getObjectDescriptionInline(
+        return getStorPoolDescriptionInline(
             storPool.getNode().getName().displayValue,
             storPool.getName().displayValue
         );
     }
 
-    public static String getObjectDescriptionInline(String nodeNameStr, String storPoolNameStr)
+    public static String getStorPoolDescriptionInline(NodeData node, StorPoolDefinitionData storPoolDfn)
     {
-        return "storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'";
+        return getStorPoolDescriptionInline(
+            node.getName().displayValue,
+            storPoolDfn.getName().displayValue
+        );
     }
 
-    private Map<String, String> getObjRefs(String nodeNameStr, String storPoolNameStr)
+    public static String getStorPoolDescriptionInline(String nodeNameStr, String storPoolNameStr)
     {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE, nodeNameStr);
-        map.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
-        return map;
+        return "storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'";
     }
 
     private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
@@ -650,22 +614,43 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         );
     }
 
-    protected final Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
+    protected final Props getProps(StorPoolData storPool)
     {
         Props props;
         try
         {
-            props = storPool.getProps(peerAccCtx);
+            props = storPool.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "access properties of storage pool '" + storPool.getName().displayValue +
-                "' on node '" + storPool.getNode().getName().displayValue + "'",
+                    "' on node '" + storPool.getNode().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
         return props;
+    }
+
+    private static ResponseContext makeStorPoolContext(
+        Peer peer,
+        ApiOperation operation,
+        String nodeNameStr,
+        String storPoolNameStr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
+        objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getStorPoolDescription(nodeNameStr, storPoolNameStr),
+            getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr),
+            ApiConsts.MASK_STOR_POOL,
+            objRefs
+        );
     }
 }

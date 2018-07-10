@@ -21,6 +21,13 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -29,18 +36,21 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+@Singleton
 class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 {
-    private String currentNodeName;
-    private String currentNetIfName;
     private final SatelliteConnector satelliteConnector;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlNetIfApiCallHandler(
@@ -51,15 +61,15 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.NET_IF,
             serializerRef,
             objectFactories,
             transMgrProviderRef,
@@ -69,6 +79,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         );
         satelliteConnector = satelliteConnectorRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc createNetIf(
@@ -79,27 +90,26 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         String stltEncrType
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                nodeNameStr,
-                netIfNameStr
-            );
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeNetIfContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            nodeNameStr,
+            netIfNameStr
+        );
+
+        try
         {
             NodeData node = loadNode(nodeNameStr, true);
             NetInterfaceName netIfName = asNetInterfaceName(netIfNameStr);
 
             if (node.getSatelliteConnection(apiCtx) != null && stltPort != null)
             {
-                throw asExc(
-                    new LinStorException("This node has already a satellite connection defined"),
-                    "Only one satellite connection allowed",
-                    ApiConsts.FAIL_EXISTS_STLT_CONN
-                );
-            }
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_STLT_CONN,
+                        "Only one satellite connection allowed"
+                    ), new LinStorException("This node has already a satellite connection defined"));
+                }
 
             NetInterfaceData netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
@@ -110,23 +120,16 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             }
 
             commit();
-            reportSuccess(netIf.getUuid());
-            updateSatellites(node);
-        }
-        catch (ApiCallHandlerFailedException ignored)
-        {
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                netIf.getUuid(), getNetIfDescriptionInline(netIf)));
+            responseConverter.addWithDetail(responses, context, updateSatellites(node));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(nodeNameStr, netIfNameStr),
-                getObjRefs(nodeNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
-        return apiCallRc;
+
+        return responses;
     }
 
     public ApiCallRc modifyNetIf(
@@ -137,16 +140,15 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         String stltEncrType
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeNetIfContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            netIfNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                nodeNameStr,
-                netIfNameStr
-            );
-        )
+        try
         {
             NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
             boolean needsReconnect = addressChanged(netIf, addressStr);
@@ -167,30 +169,22 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            reportSuccess(netIf.getUuid());
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+                netIf.getUuid(), getNetIfDescriptionInline(netIf)));
 
             if (needsReconnect)
             {
                 node.getPeer(apiCtx).closeConnection();
                 satelliteConnector.startConnecting(node, apiCtx);
             }
-            updateSatellites(node);
-        }
-        catch (ApiCallHandlerFailedException ignored)
-        {
+            responseConverter.addWithDetail(responses, context, updateSatellites(node));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeNameStr, netIfNameStr),
-                getObjRefs(nodeNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     private NetInterface getSatelliteConnection(Node node)
@@ -198,11 +192,11 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         NetInterface netIf = null;
         try
         {
-            netIf = node.getSatelliteConnection(peerAccCtx);
+            netIf = node.getSatelliteConnection(peerAccCtx.get());
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
                 "access the current satellite connection",
                 ApiConsts.FAIL_ACC_DENIED_NODE
@@ -215,11 +209,11 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            node.setSatelliteConnection(peerAccCtx, netIf);
+            node.setSatelliteConnection(peerAccCtx.get(), netIf);
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
                 "set the current satellite connection",
                 ApiConsts.FAIL_ACC_DENIED_NODE
@@ -227,10 +221,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         }
         catch (SQLException exc)
         {
-            throw asSqlExc(
-                exc,
-                "updating satellite connection"
-            );
+            throw new ApiSQLException(exc);
         }
     }
 
@@ -240,28 +231,28 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         String netIfNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                nodeNameStr,
-                netIfNameStr
-            );
-        )
-        {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeNetIfContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            nodeNameStr,
+            netIfNameStr
+        );
 
+        try
+        {
             NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr, false);
             if (netIf == null)
             {
-                addAnswer(
-                    "Deletion of " + getObjectDescriptionInline() + " had no effect.",
-                    getObjectDescriptionInlineFirstLetterCaps() + " does not exist.",
-                    null,
-                    null,
-                    ApiConsts.WARN_NOT_FOUND
+                responseConverter.addWithDetail(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.WARN_NOT_FOUND,
+                        "Deletion of " + getNetIfDescriptionInline(nodeNameStr, netIfNameStr) + " had no effect."
+                    )
+                    .setCause(firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) +
+                        " does not exist.")
+                    .build()
                 );
-                throw new ApiCallHandlerFailedException();
             }
             else
             {
@@ -275,7 +266,8 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 deleteNetIf(netIf);
 
                 commit();
-                reportSuccess(uuid);
+                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                    uuid, getNetIfDescriptionInline(nodeNameStr, netIfNameStr)));
 
                 if (closeConnection)
                 {
@@ -288,21 +280,12 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 }
             }
         }
-        catch (ApiCallHandlerFailedException ignored)
-        {
-        }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(nodeNameStr, netIfNameStr),
-                getObjRefs(nodeNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     private NetInterfaceData createNetIf(
@@ -313,6 +296,9 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         String stltConnEncrType
     )
     {
+        String nodeNameStr = node.getName().displayValue;
+        String netIfNameStr = netIfName.displayValue;
+
         NetInterfaceData netIf;
         try
         {
@@ -325,7 +311,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             }
 
             netIf = netInterfaceDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 node,
                 netIfName,
                 asLsIpAddress(address),
@@ -337,26 +323,22 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getNetIfDescriptionInline(nodeNameStr, netIfNameStr),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         catch (LinStorDataAlreadyExistsException exc)
         {
-            throw asExc(
-                exc,
-                getObjectDescriptionInlineFirstLetterCaps() + " already exists.",
-                ApiConsts.FAIL_EXISTS_NET_IF
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_NET_IF,
+                firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) + " already exists."
+            ), exc);
         }
         catch (SQLException exc)
         {
-            throw asSqlExc(
-                exc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(exc);
         }
         return netIf;
     }
@@ -370,7 +352,10 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         }
         catch (IllegalArgumentException illegalArgExc)
         {
-            throw asExc(illegalArgExc, "Invalid encryption type", ApiConsts.FAIL_INVLD_NET_TYPE);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_NET_TYPE,
+                "Invalid encryption type"
+            ), illegalArgExc);
         }
         return type;
     }
@@ -387,24 +372,23 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         try
         {
             netIf = node.getNetInterface(
-                peerAccCtx,
+                peerAccCtx.get(),
                 asNetInterfaceName(netIfNameStr)
             );
 
             if (failIfNull && netIf == null)
             {
-                throw asExc(
-                    null,
-                    "Node '" + nodeNameStr + "' has no network interface named '" + netIfNameStr + "'.",
-                    ApiConsts.FAIL_NOT_FOUND_NET_IF
-                );
-           }
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_NET_IF,
+                    "Node '" + nodeNameStr + "' has no network interface named '" + netIfNameStr + "'."
+                ));
+            }
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
-                "loading " + getObjectDescriptionInline(),
+                "load " + getNetIfDescriptionInline(nodeNameStr, netIfNameStr),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -415,22 +399,19 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            netIf.setAddress(peerAccCtx, asLsIpAddress(addressStr));
+            netIf.setAddress(peerAccCtx.get(), asLsIpAddress(addressStr));
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
-                "setting address of " + getObjectDescriptionInline(),
+                "set address of " + getNetIfDescriptionInline(netIf),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         catch (SQLException exc)
         {
-            throw asSqlExc(
-                exc,
-                "updating address of " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(exc);
         }
     }
 
@@ -439,11 +420,11 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         boolean changed = false;
         try
         {
-            changed = netIf.setStltConn(peerAccCtx, asTcpPortNumber(stltPort), asEncryptionType(stltEncrType));
+            changed = netIf.setStltConn(peerAccCtx.get(), asTcpPortNumber(stltPort), asEncryptionType(stltEncrType));
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "modify the satellite connection port and / or encryption type",
                 ApiConsts.FAIL_ACC_DENIED_NODE
@@ -451,10 +432,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "updating the net interface's satellite connection port and / or encryption type"
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return changed;
     }
@@ -464,13 +442,13 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         boolean ret;
         try
         {
-            ret = !netIf.getAddress(peerAccCtx).getAddress().equals(addressStr);
+            ret = !netIf.getAddress(peerAccCtx.get()).getAddress().equals(addressStr);
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
-                "accessing " + getObjectDescriptionInline(),
+                "access " + getNetIfDescriptionInline(netIf),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -481,70 +459,54 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            netIf.delete(peerAccCtx);
+            netIf.delete(peerAccCtx.get());
         }
         catch (AccessDeniedException exc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 exc,
-                "deleting " + getObjectDescriptionInline(),
+                "delete " + getNetIfDescriptionInline(netIf),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         catch (SQLException exc)
         {
-            throw asSqlExc(
-                exc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(exc);
         }
     }
 
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        String nodeNameStr,
-        String netIfNameStr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(nodeNameStr)
-        );
-        currentNodeName = nodeNameStr;
-        currentNetIfName = netIfNameStr;
-
-        return this;
-    }
-
-    private Map<String, String> getObjRefs(String nodeNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE, nodeNameStr);
-        return map;
-    }
-
-    @Override
-    protected String getObjectDescription()
-    {
-        return getObjectDescription(currentNodeName, currentNetIfName);
-    }
-
-    public static String getObjectDescription(String nodeName, String netIfName)
+    public static String getNetIfDescription(String nodeName, String netIfName)
     {
         return "Node: '" + nodeName + "', NetIfName: " + netIfName + "'";
     }
 
-    @Override
-    protected String getObjectDescriptionInline()
+    public static String getNetIfDescriptionInline(NetInterface netIf)
     {
-        return getObjectDescriptionInline(currentNodeName, currentNetIfName);
+        return getNetIfDescriptionInline(netIf.getNode().getName().displayValue, netIf.getName().displayValue);
     }
 
-    public static String getObjectDescriptionInline(String nodeName, String netIfName)
+    public static String getNetIfDescriptionInline(String nodeName, String netIfName)
     {
         return "netInterface '" + netIfName + "' on node '" + nodeName + "'";
+    }
+
+    private ResponseContext makeNetIfContext(
+        Peer peer,
+        ApiOperation operation,
+        String nodeNameStr,
+        String netIfNameStr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getNetIfDescription(nodeNameStr, netIfNameStr),
+            getNetIfDescriptionInline(nodeNameStr, netIfNameStr),
+            ApiConsts.MASK_NET_IF,
+            objRefs
+        );
     }
 }

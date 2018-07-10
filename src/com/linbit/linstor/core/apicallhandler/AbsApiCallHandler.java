@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
@@ -43,6 +42,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -52,49 +54,32 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler.getStorPoolDescriptionInline;
 import static java.util.stream.Collectors.toList;
 
-public abstract class AbsApiCallHandler implements AutoCloseable
+public abstract class AbsApiCallHandler
 {
-    protected enum ApiCallType
-    {
-        CREATE(ApiConsts.MASK_CRT),
-        MODIFY(ApiConsts.MASK_MOD),
-        DELETE(ApiConsts.MASK_DEL);
-
-        private long opMask;
-
-        ApiCallType(long opMaskRef)
-        {
-            opMask = opMaskRef;
-        }
-    }
-
     public enum LinStorObject
     {
-        NODE(ApiConsts.MASK_NODE),
-        NET_IF(ApiConsts.MASK_NET_IF),
-        NODE_CONN(ApiConsts.MASK_NODE_CONN),
-        RESOURCE_DEFINITION(ApiConsts.MASK_RSC_DFN),
-        RESOURCE(ApiConsts.MASK_RSC),
-        RSC_CONN(ApiConsts.MASK_RSC_CONN),
-        VOLUME_DEFINITION(ApiConsts.MASK_VLM_DFN),
-        VOLUME(ApiConsts.MASK_VLM),
-        VOLUME_CONN(ApiConsts.MASK_VLM_CONN),
-        CONTROLLER(ApiConsts.MASK_CTRL_CONF),
-        STORAGEPOOL(ApiConsts.MASK_STOR_POOL),
-        STORAGEPOOL_DEFINITION(ApiConsts.MASK_STOR_POOL_DFN),
-        SNAPSHOT(ApiConsts.MASK_SNAPSHOT);
+        NODE,
+        NET_IF,
+        NODE_CONN,
+        RESOURCE_DEFINITION,
+        RESOURCE,
+        RSC_CONN,
+        VOLUME_DEFINITION,
+        VOLUME,
+        VOLUME_CONN,
+        CONTROLLER,
+        STORAGEPOOL,
+        STORAGEPOOL_DEFINITION,
+        SNAPSHOT;
 
-        private long objMask;
-
-        LinStorObject(long objMaskRef)
+        LinStorObject()
         {
-            objMask = objMaskRef;
         }
     }
-
-    private final LinStorObject linstorObj;
 
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
@@ -103,31 +88,23 @@ public abstract class AbsApiCallHandler implements AutoCloseable
 
     private final Provider<TransactionMgr> transMgrProvider;
 
-    protected final AccessContext peerAccCtx;
+    protected final Provider<AccessContext> peerAccCtx;
     protected final Provider<Peer> peer;
     private final WhitelistProps propsWhiteList;
-
-    protected static ThreadLocal<ApiCallType> apiCallType = new ThreadLocal<>();
-    protected static ThreadLocal<ApiCallRcImpl> apiCallRc = new ThreadLocal<>();
-    private static ThreadLocal<Boolean> transMgrAutoClose = new ThreadLocal<>();
-    protected static ThreadLocal<Map<String, String>> objRefs = new ThreadLocal<>();
-
 
     protected AbsApiCallHandler(
         ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
-        LinStorObject linstorObjRef,
         CtrlStltSerializer serializerRef,
         CtrlObjectFactories objectFactoriesRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        AccessContext peerAccCtxRef,
+        Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps propsWhiteListRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        linstorObj = linstorObjRef;
         internalComSerializer = serializerRef;
         objectFactories = objectFactoriesRef;
         transMgrProvider = transMgrProviderRef;
@@ -136,39 +113,14 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         propsWhiteList = propsWhiteListRef;
     }
 
-    protected AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRcRef,
-        boolean autoCloseTransMgr,
-        Map<String, String> objRefsRef
-    )
-    {
-        apiCallType.set(type);
-        apiCallRc.set(apiCallRcRef);
-        transMgrAutoClose.set(autoCloseTransMgr);
-        objRefs.set(objRefsRef);
-        return this;
-    }
-
-    @Override
-    public void close()
-    {
-        if (transMgrAutoClose.get())
-        {
-            rollbackIfDirty();
-        }
-    }
-
     /**
      * Returns the given String as a {@link NodeName} if possible. If the String is not a valid
-     * {@link NodeName} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link NodeName} an exception is thrown.
      *
      * @param nodeNameStr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
-    protected final NodeName asNodeName(String nodeNameStr) throws ApiCallHandlerFailedException
+    protected final NodeName asNodeName(String nodeNameStr)
     {
         NodeName nodeName;
         try
@@ -177,25 +129,21 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw asExc(
-                invalidNameExc,
-                "The given node name '%s' is invalid.",
-                ApiConsts.FAIL_INVLD_NODE_NAME
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_NODE_NAME, "The given node name '%s' is invalid."
+            ), invalidNameExc);
         }
         return nodeName;
     }
 
     /**
      * Returns the given String as a {@link NetInterfaceName} if possible. If the String is not a valid
-     * {@link NetInterfaceName} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link NetInterfaceName} an exception is thrown.
      *
      * @param netIfNameStr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
-    protected NetInterfaceName asNetInterfaceName(String netIfNameStr) throws ApiCallHandlerFailedException
+    protected NetInterfaceName asNetInterfaceName(String netIfNameStr)
     {
         NetInterfaceName netInterfaceName;
         try
@@ -204,25 +152,22 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw asExc(
-                invalidNameExc,
-                "The specified net interface name '" + netIfNameStr + "' is invalid.",
-                ApiConsts.FAIL_INVLD_NET_NAME
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_NET_NAME,
+                "The specified net interface name '" + netIfNameStr + "' is invalid."
+            ), invalidNameExc);
         }
         return netInterfaceName;
     }
 
     /**
      * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
-     * {@link LsIpAddress} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link LsIpAddress} an exception is thrown.
      *
      * @param ipAddrStr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
-    protected LsIpAddress asLsIpAddress(String ipAddrStr) throws ApiCallHandlerFailedException
+    protected LsIpAddress asLsIpAddress(String ipAddrStr)
     {
         LsIpAddress lsIpAddress;
         try
@@ -231,15 +176,13 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (InvalidIpAddressException | NullPointerException invalidIpExc)
         {
-            throw asExc(
-                invalidIpExc,
-                getObjectDescriptionInlineFirstLetterCaps() +
-                    getAction(" creation", " modification", " deletion") +
-                    "failed.",
-                "The specified IP address is not valid",
-                "The specified input '" + ipAddrStr + "' is not a valid IP address.",
-                "Specify a valid IPv4 or IPv6 address.",
-                ApiConsts.FAIL_INVLD_NET_ADDR
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(ApiConsts.FAIL_INVLD_NET_ADDR, "Failed to parse IP address")
+                .setCause("The specified IP address is not valid")
+                .setDetails("The specified input '" + ipAddrStr + "' is not a valid IP address.")
+                .setCorrection("Specify a valid IPv4 or IPv6 address.")
+                .build(),
+                invalidIpExc
             );
         }
         return lsIpAddress;
@@ -247,12 +190,10 @@ public abstract class AbsApiCallHandler implements AutoCloseable
 
     /**
      * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
-     * {@link LsIpAddress} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link LsIpAddress} an exception is thrown.
      *
      * @param ipAddrStr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
     protected TcpPortNumber asTcpPortNumber(int port)
     {
@@ -263,25 +204,22 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (Exception exc)
         {
-            throw asExc(
-                exc,
-                "The given portNumber '" + port + "' is invalid.",
-                ApiConsts.FAIL_INVLD_NET_PORT
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_NET_PORT,
+                "The given portNumber '" + port + "' is invalid."
+            ), exc);
         }
         return tcpPortNumber;
     }
 
     /**
      * Returns the given String as a {@link ResourceName} if possible. If the String is not a valid
-     * {@link ResourceName} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link ResourceName} an exception is thrown.
      *
      * @param rscNameStr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
-    protected final ResourceName asRscName(String rscNameStr) throws ApiCallHandlerFailedException
+    protected final ResourceName asRscName(String rscNameStr)
     {
         ResourceName resourceName;
         try
@@ -290,28 +228,22 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw asExc(
-                invalidNameExc,
-                String.format(
-                    "The specified resource name '%s' is invalid.",
-                    rscNameStr
-                ),
-                ApiConsts.FAIL_INVLD_RSC_NAME
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_RSC_NAME,
+                "The specified resource name '%s' is invalid."
+            ), invalidNameExc);
         }
         return resourceName;
     }
 
     /**
      * Returns the given int as a {@link VolumeNumber} if possible. If the int is not a valid
-     * {@link VolumeNumber} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link VolumeNumber} an exception is thrown.
      *
      * @param vlmNr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
-    protected final VolumeNumber asVlmNr(int vlmNr) throws ApiCallHandlerFailedException
+    protected final VolumeNumber asVlmNr(int vlmNr)
     {
         VolumeNumber volumeNumber;
         try
@@ -320,26 +252,23 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (ValueOutOfRangeException valOutOfRangeExc)
         {
-            throw asExc(
-                valOutOfRangeExc,
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_VLM_NR,
                 "The given volume number '" + vlmNr + "' is invalid. Valid range from " + VolumeNumber.VOLUME_NR_MIN +
-                " to " + VolumeNumber.VOLUME_NR_MAX,
-                ApiConsts.FAIL_INVLD_VLM_NR
-            );
+                    " to " + VolumeNumber.VOLUME_NR_MAX
+            ), valOutOfRangeExc);
         }
         return volumeNumber;
     }
 
     /**
      * Returns the given String as a {@link StorPoolName} if possible. If the String is not a valid
-     * {@link StorPoolName} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link StorPoolName} an exception is thrown.
      *
      * @param storPoolNameStr
      * @return
-     * @throws ApiCallHandlerFailedException
      */
-    protected final StorPoolName asStorPoolName(String storPoolNameStr) throws ApiCallHandlerFailedException
+    protected final StorPoolName asStorPoolName(String storPoolNameStr)
     {
         StorPoolName storPoolName;
         try
@@ -348,21 +277,19 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw asExc(
-                invalidNameExc,
-                "The given storage pool name '%s' is invalid.",
-                ApiConsts.FAIL_INVLD_STOR_POOL_NAME
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                "The given storage pool name '%s' is invalid."
+            ), invalidNameExc);
         }
         return storPoolName;
     }
 
     /**
      * Returns the given String as a {@link SnapshotName} if possible. If the String is not a valid
-     * {@link SnapshotName} the thrown exception is reported to controller's {@link ErrorReporter} and
-     * the current {@link ApiCallRc} and an {@link ApiCallHandlerFailedException} is thrown.
+     * {@link SnapshotName} an exception is thrown.
      */
-    protected final SnapshotName asSnapshotName(String snapshotNameStr) throws ApiCallHandlerFailedException
+    protected final SnapshotName asSnapshotName(String snapshotNameStr)
     {
         SnapshotName snapshotName;
         try
@@ -371,76 +298,26 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (InvalidNameException invalidNameExc)
         {
-            throw asExc(
-                invalidNameExc,
-                "The given snapshot name '%s' is invalid.",
-                ApiConsts.FAIL_INVLD_SNAPSHOT_NAME
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_SNAPSHOT_NAME,
+                "The given snapshot name '%s' is invalid."
+            ), invalidNameExc);
         }
         return snapshotName;
     }
 
-    /**
-     * Depending on the current {@link ApiCallType}, this method returns the first parameter when the
-     * current type is {@link ApiCallType#CREATE}, the second for {@link ApiCallType#MODIFY} or the third
-     * for {@link ApiCallType#DELETE}. The default case throws an {@link ImplementationError}.
-     *
-     * @param crtAction
-     * @param modAction
-     * @param delAction
-     * @return
-     */
-    protected final String getAction(String crtAction, String modAction, String delAction)
-    {
-        return getAction(crtAction, modAction, delAction, apiCallType.get());
-    }
-
-    /**
-     * Depending on the parameter apiCallType, this method returns the first parameter when the
-     * apiCallType is {@link ApiCallType#CREATE}, the second for {@link ApiCallType#MODIFY} or the third
-     * for {@link ApiCallType#DELETE}. The default case throws an {@link ImplementationError}.
-     *
-     * @param crtAction
-     * @param modAction
-     * @param delAction
-     * @param apiCallTypeRef
-     * @return
-     */
-    protected final String getAction(String crtAction, String modAction, String delAction, ApiCallType apiCallTypeRef)
-    {
-        String retStr;
-        switch (apiCallTypeRef)
-        {
-            case CREATE:
-                retStr = crtAction;
-                break;
-            case DELETE:
-                retStr = delAction;
-                break;
-            case MODIFY:
-                retStr = modAction;
-                break;
-            default:
-                throw new ImplementationError(
-                    "Unknown api call type: " + apiCallTypeRef,
-                    null
-                );
-        }
-        return retStr;
-    }
-
-    protected final NodeData loadNode(String nodeNameStr, boolean failIfNull) throws ApiCallHandlerFailedException
+    protected final NodeData loadNode(String nodeNameStr, boolean failIfNull)
     {
         return loadNode(asNodeName(nodeNameStr), failIfNull);
     }
 
-    protected final NodeData loadNode(NodeName nodeName, boolean failIfNull) throws ApiCallHandlerFailedException
+    protected final NodeData loadNode(NodeName nodeName, boolean failIfNull)
     {
         NodeData node;
         try
         {
             node = objectFactories.getNodeDataFactory().getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 nodeName,
                 null,
                 null,
@@ -450,19 +327,20 @@ public abstract class AbsApiCallHandler implements AutoCloseable
 
             if (failIfNull && node == null)
             {
-                throw asExc(
-                    null,
-                    "Node '" + nodeName.displayValue + "' not found.",
-                    "The specified node '" + nodeName.displayValue + "' could not be found in the database",
-                    null, // details
-                    "Create a node with the name '" + nodeName.displayValue + "' first.",
-                    ApiConsts.FAIL_NOT_FOUND_NODE
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_NODE,
+                        "Node '" + nodeName.displayValue + "' not found."
+                    )
+                    .setCause("The specified node '" + nodeName.displayValue + "' could not be found in the database")
+                    .setCorrection("Create a node with the name '" + nodeName.displayValue + "' first.")
+                    .build()
                 );
             }
         }
         catch (AccessDeniedException accDenied)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDenied,
                 "loading node '" + nodeName.displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
@@ -470,14 +348,11 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (LinStorDataAlreadyExistsException alreadyExists)
         {
-            throw asImplError(alreadyExists);
+            throw new ImplementationError(alreadyExists);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "loading node '" + nodeName.displayValue + "'"
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return node;
     }
@@ -486,7 +361,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         String rscNameStr,
         boolean failIfNull
     )
-        throws ApiCallHandlerFailedException
     {
         return loadRscDfn(asRscName(rscNameStr), failIfNull);
     }
@@ -495,35 +369,35 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         ResourceName rscName,
         boolean failIfNull
     )
-        throws ApiCallHandlerFailedException
     {
         ResourceDefinitionData rscDfn;
         try
         {
             rscDfn = objectFactories.getResourceDefinitionDataFactory().load(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscName
             );
 
             if (failIfNull && rscDfn == null)
             {
-                throw asExc(
-                    null, // throwable
-                    "Resource definition '" + rscName.displayValue + "' not found.", // error msg
-                    "The specified resource definition '" + rscName.displayValue +
-                        "' could not be found in the database", // cause
-                    null, // details
-                    "Create a resource definition with the name '" + rscName.displayValue + "' first.", // correction
-                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                        "Resource definition '" + rscName.displayValue + "' not found."
+                    )
+                    .setCause("The specified resource definition '" + rscName.displayValue +
+                        "' could not be found in the database")
+                    .setCorrection("Create a resource definition with the name '" + rscName.displayValue + "' first.")
+                    .build()
                 );
             }
 
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access " + getObjectDescriptionInline(),
+                "access " + getRscDfnDescriptionInline(rscName.displayValue),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
@@ -531,7 +405,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     protected ResourceData loadRsc(String nodeName, String rscName, boolean failIfNull)
-        throws ApiCallHandlerFailedException
     {
         Node node = loadNode(nodeName, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
@@ -540,7 +413,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             rscData = objectFactories.getResourceDataFactory().getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscDfn,
                 node,
                 null,
@@ -550,22 +423,24 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             );
             if (rscData == null && failIfNull)
             {
-                throw asExc(
-                    null,
-                    "Resource '" + rscName + "' on node '" + nodeName + "' not found.",
-                    "The specified resource '" + rscName + "' on node '" + nodeName + "' could not " +
-                        "be found in the database",
-                    null, // details
-                    "Create a resource with the name '" + rscName + "' on node '" + nodeName + "' first.",
-                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                        "Resource '" + rscName + "' on node '" + nodeName + "' not found."
+                    )
+                    .setCause("The specified resource '" + rscName + "' on node '" + nodeName + "' could not " +
+                        "be found in the database")
+                    .setCorrection("Create a resource with the name '" + rscName + "' on node '" + nodeName +
+                        "' first.")
+                    .build()
                 );
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading resource '" + rscName + "' on node '" + nodeName + "'.",
+                "loading resource '" + rscName + "' on node '" + nodeName + "'",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
@@ -578,10 +453,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "loading resource '" + rscName + "' on node '" + nodeName + "'."
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return rscData;
     }
@@ -590,31 +462,29 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         ResourceDefinition rscDfn,
         SnapshotName snapshotName
     )
-        throws ApiCallHandlerFailedException
     {
         SnapshotDefinitionData snapshotDfn;
         try
         {
-            snapshotDfn = objectFactories.getSnapshotDefinitionDataFactory().load(peerAccCtx, rscDfn, snapshotName);
+            snapshotDfn = objectFactories.getSnapshotDefinitionDataFactory().load(peerAccCtx.get(), rscDfn, snapshotName);
 
             if (snapshotDfn == null)
             {
-                throw asExc(
-                    null, // throwable
-                    "Snapshot '" + snapshotName.displayValue +
-                        "' of resource '" + rscDfn.getName().displayValue + "' not found.", // error msg
-                    null, // cause
-                    null, // details
-                    null, // correction
-                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN,
+                        "Snapshot '" + snapshotName.displayValue +
+                            "' of resource '" + rscDfn.getName().displayValue + "' not found."
+                    )
+                    .build()
                 );
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'.",
+                "loading snapshot '" + snapshotName + "' of resource '" + rscDfn.getName() + "'",
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
@@ -622,7 +492,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
-        throws ApiCallHandlerFailedException
     {
         return loadStorPoolDfn(asStorPoolName(storPoolNameStr), failIfNull);
     }
@@ -631,13 +500,12 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         StorPoolName storPoolName,
         boolean failIfNull
     )
-        throws ApiCallHandlerFailedException
     {
         StorPoolDefinitionData storPoolDfn;
         try
         {
             storPoolDfn = objectFactories.getStorPoolDefinitionDataFactory().getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 storPoolName,
                 false,
                 false
@@ -645,21 +513,22 @@ public abstract class AbsApiCallHandler implements AutoCloseable
 
             if (failIfNull && storPoolDfn == null)
             {
-                throw asExc(
-                    null,
-                    "Storage pool definition '" + storPoolName.displayValue + "' not found.",
-                    "The specified storage pool definition '" + storPoolName.displayValue +
-                        "' could not be found in the database",
-                    null, // details
-                    "Create a storage pool definition '" + storPoolName.displayValue + "' first.",
-                    ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN,
+                        "Storage pool definition '" + storPoolName.displayValue + "' not found."
+                    )
+                    .setCause("The specified storage pool definition '" + storPoolName.displayValue +
+                        "' could not be found in the database")
+                    .setCorrection("Create a storage pool definition '" + storPoolName.displayValue + "' first.")
+                    .build()
                 );
             }
 
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "loading storage pool definition '" + storPoolName.displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
@@ -674,10 +543,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "loading storage pool definition '" + storPoolName.displayValue + "'"
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return storPoolDfn;
     }
@@ -687,13 +553,12 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         NodeData node,
         boolean failIfNull
     )
-        throws ApiCallHandlerFailedException
     {
         StorPoolData storPool;
         try
         {
             storPool = objectFactories.getStorPoolDataFactory().getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 node,
                 storPoolDfn,
                 null, // storDriverSimpleClassName
@@ -703,24 +568,24 @@ public abstract class AbsApiCallHandler implements AutoCloseable
 
             if (failIfNull && storPool == null)
             {
-                throw asExc(
-                    null,
-                    "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
-                        node.getName().displayValue + "' not found.",
-                    "The specified storage pool '" + storPoolDfn.getName().displayValue +
-                        "' on node '" + node.getName().displayValue + "' could not be found in the database",
-                    null, // details
-                    "Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
-                            node.getName().displayValue + "' first.",
-                    ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN,
+                        "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
+                            node.getName().displayValue + "' not found.")
+                    .setCause("The specified storage pool '" + storPoolDfn.getName().displayValue +
+                        "' on node '" + node.getName().displayValue + "' could not be found in the database")
+                    .setCorrection("Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
+                        node.getName().displayValue + "' first.")
+                    .build()
                 );
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading " + getObjectDescriptionInline(),
+                "load " + getStorPoolDescriptionInline(node, storPoolDfn),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
@@ -733,283 +598,64 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "loading " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return storPool;
     }
 
-    protected final Props getProps(Node node) throws ApiCallHandlerFailedException
+    protected final Props getProps(Node node)
     {
         Props props;
         try
         {
-            props = node.getProps(peerAccCtx);
+            props = node.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access properties for node '" + node.getName().displayValue + "'.",
+                "access properties for node '" + node.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         return props;
     }
 
-    protected final Props getProps(ResourceDefinitionData rscDfn) throws ApiCallHandlerFailedException
+    protected final Props getProps(ResourceDefinitionData rscDfn)
     {
         Props props;
         try
         {
-            props = rscDfn.getProps(peerAccCtx);
+            props = rscDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access properties for resource definition '" + rscDfn.getName().displayValue + "'.",
+                "access properties for resource definition '" + rscDfn.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
         return props;
     }
 
-    protected final Props getProps(VolumeDefinition vlmDfn) throws ApiCallHandlerFailedException
+    protected final Props getProps(VolumeDefinition vlmDfn)
     {
         Props props;
         try
         {
-            props = vlmDfn.getProps(peerAccCtx);
+            props = vlmDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "access properties for volume definition with number '" + vlmDfn.getVolumeNumber().value + "' " +
-                "on resource definition '" + vlmDfn.getResourceDefinition().getName().displayValue + "'",
+                    "on resource definition '" + vlmDfn.getResourceDefinition().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         return props;
-    }
-
-    /**
-     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the current
-     * {@link ApiCallRc} and returns an {@link ApiCallHandlerFailedException}. This returned exception
-     * is expected to be thrown by the caller.
-     *
-     * Example:
-     *
-     * <pre>
-     * try
-     * {
-     *     return ...
-     * }
-     * catch (Exception exc)
-     * {
-     *     throw exc(exc, "errorMessage", 42);
-     * }
-     * </pre>
-     * Without throwing an exception in the catch-clause the compiler would detect an execution-path
-     * with a missing return statement. This would be no different if the method exc would throw the
-     * newly generated {@link ApiCallHandlerFailedException}.
-     *
-     * @param throwable
-     * @param errorMessage
-     * @param retCode
-     * @return
-     */
-    protected final ApiCallHandlerFailedException asExc(Throwable throwable, String errorMessage, long retCode)
-    {
-        return asExc(
-            throwable,
-            errorMessage,
-            throwable == null ? null : throwable.getMessage(),
-            null,
-            null,
-            retCode
-        );
-    }
-
-    /**
-     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the current
-     * {@link ApiCallRc} and returns an {@link ApiCallHandlerFailedException}. This returned exception
-     * is expected to be thrown by the caller.
-     *
-     * Example:
-     *
-     * <pre>
-     * try
-     * {
-     *     return ...
-     * }
-     * catch (Exception exc)
-     * {
-     *     throw asExc(exc, "errorMessage", 42);
-     * }
-     * </pre>
-     * Without throwing an exception in the catch-clause the compiler would detect an execution-path
-     * with a missing return statement. This would be no different if the method exc would throw the
-     * newly generated {@link ApiCallHandlerFailedException}.
-     *
-     * @param throwable
-     * @param errorMessage
-     * @param causeMsg
-     * @param detailsMsg
-     * @param correctionMsg
-     * @param retCode
-     * @return
-     */
-    protected final ApiCallHandlerFailedException asExc(
-        Throwable throwable,
-        String errorMsg,
-        String causeMsg,
-        String detailsMsg,
-        String correctionMsg,
-        long retCode
-    )
-        throws ApiCallHandlerFailedException
-    {
-        report(throwable, errorMsg, causeMsg, detailsMsg, correctionMsg, retCode);
-        return new ApiCallHandlerFailedException();
-    }
-
-    /**
-     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the current
-     * {@link ApiCallRc}.
-     *
-     * @param throwable
-     * @param errorMsg
-     * @param causeMsg
-     * @param detailsMsg
-     * @param correctionMsg
-     * @param retCode
-     */
-    protected final void report(
-        Throwable throwableRef,
-        String errorMsg,
-        String causeMsg,
-        String detailsMsg,
-        String correctionMsg,
-        long retCode
-    )
-    {
-        Throwable throwable = throwableRef;
-        if (throwable == null)
-        {
-            throwable = new LinStorException(errorMsg, errorMsg, causeMsg, correctionMsg, detailsMsg);
-        }
-        errorReporter.reportError(
-            throwable,
-            peerAccCtx,
-            peer.get(),
-            errorMsg
-        );
-        addAnswer(errorMsg, causeMsg, detailsMsg, correctionMsg, retCode);
-    }
-
-    /**
-     * Adds a new {@link ApiCallRcEntry} to the current {@link ApiCallRc}.
-     *
-     * @param msg
-     * @param retCode
-     */
-    protected final void addAnswer(String msg, long retCode)
-    {
-        addAnswer(msg, null, null, null, retCode);
-    }
-
-    /**
-     * Adds a new {@link ApiCallRcEntry} to the current {@link ApiCallRc}.
-     * @param msg
-     * @param cause
-     * @param detailsRef
-     * @param correction
-     * @param retCodeRef
-     */
-    protected final void addAnswer(
-        String msg,
-        String cause,
-        String detailsRef,
-        String correction,
-        long retCodeRef
-    )
-    {
-        ApiCallRcImpl apiCallRcImpl = apiCallRc.get();
-        if (apiCallRcImpl != null)
-        {
-            long retCode = retCodeRef | apiCallType.get().opMask | linstorObj.objMask;
-
-            String objDescription = getObjectDescription();
-
-            String details = detailsRef;
-            if (details == null)
-            {
-                details = objDescription;
-            }
-            else
-            {
-                details += "\n" + objDescription;
-            }
-
-            addAnswerStatic(
-                msg,
-                cause,
-                details,
-                correction,
-                retCode,
-                objRefs.get(),
-                apiCallRcImpl
-            );
-        }
-    }
-
-
-    /**
-     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
-     * {@link ApiCallRcImpl} with a generated error message.
-     * This method can be called from the catch / finally section after the try-with-resource.
-     * @param exc
-     * @param type
-     * @param objDescr
-     * @param objRefsRef
-     * @param apiCallRcRef
-     */
-    protected void reportStatic(
-        Throwable exc,
-        ApiCallType type,
-        String objDescr,
-        Map<String, String> objRefsRef,
-        ApiCallRcImpl apiCallRcRef
-    )
-    {
-        String errorType;
-        long retCode = linstorObj.objMask | type.opMask;
-        if (exc instanceof ImplementationError)
-        {
-            errorType = "implementation error";
-            retCode |= ApiConsts.FAIL_IMPL_ERROR;
-        }
-        else
-        {
-            errorType = "unknown exception";
-            retCode |= ApiConsts.FAIL_UNKNOWN_ERROR;
-        }
-
-        reportStatic(
-            exc,
-            getAction("Creation", "Modification", "Deletion", type) + " of " + objDescr + " failed due to an " +
-            errorType + ".",
-            retCode,
-            objRefsRef,
-            apiCallRcRef,
-            errorReporter,
-            peerAccCtx,
-            peer.get()
-        );
     }
 
 
@@ -1056,8 +702,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
     /**
      * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
      * {@link ApiCallRcImpl}.
-     * The only difference between this method and {@link #report(Throwable, String, String, String, String, long)}
-     * is that this method does not access non-static variables. This method also calls
+     * This method also calls
      * {@link #addAnswerStatic(String, String, String, String, long, Map} for
      * adding an answer to the {@link ApiCallRcImpl}.
      *
@@ -1111,10 +756,8 @@ public abstract class AbsApiCallHandler implements AutoCloseable
 
     /**
      * This method adds an entry to {@link ApiCallRcImpl} and reports to controller's {@link ErrorReporter}.
-     * The main difference between this method and {@link #addAnswer(String, String, String, String, long)}
-     * is that this method does not use any non-static variables. <br />
      * <br />
-     * This implies following limitations:
+     * Note that:
      * <ul>
      *  <li>The return code (parameter {@code retCode}) is not extended
      * with the "current" object and operation masks</li>
@@ -1154,85 +797,6 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         apiCallRcRef.addEntry(entry);
     }
 
-    /**
-     * Generates a default success report depending on the current {@link ApiCallType}.
-     * Inserts the given UUID as details-message
-     * @param uuid
-     */
-    protected final void reportSuccess(UUID uuid)
-    {
-        objRefs.get().put(ApiConsts.KEY_UUID, uuid.toString());
-
-        switch (apiCallType.get())
-        {
-            case CREATE:
-                reportSuccess(
-                    "New " + getObjectDescriptionInline() + " created.",
-                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + uuid.toString()
-                );
-                break;
-            case DELETE:
-                reportSuccess(
-                    getObjectDescriptionInlineFirstLetterCaps() + " deleted.",
-                    getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + uuid.toString()
-                );
-                break;
-            case MODIFY:
-                reportSuccess(
-                    getObjectDescriptionInlineFirstLetterCaps() + " updated.",
-                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + uuid.toString()
-                );
-                break;
-            default:
-                throw new ImplementationError(
-                    "Unknown api call type: " + apiCallType.get(),
-                    null
-                );
-        }
-    }
-
-    /**
-     * Adds a success {@link ApiCallRcEntry} to the current {@link ApiCallRc} and reports
-     * to the controller's {@link ErrorReporter}.
-     * @param msg
-     */
-    protected final void reportSuccess(String msg, String details)
-    {
-        long baseRetCode;
-        switch (apiCallType.get())
-        {
-            case CREATE:
-                baseRetCode = ApiConsts.MASK_CRT | ApiConsts.CREATED;
-                break;
-            case DELETE:
-                baseRetCode = ApiConsts.MASK_DEL | ApiConsts.DELETED;
-                break;
-            case MODIFY:
-                baseRetCode = ApiConsts.MASK_MOD | ApiConsts.MODIFIED;
-                break;
-            default:
-                throw new ImplementationError(
-                    "Unknown api call type: " + apiCallType.get(),
-                    null
-                );
-        }
-        reportSuccess(msg, details, baseRetCode | linstorObj.objMask);
-    }
-
-
-    protected void reportSuccess(String msg, String details, long retCode)
-    {
-        reportSuccessStatic(
-            msg,
-            details,
-            retCode,
-            apiCallRc.get(),
-            objRefs.get(),
-            errorReporter
-        );
-    }
-
-
     public static void reportSuccessStatic(
         String msg,
         String details,
@@ -1260,52 +824,12 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    /**
-     * Basically the same as {@link #asExc(Throwable, String, long)}, but with a
-     * {@link AccessDeniedException}-specific template message.
-     *
-     * @param accDeniedExc
-     * @param action
-     * @param retCode
-     * @return
-     */
-    protected final ApiCallHandlerFailedException asAccDeniedExc(
-        AccessDeniedException accDeniedExc,
-        String action,
-        long retCode
-    )
-    {
-        return asExc(
-            accDeniedExc,
-            getAccDeniedMsg(peerAccCtx, action),
-            retCode
-        );
-    }
-
     public static String getAccDeniedMsg(AccessContext accCtx, String action)
     {
         return String.format("Identity '%s' using role: '%s' is not authorized to %s.",
             accCtx.subjectId.name.displayValue,
             accCtx.subjectRole.name.displayValue,
             action
-        );
-    }
-
-    /**
-     * Basically the same as {@link #asExc(Throwable, String, long)}, but with a
-     * {@link SQLException}-specific template message. Uses {@link ApiConsts#FAIL_SQL}
-     * as return code.
-     *
-     * @param sqlExc
-     * @param action
-     * @return
-     */
-    protected final ApiCallHandlerFailedException asSqlExc(SQLException sqlExc, String action)
-    {
-        return asExc(
-            sqlExc,
-            getSqlMsg(action),
-            ApiConsts.FAIL_SQL
         );
     }
 
@@ -1317,23 +841,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         );
     }
 
-    protected final ApiCallHandlerFailedException asImplError(Throwable throwableRef)
-    {
-        Throwable throwable = throwableRef;
-        if (!(throwable instanceof ImplementationError))
-        {
-            throwable = new ImplementationError(throwable);
-        }
-
-        throw asExc(
-            throwable,
-            "The " + getObjectDescriptionInline() + " could not be " +
-                getAction("created", "deleted", "modified") + " due to an implementation error",
-            ApiConsts.FAIL_IMPL_ERROR
-        );
-    }
-
-    protected final void commit() throws ApiCallHandlerFailedException
+    protected final void commit()
     {
         try
         {
@@ -1341,63 +849,22 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "committing " + getAction("creation", "modification", "deletion") +
-                " of " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
-    protected void rollbackIfDirty()
+    protected final ApiCallRc updateSatellites(Node node)
     {
-        TransactionMgr transMgr = transMgrProvider.get();
-        if (transMgr != null)
-        {
-            if (transMgr.isDirty())
-            {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (SQLException sqlExc)
-                {
-                    report(
-                        sqlExc,
-                        "A database error occured while trying to rollback the " +
-                                    getAction("creation", "modification", "deletion") +
-                                    " of " + getObjectDescriptionInline() + ".",
-                        sqlExc.getMessage(),
-                        null,
-                        null,
-                        ApiConsts.FAIL_SQL_ROLLBACK
-                    );
-                }
-            }
-        }
-    }
-
-    protected final void updateSatellites(Node node)
-    {
-        updateSatellites(node, true);
+        return updateSatellites(node, true);
     }
 
     /**
-     * This method depends on a valid instance of {@link CtrlStltSerializer}. If none was given
-     * at construction time an {@link ImplementationError} is thrown.
-     *
      * @param node Node to gather info which other nodes are to contact
      * @param contactArgumentNode Flag to indicate if the given node should also be contacted
      */
-    protected final void updateSatellites(Node node, boolean contactArgumentNode)
+    protected final ApiCallRc updateSatellites(Node node, boolean contactArgumentNode)
     {
-        if (internalComSerializer == null)
-        {
-            throw new ImplementationError(
-                "UpdateSatellites(Node) was called without providing a valid node serializer",
-                null
-            );
-        }
+        ApiCallRcImpl responses = new ApiCallRcImpl();
 
         try
         {
@@ -1427,16 +894,25 @@ public abstract class AbsApiCallHandler implements AutoCloseable
             for (Node nodeToContact : nodesToContact.values())
             {
                 Peer satellitePeer = nodeToContact.getPeer(apiCtx);
-                if (satellitePeer != null && satellitePeer.isConnected() && !fullSyncFailed(satellitePeer))
+                if (satellitePeer != null)
                 {
-                    satellitePeer.sendMessage(changedMessage);
+                    if (satellitePeer.hasFullSyncFailed())
+                    {
+                        responses.addEntry(makeFullSyncFailedResponse(satellitePeer));
+                    }
+                    else if (satellitePeer.isConnected())
+                    {
+                        satellitePeer.sendMessage(changedMessage);
+                    }
                 }
             }
         }
         catch (AccessDeniedException implError)
         {
-            throw asImplError(implError);
+            throw new ImplementationError(implError);
         }
+
+        return responses;
     }
 
     /**
@@ -1444,25 +920,15 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * at construction time an {@link ImplementationError} is thrown.
      * @return
      */
-    protected final void updateSatellites(Resource rsc)
+    protected final ApiCallRc updateSatellites(Resource rsc)
     {
-        updateSatellites(rsc.getDefinition());
+        return updateSatellites(rsc.getDefinition());
     }
 
-    /**
-     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
-     * at construction time an {@link ImplementationError} is thrown.
-     * @return
-     */
-    protected final void updateSatellites(ResourceDefinition rscDfn)
+    protected final ApiCallRc updateSatellites(ResourceDefinition rscDfn)
     {
-        if (internalComSerializer == null)
-        {
-            throw new ImplementationError(
-                "UpdateSatellites(ResourceDefinition) was called without providing a valid resource serializer",
-                null
-            );
-        }
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         try
         {
             // notify all peers that (at least one of) their resource has changed
@@ -1475,7 +941,11 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 boolean connected = currentPeer.isConnected();
                 if (connected)
                 {
-                    if (!fullSyncFailed(currentPeer))
+                    if (currentPeer.hasFullSyncFailed())
+                    {
+                        responses.addEntry(makeFullSyncFailedResponse(currentPeer));
+                    }
+                    else
                     {
                         connected = currentPeer.sendMessage(
                             internalComSerializer
@@ -1488,29 +958,30 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                         );
                     }
                 }
-                if (!connected)
+                else
                 {
                     String nodeName = currentRsc.getAssignedNode().getName().displayValue;
-                    String details = String.format(
-                        "The satellite was added and the controller tries to (re-) establish connection to it. " +
-                        "The controller queued the %s of the resource and as soon the satellite is connected, " +
-                        "it will receive this update.",
-                        getAction("creation", "modification", "deletion")
-                    );
-                    addAnswer(
-                        "No active connection to satellite '" + nodeName + "'",
-                        null, // cause
-                        details,
-                        null, // correction
-                        ApiConsts.WARN_NOT_CONNECTED
+                    responses.addEntry(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.WARN_NOT_CONNECTED,
+                            "No active connection to satellite '" + nodeName + "'"
+                        )
+                        .setDetails(
+                            "The controller is trying to (re-) establish a connection to the satellite. " +
+                                "The controller stored the changes and as soon the satellite is connected, it will " +
+                                "receive this update."
+                        )
+                        .build()
                     );
                 }
             }
         }
         catch (AccessDeniedException implError)
         {
-            throw asImplError(implError);
+            throw new ImplementationError(implError);
         }
+
+        return responses;
     }
 
     /**
@@ -1518,22 +989,21 @@ public abstract class AbsApiCallHandler implements AutoCloseable
      * at construction time an {@link ImplementationError} is thrown.
      * @return
      */
-    protected final void updateSatellite(StorPool storPool)
+    protected final ApiCallRc updateSatellite(StorPool storPool)
     {
-        if (internalComSerializer == null)
-        {
-            throw new ImplementationError(
-                "UpdateSatellites(StorPool) was called without providing a valid StorPool serializer",
-                null
-            );
-        }
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         try
         {
             Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
             boolean connected = satellitePeer.isConnected();
             if (connected)
             {
-                if (!fullSyncFailed(satellitePeer))
+                if (satellitePeer.hasFullSyncFailed())
+                {
+                    responses.addEntry(makeFullSyncFailedResponse(satellitePeer));
+                }
+                else
                 {
                     connected = satellitePeer.sendMessage(
                         internalComSerializer
@@ -1546,27 +1016,34 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                     );
                 }
             }
-            if (!connected)
+            else
             {
-                addAnswer(
-                    "No active connection to satellite '" + storPool.getNode().getName().displayValue + "'",
-                    null, // cause
-                    "The satellite was added and the controller tries to (re-) establish connection to it." +
-                    "The controller stored the new StorPool and as soon the satellite is connected, it will " +
-                    "receive this update.",
-                    null, // correction
-                    ApiConsts.WARN_NOT_CONNECTED
+                responses.addEntry(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.WARN_NOT_CONNECTED,
+                        "No active connection to satellite '" + storPool.getNode().getName().displayValue + "'"
+                    )
+                    .setDetails(
+                        "The controller is trying to (re-) establish a connection to the satellite. " +
+                            "The controller stored the changes and as soon the satellite is connected, it will " +
+                            "receive this update."
+                    )
+                    .build()
                 );
             }
         }
         catch (AccessDeniedException implError)
         {
-            throw asImplError(implError);
+            throw new ImplementationError(implError);
         }
+
+        return responses;
     }
 
-    protected final void updateSatellites(SnapshotDefinition snapshotDfn)
+    protected final ApiCallRc updateSatellites(SnapshotDefinition snapshotDfn)
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         try
         {
             // notify all peers that a snapshot has changed
@@ -1577,7 +1054,11 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 boolean connected = currentPeer.isConnected();
                 if (connected)
                 {
-                    if (!fullSyncFailed(currentPeer))
+                    if (currentPeer.hasFullSyncFailed())
+                    {
+                        responses.addEntry(makeFullSyncFailedResponse(currentPeer));
+                    }
+                    else
                     {
                         connected = currentPeer.sendMessage(
                             internalComSerializer
@@ -1593,52 +1074,48 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 }
                 if (!connected)
                 {
-                    String nodeName = snapshot.getNodeName().displayValue;
-                    String details = String.format(
-                            "The controller queued the %s of the snapshot and as soon the satellite is connected, " +
-                            "it will receive this update.",
-                        getAction("creation", "modification", "deletion")
-                    );
-                    addAnswer(
-                        "No active connection to satellite '" + nodeName + "'",
-                        null, // cause
-                        details,
-                        null, // correction
-                        ApiConsts.WARN_NOT_CONNECTED
+                    responses.addEntry(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.WARN_NOT_CONNECTED,
+                            "No active connection to satellite '" + snapshot.getNodeName().displayValue + "'"
+                        )
+                        .setDetails(
+                            "The controller is trying to (re-) establish a connection to the satellite. " +
+                                "The controller stored the changes and as soon the satellite is connected, it will " +
+                                "receive this update."
+                        )
+                        .build()
                     );
                 }
             }
         }
         catch (AccessDeniedException implError)
         {
-            throw asImplError(implError);
+            throw new ImplementationError(implError);
         }
+
+        return responses;
     }
 
-    /**
-     * Checks and returns if the satellite reported a fullSyncFail.
-     * If true, an answer is added to report the client about the issue
-     *
-     * @param satellite
-     * @return The result of <code>satellite.hasFullSyncFailed();</code>
-     */
-    private boolean fullSyncFailed(Peer satellite)
+    private static ApiCallRc.RcEntry makeFullSyncFailedResponse(Peer satellite)
     {
-        boolean ret = satellite.hasFullSyncFailed();
-        if (ret)
-        {
-            addAnswer(
+        return ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.WARN_STLT_NOT_UPDATED,
                 "Satellite reported an error during fullSync. This change will NOT be " +
                     "delivered to satellte '" + satellite.getNode().getName().displayValue +
                     "' until the error is resolved. Reconnect the satellite to the controller " +
-                    "to remove this blockade.",
-                ApiConsts.WARN_STLT_NOT_UPDATED
-            );
-        }
-        return ret;
+                    "to remove this blockade."
+            )
+            .build();
     }
 
-    protected void fillProperties(Map<String, String> sourceProps, Props targetProps, long failAccDeniedRc)
+    protected void fillProperties(
+        LinStorObject linstorObj,
+        Map<String, String> sourceProps,
+        Props targetProps,
+        long failAccDeniedRc
+    )
     {
         for (Entry<String, String> entry : sourceProps.entrySet())
         {
@@ -1658,7 +1135,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 }
                 catch (AccessDeniedException exc)
                 {
-                    throw asAccDeniedExc(
+                    throw new ApiAccessDeniedException(
                         exc,
                         "insert property '" + key + "'",
                         failAccDeniedRc
@@ -1668,89 +1145,59 @@ public abstract class AbsApiCallHandler implements AutoCloseable
                 {
                     if (isAuxProp)
                     {
-                        throw asExc(
-                            exc,
-                            "Invalid key.",
-                            "The key '" + key + "' is invalid.",
-                            null,
-                            null,
-                            ApiConsts.FAIL_INVLD_PROP
+                        throw new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid key.")
+                            .setCause("The key '" + key + "' is invalid.")
+                            .build(),
+                            exc
                         );
                     }
                     else
                     {
                         // we tried to insert an invalid but whitelisted key
-                        throw asImplError(exc);
+                        throw new ImplementationError(exc);
                     }
                 }
                 catch (InvalidValueException exc)
                 {
                     if (isAuxProp)
                     {
-                        throw asExc(
-                            exc,
-                            "Invalid value.",
-                            "The value '" + value + "' is invalid.",
-                            null,
-                            null,
-                            ApiConsts.FAIL_INVLD_PROP
+                        throw new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid value.")
+                            .setCause("The value '" + value + "' is invalid.")
+                            .build(),
+                            exc
                         );
                     }
                     else
                     {
                         // we tried to insert an invalid but whitelisted value
-                        throw asImplError(exc);
+                        throw new ImplementationError(exc);
                     }
                 }
                 catch (SQLException exc)
                 {
-                    throw asSqlExc(exc, "inserting property '" + key + "'");
+                    throw new ApiSQLException(exc);
                 }
             }
             else
             if (propsWhiteList.isKeyKnown(linstorObj, key))
             {
-                report(
-                    null,
-                    "Invalid property value",
-                    "The value '" + value + "' is not valid for the key '" + key + "'",
-                    "The value must match '" + propsWhiteList.getRuleValue(linstorObj, key) + "'",
-                    null,
-                    ApiConsts.FAIL_INVLD_PROP
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property value")
+                    .setCause("The value '" + value + "' is not valid for the key '" + key + "'")
+                    .setDetails("The value must match '" + propsWhiteList.getRuleValue(linstorObj, key) + "'")
+                    .build()
                 );
-                throw new ApiCallHandlerFailedException();
             }
             else
             {
-                report(
-                    null,
-                    "Invalid property key",
-                    "The key '" + key + "' is not whitelisted.",
-                    null,
-                    null,
-                    ApiConsts.FAIL_INVLD_PROP
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
+                    .setCause("The key '" + key + "' is not whitelisted.")
+                    .build()
                 );
-                throw new ApiCallHandlerFailedException();
             }
         }
-    }
-
-    protected String getObjectDescriptionInlineFirstLetterCaps()
-    {
-        String objDescrLower = getObjectDescriptionInline();
-        return objDescrLower.substring(0, 1).toUpperCase() + objDescrLower.substring(1);
-    }
-
-    protected abstract String getObjectDescription();
-
-    protected abstract String getObjectDescriptionInline();
-
-    protected static class ApiCallHandlerFailedException extends RuntimeException
-    {
-        public ApiCallHandlerFailedException()
-        {
-        }
-
-        private static final long serialVersionUID = -3941266567336938181L;
     }
 }

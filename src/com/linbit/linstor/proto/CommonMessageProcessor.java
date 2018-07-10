@@ -13,6 +13,8 @@ import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.transaction.TransactionMgr;
+
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -277,6 +279,39 @@ public class CommonMessageProcessor implements MessageProcessor
                         {
                             if (transMgr != null)
                             {
+                                if (transMgr.isDirty())
+                                {
+                                    try
+                                    {
+                                        transMgr.rollback();
+                                    }
+                                    catch (SQLException sqlExc)
+                                    {
+                                        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+                                        MsgHeader.newBuilder()
+                                            .setApiCall(ApiConsts.API_REPLY)
+                                            .setMsgId(msgId)
+                                            .build()
+                                            .writeDelimitedTo(outStream);
+
+                                        MsgApiCallResponse.newBuilder()
+                                            .setMessage("A database error occured while trying to rollback dirty data.")
+                                            .setCause(sqlExc.getMessage())
+                                            .setRetCode(ApiConsts.API_CALL_PARSE_ERROR)
+                                            .build()
+                                            .writeDelimitedTo(outStream);
+
+                                        client.sendMessage(outStream.toByteArray());
+
+                                        errorLog.reportError(
+                                            Level.ERROR,
+                                            sqlExc,
+                                            client.getAccessContext(),
+                                            client,
+                                            "A database error occured while trying to rollback '" + apiCallName + "'"
+                                        );
+                                    }
+                                }
                                 transMgr.returnConnection();
                             }
                             apiCallScope.exit();

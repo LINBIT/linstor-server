@@ -16,6 +16,7 @@ import com.linbit.linstor.security.AccessType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -94,6 +95,7 @@ public class NodeApiTest extends ApiTestBase
 
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), PUBLIC_CTX);
         testScope.seed(Peer.class, mockPeer);
+        Mockito.when(mockPeer.getAccessContext()).thenReturn(PUBLIC_CTX);
 
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
@@ -171,6 +173,7 @@ public class NodeApiTest extends ApiTestBase
     {
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), ALICE_ACC_CTX);
         testScope.seed(Peer.class, mockPeer);
+        Mockito.when(mockPeer.getAccessContext()).thenReturn(PUBLIC_CTX);
 
         evaluateTest(
             new ModifyNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)

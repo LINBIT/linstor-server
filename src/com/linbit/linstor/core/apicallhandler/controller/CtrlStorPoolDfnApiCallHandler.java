@@ -24,9 +24,15 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -38,6 +44,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -48,15 +55,18 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+@Singleton
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
-    private String currentStorPoolNameStr;
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final Provider<Integer> msgIdProvider;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -69,17 +79,17 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whiteListProps,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef
+        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.STORAGEPOOL_DEFINITION,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -93,6 +103,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
         msgIdProvider = msgIdProviderRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -100,41 +111,32 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Map<String, String> storPoolDfnProps
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolDfnContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            storPoolNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                storPoolNameStr
-            );
-        )
+        try
         {
             requireStorPoolDfnChangeAccess();
 
             StorPoolDefinitionData storPoolDfn = createStorPool(storPoolNameStr);
-            fillProperties(storPoolDfnProps, getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
+            fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps, getProps(storPoolDfn),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
             commit();
 
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
-            reportSuccess(storPoolDfn.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(storPoolNameStr),
-                getObjRefs(storPoolNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc modifyStorPoolDfn(
@@ -144,32 +146,31 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Set<String> deletePropKeys
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolDfnContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            storPoolNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                storPoolNameStr
-            );
-        )
+        try
         {
             requireStorPoolDfnChangeAccess();
             StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
 
             if (storPoolDfnUuid != null && !storPoolDfnUuid.equals(storPoolDfn.getUuid()))
             {
-                addAnswer(
-                    "UUID-check failed",
-                    ApiConsts.FAIL_UUID_STOR_POOL_DFN
-                );
-                throw new ApiCallHandlerFailedException();
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UUID_STOR_POOL_DFN,
+                    "UUID-check failed"
+                ));
             }
 
             Props props = getProps(storPoolDfn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(overrideProps, getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
+            fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, overrideProps, getProps(storPoolDfn),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
 
             for (String delKey : deletePropKeys)
             {
@@ -178,38 +179,28 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            updateSatellites(storPoolDfn);
-            reportSuccess(storPoolDfn.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithDetail(responses, context, updateSatellites(storPoolDfn));
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+                storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(storPoolNameStr),
-                getObjRefs(storPoolNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc deleteStorPoolDfn(String storPoolNameStr)
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolDfnContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            storPoolNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                storPoolNameStr
-            );
-        )
+        try
         {
             requireStorPoolDfnChangeAccess();
 
@@ -228,12 +219,14 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 }
                 nodeNames.setLength(nodeNames.length() - ", '".length());
 
-                addAnswer(
-                    getObjectDescription() + " has still storage pools on node(s): " + nodeNames + ".",
-                    null, // cause
-                    null, // details
-                    "Remove the storage pools first.", // correction
-                    ApiConsts.FAIL_IN_USE
+                responseConverter.addWithDetail(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        firstLetterCaps(getStorPoolDfnDescriptionInline(storPoolNameStr)) +
+                            " has still storage pools on node(s): " + nodeNames + "."
+                    )
+                    .setCorrection("Remove the storage pools first.")
+                    .build()
                 );
             }
             else
@@ -245,89 +238,65 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
                 storPoolDfnMap.remove(storPoolName);
 
-                reportSuccess(storPoolDfnUuid);
+                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                    storPoolDfnUuid, getStorPoolDfnDescriptionInline(storPoolName.displayValue)));
             }
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(storPoolNameStr),
-                getObjRefs(storPoolNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public byte[] getMaxVlmSizeForReplicaCount(AutoSelectFilterApi selectFilter)
     {
         byte[] result;
-        try
+        List<Candidate> candidateList = null;
+        StorPoolName storPoolName = null;
+        String storPoolNameStr = selectFilter.getStorPoolNameStr();
+        if (storPoolNameStr != null && storPoolNameStr.length() > 0)
         {
-            List<Candidate> candidateList = null;
-            StorPoolName storPoolName = null;
-            String storPoolNameStr = selectFilter.getStorPoolNameStr();
-            if (storPoolNameStr != null && storPoolNameStr.length() > 0)
+            storPoolName = asStorPoolName(storPoolNameStr);
+        }
+        candidateList = autoStorPoolSelector.getCandidateList(
+            0L,
+            new AutoStorPoolSelectorConfig(selectFilter),
+            CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy
+        );
+        if (candidateList.isEmpty())
+        {
+            ApiCallRcImpl errRc = new ApiCallRcImpl();
+            if (storPoolName != null && storPoolDfnMap.get(storPoolName) == null)
             {
-                storPoolName = asStorPoolName(storPoolNameStr);
-            }
-            candidateList = autoStorPoolSelector.getCandidateList(
-                0L,
-                new AutoStorPoolSelectorConfig(selectFilter),
-                CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy
-            );
-            if (candidateList.isEmpty())
-            {
-                ApiCallRcImpl errRc = new ApiCallRcImpl();
-                if (storPoolName != null && storPoolDfnMap.get(storPoolName) == null)
-                {
-                    // check if storpooldfn exists (storPoolName is known)
-                    errRc.addEntry(
-                        "Unknown storage pool name",
-                        ApiConsts.MASK_ERROR | ApiConsts.FAIL_INVLD_STOR_POOL_NAME
-                    );
-                }
-                else
-                {
-                    // else we simply have not enough nodes
-                    errRc.addEntry(
-                        "Not enough nodes",
-                        ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES
-                    );
-
-                }
-                result = clientComSerializer
-                    .builder(ApiConsts.API_REPLY, msgIdProvider.get())
-                    .apiCallRcSeries(errRc)
-                    .build();
+                // check if storpooldfn exists (storPoolName is known)
+                errRc.addEntry(
+                    "Unknown storage pool name",
+                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_INVLD_STOR_POOL_NAME
+                );
             }
             else
             {
-                candidateList.sort(Comparator.comparingLong(c -> c.sizeAfterDeployment));
+                // else we simply have not enough nodes
+                errRc.addEntry(
+                    "Not enough nodes",
+                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES
+                );
 
-                result = clientComSerializer
-                    .builder(ApiConsts.API_RSP_MAX_VLM_SIZE, msgIdProvider.get())
-                    .maxVlmSizeCandidateList(candidateList)
-                    .build();
             }
-        }
-        catch (InvalidKeyException exc)
-        {
-            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-            apiCallRc.addEntry(
-                "The property key '" + exc.invalidKey + "' is invalid.",
-                ApiConsts.MASK_STOR_POOL_DFN | ApiConsts.FAIL_INVLD_PROP
-            );
             result = clientComSerializer
                 .builder(ApiConsts.API_REPLY, msgIdProvider.get())
-                .apiCallRcSeries(apiCallRc)
+                .apiCallRcSeries(errRc)
+                .build();
+        }
+        else
+        {
+            candidateList.sort(Comparator.comparingLong(c -> c.sizeAfterDeployment));
+
+            result = clientComSerializer
+                .builder(ApiConsts.API_RSP_MAX_VLM_SIZE, msgIdProvider.get())
+                .maxVlmSizeCandidateList(candidateList)
                 .build();
         }
         return result;
@@ -337,22 +306,19 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            storPoolDfn.delete(peerAccCtx);
+            storPoolDfn.delete(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "delete " + getObjectDescriptionInline(),
+                "delete " + getStorPoolDfnDescriptionInline(storPoolDfn),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -365,7 +331,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return iterator;
     }
@@ -375,14 +341,14 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
         {
-            storPoolDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            storPoolDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
             for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
             {
                 try
                 {
                     if (!storPoolDfn.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
                     {
-                        storPoolDfns.add(storPoolDfn.getApiData(peerAccCtx));
+                        storPoolDfns.add(storPoolDfn.getApiData(peerAccCtx.get()));
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)
@@ -402,31 +368,13 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             .build();
     }
 
-    protected AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        String storPoolNameStr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(storPoolNameStr)
-        );
-
-        currentStorPoolNameStr = storPoolNameStr;
-
-        return this;
-    }
-
     private StorPoolDefinitionData createStorPool(String storPoolNameStrRef)
     {
         StorPoolDefinitionData storPoolDfn;
         try
         {
             storPoolDfn = storPoolDefinitionDataFactory.getInstance(
-                peerAccCtx,
+                peerAccCtx.get(),
                 asStorPoolName(storPoolNameStrRef),
                 true, // persist this entry
                 true // fail if already exists
@@ -434,35 +382,24 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getStorPoolDfnDescriptionInline(storPoolNameStrRef),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
         catch (LinStorDataAlreadyExistsException alreadyExistsExc)
         {
-            throw asExc(
-                alreadyExistsExc,
-                getObjectDescription() + " already exists.",
-                ApiConsts.FAIL_EXISTS_STOR_POOL_DFN
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_STOR_POOL_DFN,
+                firstLetterCaps(getStorPoolDfnDescriptionInline(storPoolNameStrRef)) + " already exists."
+            ), alreadyExistsExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return storPoolDfn;
-    }
-
-    private Map<String, String> getObjRefs(String storPoolNameStr)
-    {
-        Map<String, String> objRefs = new TreeMap<>();
-        objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
-        return objRefs;
     }
 
     private void requireStorPoolDfnChangeAccess()
@@ -470,35 +407,18 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             storPoolDfnMapProt.requireAccess(
-                peerAccCtx,
+                peerAccCtx.get(),
                 AccessType.CHANGE
             );
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "change any storage definitions pools.",
+                "change any storage definitions pools",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
-    }
-    @Override
-    protected String getObjectDescription()
-    {
-        return "Storage pool definition: " + currentStorPoolNameStr;
-    }
-
-    @Override
-    protected String getObjectDescriptionInline()
-    {
-        return getObjectDescriptionInline(currentStorPoolNameStr);
-    }
-
-
-    private String getObjectDescriptionInline(String storPoolName)
-    {
-        return "storage pool definition '" + storPoolName + "'";
     }
 
     private Props getProps(StorPoolDefinitionData storPoolDfn)
@@ -506,33 +426,71 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = storPoolDfn.getProps(peerAccCtx);
+            props = storPoolDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "accessing properties of storage pool definition '" + storPoolDfn.getName().displayValue + "'.",
+                "access properties of storage pool definition '" + storPoolDfn.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
         return props;
     }
 
-    private void updateSatellites(StorPoolDefinitionData storPoolDfn)
+    private ApiCallRc updateSatellites(StorPoolDefinitionData storPoolDfn)
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         try
         {
             Iterator<StorPool> iterateStorPools = storPoolDfn.iterateStorPools(apiCtx);
             while (iterateStorPools.hasNext())
             {
                 StorPool storPool = iterateStorPools.next();
-                updateSatellite(storPool);
+                responses.addEntries(updateSatellite(storPool));
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
+
+        return responses;
+    }
+
+    public static String getStorPoolDfnDescription(String storPoolName)
+    {
+        return "Storage pool definition: " + storPoolName;
+    }
+
+    public static String getStorPoolDfnDescriptionInline(StorPoolDefinition storPoolDfn)
+    {
+        return getStorPoolDfnDescriptionInline(storPoolDfn.getName().displayValue);
+    }
+
+    public static String getStorPoolDfnDescriptionInline(String storPoolName)
+    {
+        return "storage pool definition '" + storPoolName + "'";
+    }
+
+    private static ResponseContext makeStorPoolDfnContext(
+        Peer peer,
+        ApiOperation operation,
+        String storPoolNameStr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getStorPoolDfnDescription(storPoolNameStr),
+            getStorPoolDfnDescriptionInline(storPoolNameStr),
+            ApiConsts.MASK_STOR_POOL_DFN,
+            objRefs
+        );
     }
 }

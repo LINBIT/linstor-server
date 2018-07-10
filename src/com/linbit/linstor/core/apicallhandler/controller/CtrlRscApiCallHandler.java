@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +21,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
@@ -50,6 +50,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -60,7 +61,13 @@ import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -81,12 +88,13 @@ import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
+@Singleton
 public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 {
-    private String currentNodeName;
-    private String currentRscName;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -94,6 +102,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     private final CoreModule.NodesMap nodesMap;
     private final String defaultStorPoolName;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private final ResponseConverter responseConverter;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -112,9 +121,10 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         VolumeDataFactory volumeDataFactoryRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
@@ -137,6 +147,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         nodesMap = nodesMapRef;
         defaultStorPoolName = defaultStorPoolNameRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc createResource(
@@ -147,15 +158,71 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         List<VlmApi> vlmApiList
     )
     {
-        return createResource(
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeRscContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
             nodeNameStr,
-            rscNameStr,
-            flagList,
-            rscPropsMap,
-            vlmApiList,
-            true,
-            null
+            rscNameStr
         );
+
+        try
+        {
+            ResourceData rsc = createResource0(
+                nodeNameStr,
+                rscNameStr,
+                flagList,
+                rscPropsMap,
+                vlmApiList
+            ).extractApiCallRc(responses);
+
+            commit();
+
+            if (rsc.getVolumeCount() > 0)
+            {
+                // only notify satellite if there are volumes to deploy.
+                // otherwise a bug occurs when an empty resource is deleted
+                // the controller instantly deletes it (without marking for deletion first)
+                // but doesn't tell the satellite...
+                // the next time a resource with the same name will get a different UUID and
+                // will cause a conflict (and thus, an exception) on the satellite
+                responseConverter.addWithDetail(responses, context, updateSatellites(rsc));
+            }
+            // TODO: if a satellite confirms creation, also log it to controller.info
+
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                rsc.getUuid(), getRscDescriptionInline(rsc)));
+
+            Iterator<Volume> vlmIt = rsc.iterateVolumes();
+            while (vlmIt.hasNext())
+            {
+                Volume vlm = vlmIt.next();
+                int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
+
+                ApiCallRcEntry vlmCreatedRcEntry = new ApiCallRcEntry();
+                vlmCreatedRcEntry.setMessage(
+                    "Volume with number '" + vlmNr + "' on resource '" +
+                        vlm.getResourceDefinition().getName().displayValue + "' on node '" +
+                        vlm.getResource().getAssignedNode().getName().displayValue +
+                        "' successfully created"
+                    );
+                vlmCreatedRcEntry.setDetails(
+                    "Volume UUID is: " + vlm.getUuid().toString()
+                );
+                vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
+                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
+
+                responses.addEntry(vlmCreatedRcEntry);
+            }
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            responses = responseConverter.reportException(peer.get(), context, exc);
+        }
+
+        return responses;
     }
 
     private void checkStorPoolLoaded(
@@ -167,22 +234,20 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     {
         if (storPool == null)
         {
-            throw asExc(
-                new LinStorException("Dependency not found"),
-                "The default storage pool '" + storPoolNameStr + "' " +
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The default storage pool '" + storPoolNameStr + "' " +
                     "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
-                    "for volume number '" +  vlmDfn.getVolumeNumber().value + "' " +
-                    "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.",
-                null, // cause
-                "The resource which should be deployed had at least one volume definition " +
+                    "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
+                    "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.")
+                .setDetails("The resource which should be deployed had at least one volume definition " +
                     "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
                     "tried to automatically create. " +
                     "The default storage pool's name for this new volume was looked for in " +
                     "its volume definition's properties, its resource's properties, its node's " +
                     "properties and finally in a system wide default storage pool name defined by " +
-                    "the LinStor controller.",
-                null, // correction
-                FAIL_NOT_FOUND_DFLT_STOR_POOL
+                    "the LinStor controller.")
+                .build(),
+                new LinStorException("Dependency not found")
             );
         }
     }
@@ -191,31 +256,33 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     {
         if (storPool != null && storPool.getDriverKind().hasBackingStorage())
         {
-            throw asExc(
-                new LinStorException("Incorrect storage pool used."),
-                "Storage pool with backing disk not allowed with diskless resource.",
-                String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(FAIL_INVLD_STOR_POOL_NAME, "Storage pool with backing disk not allowed with diskless resource.")
+                .setCause(String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
                         "with backing disk was specified.",
                     rsc.getDefinition().getName().displayValue,
-                    storPool.getName().displayValue),
-                null,
-                "Use a storage pool with a diskless driver or remove the diskless flag.",
-                FAIL_INVLD_STOR_POOL_NAME
+                    storPool.getName().displayValue))
+                .setCorrection("Use a storage pool with a diskless driver or remove the diskless flag.")
+                .build(),
+                new LinStorException("Incorrect storage pool used.")
             );
         }
     }
 
-    private void warnAndFlagDiskless(Resource rsc, final StorPool storPool)
+    private ApiCallRc warnAndFlagDiskless(Resource rsc, final StorPool storPool)
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         if (storPool != null && !storPool.getDriverKind().hasBackingStorage())
         {
-            addAnswer(
-                "Resource will be automatically flagged diskless.",
-                String.format("Used storage pool '%s' is diskless, " +
-                    "but resource was not flagged diskless", storPool.getName().displayValue),
-                null,
-                null,
-                MASK_WARN | MASK_STOR_POOL
+            responses.addEntry(ApiCallRcImpl
+                .entryBuilder(
+                    MASK_WARN | MASK_STOR_POOL,
+                    "Resource will be automatically flagged diskless."
+                )
+                .setCause(String.format("Used storage pool '%s' is diskless, " +
+                    "but resource was not flagged diskless", storPool.getName().displayValue))
+                .build()
             );
             try
             {
@@ -223,15 +290,15 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             }
             catch (AccessDeniedException exc)
             {
-                throw asImplError(exc);
+                throw new ImplementationError(exc);
             }
             catch (SQLException exc)
             {
-                throw asSqlExc(exc, "setting diskless flag for resource '" +
-                    rsc.getDefinition().getName().displayValue + "'"
-                );
+                throw new ApiSQLException(exc);
             }
         }
+
+        return responses;
     }
 
     /**
@@ -246,8 +313,14 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
      * @throws InvalidValueException
      * @throws SQLException
      */
-    private StorPool resolveStorPool(Resource rsc, final PriorityProps prioProps, final VolumeDefinition vlmDfn)
+    private ApiCallRcWith<StorPool> resolveStorPool(
+        Resource rsc,
+        final PriorityProps prioProps,
+        final VolumeDefinition vlmDfn
+    )
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         StorPool storPool;
         try
         {
@@ -283,132 +356,21 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                     asStorPoolName(storPoolNameStr)
                 );
 
-                warnAndFlagDiskless(rsc, storPool);
+                responses.addEntries(warnAndFlagDiskless(rsc, storPool));
             }
 
             checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
         }
         catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
         {
-            throw asImplError(exc);
+            throw new ImplementationError(exc);
         }
         catch (SQLException exc)
         {
-            throw asSqlExc(exc, "settting storage pool name in resource-props");
+            throw new ApiSQLException(exc);
         }
 
-        return storPool;
-    }
-
-    public ApiCallRc createResource(
-        String nodeNameStr,
-        String rscNameStr,
-        List<String> flagList,
-        Map<String, String> rscPropsMap,
-        List<VlmApi> vlmApiList,
-        boolean autoCloseCurrentTransMgr,
-        ApiCallRcImpl apiCallRcRef
-    )
-    {
-        ApiCallRcImpl apiCallRc = apiCallRcRef;
-        if (apiCallRc == null)
-        {
-            apiCallRc = new ApiCallRcImpl();
-        }
-
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                autoCloseCurrentTransMgr,
-                nodeNameStr,
-                rscNameStr
-            )
-        )
-        {
-            ResourceData rsc = createResource0(
-                nodeNameStr,
-                rscNameStr,
-                flagList,
-                rscPropsMap,
-                vlmApiList
-            );
-
-            commit();
-
-            if (rsc.getVolumeCount() > 0)
-            {
-                // only notify satellite if there are volumes to deploy.
-                // otherwise a bug occurs when an empty resource is deleted
-                // the controller instantly deletes it (without marking for deletion first)
-                // but doesn't tell the satellite...
-                // the next time a resource with the same name will get a different UUID and
-                // will cause a conflict (and thus, an exception) on the satellite
-                updateSatellites(rsc);
-            }
-            // TODO: if a satellite confirms creation, also log it to controller.info
-
-            reportSuccess(rsc.getUuid());
-
-            Iterator<Volume> vlmIt = rsc.iterateVolumes();
-            while (vlmIt.hasNext())
-            {
-                Volume vlm = vlmIt.next();
-                int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
-
-                ApiCallRcEntry vlmCreatedRcEntry = new ApiCallRcEntry();
-                vlmCreatedRcEntry.setMessage(
-                    "Volume with number '" + vlmNr + "' on resource '" +
-                        vlm.getResourceDefinition().getName().displayValue + "' on node '" +
-                        vlm.getResource().getAssignedNode().getName().displayValue +
-                        "' successfully created"
-                    );
-                vlmCreatedRcEntry.setDetails(
-                    "Volume UUID is: " + vlm.getUuid().toString()
-                );
-                vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
-                vlmCreatedRcEntry.putAllObjRef(objRefs.get());
-                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
-
-                apiCallRc.addEntry(vlmCreatedRcEntry);
-            }
-        }
-        catch (ApiCallHandlerFailedException apiCallHandlerFailedExc)
-        {
-            // a report and a corresponding api-response already created.
-            // however, if the autoCloseCurrentTransMgr was set to false, we are in the scope of an
-            // other api call. because of that we re-throw this exception
-            if (!autoCloseCurrentTransMgr)
-            {
-                throw apiCallHandlerFailedExc;
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            if (!autoCloseCurrentTransMgr)
-            {
-                if (exc instanceof ImplementationError)
-                {
-                    throw (ImplementationError) exc;
-                }
-                else
-                {
-                    throw new LinStorRuntimeException("Unknown Exception", exc);
-                }
-            }
-            else
-            {
-                reportStatic(
-                    exc,
-                    ApiCallType.CREATE,
-                    getObjectDescriptionInline(nodeNameStr, rscNameStr),
-                    getObjRefs(nodeNameStr, rscNameStr),
-                    apiCallRc
-                );
-            }
-        }
-
-        return apiCallRc;
+        return new ApiCallRcWith<>(responses, storPool);
     }
 
     /**
@@ -427,7 +389,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
      *
      * @return the newly created resource
      */
-    ResourceData createResource0(
+    ApiCallRcWith<ResourceData> createResource0(
         String nodeNameStr,
         String rscNameStr,
         List<String> flagList,
@@ -435,6 +397,8 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         List<VlmApi> vlmApiList
     )
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         NodeData node = loadNode(nodeNameStr, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
@@ -443,7 +407,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
         Props rscProps = getProps(rsc);
 
-        fillProperties(rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
+        fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
 
         boolean isRscDiskless = isDiskless(rsc);
 
@@ -471,27 +435,27 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
                 storPool = loadStorPool(storPoolDfn, node, true);
 
-                if (isRscDiskless)
-                {
-                    checkBackingDiskWithDiskless(rsc, storPool);
-                }
-                else
-                {
-                    warnAndFlagDiskless(rsc, storPool);
-                }
+                    if (isRscDiskless)
+                    {
+                        checkBackingDiskWithDiskless(rsc, storPool);
+                    }
+                    else
+                    {
+                        responses.addEntries(warnAndFlagDiskless(rsc, storPool));
+                    }
 
                 checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
             }
             else
             {
-                storPool = resolveStorPool(rsc, prioProps, vlmDfn);
+                storPool = resolveStorPool(rsc, prioProps, vlmDfn).extractApiCallRc(responses);
             }
 
             VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
 
             Props vlmProps = getProps(vlmData);
 
-            fillProperties(vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
+            fillProperties(LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
 
             vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
         }
@@ -500,8 +464,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         while (iterateVolumeDfn.hasNext())
         {
             VolumeDefinition vlmDfn = iterateVolumeDfn.next();
-
-            objRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
             // first check if we probably just deployed a vlm for this vlmDfn
             if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
@@ -514,7 +476,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                     nodeProps
                 );
 
-                StorPool storPool = resolveStorPool(rsc, prioProps, vlmDfn);
+                StorPool storPool = resolveStorPool(rsc, prioProps, vlmDfn).extractApiCallRc(responses);
 
                 // storPool is guaranteed to be != null
                 // create missing vlm with default values
@@ -522,7 +484,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
             }
         }
-        return rsc;
+        return new ApiCallRcWith<>(responses, rsc);
     }
 
     private boolean isDiskless(Resource rsc)
@@ -534,7 +496,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
         catch (AccessDeniedException implError)
         {
-            throw asImplError(implError);
+            throw new ImplementationError(implError);
         }
         return isDiskless;
     }
@@ -547,32 +509,30 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         Set<String> deletePropKeys
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                true, // autoClose
-                nodeNameStr,
-                rscNameStr
-            );
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeRscContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            rscNameStr
+        );
+
+        try
         {
             ResourceData rsc = loadRsc(nodeNameStr, rscNameStr, true);
 
             if (rscUuid != null && !rscUuid.equals(rsc.getUuid()))
             {
-                addAnswer(
-                    "UUID-check failed",
-                    ApiConsts.FAIL_UUID_RSC
-                );
-                throw new ApiCallHandlerFailedException();
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UUID_RSC,
+                    "UUID-check failed"
+                ));
             }
 
             Props props = getProps(rsc);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
+            fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
 
             for (String delKey : deletePropKeys)
             {
@@ -581,25 +541,16 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             commit();
 
-            updateSatellites(rsc);
-            reportSuccess(rsc.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithDetail(responses, context, updateSatellites(rsc));
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                rsc.getUuid(), getRscDescriptionInline(rsc)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr),
-                getObjRefs(nodeNameStr, rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public ApiCallRc deleteResource(
@@ -607,19 +558,16 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         String rscNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeRscContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            nodeNameStr,
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                true, // autoClose
-                nodeNameStr,
-                rscNameStr
-            )
-        )
+        try
         {
-
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
 
             SatelliteState stltState = rscData.getAssignedNode().getPeer(apiCtx).getSatelliteState();
@@ -627,12 +575,14 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             if (rscState != null && rscState.isInUse() != null && rscState.isInUse())
             {
-                addAnswer(
-                    String.format("Resource '%s' is still in use.", rscNameStr),
-                    "Resource is mounted/in use.",
-                    null,
-                    String.format("Un-mount resource '%s' on the node '%s'.", rscNameStr, nodeNameStr),
-                    ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC | ApiConsts.MASK_DEL
+                responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        String.format("Resource '%s' is still in use.", rscNameStr)
+                    )
+                    .setCause("Resource is mounted/in use.")
+                    .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscNameStr, nodeNameStr))
+                    .build()
                 );
             }
             else
@@ -640,16 +590,17 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 int volumeCount = rscData.getVolumeCount();
                 String successMessage;
                 String details;
+                String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(nodeNameStr, rscNameStr));
                 if (volumeCount > 0)
                 {
-                    successMessage = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
-                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscData.getUuid();
+                    successMessage = descriptionFirstLetterCaps + " marked for deletion.";
+                    details = descriptionFirstLetterCaps + " UUID is: " + rscData.getUuid();
                     markDeleted(rscData);
                 }
                 else
                 {
-                    successMessage = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
-                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscData.getUuid();
+                    successMessage = descriptionFirstLetterCaps + " deleted.";
+                    details = descriptionFirstLetterCaps + " UUID was: " + rscData.getUuid();
                     delete(rscData);
                 }
 
@@ -658,29 +609,19 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 if (volumeCount > 0)
                 {
                     // notify satellites
-                    updateSatellites(rscData);
+                    responseConverter.addWithDetail(responses, context, updateSatellites(rscData));
                 }
 
-                reportSuccess(successMessage, details);
+                responseConverter.addWithOp(responses, context,
+                    ApiCallRcImpl.entryBuilder(ApiConsts.DELETED, successMessage).setDetails(details).build());
             }
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr),
-                getObjRefs(nodeNameStr, rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-
-        return apiCallRc;
+        return responses;
     }
 
 
@@ -698,27 +639,24 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         String rscNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeRscContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            nodeNameStr,
+            rscNameStr
+        );
 
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                true, // autoClose
-                nodeNameStr,
-                rscNameStr
-            );
-        )
+        try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, false);
 
             if (rscData == null)
             {
-                addAnswer(
-                    getObjectDescriptionInlineFirstLetterCaps() + " not found",
-                    ApiConsts.WARN_NOT_FOUND
-                );
-                throw new ApiCallHandlerFailedException();
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NOT_FOUND,
+                    firstLetterCaps(getRscDescription(nodeNameStr, rscNameStr)) + " not found"
+                ));
             }
 
             ResourceDefinition rscDfn = rscData.getDefinition();
@@ -764,36 +702,28 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             commit();
 
-            reportSuccess(rscUuid);
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                rscUuid, getRscDescriptionInline(node, rscDfn)));
 
             if (deletedRscDfnName != null)
             {
-                addRscDfnDeletedAnswer(deletedRscDfnName, rscDfnUuid);
+                responseConverter.addWithOp(
+                    responses, context, makeRscDfnDeletedResponse(deletedRscDfnName, rscDfnUuid));
                 rscDfnMap.remove(deletedRscDfnName);
             }
             if (deletedNodeName != null)
             {
                 nodesMap.remove(deletedNodeName);
                 node.getPeer(apiCtx).closeConnection();
-                addNodeDeletedAnswer(deletedNodeName, nodeUuid);
+                responseConverter.addWithOp(responses, context, makeNodeDeletedResponse(deletedNodeName, nodeUuid));
             }
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr),
-                getObjRefs(nodeNameStr, rscNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     byte[] listResources(
@@ -806,8 +736,8 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
-            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
+            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
 
             final List<String> upperFilterNodes = filterNodes.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterResources =
@@ -820,12 +750,12 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 {
                     try
                     {
-                        for (Resource rsc : rscDfn.streamResource(peerAccCtx)
+                        for (Resource rsc : rscDfn.streamResource(peerAccCtx.get())
                             .filter(rsc -> upperFilterNodes.isEmpty() ||
                                 upperFilterNodes.contains(rsc.getAssignedNode().getName().value))
                             .collect(toList()))
                         {
-                            rscs.add(rsc.getApiData(peerAccCtx, null, null));
+                            rscs.add(rsc.getApiData(peerAccCtx.get(), null, null));
                             // fullSyncId and updateId null, as they are not going to be serialized anyways
                         }
                     }
@@ -841,7 +771,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             {
                 if (upperFilterNodes.isEmpty() || upperFilterNodes.contains(node.getName().value))
                 {
-                    final Peer peer = node.getPeer(peerAccCtx);
+                    final Peer peer = node.getPeer(peerAccCtx.get());
                     if (peer != null)
                     {
                         Lock readLock = peer.getSatelliteStateLock().readLock();
@@ -961,56 +891,11 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
     }
 
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        boolean autoCloseCurrentTransMgr,
-        String nodeNameStr,
-        String rscNameStr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            autoCloseCurrentTransMgr,
-            getObjRefs(nodeNameStr, rscNameStr)
-        );
-        currentNodeName = nodeNameStr;
-        currentRscName = rscNameStr;
-        return this;
-    }
-
-    @Override
-    protected String getObjectDescription()
-    {
-        return "Node: " + currentNodeName + ", Resource: " + currentRscName;
-    }
-
-    @Override
-    protected String getObjectDescriptionInline()
-    {
-        return getObjectDescriptionInline(currentNodeName, currentRscName);
-    }
-
-    private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr)
-    {
-        return "resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
-    }
-
-    private Map<String, String> getObjRefs(String nodeNameStr, String rscNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE, nodeNameStr);
-        map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        return map;
-    }
-
     protected final VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
         int vlmNr,
         boolean failIfNull
     )
-        throws ApiCallHandlerFailedException
     {
         return loadVlmDfn(rscDfn, asVlmNr(vlmNr), failIfNull);
     }
@@ -1020,13 +905,12 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         VolumeNumber vlmNr,
         boolean failIfNull
     )
-        throws ApiCallHandlerFailedException
     {
         VolumeDefinitionData vlmDfn;
         try
         {
             vlmDfn = volumeDefinitionDataFactory.load(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscDfn,
                 vlmNr
             );
@@ -1034,64 +918,65 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             if (failIfNull && vlmDfn == null)
             {
                 String rscName = rscDfn.getName().displayValue;
-                throw asExc(
-                    null,
-                    "Volume definition with number '" + vlmNr.value + "' on resource definition '" +
-                        rscName + "' not found.",
-                    "The specified volume definition with number '" + vlmNr.value + "' on resource definition '" +
-                        rscName + "' could not be found in the database",
-                    null, // details
-                    "Create a volume definition with number '" + vlmNr.value + "' on resource definition '" +
-                        rscName + "' first.",
-                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
+                        "Volume definition with number '" + vlmNr.value + "' on resource definition '" +
+                            rscName + "' not found."
+                    )
+                    .setCause("The specified volume definition with number '" + vlmNr.value + "' on resource definition '" +
+                        rscName + "' could not be found in the database")
+                    .setCorrection("Create a volume definition with number '" + vlmNr.value + "' on resource definition '" +
+                        rscName + "' first.")
+                    .build()
                 );
             }
 
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "load " + getObjectDescriptionInline(),
+                "load " + getVlmDfnDescriptionInline(rscDfn.getName().displayValue, vlmNr.value),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         return vlmDfn;
     }
 
-    protected final Props getProps(Resource rsc) throws ApiCallHandlerFailedException
+    protected final Props getProps(Resource rsc)
     {
         Props props;
         try
         {
-            props = rsc.getProps(peerAccCtx);
+            props = rsc.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
-                rsc.getAssignedNode().getName().displayValue + "'.",
+                    rsc.getAssignedNode().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         return props;
     }
 
-    protected final Props getProps(Volume vlm) throws ApiCallHandlerFailedException
+    protected final Props getProps(Volume vlm)
     {
         Props props;
         try
         {
-            props = vlm.getProps(peerAccCtx);
+            props = vlm.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value +
-                    "' on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
-                "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'.",
+                        "' on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
+                    "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
@@ -1102,28 +987,25 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     {
         try
         {
-            rscData.markDeleted(peerAccCtx);
+            rscData.markDeleted(peerAccCtx.get());
             Iterator<Volume> volumesIterator = rscData.iterateVolumes();
             while (volumesIterator.hasNext())
             {
                 Volume vlm = volumesIterator.next();
-                vlm.markDeleted(peerAccCtx);
+                vlm.markDeleted(peerAccCtx.get());
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "mark " + getObjectDescriptionInline() + " as deleted",
+                "mark " + getRscDescription(rscData) + " as deleted",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "marking " + getObjectDescriptionInline() + " as deleted"
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -1131,22 +1013,19 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     {
         try
         {
-            rscData.delete(peerAccCtx); // also deletes all of its volumes
+            rscData.delete(peerAccCtx.get()); // also deletes all of its volumes
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "delete " + getObjectDescriptionInline(),
+                "delete " + getRscDescription(rscData),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -1158,14 +1037,11 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + CtrlRscDfnApiCallHandler.getObjectDescriptionInline(rscDfn.getName().displayValue)
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -1177,14 +1053,11 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + CtrlNodeApiCallHandler.getObjectDescriptionInline(node.getName().displayValue)
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -1197,7 +1070,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return isMarkedForDeletion;
     }
@@ -1211,40 +1084,36 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return isMarkedForDeletion;
     }
 
-    private void addRscDfnDeletedAnswer(ResourceName rscName, UUID rscDfnUuid)
+    private ApiCallRc.RcEntry makeRscDfnDeletedResponse(ResourceName rscName, UUID rscDfnUuid)
     {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-
-        String rscDeletedMsg = CtrlRscDfnApiCallHandler.getObjectDescriptionInline(rscName.displayValue) +
+        String rscDeletedMsg = CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline(rscName.displayValue) +
             " deleted.";
         rscDeletedMsg = rscDeletedMsg.substring(0, 1).toUpperCase() + rscDeletedMsg.substring(1);
-        entry.setMessage(rscDeletedMsg);
-        entry.setReturnCode(ApiConsts.MASK_RSC_DFN | ApiConsts.DELETED);
-        entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
-        entry.putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString());
 
-        apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
+
+        return ApiCallRcImpl.entryBuilder(ApiConsts.MASK_RSC_DFN | ApiConsts.DELETED, rscDeletedMsg)
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue)
+            .putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString())
+            .build();
     }
 
-    private void addNodeDeletedAnswer(NodeName nodeName, UUID nodeUuid)
+    private ApiCallRc.RcEntry makeNodeDeletedResponse(NodeName nodeName, UUID nodeUuid)
     {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-
-        String rscDeletedMsg = CtrlNodeApiCallHandler.getObjectDescriptionInline(nodeName.displayValue) +
+        String rscDeletedMsg = CtrlNodeApiCallHandler.getNodeDescriptionInline(nodeName.displayValue) +
             " deleted.";
-        entry.setMessage(rscDeletedMsg);
-        entry.setReturnCode(ApiConsts.MASK_NODE | ApiConsts.DELETED);
-        entry.putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue);
-        entry.putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString());
 
-        apiCallRc.get().addEntry(entry);
         errorReporter.logInfo(rscDeletedMsg);
+
+        return ApiCallRcImpl.entryBuilder(ApiConsts.MASK_NODE | ApiConsts.DELETED, rscDeletedMsg)
+            .putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue)
+            .putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString())
+            .build();
     }
 
     void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
@@ -1284,7 +1153,54 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
         catch (InvalidNameException | AccessDeniedException exc)
         {
-            throw asImplError(exc);
+            throw new ImplementationError(exc);
         }
+    }
+
+    public static String getRscDescription(Resource resource)
+    {
+        return getRscDescription(
+            resource.getAssignedNode().getName().displayValue, resource.getDefinition().getName().displayValue);
+    }
+
+    public static String getRscDescription(String nodeNameStr, String rscNameStr)
+    {
+        return "Node: " + nodeNameStr + ", Resource: " + rscNameStr;
+    }
+
+    public static String getRscDescriptionInline(Resource rsc)
+    {
+        return getRscDescriptionInline(rsc.getAssignedNode(), rsc.getDefinition());
+    }
+
+    public static String getRscDescriptionInline(Node node, ResourceDefinition rscDfn)
+    {
+        return getRscDescriptionInline(node.getName().displayValue, rscDfn.getName().displayValue);
+    }
+
+    public static String getRscDescriptionInline(String nodeNameStr, String rscNameStr)
+    {
+        return "resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
+    }
+
+    private static ResponseContext makeRscContext(
+        Peer peer,
+        ApiOperation operation,
+        String nodeNameStr,
+        String rscNameStr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getRscDescription(nodeNameStr, rscNameStr),
+            getRscDescriptionInline(nodeNameStr, rscNameStr),
+            ApiConsts.MASK_RSC,
+            objRefs
+        );
     }
 }

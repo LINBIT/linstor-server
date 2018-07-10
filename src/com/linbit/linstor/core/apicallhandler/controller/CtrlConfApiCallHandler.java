@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +57,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
+@Singleton
 public class CtrlConfApiCallHandler
 {
     private static final String NAMESPACE_ENCRYPTED = "encrypted";
@@ -382,9 +384,6 @@ public class CtrlConfApiCallHandler
                 AbsApiCallHandler.reportStatic(
                     null,
                     NAMESPACE_ENCRYPTED + " namespace is empty",
-                    null, // cause
-                    null, // details
-                    null, // correction
                     ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                     null, // objRefs
                     apiCallRc,

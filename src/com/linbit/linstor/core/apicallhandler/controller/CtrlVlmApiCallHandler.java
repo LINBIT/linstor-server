@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +37,11 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -49,16 +55,15 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import static com.linbit.linstor.api.ApiConsts.API_LST_VLM;
 import static java.util.stream.Collectors.toList;
 
+@Singleton
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
-    private String currentNodeName;
-    private String currentRscName;
-    private Integer currentVlmNr;
     private final CtrlClientSerializer clientComSerializer;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
+    private final ResponseConverter responseConverter;
 
     @Inject
     protected CtrlVlmApiCallHandler(
@@ -72,15 +77,15 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.VOLUME,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -93,6 +98,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
+        responseConverter = responseConverterRef;
     }
 
     ApiCallRc volumeResized(
@@ -102,16 +108,16 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         long vlmSize
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                nodeNameStr,
-                rscNameStr,
-                volumeNr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeVlmContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            rscNameStr,
+            volumeNr
+        );
+
+        try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = asVlmNr(volumeNr);
@@ -166,25 +172,15 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
             if (updateSatellites)
             {
-                updateSatellites(rscData);
+                responseConverter.addWithDetail(responses, context, updateSatellites(rscData));
             }
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
-                getObjRefs(nodeNameStr, rscNameStr, volumeNr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     ApiCallRc volumeDrbdResized(
@@ -193,16 +189,16 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         int volumeNr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.MODIFY,
-                apiCallRc,
-                nodeNameStr,
-                rscNameStr,
-                volumeNr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeVlmContext(
+            peer.get(),
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            rscNameStr,
+            volumeNr
+        );
+
+        try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = asVlmNr(volumeNr);
@@ -210,26 +206,16 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             Volume vlm = rscData.getVolume(volumeNumber);
 
             vlm.getFlags().disableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
-            vlm.getVolumeDefinition().getFlags().disableFlags(peerAccCtx, VlmDfnFlags.RESIZE);
+            vlm.getVolumeDefinition().getFlags().disableFlags(peerAccCtx.get(), VlmDfnFlags.RESIZE);
 
             commit();
         }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
-        }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.MODIFY,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
-                getObjRefs(nodeNameStr, rscNameStr, volumeNr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     ApiCallRc volumeDeleted(
@@ -238,16 +224,16 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         int volumeNr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                nodeNameStr,
-                rscNameStr,
-                volumeNr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeVlmContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            nodeNameStr,
+            rscNameStr,
+            volumeNr
+        );
+
+        try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = asVlmNr(volumeNr);
@@ -279,36 +265,31 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            reportSuccess(vlmUuid);
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                vlmUuid, getVlmDescriptionInline(rscData, vlmDfn)));
             errorReporter.logDebug(
                 String.format("Volume with number '%d' deleted on node '%s'.", volumeNr, nodeNameStr)
             );
             if (vlmDfnDeleted)
             {
-                reportSuccess(
-                    "Volume definition with number '" + volumeNumber.value + "' of resource definition '" +
-                        rscData.getDefinition().getName().displayValue + "' deleted.",
-                        "Volume definition's UUID was: " + vlmDfnUuid.toString(),
-                        ApiConsts.MASK_DEL | ApiConsts.MASK_VLM_DFN | ApiConsts.DELETED
-                );
+                responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.DELETED,
+                        "Volume definition with number '" + volumeNumber.value + "' of resource definition '" +
+                            rscData.getDefinition().getName().displayValue + "' deleted."
+                    )
+                    .setDetails(
+                        "Volume definition's UUID was: " + vlmDfnUuid.toString()
+                    )
+                    .build());
             }
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
-                getObjRefs(nodeNameStr, rscNameStr, volumeNr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     byte[] listVolumes(
@@ -322,8 +303,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
-            nodesMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
+            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
 
             final List<String> upperFilterNodes = filterNodes.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterStorPools =
@@ -338,7 +319,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 {
                     try
                     {
-                        for (Resource rsc : rscDfn.streamResource(peerAccCtx)
+                        for (Resource rsc : rscDfn.streamResource(peerAccCtx.get())
                             .filter(rsc -> upperFilterNodes.isEmpty() ||
                                 upperFilterNodes.contains(rsc.getAssignedNode().getName().value))
                             .collect(toList()))
@@ -352,17 +333,17 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                             {
                                 Volume vlm = itVolumes.next();
                                 if (upperFilterStorPools.isEmpty() ||
-                                    upperFilterStorPools.contains(vlm.getStorPool(peerAccCtx).getName().value))
+                                    upperFilterStorPools.contains(vlm.getStorPool(peerAccCtx.get()).getName().value))
                                 {
-                                    volumes.add(vlm.getApiData(peerAccCtx));
+                                    volumes.add(vlm.getApiData(peerAccCtx.get()));
                                 }
                             }
 
                             List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
-                            for (ResourceConnection rscConn : rsc.streamResourceConnections(peerAccCtx)
+                            for (ResourceConnection rscConn : rsc.streamResourceConnections(peerAccCtx.get())
                                     .collect(toList()))
                             {
-                                rscConns.add(rscConn.getApiData(peerAccCtx));
+                                rscConns.add(rscConn.getApiData(peerAccCtx.get()));
                             }
 
                             if (!volumes.isEmpty())
@@ -371,11 +352,11 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                                     rscDfn.getName().getDisplayName(),
                                     rsc.getAssignedNode().getName().getDisplayName(),
                                     rsc.getAssignedNode().getUuid(),
-                                    rscDfn.getApiData(peerAccCtx),
+                                    rscDfn.getApiData(peerAccCtx.get()),
                                     rsc.getUuid(),
-                                    rsc.getStateFlags().getFlagsBits(peerAccCtx),
+                                    rsc.getStateFlags().getFlagsBits(peerAccCtx.get()),
                                     rsc.getNodeId().value,
-                                    rsc.getProps(peerAccCtx).map(),
+                                    rsc.getProps(peerAccCtx.get()).map(),
                                     volumes,
                                     null,
                                     rscConns,
@@ -395,7 +376,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             // get resource states of all nodes
             for (final Node node : nodesMap.values())
             {
-                final Peer peer = node.getPeer(peerAccCtx);
+                final Peer peer = node.getPeer(peerAccCtx.get());
                 if (peer != null)
                 {
                     Lock readLock = peer.getSatelliteStateLock().readLock();
@@ -428,58 +409,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             .build();
     }
 
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        String nodeNameStr,
-        String rscNameStr,
-        Integer vlmNr
-    )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true, // autoClose
-            getObjRefs(nodeNameStr, rscNameStr, vlmNr)
-        );
-        currentNodeName = nodeNameStr;
-        currentRscName = rscNameStr;
-        currentVlmNr = vlmNr;
-
-        return this;
-    }
-
-    @Override
-    protected String getObjectDescription()
-    {
-        return "Node: " + currentNodeName + ", Resource: " + currentRscName +
-            " Volume number: " + currentVlmNr;
-    }
-
-    @Override
-    protected String getObjectDescriptionInline()
-    {
-        return getObjectDescriptionInline(currentNodeName, currentRscName, currentVlmNr);
-    }
-
-    private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)
-    {
-        return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" +
-            nodeNameStr + "'";
-    }
-
-    private Map<String, String> getObjRefs(String nodeNameStr, String rscNameStr, Integer vlmNr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_NODE, nodeNameStr);
-        map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        if (vlmNr != null)
-        {
-            map.put(ApiConsts.KEY_VLM_NR, rscNameStr);
-        }
-        return map;
-    }
-
     private void markClean(Volume vol)
     {
         try
@@ -488,14 +417,11 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "marking " + getObjectDescriptionInline() + " as clean."
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -508,7 +434,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return iterator;
     }
@@ -522,7 +448,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return isMarkedAsClean;
     }
@@ -536,7 +462,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         return isMarkedAsDeleted;
     }
@@ -549,17 +475,55 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asImplError(accDeniedExc);
+            throw new ImplementationError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + CtrlVlmDfnApiCallHandler.getObjectDescriptionInline(
-                    vlmDfn.getResourceDefinition().getName().displayValue,
-                    vlmDfn.getVolumeNumber().value
-                )
-            );
+            throw new ApiSQLException(sqlExc);
         }
+    }
+
+    public static String getVlmDescription(String nodeNameStr, String rscNameStr, Integer vlmNr)
+    {
+        return "Node: " + nodeNameStr + ", Resource: " + rscNameStr +
+            " Volume number: " + vlmNr;
+    }
+
+    public static String getVlmDescriptionInline(Resource rsc, VolumeDefinition vlmDfn)
+    {
+        return getVlmDescriptionInline(
+            rsc.getAssignedNode().getName().displayValue,
+            rsc.getDefinition().getName().displayValue,
+            vlmDfn.getVolumeNumber().value
+        );
+    }
+
+    public static String getVlmDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)
+    {
+        return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" +
+            nodeNameStr + "'";
+    }
+
+    private static ResponseContext makeVlmContext(
+        Peer peer,
+        ApiOperation operation,
+        String nodeNameStr,
+        String rscNameStr,
+        int volumeNr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(volumeNr));
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getVlmDescription(nodeNameStr, rscNameStr, volumeNr),
+            getVlmDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
+            ApiConsts.MASK_VLM,
+            objRefs
+        );
     }
 }

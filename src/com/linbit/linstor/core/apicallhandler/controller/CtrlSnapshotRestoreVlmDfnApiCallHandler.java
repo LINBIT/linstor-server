@@ -20,7 +20,11 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -31,17 +35,21 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import java.util.HashMap;
+import javax.inject.Singleton;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+@Singleton
 class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 {
-    private String currentFromRscName;
-    private String currentFromSnapshotName;
-    private String currentToRscName;
+    private final ResponseConverter responseConverter;
 
     @Inject
     CtrlSnapshotRestoreVlmDfnApiCallHandler(
@@ -52,9 +60,10 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         CtrlObjectFactories objectFactories,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
@@ -69,20 +78,22 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
             defaultStorPoolNameRef,
             volumeDefinitionDataFactoryRef
         );
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc restoreVlmDfn(String fromRscNameStr, String fromSnapshotNameStr, String toRscNameStr)
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                fromRscNameStr,
-                fromSnapshotNameStr,
-                toRscNameStr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = new ResponseContext(
+            peer.get(),
+            new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
+            getSnapshotRestoreVlmDfnDescription(toRscNameStr),
+            getSnapshotRestoreVlmDfnDescriptionInline(toRscNameStr),
+            ApiConsts.MASK_SNAPSHOT,
+            Collections.emptyMap()
+        );
+
+        try
         {
             ResourceDefinitionData fromRscDfn = loadRscDfn(fromRscNameStr, true);
 
@@ -91,19 +102,19 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
 
             ResourceDefinitionData toRscDfn = loadRscDfn(toRscNameStr, true);
 
-            for (SnapshotVolumeDefinition snapshotVlmDfn : fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx))
+            for (SnapshotVolumeDefinition snapshotVlmDfn : fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
             {
                 VolumeDefinitionData vlmDfn = createVlmDfnData(
-                    peerAccCtx,
+                    peerAccCtx.get(),
                     toRscDfn,
                     snapshotVlmDfn.getVolumeNumber(),
                     null,
-                    snapshotVlmDfn.getVolumeSize(peerAccCtx),
+                    snapshotVlmDfn.getVolumeSize(peerAccCtx.get()),
                     new VlmDfnFlags[] {}
                 );
 
                 boolean isEncrypted = snapshotVlmDfn.getFlags()
-                    .isSet(peerAccCtx, SnapshotVolumeDefinition.SnapshotVlmDfnFlags.ENCRYPTED);
+                    .isSet(peerAccCtx.get(), SnapshotVolumeDefinition.SnapshotVlmDfnFlags.ENCRYPTED);
                 if (isEncrypted)
                 {
                     Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
@@ -116,7 +127,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
                             "Encrypted snapshot volume definition without crypt passwd found");
                     }
 
-                    vlmDfn.getFlags().enableFlags(peerAccCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+                    vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
                     vlmDfnPropsMap.put(
                         ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
                         cryptPasswd
@@ -132,34 +143,28 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
 
             commit();
 
-            updateSatellites(toRscDfn);
+            responseConverter.addWithDetail(responses, context, updateSatellites(toRscDfn));
 
-            reportSuccess(
-                getObjectDescriptionInlineFirstLetterCaps() + " restored " +
-                    "from resource '" + fromRscNameStr + "', snapshot '" + fromSnapshotNameStr + "'.",
-                "Resource UUIDs: " +
-                    toRscDfn.streamResource(peerAccCtx)
+            responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.DELETED,
+                    firstLetterCaps(getSnapshotRestoreVlmDfnDescriptionInline(toRscNameStr)) + " restored " +
+                        "from resource '" + fromRscNameStr + "', snapshot '" + fromSnapshotNameStr + "'."
+                )
+                .setDetails("Resource UUIDs: " +
+                    toRscDfn.streamResource(peerAccCtx.get())
                         .map(Resource::getUuid)
                         .map(UUID::toString)
-                        .collect(Collectors.joining(", "))
+                        .collect(Collectors.joining(", ")))
+                .build()
             );
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(toRscNameStr),
-                new HashMap(),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     private Props getVlmDfnProps(VolumeDefinition vlmDfn)
@@ -167,13 +172,13 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         Props props;
         try
         {
-            props = vlmDfn.getProps(peerAccCtx);
+            props = vlmDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the properties of " + getObjectDescriptionInline(),
+                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
@@ -185,13 +190,13 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         Props props;
         try
         {
-            props = snapshotVlmDfn.getProps(peerAccCtx);
+            props = snapshotVlmDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the properties of " + getObjectDescriptionInline(),
+                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
             );
         }
@@ -207,50 +212,21 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "accessing resources of resource definition " + rscDfn.getName().getDisplayName(),
+                "access resources of resource definition " + rscDfn.getName().getDisplayName(),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         return iterator;
     }
 
-    private AbsApiCallHandler setContext(
-        ApiCallType apiCallType,
-        ApiCallRcImpl apiCallRc,
-        String fromRscNameStr,
-        String fromSnapshotNameStr,
-        String toRscNameStr
-    )
+    private static String getSnapshotRestoreVlmDfnDescription(String toRscNameStr)
     {
-        super.setContext(
-            apiCallType,
-            apiCallRc,
-            true, // autoClose
-            new HashMap()
-        );
-
-        currentFromRscName = fromRscNameStr;
-        currentFromSnapshotName = fromSnapshotNameStr;
-        currentToRscName = toRscNameStr;
-
-        return this;
+        return "Volume definitions of resource: " + toRscNameStr;
     }
 
-    @Override
-    protected String getObjectDescription()
-    {
-        return "Volume definitions of resource: " + currentToRscName;
-    }
-
-    @Override
-    protected String getObjectDescriptionInline()
-    {
-        return getObjectDescriptionInline(currentToRscName);
-    }
-
-    public static String getObjectDescriptionInline(String toRscNameStr)
+    private static String getSnapshotRestoreVlmDfnDescriptionInline(String toRscNameStr)
     {
         return "volume definitions of resource definition '" + toRscNameStr + "'";
     }

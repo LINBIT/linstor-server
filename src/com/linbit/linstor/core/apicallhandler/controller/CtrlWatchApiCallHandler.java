@@ -25,13 +25,16 @@ import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.util.UUID;
 
+@Singleton
 public class CtrlWatchApiCallHandler
 {
     private final ErrorReporter errorReporter;
-    private final AccessContext accCtx;
-    private final Peer peer;
+    private final Provider<AccessContext> peerAccCtx;
+    private final Provider<Peer> peer;
     private final EventBroker eventBroker;
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection rscDfnMapProt;
@@ -39,15 +42,15 @@ public class CtrlWatchApiCallHandler
     @Inject
     public CtrlWatchApiCallHandler(
         ErrorReporter errorReporterRef,
-        @PeerContext AccessContext accCtxRef,
-        Peer peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        Provider<Peer> peerRef,
         EventBroker eventBrokerRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef
     )
     {
         errorReporter = errorReporterRef;
-        accCtx = accCtxRef;
+        peerAccCtx = peerAccCtxRef;
         peer = peerRef;
         eventBroker = eventBrokerRef;
         nodesMapProt = nodesMapProtRef;
@@ -144,11 +147,11 @@ public class CtrlWatchApiCallHandler
                 // Watches can result in data being retrieved for objects that do not yet exist.
                 // For these objects we do not know the access requirements.
                 // Hence we require read access to the entire node and resource definition collections.
-                nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-                rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+                nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
+                rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
 
                 eventBroker.createWatch(new Watch(
-                    UUID.randomUUID(), peer.getId(), peerWatchId,
+                    UUID.randomUUID(), peer.get().getId(), peerWatchId,
                     new EventIdentifier(
                         eventName,
                         new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName)
@@ -160,7 +163,7 @@ public class CtrlWatchApiCallHandler
             catch (AccessDeniedException exc)
             {
                 errorMsg = AbsApiCallHandler.getAccDeniedMsg(
-                    accCtx,
+                    peerAccCtx.get(),
                     "create a watch"
                 );
                 rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
@@ -172,7 +175,7 @@ public class CtrlWatchApiCallHandler
             apiCallRc.addEntry(errorMsg, rc | ApiConsts.MASK_CRT);
             errorReporter.reportError(
                 errorExc,
-                accCtx,
+                peerAccCtx.get(),
                 null,
                 errorMsg
             );
@@ -182,7 +185,7 @@ public class CtrlWatchApiCallHandler
 
     public ApiCallRc deleteWatch(int peerWatchId)
     {
-        eventBroker.deleteWatch(peer.getId(), peerWatchId);
+        eventBroker.deleteWatch(peer.get().getId(), peerWatchId);
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 

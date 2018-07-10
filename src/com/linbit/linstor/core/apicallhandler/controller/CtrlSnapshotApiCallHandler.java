@@ -34,6 +34,13 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -49,6 +56,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,12 +66,11 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+
+@Singleton
 public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 {
-    private List<String> currentNodeNames;
-    private String currentRscName;
-    private String currentSnapshotName;
-
     private final CtrlClientSerializer clientComSerializer;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
@@ -72,6 +79,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private final SnapshotDataControllerFactory snapshotDataFactory;
     private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
     private final EventBroker eventBroker;
+    private final ResponseConverter responseConverter;
 
     @Inject
     public CtrlSnapshotApiCallHandler(
@@ -83,20 +91,20 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
         SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
-        EventBroker eventBrokerRef
+        EventBroker eventBrokerRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            LinStorObject.SNAPSHOT,
             interComSerializer,
             objectFactories,
             transMgrProviderRef,
@@ -112,6 +120,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         snapshotDataFactory = snapshotDataFactoryRef;
         snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
         eventBroker = eventBrokerRef;
+        responseConverter = responseConverterRef;
     }
 
     /**
@@ -134,22 +143,22 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         String snapshotNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                nodeNameStrs,
-                rscNameStr,
-                snapshotNameStr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeSnapshotContext(
+            peer.get(),
+            ApiOperation.makeCreateOperation(),
+            nodeNameStrs,
+            rscNameStr,
+            snapshotNameStr
+        );
+
+        try
         {
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
             SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
             SnapshotDefinition snapshotDfn = createSnapshotDfnData(
-                peerAccCtx,
+                peerAccCtx.get(),
                 rscDfn,
                 snapshotName,
                 new SnapshotDfnFlags[] {}
@@ -157,10 +166,10 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
             ensureSnapshotsViable(rscDfn);
 
-            rscDfn.addSnapshotDfn(peerAccCtx, snapshotDfn);
-            snapshotDfn.setInCreation(peerAccCtx, true);
+            rscDfn.addSnapshotDfn(peerAccCtx.get(), snapshotDfn);
+            snapshotDfn.setInCreation(peerAccCtx.get(), true);
 
-            Iterator<VolumeDefinition> vlmDfnIterator = rscDfn.iterateVolumeDfn(peerAccCtx);
+            Iterator<VolumeDefinition> vlmDfnIterator = rscDfn.iterateVolumeDfn(peerAccCtx.get());
             while (vlmDfnIterator.hasNext())
             {
                 VolumeDefinition vlmDfn = vlmDfnIterator.next();
@@ -169,13 +178,13 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                     apiCtx,
                     snapshotDfn,
                     vlmDfn.getVolumeNumber(),
-                    vlmDfn.getVolumeSize(peerAccCtx),
+                    vlmDfn.getVolumeSize(peerAccCtx.get()),
                     new SnapshotVlmDfnFlags[]{},
                     true,
                     true
                 );
 
-                boolean isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+                boolean isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
                 if (isEncrypted)
                 {
                     Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
@@ -187,7 +196,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                         throw new ImplementationError("Encrypted volume definition without crypt passwd found");
                     }
 
-                    snapshotVlmDfn.getFlags().enableFlags(peerAccCtx, SnapshotVlmDfnFlags.ENCRYPTED);
+                    snapshotVlmDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotVlmDfnFlags.ENCRYPTED);
                     snapshotVlmDfnPropsMaps.put(
                         ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
                         cryptPasswd
@@ -197,7 +206,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
             if (nodeNameStrs.isEmpty())
             {
-                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx);
+                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
                 while (rscIterator.hasNext())
                 {
                     Resource rsc = rscIterator.next();
@@ -212,41 +221,38 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 for (String nodeNameStr : nodeNameStrs)
                 {
-                    Resource rsc = rscDfn.getResource(peerAccCtx, asNodeName(nodeNameStr));
+                    Resource rsc = rscDfn.getResource(peerAccCtx.get(), asNodeName(nodeNameStr));
                     if (rsc == null)
                     {
-                        throw asExc(
-                            null,
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_RSC,
                             "Resource '" + rscDfn.getName().getDisplayName() +
-                                "' on node '" + nodeNameStr + "' not found.",
-                            ApiConsts.FAIL_NOT_FOUND_RSC
-                        );
+                                "' on node '" + nodeNameStr + "' not found."
+                        ));
                     }
 
                     if (isDiskless(rsc))
                     {
-                        throw asExc(
-                            null,
-                            "Cannot create snapshot from diskless resource on node '" + nodeNameStr + "'",
-                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
-                        );
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                            "Cannot create snapshot from diskless resource on node '" + nodeNameStr + "'"
+                        ));
                     }
                     createSnapshotOnNode(snapshotDfn, rsc);
                 }
             }
 
-            if (snapshotDfn.getAllSnapshots(peerAccCtx).isEmpty())
+            if (snapshotDfn.getAllSnapshots(peerAccCtx.get()).isEmpty())
             {
-                throw asExc(
-                    null,
-                    "No resources found for snapshotting",
-                    ApiConsts.FAIL_NOT_FOUND_RSC
-                );
-            }
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_NOT_FOUND_RSC,
+                            "No resources found for snapshotting"
+                        ));
+                }
 
             commit();
 
-            updateSatellites(snapshotDfn);
+            responseConverter.addWithDetail(responses, context, updateSatellites(snapshotDfn));
 
             eventBroker.openEventStream(EventIdentifier.snapshotDefinition(
                 ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
@@ -254,24 +260,15 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 snapshotName
             ));
 
-            reportSuccess(snapshotDfn.getUuid());
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+                snapshotDfn.getUuid(), getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr),
-                getObjRefs(rscNameStr, snapshotNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     private void createSnapshotOnNode(SnapshotDefinition snapshotDfn, Resource rsc)
@@ -287,7 +284,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         );
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition :
-            snapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx))
+            snapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
         {
             snapshotVolumeDataControllerFactory.getInstance(
                 apiCtx,
@@ -302,16 +299,16 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
     public ApiCallRc deleteSnapshot(String rscNameStr, String snapshotNameStr)
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.DELETE,
-                apiCallRc,
-                Collections.emptyList(),
-                rscNameStr,
-                snapshotNameStr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeSnapshotContext(
+            peer.get(),
+            ApiOperation.makeDeleteOperation(),
+            Collections.emptyList(),
+            rscNameStr,
+            snapshotNameStr
+        );
+
+        try
         {
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
@@ -319,43 +316,34 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
 
             UUID uuid = snapshotDfn.getUuid();
-            if (snapshotDfn.getAllSnapshots(peerAccCtx).isEmpty())
+            if (snapshotDfn.getAllSnapshots(peerAccCtx.get()).isEmpty())
             {
-                snapshotDfn.delete(peerAccCtx);
+                snapshotDfn.delete(peerAccCtx.get());
 
                 commit();
             }
             else
             {
-                snapshotDfn.markDeleted(peerAccCtx);
-                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx))
+                snapshotDfn.markDeleted(peerAccCtx.get());
+                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    snapshot.markDeleted(peerAccCtx);
+                    snapshot.markDeleted(peerAccCtx.get());
                 }
 
                 commit();
 
-                updateSatellites(snapshotDfn);
+                responseConverter.addWithDetail(responses, context, updateSatellites(snapshotDfn));
             }
 
-            reportSuccess(uuid);
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                uuid, getSnapshotDfnDescriptionInline(rscNameStr, snapshotNameStr)));
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.DELETE,
-                getObjectDescriptionInline(Collections.emptyList(), rscNameStr, snapshotNameStr),
-                getObjRefs(rscNameStr, snapshotNameStr),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     public void respondSnapshot(int msgId, String resourceNameStr, UUID snapshotUuid, String snapshotNameStr)
@@ -375,7 +363,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 SnapshotDefinition snapshotDfn = rscDefinition.getSnapshotDfn(apiCtx, snapshotName);
                 if (snapshotDfn != null && snapshotDfn.getInProgress(apiCtx))
                 {
-                    snapshot = snapshotDfn.getSnapshot(peerAccCtx, currentPeer.getNode().getName());
+                    snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), currentPeer.getNode().getName());
                 }
             }
 
@@ -426,14 +414,14 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns = new ArrayList<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx, AccessType.VIEW);
+            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
             for (ResourceDefinition rscDfn : rscDfnMap.values())
             {
-                for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx))
+                for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
                 {
                     try
                     {
-                        snapshotDfns.add(snapshotDfn.getListItemApiData(peerAccCtx));
+                        snapshotDfns.add(snapshotDfn.getListItemApiData(peerAccCtx.get()));
                     }
                     catch (AccessDeniedException accDeniedExc)
                     {
@@ -478,14 +466,14 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
                 if (!storPool.getDriverKind().isSnapshotSupported())
                 {
-                    throw asExc(
-                        null,
-                        "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots.",
-                        null, // cause
-                        "Used for storage pool '" + storPool.getName() + "'" +
-                            " on '" + rsc.getAssignedNode().getName() + "'.",
-                        null, // correction
-                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                            "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots."
+                        )
+                        .setDetails("Used for storage pool '" + storPool.getName() + "'" +
+                            " on '" + rsc.getAssignedNode().getName() + "'.")
+                        .build()
                     );
                 }
             }
@@ -500,18 +488,18 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         {
             Volume vlm = vlmIterator.next();
 
-            String metaDiskPath = vlm.getMetaDiskPath(peerAccCtx);
+            String metaDiskPath = vlm.getMetaDiskPath(peerAccCtx.get());
             if (metaDiskPath != null && !metaDiskPath.isEmpty() && !metaDiskPath.equals("internal"))
             {
-                throw asExc(
-                    null,
-                    "Snapshot with external meta-disk not supported.",
-                    null,
-                    "Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                        "Snapshot with external meta-disk not supported."
+                    )
+                    .setDetails("Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
                         " on node " + rsc.getAssignedNode().getName().displayValue +
-                        " has meta disk path '" + metaDiskPath + "'",
-                    null,
-                    ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED
+                        " has meta disk path '" + metaDiskPath + "'")
+                    .build()
                 );
             }
         }
@@ -526,13 +514,13 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         boolean connected = currentPeer.isConnected();
         if (!connected)
         {
-            throw asExc(
-                null,
-                "No active connection to satellite '" + node.getName() + "'.",
-                null, // cause
-                "Snapshots cannot be created when the corresponding satellites are not connected.",
-                null, // correction
-                ApiConsts.FAIL_NOT_CONNECTED
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_NOT_CONNECTED,
+                    "No active connection to satellite '" + node.getName() + "'."
+                )
+                .setDetails("Snapshots cannot be created when the corresponding satellites are not connected.")
+                .build()
             );
         }
     }
@@ -546,7 +534,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException implError)
         {
-            throw asImplError(implError);
+            throw new ImplementationError(implError);
         }
         return isDiskless;
     }
@@ -572,30 +560,23 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getObjectDescriptionInline(),
+                "create " + getSnapshotDfnDescriptionInline(rscDfn.getName().displayValue, snapshotName.displayValue),
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw asExc(
-                dataAlreadyExistsExc,
-                String.format(
-                    "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
-                    snapshotName,
-                    currentRscName
-                ),
-                ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN
-            );
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN, String.format(
+                "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                snapshotName,
+                rscDfn.getName().displayValue
+            )), dataAlreadyExistsExc);
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "creating " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
         return snapshotDfn;
     }
@@ -605,13 +586,13 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = vlmDfn.getProps(peerAccCtx);
+            props = vlmDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the properties of " + getObjectDescriptionInline(),
+                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
@@ -623,13 +604,13 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Props props;
         try
         {
-            props = snapshotVlmDfn.getProps(peerAccCtx);
+            props = snapshotVlmDfn.getProps(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the properties of " + getObjectDescriptionInline(),
+                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
             );
         }
@@ -640,22 +621,19 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            snapshotDfn.markDeleted(peerAccCtx);
+            snapshotDfn.markDeleted(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "mark " + getObjectDescriptionInline() + " as deleted",
+                "mark " + getSnapshotDfnDescriptionInline(snapshotDfn) + " as deleted",
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
@@ -663,70 +641,86 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            snapshot.markDeleted(peerAccCtx);
+            snapshot.markDeleted(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "mark " + getObjectDescriptionInline() + " as deleted",
+                "mark " + getSnapshotDescriptionInline(snapshot) + " as deleted",
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
         catch (SQLException sqlExc)
         {
-            throw asSqlExc(
-                sqlExc,
-                "deleting " + getObjectDescriptionInline()
-            );
+            throw new ApiSQLException(sqlExc);
         }
     }
 
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
+    public static String getSnapshotDescription(
         List<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr
     )
     {
-        super.setContext(
-            type,
-            apiCallRc,
-            true,
-            getObjRefs(rscNameStr, snapshotNameStr)
-        );
-        currentNodeNames = nodeNameStrs;
-        currentRscName = rscNameStr;
-        currentSnapshotName = snapshotNameStr;
-        return this;
-    }
-
-    @Override
-    protected String getObjectDescription()
-    {
-        String snapshotDescription = "Resource: " + currentRscName + ", Snapshot: " + currentSnapshotName;
-        return currentNodeNames.isEmpty() ?
+        String snapshotDescription = "Resource: " + rscNameStr + ", Snapshot: " + snapshotNameStr;
+        return nodeNameStrs.isEmpty() ?
             snapshotDescription :
-            "Nodes: " + String.join(", ", currentNodeNames) + "; " + snapshotDescription;
+            "Nodes: " + String.join(", ", nodeNameStrs) + "; " + snapshotDescription;
     }
 
-    @Override
-    protected String getObjectDescriptionInline()
+    public static String getSnapshotDescriptionInline(Snapshot snapshot)
     {
-        return getObjectDescriptionInline(currentNodeNames, currentRscName, currentSnapshotName);
+        return getSnapshotDescriptionInline(
+            Collections.singletonList(snapshot.getNode().getName().displayValue),
+            snapshot.getResourceName().displayValue,
+            snapshot.getSnapshotName().displayValue
+        );
     }
 
-    private String getObjectDescriptionInline(
+    public static String getSnapshotDescriptionInline(
         List<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr
     )
     {
-        String snapshotDescription = "snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
+        String snapshotDescription = getSnapshotDfnDescriptionInline(rscNameStr, snapshotNameStr);
         return nodeNameStrs.isEmpty() ?
             snapshotDescription :
             snapshotDescription + " on nodes '" + String.join(", ", nodeNameStrs) + "'";
+    }
+
+    public static String getSnapshotDfnDescriptionInline(SnapshotDefinition snapshotDfn)
+    {
+        return getSnapshotDfnDescriptionInline(
+            snapshotDfn.getResourceName().displayValue, snapshotDfn.getName().displayValue);
+    }
+
+    public static String getSnapshotDfnDescriptionInline(
+        String rscNameStr,
+        String snapshotNameStr
+    )
+    {
+        return "snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
+    }
+
+    public static String getSnapshotVlmDfnDescriptionInline(SnapshotVolumeDefinition snapshotVlmDfn)
+    {
+        return getSnapshotVlmDfnDescriptionInline(
+            snapshotVlmDfn.getResourceName().displayValue,
+            snapshotVlmDfn.getSnapshotName().displayValue,
+            snapshotVlmDfn.getVolumeNumber().value
+        );
+    }
+
+    public static String getSnapshotVlmDfnDescriptionInline(
+        String rscNameStr,
+        String snapshotNameStr,
+        Integer vlmNr
+    )
+    {
+        return "volume definition with number '" + vlmNr +
+            "' of snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
     }
 
     private Map<String, String> getObjRefs(String rscNameStr, String snapshotNameStr)
@@ -735,5 +729,27 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
         map.put(ApiConsts.KEY_SNAPSHOT, snapshotNameStr);
         return map;
+    }
+
+    private static ResponseContext makeSnapshotContext(
+        Peer peer,
+        ApiOperation operation,
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        objRefs.put(ApiConsts.KEY_SNAPSHOT, snapshotNameStr);
+
+        return new ResponseContext(
+            peer,
+            operation,
+            getSnapshotDescription(nodeNameStrs, rscNameStr, snapshotNameStr),
+            getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr),
+            ApiConsts.MASK_SNAPSHOT,
+            objRefs
+        );
     }
 }

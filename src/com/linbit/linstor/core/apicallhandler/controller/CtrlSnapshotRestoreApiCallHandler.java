@@ -28,7 +28,12 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -43,22 +48,21 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+@Singleton
 public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 {
-    private List<String> currentNodeNames;
-    private String currentFromRscName;
-    private String currentFromSnapshotName;
-    private String currentToRscName;
-
     private final SnapshotDataControllerFactory snapshotDataFactory;
+    private final ResponseConverter responseConverter;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
@@ -67,14 +71,15 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         CtrlStltSerializer interComSerializer,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
-        @PeerContext AccessContext peerAccCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
-        SnapshotDataControllerFactory snapshotDataFactoryRef
+        SnapshotDataControllerFactory snapshotDataFactoryRef,
+        ResponseConverter responseConverterRef
     )
     {
         super(
@@ -91,6 +96,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             volumeDataFactoryRef
         );
         snapshotDataFactory = snapshotDataFactoryRef;
+        responseConverter = responseConverterRef;
     }
 
     public ApiCallRc restoreSnapshot(
@@ -100,17 +106,17 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         String toRscNameStr
     )
     {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try (
-            AbsApiCallHandler basicallyThis = setContext(
-                ApiCallType.CREATE,
-                apiCallRc,
-                nodeNameStrs,
-                fromRscNameStr,
-                fromSnapshotNameStr,
-                toRscNameStr
-            )
-        )
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = new ResponseContext(
+            peer.get(),
+            new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
+            getSnapshotRestoreDescription(nodeNameStrs, toRscNameStr),
+            getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscNameStr),
+            ApiConsts.MASK_SNAPSHOT,
+            Collections.emptyMap()
+        );
+
+        try
         {
             ResourceDefinitionData fromRscDfn = loadRscDfn(fromRscNameStr, true);
 
@@ -121,16 +127,15 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 
             if (toRscDfn.getResourceCount() != 0)
             {
-                throw asExc(
-                    null,
-                    "Cannot restore to resource defintion which already has resources",
-                    ApiConsts.FAIL_EXISTS_RSC
-                );
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_RSC,
+                    "Cannot restore to resource defintion which already has resources"
+                ));
             }
 
             if (nodeNameStrs.isEmpty())
             {
-                for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx))
+                for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
                     restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode());
                 }
@@ -146,48 +151,44 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 
             commit();
 
-            if (toRscDfn.getVolumeDfnCount(peerAccCtx) > 0)
+            if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) > 0)
             {
-                updateSatellites(toRscDfn);
+                responseConverter.addWithDetail(responses, context, updateSatellites(toRscDfn));
             }
             else
             {
-                addAnswer(
-                    "No volumes to restore.",
-                    null, // cause
-                    "The target resource definition has no volume definitions. " +
-                        "The restored resources will be empty.",
-                    "Restore the volume definitions to the target resource definition.",
-                    ApiConsts.WARN_NOT_FOUND
+                responseConverter.addWithDetail(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.WARN_NOT_FOUND,
+                        "No volumes to restore."
+                    )
+                    .setDetails("The target resource definition has no volume definitions. " +
+                                "The restored resources will be empty.")
+                    .setCorrection("Restore the volume definitions to the target resource definition.")
+                    .build()
                 );
             }
 
-            reportSuccess(
-                getObjectDescriptionInlineFirstLetterCaps() + " restored " +
-                    "from resource '" + fromRscNameStr + "', snapshot '" + fromSnapshotNameStr + "'.",
-                "Resource UUIDs: " +
-                    toRscDfn.streamResource(peerAccCtx)
+            responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.CREATED,
+                    firstLetterCaps(getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscNameStr)) + " restored " +
+                        "from resource '" + fromRscNameStr + "', snapshot '" + fromSnapshotNameStr + "'."
+                )
+                .setDetails("Resource UUIDs: " +
+                    toRscDfn.streamResource(peerAccCtx.get())
                         .map(Resource::getUuid)
                         .map(UUID::toString)
-                        .collect(Collectors.joining(", "))
+                        .collect(Collectors.joining(", ")))
+                .build()
             );
-        }
-        catch (ApiCallHandlerFailedException ignore)
-        {
-            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            reportStatic(
-                exc,
-                ApiCallType.CREATE,
-                getObjectDescriptionInline(nodeNameStrs, toRscNameStr),
-                new HashMap<>(),
-                apiCallRc
-            );
+            responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return apiCallRc;
+        return responses;
     }
 
     private void restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
@@ -206,126 +207,90 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             VolumeNumber volumeNumber = toVlmDfn.getVolumeNumber();
 
             SnapshotVolumeDefinition fromSnapshotVlmDfn =
-                fromSnapshotDfn.getSnapshotVolumeDefinition(peerAccCtx, volumeNumber);
+                fromSnapshotDfn.getSnapshotVolumeDefinition(peerAccCtx.get(), volumeNumber);
 
             if (fromSnapshotVlmDfn == null)
             {
-                throw asExc(
-                    null,
-                    "Snapshot does not contain required volume number " + volumeNumber,
-                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_VLM_DFN
-                );
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_VLM_DFN,
+                    "Snapshot does not contain required volume number " + volumeNumber
+                ));
             }
 
-            long snapshotVolumeSize = fromSnapshotVlmDfn.getVolumeSize(peerAccCtx);
-            long requiredVolumeSize = toVlmDfn.getVolumeSize(peerAccCtx);
+            long snapshotVolumeSize = fromSnapshotVlmDfn.getVolumeSize(peerAccCtx.get());
+            long requiredVolumeSize = toVlmDfn.getVolumeSize(peerAccCtx.get());
             if (snapshotVolumeSize != requiredVolumeSize)
             {
-                throw asExc(
-                    null,
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_VLM_SIZE,
                     "Snapshot size does not match for volume number " + volumeNumber.value + "; " +
                         "snapshot size: " + snapshotVolumeSize + "KiB, " +
-                        "required size: " + requiredVolumeSize + "KiB",
-                    ApiConsts.FAIL_INVLD_VLM_SIZE
-                );
+                        "required size: " + requiredVolumeSize + "KiB"
+                ));
             }
 
-            SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(peerAccCtx, volumeNumber);
+            SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(peerAccCtx.get(), volumeNumber);
 
             if (fromSnapshotVolume == null)
             {
                 throw new ImplementationError("Expected snapshot volume missing");
             }
 
-            StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx);
+            StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx.get());
 
             Volume vlm = createVolume(rsc, toVlmDfn, storPool, null);
-            vlm.getProps(peerAccCtx).setProp(ApiConsts.KEY_STOR_POOL_NAME, storPool.getName().displayValue);
-            vlm.getProps(peerAccCtx).setProp(
+            vlm.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_STOR_POOL_NAME, storPool.getName().displayValue);
+            vlm.getProps(peerAccCtx.get()).setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
-            vlm.getProps(peerAccCtx).setProp(
+            vlm.getProps(peerAccCtx.get()).setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue);
         }
-    }
-
-    private AbsApiCallHandler setContext(
-        ApiCallType type,
-        ApiCallRcImpl apiCallRc,
-        List<String> nodeNameStrs,
-        String fromRscNameStr,
-        String fromSnapshotNameStr,
-        String toRscNameStr
-        )
-    {
-        super.setContext(
-            type,
-            apiCallRc,
-            true,
-            new HashMap<>()
-        );
-        currentNodeNames = nodeNameStrs;
-        currentFromRscName = fromRscNameStr;
-        currentFromSnapshotName = fromSnapshotNameStr;
-        currentToRscName = toRscNameStr;
-        return this;
-    }
-
-    @Override
-    protected String getObjectDescription()
-    {
-        return currentNodeNames.isEmpty() ?
-            "Resource: " + currentToRscName :
-            "Nodes: " + String.join(", ", currentNodeNames) + "; Resource: " + currentToRscName;
-    }
-
-    @Override
-    protected String getObjectDescriptionInline()
-    {
-        return getObjectDescriptionInline(currentNodeNames, currentToRscName);
-    }
-
-    private String getObjectDescriptionInline(List<String> nodeNameStrs, String toRscNameStr)
-    {
-        return nodeNameStrs.isEmpty() ?
-            "resource '" + toRscNameStr + "'" :
-            "resource '" + toRscNameStr + "' on nodes '" + String.join(", ", nodeNameStrs) + "'";
     }
 
     protected final Snapshot loadSnapshot(
         Node node,
         SnapshotDefinition snapshotDfn
     )
-        throws ApiCallHandlerFailedException
     {
         Snapshot snapshot;
         try
         {
-            snapshot = snapshotDataFactory.load(peerAccCtx, node, snapshotDfn);
+            snapshot = snapshotDataFactory.load(peerAccCtx.get(), node, snapshotDfn);
 
             if (snapshot == null)
             {
-                throw asExc(
-                    null, // throwable
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
                     "Snapshot '" + snapshotDfn.getName().displayValue +
                         "' of resource '" + snapshotDfn.getResourceName().displayValue +
-                        "' on node '" + node.getName().displayValue + "' not found.", // error msg
-                    null, // cause
-                    null, // details
-                    null, // correction
-                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT
-                );
+                        "' on node '" + node.getName().displayValue + "' not found."
+                ));
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
+            throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "loading snapshot '" + snapshotDfn.getName().displayValue +
+                "load snapshot '" + snapshotDfn.getName().displayValue +
                     "' of resource '" + snapshotDfn.getResourceName().displayValue +
-                    "' on node '" + node.getName().displayValue + "'.",
+                    "' on node '" + node.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
             );
         }
         return snapshot;
+    }
+
+    private static String getSnapshotRestoreDescription(List<String> nodeNameStrs, String toRscNameStr)
+    {
+        return nodeNameStrs.isEmpty() ?
+            "Resource: " + toRscNameStr :
+            "Nodes: " + String.join(", ", nodeNameStrs) + "; Resource: " + toRscNameStr;
+    }
+
+    private static String getSnapshotRestoreDescriptionInline(List<String> nodeNameStrs, String toRscNameStr)
+    {
+        return nodeNameStrs.isEmpty() ?
+            "resource '" + toRscNameStr + "'" :
+            "resource '" + toRscNameStr + "' on nodes '" + String.join(", ", nodeNameStrs) + "'";
     }
 }
