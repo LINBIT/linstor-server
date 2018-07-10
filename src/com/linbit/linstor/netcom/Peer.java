@@ -4,6 +4,7 @@ import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.api.ApiConsts;
@@ -19,6 +20,8 @@ import com.linbit.linstor.security.AccessDeniedException;
  */
 public interface Peer
 {
+    int MAX_INCOMING_QUEUE_SIZE = 1000;
+
     enum ConnectionStatus
     {
         OFFLINE(ApiConsts.CONN_STATUS_OFFLINE),
@@ -318,4 +321,17 @@ public interface Peer
      * @return
      */
     boolean hasFullSyncFailed();
+
+    /**
+     * Returns true if the peer has a complete Message object ready to be processed.
+     * @return
+     */
+    boolean hasNextMsgIn();
+
+    /**
+     * Returns a complete {@link Message} object for further processing. May return null
+     * if {@link #hasNextMsgIn()} returns false or throw an {@link ImplementationError}.
+     * @return
+     */
+    Message nextCurrentMsgIn();
 }

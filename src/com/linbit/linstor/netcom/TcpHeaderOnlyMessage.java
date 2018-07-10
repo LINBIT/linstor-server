@@ -1,23 +1,20 @@
 package com.linbit.linstor.netcom;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import com.linbit.ImplementationError;
 
-// TODO: if more than classes are needed beside Tcp(Ping|Pong)InternalMessage
-// create a common super class for them
-public class TcpHeaderOnlyMessage extends TcpConnectorMessage
+public class TcpHeaderOnlyMessage implements Message
 {
     protected static final byte[] DATA = new byte[0];
-    protected final ByteBuffer byteBuffer;
+    protected static final ByteBuffer EMPTY_DATA_BUFFER = ByteBuffer.wrap(DATA);
+
+    protected final ByteBuffer headerBuffer;
 
     protected TcpHeaderOnlyMessage(int type)
     {
-        super(true);
         byte[] buffer = new byte[HEADER_SIZE];
-        byteBuffer = ByteBuffer.wrap(buffer);
-        byteBuffer.putInt(TYPE_FIELD_OFFSET, type);
+        headerBuffer = ByteBuffer.wrap(buffer);
+        headerBuffer.putInt(TYPE_FIELD_OFFSET, type);
     }
 
     @Override
@@ -29,44 +26,29 @@ public class TcpHeaderOnlyMessage extends TcpConnectorMessage
     @Override
     public void setData(byte[] data)
     {
-        throw new ImplementationError("Cannot set Data of hardcoded Ping message", null);
+        throw new ImplementationError("Cannot set Data of TcpHeaderOnlyMessage", null);
     }
 
     @Override
-    protected int read(SocketChannel channel, ByteBuffer buffer) throws IOException
+    public int getType() throws IllegalMessageStateException
     {
-        throw new ImplementationError("TcpPingMessage should not receive read events", null);
+        // we could also cache the constructor's parameter and return that
+        // but this is more like "what would you send"
+        return headerBuffer.getInt(TYPE_FIELD_OFFSET);
     }
 
     @Override
-    protected ReadState read(SocketChannel inChannel) throws IllegalMessageStateException, IOException
+    public ByteBuffer getHeaderBuffer()
     {
-        throw new ImplementationError("TcpPingMessage should not receive read events", null);
+        // creates a new ByteBuffer sharing the same byte[].
+        // this has the advantage that is does not need to be rewind-ed after
+        // it was completely consumed.
+        return headerBuffer.asReadOnlyBuffer();
     }
 
     @Override
-    protected WriteState write(SocketChannel outChannel) throws IllegalMessageStateException, IOException
+    public ByteBuffer getDataBuffer() throws IllegalMessageStateException
     {
-        WriteState state;
-        synchronized (this)
-        {
-            outChannel.write(byteBuffer);
-            if (byteBuffer.hasRemaining())
-            {
-                state = WriteState.UNFINISHED;
-            }
-            else
-            {
-                state = WriteState.FINISHED;
-                byteBuffer.flip();
-            }
-        }
-        return state;
-    }
-
-    @Override
-    protected boolean write(SocketChannel channel, ByteBuffer buffer) throws IOException
-    {
-        throw new ImplementationError("TcpPingMessage should not receive bytes to write", null);
+        return EMPTY_DATA_BUFFER;
     }
 }

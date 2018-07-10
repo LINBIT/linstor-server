@@ -16,8 +16,7 @@ import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.TcpConnectorMessage.ReadState;
-import com.linbit.linstor.netcom.TcpConnectorMessage.WriteState;
+import com.linbit.linstor.netcom.TcpConnectorPeer.ReadState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -46,6 +45,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.event.Level;
@@ -444,32 +444,60 @@ public class TcpConnectorService implements Runnable, TcpConnector
     public void run()
     {
         // Selector loop
+        LinkedList<Peer> peersWithFinishedMessages = new LinkedList<>();
         while (!shutdownFlag.get())
         {
             try
             {
-
-                // Block until I/O operations are ready to be performed
-                // on at least one of the channels, or until the selection
-                // operation is interrupted (e.g., using wakeup())
-                int selectCount = serverSelector.select();
-
-                synchronized (syncObj)
+                if (peersWithFinishedMessages.isEmpty())
                 {
-                    // wait for the syncObj to get released
+                    // Block until I/O operations are ready to be performed
+                    // on at least one of the channels, or until the selection
+                    // operation is interrupted (e.g., using wakeup())
+                    int selectCount = serverSelector.select();
+
+                    synchronized (syncObj)
+                    {
+                        // wait for the syncObj to get released
+                    }
+
+                    // Ensure making some progress in the case that
+                    // the blocking select() call is repeatedly interrupted
+                    // (e.g., using wakeup()) before having selected any
+                    // channels
+                    if (selectCount <= 0)
+                    {
+                        serverSelector.selectNow();
+                    }
                 }
-
-                // Ensure making some progress in the case that
-                // the blocking select() call is repeatedly interrupted
-                // (e.g., using wakeup()) before having selected any
-                // channels
-                if (selectCount <= 0)
+                else
                 {
+
+                    ListIterator<Peer> listIterator = peersWithFinishedMessages.listIterator();
+                    while (listIterator.hasNext())
+                    {
+                        boolean finished = true;
+                        Peer peer = listIterator.next();
+                        if (peer.hasNextMsgIn())
+                        {
+                            msgProcessor.processMessage(peer.nextCurrentMsgIn(), this, peer);
+                            finished = false;
+                        }
+
+                        if (finished)
+                        {
+                            listIterator.remove();
+                        }
+                    }
+
+                    // we tried to process one message from each waiting peer.
+                    // now we see if we have new operations (read, write, accept, connect)
+                    // if peers still have more messages, they have to wait until the next
+                    // loop-cycle (fair scheduling).
                     serverSelector.selectNow();
                 }
 
                 Iterator<SelectionKey> keysIter = serverSelector.selectedKeys().iterator();
-
                 while (keysIter.hasNext())
                 {
                     SelectionKey currentKey = null;
@@ -488,14 +516,17 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             try
                             {
                                 connPeer = (TcpConnectorPeer) currentKey.attachment();
-                                ReadState state = connPeer.msgIn.read((SocketChannel) currentKey.channel());
+                                ReadState state = connPeer.read((SocketChannel) currentKey.channel());
                                 switch (state)
                                 {
                                     case UNFINISHED:
                                         break;
                                     case FINISHED:
-                                        msgProcessor.processMessage(connPeer.msgIn, this, connPeer);
-                                        connPeer.nextInMessage();
+                                        msgProcessor.processMessage(connPeer.nextCurrentMsgIn(), this, connPeer);
+                                        if (connPeer.hasNextMsgIn())
+                                        {
+                                            peersWithFinishedMessages.add(connPeer);
+                                        }
                                         break;
                                     case END_OF_STREAM:
                                         if (connPeer.getNode() != null)
@@ -605,23 +636,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             try
                             {
                                 connPeer = (TcpConnectorPeer) currentKey.attachment();
-                                WriteState state = connPeer.msgOut.write((SocketChannel) currentKey.channel());
-                                switch (state)
-                                {
-                                    case UNFINISHED:
-                                        break;
-                                    case FINISHED:
-                                        connPeer.nextOutMessage();
-                                        break;
-                                    default:
-                                        throw new ImplementationError(
-                                            String.format(
-                                                "Missing case label for enum member '%s'",
-                                                state.name()
-                                            ),
-                                            null
-                                        );
-                                }
+                                connPeer.write((SocketChannel) currentKey.channel());
                             }
                             catch (NotYetConnectedException connExc)
                             {

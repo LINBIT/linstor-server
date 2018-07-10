@@ -265,6 +265,10 @@ public class TaskScheduleService implements SystemService, Runnable
         if (delay >= 0)
         {
             long targetTime = delay + now;
+            if (targetTime < 0)
+            {
+                targetTime = Long.MAX_VALUE;
+            }
             // If a task list exists for the calculated target time,
             // add the task to the existing task list; otherwise, register
             // a new task list for the calculated target time and

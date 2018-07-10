@@ -11,11 +11,13 @@ import com.linbit.linstor.security.Privilege;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
 import java.nio.channels.SelectionKey;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Queue;
 
 import javax.net.ssl.SSLException;
 
@@ -33,6 +35,30 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class TcpConnectorPeer implements Peer
 {
+    public enum Phase
+    {
+        HEADER,
+        DATA;
+
+        public Phase getNextPhase()
+        {
+            return DATA;
+        }
+    }
+
+    public enum ReadState
+    {
+        UNFINISHED,
+        FINISHED,
+        END_OF_STREAM
+    }
+
+    public enum WriteState
+    {
+        UNFINISHED,
+        FINISHED
+    }
+
     private final Node node;
 
     private String peerId;
@@ -40,14 +66,14 @@ public class TcpConnectorPeer implements Peer
     private TcpConnector connector;
 
     // Current inbound message
-    protected TcpConnectorMessage msgIn;
+    protected Message msgIn;
 
     // Current outbound message; cached for quicker access
-    protected TcpConnectorMessage msgOut;
+    protected Message msgOut;
 
     // Queue of pending outbound messages
     // TODO: Put a capacity limit on the maximum number of queued outbound messages
-    protected final Deque<TcpConnectorMessage> msgOutQueue;
+    protected final Deque<Message> msgOutQueue;
 
     protected SelectionKey selKey;
 
@@ -81,6 +107,12 @@ public class TcpConnectorPeer implements Peer
     private final AtomicLong serializerId;
     private final ReadWriteLock serializerLock;
 
+    protected Phase currentReadPhase = Phase.HEADER;
+    protected Phase currentWritePhase = Phase.HEADER;
+
+    private final Queue<Message> finishedMsgInQueue;
+    private int opInterest = OP_READ;
+
     protected TcpConnectorPeer(
         String peerIdRef,
         TcpConnector connectorRef,
@@ -95,11 +127,11 @@ public class TcpConnectorPeer implements Peer
         msgOutQueue = new LinkedList<>();
 
         // Do not use createMessage() here!
-        // The SslTcpConnectorPeer has no initialized SSLEngine instance yet,
+        // The SslTcpConnectorPeer has not initialized SSLEngine instance yet,
         // so a NullPointerException would be thrown in createMessage().
         // After initialization of the sslEngine, msgIn will be overwritten with
         // a reference to a valid instance.
-        msgIn = new TcpConnectorMessage(false);
+        msgIn = new MessageData(false);
 
         selKey = key;
         peerAccCtx = accCtx;
@@ -116,6 +148,8 @@ public class TcpConnectorPeer implements Peer
         {
             satelliteState = new SatelliteState();
         }
+
+        finishedMsgInQueue = new LinkedList<>();
     }
 
     @Override
@@ -173,9 +207,17 @@ public class TcpConnectorPeer implements Peer
         return createMessage(true);
     }
 
-    protected TcpConnectorMessage createMessage(boolean forSend)
+    protected Message createMessage(boolean forSend)
     {
-        return new TcpConnectorMessage(forSend);
+        if (forSend)
+        {
+            currentWritePhase = Phase.HEADER;
+        }
+        else
+        {
+            currentReadPhase = Phase.HEADER;
+        }
+        return new MessageData(forSend);
     }
 
     @Override
@@ -185,33 +227,21 @@ public class TcpConnectorPeer implements Peer
         boolean connFlag = connected;
         if (connFlag)
         {
-            TcpConnectorMessage tcpConMsg;
-            try
-            {
-                tcpConMsg = (TcpConnectorMessage) msg;
-            }
-            catch (ClassCastException ccExc)
-            {
-                tcpConMsg = createMessage(true);
-                tcpConMsg.setData(msg.getData());
-            }
-
             synchronized (this)
             {
                 // Queue the message for sending
                 if (msgOut == null)
                 {
-                    msgOut = tcpConMsg;
+                    msgOut = msg;
                 }
                 else
                 {
-                    msgOutQueue.add(tcpConMsg);
+                    msgOutQueue.add(msg);
                 }
 
                 try
                 {
-                    // Outbound messages present, enable OP_WRITE
-                    selKey.interestOps(OP_READ | OP_WRITE);
+                    enableOpInterest(OP_WRITE);
                     connector.wakeup();
                 }
                 catch (IllegalStateException illState)
@@ -222,6 +252,29 @@ public class TcpConnectorPeer implements Peer
             }
         }
         return connFlag;
+    }
+
+    protected void enableOpInterest(int op)
+    {
+        opInterest |= op;
+        selKey.interestOps(opInterest);
+    }
+
+    protected boolean isInterestOpEnabled(int op)
+    {
+        return (opInterest & op) == op;
+    }
+
+    protected void disableInterestOp(int op)
+    {
+        opInterest &= ~op;
+        selKey.interestOps(opInterest);
+    }
+
+    protected void setOpInterest(int op)
+    {
+        opInterest = op;
+        selKey.interestOps(op);
     }
 
     @Override
@@ -346,7 +399,7 @@ public class TcpConnectorPeer implements Peer
                 try
                 {
                     // No more outbound messages present, disable OP_WRITE
-                    selKey.interestOps(OP_READ);
+                    disableInterestOp(OP_WRITE);
                 }
                 catch (IllegalStateException illState)
                 {
@@ -565,6 +618,23 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
+    public boolean hasNextMsgIn()
+    {
+        return !finishedMsgInQueue.isEmpty();
+    }
+
+    @Override
+    public Message nextCurrentMsgIn()
+    {
+        Message message = finishedMsgInQueue.poll();
+        if (finishedMsgInQueue.size() < MAX_INCOMING_QUEUE_SIZE && !isInterestOpEnabled(OP_READ))
+        {
+            enableOpInterest(OP_READ);
+        }
+        return message;
+    }
+
+    @Override
     public String toString()
     {
         String ret;
@@ -579,4 +649,157 @@ public class TcpConnectorPeer implements Peer
         return ret;
     }
 
+    public ReadState read(SocketChannel inChannel)
+        throws IllegalMessageStateException, IOException
+    {
+        ReadState state = ReadState.UNFINISHED;
+        switch (currentReadPhase)
+        {
+            case HEADER:
+                {
+                    ByteBuffer headerBuffer = msgIn.getHeaderBuffer();
+                    int readCount = inChannel.read(headerBuffer);
+                    if (readCount > -1)
+                    {
+                        if (!headerBuffer.hasRemaining())
+                        {
+                            // All header data has been received
+                            // Prepare reading the message
+                            initDataByteBuffer(headerBuffer);
+                            state = readData(inChannel, state);
+                        }
+                    }
+                    else
+                    {
+                        // Peer has closed the stream
+                        state = ReadState.END_OF_STREAM;
+                    }
+                }
+                break;
+            case DATA:
+                state = readData(inChannel, state);
+                break;
+            default:
+                throw new ImplementationError(
+                    String.format(
+                        "Missing case label for enum member '%s'",
+                        currentReadPhase.name()
+                    ),
+                    null
+                );
+        }
+        if (state == ReadState.FINISHED)
+        {
+            addToQueue(msgIn);
+            msgIn = createMessage(false);
+        }
+        return state;
+    }
+
+    protected void initDataByteBuffer(ByteBuffer headerBuffer) throws IllegalMessageStateException
+    {
+        int dataSize = headerBuffer.getInt(Message.LENGTH_FIELD_OFFSET);
+        if (dataSize < 0)
+        {
+            dataSize = 0;
+        }
+        if (dataSize > Message.DEFAULT_MAX_DATA_SIZE)
+        {
+            dataSize = Message.DEFAULT_MAX_DATA_SIZE;
+        }
+        msgIn.setData(new byte[dataSize]);
+        currentReadPhase = currentReadPhase.getNextPhase();
+    }
+
+    private ReadState readData(SocketChannel inChannel, ReadState stateRef)
+        throws IOException, IllegalMessageStateException
+    {
+        ReadState state = stateRef;
+        ByteBuffer dataBuffer = msgIn.getDataBuffer();
+        int readCount = inChannel.read(dataBuffer);
+        if (readCount <= -1)
+        {
+            // Peer has closed the stream
+            state = ReadState.END_OF_STREAM;
+        }
+        if (!dataBuffer.hasRemaining())
+        {
+            // All message data has been received
+            currentReadPhase = currentReadPhase.getNextPhase();
+            state = ReadState.FINISHED;
+        }
+        return state;
+    }
+
+    public WriteState write(SocketChannel outChannel)
+        throws IllegalMessageStateException, IOException
+    {
+        WriteState state = WriteState.UNFINISHED;
+        switch (currentWritePhase)
+        {
+            case HEADER:
+                {
+                    ByteBuffer headerBuffer = msgOut.getHeaderBuffer();
+                    outChannel.write(headerBuffer);
+                    if (!headerBuffer.hasRemaining())
+                    {
+                        currentWritePhase = currentWritePhase.getNextPhase();
+                        state = writeData(outChannel, state);
+                    }
+                }
+                break;
+            case DATA:
+                state = writeData(outChannel, state);
+                break;
+            default:
+                throw new ImplementationError(
+                    String.format(
+                        "Missing case label for enum member '%s'",
+                        currentWritePhase.name()
+                    ),
+                    null
+                );
+        }
+        if (state == WriteState.FINISHED)
+        {
+            currentWritePhase = Phase.HEADER;
+            nextOutMessage();
+        }
+        return state;
+    }
+
+    private WriteState writeData(SocketChannel outChannel, WriteState stateRef)
+        throws IOException, IllegalMessageStateException
+    {
+        WriteState state = stateRef;
+        ByteBuffer dataBuffer = msgOut.getDataBuffer();
+        outChannel.write(dataBuffer);
+        if (!dataBuffer.hasRemaining())
+        {
+            // Finished sending the message
+            state = WriteState.FINISHED;
+            currentWritePhase = currentWritePhase.getNextPhase();
+        }
+        return state;
+    }
+
+
+    protected void addToQueue(Message msg)
+    {
+        finishedMsgInQueue.add(msg);
+        if (finishedMsgInQueue.size() >= MAX_INCOMING_QUEUE_SIZE)
+        {
+            /*
+             * we reached MAX_INCOMING_QUEUE_SIZE. if we would allow
+             * unlimited messages, the queue could get full which either
+             * throw an out of memory error eventually or the queue.add will block.
+             * Latter would block the whole tcpConnectorService-thread.
+             *
+             * Therefore we stop listening to OP_READ. This will be reverted
+             * when a message which is ready to process is consumed (i.e.
+             * leaves our queue).
+             */
+            disableInterestOp(OP_READ);
+        }
+    }
 }
