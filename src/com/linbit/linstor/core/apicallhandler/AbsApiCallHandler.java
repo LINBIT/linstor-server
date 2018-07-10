@@ -292,7 +292,10 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asExc(
                 invalidNameExc,
-                "The given resource name '%s' is invalid.",
+                String.format(
+                    "The specified resource name '%s' is invalid.",
+                    rscNameStr
+                ),
                 ApiConsts.FAIL_INVLD_RSC_NAME
             );
         }
@@ -897,7 +900,7 @@ public abstract class AbsApiCallHandler implements AutoCloseable
         Throwable throwable = throwableRef;
         if (throwable == null)
         {
-            throwable = new LinStorException(errorMsg);
+            throwable = new LinStorException(errorMsg, errorMsg, causeMsg, correctionMsg, detailsMsg);
         }
         errorReporter.reportError(
             throwable,
