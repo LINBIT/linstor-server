@@ -94,7 +94,7 @@ public class ConfFileBuilder
 
         appendLine(header());
         appendLine("");
-        appendLine("resource %s", localRsc.getDefinition().getName().displayValue);
+        appendLine("resource \"%s\"", localRsc.getDefinition().getName().displayValue);
         try (Section resourceSection = new Section())
         {
             // include linstor common
