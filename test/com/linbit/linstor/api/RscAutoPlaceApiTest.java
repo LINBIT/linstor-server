@@ -30,6 +30,7 @@ import com.linbit.linstor.storage.LvmDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import javax.inject.Provider;
 
@@ -77,6 +78,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         super.setUp();
         createRscDfn(TEST_RSC_NAME, TEST_TCP_PORT_NR);
         MINOR_GEN.set(MINOR_NR_MIN);
+
+        Mockito.when(mockSatellite.isConnected()).thenReturn(true);
     }
 
     @Test
@@ -87,8 +90,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -116,7 +117,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 1,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
                 ApiConsts.CREATED // rsc autoplace
             )
             // Name and order the options so that the expected choice is in the middle in terms of creation sequence
@@ -147,7 +147,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 1,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
@@ -198,8 +197,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -229,8 +226,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -318,8 +313,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -359,8 +352,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -400,8 +391,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -491,10 +480,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.WARN_NOT_CONNECTED, // stlt3
-                ApiConsts.WARN_NOT_CONNECTED, // stlt4
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -540,8 +525,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -588,8 +571,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -614,10 +595,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 3,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.WARN_NOT_CONNECTED, // stlt3
-                ApiConsts.WARN_NOT_CONNECTED, // stlt4 (diskless)
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -661,8 +638,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -689,10 +664,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 4,
-                ApiConsts.WARN_NOT_CONNECTED, // stlt1
-                ApiConsts.WARN_NOT_CONNECTED, // stlt2
-                ApiConsts.WARN_NOT_CONNECTED, // stlt3
-                ApiConsts.WARN_NOT_CONNECTED, // stlt4
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
