@@ -1,5 +1,6 @@
 GIT = git
 MAKE = make
+DOCKERREGISTRY = drbd.io
 
 GENRES=./generated-resources
 GENSRC=generated-src
@@ -64,6 +65,9 @@ ifneq ($(FORCE),1)
 	if ! grep -q "^linstor-server ($(VERSION)" debian/changelog ; then \
 		echo >&2 "debian/changelog needs update"; exit 1; \
 	fi
+	if ! grep -q "^ENV LINSTOR_VERSION $(VERSION)" Dockerfile ; then \
+		echo >&2 "Dockerfile needs update"; exit 1; \
+	fi
 endif
 
 .PHONY: getprotc
@@ -84,3 +88,6 @@ versioninfo:
 	echo "version=$(VERSION)" > $(VERSINFO)
 	echo "git.commit.id=$(GITHASH)" >> $(VERSINFO)
 	echo "build.time=$$(date -u --iso-8601=second)" >> $(VERSINFO)
+
+dockerimage: debrelease
+	docker build -t $(DOCKERREGISTRY)/linstor-controller .
