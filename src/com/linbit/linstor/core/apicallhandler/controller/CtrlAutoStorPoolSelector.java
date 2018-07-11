@@ -16,6 +16,7 @@ import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -121,6 +122,8 @@ public class CtrlAutoStorPoolSelector
             .filter(storPool -> !(storPool.getDriverKind() instanceof DisklessDriverKind))
             // filter for user access on node
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
+            // filter for node connected
+            .filter(storPool -> getPeerPrivileged(storPool).isConnected())
             // filter for enough free space
             .filter(storPool -> poolHasSpaceFor(storPool, rscSize))
             .collect(
@@ -242,6 +245,20 @@ public class CtrlAutoStorPoolSelector
             throw new ImplementationError(exc);
         }
         return storPool;
+    }
+
+    private Peer getPeerPrivileged(StorPool storPool)
+    {
+        Peer peer;
+        try
+        {
+            peer = storPool.getNode().getPeer(apiAccCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return peer;
     }
 
     private Optional<Long> getFreeSpace(Node node, StorPoolName storPoolName)
@@ -516,7 +533,8 @@ public class CtrlAutoStorPoolSelector
                                 " * the storage pool '" + storPoolName + "' has to have at least '" +
                                 rscSize + "' free space\n"
                     ) +
-                    " * the current access context has enough privileges to use the node and the storage pool"
+                    " * the current access context has enough privileges to use the node and the storage pool\n" +
+                    " * the node is online"
             )
             .build()
         );
