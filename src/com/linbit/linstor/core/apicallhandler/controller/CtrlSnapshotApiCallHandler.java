@@ -146,7 +146,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeSnapshotContext(
             peer.get(),
-            ApiOperation.makeCreateOperation(),
+            ApiOperation.makeRegisterOperation(),
             nodeNameStrs,
             rscNameStr,
             snapshotNameStr
@@ -260,7 +260,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                 snapshotName
             ));
 
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultRegisteredEntry(
                 snapshotDfn.getUuid(), getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)));
         }
         catch (Exception | ImplementationError exc)
@@ -562,7 +562,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getSnapshotDfnDescriptionInline(rscDfn.getName().displayValue, snapshotName.displayValue),
+                "register " + getSnapshotDfnDescriptionInline(rscDfn.getName().displayValue, snapshotName.displayValue),
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }

@@ -93,7 +93,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNetIfContext(
             peer.get(),
-            ApiOperation.makeCreateOperation(),
+            ApiOperation.makeRegisterOperation(),
             nodeNameStr,
             netIfNameStr
         );
@@ -120,8 +120,8 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             }
 
             commit();
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
-                netIf.getUuid(), getNetIfDescriptionInline(netIf)));
+            responseConverter.addWithOp(responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(netIf.getUuid(), getNetIfDescriptionInline(netIf)));
             responseConverter.addWithDetail(responses, context, updateSatellites(node));
         }
         catch (Exception | ImplementationError exc)
@@ -325,7 +325,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 exc,
-                "create " + getNetIfDescriptionInline(nodeNameStr, netIfNameStr),
+                "register " + getNetIfDescriptionInline(nodeNameStr, netIfNameStr),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }

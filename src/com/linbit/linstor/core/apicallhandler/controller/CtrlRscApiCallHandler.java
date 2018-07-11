@@ -161,7 +161,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeRscContext(
             peer.get(),
-            ApiOperation.makeCreateOperation(),
+            ApiOperation.makeRegisterOperation(),
             nodeNameStr,
             rscNameStr
         );
@@ -188,10 +188,9 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 // will cause a conflict (and thus, an exception) on the satellite
                 responseConverter.addWithDetail(responses, context, updateSatellites(rsc));
             }
-            // TODO: if a satellite confirms creation, also log it to controller.info
 
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
-                rsc.getUuid(), getRscDescriptionInline(rsc)));
+            responseConverter.addWithOp(responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc)));
 
             Iterator<Volume> vlmIt = rsc.iterateVolumes();
             while (vlmIt.hasNext())
@@ -204,7 +203,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                     "Volume with number '" + vlmNr + "' on resource '" +
                         vlm.getResourceDefinition().getName().displayValue + "' on node '" +
                         vlm.getResource().getAssignedNode().getName().displayValue +
-                        "' successfully created"
+                        "' successfully registered"
                     );
                 vlmCreatedRcEntry.setDetails(
                     "Volume UUID is: " + vlm.getUuid().toString()
@@ -235,14 +234,14 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         if (storPool == null)
         {
             throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The default storage pool '" + storPoolNameStr + "' " +
+                .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The storage pool '" + storPoolNameStr + "' " +
                     "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
                     "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
                     "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.")
                 .setDetails("The resource which should be deployed had at least one volume definition " +
                     "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
                     "tried to automatically create. " +
-                    "The default storage pool's name for this new volume was looked for in " +
+                    "The storage pool's name for this new volume was looked for in " +
                     "its volume definition's properties, its resource's properties, its node's " +
                     "properties and finally in a system wide default storage pool name defined by " +
                     "the LinStor controller.")
@@ -435,14 +434,14 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
                 storPool = loadStorPool(storPoolDfn, node, true);
 
-                    if (isRscDiskless)
-                    {
-                        checkBackingDiskWithDiskless(rsc, storPool);
-                    }
-                    else
-                    {
-                        responses.addEntries(warnAndFlagDiskless(rsc, storPool));
-                    }
+                if (isRscDiskless)
+                {
+                    checkBackingDiskWithDiskless(rsc, storPool);
+                }
+                else
+                {
+                    responses.addEntries(warnAndFlagDiskless(rsc, storPool));
+                }
 
                 checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
             }

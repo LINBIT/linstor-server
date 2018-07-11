@@ -206,7 +206,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeContext(
             peer.get(),
-            ApiOperation.makeCreateOperation(),
+            ApiOperation.makeRegisterOperation(),
             nodeNameStr
         );
 
@@ -268,8 +268,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 commit();
                 nodesMap.put(nodeName, node);
 
-                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
-                    node.getUuid(), getNodeDescriptionInline(node)));
+                responseConverter.addWithOp(responses, context,
+                    ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
 
                 if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                 {
@@ -859,7 +859,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_ACC_DENIED_NODE,
-                    "ObjProt of non-existing Node denies access of creating the Node in question."
+                    "ObjProt of non-existing Node denies access of registering the Node in question."
                 ),
                 new LinStorException(
                     "An accessDeniedException occured during creation of a node. That means the " +
@@ -872,7 +872,10 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_EXISTS_NODE, "Creation of node '" + nodeName.displayValue + "' failed.")
+                .entryBuilder(
+                    ApiConsts.FAIL_EXISTS_NODE,
+                    "Registration of node '" + nodeName.displayValue + "' failed."
+                )
                 .setCause("A node with the specified name '" + nodeName.displayValue + "' already exists.")
                 .setCorrection("- Specify another name for the new node\n" +
                     "or\n" +
@@ -908,7 +911,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private void reportMissingNetInterfaces(String nodeNameStr)
     {
         throw new ApiRcException(ApiCallRcImpl
-            .entryBuilder(ApiConsts.FAIL_MISSING_NETCOM, "Creation of node '" + nodeNameStr + "' failed.")
+            .entryBuilder(ApiConsts.FAIL_MISSING_NETCOM, "Registration of node '" + nodeNameStr + "' failed.")
             .setCause("No network interfaces were given.")
             .setCorrection("At least one network interface has to be given and be marked to be used for " +
             "controller-satellite communitaction.")
@@ -942,15 +945,15 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create the netinterface '" + netName + "' on node '" + node.getName() + "'",
+                "register the netinterface '" + netName + "' on node '" + node.getName() + "'",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_EXISTS_NET_IF, "Creation of node '" + node.getName() + "' failed.")
-                .setCause("A duplicate network interface name was encountered during node creation.")
+                .entryBuilder(ApiConsts.FAIL_EXISTS_NET_IF, "Registration of node '" + node.getName() + "' failed.")
+                .setCause("A duplicate network interface name was encountered during node registration.")
                 .setDetails("The network interface name '" + netName +
                     "' was specified for more than one network interface.")
                 .setCorrection("A name that is unique per node must be specified for each network interface.")
@@ -963,24 +966,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw new ApiSQLException(sqlExc);
         }
         return netIf;
-    }
-
-    private NetInterface getNetInterface(Node node, NetInterfaceName niName)
-    {
-        NetInterface netInterface;
-        try
-        {
-            netInterface = node.getNetInterface(peerAccCtx.get(), niName);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "creating a satellite connection",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        return netInterface;
     }
 
     private Stream<Resource> getRscStream(NodeData nodeData)

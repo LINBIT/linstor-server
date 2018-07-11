@@ -104,7 +104,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 
         ResponseContext context = new ResponseContext(
             peer.get(),
-            ApiOperation.makeCreateOperation(),
+            ApiOperation.makeRegisterOperation(),
             getObjectDescription(rscNameStr),
             getObjectDescriptionInline(rscNameStr),
             ApiConsts.MASK_RSC,

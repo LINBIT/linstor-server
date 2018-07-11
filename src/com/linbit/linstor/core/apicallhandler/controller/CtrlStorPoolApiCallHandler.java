@@ -121,7 +121,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
             peer.get(),
-            ApiOperation.makeCreateOperation(),
+            ApiOperation.makeRegisterOperation(),
             nodeNameStr,
             storPoolNameStr
         );
@@ -142,8 +142,8 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             updateStorPoolDfnMap(storPool);
             responseConverter.addWithDetail(responses, context, updateSatellite(storPool));
 
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
-                storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
+            responseConverter.addWithOp(responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -504,7 +504,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr),
+                "register " + getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }

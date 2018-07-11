@@ -154,7 +154,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create the " + getRscDescriptionInline(node, rscDfn),
+                "register the " + getRscDescriptionInline(node, rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
@@ -255,7 +255,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getVlmDescriptionInline(rsc, vlmDfn),
+                "register " + getVlmDescriptionInline(rsc, vlmDfn),
                 ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
