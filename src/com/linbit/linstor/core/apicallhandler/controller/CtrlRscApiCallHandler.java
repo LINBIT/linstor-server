@@ -703,7 +703,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                rscUuid, getRscDescriptionInline(node, rscDfn)));
+                rscUuid, getRscDescriptionInline(nodeNameStr, rscNameStr)));
 
             if (deletedRscDfnName != null)
             {
