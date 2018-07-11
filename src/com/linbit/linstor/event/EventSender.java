@@ -392,7 +392,7 @@ public class EventSender
 
             byte[] completeData = new byte[eventHeaderBytes.length + eventData.length];
             System.arraycopy(eventHeaderBytes, 0, completeData, 0, eventHeaderBytes.length);
-                System.arraycopy(eventData, 0, completeData, eventHeaderBytes.length, eventData.length);
+            System.arraycopy(eventData, 0, completeData, eventHeaderBytes.length, eventData.length);
 
             peer.sendMessage(completeData);
         }
