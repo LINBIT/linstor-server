@@ -52,15 +52,15 @@ public class SatelliteStateHelper
 
                 if (peer != null)
                 {
-                    Lock readLock = peer.getSatelliteStateLock().readLock();
-                    readLock.lock();
+                    Lock writeLock = peer.getSatelliteStateLock().writeLock();
+                    writeLock.lock();
                     try
                     {
                         value = extractor.apply(peer.getSatelliteState());
                     }
                     finally
                     {
-                        readLock.unlock();
+                        writeLock.unlock();
                     }
                 }
             }
