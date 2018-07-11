@@ -12,7 +12,6 @@ public interface DatabaseDriverInfo
             Class<?> loadedClass = Class.forName(driverClass);
             Constructor<?> objConstr = loadedClass.getConstructor();
             objConstr.newInstance();
-            Class.forName(driverClass).newInstance();
         }
         catch (final ClassNotFoundException | IllegalAccessException | InstantiationException |
                NoSuchMethodException | IllegalArgumentException | InvocationTargetException loadExc)
