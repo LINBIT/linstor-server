@@ -424,7 +424,13 @@ public abstract class AbsStorageDriver implements StorageDriver
                     throw new StorageException(
                         String.format("Volume [%s] still exists.", identifier),
                         String.format("Failed to delete %s [%s].", volumeType.getName(), identifier),
-                        null,
+                        String.format(
+                            "External command: %s\n\tstd out: %s\n\tstd err: %s\n\texit code: %d",
+                            glue(command, " "),
+                            new String(output.stdoutData),
+                            new String(output.stderrData),
+                            output.exitCode
+                        ),
                         String.format("Manual deletion of %s [%s] may be necessary.",
                             volumeType.getName(), identifier),
                         null
