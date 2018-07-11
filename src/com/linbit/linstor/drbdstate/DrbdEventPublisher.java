@@ -153,7 +153,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver, Drbd
         DrbdVolume volume
     )
     {
-        if (resource.isKnownByLinstor())
+        if (connection == null && resource.isKnownByLinstor())
         {
             eventBroker.closeEventStream(volumeDiskStateEventIdentifier(resource, volume));
         }
