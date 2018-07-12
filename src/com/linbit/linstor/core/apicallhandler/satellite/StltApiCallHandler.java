@@ -56,7 +56,6 @@ import javax.inject.Singleton;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Iterator;
@@ -371,42 +370,9 @@ public class StltApiCallHandler
                 // FullSync implicitly creates a watch for all events.
                 createWatchForPeer();
 
+                for (RscPojo rsc : resources)
                 {
-                    /*
-                     *  in rare cases (e.g. migration) it is possible that a DRBD-resource already
-                     *  exists and we receive "create drbd resource" from the "events2"-stream
-                     *  before the controller tells us about that resource.
-                     *
-                     *  In this case we have to update the corresponding DrbdResources that from now
-                     *  on we know them and are interested in the changes, and send the controller
-                     *  the initial "resource created" event.
-                     */
-
-                    /*
-                     * In cases where a resource has nothing to do with DRBD (or is not deployed yet)
-                     * the drbdStateTracker will simply return null and this block results in a no-op.
-                     *
-                     * If later drbd fires the "create drbd resource" in its "events2" stream, there is
-                     * also a check if we already know this resource, so that way is also covered.
-                     */
-
-                    for (RscPojo rsc : resources)
-                    {
-                        DrbdResource drbdResource = drbdStateTracker.getResource(rsc.getName());
-                        if (drbdResource != null && !drbdResource.isKnownByLinstor())
-                        {
-                            drbdResource.setKnownByLinstor(true);
-                            drbdEventPublisher.resourceCreated(drbdResource);
-
-                            Iterator<DrbdVolume> itVlm = drbdResource.iterateVolumes();
-                            while (itVlm.hasNext())
-                            {
-                                DrbdVolume drbdVlm = itVlm.next();
-                                drbdEventPublisher.volumeCreated(drbdResource, null, drbdVlm);
-
-                            }
-                        }
-                    }
+                    checkForAlreadyKnownResources(rsc);
                 }
 
             }
@@ -441,6 +407,42 @@ public class StltApiCallHandler
             // in other words: if this exception happens, either the controller or this satellite has
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
             updateMonitor.getNextFullSyncId();
+        }
+    }
+
+    private void checkForAlreadyKnownResources(RscPojo rsc)
+    {
+        /*
+         *  in rare cases (e.g. migration) it is possible that a DRBD-resource already
+         *  exists and we receive "create drbd resource" from the "events2"-stream
+         *  before the controller tells us about that resource.
+         *
+         *  In this case we have to update the corresponding DrbdResources that from now
+         *  on we know them and are interested in the changes, and send the controller
+         *  the initial "resource created" event.
+         */
+
+        /*
+         * In cases where a resource has nothing to do with DRBD (or is not deployed yet)
+         * the drbdStateTracker will simply return null and this block results in a no-op.
+         *
+         * If later drbd fires the "create drbd resource" in its "events2" stream, there is
+         * also a check if we already know this resource, so that way is also covered.
+         */
+
+        DrbdResource drbdResource = drbdStateTracker.getResource(rsc.getName());
+        if (drbdResource != null && !drbdResource.isKnownByLinstor())
+        {
+            drbdResource.setKnownByLinstor(true);
+            drbdEventPublisher.resourceCreated(drbdResource);
+
+            Iterator<DrbdVolume> itVlm = drbdResource.iterateVolumes();
+            while (itVlm.hasNext())
+            {
+                DrbdVolume drbdVlm = itVlm.next();
+                drbdEventPublisher.volumeCreated(drbdResource, null, drbdVlm);
+
+            }
         }
     }
 
@@ -863,6 +865,7 @@ public class StltApiCallHandler
                 if (rscPojo != null)
                 {
                     rscHandler.applyChanges(rscPojo);
+                    checkForAlreadyKnownResources(rscPojo);
                 }
                 else
                 {
