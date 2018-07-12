@@ -662,9 +662,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             // Request updates from the controller
             requestControllerUpdates(updPendingBundle.updControllerMap);
             requestNodeUpdates(updPendingBundle.updNodeMap);
+            requestStorPoolUpdates(updPendingBundle.updStorPoolMap);
             requestRscDfnUpdates(updPendingBundle.updRscDfnMap);
             requestRscUpdates(updPendingBundle.updRscMap);
-            requestStorPoolUpdates(updPendingBundle.updStorPoolMap);
             requestSnapshotUpdates(updPendingBundle.updSnapshotMap);
 
             updPendingBundle.clear();
