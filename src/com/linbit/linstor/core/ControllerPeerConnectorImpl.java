@@ -101,6 +101,11 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         return disklessStorPoolDfn;
     }
 
+    public NodeName getLocalNodeName()
+    {
+        return localNodeName;
+    }
+
     @Override
     public void setControllerPeer(
         Peer controllerPeerRef,

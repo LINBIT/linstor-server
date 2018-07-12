@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.netcom.Peer;
 
@@ -23,4 +24,6 @@ public interface ControllerPeerConnector
     );
 
     void setControllerPeerToCurrentLocalNode();
+
+    NodeName getLocalNodeName();
 }

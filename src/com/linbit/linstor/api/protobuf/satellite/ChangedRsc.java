@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.api.ApiCall;
@@ -55,9 +54,8 @@ public class ChangedRsc implements ApiCall
 
             Map<NodeName, UUID> changedNodes = new TreeMap<>();
             // controller could notify us (in future) about changes in other nodes
-            NodeData localNode = controllerPeerConnector.getLocalNode();
             changedNodes.put(
-                localNode.getName(),
+                controllerPeerConnector.getLocalNodeName(),
                 rscUuid
             );
             deviceManager.getUpdateTracker().updateResource(
