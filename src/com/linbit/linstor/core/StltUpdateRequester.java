@@ -105,29 +105,17 @@ public class StltUpdateRequester
 
     private void sendRequest(byte[] requestData)
     {
-        try
+        if (requestData != null && requestData.length > 0)
         {
-            if (requestData != null && requestData.length > 0)
-            {
-                Peer controllerPeer = controllerPeerConnector.getLocalNode().getPeer(apiCtx);
-                controllerPeer.sendMessage(requestData);
-            }
-            else
-            {
-                errorReporter.reportError(
-                    new ImplementationError(
-                        "Failed to serialize a request ",
-                        null
-                    )
-                );
-            }
+            Peer controllerPeer = controllerPeerConnector.getControllerPeer();
+            controllerPeer.sendMessage(requestData);
         }
-        catch (AccessDeniedException accDeniedExc)
+        else
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "StltApiCtx does not have enough privileges to send a message to controller",
-                    accDeniedExc
+                    "Failed to serialize a request ",
+                    null
                 )
             );
         }
