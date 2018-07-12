@@ -1368,7 +1368,8 @@ public class CtrlApiCallHandler
             LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
-                storPoolDfnMapLock.readLock()
+                storPoolDfnMapLock.readLock(),
+                peer.get().getSerializerLock().readLock()
             )
         )
         {
@@ -1393,7 +1394,8 @@ public class CtrlApiCallHandler
         try (
             LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
-                storPoolDfnMapLock.readLock()
+                storPoolDfnMapLock.readLock(),
+                peer.get().getSerializerLock().readLock()
             )
         )
         {
@@ -1409,7 +1411,8 @@ public class CtrlApiCallHandler
     {
         try (
             LockGuard ls = LockGuard.createLocked(
-                rscDfnMapLock.readLock()
+                rscDfnMapLock.readLock(),
+                peer.get().getSerializerLock().readLock()
             )
         )
         {
@@ -1427,7 +1430,11 @@ public class CtrlApiCallHandler
         String nodeNameStr
     )
     {
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(
+                nodesMapLock.readLock(),
+                peer.get().getSerializerLock().readLock()
+            )
+        )
         {
             ctrlConfApiCallHandler.respondController(
                 msgId.get(),
@@ -1442,7 +1449,11 @@ public class CtrlApiCallHandler
         String nodeNameStr
     )
     {
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
+        try (LockGuard ls = LockGuard.createLocked(
+                nodesMapLock.readLock(),
+                peer.get().getSerializerLock().readLock()
+            )
+        )
         {
             nodeApiCallHandler.respondNode(
                 msgId.get(),
