@@ -376,103 +376,55 @@ public class CtrlAutoStorPoolSelector
         {
             for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesIn.entrySet())
             {
-                Map<BucketId, List<Node>> buckets = new HashMap<>();
-                buckets.put(new BucketId(), candidateEntry.getValue());
+                List<Node> candidateNodes = candidateEntry.getValue();
 
-                /*
-                 * Example:
-                 *
-                 * Let's assume that we have in replicasOnSamePropList the node-property-keys "A" and "B"
-                 * with values "x","y" and "z" for key "A"
-                 * and values "1", "2", "3" for "B"
-                 *
-                 * In the first iteration we have a map with one entry
-                 *  key: ""
-                 *  value: all nodes from the current storPoolName
-                 * In each iteration we extend the key with the current node's property-value (delimited with ":").
-                 * That means after the first iteration we will have 3 buckets ":x", ":y" and ":z"
-                 *  (the "" bucket is removed by not adding it to the nextSameBuckets reference and
-                 *  overriding the "buckets"-map with nextSameBuckets)
-                 * After the second iteration, we will have 9 buckets with the following keys:
-                 *  ":x:1"
-                 *  ":x:2"
-                 *  ":x:3"
-                 *  ":y:1"
-                 *  ...
-                 *  ":z:3"
-                 * Every node is only in the list of one of those buckets.
-                 */
-                for (String samePropKey : replicasOnSamePropList)
+                // Gather the prop values for the props that need to be the same
+                Map<NodeName, Map<String, String>> propsForNodes = new HashMap<>();
+                for (Node node : candidateNodes)
                 {
-                    Map<BucketId, List<Node>> nextSameBuckets = new HashMap<>();
-                    for (Entry<BucketId, List<Node>> bucketEntry : buckets.entrySet())
+                    Map<String, String> props = new HashMap<>();
+                    for (String samePropKey : replicasOnSamePropList)
                     {
-                        for (Node bucketEntryNode : bucketEntry.getValue())
-                        {
-                            BucketId entryNodeId = bucketEntry.getKey().extend(
-                                bucketEntryNode.getProps(peerAccCtx.get()).getProp(samePropKey)
-                            );
-                            List<Node> nextSameBucketNodes = nextSameBuckets.get(entryNodeId);
-                            if (nextSameBucketNodes == null)
-                            {
-                                nextSameBucketNodes = new ArrayList<>();
-                                nextSameBuckets.put(entryNodeId, nextSameBucketNodes);
-                            }
-                            nextSameBucketNodes.add(bucketEntryNode);
-                        }
+                        props.put(samePropKey, node.getProps(peerAccCtx.get()).getProp(samePropKey));
                     }
-                    buckets = nextSameBuckets;
+                    propsForNodes.put(node.getName(), props);
                 }
 
-                /*
-                 * Sort the nodes within each bucket so that the most preferred nodes are chosen first.
-                 */
-                for (List<Node> bucketNodes : buckets.values())
+                // Form groups of nodes where all the prop values match
+                Collection<List<Node>> nodeGroups = candidateNodes.stream()
+                    .collect(Collectors.groupingBy(node -> propsForNodes.get(node.getName())))
+                    .values();
+
+                // Eliminate elements from the groups until the nodes in each group differ in all the props that need
+                // to be different
+                for (List<Node> nodeGroup : nodeGroups)
                 {
-                    bucketNodes.sort((node1, node2) -> nodeSelectionStartegy.compare(
+                    // Sort the nodes within the group so that the most preferred nodes are chosen first (sort
+                    // duplicate list because the input list may not be mutable)
+                    List<Node> sortNodes = new ArrayList<>(nodeGroup);
+                    sortNodes.sort((node1, node2) -> nodeSelectionStartegy.compare(
                         node1,
                         node2,
                         candidateEntry.getKey(),
                         peerAccCtx.get()
                     ));
-                }
 
-                /*
-                 * Now we have grouped all nodes by the "same" criteria.
-                 * Next, for each bucket, we remove the nodes such that each of the
-                 * property-values from "replicasOnDiffParamList"-keys are distinct.
-                 *
-                 * When two nodes have the same value, we will have to choose which node to delete.
-                 * For this, we already have to use a "candidate-pre-selection". This is done by the
-                 * functional-interface-argument "nodePreSelectionStartegy"
-                 */
-                for (String diffPropKey : replicasOnDiffParamList)
-                {
-                    // although we do not care about the key, we need to iterate over the entrySet
-                    // as we will have to call setValue after this loop
-                    for (Entry<BucketId, List<Node>> bucketEntry : buckets.entrySet())
+                    Collection<Node> remainingNodes = sortNodes;
+                    for (String diffPropKey : replicasOnDiffParamList)
                     {
                         HashMap<String, Node> usedValues = new HashMap<>();
-                        for (Node bucketNode : bucketEntry.getValue())
+                        for (Node node : remainingNodes)
                         {
-                            String nodeValue = bucketNode.getProps(peerAccCtx.get()).getProp(diffPropKey);
-                            if (!usedValues.containsKey(nodeValue))
+                            String propValue = node.getProps(peerAccCtx.get()).getProp(diffPropKey);
+                            if (!usedValues.containsKey(propValue))
                             {
-                                usedValues.put(nodeValue, bucketNode);
+                                usedValues.put(propValue, node);
                             }
                         }
-                        bucketEntry.setValue(new ArrayList<>(usedValues.values()));
+                        remainingNodes = usedValues.values();
                     }
-                }
 
-                /*
-                 * Currently we have a list of candidates for the current storPoolName.
-                 * As we don't know how many nodes a "valid" candidate has to contain, we
-                 * simply emit all of our candidates:)
-                 */
-                for (Collection<Node> nodeList : buckets.values())
-                {
-                    addCandidate(candidatesOut, candidateEntry.getKey(), nodeList, placeCount);
+                    addCandidate(candidatesOut, candidateEntry.getKey(), remainingNodes, placeCount);
                 }
             }
         }
@@ -776,62 +728,5 @@ public class CtrlAutoStorPoolSelector
     public interface CandidateSelectionStrategy
     {
         int compare(Candidate candidate1, Candidate candidate2, AccessContext accCtx);
-    }
-
-    private class BucketId
-    {
-        BucketId parent;
-        String id;
-
-        /**
-         * Root bucket constructor
-         */
-        BucketId()
-        {
-        }
-
-        /**
-         * Child bucket Constructor
-         */
-        BucketId(BucketId parentRef, String idRef)
-        {
-            parent = parentRef;
-            id = idRef;
-        }
-
-        BucketId extend(String idRef)
-        {
-            return new BucketId(this, idRef);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((id == null) ? 0 : id.hashCode());
-            result = prime * result + ((parent == null) ? 0 : parent.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            boolean eq = false;
-            if (obj != null && obj instanceof BucketId)
-            {
-                BucketId other = (BucketId) obj;
-                eq = Objects.equals(other.id, this.id) && Objects.equals(other.parent, this.parent);
-            }
-            return eq;
-        }
-
-        @Override
-        public String toString()
-        {
-            return parent == null ?
-                id :
-                parent.toString() + ", " + id;
-        }
     }
 }
