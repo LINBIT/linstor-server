@@ -2056,27 +2056,24 @@ class DrbdDeviceHandler implements DeviceHandler
         // Determine the state of the DRBD resource
         evaluateDelDrbdResource(rsc, rscDfn, rscState);
 
-        // Shut down the DRBD resource if it is still active
-        if (rscState.isPresent())
+        // Shut down the DRBD resource
+        try
         {
-            try
-            {
-                drbdUtils.down(rscName);
-            }
-            catch (ExtCmdFailedException cmdExc)
-            {
-                throw new ResourceException(
-                    "Shutdown of the DRBD resource '" + rscName.displayValue + " failed",
-                    getAbortMsg(rscName),
-                    "The external command for stopping the DRBD resource failed",
-                    "- Check whether the required software is installed\n" +
-                    "- Check whether the application's search path includes the location\n" +
-                    "  of the external software\n" +
-                    "- Check whether the application has execute permission for the external command\n",
-                    null,
-                    cmdExc
-                );
-            }
+            drbdUtils.down(rscName);
+        }
+        catch (ExtCmdFailedException cmdExc)
+        {
+            throw new ResourceException(
+                "Shutdown of the DRBD resource '" + rscName.displayValue + " failed",
+                getAbortMsg(rscName),
+                "The external command for stopping the DRBD resource failed",
+                "- Check whether the required software is installed\n" +
+                "- Check whether the application's search path includes the location\n" +
+                "  of the external software\n" +
+                "- Check whether the application has execute permission for the external command\n",
+                null,
+                cmdExc
+            );
         }
 
         // TODO: Wait for the DRBD resource to disappear
