@@ -5,15 +5,15 @@ ENV LINSTOR_VERSION 0.2.4
 ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
-RUN groupadd makepkg
-RUN useradd -m -g makepkg makepkg
+RUN groupadd makepkg # !lbbuild
+RUN useradd -m -g makepkg makepkg # !lbbuild
 
-RUN apt-get update -y
+RUN apt-get update -y # !lbbuild
 
-RUN apt-get install -y debhelper default-jdk-headless dh-systemd
+RUN apt-get install -y debhelper default-jdk-headless dh-systemd # !lbbuild
 # I saw gradle pulling in a higher java dependency when java was not installed first.
 # so keep it on a extra line
-RUN apt-get install -y gradle javahelper
+RUN apt-get install -y gradle javahelper # !lbbuild
 
 COPY /${LINSTOR_TGZ} /tmp/
 
