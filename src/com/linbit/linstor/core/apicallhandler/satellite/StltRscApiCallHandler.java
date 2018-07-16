@@ -169,7 +169,7 @@ class StltRscApiCallHandler
             }
 
             errorReporter.logInfo("Resource definition '" + rscNameStr +
-                "' and the corresponding resource" + " removed by Controller.");
+                "' and the corresponding resource removed by Controller.");
 
             Map<ResourceName, Set<NodeName>> updatedRscs = new TreeMap<>();
             TreeSet<NodeName> nodes = new TreeSet<NodeName>();
