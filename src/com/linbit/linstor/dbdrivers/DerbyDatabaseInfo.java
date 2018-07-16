@@ -2,11 +2,6 @@ package com.linbit.linstor.dbdrivers;
 
 public class DerbyDatabaseInfo implements DatabaseDriverInfo
 {
-    public DerbyDatabaseInfo()
-    {
-        DatabaseDriverInfo.loadDriver("org.apache.derby.jdbc.ClientDriver");
-    }
-
     @Override
     public String jdbcUrl(final String dbPath)
     {

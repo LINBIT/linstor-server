@@ -2,11 +2,6 @@ package com.linbit.linstor.dbdrivers;
 
 public class PostgresqlDatabaseInfo implements DatabaseDriverInfo
 {
-    public PostgresqlDatabaseInfo()
-    {
-        DatabaseDriverInfo.loadDriver("org.postgresql.Driver");
-    }
-
     @Override
     public String jdbcUrl(String dbPath)
     {

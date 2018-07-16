@@ -2,11 +2,6 @@ package com.linbit.linstor.dbdrivers;
 
 public class H2DatabaseInfo implements DatabaseDriverInfo
 {
-    public H2DatabaseInfo()
-    {
-        DatabaseDriverInfo.loadDriver("org.h2.Driver");
-    }
-
     @Override
     public String jdbcUrl(final String dbPath)
     {
