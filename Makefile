@@ -89,5 +89,9 @@ versioninfo:
 	echo "git.commit.id=$(GITHASH)" >> $(VERSINFO)
 	echo "build.time=$$(date -u --iso-8601=second)" >> $(VERSINFO)
 
+ifneq ($(FORCE),1)
 dockerimage: debrelease
+else
+dockerimage:
+endif
 	docker build -t $(DOCKERREGISTRY)/linstor-controller .
