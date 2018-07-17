@@ -77,7 +77,7 @@ getprotc:
 
 .PHONY: gen-java
 gen-java: getprotc
-	@gradle genJava
+	@gradle generateJava
 	@echo "generated java sources"
 
 tarball: check-all-committed check-submods versioninfo gen-java .filelist

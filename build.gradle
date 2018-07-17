@@ -220,12 +220,6 @@ task buildTestCommands(type:Exec) {
   }
 }
 
-task generatePropRules(type:Exec) {
-    workingDir 'linstor-common'
-
-    commandLine 'make', '../generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java'
-}
-
 task unzip(type: Copy) {
     def zipFile = file("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
     def outputDir = file("tools/protoc-" + protobufVersion)
@@ -255,6 +249,13 @@ task getProtoc {
 }
 
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
+
+/**
+ * Generates Java sources from common API definitions. This includes the protobuf compilation.
+ *
+ * For package builds this task is run in the 'make debrelease' stage, the generated sources are bundled in the package
+ * tarball, and it is then skipped when the package is finally built.
+ */
 task generateJava(type:Exec) {
     doFirst {
         if (!protoc.exists()) {
@@ -287,12 +288,8 @@ task cleanTestCommands(type:Exec) {
   }
 }
 
-task generate {
-    dependsOn generatePropRules, generateJava
-}
-
 compileJava {
-    dependsOn generate
+    dependsOn generateJava
 }
 
 compileTestJava {
