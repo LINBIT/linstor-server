@@ -3,7 +3,7 @@
 JAVA_HOME=/usr/lib/jvm/default-java
 
 GRADLE_TASKS = installdist
-GRADLE_FLAGS = --offline --gradle-user-home debian/.gradlehome --no-daemon
+GRADLE_FLAGS = --offline --gradle-user-home debian/.gradlehome --no-daemon --exclude-task generateJava
 LS_PREFIX=/usr/share/linstor-server
 
 %:
