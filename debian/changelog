@@ -1,3 +1,98 @@
+linstor-server (0.2.4-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Enable resize of underlying storage volumes
+  * Enable resize of DRBD volumes
+  * Add a volume definition resize flag so that the client can show a resi [...]
+  * Fix storage driver tests to match behavior introduced for volume resize
+  * Explain unexpected resize size situation
+  * Use driver kind provisioning trait instead of duplicated trait in driver
+  * Do not send restored resources to satellites when no volumes are present
+  * Fix prioritization of storage pools with more free space when auto-placing.
+  * Do not send any free space for LVM thin pools because the data is not useful
+  * Indicate in the max volume size query whether the pool is thin
+  * Allow auto-placement in thin pools even though they have unknown free space.
+  * Error message when loading a node should not depend on current API call type
+  * Simplify API call handler answering and error handling helpers
+  * Remove variables from API call response since the original format stri [...]
+  * Remove mutable state from controller API call handlers
+  * Use 'register' terminology for entity creation when the entity has a c [...]
+  * Do not try to auto-place on nodes which are not connected
+  * Fix auto-place test such that the mock peer is connected
+  * Simplify logic for auto-place selection based on property values
+  * Remove unnecessary driver loading method.
+  * Check for the protoc binary when executing the task rather than when c [...]
+
+  [ Gabor Hernadi ]
+  * Add OverrideVlmId property
+  * Fix: Initial drbd status
+  * Moved apicallhandlers in dedicated packages
+  * Extract auto-select feature
+  * Add qryMaxVlmSize feature
+  * Fixed wrong proto msg for maxSize-reply
+  * Extracted AutoSelectFilter-ProtoMsg
+  * Add disklessOnRemaining for RscAutoPlace
+  * Fix: LvmDriver
+  * Unified internal structures in AutoSelector
+  * Made AutoPlace idempotent.
+  * Refactored AutoPlace calling CtrlRscApiCallHandler
+  * ConfFileBuilder
+  * Improved error reporting for AbsStorDriver.delete
+  * Fixed hung resource creation
+  * Fixed object order when requesting changed data
+  * Fixed potential nullpointer access
+  * DrbdDeviceHandler tries 'drbdsetup down' more eagerly
+
+  [ Rene Peinthor ]
+  * api-serialization: remove a layer of abstraction
+  * stlt/hostname: add hostname satellite api call
+  * allow sub datasets to be used for zfs storage pools
+  * Fix incorrect checking of zfs extend size [BREAKS old ZFS]
+  * maxvlmsize: fix incorrect protobuf deserialization
+  * gradle-rpm: add firewalld service files for linstor and drbd
+  * proto-api: send parser apicall error if protobuf parsing failed
+  * gradle: simplify startscript creation
+  * gradle: fix missing start scripts in .tar/.zip
+  * commandline: add --logs and rework --controller-directory
+  * rsc-list: filter resources states data too
+  * rscapi: fix access to deleted data
+  * drbdevents: volume destroyed was also send for destroyed peer connections
+  * fix incorrect indention
+  * event-generator: withSatelliteState should acquire a writeLock
+  * ctrl-stlt: ensure no apply updates run while fullsync in progress
+  * stltupdaterequester: do not access getLocalNode() for the controller Peer
+  * remove unnecessary string concat
+
+  [ Robert Altnoeder ]
+  * Fix controller notification about deleted resources when free space re [...]
+  * Hotfix: Report PROV_THIN for LvmThinDriver.
+  * Added DRBD metadata generation ID generator
+  * Generation of an initial DRBD current GI for each volume definition
+  * Updated nbproject/build-impl.xml
+  * Skip the initial sync of thinly provisioned volumes
+  * Skip the resync when resizing thin provisioned volumes
+  * Added exception handling comment, slightly optimized value parsing
+  * Fixed potential unit index off by one when formatting very large size values
+  * Unified ...utils.LockSupport & ...locks.MultiLock into com.linbit.lock [...]
+  * Fixed error message for invalid resource name, added error reporting fields
+  * Replaced Class.newInstance() call, which has been marked deprecated in [...]
+  * Removed replaced Class.newInstance() call
+
+  [ Roland Kammerer ]
+  * move from /opt to /usr/share
+  * build: don't include test-libs in release tarballs
+  * debian: initial debian packaging
+  * build: add "release" target
+  * linstor-satellite.service: fix typo
+  * debian: add postinstall script
+  * debian: pkg split
+  * initial docker integration
+  * build: allow FORCE=1 for dockerimage target
+  * Dockerfile: initial lbbuild integration
+  * build: dockerpath target
+
+ -- Joel Colledge <joel.colledge@linbit.com>  Tue, 17 Jul 2018 14:39:06 +0200
+
 linstor-server (0.2.3-1) experimental; urgency=medium
 
   * initial release
