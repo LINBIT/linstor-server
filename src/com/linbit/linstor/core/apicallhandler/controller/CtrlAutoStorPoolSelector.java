@@ -503,13 +503,23 @@ public class CtrlAutoStorPoolSelector
         int cmp = 0;
         try
         {
-            // compare the arguments in reverse order so that the candidate with more free space comes first
-            cmp = Long.compare(
-                cand2.nodes.get(0).getStorPool(accCtx, cand2.storPoolName)
-                    .getFreeSpace(accCtx).orElse(0L),
-                cand1.nodes.get(0).getStorPool(accCtx, cand1.storPoolName)
-                    .getFreeSpace(accCtx).orElse(0L)
+            StorPool storPool1 = cand1.nodes.get(0).getStorPool(accCtx, cand1.storPoolName);
+            StorPool storPool2 = cand2.nodes.get(0).getStorPool(accCtx, cand2.storPoolName);
+
+            // prefer thick to thin pools
+            cmp = Boolean.compare(
+                storPool1.getDriverKind().usesThinProvisioning(),
+                storPool2.getDriverKind().usesThinProvisioning()
             );
+
+            if (cmp == 0)
+            {
+                // compare the arguments in reverse order so that the candidate with more free space comes first
+                cmp = Long.compare(
+                    storPool2.getFreeSpace(accCtx).orElse(0L),
+                    storPool1.getFreeSpace(accCtx).orElse(0L)
+                );
+            }
         }
         catch (AccessDeniedException exc)
         {

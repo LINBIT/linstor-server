@@ -12,8 +12,6 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class LvsInfo extends VolumeInfo
 {
-    // DO NOT USE "," or "." AS DELIMITER due to localization issues
-    private static final String DELIMITER = ";";
 
     public LvsInfo(final long size, final String identifier, final String path)
     {
@@ -29,9 +27,10 @@ public class LvsInfo extends VolumeInfo
         {
             lvmLvsCommand,
             "-o", "lv_name,lv_path,lv_size",
-            "--separator", DELIMITER,
+            "--separator", StorageUtils.DELIMITER,
             "--noheadings",
             "--units", "k",
+            "--nosuffix",
             volumeGroup
         };
     }
@@ -41,7 +40,7 @@ public class LvsInfo extends VolumeInfo
         final String lvmLvsCommand,
         final String volumeGroup
     )
-        throws ChildProcessTimeoutException, IOException
+        throws ChildProcessTimeoutException, IOException, StorageException
     {
         final OutputData output = ec.exec(
             LvsInfo.getCommand(lvmLvsCommand, volumeGroup)
@@ -54,7 +53,7 @@ public class LvsInfo extends VolumeInfo
         final String[] lines = stdOut.split("\n");
         for (final String line : lines)
         {
-            final String[] data = line.trim().split(DELIMITER);
+            final String[] data = line.trim().split(StorageUtils.DELIMITER);
             final int expectedColCount = 3;
             if (data.length >= expectedColCount)
             {
@@ -62,13 +61,22 @@ public class LvsInfo extends VolumeInfo
                 final String path = data[1];
                 final String rawSize = data[2];
 
-                int indexOf = rawSize.indexOf('.');
-                if (indexOf == -1)
+                long size;
+                try
                 {
-                    indexOf = rawSize.indexOf(','); // localization
+                    size = StorageUtils.parseDecimalAsLong(rawSize.trim());
                 }
-                final String rawSizeLong = rawSize.substring(0, indexOf);
-                final long size = Long.parseLong(rawSizeLong);
+                catch (NumberFormatException nfExc)
+                {
+                    throw new StorageException(
+                        "Unable to parse logical volume size",
+                        "Size to parse: '" + rawSize + "'",
+                        null,
+                        null,
+                        "External command used to query logical volume info: " + String.join(" ", lvmLvsCommand),
+                        nfExc
+                    );
+                }
 
                 final LvsInfo info = new LvsInfo(size, identifier, path);
                 infoByIdentifier.put(info.getIdentifier(), info);

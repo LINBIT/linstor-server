@@ -2,12 +2,16 @@ package com.linbit.linstor.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
@@ -113,9 +117,79 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public Long getFreeSpace()
+    public long getFreeSpace() throws StorageException
     {
-        return null;
+        final String qualifiedPoolName = volumeGroup + File.separator + thinPoolName;
+
+        long freeSpace;
+        final String[] command = new String[]
+            {
+                lvmLvsCommand,
+                qualifiedPoolName,
+                "-o", "lv_size,data_percent",
+                "--separator", StorageUtils.DELIMITER,
+                "--units", "b",
+                "--noheadings",
+                "--nosuffix"
+            };
+        String rawOut = null;
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData output = extCommand.exec(command);
+
+            checkExitCode(output, command);
+
+            rawOut = new String(output.stdoutData);
+            String[] data = rawOut.split(StorageUtils.DELIMITER);
+            if (data.length != 2)
+            {
+                throw new StorageException(
+                    "LVM free size output has unexpected number of entries",
+                    "Pool: " + qualifiedPoolName + "; output to parse: '" + rawOut + "'",
+                    null,
+                    null,
+                    "External command used to query free size: " + glue(command, " ")
+                );
+            }
+
+            BigDecimal thinPoolSizeBytes = StorageUtils.parseDecimal(data[0].trim());
+
+            final String rawDataPercent = data[1];
+
+            BigDecimal dataPercent = StorageUtils.parseDecimal(data[1].trim());
+            BigDecimal dataFraction = dataPercent.movePointLeft(2);
+            BigDecimal freeFraction = dataFraction.negate().add(BigDecimal.valueOf(1L));
+
+            BigInteger freeBytes = thinPoolSizeBytes.multiply(freeFraction).toBigInteger();
+            freeSpace = SizeConv.convert(freeBytes, SizeUnit.UNIT_B, SizeUnit.UNIT_KiB).longValueExact();
+        }
+        catch (NumberFormatException nfexc)
+        {
+            throw new StorageException(
+                "Unable to parse thin pool free size.",
+                "Pool: " + qualifiedPoolName + "; output to parse: '" + rawOut + "'",
+                null,
+                null,
+                "External command used to query free size: " + glue(command, " "),
+                nfexc
+            );
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to query thin pool free size",
+                String.format("Failed to query the free size of thin pool: %s", qualifiedPoolName),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+
+        return freeSpace;
     }
 
     @Override

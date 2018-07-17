@@ -7,7 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.linbit.SizeConv.SizeUnit.UNIT_B;
-import static com.linbit.SizeConv.SizeUnit.UNIT_kiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_KiB;
 import static com.linbit.SizeConv.SizeUnit.UNIT_MiB;
 import static com.linbit.SizeConv.SizeUnit.UNIT_GiB;
 import static com.linbit.SizeConv.SizeUnit.UNIT_TiB;
@@ -42,7 +42,7 @@ public class SizeConvTest
         new TestEntry(1L, UNIT_EB, UNIT_EB, 1L, false),
         new TestEntry(1L, UNIT_ZB, UNIT_ZB, 1L, false),
         new TestEntry(1L, UNIT_YB, UNIT_YB, 1L, false),
-        new TestEntry(1L, UNIT_kiB, UNIT_kiB, 1L, false),
+        new TestEntry(1L, UNIT_KiB, UNIT_KiB, 1L, false),
         new TestEntry(1L, UNIT_MiB, UNIT_MiB, 1L, false),
         new TestEntry(1L, UNIT_GiB, UNIT_GiB, 1L, false),
         new TestEntry(1L, UNIT_TiB, UNIT_TiB, 1L, false),
@@ -58,23 +58,23 @@ public class SizeConvTest
         new TestEntry(1L, UNIT_EB, UNIT_B, 1000000000000000000L, false),
         new TestEntry(1L, UNIT_ZB, UNIT_kB, 1000000000000000000L, false),
         new TestEntry(1L, UNIT_YB, UNIT_MB, 1000000000000000000L, false),
-        new TestEntry(1L, UNIT_kiB, UNIT_B, 1024L, false),
+        new TestEntry(1L, UNIT_KiB, UNIT_B, 1024L, false),
         new TestEntry(1L, UNIT_MiB, UNIT_B, 1048576L, false),
         new TestEntry(1L, UNIT_GiB, UNIT_B, 1073741824L, false),
         new TestEntry(1L, UNIT_TiB, UNIT_B, 1099511627776L, false),
         new TestEntry(1L, UNIT_PiB, UNIT_B, 1125899906842624L, false),
         new TestEntry(1L, UNIT_EiB, UNIT_B, 1152921504606846976L, false),
-        new TestEntry(1L, UNIT_ZiB, UNIT_kiB, 1152921504606846976L, false),
+        new TestEntry(1L, UNIT_ZiB, UNIT_KiB, 1152921504606846976L, false),
         new TestEntry(1L, UNIT_YiB, UNIT_MiB, 1152921504606846976L, false),
         new TestEntry(1L, UNIT_MiB, UNIT_B, 1048576L, false),
-        new TestEntry(1L, UNIT_MB, UNIT_kiB, 976L, true),
-        new TestEntry(262144L, UNIT_kiB, UNIT_MiB, 256L, false),
-        new TestEntry(63L, UNIT_GiB, UNIT_kiB, 66060288L, false),
+        new TestEntry(1L, UNIT_MB, UNIT_KiB, 976L, true),
+        new TestEntry(262144L, UNIT_KiB, UNIT_MiB, 256L, false),
+        new TestEntry(63L, UNIT_GiB, UNIT_KiB, 66060288L, false),
         new TestEntry(40516976640L, UNIT_MiB, UNIT_TiB, 38640L, false),
-        new TestEntry(48510, UNIT_GB, UNIT_kiB, 47373046875L, false),
-        new TestEntry(1023, UNIT_kiB, UNIT_MiB, 0, true),
-        new TestEntry(2047, UNIT_kiB, UNIT_MiB, 1, true),
-        new TestEntry(58273485671283L, UNIT_B, UNIT_kiB, 56907700850L, true),
+        new TestEntry(48510, UNIT_GB, UNIT_KiB, 47373046875L, false),
+        new TestEntry(1023, UNIT_KiB, UNIT_MiB, 0, true),
+        new TestEntry(2047, UNIT_KiB, UNIT_MiB, 1, true),
+        new TestEntry(58273485671283L, UNIT_B, UNIT_KiB, 56907700850L, true),
         new TestEntry(58273485671283L, UNIT_B, UNIT_MiB, 55573926L, true),
         new TestEntry(58273485671283L, UNIT_B, UNIT_GiB, 54271L, true),
         new TestEntry(58273485671283L, UNIT_B, UNIT_TiB, 52L, true),
@@ -200,7 +200,7 @@ public class SizeConvTest
         System.out.println("FACTOR_EB = " + SizeConv.FACTOR_EB);
         System.out.println("FACTOR_ZB = " + SizeConv.FACTOR_ZB);
         System.out.println("FACTOR_YB = " + SizeConv.FACTOR_YB);
-        System.out.println("FACTOR_kiB = " + SizeConv.FACTOR_kiB);
+        System.out.println("FACTOR_kiB = " + SizeConv.FACTOR_KiB);
         System.out.println("FACTOR_MiB = " + SizeConv.FACTOR_MiB);
         System.out.println("FACTOR_GiB = " + SizeConv.FACTOR_GiB);
         System.out.println("FACTOR_TiB = " + SizeConv.FACTOR_TiB);

@@ -142,9 +142,9 @@ public class LvmThinDriverTest extends StorageTestUtils
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             volumeIdentifier,
-            Long.toString(maxToleratedSize) + ".00k"
+            Long.toString(maxToleratedSize) + ".00"
         );
-        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, Long.toString(TEST_EXTENT_SIZE) + ".00k");
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, Long.toString(TEST_EXTENT_SIZE) + ".00");
 
         {
             StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
@@ -159,7 +159,7 @@ public class LvmThinDriverTest extends StorageTestUtils
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             volumeIdentifier,
-            Long.toString(maxToleratedSize + 1) + ".00k"
+            Long.toString(maxToleratedSize + 1) + ".00"
         );
 
         try
@@ -186,7 +186,7 @@ public class LvmThinDriverTest extends StorageTestUtils
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             identifier,
-            Long.toString(volumeSize) + ".00k"
+            Long.toString(volumeSize) + ".00"
         );
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
@@ -337,7 +337,13 @@ public class LvmThinDriverTest extends StorageTestUtils
     @Test
     public void testFreeSpace() throws StorageException
     {
-        assertNull(driver.getFreeSpace());
+        final long lvSizeKiB = 10000L;
+        // 10.01% used => 89.99% free => 8999KiB free
+        final long dataPerTenThousand = 1001;
+        expectThinLvFreeSpaceCommand(
+            LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, LVM_THIN_POOL_DEFAULT, lvSizeKiB, dataPerTenThousand);
+
+        assertEquals(8999L, driver.getFreeSpace());
     }
 
     @Test(expected = StorageException.class)
@@ -425,6 +431,31 @@ public class LvmThinDriverTest extends StorageTestUtils
             "",
             "",
             0);
+        ec.setExpectedBehavior(command, outData);
+    }
+
+    private void expectThinLvFreeSpaceCommand(
+        String lvsCommand,
+        String volumeGroup,
+        String lvmThinPool,
+        long lvSizeKiB,
+        long dataPerTenThousand
+    )
+    {
+        Command command = new Command(
+            lvsCommand,
+            volumeGroup + "/" + lvmThinPool,
+            "-o", "lv_size,data_percent",
+            "--separator", LVM_EXT_CMD_SEPARATOR,
+            "--units", "b",
+            "--noheadings",
+            "--nosuffix"
+        );
+        OutputData outData = new TestOutputData(
+            String.format("  %d;%d.%02d", lvSizeKiB * 1024L, dataPerTenThousand / 100L, dataPerTenThousand % 100L),
+            "",
+            0
+        );
         ec.setExpectedBehavior(command, outData);
     }
 }

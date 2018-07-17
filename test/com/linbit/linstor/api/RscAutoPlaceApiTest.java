@@ -27,6 +27,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LvmDriver;
+import com.linbit.linstor.storage.LvmThinDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -160,6 +161,30 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         );
         expectDeployed(
             "pool2",
+            TEST_RSC_NAME,
+            "stlt"
+        );
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:magicnumber")
+    public void chooseThickPoolTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                1,
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .stltBuilder("stlt")
+                .addStorPool("pool1", 30 * MB, true)
+                .addStorPool("pool2", 10 * MB)
+                .addStorPool("pool3", 20 * MB)
+                .build()
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * MB)
+        );
+        expectDeployed(
+            "pool3",
             TEST_RSC_NAME,
             "stlt"
         );
@@ -966,6 +991,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize) throws Exception
         {
+            return addStorPool(storPoolName, storPoolSize, false);
+        }
+
+        SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, boolean thin) throws Exception
+        {
             StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 BOB_ACC_CTX,
                 new StorPoolName(storPoolName),
@@ -979,7 +1009,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,
-                LvmDriver.class.getSimpleName(),
+                (thin ? LvmThinDriver.class : LvmDriver.class).getSimpleName(),
                 true,
                 false
             );

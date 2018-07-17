@@ -466,7 +466,7 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public Long getFreeSpace() throws StorageException
+    public long getFreeSpace() throws StorageException
     {
         long freeSpace;
         final String[] command = new String[]
@@ -487,17 +487,7 @@ public class LvmDriver extends AbsStorageDriver
             checkExitCode(output, command);
 
             rawOut = new String(output.stdoutData);
-            // cut everything after the decimal dot
-            int indexOf = rawOut.indexOf('.');
-            if (indexOf == -1)
-            {
-                indexOf = rawOut.indexOf(',');
-            }
-            if (indexOf > -1)   // could be plain '0' instead of '0.00'
-            {
-                rawOut = rawOut.substring(0, indexOf);
-            }
-            freeSpace = Long.parseLong(rawOut.trim());
+            freeSpace = StorageUtils.parseDecimalAsLong(rawOut.trim());
         }
         catch (NumberFormatException nfexc)
         {

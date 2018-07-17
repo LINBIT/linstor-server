@@ -359,7 +359,7 @@ public class ZfsDriver extends AbsStorageDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public Long getFreeSpace() throws StorageException
+    public long getFreeSpace() throws StorageException
     {
         final String[] command = new String[]
         {

@@ -139,7 +139,7 @@ public class LvmDriverTest extends StorageTestUtils
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             volumeIdentifier,
-            Long.toString(maxtoleratedSize) + ".00k"
+            Long.toString(maxtoleratedSize) + ".00"
         );
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, "4096.00k");
 
@@ -156,7 +156,7 @@ public class LvmDriverTest extends StorageTestUtils
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             volumeIdentifier,
-            Long.toString(maxtoleratedSize + 1) + ".00k"
+            Long.toString(maxtoleratedSize + 1) + ".00"
         );
 
         try
@@ -211,7 +211,7 @@ public class LvmDriverTest extends StorageTestUtils
             LVM_LVS_DEFAULT,
             LVM_VOLUME_GROUP_DEFAULT,
             identifier,
-            Long.toString(volumeSize) + ".00k"
+            Long.toString(volumeSize) + ".00"
         );
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
@@ -451,7 +451,7 @@ public class LvmDriverTest extends StorageTestUtils
     @Test
     public void testFreeSpace() throws StorageException
     {
-        final Long size = 1L * 1024 * 1024 * 1024;
+        final long size = 1L * 1024 * 1024 * 1024;
         expectVgsFreeSpaceCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
 
         assertEquals(size, driver.getFreeSpace());

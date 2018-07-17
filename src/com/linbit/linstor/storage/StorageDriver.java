@@ -117,10 +117,13 @@ public interface StorageDriver
     long getSize(String identifier) throws StorageException;
 
     /**
-     * Returns the free space in the pool. null if the pool does not have a clearly defined free space (e.g. thinly
-     * provisioned).
+     * Returns the free space in the pool.
+     * This is the real capacity available to be used.
+     * Defined as 'free_capacity' in
+     * <a href=https://specs.openstack.org/openstack/cinder-specs/specs/kilo/over-subscription-in-thin-provisioning.html>
+     * the OpenStack docs</a>.
      */
-    Long getFreeSpace() throws StorageException;
+    long getFreeSpace() throws StorageException;
 
     /**
      * Returns a map of this driver's characteristics, such as what minimum unit of allocation

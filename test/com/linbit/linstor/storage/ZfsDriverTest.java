@@ -501,7 +501,7 @@ public class ZfsDriverTest extends StorageTestUtils
     @Test
     public void testFreeSpace() throws StorageException
     {
-        final Long size = 1L * 1024 * 1024 * 1024; // 1TB
+        final long size = 1L * 1024 * 1024 * 1024; // 1TB
         expectZfsFreeSpaceCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, null, size, true);
 
         assertEquals(size, driver.getFreeSpace());

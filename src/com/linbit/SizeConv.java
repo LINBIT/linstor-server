@@ -16,7 +16,7 @@ public class SizeConv
     public enum SizeUnit
     {
         UNIT_B,
-        UNIT_kiB,
+        UNIT_KiB,
         UNIT_MiB,
         UNIT_GiB,
         UNIT_TiB,
@@ -41,8 +41,8 @@ public class SizeConv
                 case UNIT_B:
                     factor = FACTOR_B;
                     break;
-                case UNIT_kiB:
-                    factor = FACTOR_kiB;
+                case UNIT_KiB:
+                    factor = FACTOR_KiB;
                     break;
                 case UNIT_MiB:
                     factor = FACTOR_MiB;
@@ -108,7 +108,7 @@ public class SizeConv
     // Factor 1,024
     // Naming convention exception: SI unit capitalization rules
     @SuppressWarnings("checkstyle:constantname")
-    public static final BigInteger FACTOR_kiB = BigInteger.valueOf(1024L);
+    public static final BigInteger FACTOR_KiB = BigInteger.valueOf(1024L);
 
     // Factor 1,048,576
     // Naming convention exception: SI unit capitalization rules

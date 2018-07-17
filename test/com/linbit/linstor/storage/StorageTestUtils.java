@@ -40,7 +40,7 @@ import com.linbit.linstor.testutils.EmptyErrorReporter;
 
 public class StorageTestUtils
 {
-    private static final String LVM_EXT_CMD_SEPARATOR = ";";
+    public static final String LVM_EXT_CMD_SEPARATOR = ";";
     private static final int START_VOL_NOT_EXISTS_ERROR_CODE = 5;
     private static final int STOP_VOL_NOT_EXISTS_ERROR_CODE = 5;
     private static final int DEL_VOL_EXISTS_ERROR_CODE = 5;
@@ -379,7 +379,7 @@ public class StorageTestUtils
         final String identifier,
         final long volumeSize)
     {
-        expectLvsInfoBehavior(lvsCommand, volumeGroup, identifier, Long.toString(volumeSize) + ".00k");
+        expectLvsInfoBehavior(lvsCommand, volumeGroup, identifier, Long.toString(volumeSize) + ".00");
     }
 
     protected void expectLvsInfoBehavior(
@@ -406,6 +406,7 @@ public class StorageTestUtils
             "--separator", LVM_EXT_CMD_SEPARATOR,
             "--noheadings",
             "--units", "k",
+            "--nosuffix",
             volumeGroup);
         StringBuilder sb = new StringBuilder();
         OutputData outData;

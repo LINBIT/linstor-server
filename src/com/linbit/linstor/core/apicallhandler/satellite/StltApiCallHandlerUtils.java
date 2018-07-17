@@ -82,11 +82,8 @@ public class StltApiCallHandlerUtils
                 if (storageDriver != null)
                 {
                     storPool.reconfigureStorageDriver(storageDriver);
-                    Long freeSpace = storageDriver.getFreeSpace();
-                    if (freeSpace != null)
-                    {
-                        freeSpaceMap.put(storPool, freeSpace);
-                    }
+                    long freeSpace = storageDriver.getFreeSpace();
+                    freeSpaceMap.put(storPool, freeSpace);
                 }
             }
         }
