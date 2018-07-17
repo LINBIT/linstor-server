@@ -255,7 +255,13 @@ task getProtoc {
 }
 
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
-task genJava(type:Exec) {
+task generateJava(type:Exec) {
+    doFirst {
+        if (!protoc.exists()) {
+            throw new GradleException("'protoc' binary not found; run the task 'getProtoc' to download the binary")
+        }
+    }
+
     workingDir 'linstor-common'
 
     commandLine 'make', "PROTOC=" + protoc, 'java'
@@ -282,15 +288,11 @@ task cleanTestCommands(type:Exec) {
 }
 
 task generate {
-    dependsOn generatePropRules
-
-    if(protoc.exists()) {
-        dependsOn += genJava
-    }
+    dependsOn generatePropRules, generateJava
 }
 
 compileJava {
-    dependsOn generatePropRules, generate
+    dependsOn generate
 }
 
 compileTestJava {
