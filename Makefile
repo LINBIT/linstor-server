@@ -1,6 +1,7 @@
 GIT = git
 MAKE = make
 DOCKERREGISTRY = drbd.io
+DOCKERREGPATH = $(DOCKERREGISTRY)/linstor-controller
 
 GENRES=./generated-resources
 GENSRC=generated-src
@@ -94,4 +95,8 @@ dockerimage: debrelease
 else
 dockerimage:
 endif
-	docker build -t $(DOCKERREGISTRY)/linstor-controller .
+	docker build -t $(DOCKERREGPATH) .
+
+.PHONY: dockerpath
+dockerpath:
+	@echo $(DOCKERREGPATH)
