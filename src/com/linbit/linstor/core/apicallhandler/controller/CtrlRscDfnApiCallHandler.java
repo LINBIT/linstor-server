@@ -312,10 +312,29 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     {
                         markDeleted(rscDfn);
 
-                        while (rscIterator.hasNext())
+                        if (rscDfn.hasDiskless(apiCtx))
                         {
-                            Resource rsc = rscIterator.next();
-                            markDeletedPrivileged(rsc);
+                            // if the resource definition has diskless resource
+                            // first delete them, as we can't delete diskfull before
+                            // diskfull resource will be delete trigger later in the notify
+                            // resource deleted api
+                            while (rscIterator.hasNext())
+                            {
+                                Resource rsc = rscIterator.next();
+                                if (rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS))
+                                {
+                                    markDeletedPrivileged(rsc);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // mark all resources deleted
+                            while (rscIterator.hasNext())
+                            {
+                                Resource rsc = rscIterator.next();
+                                markDeletedPrivileged(rsc);
+                            }
                         }
 
                         commit();

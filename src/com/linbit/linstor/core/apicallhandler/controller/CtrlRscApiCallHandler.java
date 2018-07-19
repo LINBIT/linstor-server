@@ -669,6 +669,16 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             UUID nodeUuid = null;
             NodeName deletedNodeName = null;
 
+            // check if only diskfull resources are left in the rscDfn that is to be deleted
+            // and if so, mark the diskfull as deleted
+            if (!rscDfn.hasDiskless(apiCtx) && isMarkedForDeletion(rscDfn))
+            {
+                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(toList()))
+                {
+                    rsc.markDeleted(apiCtx);
+                }
+            }
+
             // cleanup resource definition if empty and marked for deletion
             if (rscDfn.getResourceCount() == 0)
             {
