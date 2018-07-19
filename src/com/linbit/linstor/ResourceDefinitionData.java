@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Provider;
@@ -380,6 +381,19 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         return transportType.set(type);
+    }
+
+    @Override
+    public boolean hasDiskless(AccessContext accCtx) throws AccessDeniedException
+    {
+        boolean hasDiskless = false;
+        for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
+        {
+            hasDiskless = rsc.getStateFlags().isSet(accCtx, Resource.RscFlags.DISKLESS);
+            if (hasDiskless)
+                break;
+        }
+        return hasDiskless;
     }
 
     @Override

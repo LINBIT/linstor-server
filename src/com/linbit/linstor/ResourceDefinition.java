@@ -90,6 +90,9 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
     TransportType setTransportType(AccessContext accCtx, TransportType type)
         throws AccessDeniedException, SQLException;
 
+    boolean hasDiskless(AccessContext accCtx)
+        throws AccessDeniedException;
+
     Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
