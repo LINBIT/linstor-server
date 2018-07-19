@@ -672,17 +672,19 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             // cleanup resource definition if empty and marked for deletion
             if (rscDfn.getResourceCount() == 0)
             {
-                // remove primary flag
-                errorReporter.logDebug(
-                    String.format("Resource definition '%s' empty, deleting primary flag.", rscNameStr)
-                );
-                rscDfn.getProps(apiCtx).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
-
                 if (isMarkedForDeletion(rscDfn))
                 {
                     deletedRscDfnName = rscDfn.getName();
                     rscDfnUuid = rscDfn.getUuid();
                     delete(rscDfn);
+                }
+                else
+                {
+                    // remove primary flag
+                    errorReporter.logDebug(
+                        String.format("Resource definition '%s' empty, deleting primary flag.", rscNameStr)
+                    );
+                    rscDfn.getProps(apiCtx).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
                 }
             }
 
