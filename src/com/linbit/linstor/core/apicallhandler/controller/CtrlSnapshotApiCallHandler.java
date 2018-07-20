@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -160,7 +161,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         {
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
-            SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
+            SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
             SnapshotDefinition snapshotDfn = createSnapshotDfnData(
                 peerAccCtx.get(),
                 rscDfn,
@@ -225,7 +226,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 for (String nodeNameStr : nodeNameStrs)
                 {
-                    Resource rsc = rscDfn.getResource(peerAccCtx.get(), asNodeName(nodeNameStr));
+                    Resource rsc = rscDfn.getResource(peerAccCtx.get(), LinstorParsingUtils.asNodeName(nodeNameStr));
                     if (rsc == null)
                     {
                         throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -316,7 +317,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         {
             ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
-            SnapshotName snapshotName = asSnapshotName(snapshotNameStr);
+            SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
             SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
 
             UUID uuid = snapshotDfn.getUuid();

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -97,7 +98,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         {
             ResourceDefinitionData fromRscDfn = loadRscDfn(fromRscNameStr, true);
 
-            SnapshotName fromSnapshotName = asSnapshotName(fromSnapshotNameStr);
+            SnapshotName fromSnapshotName = LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr);
             SnapshotDefinition fromSnapshotDfn = loadSnapshotDfn(fromRscDfn, fromSnapshotName);
 
             ResourceDefinitionData toRscDfn = loadRscDfn(toRscNameStr, true);

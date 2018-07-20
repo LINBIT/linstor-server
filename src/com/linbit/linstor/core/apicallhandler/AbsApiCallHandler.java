@@ -6,13 +6,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
-import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -25,9 +20,7 @@ import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
@@ -100,202 +93,9 @@ public abstract class AbsApiCallHandler
         propsWhiteList = propsWhiteListRef;
     }
 
-    /**
-     * Returns the given String as a {@link NodeName} if possible. If the String is not a valid
-     * {@link NodeName} an exception is thrown.
-     *
-     * @param nodeNameStr
-     * @return
-     */
-    protected final NodeName asNodeName(String nodeNameStr)
-    {
-        NodeName nodeName;
-        try
-        {
-            nodeName = new NodeName(nodeNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_NODE_NAME, "The given node name '%s' is invalid."
-            ), invalidNameExc);
-        }
-        return nodeName;
-    }
-
-    /**
-     * Returns the given String as a {@link NetInterfaceName} if possible. If the String is not a valid
-     * {@link NetInterfaceName} an exception is thrown.
-     *
-     * @param netIfNameStr
-     * @return
-     */
-    protected NetInterfaceName asNetInterfaceName(String netIfNameStr)
-    {
-        NetInterfaceName netInterfaceName;
-        try
-        {
-            netInterfaceName = new NetInterfaceName(netIfNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_NET_NAME,
-                "The specified net interface name '" + netIfNameStr + "' is invalid."
-            ), invalidNameExc);
-        }
-        return netInterfaceName;
-    }
-
-    /**
-     * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
-     * {@link LsIpAddress} an exception is thrown.
-     *
-     * @param ipAddrStr
-     * @return
-     */
-    protected LsIpAddress asLsIpAddress(String ipAddrStr)
-    {
-        LsIpAddress lsIpAddress;
-        try
-        {
-            lsIpAddress = new LsIpAddress(ipAddrStr);
-        }
-        catch (InvalidIpAddressException | NullPointerException invalidIpExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_INVLD_NET_ADDR, "Failed to parse IP address")
-                .setCause("The specified IP address is not valid")
-                .setDetails("The specified input '" + ipAddrStr + "' is not a valid IP address.")
-                .setCorrection("Specify a valid IPv4 or IPv6 address.")
-                .build(),
-                invalidIpExc
-            );
-        }
-        return lsIpAddress;
-    }
-
-    /**
-     * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
-     * {@link LsIpAddress} an exception is thrown.
-     *
-     * @param ipAddrStr
-     * @return
-     */
-    protected TcpPortNumber asTcpPortNumber(int port)
-    {
-        TcpPortNumber tcpPortNumber;
-        try
-        {
-            tcpPortNumber = new TcpPortNumber(port);
-        }
-        catch (Exception exc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_NET_PORT,
-                "The given portNumber '" + port + "' is invalid."
-            ), exc);
-        }
-        return tcpPortNumber;
-    }
-
-    /**
-     * Returns the given String as a {@link ResourceName} if possible. If the String is not a valid
-     * {@link ResourceName} an exception is thrown.
-     *
-     * @param rscNameStr
-     * @return
-     */
-    protected final ResourceName asRscName(String rscNameStr)
-    {
-        ResourceName resourceName;
-        try
-        {
-            resourceName = new ResourceName(rscNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_RSC_NAME,
-                "The specified resource name '%s' is invalid."
-            ), invalidNameExc);
-        }
-        return resourceName;
-    }
-
-    /**
-     * Returns the given int as a {@link VolumeNumber} if possible. If the int is not a valid
-     * {@link VolumeNumber} an exception is thrown.
-     *
-     * @param vlmNr
-     * @return
-     */
-    protected final VolumeNumber asVlmNr(int vlmNr)
-    {
-        VolumeNumber volumeNumber;
-        try
-        {
-            volumeNumber = new VolumeNumber(vlmNr);
-        }
-        catch (ValueOutOfRangeException valOutOfRangeExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_VLM_NR,
-                "The given volume number '" + vlmNr + "' is invalid. Valid range from " + VolumeNumber.VOLUME_NR_MIN +
-                    " to " + VolumeNumber.VOLUME_NR_MAX
-            ), valOutOfRangeExc);
-        }
-        return volumeNumber;
-    }
-
-    /**
-     * Returns the given String as a {@link StorPoolName} if possible. If the String is not a valid
-     * {@link StorPoolName} an exception is thrown.
-     *
-     * @param storPoolNameStr
-     * @return
-     */
-    protected final StorPoolName asStorPoolName(String storPoolNameStr)
-    {
-        StorPoolName storPoolName;
-        try
-        {
-            storPoolName = new StorPoolName(storPoolNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                "The given storage pool name '%s' is invalid."
-            ), invalidNameExc);
-        }
-        return storPoolName;
-    }
-
-    /**
-     * Returns the given String as a {@link SnapshotName} if possible. If the String is not a valid
-     * {@link SnapshotName} an exception is thrown.
-     */
-    protected final SnapshotName asSnapshotName(String snapshotNameStr)
-    {
-        SnapshotName snapshotName;
-        try
-        {
-            snapshotName = new SnapshotName(snapshotNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_SNAPSHOT_NAME,
-                "The given snapshot name '%s' is invalid."
-            ), invalidNameExc);
-        }
-        return snapshotName;
-    }
-
     protected final NodeData loadNode(String nodeNameStr, boolean failIfNull)
     {
-        return loadNode(asNodeName(nodeNameStr), failIfNull);
+        return loadNode(LinstorParsingUtils.asNodeName(nodeNameStr), failIfNull);
     }
 
     protected final NodeData loadNode(NodeName nodeName, boolean failIfNull)
@@ -349,7 +149,7 @@ public abstract class AbsApiCallHandler
         boolean failIfNull
     )
     {
-        return loadRscDfn(asRscName(rscNameStr), failIfNull);
+        return loadRscDfn(LinstorParsingUtils.asRscName(rscNameStr), failIfNull);
     }
 
     protected final ResourceDefinitionData loadRscDfn(
@@ -480,7 +280,7 @@ public abstract class AbsApiCallHandler
 
     protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
     {
-        return loadStorPoolDfn(asStorPoolName(storPoolNameStr), failIfNull);
+        return loadStorPoolDfn(LinstorParsingUtils.asStorPoolName(storPoolNameStr), failIfNull);
     }
 
     protected final StorPoolDefinitionData loadStorPoolDfn(

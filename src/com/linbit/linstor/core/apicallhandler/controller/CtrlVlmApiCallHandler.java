@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
@@ -120,7 +121,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
-            VolumeNumber volumeNumber = asVlmNr(volumeNr);
+            VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
 
@@ -201,7 +202,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
-            VolumeNumber volumeNumber = asVlmNr(volumeNr);
+            VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
 
@@ -236,7 +237,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         try
         {
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
-            VolumeNumber volumeNumber = asVlmNr(volumeNr);
+            VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
             UUID vlmUuid = vlm.getUuid(); // prevent access to deleted object

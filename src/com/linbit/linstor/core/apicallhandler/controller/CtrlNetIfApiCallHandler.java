@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
@@ -103,7 +104,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         try
         {
             NodeData node = loadNode(nodeNameStr, true);
-            NetInterfaceName netIfName = asNetInterfaceName(netIfNameStr);
+            NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
 
             if (node.getSatelliteConnection(apiCtx) != null && stltPort != null)
             {
@@ -308,7 +309,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             EncryptionType type = null;
             if (stltConnPort != null && stltConnEncrType != null)
             {
-                port = asTcpPortNumber(stltConnPort);
+                port = LinstorParsingUtils.asTcpPortNumber(stltConnPort);
                 type = asEncryptionType(stltConnEncrType);
             }
 
@@ -316,7 +317,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 peerAccCtx.get(),
                 node,
                 netIfName,
-                asLsIpAddress(address),
+                LinstorParsingUtils.asLsIpAddress(address),
                 port,
                 type,
                 true,
@@ -375,7 +376,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         {
             netIf = node.getNetInterface(
                 peerAccCtx.get(),
-                asNetInterfaceName(netIfNameStr)
+                LinstorParsingUtils.asNetInterfaceName(netIfNameStr)
             );
 
             if (failIfNull && netIf == null)
@@ -401,7 +402,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            netIf.setAddress(peerAccCtx.get(), asLsIpAddress(addressStr));
+            netIf.setAddress(peerAccCtx.get(), LinstorParsingUtils.asLsIpAddress(addressStr));
         }
         catch (AccessDeniedException exc)
         {
@@ -422,7 +423,8 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         boolean changed = false;
         try
         {
-            changed = netIf.setStltConn(peerAccCtx.get(), asTcpPortNumber(stltPort), asEncryptionType(stltEncrType));
+            changed = netIf.setStltConn(
+                peerAccCtx.get(), LinstorParsingUtils.asTcpPortNumber(stltPort), asEncryptionType(stltEncrType));
         }
         catch (AccessDeniedException accDeniedExc)
         {

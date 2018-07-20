@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
@@ -490,7 +491,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 // implicitly create storage pool definition if it doesn't exist
                 storPoolDef = storPoolDefinitionDataFactory.getInstance(
                     peerAccCtx.get(),
-                    asStorPoolName(storPoolNameStr),
+                    LinstorParsingUtils.asStorPoolName(storPoolNameStr),
                     true,  // create and persist if not exists
                     false  // do not throw exception if exists
                 );

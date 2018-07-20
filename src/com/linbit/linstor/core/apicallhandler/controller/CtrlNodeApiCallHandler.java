@@ -26,6 +26,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.EncryptionType;
@@ -217,7 +218,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             requireNodesMapChangeAccess();
-            NodeName nodeName = asNodeName(nodeNameStr);
+            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
 
             NodeType type = asNodeType(nodeTypeStr);
 
@@ -240,14 +241,14 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     EncryptionType encrType = null;
                     if (netIfApi.isUsableAsSatelliteConnection())
                     {
-                        port = asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
+                        port = LinstorParsingUtils.asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
                         encrType = asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
                     }
 
                     NetInterfaceData netIf = createNetInterface(
                         node,
-                        asNetInterfaceName(netIfApi.getName()),
-                        asLsIpAddress(netIfApi.getAddress()),
+                        LinstorParsingUtils.asNetInterfaceName(netIfApi.getName()),
+                        LinstorParsingUtils.asLsIpAddress(netIfApi.getAddress()),
                         port,
                         encrType
                     );
@@ -345,7 +346,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             requireNodesMapChangeAccess();
-            NodeName nodeName = asNodeName(nodeNameStr);
+            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
             NodeData node = loadNode(nodeName, true);
             if (nodeUuid != null && !nodeUuid.equals(node.getUuid()))
             {
@@ -395,7 +396,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             requireNodesMapChangeAccess();
-            NodeName nodeName = asNodeName(nodeNameStr);
+            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
             NodeData nodeData = loadNode(nodeName, false);
             if (nodeData == null)
             {
@@ -526,7 +527,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         try
         {
             requireNodesMapChangeAccess();
-            NodeName nodeName = asNodeName(nodeNameStr);
+            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
             NodeData nodeData = loadNode(nodeName, false);
             if (nodeData == null)
             {

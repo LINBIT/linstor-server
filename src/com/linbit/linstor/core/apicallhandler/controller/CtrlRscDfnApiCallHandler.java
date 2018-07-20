@@ -7,6 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -202,7 +203,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             requireRscDfnMapChangeAccess();
 
-            ResourceName rscName = asRscName(rscNameStr);
+            ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
             ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
@@ -218,7 +219,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             }
             if (portInt != null)
             {
-                TcpPortNumber port = asTcpPortNumber(portInt);
+                TcpPortNumber port = LinstorParsingUtils.asTcpPortNumber(portInt);
                 rscDfn.setPort(peerAccCtx.get(), port);
             }
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
@@ -507,7 +508,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 ), unknownValueExc);
             }
         }
-        ResourceName rscName = asRscName(rscNameStr);
+        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
         ResourceDefinitionData rscDfn;
         try

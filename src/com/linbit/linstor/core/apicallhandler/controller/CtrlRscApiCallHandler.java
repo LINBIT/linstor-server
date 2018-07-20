@@ -21,6 +21,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
@@ -342,7 +343,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 {
                     storPool = rsc.getAssignedNode().getStorPool(
                         apiCtx,
-                        asStorPoolName(storPoolNameStr)
+                        LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                     );
                 }
 
@@ -356,7 +357,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 }
                 storPool = rsc.getAssignedNode().getStorPool(
                     apiCtx,
-                    asStorPoolName(storPoolNameStr)
+                    LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );
 
                 responses.addEntries(warnAndFlagDiskless(rsc, storPool));
@@ -912,7 +913,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         boolean failIfNull
     )
     {
-        return loadVlmDfn(rscDfn, asVlmNr(vlmNr), failIfNull);
+        return loadVlmDfn(rscDfn, LinstorParsingUtils.asVlmNr(vlmNr), failIfNull);
     }
 
     protected final VolumeDefinitionData loadVlmDfn(

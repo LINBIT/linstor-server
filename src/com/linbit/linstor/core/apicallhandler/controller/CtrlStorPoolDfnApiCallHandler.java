@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
@@ -258,7 +259,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         String storPoolNameStr = selectFilter.getStorPoolNameStr();
         if (storPoolNameStr != null && storPoolNameStr.length() > 0)
         {
-            storPoolName = asStorPoolName(storPoolNameStr);
+            storPoolName = LinstorParsingUtils.asStorPoolName(storPoolNameStr);
         }
         candidateList = autoStorPoolSelector.getCandidateList(
             0L,
@@ -375,7 +376,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         {
             storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 peerAccCtx.get(),
-                asStorPoolName(storPoolNameStrRef),
+                LinstorParsingUtils.asStorPoolName(storPoolNameStrRef),
                 true, // persist this entry
                 true // fail if already exists
             );

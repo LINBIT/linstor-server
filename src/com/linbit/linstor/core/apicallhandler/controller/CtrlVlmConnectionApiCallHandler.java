@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
@@ -316,7 +317,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Resource rsc;
         try
         {
-            rsc = node.getResource(peerAccCtx.get(), asRscName(rscNameStr));
+            rsc = node.getResource(peerAccCtx.get(), LinstorParsingUtils.asRscName(rscNameStr));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -331,7 +332,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
     private Volume getVlm(Resource rsc, int vlmNr)
     {
-        return rsc.getVolume(asVlmNr(vlmNr));
+        return rsc.getVolume(LinstorParsingUtils.asVlmNr(vlmNr));
     }
 
     private Props getProps(VolumeConnectionData vlmConn)

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
@@ -208,7 +209,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     {
         NodeData node1 = loadNode(nodeName1Str, true);
         NodeData node2 = loadNode(nodeName2Str, true);
-        ResourceName rscName = asRscName(rscNameStr);
+        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
         Resource rsc1 = loadRsc(node1, rscName);
         Resource rsc2 = loadRsc(node2, rscName);
@@ -256,7 +257,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     {
         NodeData node1 = loadNode(nodeName1, true);
         NodeData node2 = loadNode(nodeName2, true);
-        ResourceName rscName = asRscName(rscNameStr);
+        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
         Resource rsc1 = loadRsc(node1, rscName);
         Resource rsc2 = loadRsc(node2, rscName);
