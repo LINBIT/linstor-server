@@ -19,7 +19,6 @@ import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -60,7 +59,6 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef
@@ -72,8 +70,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
 
         stltConf = stltConfRef;

@@ -56,7 +56,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
@@ -106,6 +105,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     private final String defaultStorPoolName;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -127,8 +127,8 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -138,7 +138,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
-            whitelistPropsRef,
             stltConfRef,
             resourceDataFactoryRef,
             volumeDataFactoryRef
@@ -153,6 +152,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         defaultStorPoolName = defaultStorPoolNameRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createResource(
@@ -411,12 +411,12 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
         Props rscProps = getProps(rsc);
 
-        fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
+        ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
 
         boolean isRscDiskless = isDiskless(rsc);
 
-        Props rscDfnProps = getProps(rscDfn);
-        Props nodeProps = getProps(node);
+        Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
+        Props nodeProps = ctrlPropsHelper.getProps(node);
 
         Map<Integer, Volume> vlmMap = new TreeMap<>();
         for (VlmApi vlmApi : vlmApiList)
@@ -425,7 +425,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             PriorityProps prioProps = new PriorityProps(
                 rscProps,
-                getProps(vlmDfn),
+                ctrlPropsHelper.getProps(vlmDfn),
                 rscDfnProps,
                 nodeProps
             );
@@ -459,7 +459,8 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             Props vlmProps = getProps(vlmData);
 
-            fillProperties(LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
+            ctrlPropsHelper.fillProperties(
+                LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
 
             vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
         }
@@ -475,7 +476,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 // not deployed yet.
 
                 PriorityProps prioProps = new PriorityProps(
-                    getProps(vlmDfn),
+                    ctrlPropsHelper.getProps(vlmDfn),
                     rscProps,
                     nodeProps
                 );
@@ -536,7 +537,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             Props props = getProps(rsc);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
+            ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
 
             for (String delKey : deletePropKeys)
             {

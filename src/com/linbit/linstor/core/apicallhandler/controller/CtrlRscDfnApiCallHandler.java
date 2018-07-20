@@ -31,7 +31,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -83,6 +82,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private CtrlVlmDfnApiCallHandler vlmDfnHandler;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlRscDfnApiCallHandler(
@@ -99,8 +99,8 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlVlmDfnApiCallHandler vlmDfnHandlerRef,
-        WhitelistProps whitelistPropsRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -109,8 +109,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
@@ -121,6 +120,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         vlmDfnHandler = vlmDfnHandlerRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -144,8 +144,8 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             requireRscDfnMapChangeAccess();
             ResourceDefinitionData rscDfn = createRscDfn(rscNameStr, transportTypeStr, portInt, secret);
 
-            fillProperties(
-                LinStorObject.RESOURCE_DEFINITION, props, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+            ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
+                ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
             List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
@@ -224,10 +224,10 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             }
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
-                Map<String, String> map = getProps(rscDfn).map();
+                Map<String, String> map = ctrlPropsHelper.getProps(rscDfn).map();
 
-                fillProperties(
-                    LinStorObject.RESOURCE_DEFINITION, overrideProps, getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+                ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, overrideProps,
+                    ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
                 for (String delKey : deletePropKeys)
                 {
@@ -391,7 +391,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
             ResourceDefinitionData resDfn = (ResourceDefinitionData) res.getDefinition();
 
-            Props resDfnProps = getProps(resDfn);
+            Props resDfnProps = ctrlPropsHelper.getProps(resDfn);
             if (resDfnProps.getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
             {
                 resDfnProps.setProp(

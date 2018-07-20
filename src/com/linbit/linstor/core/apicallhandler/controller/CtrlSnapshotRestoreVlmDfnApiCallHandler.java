@@ -17,7 +17,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -62,7 +61,6 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef
     )
@@ -74,7 +72,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
-            whitelistPropsRef,
+            ctrlSatelliteUpdaterRef,
             defaultStorPoolNameRef,
             volumeDefinitionDataFactoryRef
         );

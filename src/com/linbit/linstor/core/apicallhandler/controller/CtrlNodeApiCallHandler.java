@@ -53,7 +53,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
@@ -93,6 +92,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     public class ErrorReportRequest
     {
@@ -141,8 +141,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps propsWhiteListRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -151,8 +151,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            propsWhiteListRef
+            peerRef
         );
         ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
@@ -163,6 +162,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     /**
@@ -224,7 +224,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
             Node node = createNode(nodeName, type);
 
-            fillProperties(LinStorObject.NODE, propsMap, getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
+            ctrlPropsHelper.fillProperties(
+                LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
 
             if (netIfs.isEmpty())
             {
@@ -360,8 +361,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 setNodeType(node, nodeTypeStr);
             }
 
-            Props props = getProps(node);
-            fillProperties(LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
+            Props props = ctrlPropsHelper.getProps(node);
+            ctrlPropsHelper.fillProperties(LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
 
             Map<String, String> nodeProps = props.map();
             for (String key : deletePropKeys)

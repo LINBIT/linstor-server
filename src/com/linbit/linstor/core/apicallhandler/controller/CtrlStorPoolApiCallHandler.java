@@ -21,7 +21,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
@@ -72,6 +71,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlStorPoolApiCallHandler(
@@ -89,8 +89,8 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -99,8 +99,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
 
         nodesMapProt = nodesMapProtRef;
@@ -113,6 +112,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createStorPool(
@@ -138,7 +138,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             requireStorPoolDfnMapChangeAccess();
 
             StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver);
-            fillProperties(
+            ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
             commit();
@@ -189,7 +189,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             Props props = getProps(storPool);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(
+            ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, overrideProps, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
             for (String delKey : deletePropKeys)

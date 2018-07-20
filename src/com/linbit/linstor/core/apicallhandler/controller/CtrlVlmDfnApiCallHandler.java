@@ -24,7 +24,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
@@ -76,6 +75,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     private final CtrlSecurityObjects secObjs;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -91,8 +91,8 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSecurityObjects secObjsRef,
-        WhitelistProps whitelistPropsRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -102,7 +102,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
-            whitelistPropsRef,
+            ctrlSatelliteUpdaterRef,
             defaultStorPoolNameRef,
             volumeDefinitionDataFactoryRef
         );
@@ -113,6 +113,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
         secObjs = secObjsRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     ApiCallRc createVolumeDefinitions(
@@ -235,8 +236,8 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             );
             Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
 
-            fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApi.getProps(), getVlmDfnProps(vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApi.getProps(),
+                getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
             // Set an initial DRBD current generation identifier for use when creating volumes
             // in a setup that includes thin provisioning storage pools
@@ -310,8 +311,8 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             Props props = getVlmDfnProps(vlmDfn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(LinStorObject.VOLUME_DEFINITION, overrideProps, getVlmDfnProps(vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, overrideProps,
+                getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
             for (String delKey : deletePropKeys)
             {

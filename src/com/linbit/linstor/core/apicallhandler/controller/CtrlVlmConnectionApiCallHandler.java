@@ -13,7 +13,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -45,6 +44,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final VolumeConnectionDataFactory volumeConnectionDataFactory;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlVlmConnectionApiCallHandler(
@@ -55,9 +55,9 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -66,12 +66,12 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createVolumeConnection(
@@ -96,7 +96,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         {
             VolumeConnectionData vlmConn = createVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
 
-            fillProperties(
+            ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_CONN, vlmConnPropsMap, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
 
             commit();
@@ -148,7 +148,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             Props props = getProps(vlmConn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(
+            ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_CONN, overrideProps, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
 
             for (String delKey : deletePropKeys)

@@ -17,7 +17,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
@@ -68,6 +67,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final Provider<Integer> msgIdProvider;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -82,10 +82,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whiteListProps,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
         @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -94,8 +94,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whiteListProps
+            peerRef
         );
         clientComSerializer = clientComSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -105,6 +104,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         autoStorPoolSelector = autoStorPoolSelectorRef;
         msgIdProvider = msgIdProviderRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -124,8 +124,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             requireStorPoolDfnChangeAccess();
 
             StorPoolDefinitionData storPoolDfn = createStorPool(storPoolNameStr);
-            fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps, getProps(storPoolDfn),
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
+            ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
+                getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
             commit();
 
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
@@ -170,8 +170,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             Props props = getProps(storPoolDfn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, overrideProps, getProps(storPoolDfn),
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
+            ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
+                getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
 
             for (String delKey : deletePropKeys)
             {

@@ -16,7 +16,6 @@ import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -48,7 +47,7 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         String defaultStorPoolNameRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
     )
@@ -59,8 +58,7 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
 
         defaultStorPoolName = defaultStorPoolNameRef;

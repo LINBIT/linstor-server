@@ -13,7 +13,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -45,6 +44,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlRscConnectionApiCallHandler(
@@ -55,9 +55,9 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -66,12 +66,12 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createResourceConnection(
@@ -94,7 +94,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         {
             ResourceConnectionData rscConn = createRscConn(nodeName1Str, nodeName2Str, rscNameStr);
 
-            fillProperties(
+            ctrlPropsHelper.fillProperties(
                 LinStorObject.RSC_CONN, rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
             commit();
@@ -144,7 +144,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             Props props = getProps(rscConn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(
+            ctrlPropsHelper.fillProperties(
                 LinStorObject.RSC_CONN, overrideProps, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
             for (String delKey : deletePropKeys)

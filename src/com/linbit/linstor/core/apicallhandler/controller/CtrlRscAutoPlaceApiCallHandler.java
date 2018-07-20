@@ -27,7 +27,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.CoreModule.NodesMap;
@@ -66,7 +65,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
         ResponseConverter responseConverterRef
@@ -78,8 +76,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodesMap = nodesMapRef;

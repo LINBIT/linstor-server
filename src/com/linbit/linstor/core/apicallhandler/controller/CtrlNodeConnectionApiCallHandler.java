@@ -11,7 +11,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -43,6 +42,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
     private final ResponseConverter responseConverter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     CtrlNodeConnectionApiCallHandler(
@@ -53,9 +53,9 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         super(
@@ -64,12 +64,12 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
         responseConverter = responseConverterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public ApiCallRc createNodeConnection(
@@ -93,7 +93,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
             NodeConnectionData nodeConn = createNodeConn(node1, node2);
 
-            fillProperties(LinStorObject.NODE_CONN, nodeConnPropsMap, getProps(nodeConn), ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
+            ctrlPropsHelper.fillProperties(
+                LinStorObject.NODE_CONN, nodeConnPropsMap, getProps(nodeConn), ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
 
             commit();
 
@@ -142,7 +143,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             Props props = getProps(nodeConn);
             Map<String, String> propsMap = props.map();
 
-            fillProperties(LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
+            ctrlPropsHelper.fillProperties(
+                LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
 
             for (String delKey : deletePropKeys)
             {

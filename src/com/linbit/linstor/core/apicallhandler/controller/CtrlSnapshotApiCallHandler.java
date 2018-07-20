@@ -31,7 +31,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -97,7 +96,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
@@ -112,8 +110,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;

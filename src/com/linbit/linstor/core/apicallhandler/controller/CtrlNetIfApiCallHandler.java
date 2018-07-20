@@ -18,7 +18,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -66,7 +65,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        WhitelistProps whitelistPropsRef,
         ResponseConverter responseConverterRef
     )
     {
@@ -76,8 +74,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
-            peerRef,
-            whitelistPropsRef
+            peerRef
         );
         satelliteConnector = satelliteConnectorRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
