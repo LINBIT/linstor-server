@@ -40,8 +40,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -216,7 +216,7 @@ public class CtrlConfApiCallHandler
             long rc;
             if (exc instanceof AccessDeniedException)
             {
-                errorMsg = AbsApiCallHandler.getAccDeniedMsg(
+                errorMsg = ResponseUtils.getAccDeniedMsg(
                     accCtx,
                     "set a controller config property"
                 );
@@ -237,7 +237,7 @@ public class CtrlConfApiCallHandler
             else
             if (exc instanceof SQLException)
             {
-                errorMsg = AbsApiCallHandler.getSqlMsg(
+                errorMsg = ResponseUtils.getSqlMsg(
                     "Persisting controller config prop with key '" + key + "' in namespace '" + namespace +
                     "' with value '" + value + "'."
                 );
@@ -332,7 +332,7 @@ public class CtrlConfApiCallHandler
             long rc;
             if (exc instanceof AccessDeniedException)
             {
-                errorMsg = AbsApiCallHandler.getAccDeniedMsg(
+                errorMsg = ResponseUtils.getAccDeniedMsg(
                     accCtx,
                     "delete a controller config property"
                 );
@@ -347,7 +347,7 @@ public class CtrlConfApiCallHandler
             else
             if (exc instanceof SQLException)
             {
-                errorMsg = AbsApiCallHandler.getSqlMsg(
+                errorMsg = ResponseUtils.getSqlMsg(
                     "Deleting controller config prop with key '" + key + "' in namespace '" + namespace +
                     "'."
                 );
@@ -381,7 +381,7 @@ public class CtrlConfApiCallHandler
             Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
             if (namespace == null || namespace.isEmpty())
             {
-                AbsApiCallHandler.reportStatic(
+                ResponseUtils.reportStatic(
                     null,
                     NAMESPACE_ENCRYPTED + " namespace is empty",
                     ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
@@ -399,7 +399,7 @@ public class CtrlConfApiCallHandler
                 {
                     setCryptKey(decryptedMasterKey);
 
-                    AbsApiCallHandler.reportSuccessStatic(
+                    ResponseUtils.reportSuccessStatic(
                         "Passphrase accepted",
                         null,
                         ApiConsts.MASK_CTRL_CONF | ApiConsts.PASSPHRASE_ACCEPTED,
@@ -412,8 +412,8 @@ public class CtrlConfApiCallHandler
         }
         catch (AccessDeniedException exc)
         {
-            AbsApiCallHandler.addAnswerStatic(
-                AbsApiCallHandler.getAccDeniedMsg(accCtx, "view the controller properties"),
+            ResponseUtils.addAnswerStatic(
+                ResponseUtils.getAccDeniedMsg(accCtx, "view the controller properties"),
                 null, // cause
                 null, // details
                 null, // correction
@@ -424,7 +424,7 @@ public class CtrlConfApiCallHandler
         }
         catch (InvalidKeyException exc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 new ImplementationError(
                     "Hardcoded namespace or property key invalid",
                     exc
@@ -440,7 +440,7 @@ public class CtrlConfApiCallHandler
         }
         catch (LinStorException exc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 exc,
                 "Unknown error occured while validating the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
@@ -478,7 +478,7 @@ public class CtrlConfApiCallHandler
                         masterKey
                     );
                     setCryptKey(masterKey);
-                    AbsApiCallHandler.reportSuccessStatic(
+                    ResponseUtils.reportSuccessStatic(
                          "Crypt passphrase created.",
                          null, // details
                          mask | ApiConsts.CREATED,
@@ -489,7 +489,7 @@ public class CtrlConfApiCallHandler
                 }
                 else
                 {
-                    AbsApiCallHandler.addAnswerStatic(
+                    ResponseUtils.addAnswerStatic(
                         "Coult not create new crypt passphrase as it already exists",
                         "A passphrase was already defined",
                         null,
@@ -505,7 +505,7 @@ public class CtrlConfApiCallHandler
                 mask |= ApiConsts.MASK_MOD;
                 if (namespace == null || namespace.isEmpty())
                 {
-                    AbsApiCallHandler.addAnswerStatic(
+                    ResponseUtils.addAnswerStatic(
                         "Coult not modify crypt passphrase as it does not exist",
                         "No passphrase was defined yet",
                         null,
@@ -525,7 +525,7 @@ public class CtrlConfApiCallHandler
                     if (decryptedMasterKey != null)
                     {
                         setPassphraseImpl(newPassphrase, decryptedMasterKey);
-                        AbsApiCallHandler.reportSuccessStatic(
+                        ResponseUtils.reportSuccessStatic(
                             "Crypt passphrase updated",
                             null, // details
                             mask | ApiConsts.MODIFIED,
@@ -540,7 +540,7 @@ public class CtrlConfApiCallHandler
         }
         catch (InvalidKeyException invalidNameExc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 new ImplementationError(
                     "Hardcoded namespace or property key invalid",
                     invalidNameExc
@@ -556,9 +556,9 @@ public class CtrlConfApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 accDeniedExc,
-                AbsApiCallHandler.getAccDeniedMsg(accCtx, "access the controller properties"),
+                ResponseUtils.getAccDeniedMsg(accCtx, "access the controller properties"),
                 ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objects
                 apiCallRc,
@@ -569,7 +569,7 @@ public class CtrlConfApiCallHandler
         }
         catch (InvalidValueException exc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 new ImplementationError(exc),
                 "Generated key could not be stored as property",
                 ApiConsts.FAIL_IMPL_ERROR,
@@ -582,9 +582,9 @@ public class CtrlConfApiCallHandler
         }
         catch (SQLException exc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 exc,
-                AbsApiCallHandler.getSqlMsg("storing the generated and encrypted master key"),
+                ResponseUtils.getSqlMsg("storing the generated and encrypted master key"),
                 ApiConsts.FAIL_SQL,
                 null,
                 apiCallRc,
@@ -595,7 +595,7 @@ public class CtrlConfApiCallHandler
         }
         catch (LinStorException exc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 exc,
                 "An unknown exception occured while setting the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
@@ -646,7 +646,7 @@ public class CtrlConfApiCallHandler
             passphraseSaltStr == null
         )
         {
-            AbsApiCallHandler.addAnswerStatic(
+            ResponseUtils.addAnswerStatic(
                 "Could not restore crypt passphrase as one of the following properties is not set:\n" +
                     "'" + KEY_CRYPT_HASH + "', '" + KEY_CRYPT_KEY + "', '" + KEY_PASSPHRASE_SALT + "'",
                 "This is either an implementation error or a user has manually removed one of the " +
@@ -681,7 +681,7 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                AbsApiCallHandler.addAnswerStatic(
+                ResponseUtils.addAnswerStatic(
                     "Could not restore master passphrase as the given old passphrase was incorrect",
                     "Wrong passphrase", // cause
                     null, // details

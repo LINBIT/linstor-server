@@ -10,7 +10,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -162,7 +162,7 @@ public class CtrlWatchApiCallHandler
             }
             catch (AccessDeniedException exc)
             {
-                errorMsg = AbsApiCallHandler.getAccDeniedMsg(
+                errorMsg = ResponseUtils.getAccDeniedMsg(
                     peerAccCtx.get(),
                     "create a watch"
                 );

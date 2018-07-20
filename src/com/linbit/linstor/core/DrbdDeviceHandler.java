@@ -36,7 +36,7 @@ import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.api.pojo.VolumeStateDevManager;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
@@ -326,14 +326,14 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         catch (ResourceException rscExc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 rscExc, rscExc.getMessage(), rscExc.getCauseText(), rscExc.getDetailsText(), rscExc.getCorrectionText(),
                 ApiConsts.FAIL_UNKNOWN_ERROR, null, apiCallRc, errLog, null, null
             );
         }
         catch (AccessDeniedException accExc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 accExc, "Satellite worker access context not authorized to perform a required operation",
                 ApiConsts.FAIL_IMPL_ERROR,
                 null, apiCallRc, errLog, null, null
@@ -341,7 +341,7 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         catch (NoInitialStateException drbdStateExc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 drbdStateExc,
                 "DRBD state tracking is unavailable, operations on resource '" + rscName.displayValue +
                     "' were aborted.",
@@ -354,7 +354,7 @@ class DrbdDeviceHandler implements DeviceHandler
         }
         catch (Exception | ImplementationError exc)
         {
-            AbsApiCallHandler.reportStatic(
+            ResponseUtils.reportStatic(
                 exc, exc.getMessage() == null ? exc.getClass().getSimpleName() : exc.getMessage(),
                 ApiConsts.FAIL_UNKNOWN_ERROR, null, apiCallRc, errLog, null, null
             );
@@ -406,7 +406,7 @@ class DrbdDeviceHandler implements DeviceHandler
         varRefs.put(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
         objRefs.put(ApiConsts.KEY_NODE_NAME, localNodeName.displayValue);
 
-        AbsApiCallHandler.reportSuccessStatic(
+        ResponseUtils.reportSuccessStatic(
             String.format("Resource '%s' on node '%s' successfully deleted.",
                 rscName.displayValue,
                 localNodeName.displayValue),

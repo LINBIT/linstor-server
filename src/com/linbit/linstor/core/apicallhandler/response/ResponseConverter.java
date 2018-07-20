@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.StringUtils;
@@ -112,7 +111,7 @@ public class ResponseConverter
             entry = ApiCallRcImpl
                 .entryBuilder(
                     acExc.getRetCode(),
-                    AbsApiCallHandler.getAccDeniedMsg(context.getPeer().getAccessContext(), acExc.getAction())
+                    ResponseUtils.getAccDeniedMsg(context.getPeer().getAccessContext(), acExc.getAction())
                 )
                 .setCause(acExc.getCause().getMessage())
                 .build();
@@ -123,7 +122,7 @@ public class ResponseConverter
             entry = ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_SQL,
-                    AbsApiCallHandler.getSqlMsg(
+                    ResponseUtils.getSqlMsg(
                         context.getOperationDescription().getProgressive() + " " + context.getObjectDescriptionInline())
                 )
                 .setCause(sqlExc.getCause().getMessage())
