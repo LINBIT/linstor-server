@@ -27,7 +27,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
@@ -51,6 +50,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 {
     private final NodesMap nodesMap;
 
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CtrlRscApiCallHandler rscApiCallHandler;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final ResponseConverter responseConverter;
@@ -58,7 +58,6 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         // @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         NodesMap nodesMapRef,
@@ -68,6 +67,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
         ResponseConverter responseConverterRef
     )
@@ -75,13 +75,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef
         );
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodesMap = nodesMapRef;
         rscApiCallHandler = rscApiCallHandlerRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
@@ -272,7 +272,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                 if (!deployedResources.isEmpty())
                 {
                     responseConverter.addWithDetail(responses, context,
-                        updateSatellites(deployedResources.get(0).getDefinition()));
+                        ctrlSatelliteUpdater.updateSatellites(deployedResources.get(0).getDefinition()));
                 }
 
                 responseConverter.addWithOp(responses, context, ApiCallRcImpl

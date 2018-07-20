@@ -31,7 +31,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
@@ -59,6 +58,7 @@ import static java.util.stream.Collectors.toList;
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection nodesMapProt;
@@ -68,9 +68,9 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     @Inject
     protected CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
@@ -86,7 +86,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -94,6 +93,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             whitelistPropsRef
         );
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         rscDfnMapProt = rscDfnMapProtRef;
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
@@ -172,7 +172,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
             if (updateSatellites)
             {
-                responseConverter.addWithDetail(responses, context, updateSatellites(rscData));
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscData));
             }
         }
         catch (Exception | ImplementationError exc)

@@ -24,7 +24,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.CoreModule;
@@ -71,6 +70,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 {
     private static final int SECRET_KEY_BYTES = 20;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
@@ -80,8 +80,8 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
     @Inject
     CtrlVlmDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtx,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
@@ -98,7 +98,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         super(
             errorReporterRef,
             apiCtx,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -108,6 +107,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             volumeDefinitionDataFactoryRef
         );
 
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
@@ -174,7 +174,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             {
                 responseConverter.addWithOp(responses, context, createVlmDfnCrtSuccessEntry(vlmDfn, rscNameStr));
             }
-            responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -370,7 +370,8 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(vlmDfn.getResourceDefinition()));
+            responseConverter.addWithDetail(
+                responses, context, ctrlSatelliteUpdater.updateSatellites(vlmDfn.getResourceDefinition()));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -447,7 +448,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
                 commit();
 
-                responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
 
                 responseConverter.addWithOp(responses, context, ApiCallRcImpl
                     .entryBuilder(

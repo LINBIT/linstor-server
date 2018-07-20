@@ -83,7 +83,9 @@ import static java.util.stream.Collectors.toList;
 @Singleton
 public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CoreModule.NodesMap nodesMap;
     private final ObjectProtection nodesMapProt;
     private final SatelliteConnector satelliteConnector;
@@ -126,8 +128,9 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     public CtrlNodeApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlStltSerializer interComSerializer,
+        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlClientSerializer clientComSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CoreModule.NodesMap nodesMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         SatelliteConnector satelliteConnectorRef,
@@ -144,14 +147,15 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             propsWhiteListRef
         );
+        ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodesMap = nodesMapRef;
         nodesMapProt = nodesMapProtRef;
         satelliteConnector = satelliteConnectorRef;
@@ -366,7 +370,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(node));
+            responseConverter.addWithDetail(
+                responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 node.getUuid(), getNodeDescriptionInline(node)));
         }
@@ -478,13 +483,15 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             // in case the node still has some resources deployed, we just marked
                             // those to be deleted and now we have to send the new DELETE-flags
                             // to the satellites.
-                            responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
+                            responseConverter.addWithDetail(
+                                responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
 
                             // when they finished undeploying the resource(s), the corresponding
                             // "resourceDeleted" method in CtrlRscApiCallHandler will check if the
                             // node also needs to be deleted, and does so if needed.
                         }
-                        responseConverter.addWithDetail(responses, context, updateSatellites(nodeData));
+                        responseConverter.addWithDetail(
+                            responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData, true));
                     }
 
                     responseConverter.addWithOp(responses, context, ApiCallRcImpl
@@ -550,7 +557,8 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 // set node mark deleted for updates to other satellites
                 nodeData.markDeleted(apiCtx);
                 // inform other satellites that the node is gone
-                responseConverter.addWithDetail(responses, context, updateSatellites(nodeData));
+                responseConverter.addWithDetail(
+                    responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData, true));
 
                 // gather all resources of the lost node and circumvent concurrent modification
                 List<Resource> rscToDelete = getRscStream(nodeData).collect(toList());
@@ -777,7 +785,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     long fullSyncTimestamp = currentPeer.getFullSyncId();
                     long serializerId = currentPeer.getNextSerializerId();
                     currentPeer.sendMessage(
-                        internalComSerializer
+                        ctrlStltSerializer
                             .builder(InternalApiConsts.API_APPLY_NODE, msgId)
                             .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
                             .build()
@@ -800,7 +808,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 long fullSyncTimestamp = currentPeer.getFullSyncId();
                 long serializerId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
-                    internalComSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
+                    ctrlStltSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
                         .deletedNodeData(nodeNameStr, fullSyncTimestamp, serializerId)
                         .build()
                 );

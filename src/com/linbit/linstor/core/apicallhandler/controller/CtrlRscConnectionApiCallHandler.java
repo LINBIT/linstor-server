@@ -12,7 +12,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -42,13 +41,13 @@ import java.util.UUID;
 @Singleton
 class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
     private final ResponseConverter responseConverter;
 
     @Inject
     CtrlRscConnectionApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
@@ -56,19 +55,20 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef
         );
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         responseConverter = responseConverterRef;
     }
@@ -336,8 +336,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            responses.addEntries(updateSatellites(rscConn.getSourceResource(apiCtx)));
-            responses.addEntries(updateSatellites(rscConn.getTargetResource(apiCtx)));
+            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(rscConn.getSourceResource(apiCtx)));
+            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(rscConn.getTargetResource(apiCtx)));
         }
         catch (AccessDeniedException implErr)
         {

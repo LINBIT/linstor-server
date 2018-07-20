@@ -2,16 +2,13 @@ package com.linbit.linstor.core.apicallhandler;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LsIpAddress;
@@ -19,27 +16,21 @@ import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -56,7 +47,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler.getStorPoolDescriptionInline;
-import static java.util.stream.Collectors.toList;
 
 public abstract class AbsApiCallHandler
 {
@@ -83,7 +73,6 @@ public abstract class AbsApiCallHandler
 
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
-    protected final CtrlStltSerializer internalComSerializer;
     private final CtrlObjectFactories objectFactories;
 
     private final Provider<TransactionMgr> transMgrProvider;
@@ -95,7 +84,6 @@ public abstract class AbsApiCallHandler
     protected AbsApiCallHandler(
         ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
-        CtrlStltSerializer serializerRef,
         CtrlObjectFactories objectFactoriesRef,
         Provider<TransactionMgr> transMgrProviderRef,
         Provider<AccessContext> peerAccCtxRef,
@@ -105,7 +93,6 @@ public abstract class AbsApiCallHandler
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        internalComSerializer = serializerRef;
         objectFactories = objectFactoriesRef;
         transMgrProvider = transMgrProviderRef;
         peerAccCtx = peerAccCtxRef;
@@ -851,263 +838,6 @@ public abstract class AbsApiCallHandler
         {
             throw new ApiSQLException(sqlExc);
         }
-    }
-
-    protected final ApiCallRc updateSatellites(Node node)
-    {
-        return updateSatellites(node, true);
-    }
-
-    /**
-     * @param node Node to gather info which other nodes are to contact
-     * @param contactArgumentNode Flag to indicate if the given node should also be contacted
-     */
-    protected final ApiCallRc updateSatellites(Node node, boolean contactArgumentNode)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        try
-        {
-            Map<NodeName, Node> nodesToContact = new TreeMap<>();
-            if (contactArgumentNode)
-            {
-                nodesToContact.put(node.getName(), node);
-            }
-            for (Resource rsc : node.streamResources(apiCtx).collect(toList()))
-            {
-                ResourceDefinition rscDfn = rsc.getDefinition();
-                Iterator<Resource> allRscsIterator = rscDfn.iterateResource(apiCtx);
-                while (allRscsIterator.hasNext())
-                {
-                    Resource allRsc = allRscsIterator.next();
-                    nodesToContact.put(allRsc.getAssignedNode().getName(), allRsc.getAssignedNode());
-                }
-            }
-
-            byte[] changedMessage = internalComSerializer
-                .builder(InternalApiConsts.API_CHANGED_NODE, 0)
-                .changedNode(
-                    node.getUuid(),
-                    node.getName().displayValue
-                )
-                .build();
-            for (Node nodeToContact : nodesToContact.values())
-            {
-                Peer satellitePeer = nodeToContact.getPeer(apiCtx);
-                if (satellitePeer != null)
-                {
-                    if (satellitePeer.hasFullSyncFailed())
-                    {
-                        responses.addEntry(makeFullSyncFailedResponse(satellitePeer));
-                    }
-                    else if (satellitePeer.isConnected())
-                    {
-                        satellitePeer.sendMessage(changedMessage);
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException implError)
-        {
-            throw new ImplementationError(implError);
-        }
-
-        return responses;
-    }
-
-    /**
-     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
-     * at construction time an {@link ImplementationError} is thrown.
-     * @return
-     */
-    protected final ApiCallRc updateSatellites(Resource rsc)
-    {
-        return updateSatellites(rsc.getDefinition());
-    }
-
-    protected final ApiCallRc updateSatellites(ResourceDefinition rscDfn)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        try
-        {
-            // notify all peers that (at least one of) their resource has changed
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
-            while (rscIterator.hasNext())
-            {
-                Resource currentRsc = rscIterator.next();
-                Peer currentPeer = currentRsc.getAssignedNode().getPeer(apiCtx);
-
-                boolean connected = currentPeer.isConnected();
-                if (connected)
-                {
-                    if (currentPeer.hasFullSyncFailed())
-                    {
-                        responses.addEntry(makeFullSyncFailedResponse(currentPeer));
-                    }
-                    else
-                    {
-                        connected = currentPeer.sendMessage(
-                            internalComSerializer
-                            .builder(InternalApiConsts.API_CHANGED_RSC, 0)
-                            .changedResource(
-                                currentRsc.getUuid(),
-                                currentRsc.getDefinition().getName().displayValue
-                            )
-                            .build()
-                        );
-                    }
-                }
-                else
-                {
-                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
-                    responses.addEntry(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.WARN_NOT_CONNECTED,
-                            "No active connection to satellite '" + nodeName + "'"
-                        )
-                        .setDetails(
-                            "The controller is trying to (re-) establish a connection to the satellite. " +
-                                "The controller stored the changes and as soon the satellite is connected, it will " +
-                                "receive this update."
-                        )
-                        .build()
-                    );
-                }
-            }
-        }
-        catch (AccessDeniedException implError)
-        {
-            throw new ImplementationError(implError);
-        }
-
-        return responses;
-    }
-
-    /**
-     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
-     * at construction time an {@link ImplementationError} is thrown.
-     * @return
-     */
-    protected final ApiCallRc updateSatellite(StorPool storPool)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        try
-        {
-            Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
-            boolean connected = satellitePeer.isConnected();
-            if (connected)
-            {
-                if (satellitePeer.hasFullSyncFailed())
-                {
-                    responses.addEntry(makeFullSyncFailedResponse(satellitePeer));
-                }
-                else
-                {
-                    connected = satellitePeer.sendMessage(
-                        internalComSerializer
-                        .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
-                        .changedStorPool(
-                            storPool.getUuid(),
-                            storPool.getName().displayValue
-                        )
-                        .build()
-                    );
-                }
-            }
-            else
-            {
-                responses.addEntry(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.WARN_NOT_CONNECTED,
-                        "No active connection to satellite '" + storPool.getNode().getName().displayValue + "'"
-                    )
-                    .setDetails(
-                        "The controller is trying to (re-) establish a connection to the satellite. " +
-                            "The controller stored the changes and as soon the satellite is connected, it will " +
-                            "receive this update."
-                    )
-                    .build()
-                );
-            }
-        }
-        catch (AccessDeniedException implError)
-        {
-            throw new ImplementationError(implError);
-        }
-
-        return responses;
-    }
-
-    protected final ApiCallRc updateSatellites(SnapshotDefinition snapshotDfn)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        try
-        {
-            // notify all peers that a snapshot has changed
-            for (Snapshot snapshot : snapshotDfn.getAllSnapshots(apiCtx))
-            {
-                Peer currentPeer = snapshot.getNode().getPeer(apiCtx);
-
-                boolean connected = currentPeer.isConnected();
-                if (connected)
-                {
-                    if (currentPeer.hasFullSyncFailed())
-                    {
-                        responses.addEntry(makeFullSyncFailedResponse(currentPeer));
-                    }
-                    else
-                    {
-                        connected = currentPeer.sendMessage(
-                            internalComSerializer
-                                .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
-                                .changedSnapshot(
-                                    snapshotDfn.getResourceName().displayValue,
-                                    snapshot.getUuid(),
-                                    snapshot.getSnapshotName().displayValue
-                                )
-                                .build()
-                        );
-                    }
-                }
-                if (!connected)
-                {
-                    responses.addEntry(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.WARN_NOT_CONNECTED,
-                            "No active connection to satellite '" + snapshot.getNodeName().displayValue + "'"
-                        )
-                        .setDetails(
-                            "The controller is trying to (re-) establish a connection to the satellite. " +
-                                "The controller stored the changes and as soon the satellite is connected, it will " +
-                                "receive this update."
-                        )
-                        .build()
-                    );
-                }
-            }
-        }
-        catch (AccessDeniedException implError)
-        {
-            throw new ImplementationError(implError);
-        }
-
-        return responses;
-    }
-
-    private static ApiCallRc.RcEntry makeFullSyncFailedResponse(Peer satellite)
-    {
-        return ApiCallRcImpl
-            .entryBuilder(
-                ApiConsts.WARN_STLT_NOT_UPDATED,
-                "Satellite reported an error during fullSync. This change will NOT be " +
-                    "delivered to satellte '" + satellite.getNode().getName().displayValue +
-                    "' until the error is resolved. Reconnect the satellite to the controller " +
-                    "to remove this blockade."
-            )
-            .build();
     }
 
     protected void fillProperties(

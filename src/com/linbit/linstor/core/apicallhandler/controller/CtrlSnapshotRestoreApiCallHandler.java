@@ -7,6 +7,7 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataFactory;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDataControllerFactory;
@@ -24,7 +25,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
@@ -61,6 +61,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 @Singleton
 public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 {
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final SnapshotDataControllerFactory snapshotDataFactory;
     private final ResponseConverter responseConverter;
 
@@ -68,7 +69,6 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
     public CtrlSnapshotRestoreApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlStltSerializer interComSerializer,
         CtrlObjectFactories objectFactories,
         Provider<TransactionMgr> transMgrProviderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
@@ -78,6 +78,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
         ResponseConverter responseConverterRef
     )
@@ -85,7 +86,6 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -95,6 +95,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             resourceDataFactoryRef,
             volumeDataFactoryRef
         );
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         responseConverter = responseConverterRef;
     }
@@ -153,7 +154,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 
             if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) > 0)
             {
-                responseConverter.addWithDetail(responses, context, updateSatellites(toRscDfn));
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(toRscDfn));
             }
             else
             {

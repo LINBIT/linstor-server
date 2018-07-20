@@ -16,7 +16,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
@@ -49,12 +48,12 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 @Singleton
 class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 {
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
 
     @Inject
     CtrlSnapshotRestoreVlmDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtx,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         CtrlObjectFactories objectFactories,
@@ -63,13 +62,13 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtx,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -78,6 +77,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
             defaultStorPoolNameRef,
             volumeDefinitionDataFactoryRef
         );
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
     }
 
@@ -143,7 +143,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
 
             commit();
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(toRscDfn));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(toRscDfn));
 
             responseConverter.addWithOp(responses, context, ApiCallRcImpl
                 .entryBuilder(

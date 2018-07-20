@@ -74,7 +74,9 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 @Singleton
 public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
@@ -84,9 +86,10 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     @Inject
     CtrlRscDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
+        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CtrlObjectFactories objectFactories,
@@ -102,14 +105,15 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef
         );
+        ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
 
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
@@ -242,7 +246,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 rscDfn.getUuid(), getRscDfnDescriptionInline(rscDfn)));
-            responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -340,7 +344,8 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                         commit();
 
                         // notify satellites
-                        responseConverter.addWithDetail(responses, context, updateSatellites(rscDfn));
+                        responseConverter.addWithDetail(
+                            responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
 
                         successMsg = descriptionFirstLetterCaps + " marked for deletion.";
                         details = descriptionFirstLetterCaps + " UUID is: " + rscDfnUuid;
@@ -399,10 +404,10 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "Primary set for " + currentPeer.getNode().getName().getDisplayName()
                 );
 
-                updateSatellites(resDfn);
+                ctrlSatelliteUpdater.updateSatellites(resDfn);
 
                 currentPeer.sendMessage(
-                    internalComSerializer
+                    ctrlStltSerializer
                         .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
                         .primaryRequest(rscNameStr, res.getUuid().toString())
                         .build()

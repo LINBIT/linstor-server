@@ -95,7 +95,9 @@ import static java.util.stream.Collectors.toList;
 @Singleton
 public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 {
+    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection nodesMapProt;
@@ -107,8 +109,9 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     @Inject
     public CtrlRscApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
+        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlClientSerializer clientComSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -130,7 +133,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -140,7 +142,9 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             resourceDataFactoryRef,
             volumeDataFactoryRef
         );
+        ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         rscDfnMapProt = rscDfnMapProtRef;
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
@@ -186,7 +190,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 // but doesn't tell the satellite...
                 // the next time a resource with the same name will get a different UUID and
                 // will cause a conflict (and thus, an exception) on the satellite
-                responseConverter.addWithDetail(responses, context, updateSatellites(rsc));
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rsc));
             }
 
             responseConverter.addWithOp(responses, context,
@@ -540,7 +544,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
             commit();
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(rsc));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rsc));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 rsc.getUuid(), getRscDescriptionInline(rsc)));
         }
@@ -608,7 +612,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 if (volumeCount > 0)
                 {
                     // notify satellites
-                    responseConverter.addWithDetail(responses, context, updateSatellites(rscData));
+                    responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscData));
                 }
 
                 responseConverter.addWithOp(responses, context,
@@ -854,7 +858,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 if (rsc != null && !rsc.isDeleted())
                 {
                     peer.get().sendMessage(
-                        internalComSerializer
+                        ctrlStltSerializer
                             .builder(InternalApiConsts.API_APPLY_RSC, msgId)
                             .resourceData(rsc, fullSyncTimestamp, updateId)
                             .build()
@@ -863,7 +867,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 else
                 {
                     peer.get().sendMessage(
-                        internalComSerializer
+                        ctrlStltSerializer
                         .builder(InternalApiConsts.API_APPLY_RSC_DELETED, msgId)
                         .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
                         .build()

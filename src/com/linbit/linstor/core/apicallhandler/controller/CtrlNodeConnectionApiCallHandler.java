@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeData;
@@ -10,7 +11,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -40,13 +40,13 @@ import java.util.UUID;
 @Singleton
 class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
     private final ResponseConverter responseConverter;
 
     @Inject
     CtrlNodeConnectionApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
@@ -54,19 +54,20 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef
         );
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
         responseConverter = responseConverterRef;
     }
@@ -99,8 +100,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(node1));
-            responseConverter.addWithDetail(responses, context, updateSatellites(node2));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1, true));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2, true));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -309,8 +310,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            responses.addEntries(updateSatellites(nodeConn.getSourceNode(apiCtx)));
-            responses.addEntries(updateSatellites(nodeConn.getTargetNode(apiCtx)));
+            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(nodeConn.getSourceNode(apiCtx), true));
+            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(nodeConn.getTargetNode(apiCtx), true));
         }
         catch (AccessDeniedException accDeniedExc)
         {

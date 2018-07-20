@@ -49,6 +49,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 {
     private final SatelliteConnector satelliteConnector;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ResponseConverter responseConverter;
 
@@ -58,6 +59,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         CtrlStltSerializer serializerRef,
         @ApiContext AccessContext apiCtxRef,
         SatelliteConnector satelliteConnectorRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -70,7 +72,6 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            serializerRef,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -78,6 +79,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             whitelistPropsRef
         );
         satelliteConnector = satelliteConnectorRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         responseConverter = responseConverterRef;
     }
@@ -122,7 +124,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             commit();
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(netIf.getUuid(), getNetIfDescriptionInline(netIf)));
-            responseConverter.addWithDetail(responses, context, updateSatellites(node));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -177,7 +179,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 node.getPeer(apiCtx).closeConnection();
                 satelliteConnector.startConnecting(node, apiCtx);
             }
-            responseConverter.addWithDetail(responses, context, updateSatellites(node));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
         }
         catch (Exception | ImplementationError exc)
         {

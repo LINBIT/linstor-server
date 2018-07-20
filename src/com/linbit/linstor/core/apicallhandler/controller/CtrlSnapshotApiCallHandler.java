@@ -71,7 +71,9 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCal
 @Singleton
 public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
@@ -84,8 +86,9 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     @Inject
     public CtrlSnapshotApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
+        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlClientSerializer clientComSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
@@ -105,14 +108,15 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef
         );
+        ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
@@ -252,7 +256,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(snapshotDfn));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
 
             eventBroker.openEventStream(EventIdentifier.snapshotDefinition(
                 ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
@@ -332,7 +336,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
                 commit();
 
-                responseConverter.addWithDetail(responses, context, updateSatellites(snapshotDfn));
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
             }
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
@@ -373,7 +377,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 // TODO: check if the snapshot has the same uuid as snapshotUuid
                 currentPeer.sendMessage(
-                    internalComSerializer
+                    ctrlStltSerializer
                         .builder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT, msgId)
                         .snapshotData(snapshot, fullSyncId, updateId)
                         .build()
@@ -382,7 +386,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             else
             {
                 currentPeer.sendMessage(
-                    internalComSerializer
+                    ctrlStltSerializer
                         .builder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED, msgId)
                         .endedSnapshotData(resourceNameStr, snapshotNameStr, fullSyncId, updateId)
                         .build()

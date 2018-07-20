@@ -56,14 +56,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import static com.linbit.linstor.api.ApiCallRcImpl.singletonApiCallRc;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
@@ -74,8 +75,9 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     @Inject
     CtrlStorPoolApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
+        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlClientSerializer clientComSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
@@ -93,7 +95,6 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -105,7 +106,9 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         storPoolDfnMapProt = storPoolDfnMapProtRef;
         storPoolDfnMap = storPoolDfnMapRef;
 
+        ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
         responseConverter = responseConverterRef;
@@ -140,7 +143,8 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             commit();
 
             updateStorPoolDfnMap(storPool);
-            responseConverter.addWithDetail(responses, context, updateSatellite(storPool));
+            responseConverter.addWithDetail(
+                responses, context, ctrlSatelliteUpdater.updateSatellite(storPool));
 
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
@@ -196,7 +200,8 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
-            responseConverter.addWithDetail(responses, context, updateSatellite(storPool));
+            responseConverter.addWithDetail(
+                responses, context, ctrlSatelliteUpdater.updateSatellite(storPool));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -299,7 +304,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 long fullSyncTimestamp = currentPeer.getFullSyncId();
                 long updateId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
-                    internalComSerializer
+                    ctrlStltSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
                         .storPoolData(storPool, fullSyncTimestamp, updateId)
                         .build()
@@ -310,7 +315,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 long fullSyncTimestamp = currentPeer.getFullSyncId();
                 long updateId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
-                    internalComSerializer
+                    ctrlStltSerializer
                         .builder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED, msgId)
                         .deletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId)
                         .build()

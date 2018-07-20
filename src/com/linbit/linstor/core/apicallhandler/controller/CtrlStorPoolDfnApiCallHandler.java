@@ -16,7 +16,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlObjectFactories;
@@ -61,6 +60,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
@@ -71,8 +71,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     @Inject
     CtrlStorPoolDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
@@ -90,7 +90,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
@@ -98,6 +97,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             whiteListProps
         );
         clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         storPoolDfnMap = storPoolDfnMapRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
@@ -449,7 +449,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             while (iterateStorPools.hasNext())
             {
                 StorPool storPool = iterateStorPools.next();
-                responses.addEntries(updateSatellite(storPool));
+                responses.addEntries(ctrlSatelliteUpdater.updateSatellite(storPool));
             }
         }
         catch (AccessDeniedException accDeniedExc)

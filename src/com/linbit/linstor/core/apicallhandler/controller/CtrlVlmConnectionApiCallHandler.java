@@ -12,7 +12,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -42,13 +41,13 @@ import java.util.UUID;
 @Singleton
 class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 {
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final VolumeConnectionDataFactory volumeConnectionDataFactory;
     private final ResponseConverter responseConverter;
 
     @Inject
     CtrlVlmConnectionApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer interComSerializer,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
@@ -56,19 +55,20 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         WhitelistProps whitelistPropsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef
     )
     {
         super(
             errorReporterRef,
             apiCtxRef,
-            interComSerializer,
             objectFactories,
             transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             whitelistPropsRef
         );
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
         responseConverter = responseConverterRef;
     }
@@ -378,7 +378,8 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            responses.addEntries(updateSatellites(vlmConn.getSourceVolume(apiCtx).getResourceDefinition()));
+            responses.addEntries(
+                ctrlSatelliteUpdater.updateSatellites(vlmConn.getSourceVolume(apiCtx).getResourceDefinition()));
         }
         catch (AccessDeniedException accDeniedExc)
         {
