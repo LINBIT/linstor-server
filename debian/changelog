@@ -1,3 +1,21 @@
+linstor-server (0.2.5-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Check for the protoc binary when executing the task rather than when c [...]
+  * Tidy up Java generation tasks
+  * Explicitly exclude Java generation from the debian build rules because [...]
+
+  [ Roland Kammerer ]
+  * debian: add python as builddep
+
+  [ Rene Peinthor ]
+  * resourcedfn: add hasDiskless method
+  * rscdfn: only remove the primary flag if rscdfn is not deleted anyway
+  * rscdfn: on delete first try to delete diskless resources
+  * make the error (which it isn't) a warning
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 20 Jul 2018 08:01:28 +0200
+
 linstor-server (0.2.4-1) experimental; urgency=medium
 
   [ Joel Colledge ]
