@@ -78,6 +78,11 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
         bld.setUuid(netInterApi.getUuid().toString());
         bld.setName(netInterApi.getName());
         bld.setAddress(netInterApi.getAddress());
+        if (netInterApi.isUsableAsSatelliteConnection())
+        {
+            bld.setStltPort(netInterApi.getSatelliteConnectionPort());
+            bld.setStltEncryptionType(netInterApi.getSatelliteConnectionEncryptionType());
+        }
         return bld.build();
     }
 }
