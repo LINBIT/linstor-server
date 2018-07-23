@@ -1,7 +1,11 @@
 package com.linbit.linstor.core;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * LinStor common constants and basic utilities
@@ -94,6 +98,29 @@ public abstract class LinStor
         System.out.println();
 
         System.out.println("System components initialization in progress\n");
+    }
+
+    /**
+     * Returns the system hostname.
+     * On error returns an empty string.
+     *
+     * @return Hostname by 'uname -n'.
+     */
+    static String getHostName()
+    {
+        String uname = "";
+        try
+        {
+            Process process = new ProcessBuilder("uname", "-n").start();
+            process.waitFor(1, TimeUnit.SECONDS);
+            BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            uname = br.readLine().trim();
+        }
+        catch (IOException | InterruptedException ignored)
+        {
+        }
+
+        return uname;
     }
 
     private LinStor()

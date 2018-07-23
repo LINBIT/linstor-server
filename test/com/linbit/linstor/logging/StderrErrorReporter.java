@@ -16,7 +16,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
 
     public StderrErrorReporter(String moduleName)
     {
-        super(moduleName, false);
+        super(moduleName, false, "");
     }
 
     @Override

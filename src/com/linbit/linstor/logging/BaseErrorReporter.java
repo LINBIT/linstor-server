@@ -3,6 +3,7 @@ package com.linbit.linstor.logging;
 import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
@@ -24,6 +25,7 @@ public abstract class BaseErrorReporter
     static final int SEPARATOR_WIDTH = 60;
 
     final String dmModule;
+    final String nodeName;
     final Calendar cal;
 
     protected final boolean printStackTraces;
@@ -46,9 +48,10 @@ public abstract class BaseErrorReporter
     public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
 
     @SuppressWarnings("checkstyle:magicnumber")
-    BaseErrorReporter(String moduleName, boolean printStackTracesRef)
+    BaseErrorReporter(String moduleName, boolean printStackTracesRef, String nodeNameRef)
     {
         dmModule = moduleName;
+        nodeName = nodeNameRef;
         instanceId = String.format("%07X", ((System.currentTimeMillis() / 1000) & 0x7FFFFFFF));
         cal = Calendar.getInstance();
         printStackTraces = printStackTracesRef;
@@ -137,6 +140,7 @@ public abstract class BaseErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Build ID:", LinStor.VERSION_INFO_PROVIDER.getGitCommitId());
         output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
         output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(new Date()));
+        output.printf(ERROR_FIELD_FORMAT, "Node:", nodeName);
         output.println();
         output.println(SECTION_SEPARATOR);
         output.println();

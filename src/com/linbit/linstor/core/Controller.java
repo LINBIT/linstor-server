@@ -281,7 +281,8 @@ public final class Controller
         ErrorReporter errorLog = new StdErrorReporter(
             Controller.MODULE,
             Paths.get(cArgs.getLogDirectory()),
-            cArgs.isPrintStacktraces()
+            cArgs.isPrintStacktraces(),
+            LinStor.getHostName()
         );
 
         try

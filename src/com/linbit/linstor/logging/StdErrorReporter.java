@@ -44,9 +44,9 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     private final AtomicLong errorNr;
     private final Path baseLogDirectory;
 
-    public StdErrorReporter(String moduleName, Path logDirectory, boolean printStackTraces)
+    public StdErrorReporter(String moduleName, Path logDirectory, boolean printStackTraces, String nodeName)
     {
-        super(moduleName, printStackTraces);
+        super(moduleName, printStackTraces, nodeName);
         this.baseLogDirectory = logDirectory;
         mainLogger = org.slf4j.LoggerFactory.getLogger(LinStor.PROGRAM + "/" + moduleName);
 

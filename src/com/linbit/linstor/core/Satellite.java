@@ -1,5 +1,17 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
@@ -40,18 +52,6 @@ import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * linstor satellite prototype
@@ -280,7 +280,8 @@ public final class Satellite
         ErrorReporter errorLog = new StdErrorReporter(
             Satellite.MODULE,
             Paths.get(cArgs.getLogDirectory()),
-            cArgs.isPrintStacktraces()
+            cArgs.isPrintStacktraces(),
+            LinStor.getHostName()
         );
 
         try
