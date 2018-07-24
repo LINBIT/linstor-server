@@ -1,3 +1,10 @@
+linstor-server (0.2.6-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * cmd-parser: don't fail if config directory doesn't exist
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 24 Jul 2018 13:43:44 +0200
+
 linstor-server (0.2.5-1) experimental; urgency=medium
 
   [ Joel Colledge ]
