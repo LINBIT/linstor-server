@@ -36,59 +36,37 @@ public class ResourceConnectionDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public ResourceConnectionData getInstance(
+    public ResourceConnectionData create(
         AccessContext accCtx,
         Resource sourceResource,
-        Resource targetResource,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Resource targetResource
     )
         throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
-        ResourceConnectionData rscConData = null;
+        sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        Resource source;
-        Resource target;
+        ResourceConnectionData rscConData = ResourceConnectionData.get(accCtx, sourceResource, targetResource);
 
-        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
-        NodeName targetNodeName = targetResource.getAssignedNode().getName();
-
-        if (sourceNodeName.compareTo(targetNodeName) < 0)
-        {
-            source = sourceResource;
-            target = targetResource;
-        }
-        else
-        {
-            source = targetResource;
-            target = sourceResource;
-        }
-        source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        rscConData = (ResourceConnectionData) sourceResource.getResourceConnection(accCtx, targetResource);
-
-        if (failIfExists && rscConData != null)
+        if (rscConData != null)
         {
             throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
         }
 
-        if (rscConData == null && createIfNotExists)
-        {
-            rscConData = new ResourceConnectionData(
-                UUID.randomUUID(),
-                source,
-                target,
-                dbDriver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider
-            );
-            dbDriver.create(rscConData);
+        rscConData = new ResourceConnectionData(
+            UUID.randomUUID(),
+            sourceResource,
+            targetResource,
+            dbDriver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        dbDriver.create(rscConData);
 
-            sourceResource.setResourceConnection(accCtx, rscConData);
-            targetResource.setResourceConnection(accCtx, rscConData);
-        }
+        sourceResource.setResourceConnection(accCtx, rscConData);
+        targetResource.setResourceConnection(accCtx, rscConData);
+
         return rscConData;
     }
 

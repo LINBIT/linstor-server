@@ -32,13 +32,11 @@ public class SnapshotVolumeDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public SnapshotVolume getInstance(
+    public SnapshotVolume create(
         AccessContext accCtx,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition,
-        StorPool storPool,
-        boolean createIfNotExists,
-        boolean failIfExists
+        StorPool storPool
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -46,46 +44,23 @@ public class SnapshotVolumeDataControllerFactory
 
         SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(accCtx, snapshotVolumeDefinition.getVolumeNumber());
 
-        if (snapshotVolume != null && failIfExists)
+        if (snapshotVolume != null)
         {
             throw new LinStorDataAlreadyExistsException("The SnapshotVolume already exists");
         }
 
-        if (snapshotVolume == null && createIfNotExists)
-        {
-            snapshotVolume = new SnapshotVolumeData(
-                UUID.randomUUID(),
-                snapshot,
-                snapshotVolumeDefinition,
-                storPool,
-                driver, transObjFactory, transMgrProvider
-            );
+        snapshotVolume = new SnapshotVolumeData(
+            UUID.randomUUID(),
+            snapshot,
+            snapshotVolumeDefinition,
+            storPool,
+            driver, transObjFactory, transMgrProvider
+        );
 
-            driver.create(snapshotVolume);
-            snapshot.addSnapshotVolume(accCtx, snapshotVolume);
-            snapshotVolumeDefinition.addSnapshotVolume(accCtx, snapshotVolume);
-        }
+        driver.create(snapshotVolume);
+        snapshot.addSnapshotVolume(accCtx, snapshotVolume);
+        snapshotVolumeDefinition.addSnapshotVolume(accCtx, snapshotVolume);
 
         return snapshotVolume;
-    }
-
-    public SnapshotVolume load(
-        AccessContext accCtx,
-        Snapshot snapshot,
-        SnapshotVolumeDefinition snapshotVolumeDefinition,
-        StorPool storPool
-    )
-        throws AccessDeniedException
-    {
-        SnapshotVolume instance;
-        try
-        {
-            instance = getInstance(accCtx, snapshot, snapshotVolumeDefinition, storPool, false, false);
-        }
-        catch (LinStorDataAlreadyExistsException | SQLException exc)
-        {
-            throw new ImplementationError("Impossible exception was thrown", exc);
-        }
-        return instance;
     }
 }

@@ -926,11 +926,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.load(
-                peerAccCtx.get(),
-                rscDfn,
-                vlmNr
-            );
+            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
 
             if (failIfNull && vlmDfn == null)
             {

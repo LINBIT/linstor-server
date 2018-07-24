@@ -52,9 +52,9 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
+        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
+        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         nodeCon = new NodeConnectionData(
@@ -74,7 +74,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, true, false);
+        nodeConnectionDataFactory.create(SYS_CTX, nodeSrc, nodeDst);
         commit();
 
         checkDbPersist(false);
@@ -105,12 +105,10 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeSrc.setNodeConnection(SYS_CTX, nodeCon);
         nodeDst.setNodeConnection(SYS_CTX, nodeCon);
 
-        NodeConnectionData loadedConDfn = nodeConnectionDataFactory.getInstance(
+        NodeConnectionData loadedConDfn = NodeConnectionData.get(
             SYS_CTX,
             nodeSrc,
-            nodeDst,
-            false,
-            false
+            nodeDst
         );
 
         checkLoadedConDfn(loadedConDfn, true);
@@ -119,22 +117,18 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        NodeConnectionData storedInstance = nodeConnectionDataFactory.getInstance(
+        NodeConnectionData storedInstance = nodeConnectionDataFactory.create(
             SYS_CTX,
             nodeSrc,
-            nodeDst,
-            true,
-            false
+            nodeDst
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, nodeConnectionDataFactory.getInstance(
+        assertEquals(storedInstance, NodeConnectionData.get(
             SYS_CTX,
             nodeSrc,
-            nodeDst,
-            false,
-            false
+            nodeDst
         ));
     }
 
@@ -169,7 +163,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeSrc.setNodeConnection(SYS_CTX, nodeCon);
         nodeDst.setNodeConnection(SYS_CTX, nodeCon);
 
-        nodeConnectionDataFactory.getInstance(SYS_CTX, nodeSrc, nodeDst, false, true);
+        nodeConnectionDataFactory.create(SYS_CTX, nodeSrc, nodeDst);
     }
 
 

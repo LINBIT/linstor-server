@@ -37,13 +37,11 @@ public class StorPoolDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public StorPoolData getInstance(
+    public StorPoolData create(
         AccessContext accCtx,
         Node node,
         StorPoolDefinition storPoolDef,
-        String storDriverSimpleClassNameRef,
-        boolean createIfNotExists,
-        boolean failIfExists
+        String storDriverSimpleClassNameRef
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -53,29 +51,27 @@ public class StorPoolDataFactory
 
         storPoolData = (StorPoolData) node.getStorPool(accCtx, storPoolDef.getName());
 
-        if (failIfExists && storPoolData != null)
+        if (storPoolData != null)
         {
             throw new LinStorDataAlreadyExistsException("The StorPool already exists");
         }
 
-        if (storPoolData == null && createIfNotExists)
-        {
-            storPoolData = new StorPoolData(
-                UUID.randomUUID(),
-                node,
-                storPoolDef,
-                storDriverSimpleClassNameRef,
-                false,
-                driver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
-            driver.create(storPoolData);
-            ((NodeData) node).addStorPool(accCtx, storPoolData);
-            ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
-        }
+        storPoolData = new StorPoolData(
+            UUID.randomUUID(),
+            node,
+            storPoolDef,
+            storDriverSimpleClassNameRef,
+            false,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>()
+        );
+        driver.create(storPoolData);
+        ((NodeData) node).addStorPool(accCtx, storPoolData);
+        ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
+
         return storPoolData;
     }
 

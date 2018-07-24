@@ -131,7 +131,11 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr, true);
+            ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr);
+            if (rscConn == null)
+            {
+                rscConn = createRscConn(nodeName1, nodeName2, rscNameStr);
+            }
 
             if (rscConnUuid != null && !rscConnUuid.equals(rscConn.getUuid()))
             {
@@ -183,7 +187,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr, false);
+            ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr);
             UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
 
@@ -217,12 +221,10 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ResourceConnectionData rscConn;
         try
         {
-            rscConn = resourceConnectionDataFactory.getInstance(
+            rscConn = resourceConnectionDataFactory.create(
                 peerAccCtx.get(),
                 rsc1,
-                rsc2,
-                true,
-                true
+                rsc2
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -251,8 +253,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private ResourceConnectionData loadRscConn(
         String nodeName1,
         String nodeName2,
-        String rscNameStr,
-        boolean createIfNotExists
+        String rscNameStr
     )
     {
         NodeData node1 = loadNode(nodeName1, true);
@@ -265,12 +266,10 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ResourceConnectionData rscConn;
         try
         {
-            rscConn = resourceConnectionDataFactory.getInstance(
+            rscConn = ResourceConnectionData.get(
                 peerAccCtx.get(),
                 rsc1,
-                rsc2,
-                createIfNotExists,
-                false
+                rsc2
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -280,14 +279,6 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 "load " + getResourceConnectionDescriptionInline(nodeName1, nodeName2, rscNameStr),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
         }
         return rscConn;
     }

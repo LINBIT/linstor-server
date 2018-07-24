@@ -71,34 +71,28 @@ public class RscApiTest extends ApiTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        testControllerNode = nodeDataFactory.getInstance(
+        testControllerNode = nodeDataFactory.create(
             BOB_ACC_CTX,
             testControllerName,
             testControllerType,
-            testControllerFlags,
-            true,
-            true
+            testControllerFlags
         );
         nodesMap.put(testControllerName, testControllerNode);
-        testSatelliteNode = nodeDataFactory.getInstance(
+        testSatelliteNode = nodeDataFactory.create(
             BOB_ACC_CTX,
             testSatelliteName,
             testSatelliteType,
-            testSatelliteFlags, // flags
-            true,
-            true
+            testSatelliteFlags // flags
         );
         nodesMap.put(testSatelliteName, testSatelliteNode);
 
-        testRscDfn = resourceDefinitionDataFactory.getInstance(
+        testRscDfn = resourceDefinitionDataFactory.create(
             BOB_ACC_CTX,
             testRscName,
             testRscDfnPort,
             testRscDfnFlags,
             testRscDfnSecret,
-            tesTRscDfnTransportType,
-            true,
-            true
+            tesTRscDfnTransportType
         );
         rscDfnMap.put(testRscName, testRscDfn);
     }

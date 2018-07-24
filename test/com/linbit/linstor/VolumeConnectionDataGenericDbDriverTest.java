@@ -98,38 +98,38 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
+        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
+        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, false
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        volDfn = volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, true, false);
+        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, true, false);
-        resDst = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, true, false);
+        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null);
+        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null);
 
-        storPoolDfn = storPoolDefinitionDataFactory.getInstance(SYS_CTX, storPoolName, true, false);
+        storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
-        storPool1 = storPoolDataFactory.getInstance(
-            SYS_CTX, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        storPool1 = storPoolDataFactory.create(
+            SYS_CTX, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName()
         );
-        storPool2 = storPoolDataFactory.getInstance(
-            SYS_CTX, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        storPool2 = storPoolDataFactory.create(
+            SYS_CTX, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName()
         );
 
-        volSrc = volumeDataFactory.getInstance(
-            SYS_CTX, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null, true, false
+        volSrc = volumeDataFactory.create(
+            SYS_CTX, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null
         );
-        volDst = volumeDataFactory.getInstance(
-            SYS_CTX, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null, true, false
+        volDst = volumeDataFactory.create(
+            SYS_CTX, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null
         );
     }
 
@@ -154,7 +154,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, true, false);
+        volumeConnectionDataFactory.create(SYS_CTX, volSrc, volDst);
         commit();
 
         checkDbPersist(false);
@@ -219,12 +219,10 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         volSrc.setVolumeConnection(SYS_CTX, volCon);
         volDst.setVolumeConnection(SYS_CTX, volCon);
 
-        VolumeConnectionData loadedConDfn = volumeConnectionDataFactory.getInstance(
+        VolumeConnectionData loadedConDfn = VolumeConnectionData.get(
             SYS_CTX,
             volSrc,
-            volDst,
-            false,
-            false
+            volDst
         );
 
         checkLoadedConDfn(loadedConDfn, true);
@@ -233,22 +231,18 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        VolumeConnectionData storedInstance = volumeConnectionDataFactory.getInstance(
+        VolumeConnectionData storedInstance = volumeConnectionDataFactory.create(
             SYS_CTX,
             volSrc,
-            volDst,
-            true,
-            false
+            volDst
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, volumeConnectionDataFactory.getInstance(
+        assertEquals(storedInstance, VolumeConnectionData.get(
             SYS_CTX,
             volSrc,
-            volDst,
-            false,
-            false
+            volDst
         ));
     }
 
@@ -325,7 +319,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, true, true);
-        volumeConnectionDataFactory.getInstance(SYS_CTX, volSrc, volDst, false, true);
+        volumeConnectionDataFactory.create(SYS_CTX, volSrc, volDst);
+        volumeConnectionDataFactory.create(SYS_CTX, volSrc, volDst);
     }
 }

@@ -308,15 +308,13 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 type = asEncryptionType(stltConnEncrType);
             }
 
-            netIf = netInterfaceDataFactory.getInstance(
+            netIf = netInterfaceDataFactory.create(
                 peerAccCtx.get(),
                 node,
                 netIfName,
                 LinstorParsingUtils.asLsIpAddress(address),
                 port,
-                type,
-                true,
-                true
+                type
             );
         }
         catch (AccessDeniedException exc)

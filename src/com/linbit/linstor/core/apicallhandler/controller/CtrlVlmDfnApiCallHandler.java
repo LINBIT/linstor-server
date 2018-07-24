@@ -491,11 +491,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.load(
-                peerAccCtx.get(),
-                rscDfn,
-                new VolumeNumber(vlmNr)
-            );
+            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), new VolumeNumber(vlmNr));
 
             if (vlmDfn == null)
             {

@@ -214,12 +214,10 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeConnectionData nodeConnection;
         try
         {
-            nodeConnection = nodeConnectionDataFactory.getInstance(
+            nodeConnection = nodeConnectionDataFactory.create(
                 peerAccCtx.get(),
                 node1,
-                node2,
-                true, // persist this entry
-                true // throw exception if the entry exists
+                node2
             );
         }
         catch (SQLException sqlExc)
@@ -252,12 +250,10 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         NodeConnectionData nodeConn;
         try
         {
-            nodeConn = nodeConnectionDataFactory.getInstance(
+            nodeConn = NodeConnectionData.get(
                 peerAccCtx.get(),
                 node1,
-                node2,
-                false,
-                false
+                node2
             );
             if (nodeConn == null && failIfNull)
             {
@@ -275,14 +271,6 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 "load node connection between nodes '" + nodeName1 + "' and '" + nodeName2 + "'",
                 ApiConsts.FAIL_ACC_DENIED_NODE_CONN
             );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
         }
         return nodeConn;
     }

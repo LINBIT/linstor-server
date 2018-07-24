@@ -61,85 +61,65 @@ public class ResourceDefinitionDataControllerFactory
         rscDfnMapProt = rscDfnMapProtRef;
     }
 
-    public ResourceDefinitionData getInstance(
+    public ResourceDefinitionData getInstance(AccessContext accCtx, ResourceName rscName)
+        throws AccessDeniedException
+    {
+        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+        return (ResourceDefinitionData) rscDfnMap.get(rscName);
+    }
+
+    public ResourceDefinitionData create(
         AccessContext accCtx,
         ResourceName rscName,
         Integer port,
         ResourceDefinition.RscDfnFlags[] flags,
         String secret,
-        ResourceDefinition.TransportType transType,
-        boolean createIfNotExists,
-        boolean failIfExists
+        ResourceDefinition.TransportType transType
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
-        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-        ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
+        ResourceDefinitionData rscDfn = getInstance(accCtx, rscName);
 
-        if (rscDfn != null && failIfExists)
+        if (rscDfn != null)
         {
             throw new LinStorDataAlreadyExistsException("The ResourceDefinition already exists");
         }
 
-        if (rscDfn == null && createIfNotExists)
+        TcpPortNumber chosenTcpPort;
+        if (port == null)
         {
-            TcpPortNumber chosenTcpPort;
-            if (port == null)
-            {
-                chosenTcpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
-            }
-            else
-            {
-                chosenTcpPort = new TcpPortNumber(port);
-                tcpPortPool.allocate(port);
-            }
-
-            rscDfn = new ResourceDefinitionData(
-                UUID.randomUUID(),
-                objectProtectionFactory.getInstance(
-                    accCtx,
-                    ObjectProtection.buildPath(rscName),
-                    true
-                ),
-                rscName,
-                chosenTcpPort,
-                tcpPortPool,
-                StateFlagsBits.getMask(flags),
-                secret,
-                transType,
-                driver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>(),
-                new TreeMap<>(),
-                new TreeMap<>()
-            );
-            driver.create(rscDfn);
+            chosenTcpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
+        }
+        else
+        {
+            chosenTcpPort = new TcpPortNumber(port);
+            tcpPortPool.allocate(port);
         }
 
-        return rscDfn;
-    }
+        rscDfn = new ResourceDefinitionData(
+            UUID.randomUUID(),
+            objectProtectionFactory.getInstance(
+                accCtx,
+                ObjectProtection.buildPath(rscName),
+                true
+            ),
+            rscName,
+            chosenTcpPort,
+            tcpPortPool,
+            StateFlagsBits.getMask(flags),
+            secret,
+            transType,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>(),
+            new TreeMap<>()
+        );
+        driver.create(rscDfn);
 
-    public ResourceDefinitionData load(AccessContext accCtx, ResourceName resName)
-        throws AccessDeniedException
-    {
-        ResourceDefinitionData rscDfn;
-        try
-        {
-            rscDfn = getInstance(accCtx, resName, null, null, null, null, false, false);
-        }
-        catch (
-            SQLException |
-            LinStorDataAlreadyExistsException |
-            ValueOutOfRangeException |
-            ValueInUseException |
-            ExhaustedPoolException exc
-        )
-        {
-            throw new ImplementationError("Impossible exception was thrown", exc);
-        }
         return rscDfn;
     }
 }

@@ -374,11 +374,9 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         StorPoolDefinitionData storPoolDfn;
         try
         {
-            storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+            storPoolDfn = storPoolDefinitionDataFactory.create(
                 peerAccCtx.get(),
-                LinstorParsingUtils.asStorPoolName(storPoolNameStrRef),
-                true, // persist this entry
-                true // fail if already exists
+                LinstorParsingUtils.asStorPoolName(storPoolNameStrRef)
             );
         }
         catch (AccessDeniedException accDeniedExc)

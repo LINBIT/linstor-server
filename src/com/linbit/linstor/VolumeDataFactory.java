@@ -38,16 +38,14 @@ public class VolumeDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public VolumeData getInstance(
+    public VolumeData create(
         AccessContext accCtx,
         Resource rsc,
         VolumeDefinition vlmDfn,
         StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
-        Volume.VlmFlags[] flags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Volume.VlmFlags[] flags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -56,32 +54,30 @@ public class VolumeDataFactory
 
         volData = (VolumeData) rsc.getVolume(vlmDfn.getVolumeNumber());
 
-        if (failIfExists && volData != null)
+        if (volData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Volume already exists");
         }
 
-        if (volData == null && createIfNotExists)
-        {
-            volData = new VolumeData(
-                UUID.randomUUID(),
-                rsc,
-                vlmDfn,
-                storPool,
-                blockDevicePathRef,
-                metaDiskPathRef,
-                StateFlagsBits.getMask(flags),
-                driver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
-            driver.create(volData);
-            ((ResourceData) rsc).putVolume(accCtx, volData);
-            ((StorPoolData) storPool).putVolume(accCtx, volData);
-            ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
-        }
+        volData = new VolumeData(
+            UUID.randomUUID(),
+            rsc,
+            vlmDfn,
+            storPool,
+            blockDevicePathRef,
+            metaDiskPathRef,
+            StateFlagsBits.getMask(flags),
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>()
+        );
+        driver.create(volData);
+        ((ResourceData) rsc).putVolume(accCtx, volData);
+        ((StorPoolData) storPool).putVolume(accCtx, volData);
+        ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
+
         return volData;
     }
 

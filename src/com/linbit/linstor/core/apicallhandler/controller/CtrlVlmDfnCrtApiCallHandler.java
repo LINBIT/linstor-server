@@ -25,7 +25,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
@@ -75,15 +74,13 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.getInstance(
+            vlmDfn = volumeDefinitionDataFactory.create(
                 accCtx,
                 rscDfn,
                 volNr,
                 minorNr,
                 size,
-                vlmDfnInitFlags,
-                true,
-                true
+                vlmDfnInitFlags
             );
         }
         catch (AccessDeniedException accDeniedExc)

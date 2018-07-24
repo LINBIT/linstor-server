@@ -59,54 +59,55 @@ public class NodeDataControllerFactory
 
     public NodeData getInstance(
         AccessContext accCtx,
+        NodeName nameRef
+    )
+        throws AccessDeniedException
+    {
+        nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
+        return (NodeData) nodesMap.get(nameRef);
+    }
+
+    public NodeData create(
+        AccessContext accCtx,
         NodeName nameRef,
         Node.NodeType type,
-        Node.NodeFlag[] flags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Node.NodeFlag[] flags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        NodeData nodeData = null;
+        NodeData nodeData = getInstance(accCtx, nameRef);
 
-        nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        nodeData = (NodeData) nodesMap.get(nameRef);
-
-        if (failIfExists && nodeData != null)
+        if (nodeData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Node already exists");
         }
 
-        if (nodeData == null && createIfNotExists)
-        {
-            nodeData = new NodeData(
-                UUID.randomUUID(),
-                objectProtectionFactory.getInstance(
-                    accCtx,
-                    ObjectProtection.buildPath(nameRef),
-                    true
-                ),
-                nameRef,
-                type,
-                StateFlagsBits.getMask(flags),
-                dbDriver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider
-            );
-            dbDriver.create(nodeData);
+        nodeData = new NodeData(
+            UUID.randomUUID(),
+            objectProtectionFactory.getInstance(
+                accCtx,
+                ObjectProtection.buildPath(nameRef),
+                true
+            ),
+            nameRef,
+            type,
+            StateFlagsBits.getMask(flags),
+            dbDriver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        dbDriver.create(nodeData);
 
-            nodeData.setDisklessStorPool(
-                storPoolDataFactory.getInstance(
-                    accCtx,
-                    nodeData,
-                    disklessStorPoolDfn,
-                    DisklessDriver.class.getSimpleName(),
-                    createIfNotExists,
-                    failIfExists
-                )
-            );
-        }
+        nodeData.setDisklessStorPool(
+            storPoolDataFactory.create(
+                accCtx,
+                nodeData,
+                disklessStorPoolDfn,
+                DisklessDriver.class.getSimpleName()
+            )
+        );
+
         return nodeData;
     }
 }

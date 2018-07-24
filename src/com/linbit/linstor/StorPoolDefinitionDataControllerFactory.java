@@ -53,9 +53,17 @@ public class StorPoolDefinitionDataControllerFactory
 
     public StorPoolDefinitionData getInstance(
         AccessContext accCtx,
-        StorPoolName storPoolName,
-        boolean createIfNotExists,
-        boolean failIfExists
+        StorPoolName storPoolName
+    )
+        throws AccessDeniedException
+    {
+        storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+        return  (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
+    }
+
+    public StorPoolDefinitionData create(
+        AccessContext accCtx,
+        StorPoolName storPoolName
     )
         throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
@@ -64,30 +72,27 @@ public class StorPoolDefinitionDataControllerFactory
         storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
         storPoolDfn = (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
 
-        if (failIfExists && storPoolDfn != null)
+        if (storPoolDfn != null)
         {
             throw new LinStorDataAlreadyExistsException("The StorPoolDefinition already exists");
         }
 
-        if (storPoolDfn == null && createIfNotExists)
-        {
-            storPoolDfn = new StorPoolDefinitionData(
-                UUID.randomUUID(),
-                objectProtectionFactory.getInstance(
-                    accCtx,
-                    ObjectProtection.buildPathSPD(storPoolName),
-                    true
-                ),
-                storPoolName,
-                dbDriver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
+        storPoolDfn = new StorPoolDefinitionData(
+            UUID.randomUUID(),
+            objectProtectionFactory.getInstance(
+                accCtx,
+                ObjectProtection.buildPathSPD(storPoolName),
+                true
+            ),
+            storPoolName,
+            dbDriver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>()
+        );
 
-            dbDriver.create(storPoolDfn);
-        }
+        dbDriver.create(storPoolDfn);
 
         return storPoolDfn;
     }

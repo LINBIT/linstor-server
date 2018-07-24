@@ -71,18 +71,18 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, true
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        nodeSrc = nodeDataFactory.getInstance(SYS_CTX, sourceName, null, null, true, false);
-        nodeDst = nodeDataFactory.getInstance(SYS_CTX, targetName, null, null, true, false);
+        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
+        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, true, false);
-        resDst = resourceDataFactory.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, true, false);
+        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null);
+        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null);
 
         resCon = new ResourceConnectionData(
             uuid,
@@ -107,7 +107,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, true, false);
+        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst);
         commit();
 
         checkDbPersist(false);
@@ -140,12 +140,10 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc.setResourceConnection(SYS_CTX, resCon);
         resDst.setResourceConnection(SYS_CTX, resCon);
 
-        ResourceConnectionData loadedConDfn = resourceConnectionDataFactory.getInstance(
+        ResourceConnectionData loadedConDfn = ResourceConnectionData.get(
             SYS_CTX,
             resSrc,
-            resDst,
-            false,
-            false
+            resDst
         );
 
         checkLoadedConDfn(loadedConDfn, true);
@@ -154,22 +152,18 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        ResourceConnectionData storedInstance = resourceConnectionDataFactory.getInstance(
+        ResourceConnectionData storedInstance = resourceConnectionDataFactory.create(
             SYS_CTX,
             resSrc,
-            resDst,
-            true,
-            false
+            resDst
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, resourceConnectionDataFactory.getInstance(
+        assertEquals(storedInstance, ResourceConnectionData.get(
             SYS_CTX,
             resSrc,
-            resDst,
-            false,
-            false
+            resDst
         ));
     }
 
@@ -239,6 +233,6 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc.setResourceConnection(SYS_CTX, resCon);
         resDst.setResourceConnection(SYS_CTX, resCon);
 
-        resourceConnectionDataFactory.getInstance(SYS_CTX, resSrc, resDst, false, true);
+        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst);
     }
 }

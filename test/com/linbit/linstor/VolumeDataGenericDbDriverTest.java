@@ -67,68 +67,56 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
 
         nodeName = new NodeName("TestNodeName");
-        node = nodeDataFactory.getInstance(
+        node = nodeDataFactory.create(
             SYS_CTX,
             nodeName,
             null,
-            null,
-            true,
-            false
+            null
         );
 
         resName = new ResourceName("TestResName");
         resPort = 9001;
-        resDfn = resourceDefinitionDataFactory.getInstance(
+        resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             resPort,
             null,
             "secret",
-            TransportType.IP,
-            true,
-            false
+            TransportType.IP
         );
 
         nodeId = new NodeId(7);
-        res = resourceDataFactory.getInstance(
+        res = resourceDataFactory.create(
             SYS_CTX,
             resDfn,
             node,
             nodeId,
-            null,
-            true,
-            false
+            null
         );
 
         storPoolName = new StorPoolName("TestStorPoolName");
-        storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+        storPoolDfn = storPoolDefinitionDataFactory.create(
             SYS_CTX,
-            storPoolName,
-            true,
-            false
+            storPoolName
         );
 
-        storPool = storPoolDataFactory.getInstance(
+        storPool = storPoolDataFactory.create(
             SYS_CTX,
             node,
             storPoolDfn,
-            LvmDriver.class.getSimpleName(),
-            true,
-            false
+            LvmDriver.class.getSimpleName()
         );
 
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        volDfn = volumeDefinitionDataFactory.getInstance(
+        volDfn = volumeDefinitionDataFactory.create(
             SYS_CTX,
             resDfn,
             volNr,
             minor,
             volSize,
-            null,
-            true,
-            false
+            null
         );
 
         uuid = randomUUID();
@@ -177,16 +165,14 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        VolumeData volData = volumeDataFactory.getInstance(
+        VolumeData volData = volumeDataFactory.create(
             SYS_CTX,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
-            new VlmFlags[] {VlmFlags.CLEAN},
-            true,
-            false
+            new VlmFlags[] {VlmFlags.CLEAN}
         );
         commit();
 
@@ -274,48 +260,26 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         volDfn.putVolume(SYS_CTX, vol);
         res.putVolume(SYS_CTX, vol);
 
-        VolumeData loadedVol = volumeDataFactory.getInstance(
-            SYS_CTX,
-            res,
-            volDfn,
-            storPool,
-            blockDevicePath,
-            metaDiskPath,
-            null, // flags
-            false,
-            false
-        );
+        VolumeData loadedVol = (VolumeData) res.getVolume(volDfn.getVolumeNumber());
         checkLoaded(loadedVol, uuid);
     }
 
     @Test
     public void testCache() throws Exception
     {
-        VolumeData storedInstance = volumeDataFactory.getInstance(
+        VolumeData storedInstance = volumeDataFactory.create(
             SYS_CTX,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
-            null,
-            true,
-            false
+            null
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, volumeDataFactory.getInstance(
-            SYS_CTX,
-            res,
-            volDfn,
-            null,
-            null,
-            null,
-            null,
-            false,
-            false
-        ));
+        assertEquals(storedInstance, res.getVolume(volDfn.getVolumeNumber()));
     }
 
     @Test
@@ -466,16 +430,14 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         volDfn.putVolume(SYS_CTX, vol);
         res.putVolume(SYS_CTX, vol);
 
-        volumeDataFactory.getInstance(
+        volumeDataFactory.create(
             SYS_CTX,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
-            null,
-            false,
-            true
+            null
         );
     }
 

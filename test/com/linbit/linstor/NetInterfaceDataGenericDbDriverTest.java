@@ -65,13 +65,11 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_NODE_NET_INTERFACES
         );
 
-        node = nodeDataFactory.getInstance(
+        node = nodeDataFactory.create(
             SYS_CTX,
             nodeName,
             null, // types
-            null, // flags
-            true,
-            false
+            null // flags
         );
 
         dbDriver = new NetInterfaceDataGenericDbDriver(SYS_CTX, errorReporter, transObjFactory, transMgrProvider);
@@ -133,15 +131,13 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testPersistGetInstance() throws Exception
     {
         NetInterfaceName netInterfaceName = new NetInterfaceName("TestNetIface");
-        netInterfaceDataFactory.getInstance(
+        netInterfaceDataFactory.create(
             SYS_CTX,
             node,
             netInterfaceName,
             niAddr,
             niStltConnPort,
-            niStltConnEncrType,
-            true,
-            false
+            niStltConnEncrType
         );
         commit();
 
@@ -186,16 +182,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         dbDriver.create(niData);
         ((NodeData) node).addNetInterface(SYS_CTX, niData);
 
-        NetInterfaceData netData1 = netInterfaceDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            niName,
-            niAddr,
-            niStltConnPort,
-            niStltConnEncrType,
-            false,
-            false
-        );
+        NetInterfaceData netData1 = (NetInterfaceData) node.getNetInterface(SYS_CTX, niName);
 
         assertNotNull(netData1);
         assertEquals(niUuid, netData1.getUuid());
@@ -204,16 +191,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(niName.displayValue, netData1.getName().displayValue);
         assertEquals(niAddrStr, netData1.getAddress(SYS_CTX).getAddress());
 
-        NetInterfaceData netData2 = netInterfaceDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            niName,
-            niAddr,
-            niStltConnPort,
-            niStltConnEncrType,
-            false,
-            false
-        );
+        NetInterfaceData netData2 = (NetInterfaceData) node.getNetInterface(SYS_CTX, niName);
         assertTrue(netData1 == netData2);
     }
 
@@ -238,28 +216,17 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        NetInterfaceData storedInstance = netInterfaceDataFactory.getInstance(
+        NetInterfaceData storedInstance = netInterfaceDataFactory.create(
             SYS_CTX,
             node,
             niName,
             niAddr,
             niStltConnPort,
-            niStltConnEncrType,
-            true,
-            false
+            niStltConnEncrType
         );
 
         // no clearCaches
-        assertEquals(storedInstance, netInterfaceDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            niName,
-            null,
-            null,
-            null,
-            false,
-            false
-        ));
+        assertEquals(storedInstance, node.getNetInterface(SYS_CTX, niName));
     }
 
     @Test
@@ -348,15 +315,13 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         dbDriver.create(niData);
         ((NodeData) node).addNetInterface(SYS_CTX, niData);
 
-        netInterfaceDataFactory.getInstance(
+        netInterfaceDataFactory.create(
             SYS_CTX,
             node,
             niName,
             niAddr,
             niStltConnPort,
-            niStltConnEncrType,
-            false,
-            true
+            niStltConnEncrType
         );
     }
 

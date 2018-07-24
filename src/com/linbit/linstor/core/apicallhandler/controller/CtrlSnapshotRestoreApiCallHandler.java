@@ -253,7 +253,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         Snapshot snapshot;
         try
         {
-            snapshot = snapshotDataFactory.load(peerAccCtx.get(), node, snapshotDfn);
+            snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), node.getName());
 
             if (snapshot == null)
             {

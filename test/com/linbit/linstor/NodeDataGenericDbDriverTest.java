@@ -133,13 +133,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        nodeDataFactory.getInstance(
+        nodeDataFactory.create(
             SYS_CTX,
             nodeName,
             null,
-            null,
-            true,
-            false
+            null
         );
         commit();
 
@@ -221,7 +219,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
+        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName);
         assertNull(loadedNode);
 
         insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
@@ -330,13 +328,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
 
         {
             // node1
-            NodeData node1 = nodeDataFactory.getInstance(
+            NodeData node1 = nodeDataFactory.create(
                 SYS_CTX,
                 nodeName,
                 NodeType.AUXILIARY,
-                new NodeFlag[] {NodeFlag.QIGNORE},
-                true,
-                true
+                new NodeFlag[] {NodeFlag.QIGNORE}
             );
             node1.getProps(SYS_CTX).setProp(node1TestKey, node1TestValue);
             node1Uuid = node1.getUuid();
@@ -344,40 +340,34 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             nodesMap.put(node1.getName(), node1);
 
             // node1's netIface
-            NetInterfaceData netIf = netInterfaceDataFactory.getInstance(
+            NetInterfaceData netIf = netInterfaceDataFactory.create(
                 SYS_CTX,
                 node1,
                 netName,
                 new LsIpAddress(netHost),
                 new TcpPortNumber(ApiConsts.DFLT_CTRL_PORT_PLAIN),
-                EncryptionType.PLAIN,
-                true,
-                true
+                EncryptionType.PLAIN
             );
             netIfUuid = netIf.getUuid();
 
             // node2
-            NodeData node2 = nodeDataFactory.getInstance(
+            NodeData node2 = nodeDataFactory.create(
                 SYS_CTX,
                 nodeName2,
                 NodeType.AUXILIARY,
-                null,
-                true,
-                true
+                null
             );
 
             nodesMap.put(node2.getName(), node2);
 
             // resDfn
-            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.getInstance(
+            ResourceDefinitionData resDfn = resourceDefinitionDataFactory.create(
                 SYS_CTX,
                 resName,
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
-                transportType,
-                true,
-                true
+                transportType
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
@@ -385,137 +375,115 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             rscDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
-            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.getInstance(
+            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.create(
                 SYS_CTX,
                 resDfn,
                 volDfnNr,
                 volDfnMinorNr,
                 volDfnSize,
-                new VlmDfnFlags[] {VlmDfnFlags.DELETE},
-                true,
-                true
+                new VlmDfnFlags[] {VlmDfnFlags.DELETE}
             );
             volDfn.getProps(SYS_CTX).setProp(volDfnTestKey, volDfnTestValue);
             volDfnUuid = volDfn.getUuid();
 
             // storPoolDfn
-            StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+            StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.create(
                 SYS_CTX,
-                poolName,
-                true,
-                true
+                poolName
             );
             storPoolDfnUuid = storPoolDfn.getUuid();
 
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
             // node1 storPool
-            StorPoolData storPool1 = storPoolDataFactory.getInstance(
+            StorPoolData storPool1 = storPoolDataFactory.create(
                 SYS_CTX,
                 node1,
                 storPoolDfn,
-                storPoolDriver1,
-                true,
-                true
+                storPoolDriver1
             );
             storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
             // node2 storPool
-            StorPoolData storPool2 = storPoolDataFactory.getInstance(
+            StorPoolData storPool2 = storPoolDataFactory.create(
                 SYS_CTX,
                 node2,
                 storPoolDfn,
-                storPoolDriver2,
-                true,
-                true
+                storPoolDriver2
             );
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 
             // node1 res
-            ResourceData res1 = resourceDataFactory.getInstance(
+            ResourceData res1 = resourceDataFactory.create(
                 SYS_CTX,
                 resDfn,
                 node1,
                 node1Id,
-                new RscFlags[] {RscFlags.CLEAN},
-                true,
-                true
+                new RscFlags[] {RscFlags.CLEAN}
             );
             res1.getProps(SYS_CTX).setProp(res1TestKey, res1TestValue);
             res1Uuid = res1.getUuid();
 
             // node1 vol
-            VolumeData vol1 = volumeDataFactory.getInstance(
+            VolumeData vol1 = volumeDataFactory.create(
                 SYS_CTX,
                 res1,
                 volDfn,
                 storPool1,
                 vol1TestBlockDev,
                 vol1TestMetaDisk,
-                new VlmFlags[] {VlmFlags.CLEAN},
-                true,
-                true
+                new VlmFlags[] {VlmFlags.CLEAN}
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
             vol1Uuid = vol1.getUuid();
 
             // node2 res
-            ResourceData res2 = resourceDataFactory.getInstance(
+            ResourceData res2 = resourceDataFactory.create(
                 SYS_CTX,
                 resDfn,
                 node2,
                 node2Id,
-                new RscFlags[] {RscFlags.CLEAN},
-                true,
-                true
+                new RscFlags[] {RscFlags.CLEAN}
             );
             res2.getProps(SYS_CTX).setProp(res2TestKey, res2TestValue);
             res2Uuid = res2.getUuid();
 
             // node2 vol
-            VolumeData vol2 = volumeDataFactory.getInstance(
+            VolumeData vol2 = volumeDataFactory.create(
                 SYS_CTX,
                 res2,
                 volDfn,
                 storPool2,
                 vol2TestBlockDev,
                 vol2TestMetaDisk,
-                new VlmFlags[] {VlmFlags.CLEAN},
-                true,
-                true
+                new VlmFlags[] {VlmFlags.CLEAN}
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
             vol2Uuid = vol2.getUuid();
 
             // nodeCon node1 <-> node2
-            NodeConnectionData nodeCon = nodeConnectionDataFactory.getInstance(
+            NodeConnectionData nodeCon = nodeConnectionDataFactory.create(
                 SYS_CTX,
                 node1,
-                node2,
-                true,
-                true
+                node2
             );
             nodeCon.getProps(SYS_CTX).setProp(nodeConTestKey, nodeConTestValue);
             nodeConUuid = nodeCon.getUuid();
 
             // resCon res1 <-> res2
-            ResourceConnectionData resCon = resourceConnectionDataFactory.getInstance(
+            ResourceConnectionData resCon = resourceConnectionDataFactory.create(
                 SYS_CTX,
                 res1,
-                res2,
-                true,
-                true
+                res2
             );
             resCon.getProps(SYS_CTX).setProp(resConTestKey, resConTestValue);
             resConUuid = resCon.getUuid();
 
             // volCon vol1 <-> vol2
-            VolumeConnectionData volCon = volumeConnectionDataFactory.getInstance(
+            VolumeConnectionData volCon = volumeConnectionDataFactory.create(
                 SYS_CTX,
                 vol1,
-                vol2,
-                true,
-                true
+                vol2
             );
             volCon.getProps(SYS_CTX).setProp(volConTestKey, volConTestValue);
             volConUuid = volCon.getUuid();
@@ -523,8 +491,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             commit();
         }
 
-        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false);
-        NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, null, null, false, false);
+        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName);
+        NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2);
 
         assertNotNull(loadedNode);
 
@@ -704,7 +672,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeName, node);
         // no clearCaches
 
-        assertEquals(node, nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, false, false));
+        assertEquals(node, nodeDataFactory.getInstance(SYS_CTX, nodeName));
     }
 
     @Test
@@ -732,13 +700,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     {
         dbDriver.create(node);
         NodeName nodeName2 = new NodeName("NodeName2");
-        NodeData node2 = nodeDataFactory.getInstance(
+        NodeData node2 = nodeDataFactory.create(
             SYS_CTX,
             nodeName2,
             NodeType.CONTROLLER,
-            null,
-            true,
-            false
+            null
         );
         nodesMap.put(nodeName, node);
         nodesMap.put(nodeName2, node2);
@@ -776,7 +742,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         dbDriver.create(node);
         nodesMap.put(nodeName, node);
 
-        nodeDataFactory.getInstance(SYS_CTX, nodeName, initialType, null, false, true);
+        nodeDataFactory.create(SYS_CTX, nodeName, initialType, null);
     }
 
 }

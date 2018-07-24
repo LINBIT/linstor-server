@@ -33,13 +33,11 @@ public class SnapshotDefinitionDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public SnapshotDefinitionData getInstance(
+    public SnapshotDefinitionData create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
-        SnapshotDefinition.SnapshotDfnFlags[] initFlags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        SnapshotDefinition.SnapshotDfnFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -47,51 +45,26 @@ public class SnapshotDefinitionDataControllerFactory
 
         SnapshotDefinitionData snapshotDfnData = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(accCtx, snapshotName);
 
-        if (snapshotDfnData != null && failIfExists)
+        if (snapshotDfnData != null)
         {
             throw new LinStorDataAlreadyExistsException("The SnapshotDefinition already exists");
         }
 
-        if (snapshotDfnData == null && createIfNotExists)
-        {
-            snapshotDfnData = new SnapshotDefinitionData(
-                UUID.randomUUID(),
-                rscDfn,
-                snapshotName,
-                StateFlagsBits.getMask(initFlags),
-                driver,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>(),
-                new TreeMap<>()
-            );
+        snapshotDfnData = new SnapshotDefinitionData(
+            UUID.randomUUID(),
+            rscDfn,
+            snapshotName,
+            StateFlagsBits.getMask(initFlags),
+            driver,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
+        );
 
-            driver.create(snapshotDfnData);
-            rscDfn.addSnapshotDfn(accCtx, snapshotDfnData);
-        }
+        driver.create(snapshotDfnData);
+        rscDfn.addSnapshotDfn(accCtx, snapshotDfnData);
 
         return snapshotDfnData;
-    }
-
-    public SnapshotDefinitionData load(
-        AccessContext accCtx,
-        ResourceDefinition resDfn,
-        SnapshotName snapshotName
-    )
-        throws AccessDeniedException
-    {
-        SnapshotDefinitionData snapshotDfn;
-        try
-        {
-            snapshotDfn = getInstance(accCtx, resDfn, snapshotName, null, false, false);
-        }
-        catch (
-            LinStorDataAlreadyExistsException |
-            SQLException exc
-        )
-        {
-            throw new ImplementationError("Impossible Exception was thrown", exc);
-        }
-        return snapshotDfn;
     }
 }

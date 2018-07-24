@@ -55,8 +55,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         resName = new ResourceName("TestResource");
         resPort = 9001;
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, false
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
 
         uuid = randomUUID();
@@ -115,26 +115,22 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.create(
             SYS_CTX,
             new ResourceName("TestResource2"),
             resPort + 1, // prevent tcp-port-conflict
             null,
             "secret",
-            TransportType.IP,
-            true,
-            false
+            TransportType.IP
         );
 
-        volumeDefinitionDataFactory.getInstance(
+        volumeDefinitionDataFactory.create(
             SYS_CTX,
             resDefinitionTest,
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] {VlmDfnFlags.DELETE},
-            true,
-            false
+            new VlmDfnFlags[] {VlmDfnFlags.DELETE}
         );
         commit();
 
@@ -158,11 +154,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
 
-        VolumeDefinitionData loadedVd = volumeDefinitionDataFactory.load(
-            SYS_CTX,
-            resDfn,
-            volNr
-        );
+        VolumeDefinitionData loadedVd = (VolumeDefinitionData) resDfn.getVolumeDfn(SYS_CTX, volNr);
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
@@ -362,7 +354,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
 
-        volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, true, true);
+        volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
     }
 
     @Test
@@ -373,15 +365,13 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         Mockito.when(minorNrPoolMock.autoAllocate()).thenReturn(testMinorNumber);
 
-        VolumeDefinitionData newvolDfn = volumeDefinitionDataFactory.getInstance(
+        VolumeDefinitionData newvolDfn = volumeDefinitionDataFactory.create(
             SYS_CTX,
             resDfn,
             testVolumeNumber,
             null, // auto allocate
             volSize,
-            null,
-            true,
-            true
+            null
         );
 
         assertThat(newvolDfn.getMinorNr(SYS_CTX).value).isEqualTo(testMinorNumber);

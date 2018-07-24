@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -33,13 +32,11 @@ public class SnapshotDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public Snapshot getInstance(
+    public Snapshot create(
         AccessContext accCtx,
         Node node,
         SnapshotDefinition snapshotDfn,
-        Snapshot.SnapshotFlags[] initFlags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Snapshot.SnapshotFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -47,49 +44,24 @@ public class SnapshotDataControllerFactory
 
         Snapshot snapshot = snapshotDfn.getSnapshot(accCtx, node.getName());
 
-        if (snapshot != null && failIfExists)
+        if (snapshot != null)
         {
             throw new LinStorDataAlreadyExistsException("The Snapshot already exists");
         }
 
-        if (snapshot == null && createIfNotExists)
-        {
-            snapshot = new SnapshotData(
-                UUID.randomUUID(),
-                snapshotDfn,
-                node,
-                StateFlagsBits.getMask(initFlags),
-                driver, transObjFactory, transMgrProvider,
-                new TreeMap<>()
-                );
+        snapshot = new SnapshotData(
+            UUID.randomUUID(),
+            snapshotDfn,
+            node,
+            StateFlagsBits.getMask(initFlags),
+            driver, transObjFactory, transMgrProvider,
+            new TreeMap<>()
+            );
 
-            driver.create(snapshot);
-            snapshotDfn.addSnapshot(accCtx, snapshot);
-            node.addSnapshot(accCtx, snapshot);
-        }
+        driver.create(snapshot);
+        snapshotDfn.addSnapshot(accCtx, snapshot);
+        node.addSnapshot(accCtx, snapshot);
 
-        return snapshot;
-    }
-
-    public Snapshot load(
-        AccessContext accCtx,
-        Node node,
-        SnapshotDefinition snapshotDfn
-    )
-        throws AccessDeniedException
-    {
-        Snapshot snapshot;
-        try
-        {
-            snapshot = getInstance(accCtx, node, snapshotDfn, null, false, false);
-        }
-        catch (
-            LinStorDataAlreadyExistsException |
-            SQLException exc
-        )
-        {
-            throw new ImplementationError("Impossible exception was thrown", exc);
-        }
         return snapshot;
     }
 }

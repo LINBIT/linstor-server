@@ -513,15 +513,13 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = resourceDefinitionDataFactory.getInstance(
+            rscDfn = resourceDefinitionDataFactory.create(
                 peerAccCtx.get(),
                 rscName,
                 portInt,
                 null, // RscDfnFlags
                 secret,
-                transportType,
-                true,
-                true
+                transportType
             );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)

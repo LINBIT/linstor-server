@@ -107,6 +107,33 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         );
     }
 
+    public static ResourceConnectionData get(
+        AccessContext accCtx,
+        Resource sourceResource,
+        Resource targetResource
+    )
+        throws AccessDeniedException
+    {
+        Resource source;
+        Resource target;
+
+        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
+        NodeName targetNodeName = targetResource.getAssignedNode().getName();
+
+        if (sourceNodeName.compareTo(targetNodeName) < 0)
+        {
+            source = sourceResource;
+            target = targetResource;
+        }
+        else
+        {
+            source = targetResource;
+            target = sourceResource;
+        }
+
+        return (ResourceConnectionData) sourceResource.getResourceConnection(accCtx, targetResource);
+    }
+
     @Override
     public UUID debugGetVolatileUuid()
     {

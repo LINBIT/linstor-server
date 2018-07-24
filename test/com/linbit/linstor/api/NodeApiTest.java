@@ -50,13 +50,11 @@ public class NodeApiTest extends ApiTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        testNode = nodeDataFactory.getInstance(
+        testNode = nodeDataFactory.create(
             BOB_ACC_CTX,
             testNodeName,
             testNodeType,
-            null,
-            true,
-            true
+            null
         );
         testNode.setPeer(SYS_CTX, mockSatellite);
         nodesMap.put(testNodeName, testNode);

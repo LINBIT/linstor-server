@@ -852,13 +852,11 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NodeData node;
         try
         {
-            node = nodeDataFactory.getInstance(
+            node = nodeDataFactory.create(
                 peerAccCtx.get(),
                 nodeName,
                 type,
-                new NodeFlag[0],
-                true,
-                true
+                new NodeFlag[0]
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -940,15 +938,13 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         NetInterfaceData netIf;
         try
         {
-            netIf = netInterfaceDataFactory.getInstance(
+            netIf = netInterfaceDataFactory.create(
                 peerAccCtx.get(),
                 node,
                 netName,
                 addr,
                 port,
-                type,
-                true,   // persist node
-                true    // throw LinStorDataAlreadyExistsException if needed
+                type
             );
         }
         catch (AccessDeniedException accDeniedExc)

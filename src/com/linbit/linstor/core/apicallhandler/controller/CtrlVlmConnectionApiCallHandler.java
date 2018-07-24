@@ -236,12 +236,10 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         VolumeConnectionData vlmConn;
         try
         {
-            vlmConn = volumeConnectionDataFactory.getInstance(
+            vlmConn = volumeConnectionDataFactory.create(
                 peerAccCtx.get(),
                 sourceVolume,
-                targetVolume,
-                true,
-                true
+                targetVolume
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -285,12 +283,10 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         VolumeConnectionData vlmConn;
         try
         {
-            vlmConn = volumeConnectionDataFactory.getInstance(
+            vlmConn = VolumeConnectionData.get(
                 peerAccCtx.get(),
                 vlm1,
-                vlm2,
-                false,
-                false
+                vlm2
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -300,14 +296,6 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 "access " + getVlmConnectionDescriptionInline(nodeName1, nodeName2, rscNameStr, vlmNr),
                 ApiConsts.FAIL_ACC_DENIED_VLM_CONN
             );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
         }
         return vlmConn;
     }

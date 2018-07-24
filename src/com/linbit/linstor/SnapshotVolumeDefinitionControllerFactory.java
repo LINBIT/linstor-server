@@ -37,54 +37,40 @@ public class SnapshotVolumeDefinitionControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public SnapshotVolumeDefinition getInstance(
+    public SnapshotVolumeDefinition create(
         AccessContext accCtx,
         SnapshotDefinition snapshotDfn,
         VolumeNumber volumeNumber,
         long volSize,
-        SnapshotVolumeDefinition.SnapshotVlmDfnFlags[] initFlags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        SnapshotVolumeDefinition.SnapshotVlmDfnFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException, MdException
     {
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        SnapshotVolumeDefinition snapshotVolumeDefinition = load(accCtx, snapshotDfn, volumeNumber);
+        SnapshotVolumeDefinition snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
 
-        if (snapshotVolumeDefinition != null && failIfExists)
+        if (snapshotVolumeDefinition != null)
         {
             throw new LinStorDataAlreadyExistsException("The SnapshotVolumeDefinition already exists");
         }
 
-        if (snapshotVolumeDefinition == null && createIfNotExists)
-        {
-            snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
-                UUID.randomUUID(),
-                snapshotDfn,
-                volumeNumber,
-                volSize,
-                StateFlagsBits.getMask(initFlags),
-                driver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
+        snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
+            UUID.randomUUID(),
+            snapshotDfn,
+            volumeNumber,
+            volSize,
+            StateFlagsBits.getMask(initFlags),
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>()
+        );
 
-            driver.create(snapshotVolumeDefinition);
-            snapshotDfn.addSnapshotVolumeDefinition(accCtx, snapshotVolumeDefinition);
-        }
+        driver.create(snapshotVolumeDefinition);
+        snapshotDfn.addSnapshotVolumeDefinition(accCtx, snapshotVolumeDefinition);
 
         return snapshotVolumeDefinition;
-    }
-
-    public SnapshotVolumeDefinition load(
-        AccessContext accCtx, SnapshotDefinition snapshotDfn,
-        VolumeNumber volumeNumber
-    )
-        throws AccessDeniedException
-    {
-        return snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
     }
 }

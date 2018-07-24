@@ -80,13 +80,11 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         );
 
         node1Id = new NodeId(1);
-        node1 = nodeDataFactory.getInstance(
+        node1 = nodeDataFactory.create(
             SYS_CTX,
             nodeName,
             null,
-            null,
-            true,
-            false
+            null
         );
         nodesMap.put(node1.getName(), node1);
         resDfn = new ResourceDefinitionData(
@@ -134,15 +132,13 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceDefinitionDataFactory.getInstance(
+        resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] {RscDfnFlags.DELETE},
             secret,
-            transportType,
-            true,
-            true
+            transportType
         );
 
         commit();
@@ -167,7 +163,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        ResourceDefinitionData loadedResDfn = resourceDefinitionDataFactory.load(
+        ResourceDefinitionData loadedResDfn = resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName
         );
@@ -178,17 +174,15 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         rscDfnMap.put(resDfn.getName(), resDfn);
 
-        resourceDataFactory.getInstance(
+        resourceDataFactory.create(
             SYS_CTX,
             resDfn,
             node1,
             node1Id,
-            null,
-            true,
-            false
+            null
         );
 
-        loadedResDfn = resourceDefinitionDataFactory.load(
+        loadedResDfn = resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
             resName
         );
@@ -205,28 +199,20 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             port,
             null,
             secret,
-            transportType,
-            true,
-            true
+            transportType
         );
         rscDfnMap.put(resName, storedInstance);
         // no clearCaches
 
         assertEquals(storedInstance, resourceDefinitionDataFactory.getInstance(
             SYS_CTX,
-            resName,
-            null,
-            null,
-            null,
-            null,
-            false,
-            false
+            resName
         ));
     }
 
@@ -356,15 +342,13 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(resDfn);
         ResourceName resName2 = new ResourceName("ResName2");
-        resourceDefinitionDataFactory.getInstance(
+        resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName2,
             port + 1, // prevent tcp-port-conflict
             null,
             "secret",
-            transportType,
-            true,
-            true
+            transportType
         );
         objProtDriver.insertOp(resDfnObjProt);
 
@@ -386,8 +370,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         objProtDriver.insertOp(resDfnObjProt);
         rscDfnMap.put(resName, resDfn);
 
-        resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, port, null, "secret", transportType, true, true
+        resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, port, null, "secret", transportType
         );
     }
 
@@ -398,15 +382,13 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         Mockito.when(tcpPortPoolMock.autoAllocate()).thenReturn(testTcpPort);
 
-        ResourceDefinitionData newRscDfn = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinitionData newRscDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
             null, // auto allocate
             null,
             "secret",
-            transportType,
-            true,
-            true
+            transportType
         );
 
         assertThat(newRscDfn.getPort(SYS_CTX).value).isEqualTo(testTcpPort);

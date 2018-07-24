@@ -85,6 +85,29 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         );
     }
 
+    public static NodeConnectionData get(
+        AccessContext accCtx,
+        Node node1,
+        Node node2
+    )
+        throws AccessDeniedException
+    {
+        Node source;
+        Node target;
+        if (node1.getName().compareTo(node2.getName()) < 0)
+        {
+            source = node1;
+            target = node2;
+        }
+        else
+        {
+            source = node2;
+            target = node1;
+        }
+
+        return (NodeConnectionData) source.getNodeConnection(accCtx, target);
+    }
+
     @Override
     public UUID debugGetVolatileUuid()
     {

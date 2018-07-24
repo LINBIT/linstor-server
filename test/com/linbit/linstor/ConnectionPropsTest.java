@@ -78,33 +78,33 @@ public class ConnectionPropsTest extends GenericDbBase
         blockDev2 = "/dev/vol2/block";
         metaDisk2 = "/dev/vol2/meta";
 
-        node1 = nodeDataFactory.getInstance(SYS_CTX, nodeName1, NodeType.CONTROLLER, null, true, false);
-        node2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2, NodeType.CONTROLLER, null, true, false);
+        node1 = nodeDataFactory.create(SYS_CTX, nodeName1, NodeType.CONTROLLER, null);
+        node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.CONTROLLER, null);
 
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, true, true
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType
         );
 
-        res1 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node1, nodeId1, null, true, false);
-        res2 = resourceDataFactory.getInstance(SYS_CTX, resDfn, node2, nodeId2, null, true, false);
+        res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null);
+        res2 = resourceDataFactory.create(SYS_CTX, resDfn, node2, nodeId2, null);
 
-        storPoolDfn = storPoolDefinitionDataFactory.getInstance(SYS_CTX, storPoolName, true, false);
+        storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
 
-        storPool1 = storPoolDataFactory.getInstance(
-            SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        storPool1 = storPoolDataFactory.create(
+            SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName()
         );
-        storPool2 = storPoolDataFactory.getInstance(
-            SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), true, false
+        storPool2 = storPoolDataFactory.create(
+            SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName()
         );
 
-        volDfn = volumeDefinitionDataFactory.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, true, true);
+        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
-        vol1 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null, true, false);
-        vol2 = volumeDataFactory.getInstance(SYS_CTX, res1, volDfn, storPool2, blockDev2, metaDisk2, null, true, false);
+        vol1 = volumeDataFactory.create(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null);
+        vol2 = volumeDataFactory.create(SYS_CTX, res2, volDfn, storPool2, blockDev2, metaDisk2, null);
 
-        nodeCon = nodeConnectionDataFactory.getInstance(SYS_CTX, node1, node2, true, false);
-        resCon = resourceConnectionDataFactory.getInstance(SYS_CTX, res1, res2, true, false);
-        volCon = volumeConnectionDataFactory.getInstance(SYS_CTX, vol1, vol2, true, false);
+        nodeCon = nodeConnectionDataFactory.create(SYS_CTX, node1, node2);
+        resCon = resourceConnectionDataFactory.create(SYS_CTX, res1, res2);
+        volCon = volumeConnectionDataFactory.create(SYS_CTX, vol1, vol2);
 
         nodeConProps = nodeCon.getProps(SYS_CTX);
         resConProps = resCon.getProps(SYS_CTX);

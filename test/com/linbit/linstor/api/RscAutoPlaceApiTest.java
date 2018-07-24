@@ -767,15 +767,13 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private ResourceDefinitionData createRscDfn(String rscNameStr, int tcpPort)
         throws Exception
     {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstance(
+        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
             BOB_ACC_CTX,
             new ResourceName(rscNameStr),
             tcpPort,
             null,
             "NotTellingYou",
-            ResourceDefinition.TransportType.IP,
-            true,
-            true
+            ResourceDefinition.TransportType.IP
         );
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);
@@ -911,13 +909,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         SatelliteBuilder stltBuilder(String stltName) throws Exception
         {
-            NodeData stlt = nodeDataFactory.getInstance(
+            NodeData stlt = nodeDataFactory.create(
                 BOB_ACC_CTX,
                 new NodeName(stltName),
                 Node.NodeType.SATELLITE,
-                null,
-                true,
-                true
+                null
             );
 
             stlt.setPeer(SYS_CTX, mockSatellite);
@@ -931,15 +927,13 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             ResourceName rscName = new ResourceName(rscNameStrRef);
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
 
-            volumeDefinitionDataFactory.getInstance(
+            volumeDefinitionDataFactory.create(
                 BOB_ACC_CTX,
                 rscDfn,
                 new VolumeNumber(vlmNrRef),
                 MINOR_GEN.incrementAndGet(),
                 sizeRef,
-                null,
-                true,
-                true
+                null
             );
 
             return this;
@@ -998,20 +992,24 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
                 BOB_ACC_CTX,
-                new StorPoolName(storPoolName),
-                true,
-                false
+                new StorPoolName(storPoolName)
             );
 
-            storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+            if (storPoolDfn == null)
+            {
+                storPoolDfn = storPoolDefinitionDataFactory.create(
+                    BOB_ACC_CTX,
+                    new StorPoolName(storPoolName)
+                );
 
-            StorPoolData storPool = storPoolDataFactory.getInstance(
+                storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+            }
+
+            StorPoolData storPool = storPoolDataFactory.create(
                 BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,
-                (thin ? LvmThinDriver.class : LvmDriver.class).getSimpleName(),
-                true,
-                false
+                (thin ? LvmThinDriver.class : LvmDriver.class).getSimpleName()
             );
 
             storPool.setRealFreeSpace(SYS_CTX, storPoolSize);

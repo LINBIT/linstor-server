@@ -36,58 +36,37 @@ public class VolumeConnectionDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public VolumeConnectionData getInstance(
+    public VolumeConnectionData create(
         AccessContext accCtx,
         Volume sourceVolume,
-        Volume targetVolume,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Volume targetVolume
     )
         throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
-        VolumeConnectionData volConData = null;
+        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        Volume source;
-        Volume target;
-        NodeName sourceNodeName = sourceVolume.getResource().getAssignedNode().getName();
-        NodeName targetNodeName = targetVolume.getResource().getAssignedNode().getName();
-        if (sourceNodeName.compareTo(targetNodeName) < 0)
-        {
-            source = sourceVolume;
-            target = targetVolume;
-        }
-        else
-        {
-            source = targetVolume;
-            target = sourceVolume;
-        }
-        source.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        target.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        VolumeConnectionData volConData = VolumeConnectionData.get(accCtx, sourceVolume, targetVolume);
 
-
-        volConData = (VolumeConnectionData) source.getVolumeConnection(accCtx, target);
-
-        if (failIfExists && volConData != null)
+        if (volConData != null)
         {
             throw new LinStorDataAlreadyExistsException("The VolumeConnection already exists");
         }
 
-        if (volConData == null && createIfNotExists)
-        {
-            volConData = new VolumeConnectionData(
-                UUID.randomUUID(),
-                source,
-                target,
-                dbDriver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider
-            );
+        volConData = new VolumeConnectionData(
+            UUID.randomUUID(),
+            sourceVolume,
+            targetVolume,
+            dbDriver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
 
-            dbDriver.create(volConData);
-            sourceVolume.setVolumeConnection(accCtx, volConData);
-            targetVolume.setVolumeConnection(accCtx, volConData);
-        }
+        dbDriver.create(volConData);
+        sourceVolume.setVolumeConnection(accCtx, volConData);
+        targetVolume.setVolumeConnection(accCtx, volConData);
+
         return volConData;
     }
 

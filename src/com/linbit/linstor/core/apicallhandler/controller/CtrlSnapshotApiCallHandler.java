@@ -176,14 +176,12 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 VolumeDefinition vlmDfn = vlmDfnIterator.next();
 
-                SnapshotVolumeDefinition snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.getInstance(
+                SnapshotVolumeDefinition snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
                     apiCtx,
                     snapshotDfn,
                     vlmDfn.getVolumeNumber(),
                     vlmDfn.getVolumeSize(peerAccCtx.get()),
-                    new SnapshotVlmDfnFlags[]{},
-                    true,
-                    true
+                    new SnapshotVlmDfnFlags[]{}
                 );
 
                 boolean isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
@@ -276,25 +274,21 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private void createSnapshotOnNode(SnapshotDefinition snapshotDfn, Resource rsc)
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        Snapshot snapshot = snapshotDataFactory.getInstance(
+        Snapshot snapshot = snapshotDataFactory.create(
             apiCtx,
             rsc.getAssignedNode(),
             snapshotDfn,
-            new Snapshot.SnapshotFlags[]{},
-            true,
-            true
+            new Snapshot.SnapshotFlags[]{}
         );
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition :
             snapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
         {
-            snapshotVolumeDataControllerFactory.getInstance(
+            snapshotVolumeDataControllerFactory.create(
                 apiCtx,
                 snapshot,
                 snapshotVolumeDefinition,
-                rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx),
-                true,
-                true
+                rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx)
             );
         }
     }
@@ -551,13 +545,11 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         SnapshotDefinitionData snapshotDfn;
         try
         {
-            snapshotDfn = snapshotDefinitionDataFactory.getInstance(
+            snapshotDfn = snapshotDefinitionDataFactory.create(
                 accCtx,
                 rscDfn,
                 snapshotName,
-                snapshotDfnInitFlags,
-                true,
-                true
+                snapshotDfnInitFlags
             );
         }
         catch (AccessDeniedException accDeniedExc)

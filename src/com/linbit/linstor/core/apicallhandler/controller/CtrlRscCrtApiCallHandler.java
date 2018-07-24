@@ -32,7 +32,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
@@ -130,14 +129,12 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             checkPeerSlotsForNewPeer(rscDfn);
             short peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn);
 
-            rsc = resourceDataFactory.getInstance(
+            rsc = resourceDataFactory.create(
                 peerAccCtx.get(),
                 rscDfn,
                 node,
                 nodeId,
-                flags,
-                true, // persist this entry
-                true // throw exception if the entry exists
+                flags
             );
 
             rsc.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));
@@ -231,16 +228,14 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             String blockDevice = vlmApi == null ? null : vlmApi.getBlockDevice();
             String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
 
-            vlm = volumeDataFactory.getInstance(
+            vlm = volumeDataFactory.create(
                 peerAccCtx.get(),
                 rsc,
                 vlmDfn,
                 storPool,
                 blockDevice,
                 metaDisk,
-                null, // flags
-                true, // persist this entry
-                true // throw exception if the entry exists
+                null // flags
             );
         }
         catch (AccessDeniedException accDeniedExc)

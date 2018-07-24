@@ -89,11 +89,7 @@ public abstract class AbsApiCallHandler
         {
             node = objectFactories.getNodeDataFactory().getInstance(
                 peerAccCtx.get(),
-                nodeName,
-                null,
-                null,
-                false,
-                false
+                nodeName
             );
 
             if (failIfNull && node == null)
@@ -117,14 +113,6 @@ public abstract class AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        catch (LinStorDataAlreadyExistsException alreadyExists)
-        {
-            throw new ImplementationError(alreadyExists);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
         return node;
     }
 
@@ -144,7 +132,7 @@ public abstract class AbsApiCallHandler
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = objectFactories.getResourceDefinitionDataFactory().load(
+            rscDfn = objectFactories.getResourceDefinitionDataFactory().getInstance(
                 peerAccCtx.get(),
                 rscName
             );
@@ -183,15 +171,7 @@ public abstract class AbsApiCallHandler
         ResourceData rscData;
         try
         {
-            rscData = objectFactories.getResourceDataFactory().getInstance(
-                peerAccCtx.get(),
-                rscDfn,
-                node,
-                null,
-                null,
-                false,
-                false
-            );
+            rscData = (ResourceData) node.getResource(peerAccCtx.get(), rscDfn.getName());
             if (rscData == null && failIfNull)
             {
                 throw new ApiRcException(ApiCallRcImpl
@@ -215,17 +195,6 @@ public abstract class AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading a resource caused DataAlreadyExistsException",
-                dataAlreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
         return rscData;
     }
 
@@ -237,7 +206,7 @@ public abstract class AbsApiCallHandler
         SnapshotDefinitionData snapshotDfn;
         try
         {
-            snapshotDfn = objectFactories.getSnapshotDefinitionDataFactory().load(peerAccCtx.get(), rscDfn, snapshotName);
+            snapshotDfn = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
 
             if (snapshotDfn == null)
             {
@@ -277,9 +246,7 @@ public abstract class AbsApiCallHandler
         {
             storPoolDfn = objectFactories.getStorPoolDefinitionDataFactory().getInstance(
                 peerAccCtx.get(),
-                storPoolName,
-                false,
-                false
+                storPoolName
             );
 
             if (failIfNull && storPoolDfn == null)
@@ -305,17 +272,6 @@ public abstract class AbsApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
         }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading storage pool caused dataAlreadyExists exception",
-                dataAlreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
         return storPoolDfn;
     }
 
@@ -328,14 +284,7 @@ public abstract class AbsApiCallHandler
         StorPoolData storPool;
         try
         {
-            storPool = objectFactories.getStorPoolDataFactory().getInstance(
-                peerAccCtx.get(),
-                node,
-                storPoolDfn,
-                null, // storDriverSimpleClassName
-                false,
-                false
-            );
+            storPool = (StorPoolData) node.getStorPool(peerAccCtx.get(), storPoolDfn.getName());
 
             if (failIfNull && storPool == null)
             {
@@ -359,17 +308,6 @@ public abstract class AbsApiCallHandler
                 "load " + getStorPoolDescriptionInline(node, storPoolDfn),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading storage pool caused dataAlreadyExists exception",
-                dataAlreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
         }
         return storPool;
     }

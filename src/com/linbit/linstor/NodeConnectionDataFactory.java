@@ -35,56 +35,37 @@ public class NodeConnectionDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public NodeConnectionData getInstance(
+    public NodeConnectionData create(
         AccessContext accCtx,
         Node node1,
-        Node node2,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Node node2
     )
         throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
-        NodeConnectionData nodeConData = null;
+        node1.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        node2.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        Node source;
-        Node target;
-        if (node1.getName().compareTo(node2.getName()) < 0)
-        {
-            source = node1;
-            target = node2;
-        }
-        else
-        {
-            source = node2;
-            target = node1;
-        }
+        NodeConnectionData nodeConData = NodeConnectionData.get(accCtx, node1, node2);
 
-        source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        nodeConData = (NodeConnectionData) source.getNodeConnection(accCtx, target);
-
-        if (failIfExists && nodeConData != null)
+        if (nodeConData != null)
         {
             throw new LinStorDataAlreadyExistsException("The NodeConnection already exists");
         }
 
-        if (nodeConData == null && createIfNotExists)
-        {
-            nodeConData = new NodeConnectionData(
-                UUID.randomUUID(),
-                source,
-                target,
-                dbDriver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider
-            );
-            dbDriver.create(nodeConData);
+        nodeConData = new NodeConnectionData(
+            UUID.randomUUID(),
+            node1,
+            node2,
+            dbDriver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
+        dbDriver.create(nodeConData);
 
-            source.setNodeConnection(accCtx, nodeConData);
-            target.setNodeConnection(accCtx, nodeConData);
-        }
+        node1.setNodeConnection(accCtx, nodeConData);
+        node2.setNodeConnection(accCtx, nodeConData);
+
         return nodeConData;
     }
 

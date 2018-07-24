@@ -61,8 +61,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_NODE_STOR_POOL
         );
 
-        node = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, true, false);
-        spdd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName, true, false);
+        node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
+        spdd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
 
         uuid = randomUUID();
     }
@@ -101,13 +101,12 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistStorGetInstance() throws Exception
     {
-        StorPool pool = storPoolDataFactory.getInstance(
+        StorPool pool = storPoolDataFactory.create(
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
-            true, // create
-            false
+            LvmDriver.class.getSimpleName()
+            // create
         );
         commit();
 
@@ -179,38 +178,22 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        StorPoolData storedInstance = storPoolDataFactory.getInstance(
+        StorPoolData storedInstance = storPoolDataFactory.create(
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
-            true,
-            false
+            LvmDriver.class.getSimpleName()
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, storPoolDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            spdd,
-            null,
-            false,
-            false
-        ));
+        assertEquals(storedInstance, node.getStorPool(SYS_CTX, spdd.getName()));
     }
 
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        StorPoolData loadedStorPool = storPoolDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            spdd,
-            LvmDriver.class.getSimpleName(),
-            false,
-            false
-        );
+        StorPoolData loadedStorPool = (StorPoolData) node.getStorPool(SYS_CTX, spdd.getName());
 
         assertNull(loadedStorPool);
 
@@ -230,14 +213,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         node.addStorPool(SYS_CTX, storPool);
         spdd.addStorPool(SYS_CTX, storPool);
 
-        loadedStorPool = storPoolDataFactory.getInstance(
-            SYS_CTX,
-            node,
-            spdd,
-            LvmDriver.class.getSimpleName(),
-            false,
-            false
-        );
+        loadedStorPool = (StorPoolData) node.getStorPool(SYS_CTX, spdd.getName());
 
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
@@ -250,13 +226,12 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        StorPoolData storPool = storPoolDataFactory.getInstance(
+        StorPoolData storPool = storPoolDataFactory.create(
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
-            true, // create
-            false
+            LvmDriver.class.getSimpleName()
+            // create
         );
         commit();
 
@@ -333,13 +308,11 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         node.addStorPool(SYS_CTX, storPool);
         spdd.addStorPool(SYS_CTX, storPool);
 
-        storPoolDataFactory.getInstance(
+        storPoolDataFactory.create(
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
-            false,
-            true
+            LvmDriver.class.getSimpleName()
         );
     }
 }

@@ -64,9 +64,9 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_RESOURCES
         );
 
-        node = nodeDataFactory.getInstance(SYS_CTX, nodeName, null, null, true, false);
-        resDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, true, true
+        node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
+        resDfn = resourceDefinitionDataFactory.create(
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
         );
 
         resUuid = randomUUID();
@@ -114,14 +114,12 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceDataFactory.getInstance(
+        resourceDataFactory.create(
             SYS_CTX,
             resDfn,
             node,
             nodeId,
-            new RscFlags[] {RscFlags.DELETE},
-            true,
-            false
+            new RscFlags[] {RscFlags.DELETE}
         );
 
         commit();
@@ -144,15 +142,7 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        ResourceData loadedRes = resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node,
-            nodeId,
-            null,
-            false,
-            false
-        );
+        ResourceData loadedRes = (ResourceData) node.getResource(SYS_CTX, resDfn.getName());
         assertNull(loadedRes);
 
         ResourceData res = new ResourceData(
@@ -174,15 +164,7 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
         node.addResource(SYS_CTX, res);
         resDfn.addResource(SYS_CTX, res);
 
-        loadedRes = resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node,
-            nodeId,
-            null,
-            false,
-            false
-        );
+        loadedRes = (ResourceData) node.getResource(SYS_CTX, resDfn.getName());
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -237,27 +219,17 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        ResourceData storedInstance = resourceDataFactory.getInstance(
+        ResourceData storedInstance = resourceDataFactory.create(
             SYS_CTX,
             resDfn,
             node,
             nodeId,
-            null,
-            true,
-            false
+            null
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, resourceDataFactory.getInstance(
-            SYS_CTX,
-            resDfn,
-            node,
-            null,
-            null,
-            false,
-            false
-        ));
+        assertEquals(storedInstance, node.getResource(SYS_CTX, resDfn.getName()));
     }
 
     @Test
@@ -394,6 +366,6 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
         node.addResource(SYS_CTX, res);
         resDfn.addResource(SYS_CTX, res);
 
-        resourceDataFactory.getInstance(SYS_CTX, resDfn, node, nodeId, null, false, true);
+        resourceDataFactory.create(SYS_CTX, resDfn, node, nodeId, null);
     }
 }

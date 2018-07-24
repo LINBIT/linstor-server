@@ -110,6 +110,33 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         );
     }
 
+    public static VolumeConnectionData get(
+        AccessContext accCtx,
+        Volume sourceVolume,
+        Volume targetVolume
+    )
+        throws AccessDeniedException
+    {
+        Volume source;
+        Volume target;
+
+        NodeName sourceNodeName = sourceVolume.getResource().getAssignedNode().getName();
+        NodeName targetNodeName = targetVolume.getResource().getAssignedNode().getName();
+
+        if (sourceNodeName.compareTo(targetNodeName) < 0)
+        {
+            source = sourceVolume;
+            target = targetVolume;
+        }
+        else
+        {
+            source = targetVolume;
+            target = sourceVolume;
+        }
+
+        return (VolumeConnectionData) source.getVolumeConnection(accCtx, target);
+    }
+
     @Override
     public UUID debugGetVolatileUuid()
     {

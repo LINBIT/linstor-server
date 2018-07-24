@@ -32,15 +32,13 @@ public class NetInterfaceDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public NetInterfaceData getInstance(
+    public NetInterfaceData create(
         AccessContext accCtx,
         Node node,
         NetInterfaceName netName,
         LsIpAddress addr,
         TcpPortNumber port,
-        EncryptionType encrType,
-        boolean createIfNotExists,
-        boolean failIfExists
+        EncryptionType encrType
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -50,27 +48,25 @@ public class NetInterfaceDataFactory
 
         netData = (NetInterfaceData) node.getNetInterface(accCtx, netName);
 
-        if (failIfExists && netData != null)
+        if (netData != null)
         {
             throw new LinStorDataAlreadyExistsException("The NetInterface already exists");
         }
 
-        if (netData == null && createIfNotExists)
-        {
-            netData = new NetInterfaceData(
-                UUID.randomUUID(),
-                netName,
-                node,
-                addr,
-                port,
-                encrType,
-                driver,
-                transObjFactory,
-                transMgrProvider
-            );
-            driver.create(netData);
-            ((NodeData) node).addNetInterface(accCtx, netData);
-        }
+        netData = new NetInterfaceData(
+            UUID.randomUUID(),
+            netName,
+            node,
+            addr,
+            port,
+            encrType,
+            driver,
+            transObjFactory,
+            transMgrProvider
+        );
+        driver.create(netData);
+        ((NodeData) node).addNetInterface(accCtx, netData);
+
         return netData;
     }
 

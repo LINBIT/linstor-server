@@ -51,15 +51,13 @@ public class VolumeDefinitionDataControllerFactory
         secObjs = secObjsRef;
     }
 
-    public VolumeDefinitionData getInstance(
+    public VolumeDefinitionData create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber vlmNr,
         Integer minor,
         Long vlmSize,
-        VolumeDefinition.VlmDfnFlags[] initFlags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        VolumeDefinition.VlmDfnFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
@@ -68,68 +66,40 @@ public class VolumeDefinitionDataControllerFactory
 
         VolumeDefinitionData vlmDfnData = (VolumeDefinitionData) rscDfn.getVolumeDfn(accCtx, vlmNr);
 
-        if (vlmDfnData != null && failIfExists)
+        if (vlmDfnData != null)
         {
             throw new LinStorDataAlreadyExistsException("The VolumeDefinition already exists");
         }
 
-        if (vlmDfnData == null && createIfNotExists)
+        MinorNumber chosenMinorNr;
+        if (minor == null)
         {
-            MinorNumber chosenMinorNr;
-            if (minor == null)
-            {
-                chosenMinorNr = new MinorNumber(minorNrPool.autoAllocate());
-            }
-            else
-            {
-                chosenMinorNr = new MinorNumber(minor);
-                minorNrPool.allocate(minor);
-            }
-
-            vlmDfnData = new VolumeDefinitionData(
-                UUID.randomUUID(),
-                rscDfn,
-                vlmNr,
-                chosenMinorNr,
-                minorNrPool,
-                vlmSize,
-                StateFlagsBits.getMask(initFlags),
-                driver,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
-
-            driver.create(vlmDfnData);
-            ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
+            chosenMinorNr = new MinorNumber(minorNrPool.autoAllocate());
         }
+        else
+        {
+            chosenMinorNr = new MinorNumber(minor);
+            minorNrPool.allocate(minor);
+        }
+
+        vlmDfnData = new VolumeDefinitionData(
+            UUID.randomUUID(),
+            rscDfn,
+            vlmNr,
+            chosenMinorNr,
+            minorNrPool,
+            vlmSize,
+            StateFlagsBits.getMask(initFlags),
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>()
+        );
+
+        driver.create(vlmDfnData);
+        ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
+
         return vlmDfnData;
-    }
-
-    public VolumeDefinitionData load(
-        AccessContext accCtx,
-        ResourceDefinition resDfn,
-        VolumeNumber volNr
-    )
-        throws AccessDeniedException
-    {
-        VolumeDefinitionData vlmDfn;
-        try
-        {
-            vlmDfn = getInstance(accCtx, resDfn, volNr, null, null, null, false, false);
-        }
-        catch (
-            LinStorDataAlreadyExistsException |
-            SQLException |
-            MdException |
-            ValueOutOfRangeException |
-            ValueInUseException |
-            ExhaustedPoolException exc
-        )
-        {
-            throw new ImplementationError("Impossible exception was thrown", exc);
-        }
-        return vlmDfn;
     }
 }

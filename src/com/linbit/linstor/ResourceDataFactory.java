@@ -46,53 +46,49 @@ public class ResourceDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public ResourceData getInstance(
+    public ResourceData create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
         NodeId nodeId,
-        Resource.RscFlags[] initFlags,
-        boolean createIfNotExists,
-        boolean failIfExists
+        Resource.RscFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         ResourceData rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
 
-        if (failIfExists && rscData != null)
+        if (rscData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Resource already exists");
         }
 
-        if (rscData == null && createIfNotExists)
-        {
-            rscData = new ResourceData(
-                UUID.randomUUID(),
-                objectProtectionFactory.getInstance(
-                    accCtx,
-                    ObjectProtection.buildPath(
-                        node.getName(),
-                        rscDfn.getName()
-                    ),
-                    true
+        rscData = new ResourceData(
+            UUID.randomUUID(),
+            objectProtectionFactory.getInstance(
+                accCtx,
+                ObjectProtection.buildPath(
+                    node.getName(),
+                    rscDfn.getName()
                 ),
-                rscDfn,
-                node,
-                nodeId,
-                StateFlagsBits.getMask(initFlags),
-                dbDriver,
-                propsContainerFactory,
-                volumeDataFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>(),
-                new TreeMap<>()
-            );
-            dbDriver.create(rscData);
-            ((NodeData) node).addResource(accCtx, rscData);
-            ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
-        }
+                true
+            ),
+            rscDfn,
+            node,
+            nodeId,
+            StateFlagsBits.getMask(initFlags),
+            dbDriver,
+            propsContainerFactory,
+            volumeDataFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>()
+        );
+        dbDriver.create(rscData);
+        ((NodeData) node).addResource(accCtx, rscData);
+        ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
+
         return rscData;
     }
 

@@ -318,16 +318,14 @@ public class ResourceData extends BaseTransactionObject implements Resource
                         }
                     }
 
-                    volumeDataFactory.getInstance(
+                    volumeDataFactory.create(
                         apiCtx,
                         this,
                         vlmDfn,
                         storPool,
                         null, // blockDevicePathRef,
                         null, // metaDiskPathRef,
-                        null,
-                        true,
-                        true
+                        null
                     );
                 }
             }

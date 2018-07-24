@@ -489,21 +489,17 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             if (storPoolDef == null)
             {
                 // implicitly create storage pool definition if it doesn't exist
-                storPoolDef = storPoolDefinitionDataFactory.getInstance(
+                storPoolDef = storPoolDefinitionDataFactory.create(
                     peerAccCtx.get(),
-                    LinstorParsingUtils.asStorPoolName(storPoolNameStr),
-                    true,  // create and persist if not exists
-                    false  // do not throw exception if exists
+                    LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );
             }
 
-            storPool = storPoolDataFactory.getInstance(
+            storPool = storPoolDataFactory.create(
                 peerAccCtx.get(),
                 node,
                 storPoolDef,
-                driver,
-                true,
-                true
+                driver
             );
         }
         catch (AccessDeniedException accDeniedExc)
