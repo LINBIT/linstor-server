@@ -58,9 +58,9 @@ public class LinStorArgumentParser
         {
                 cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
                 File workingDir = new File(cArgs.getConfigurationDirectory());
-                if (!workingDir.exists() || !workingDir.isDirectory())
+                if (workingDir.exists() && !workingDir.isDirectory())
                 {
-                    System.err.println("Error: Given configuration directory does not exist or is no directory");
+                    System.err.println("Error: Given configuration directory is no directory");
                     System.exit(2);
                 }
         }
