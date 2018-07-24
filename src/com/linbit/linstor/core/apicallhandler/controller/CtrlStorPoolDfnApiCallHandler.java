@@ -38,7 +38,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -64,6 +63,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ObjectProtection storPoolDfnMapProt;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final Provider<Integer> msgIdProvider;
     private final ResponseConverter responseConverter;
@@ -79,7 +79,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         CtrlObjectFactories objectFactories,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
@@ -92,7 +92,6 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
@@ -101,6 +100,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         storPoolDfnMap = storPoolDfnMapRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
         msgIdProvider = msgIdProviderRef;
         responseConverter = responseConverterRef;
@@ -126,7 +126,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             StorPoolDefinitionData storPoolDfn = createStorPool(storPoolNameStr);
             ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
-            commit();
+            ctrlTransactionHelper.commit();
 
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
@@ -178,7 +178,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 propsMap.remove(delKey);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, updateSatellites(storPoolDfn));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
@@ -235,7 +235,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 UUID storPoolDfnUuid = storPoolDfn.getUuid();
                 StorPoolName storPoolName = storPoolDfn.getName();
                 delete(storPoolDfn);
-                commit();
+                ctrlTransactionHelper.commit();
 
                 storPoolDfnMap.remove(storPoolName);
 

@@ -74,7 +74,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Pair;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
@@ -91,6 +90,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final SatelliteConnector satelliteConnector;
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -138,7 +138,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         ResponseConverter responseConverterRef,
@@ -149,7 +149,6 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
@@ -161,6 +160,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         satelliteConnector = satelliteConnectorRef;
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
@@ -271,7 +271,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     ));
                 }
 
-                commit();
+                ctrlTransactionHelper.commit();
                 nodesMap.put(nodeName, node);
 
                 responseConverter.addWithOp(responses, context,
@@ -370,7 +370,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 nodeProps.remove(key);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(
                 responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
@@ -466,7 +466,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         successMessage += " deleted.";
                     }
 
-                    commit();
+                    ctrlTransactionHelper.commit();
 
                     if (!hasRsc)
                     {
@@ -598,7 +598,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                 delete(nodeData);
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 nodesMap.remove(nodeName);
 

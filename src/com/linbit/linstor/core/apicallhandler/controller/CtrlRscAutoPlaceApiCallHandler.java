@@ -42,7 +42,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 @Singleton
 public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
@@ -51,6 +50,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
 
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CtrlRscApiCallHandler rscApiCallHandler;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final ResponseConverter responseConverter;
 
@@ -62,7 +62,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         NodesMap nodesMapRef,
         CtrlObjectFactories objectFactories,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -74,13 +74,13 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodesMap = nodesMapRef;
         rscApiCallHandler = rscApiCallHandlerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
         responseConverter = responseConverterRef;
     }
@@ -264,7 +264,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
                     }
                 }
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 if (!deployedResources.isEmpty())
                 {

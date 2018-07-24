@@ -29,7 +29,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -49,6 +48,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 {
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
 
     @Inject
@@ -58,7 +58,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         CtrlObjectFactories objectFactories,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -69,7 +69,6 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
             errorReporterRef,
             apiCtx,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             ctrlSatelliteUpdaterRef,
@@ -77,6 +76,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
             volumeDefinitionDataFactoryRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
     }
 
@@ -140,7 +140,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
                 }
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(toRscDfn));
 

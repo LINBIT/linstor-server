@@ -49,7 +49,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_VLM;
 import static java.util.stream.Collectors.toList;
@@ -63,6 +62,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
 
     @Inject
@@ -76,7 +76,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         CoreModule.NodesMap nodesMapRef,
         CtrlObjectFactories objectFactories,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         ResponseConverter responseConverterRef
@@ -86,7 +86,6 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
@@ -96,6 +95,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
     }
 
@@ -166,7 +166,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 }
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             if (updateSatellites)
             {
@@ -206,7 +206,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             vlm.getFlags().disableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
             vlm.getVolumeDefinition().getFlags().disableFlags(peerAccCtx.get(), VlmDfnFlags.RESIZE);
 
-            commit();
+            ctrlTransactionHelper.commit();
         }
         catch (Exception | ImplementationError exc)
         {
@@ -261,7 +261,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                 vlmDfnDeleted = true;
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                 vlmUuid, getVlmDescriptionInline(rscData, vlmDfn)));

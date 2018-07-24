@@ -51,7 +51,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -80,6 +79,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotDataControllerFactory snapshotDataFactory;
     private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final EventBroker eventBroker;
     private final ResponseConverter responseConverter;
 
@@ -93,7 +93,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CtrlObjectFactories objectFactories,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
@@ -108,7 +108,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
@@ -121,6 +120,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         eventBroker = eventBrokerRef;
         responseConverter = responseConverterRef;
     }
@@ -252,7 +252,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                         ));
                 }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
 
@@ -322,7 +322,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             {
                 snapshotDfn.delete(peerAccCtx.get());
 
-                commit();
+                ctrlTransactionHelper.commit();
             }
             else
             {
@@ -332,7 +332,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
                     snapshot.markDeleted(peerAccCtx.get());
                 }
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
             }

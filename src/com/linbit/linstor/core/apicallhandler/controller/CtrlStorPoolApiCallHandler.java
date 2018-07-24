@@ -41,7 +41,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -70,6 +69,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -86,7 +86,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         CtrlObjectFactories objectFactories,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         ResponseConverter responseConverterRef,
@@ -97,7 +97,6 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
@@ -111,6 +110,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
@@ -141,7 +141,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             updateStorPoolDfnMap(storPool);
             responseConverter.addWithDetail(
@@ -197,7 +197,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 propsMap.remove(delKey);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
@@ -277,7 +277,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             {
                 UUID storPoolUuid = storPool.getUuid(); // cache storpool uuid to avoid access deleted storpool
                 delete(storPool);
-                commit();
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolUuid, getStorPoolDescription(nodeNameStr, storPoolNameStr)));
@@ -430,7 +430,7 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                     }
                 }
 
-                commit();
+                ctrlTransactionHelper.commit();
             }
             catch (ApiRcException exc)
             {

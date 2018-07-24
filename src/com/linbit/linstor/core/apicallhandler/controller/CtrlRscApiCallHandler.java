@@ -80,7 +80,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
@@ -104,6 +103,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     private final CoreModule.NodesMap nodesMap;
     private final String defaultStorPoolName;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -124,7 +124,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         ResponseConverter responseConverterRef,
@@ -135,7 +135,6 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             stltConfRef,
@@ -151,6 +150,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         nodesMap = nodesMapRef;
         defaultStorPoolName = defaultStorPoolNameRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
@@ -181,7 +181,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 vlmApiList
             ).extractApiCallRc(responses);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             if (rsc.getVolumeCount() > 0)
             {
@@ -544,7 +544,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 propsMap.remove(delKey);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rsc));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
@@ -609,7 +609,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                     delete(rscData);
                 }
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 if (volumeCount > 0)
                 {
@@ -717,7 +717,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 delete(node);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                 rscUuid, getRscDescriptionInline(nodeNameStr, rscNameStr)));

@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeData;
@@ -25,7 +24,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -41,6 +39,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -50,7 +49,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -62,12 +61,12 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
@@ -96,7 +95,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             ctrlPropsHelper.fillProperties(
                 LinStorObject.NODE_CONN, nodeConnPropsMap, getProps(nodeConn), ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
@@ -151,7 +150,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 propsMap.remove(delKey);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1, nodeName2)));
@@ -194,7 +193,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
                 UUID nodeConnUuid = nodeConn.getUuid();
                 nodeConn.delete(peerAccCtx.get()); // accDeniedExc4
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     nodeConnUuid, getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));

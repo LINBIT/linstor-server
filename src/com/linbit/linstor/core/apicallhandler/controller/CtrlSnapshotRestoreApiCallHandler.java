@@ -42,7 +42,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -62,6 +61,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
 {
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final SnapshotDataControllerFactory snapshotDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
 
     @Inject
@@ -69,7 +69,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
@@ -85,7 +85,6 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             stltConfRef,
@@ -94,6 +93,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         snapshotDataFactory = snapshotDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
     }
 
@@ -147,7 +147,7 @@ public class CtrlSnapshotRestoreApiCallHandler extends CtrlRscCrtApiCallHandler
                 }
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) > 0)
             {

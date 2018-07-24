@@ -44,7 +44,6 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         ErrorReporter errorReporterRef,
         AccessContext apiCtx,
         CtrlObjectFactories objectFactories,
-        Provider<TransactionMgr> transMgrProviderRef,
         Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -56,7 +55,6 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtx,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );

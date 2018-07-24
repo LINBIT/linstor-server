@@ -44,7 +44,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
@@ -73,6 +72,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlSecurityObjects secObjs;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -87,7 +87,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         CtrlObjectFactories objectFactories,
         VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSecurityObjects secObjsRef,
@@ -99,7 +99,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             errorReporterRef,
             apiCtx,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef,
             ctrlSatelliteUpdaterRef,
@@ -111,6 +110,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         secObjs = secObjsRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
@@ -167,7 +167,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 adjustRscVolumes(rsc);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             rscDfnMap.put(rscDfn.getName(), rscDfn);
 
@@ -366,7 +366,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 setMinorNr(vlmDfn, minorNr);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
@@ -447,7 +447,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                     deleteAction = " marked for deletion.";
                 }
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
 

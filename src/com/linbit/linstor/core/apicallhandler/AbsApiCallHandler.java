@@ -28,7 +28,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler.getStorPoolDescriptionInline;
@@ -60,8 +59,6 @@ public abstract class AbsApiCallHandler
     protected final AccessContext apiCtx;
     private final CtrlObjectFactories objectFactories;
 
-    private final Provider<TransactionMgr> transMgrProvider;
-
     protected final Provider<AccessContext> peerAccCtx;
     protected final Provider<Peer> peer;
 
@@ -69,7 +66,6 @@ public abstract class AbsApiCallHandler
         ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
         CtrlObjectFactories objectFactoriesRef,
-        Provider<TransactionMgr> transMgrProviderRef,
         Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef
     )
@@ -77,7 +73,6 @@ public abstract class AbsApiCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         objectFactories = objectFactoriesRef;
-        transMgrProvider = transMgrProviderRef;
         peerAccCtx = peerAccCtxRef;
         peer = peerRef;
     }
@@ -379,15 +374,4 @@ public abstract class AbsApiCallHandler
         return storPool;
     }
 
-    protected final void commit()
-    {
-        try
-        {
-            transMgrProvider.get().commit();
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
 }

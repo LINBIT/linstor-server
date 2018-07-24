@@ -27,7 +27,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -43,6 +42,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final VolumeConnectionDataFactory volumeConnectionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -52,7 +52,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -64,12 +64,12 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
@@ -99,7 +99,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_CONN, vlmConnPropsMap, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)));
@@ -156,7 +156,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
                 propsMap.remove(delKey);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)));
@@ -203,7 +203,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             {
                 UUID vlmConnUuid = vlmConn.getUuid();
                 delete(vlmConn);
-                commit();
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     vlmConnUuid, getVlmConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt)));

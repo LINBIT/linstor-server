@@ -27,7 +27,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -43,6 +42,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -52,7 +52,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -64,12 +64,12 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
@@ -97,7 +97,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             ctrlPropsHelper.fillProperties(
                 LinStorObject.RSC_CONN, rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, updateSatellites(rscConn));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
@@ -152,7 +152,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 propsMap.remove(delKey);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 rscConn.getUuid(), getResourceConnectionDescriptionInline(apiCtx, rscConn)));
@@ -187,7 +187,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, updateSatellites(rscConn));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(

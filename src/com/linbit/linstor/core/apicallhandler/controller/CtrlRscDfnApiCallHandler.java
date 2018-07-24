@@ -51,7 +51,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -80,6 +79,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection rscDfnMapProt;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private CtrlVlmDfnApiCallHandler vlmDfnHandler;
     private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -95,7 +95,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CtrlObjectFactories objectFactories,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         CtrlVlmDfnApiCallHandler vlmDfnHandlerRef,
@@ -107,7 +107,6 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
@@ -118,6 +117,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         rscDfnMap = rscDfnMapRef;
         rscDfnMapProt = rscDfnMapProtRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         vlmDfnHandler = vlmDfnHandlerRef;
         responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
@@ -149,7 +149,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             rscDfnMap.put(rscDfn.getName(), rscDfn);
 
@@ -243,7 +243,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 }
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 rscDfn.getUuid(), getRscDfnDescriptionInline(rscDfn)));
@@ -342,7 +342,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                             }
                         }
 
-                        commit();
+                        ctrlTransactionHelper.commit();
 
                         // notify satellites
                         responseConverter.addWithDetail(
@@ -355,7 +355,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     {
                         ResourceName rscName = rscDfn.getName();
                         delete(rscDfn);
-                        commit();
+                        ctrlTransactionHelper.commit();
 
                         rscDfnMap.remove(rscName);
 
@@ -399,7 +399,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     res.getAssignedNode().getName().value
                 );
 
-                commit();
+                ctrlTransactionHelper.commit();
 
                 errorReporter.logTrace(
                     "Primary set for " + currentPeer.getNode().getName().getDisplayName()

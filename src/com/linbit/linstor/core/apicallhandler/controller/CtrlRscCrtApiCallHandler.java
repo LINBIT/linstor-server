@@ -56,7 +56,6 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
         CtrlObjectFactories objectFactories,
-        Provider<TransactionMgr> transMgrProviderRef,
         Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         Props stltConfRef,
@@ -68,7 +67,6 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );

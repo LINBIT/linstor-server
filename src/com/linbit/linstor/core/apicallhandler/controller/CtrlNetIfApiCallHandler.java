@@ -17,7 +17,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
@@ -32,7 +31,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -51,18 +49,18 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
     private final SatelliteConnector satelliteConnector;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
 
     @Inject
     CtrlNetIfApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer serializerRef,
         @ApiContext AccessContext apiCtxRef,
         SatelliteConnector satelliteConnectorRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlObjectFactories objectFactories,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         ResponseConverter responseConverterRef
@@ -72,13 +70,13 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
             errorReporterRef,
             apiCtxRef,
             objectFactories,
-            transMgrProviderRef,
             peerAccCtxRef,
             peerRef
         );
         satelliteConnector = satelliteConnectorRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
     }
 
@@ -119,7 +117,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 satelliteConnector.startConnecting(node, apiCtx);
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(netIf.getUuid(), getNetIfDescriptionInline(netIf)));
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
@@ -167,7 +165,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 }
             }
 
-            commit();
+            ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 netIf.getUuid(), getNetIfDescriptionInline(netIf)));
@@ -265,7 +263,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
                 UUID uuid = netIf.getUuid();
                 deleteNetIf(netIf);
 
-                commit();
+                ctrlTransactionHelper.commit();
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     uuid, getNetIfDescriptionInline(nodeNameStr, netIfNameStr)));
 
