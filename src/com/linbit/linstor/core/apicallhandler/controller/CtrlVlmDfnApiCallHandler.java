@@ -16,7 +16,6 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -24,9 +23,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -65,55 +63,54 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
-class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
+class CtrlVlmDfnApiCallHandler
 {
     private static final int SECRET_KEY_BYTES = 20;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection rscDfnMapProt;
-    private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlSecurityObjects secObjs;
-    private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CtrlSecurityObjects secObjs;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     CtrlVlmDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtx,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
-        CtrlObjectFactories objectFactories,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
+        @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CtrlSecurityObjects secObjsRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtx,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef,
-            ctrlSatelliteUpdaterRef,
-            defaultStorPoolNameRef,
-            volumeDefinitionDataFactoryRef
-        );
-
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        rscDfnMap = rscDfnMapRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        secObjs = secObjsRef;
-        responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        rscDfnMap = rscDfnMapRef;
+        secObjs = secObjsRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     ApiCallRc createVolumeDefinitions(
@@ -151,7 +148,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
                 );
             }
 
-            ResourceDefinition rscDfn = loadRscDfn(rscNameStr, true);
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
             Iterator<Resource> iterateResource = getRscIterator(rscDfn);
             List<Resource> rscList = new ArrayList<>();
@@ -164,7 +161,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
             for (Resource rsc : rscList)
             {
-                adjustRscVolumes(rsc);
+                ctrlVlmDfnCrtApiHelper.adjustRscVolumes(rsc);
             }
 
             ctrlTransactionHelper.commit();
@@ -226,7 +223,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
             VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
 
-            vlmDfn = createVlmDfnData(
+            vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                 peerAccCtx.get(),
                 rscDfn,
                 volNr,
@@ -487,7 +484,7 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
 
     private VolumeDefinitionData loadVlmDfn(String rscName, int vlmNr)
     {
-        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
         VolumeDefinitionData vlmDfn;
         try
         {
@@ -581,26 +578,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
             );
         }
         return props;
-    }
-
-    private boolean isFlagSet(VolumeDefinitionData vlmDfn, VlmDfnFlags flag)
-    {
-        boolean isSet;
-
-        try
-        {
-            isSet = vlmDfn.getFlags().isSet(peerAccCtx.get(), flag);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "access volume definitions flags",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-
-        return isSet;
     }
 
     private ApiCallRcEntry createVlmDfnCrtSuccessEntry(VolumeDefinition vlmDfn, String rscNameStr)
@@ -716,12 +693,6 @@ class CtrlVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
         {
             throw new ApiSQLException(sqlExc);
         }
-    }
-
-    private Map<String, String> getObjRefs(String rscName, Integer vlmNr)
-    {
-        Map<String, String> objRefs = new TreeMap<>();
-        return objRefs;
     }
 
     public static String getVlmDfnDescription(String rscName, Integer vlmNr)

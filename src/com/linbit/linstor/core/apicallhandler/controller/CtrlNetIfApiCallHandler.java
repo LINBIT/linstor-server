@@ -5,10 +5,10 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.TcpPortNumber;
@@ -17,9 +17,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -27,7 +25,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -35,7 +32,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -44,40 +40,40 @@ import java.util.UUID;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
-class CtrlNetIfApiCallHandler extends AbsApiCallHandler
+class CtrlNetIfApiCallHandler
 {
+    private final AccessContext apiCtx;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final SatelliteConnector satelliteConnector;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final NetInterfaceDataFactory netInterfaceDataFactory;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     CtrlNetIfApiCallHandler(
-        ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        NetInterfaceDataFactory netInterfaceDataFactoryRef,
         SatelliteConnector satelliteConnectorRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        CtrlObjectFactories objectFactories,
-        NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        ResponseConverter responseConverterRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
+        apiCtx = apiCtxRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        netInterfaceDataFactory = netInterfaceDataFactoryRef;
         satelliteConnector = satelliteConnectorRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        netInterfaceDataFactory = netInterfaceDataFactoryRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc createNetIf(
@@ -98,7 +94,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            NodeData node = loadNode(nodeNameStr, true);
+            NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
 
             if (node.getSatelliteConnection(apiCtx) != null && stltPort != null)
@@ -363,7 +359,7 @@ class CtrlNetIfApiCallHandler extends AbsApiCallHandler
 
     private NetInterface loadNetIf(String nodeNameStr, String netIfNameStr, boolean failIfNull)
     {
-        Node node = loadNode(nodeNameStr, true);
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         NetInterface netIf;
         try
         {

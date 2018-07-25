@@ -5,8 +5,10 @@ import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 
+@Singleton
 public class CtrlTransactionHelper
 {
     private final Provider<TransactionMgr> transMgrProvider;

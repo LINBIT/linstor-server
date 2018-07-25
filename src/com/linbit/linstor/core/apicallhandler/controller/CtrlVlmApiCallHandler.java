@@ -1,19 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
@@ -34,8 +20,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -50,53 +34,70 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+
 import static com.linbit.linstor.api.ApiConsts.API_LST_VLM;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
-public class CtrlVlmApiCallHandler extends AbsApiCallHandler
+public class CtrlVlmApiCallHandler
 {
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
-    protected CtrlVlmApiCallHandler(
+    public CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         CoreModule.NodesMap nodesMapRef,
-        CtrlObjectFactories objectFactories,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlClientSerializer clientComSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        ResponseConverter responseConverterRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
         rscDfnMapProt = rscDfnMapProtRef;
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     ApiCallRc volumeResized(
@@ -117,7 +118,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
+            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
@@ -198,7 +199,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
+            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
@@ -233,7 +234,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
+            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);

@@ -3,7 +3,6 @@ package com.linbit.linstor.api.prop;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler.LinStorObject;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 
 import java.io.ByteArrayInputStream;

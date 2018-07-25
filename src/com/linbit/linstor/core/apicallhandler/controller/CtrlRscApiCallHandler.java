@@ -44,7 +44,6 @@ import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -56,10 +55,10 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -92,67 +91,64 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
-public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
+public class CtrlRscApiCallHandler
 {
-    private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ObjectProtection rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ObjectProtection nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
-    private final String defaultStorPoolName;
-    private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlStltSerializer ctrlStltSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
-    private final CtrlPropsHelper ctrlPropsHelper;
+    private final String defaultStorPoolName;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public CtrlRscApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
         @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         CoreModule.NodesMap nodesMapRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
-        CtrlObjectFactories objectFactories,
-        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
-        ResourceDataFactory resourceDataFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlClientSerializer clientComSerializerRef,
+        CtrlStltSerializer ctrlStltSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef,
-            stltConfRef,
-            resourceDataFactoryRef,
-            volumeDataFactoryRef
-        );
-        ctrlStltSerializer = ctrlStltSerializerRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
         rscDfnMapProt = rscDfnMapProtRef;
         rscDfnMap = rscDfnMapRef;
         nodesMapProt = nodesMapProtRef;
         nodesMap = nodesMapRef;
-        defaultStorPoolName = defaultStorPoolNameRef;
-        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        clientComSerializer = clientComSerializerRef;
+        ctrlStltSerializer = ctrlStltSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
-        ctrlPropsHelper = ctrlPropsHelperRef;
+        defaultStorPoolName = defaultStorPoolNameRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc createResource(
@@ -403,12 +399,12 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        NodeData node = loadNode(nodeNameStr, true);
-        ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
+        NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
-        NodeId nodeId = getNextFreeNodeId(rscDfn);
+        NodeId nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(rscDfn);
 
-        ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
+        ResourceData rsc = ctrlRscCrtApiHelper.createResource(rscDfn, node, nodeId, flagList);
         Props rscProps = getProps(rsc);
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
@@ -436,8 +432,8 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             storPoolNameStr = vlmApi.getStorPoolName();
             if (storPoolNameStr != null && !storPoolNameStr.isEmpty())
             {
-                StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
-                storPool = loadStorPool(storPoolDfn, node, true);
+                StorPoolDefinitionData storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
+                storPool = ctrlApiDataLoader.loadStorPool(storPoolDfn, node, true);
 
                 if (isRscDiskless)
                 {
@@ -455,7 +451,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
                 storPool = resolveStorPool(rsc, prioProps, vlmDfn).extractApiCallRc(responses);
             }
 
-            VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
+            VolumeData vlmData = ctrlRscCrtApiHelper.createVolume(rsc, vlmDfn, storPool, vlmApi);
 
             Props vlmProps = getProps(vlmData);
 
@@ -465,7 +461,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
             vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
         }
 
-        Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);
+        Iterator<VolumeDefinition> iterateVolumeDfn = ctrlRscCrtApiHelper.getVlmDfnIterator(rscDfn);
         while (iterateVolumeDfn.hasNext())
         {
             VolumeDefinition vlmDfn = iterateVolumeDfn.next();
@@ -485,7 +481,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
                 // storPool is guaranteed to be != null
                 // create missing vlm with default values
-                VolumeData vlm = createVolume(rsc, vlmDfn, storPool, null);
+                VolumeData vlm = ctrlRscCrtApiHelper.createVolume(rsc, vlmDfn, storPool, null);
                 vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
             }
         }
@@ -524,7 +520,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
         try
         {
-            ResourceData rsc = loadRsc(nodeNameStr, rscNameStr, true);
+            ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
 
             if (rscUuid != null && !rscUuid.equals(rsc.getUuid()))
             {
@@ -573,7 +569,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
         try
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
+            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
 
             SatelliteState stltState = rscData.getAssignedNode().getPeer(apiCtx).getSatelliteState();
             SatelliteResourceState rscState = stltState.getResourceStates().get(rscData.getDefinition().getName());
@@ -654,7 +650,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
 
         try
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, false);
+            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
 
             if (rscData == null)
             {
@@ -908,7 +904,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         }
     }
 
-    protected final VolumeDefinitionData loadVlmDfn(
+    private final VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
         int vlmNr,
         boolean failIfNull
@@ -917,7 +913,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         return loadVlmDfn(rscDfn, LinstorParsingUtils.asVlmNr(vlmNr), failIfNull);
     }
 
-    protected final VolumeDefinitionData loadVlmDfn(
+    private final VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
         VolumeNumber vlmNr,
         boolean failIfNull
@@ -957,7 +953,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         return vlmDfn;
     }
 
-    protected final Props getProps(Resource rsc)
+    private final Props getProps(Resource rsc)
     {
         Props props;
         try
@@ -976,7 +972,7 @@ public class CtrlRscApiCallHandler extends CtrlRscCrtApiCallHandler
         return props;
     }
 
-    protected final Props getProps(Volume vlm)
+    private final Props getProps(Volume vlm)
     {
         Props props;
         try

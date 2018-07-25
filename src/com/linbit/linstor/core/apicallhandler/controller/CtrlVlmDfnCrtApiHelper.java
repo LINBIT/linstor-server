@@ -14,55 +14,43 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.inject.Provider;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
-/**
- * Common API call handler base class for operations that create volume definitions.
- */
-abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
+@Singleton
+class CtrlVlmDfnCrtApiHelper
 {
-    private final String defaultStorPoolName;
+    private final AccessContext apiCtx;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private final String defaultStorPoolName;
 
-    CtrlVlmDfnCrtApiCallHandler(
-        ErrorReporter errorReporterRef,
-        AccessContext apiCtx,
-        CtrlObjectFactories objectFactories,
-        Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        String defaultStorPoolNameRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
-    )
+    @Inject
+    CtrlVlmDfnCrtApiHelper(
+        @ApiContext AccessContext apiCtxRef,
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
+        )
     {
-        super(
-            errorReporterRef,
-            apiCtx,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-
-        defaultStorPoolName = defaultStorPoolNameRef;
+        apiCtx = apiCtxRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        defaultStorPoolName = defaultStorPoolNameRef;
     }
 
-    protected VolumeDefinitionData createVlmDfnData(
+    VolumeDefinitionData createVlmDfnData(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber volNr,
@@ -130,7 +118,7 @@ abstract class CtrlVlmDfnCrtApiCallHandler extends AbsApiCallHandler
         return vlmDfn;
     }
 
-    protected void adjustRscVolumes(Resource rsc)
+    void adjustRscVolumes(Resource rsc)
     {
         try
         {

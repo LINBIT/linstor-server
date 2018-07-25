@@ -10,8 +10,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -19,7 +18,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -35,40 +33,40 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 @Singleton
-class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
+class CtrlNodeConnectionApiCallHandler
 {
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final NodeConnectionDataFactory nodeConnectionDataFactory;
+    private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final NodeConnectionDataFactory nodeConnectionDataFactory;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     CtrlNodeConnectionApiCallHandler(
-        ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlObjectFactories objectFactories,
-        NodeConnectionDataFactory nodeConnectionDataFactoryRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        NodeConnectionDataFactory nodeConnectionDataFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
+        apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc createNodeConnection(
@@ -87,8 +85,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            NodeData node1 = loadNode(nodeName1Str, true);
-            NodeData node2 = loadNode(nodeName2Str, true);
+            NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
+            NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
 
             NodeConnectionData nodeConn = createNodeConn(node1, node2);
 
@@ -244,8 +242,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
     private NodeConnectionData loadNodeConn(String nodeName1, String nodeName2, boolean failIfNull)
     {
-        NodeData node1 = loadNode(nodeName1, true);
-        NodeData node2 = loadNode(nodeName2, true);
+        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
+        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
 
         NodeConnectionData nodeConn;
         try

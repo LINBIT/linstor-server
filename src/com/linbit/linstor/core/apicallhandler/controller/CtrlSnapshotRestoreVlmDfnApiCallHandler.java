@@ -11,27 +11,22 @@ import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ConfigModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collections;
@@ -45,39 +40,37 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCal
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
-class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandler
+class CtrlSnapshotRestoreVlmDfnApiCallHandler
 {
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     CtrlSnapshotRestoreVlmDfnApiCallHandler(
-        ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtx,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
-        CtrlObjectFactories objectFactories,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
+        @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtx,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef,
-            ctrlSatelliteUpdaterRef,
-            defaultStorPoolNameRef,
-            volumeDefinitionDataFactoryRef
-        );
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc restoreVlmDfn(String fromRscNameStr, String fromSnapshotNameStr, String toRscNameStr)
@@ -94,16 +87,16 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
 
         try
         {
-            ResourceDefinitionData fromRscDfn = loadRscDfn(fromRscNameStr, true);
+            ResourceDefinitionData fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscNameStr, true);
 
             SnapshotName fromSnapshotName = LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr);
-            SnapshotDefinition fromSnapshotDfn = loadSnapshotDfn(fromRscDfn, fromSnapshotName);
+            SnapshotDefinition fromSnapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(fromRscDfn, fromSnapshotName);
 
-            ResourceDefinitionData toRscDfn = loadRscDfn(toRscNameStr, true);
+            ResourceDefinitionData toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
 
             for (SnapshotVolumeDefinition snapshotVlmDfn : fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
             {
-                VolumeDefinitionData vlmDfn = createVlmDfnData(
+                VolumeDefinitionData vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                     peerAccCtx.get(),
                     toRscDfn,
                     snapshotVlmDfn.getVolumeNumber(),
@@ -136,7 +129,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler extends CtrlVlmDfnCrtApiCallHandle
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
                 {
-                    adjustRscVolumes(rscIterator.next());
+                    ctrlVlmDfnCrtApiHelper.adjustRscVolumes(rscIterator.next());
                 }
             }
 

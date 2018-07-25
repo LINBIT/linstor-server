@@ -17,10 +17,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -30,7 +29,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -56,55 +54,55 @@ import java.util.UUID;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
-class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
+class CtrlStorPoolDfnApiCallHandler
 {
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-    private final ObjectProtection storPoolDfnMapProt;
-    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
-    private final Provider<Integer> msgIdProvider;
-    private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final ObjectProtection storPoolDfnMapProt;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
+    private final Provider<Integer> msgIdProvider;
 
     @Inject
-    CtrlStorPoolDfnApiCallHandler(
-        ErrorReporter errorReporterRef,
+    public CtrlStorPoolDfnApiCallHandler(
+        @ApiContext AccessContext apiCtxRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
+        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        @ApiContext AccessContext apiCtxRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        CtrlObjectFactories objectFactories,
-        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
-        CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        storPoolDfnMap = storPoolDfnMapRef;
-        storPoolDfnMapProt = storPoolDfnMapProtRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
-        msgIdProvider = msgIdProviderRef;
-        responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDfnMapProt = storPoolDfnMapProtRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        clientComSerializer = clientComSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
+        msgIdProvider = msgIdProviderRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -157,7 +155,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         try
         {
             requireStorPoolDfnChangeAccess();
-            StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
+            StorPoolDefinitionData storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
 
             if (storPoolDfnUuid != null && !storPoolDfnUuid.equals(storPoolDfn.getUuid()))
             {
@@ -205,7 +203,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         {
             requireStorPoolDfnChangeAccess();
 
-            StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
+            StorPoolDefinitionData storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
 
             Iterator<StorPool> storPoolIterator = getPrivilegedStorPoolIterator(storPoolDfn);
 

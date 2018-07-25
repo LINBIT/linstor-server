@@ -17,15 +17,14 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -33,7 +32,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -42,40 +44,32 @@ import java.util.List;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
 
-/**
- * Common API call handler base class for operations that create resources.
- */
-abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
+@Singleton
+class CtrlRscCrtApiHelper
 {
+    private final AccessContext apiCtx;
     private final Props stltConf;
     private final ResourceDataFactory resourceDataFactory;
     private final VolumeDataFactory volumeDataFactory;
+    private final Provider<AccessContext> peerAccCtx;
 
-    CtrlRscCrtApiCallHandler(
-        ErrorReporter errorReporterRef,
-        AccessContext apiCtxRef,
-        CtrlObjectFactories objectFactories,
-        Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
-        Props stltConfRef,
+    @Inject
+    CtrlRscCrtApiHelper(
+        @ApiContext AccessContext apiCtxRef,
+        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef
-    )
+        VolumeDataFactory volumeDataFactoryRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
+        )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-
+        apiCtx = apiCtxRef;
         stltConf = stltConfRef;
         resourceDataFactory = resourceDataFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
-    protected NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
+    NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
     {
         NodeId freeNodeId;
         try
@@ -110,7 +104,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         return freeNodeId;
     }
 
-    protected ResourceData createResource(
+    ResourceData createResource(
         ResourceDefinitionData rscDfn,
         Node node,
         NodeId nodeId,
@@ -215,7 +209,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         return peerSlots;
     }
 
-    protected VolumeData createVolume(
+    VolumeData createVolume(
         Resource rsc,
         VolumeDefinition vlmDfn,
         StorPool storPool,
@@ -260,7 +254,7 @@ abstract class CtrlRscCrtApiCallHandler extends AbsApiCallHandler
         return vlm;
     }
 
-    protected Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
+    Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
     {
         Iterator<VolumeDefinition> iterator;
         try

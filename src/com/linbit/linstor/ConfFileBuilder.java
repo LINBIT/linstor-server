@@ -6,7 +6,7 @@ import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler.LinStorObject;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;

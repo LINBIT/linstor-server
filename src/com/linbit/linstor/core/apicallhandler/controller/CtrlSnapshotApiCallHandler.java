@@ -32,8 +32,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -68,61 +66,64 @@ import java.util.UUID;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
 @Singleton
-public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
+public class CtrlSnapshotApiCallHandler
 {
-    private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection rscDfnMapProt;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final EventBroker eventBroker;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotDataControllerFactory snapshotDataFactory;
     private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final EventBroker eventBroker;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlStltSerializer ctrlStltSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public CtrlSnapshotApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CtrlObjectFactories objectFactories,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
-        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataControllerFactoryRef,
+        EventBroker eventBrokerRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
         SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
-        EventBroker eventBrokerRef,
-        ResponseConverter responseConverterRef
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CtrlClientSerializer clientComSerializerRef,
+        CtrlStltSerializer ctrlStltSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        ResponseConverter responseConverterRef,
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        ctrlStltSerializer = ctrlStltSerializerRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        rscDfnMap = rscDfnMapRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        snapshotDefinitionDataFactory = snapshotDefinitionDataControllerFactoryRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        eventBroker = eventBrokerRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
-        eventBroker = eventBrokerRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        rscDfnMap = rscDfnMapRef;
+        clientComSerializer = clientComSerializerRef;
+        ctrlStltSerializer = ctrlStltSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     /**
@@ -156,7 +157,7 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
+            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
             SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
             SnapshotDefinition snapshotDfn = createSnapshotDfnData(
@@ -306,10 +307,10 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
 
         try
         {
-            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
+            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
             SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
-            SnapshotDefinition snapshotDfn = loadSnapshotDfn(rscDfn, snapshotName);
+            SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscDfn, snapshotName);
 
             UUID uuid = snapshotDfn.getUuid();
             if (snapshotDfn.getAllSnapshots(peerAccCtx.get()).isEmpty())
@@ -320,10 +321,10 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                snapshotDfn.markDeleted(peerAccCtx.get());
+                markSnapshotDfnDeleted(snapshotDfn);
                 for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    snapshot.markDeleted(peerAccCtx.get());
+                    markSnapshotDeleted(snapshot);
                 }
 
                 ctrlTransactionHelper.commit();
@@ -715,14 +716,6 @@ public class CtrlSnapshotApiCallHandler extends AbsApiCallHandler
     {
         return "volume definition with number '" + vlmNr +
             "' of snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
-    }
-
-    private Map<String, String> getObjRefs(String rscNameStr, String snapshotNameStr)
-    {
-        Map<String, String> map = new TreeMap<>();
-        map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        map.put(ApiConsts.KEY_SNAPSHOT, snapshotNameStr);
-        return map;
     }
 
     private static ResponseContext makeSnapshotContext(

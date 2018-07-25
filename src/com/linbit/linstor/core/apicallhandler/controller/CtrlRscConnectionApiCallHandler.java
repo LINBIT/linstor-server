@@ -13,8 +13,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -22,7 +21,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -38,40 +36,40 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 @Singleton
-class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
+class CtrlRscConnectionApiCallHandler
 {
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     CtrlRscConnectionApiCallHandler(
-        ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlObjectFactories objectFactories,
-        ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        responseConverter = responseConverterRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc createResourceConnection(
@@ -211,8 +209,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        NodeData node1 = loadNode(nodeName1Str, true);
-        NodeData node2 = loadNode(nodeName2Str, true);
+        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
+        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
         Resource rsc1 = loadRsc(node1, rscName);
@@ -256,8 +254,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        NodeData node1 = loadNode(nodeName1, true);
-        NodeData node2 = loadNode(nodeName2, true);
+        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
+        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
         Resource rsc1 = loadRsc(node1, rscName);

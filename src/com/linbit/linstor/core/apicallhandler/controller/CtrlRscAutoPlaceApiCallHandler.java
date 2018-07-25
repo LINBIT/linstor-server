@@ -1,22 +1,9 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.linbit.ImplementationError;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -27,10 +14,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -43,46 +28,59 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-@Singleton
-public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
-{
-    private final NodesMap nodesMap;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+@Singleton
+public class CtrlRscAutoPlaceApiCallHandler
+{
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final CtrlRscApiCallHandler rscApiCallHandler;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlAutoStorPoolSelector autoStorPoolSelector;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final NodesMap nodesMap;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        // @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        NodesMap nodesMapRef,
-        CtrlObjectFactories objectFactories,
+        CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        NodesMap nodesMapRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        nodesMap = nodesMapRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        autoStorPoolSelector = autoStorPoolSelectorRef;
         rscApiCallHandler = rscApiCallHandlerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        autoStorPoolSelector = autoStorPoolSelectorRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        nodesMap = nodesMapRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc autoPlace(
@@ -299,7 +297,7 @@ public class CtrlRscAutoPlaceApiCallHandler extends AbsApiCallHandler
         long size = 0;
         try
         {
-            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
+            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
             Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(peerAccCtx.get());
             while (vlmDfnIt.hasNext())
             {

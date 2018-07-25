@@ -7,8 +7,8 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -20,22 +20,24 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Map;
 
+@Singleton
 public class CtrlPropsHelper
 {
-    private final Provider<AccessContext> peerAccCtx;
     private final WhitelistProps propsWhiteList;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public CtrlPropsHelper(
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        WhitelistProps propsWhiteListRef
-    )
+        WhitelistProps propsWhiteListRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
+        )
     {
-        peerAccCtx = peerAccCtxRef;
         propsWhiteList = propsWhiteListRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public Props getProps(Node node)
@@ -94,7 +96,7 @@ public class CtrlPropsHelper
     }
 
     public void fillProperties(
-        AbsApiCallHandler.LinStorObject linstorObj,
+        LinStorObject linstorObj,
         Map<String, String> sourceProps,
         Props targetProps,
         long failAccDeniedRc

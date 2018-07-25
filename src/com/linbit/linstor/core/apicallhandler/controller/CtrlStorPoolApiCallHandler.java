@@ -21,13 +21,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -59,60 +58,61 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
-public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
+public class CtrlStorPoolApiCallHandler
 {
-    private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final StorPoolDataFactory storPoolDataFactory;
     private final ObjectProtection nodesMapProt;
     private final ObjectProtection storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataFactory storPoolDataFactory;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlStltSerializer ctrlStltSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
-    private final CtrlPropsHelper ctrlPropsHelper;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
-    CtrlStorPoolApiCallHandler(
+    public CtrlStorPoolApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         @ApiContext AccessContext apiCtxRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDataFactory storPoolDataFactoryRef,
         @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
         @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        CtrlObjectFactories objectFactories,
-        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        CtrlClientSerializer clientComSerializerRef,
+        CtrlStltSerializer ctrlStltSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDataFactory = storPoolDataFactoryRef;
         nodesMapProt = nodesMapProtRef;
         storPoolDfnMapProt = storPoolDfnMapProtRef;
         storPoolDfnMap = storPoolDfnMapRef;
-
-        ctrlStltSerializer = ctrlStltSerializerRef;
         clientComSerializer = clientComSerializerRef;
+        ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
-        ctrlPropsHelper = ctrlPropsHelperRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc createStorPool(
@@ -480,8 +480,8 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     private StorPoolData createStorPool(String nodeNameStr, String storPoolNameStr, String driver)
     {
-        NodeData node = loadNode(nodeNameStr, true);
-        StorPoolDefinitionData storPoolDef = loadStorPoolDfn(storPoolNameStr, false);
+        NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+        StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
 
         StorPoolData storPool;
         try
@@ -609,14 +609,14 @@ public class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
     {
-        return loadStorPool(
-            loadStorPoolDfn(storPoolNameStr, true),
-            loadNode(nodeNameStr, true),
+        return ctrlApiDataLoader.loadStorPool(
+            ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true),
+            ctrlApiDataLoader.loadNode(nodeNameStr, true),
             failIfNull
         );
     }
 
-    protected final Props getProps(StorPoolData storPool)
+    private final Props getProps(StorPoolData storPool)
     {
         Props props;
         try

@@ -31,9 +31,8 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -71,56 +70,58 @@ import java.util.stream.Stream;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
-public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
+public class CtrlRscDfnApiCallHandler
 {
-    private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection rscDfnMapProt;
-    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlVlmDfnApiCallHandler vlmDfnHandler;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private CtrlVlmDfnApiCallHandler vlmDfnHandler;
-    private final ResponseConverter responseConverter;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    private final ObjectProtection rscDfnMapProt;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlStltSerializer ctrlStltSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final ResponseConverter responseConverter;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
-    CtrlRscDfnApiCallHandler(
+    public CtrlRscDfnApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlClientSerializer clientComSerializerRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CtrlObjectFactories objectFactories,
-        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
         CtrlVlmDfnApiCallHandler vlmDfnHandlerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
+        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CtrlClientSerializer clientComSerializerRef,
+        CtrlStltSerializer ctrlStltSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        ctrlStltSerializer = ctrlStltSerializerRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-
-        rscDfnMap = rscDfnMapRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
         vlmDfnHandler = vlmDfnHandlerRef;
-        responseConverter = responseConverterRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        rscDfnMapProt = rscDfnMapProtRef;
+        rscDfnMap = rscDfnMapRef;
+        clientComSerializer = clientComSerializerRef;
+        ctrlStltSerializer = ctrlStltSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        responseConverter = responseConverterRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -204,7 +205,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             requireRscDfnMapChangeAccess();
 
             ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
-            ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
                 throw new ApiRcException(ApiCallRcImpl
@@ -272,7 +273,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             requireRscDfnMapChangeAccess();
 
-            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, false);
+            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, false);
             if (rscDfn == null)
             {
                 responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
@@ -384,11 +385,7 @@ public class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         Peer currentPeer = peer.get();
         try
         {
-            Resource res = loadRsc(
-                currentPeer.getNode().getName().displayValue,
-                rscNameStr,
-                true
-            );
+            Resource res = ctrlApiDataLoader.loadRsc(currentPeer.getNode().getName().displayValue, rscNameStr, true);
             ResourceDefinitionData resDfn = (ResourceDefinitionData) res.getDefinition();
 
             Props resDfnProps = ctrlPropsHelper.getProps(resDfn);

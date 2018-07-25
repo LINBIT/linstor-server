@@ -1,27 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.stream.Stream;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -53,10 +31,9 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlObjectFactories;
 import com.linbit.linstor.core.SatelliteConnector;
-import com.linbit.linstor.core.apicallhandler.AbsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -76,23 +53,50 @@ import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.Pair;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Stream;
+
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
-public class CtrlNodeApiCallHandler extends AbsApiCallHandler
+public class CtrlNodeApiCallHandler
 {
-    private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final CoreModule.NodesMap nodesMap;
-    private final ObjectProtection nodesMapProt;
-    private final SatelliteConnector satelliteConnector;
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final ObjectProtection nodesMapProt;
+    private final CoreModule.NodesMap nodesMap;
+    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlStltSerializer ctrlStltSerializer;
+    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final SatelliteConnector satelliteConnector;
     private final ResponseConverter responseConverter;
-    private final CtrlPropsHelper ctrlPropsHelper;
+    private final Provider<Peer> peer;
+    private final Provider<AccessContext> peerAccCtx;
 
     public class ErrorReportRequest
     {
@@ -129,40 +133,38 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
     public CtrlNodeApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        CoreModule.NodesMap nodesMapRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        SatelliteConnector satelliteConnectorRef,
-        CtrlObjectFactories objectFactories,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef,
+        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
+        CoreModule.NodesMap nodesMapRef,
+        CtrlClientSerializer clientComSerializerRef,
+        CtrlStltSerializer ctrlStltSerializerRef,
+        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        SatelliteConnector satelliteConnectorRef,
         ResponseConverter responseConverterRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        Provider<Peer> peerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        super(
-            errorReporterRef,
-            apiCtxRef,
-            objectFactories,
-            peerAccCtxRef,
-            peerRef
-        );
-        ctrlStltSerializer = ctrlStltSerializerRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        nodesMap = nodesMapRef;
-        nodesMapProt = nodesMapProtRef;
-        satelliteConnector = satelliteConnectorRef;
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        nodesMapProt = nodesMapProtRef;
+        nodesMap = nodesMapRef;
+        clientComSerializer = clientComSerializerRef;
+        ctrlStltSerializer = ctrlStltSerializerRef;
+        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        satelliteConnector = satelliteConnectorRef;
         responseConverter = responseConverterRef;
-        ctrlPropsHelper = ctrlPropsHelperRef;
+        peer = peerRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     /**
@@ -348,7 +350,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-            NodeData node = loadNode(nodeName, true);
+            NodeData node = ctrlApiDataLoader.loadNode(nodeName, true);
             if (nodeUuid != null && !nodeUuid.equals(node.getUuid()))
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -398,7 +400,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-            NodeData nodeData = loadNode(nodeName, false);
+            NodeData nodeData = ctrlApiDataLoader.loadNode(nodeName, false);
             if (nodeData == null)
             {
                 responseConverter.addWithDetail(responses, context, ApiCallRcImpl
@@ -529,7 +531,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-            NodeData nodeData = loadNode(nodeName, false);
+            NodeData nodeData = ctrlApiDataLoader.loadNode(nodeName, false);
             if (nodeData == null)
             {
                 responseConverter.addWithDetail(responses, context, ApiCallRcImpl
@@ -1130,7 +1132,7 @@ public class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    protected void requireNodesMapChangeAccess()
+    private void requireNodesMapChangeAccess()
     {
         try
         {
