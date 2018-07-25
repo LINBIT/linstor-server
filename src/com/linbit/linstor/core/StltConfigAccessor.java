@@ -1,12 +1,12 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 
 public class StltConfigAccessor
 {
@@ -14,7 +14,7 @@ public class StltConfigAccessor
 
     @Inject
     public StltConfigAccessor(
-        @Named(SatelliteCoreModule.SATELLITE_PROPS) Props stltPropsRef
+        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef
     )
     {
         stltProps = stltPropsRef;

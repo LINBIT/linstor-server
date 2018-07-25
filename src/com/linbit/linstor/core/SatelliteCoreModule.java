@@ -1,5 +1,13 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
@@ -19,18 +27,8 @@ import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import javax.inject.Named;
-import javax.inject.Singleton;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.sql.SQLException;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 public class SatelliteCoreModule extends AbstractModule
 {
-    public static final String SATELLITE_PROPS = "SatelliteProps";
-
     public static final String STLT_CONF_LOCK = "stltConfLock";
     public static final String DRBD_CONFIG_PATH = "DrbdConfigPath";
 
@@ -72,7 +70,7 @@ public class SatelliteCoreModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(SATELLITE_PROPS)
+    @Named(LinStor.SATELLITE_PROPS)
     public Props loadPropsContainer(
         PropsContainerFactory propsContainerFactory,
         LinStorScope initScope

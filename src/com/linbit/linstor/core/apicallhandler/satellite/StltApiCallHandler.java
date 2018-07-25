@@ -1,6 +1,22 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
-import static com.linbit.linstor.core.SatelliteCoreModule.SATELLITE_PROPS;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
@@ -27,6 +43,7 @@ import com.linbit.linstor.core.ApplicationLifecycleManager;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
@@ -48,26 +65,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import org.slf4j.event.Level;
 
 @Singleton
@@ -132,7 +129,7 @@ public class StltApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        @Named(SATELLITE_PROPS) Props satellitePropsRef,
+        @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
