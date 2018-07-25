@@ -1,12 +1,5 @@
 package com.linbit.linstor.logging;
 
-import com.linbit.AutoIndent;
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -15,6 +8,12 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+
+import com.linbit.AutoIndent;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
 
 public abstract class BaseErrorReporter
 {

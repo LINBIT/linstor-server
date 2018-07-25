@@ -1,5 +1,13 @@
 package com.linbit.linstor.event.handler;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.ResourceDefinition;
@@ -11,7 +19,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SnapshotState;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.generator.SatelliteStateHelper;
@@ -19,18 +26,10 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-
 /**
  * Manages snapshot creation.
  * <p>
- * See {@link CtrlSnapshotApiCallHandler#createSnapshot(List, String, String)} for a description of the
+ * See CtrlSnapshotApiCallHandler#createSnapshot(List, String, String) for a description of the
  * snapshot creation process.
  */
 @Singleton

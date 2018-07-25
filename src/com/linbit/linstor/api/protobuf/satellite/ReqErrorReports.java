@@ -3,19 +3,14 @@ package com.linbit.linstor.api.protobuf.satellite;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.logging.ErrorReport;
-import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 
