@@ -22,7 +22,6 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
-import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -117,7 +116,7 @@ class StltNodeApiCallHandler
 
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(nodeName);
-            deviceManager.getUpdateTracker().checkMultipleResources(rscToDeleteNames);
+            deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(rscToDeleteNames);
             deviceManager.nodeUpdateApplied(updatedNodes);
         }
         catch (Exception | ImplementationError exc)

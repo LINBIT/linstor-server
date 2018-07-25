@@ -5,7 +5,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -14,9 +13,9 @@ public interface StltUpdateTracker
     void updateController(UUID nodeUuid, NodeName name);
     void updateNode(UUID nodeUuid, NodeName name);
     void updateResourceDfn(UUID rscDfnUuid, ResourceName name);
-    void updateResource(ResourceName rscName, Map<NodeName, UUID> updNodeSet);
+    void updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);
     void updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
-    void updateSnapshot(ResourceName resourceName, UUID snapshotUuid, SnapshotName snapshotName);
-    void checkResource(ResourceName name);
-    void checkMultipleResources(Set<ResourceName> rscSet);
+    void updateSnapshot(UUID snapshotUuid, ResourceName resourceName, SnapshotName snapshotName);
+    void markResourceForDispatch(ResourceName name);
+    void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);
 }

@@ -9,7 +9,6 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -71,7 +70,7 @@ class StltRscDfnApiCallHandler
                 rscData.setCreatePrimary();
                 errorReporter.logInfo("Primary bool set on Resource %s", rscNameStr);
 
-                deviceManager.getUpdateTracker().checkResource(rscName);
+                deviceManager.getUpdateTracker().markResourceForDispatch(rscName);
             }
         }
         catch (InvalidNameException ignored)

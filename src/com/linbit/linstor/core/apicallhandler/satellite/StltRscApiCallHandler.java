@@ -54,8 +54,6 @@ import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentDataException;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -68,6 +66,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -171,11 +170,8 @@ class StltRscApiCallHandler
             errorReporter.logInfo("Resource definition '" + rscNameStr +
                 "' and the corresponding resource removed by Controller.");
 
-            Map<ResourceName, Set<NodeName>> updatedRscs = new TreeMap<>();
-            TreeSet<NodeName> nodes = new TreeSet<NodeName>();
-            nodes.add(controllerPeerConnector.getLocalNode().getName());
-            updatedRscs.put(rscName, nodes);
-            deviceManager.rscUpdateApplied(updatedRscs);
+            deviceManager.rscUpdateApplied(
+                Collections.singleton(new Resource.Key(rscName, controllerPeerConnector.getLocalNodeName())));
 
             Set<ResourceName> rscDfnSet = new TreeSet<>();
             rscDfnSet.add(rscName);
@@ -198,8 +194,8 @@ class StltRscApiCallHandler
             ResourceDefinitionData rscDfnToRegister = null;
             List<NodeData> nodesToRegister = new ArrayList<>();
 
-            Map<ResourceName, Set<NodeName>> createdRscMap = new TreeMap<>();
-            Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
+            Set<Resource.Key> createdRscSet = new TreeSet<>();
+            Set<Resource.Key> updatedRscSet = new TreeSet<>();
 
             rscName = new ResourceName(rscRawData.getName());
             String rscDfnSecret = rscRawData.getRscDfnSecret();
@@ -305,7 +301,7 @@ class StltRscApiCallHandler
                     false
                 );
 
-                add(localRsc, createdRscMap);
+                createdRscSet.add(new Resource.Key(localRsc));
 
                 for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
                 {
@@ -346,7 +342,7 @@ class StltRscApiCallHandler
                     );
                     otherRscs.add(remoteRsc);
 
-                    add(remoteRsc, createdRscMap);
+                    createdRscSet.add(new Resource.Key(remoteRsc));
                 }
             }
             else
@@ -416,7 +412,7 @@ class StltRscApiCallHandler
                 // update flags
                 localRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(rscRawData.getLocalRscFlags()));
 
-                add(localRsc, updatedRscMap);
+                updatedRscSet.add(new Resource.Key(localRsc));
 
                 for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
                 {
@@ -505,7 +501,7 @@ class StltRscApiCallHandler
                             true
                         );
 
-                        add(remoteRsc, createdRscMap);
+                        createdRscSet.add(new Resource.Key(remoteRsc));
                     }
                     else
                     {
@@ -549,7 +545,7 @@ class StltRscApiCallHandler
                         // everything ok, mark the resource to be kept
                         removedList.remove(remoteRsc);
 
-                        add(remoteRsc, updatedRscMap);
+                        updatedRscSet.add(new Resource.Key(remoteRsc));
                     }
                     if (remoteRsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DELETE))
                     {
@@ -657,13 +653,13 @@ class StltRscApiCallHandler
 
             transMgrProvider.get().commit();
 
-            Map<ResourceName, Set<NodeName>> devMgrNotifications = new TreeMap<>();
+            Set<Resource.Key> devMgrNotifications = new TreeSet<>();
 
-            reportSuccess(createdRscMap, "created");
-            reportSuccess(updatedRscMap, "updated");
+            reportSuccess(createdRscSet, "created");
+            reportSuccess(updatedRscSet, "updated");
 
-            devMgrNotifications.putAll(createdRscMap);
-            devMgrNotifications.putAll(updatedRscMap);
+            devMgrNotifications.addAll(createdRscSet);
+            devMgrNotifications.addAll(updatedRscSet);
 
             deviceManager.rscUpdateApplied(devMgrNotifications);
         }
@@ -674,45 +670,22 @@ class StltRscApiCallHandler
         }
     }
 
-    private void reportSuccess(Map<ResourceName, Set<NodeName>> map, String action)
+    private void reportSuccess(Set<Resource.Key> rscSet, String action)
     {
-        for (Entry<ResourceName, Set<NodeName>> entry : map.entrySet())
+        for (Resource.Key rscKey : rscSet)
         {
-            Set<NodeName> nodeNames = entry.getValue();
             StringBuilder msgBuilder = new StringBuilder();
             msgBuilder
                 .append("Resource '")
-                .append(entry.getKey().displayValue)
+                .append(rscKey.getResourceName().displayValue)
                 .append("' ")
                 .append(action)
-                .append(" for node");
-            if (nodeNames.size() > 1)
-            {
-                msgBuilder.append("s");
-            }
-            msgBuilder.append(" '");
-            for (NodeName nodeName : nodeNames)
-            {
-                msgBuilder
-                    .append(nodeName.displayValue)
-                    .append("', '");
-            }
-            msgBuilder.setLength(msgBuilder.length() - ", '".length());
-            msgBuilder.append(".");
+                .append(" for node '")
+                .append(rscKey.getNodeName().displayValue)
+                .append("'.");
 
             errorReporter.logInfo(msgBuilder.toString());
         }
-    }
-
-    private void add(Resource rsc, Map<ResourceName, Set<NodeName>> map)
-    {
-        Set<NodeName> set = map.get(rsc.getDefinition().getName());
-        if (set == null)
-        {
-            set = new TreeSet<>();
-            map.put(rsc.getDefinition().getName(), set);
-        }
-        set.add(rsc.getAssignedNode().getName());
     }
 
     private ResourceData createRsc(

@@ -359,11 +359,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void rscUpdateApplied(Map<ResourceName, Set<NodeName>> rscMap)
+    public void rscUpdateApplied(Set<Resource.Key> rscKeySet)
     {
         synchronized (sched)
         {
-            rscUpdateAppliedImpl(rscMap);
+            for (Resource.Key resourceKey : rscKeySet)
+            {
+                rcvPendingBundle.updRscMap.remove(resourceKey);
+            }
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -376,53 +379,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            for (SnapshotDefinition.Key snapshotId : snapshotKeySet)
+            for (SnapshotDefinition.Key snapshotKey : snapshotKeySet)
             {
-                rcvPendingBundle.updSnapshotMap.remove(snapshotId);
+                rcvPendingBundle.updSnapshotMap.remove(snapshotKey);
             }
-            if (rcvPendingBundle.isEmpty())
-            {
-                sched.notify();
-            }
-        }
-    }
-
-    @Override
-    public void updateApplied(
-        Set<NodeName> nodeSet,
-        Set<ResourceName> rscDfnSet,
-        Set<StorPoolName> storPoolSet,
-        Map<ResourceName, Set<NodeName>> rscMap
-    )
-    {
-        synchronized (sched)
-        {
-            if (nodeSet != null)
-            {
-                for (NodeName nodeName : nodeSet)
-                {
-                    rcvPendingBundle.updNodeMap.remove(nodeName);
-                }
-            }
-            if (rscDfnSet != null)
-            {
-                for (ResourceName rscName : rscDfnSet)
-                {
-                    rcvPendingBundle.updRscDfnMap.remove(rscName);
-                }
-            }
-            if (storPoolSet != null)
-            {
-                for (StorPoolName storPoolName : storPoolSet)
-                {
-                    rcvPendingBundle.updStorPoolMap.remove(storPoolName);
-                }
-            }
-            if (rscMap != null)
-            {
-                rscUpdateAppliedImpl(rscMap);
-            }
-
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -455,30 +415,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     public StltUpdateTracker getUpdateTracker()
     {
         return updTracker;
-    }
-
-    // Caller must hold the scheduler lock ('synchronized (sched)')
-    private void rscUpdateAppliedImpl(Map<ResourceName, Set<NodeName>> rscMap)
-    {
-        for (Map.Entry<ResourceName, Set<NodeName>> entry : rscMap.entrySet())
-        {
-            ResourceName rscName = entry.getKey();
-            Map<NodeName, UUID> pendNodeSet = rcvPendingBundle.updRscMap.get(rscName);
-            if (pendNodeSet != null)
-            {
-                Set<NodeName> updNodeSet = entry.getValue();
-                assert(!updNodeSet.isEmpty());
-                for (NodeName nodeName : updNodeSet)
-                {
-                    pendNodeSet.remove(nodeName);
-                }
-
-                if (pendNodeSet.isEmpty())
-                {
-                    rcvPendingBundle.updRscMap.remove(rscName);
-                }
-            }
-        }
     }
 
     @Override
@@ -650,14 +586,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             updPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
 
             // Schedule all objects that will be updated for a device handler run
-            dispatchRscSet.addAll(updPendingBundle.chkRscSet);
-            dispatchRscSet.addAll(updPendingBundle.updRscDfnMap.keySet());
-            dispatchRscSet.addAll(updPendingBundle.updRscMap.keySet());
-            dispatchRscSet.addAll(
-                updPendingBundle.updSnapshotMap.keySet().stream()
-                    .map(SnapshotDefinition.Key::getResourceName)
-                    .collect(Collectors.toSet())
-            );
+            dispatchRscSet.addAll(updPendingBundle.dispatchRscSet);
 
             // Request updates from the controller
             requestControllerUpdates(updPendingBundle.updControllerMap);
@@ -712,8 +641,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             // Add any check requests that were received in the meantime
             // into the dispatch set and clear the check requests
-            dispatchRscSet.addAll(updPendingBundle.chkRscSet);
-            updPendingBundle.chkRscSet.clear();
+            dispatchRscSet.addAll(updPendingBundle.dispatchRscSet);
+            updPendingBundle.dispatchRscSet.clear();
         }
 
         // BEGIN DEBUG
@@ -997,21 +926,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestRscUpdates(Map<ResourceName, Map<NodeName, UUID>> updRscMap)
+    private void requestRscUpdates(Map<Resource.Key, UUID> updRscMap)
     {
-        for (Entry<ResourceName, Map<NodeName, UUID>> entry : updRscMap.entrySet())
+        for (Entry<Resource.Key, UUID> entry : updRscMap.entrySet())
         {
-            ResourceName rscName = entry.getKey();
-            Map<NodeName, UUID> nodes = entry.getValue();
-            for (Entry<NodeName, UUID> nodeEntry : nodes.entrySet())
-            {
-                errLog.logTrace("Requesting update for resource '" + entry.getKey().displayValue + "'");
-                stltUpdateRequester.requestRscUpdate(
-                    nodeEntry.getValue(),
-                    nodeEntry.getKey(),
-                    rscName
-                );
-            }
+            errLog.logTrace("Requesting update for resource '" + entry.getKey().getResourceName().displayValue + "'");
+            stltUpdateRequester.requestRscUpdate(
+                entry.getValue(),
+                entry.getKey().getNodeName(),
+                entry.getKey().getResourceName()
+            );
         }
     }
 

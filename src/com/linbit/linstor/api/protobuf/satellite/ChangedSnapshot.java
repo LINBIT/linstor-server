@@ -52,8 +52,8 @@ public class ChangedSnapshot implements ApiCall
             String snapshotName = snapshotId.getName();
 
             deviceManager.getUpdateTracker().updateSnapshot(
-                new ResourceName(rscName),
                 snapshotUuid,
+                new ResourceName(rscName),
                 new SnapshotName(snapshotName)
             );
         }

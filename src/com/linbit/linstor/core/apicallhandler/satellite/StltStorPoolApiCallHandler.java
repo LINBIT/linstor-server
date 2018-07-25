@@ -17,7 +17,6 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -182,7 +181,7 @@ class StltStorPoolApiCallHandler
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
             deviceManager.storPoolUpdateApplied(storPoolSet);
-            deviceManager.getUpdateTracker().checkMultipleResources(changedResources);
+            deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(changedResources);
 
         }
         catch (Exception | ImplementationError exc)

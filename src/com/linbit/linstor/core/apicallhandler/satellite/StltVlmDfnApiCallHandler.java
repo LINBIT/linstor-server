@@ -89,7 +89,7 @@ public class StltVlmDfnApiCallHandler
             else
             {
                 transMgr.commit();
-                devMgr.getUpdateTracker().checkMultipleResources(rscDfnsToAdjust);
+                devMgr.getUpdateTracker().markMultipleResourcesForDispatch(rscDfnsToAdjust);
             }
         }
         catch (SQLException exc)

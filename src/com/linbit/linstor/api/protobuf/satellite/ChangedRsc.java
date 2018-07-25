@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -52,15 +53,10 @@ public class ChangedRsc implements ApiCall
             rscName = rscId.getName();
             UUID rscUuid = UUID.fromString(rscId.getUuid());
 
-            Map<NodeName, UUID> changedNodes = new TreeMap<>();
-            // controller could notify us (in future) about changes in other nodes
-            changedNodes.put(
-                controllerPeerConnector.getLocalNodeName(),
-                rscUuid
-            );
             deviceManager.getUpdateTracker().updateResource(
+                rscUuid,
                 new ResourceName(rscName),
-                changedNodes
+                controllerPeerConnector.getLocalNodeName()
             );
         }
         catch (InvalidNameException invalidNameExc)

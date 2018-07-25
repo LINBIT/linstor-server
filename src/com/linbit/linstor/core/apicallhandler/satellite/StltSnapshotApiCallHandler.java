@@ -30,7 +30,6 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -110,7 +109,7 @@ class StltSnapshotApiCallHandler
 
             rscDfnMap.put(rscDfn.getName(), rscDfn);
 
-            deviceManager.getUpdateTracker().checkResource(rscDfn.getName());
+            deviceManager.getUpdateTracker().markResourceForDispatch(rscDfn.getName());
             deviceManager.snapshotUpdateApplied(Collections.singleton(
                 new SnapshotDefinition.Key(rscDfn.getName(), snapshotDfn.getName())));
         }

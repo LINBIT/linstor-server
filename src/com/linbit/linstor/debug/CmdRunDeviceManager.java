@@ -107,7 +107,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                     {
                         slctRsc.add(curRscDfn.getName());
                     }
-                    deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
+                    deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(slctRsc);
                     debugOut.println("Device manager notified to adjust all resources.");
                 }
                 else
@@ -122,7 +122,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                             slctRsc.add(rscName);
                         }
                     }
-                    deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
+                    deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(slctRsc);
                     debugOut.println("Device manager notified to adjust " + slctRsc.size() + " selected resources.");
                 }
             }
@@ -165,7 +165,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                 if (rscDfn != null)
                 {
                     ResourceName rscName = rscDfn.getName();
-                    deviceManager.getUpdateTracker().checkResource(rscName);
+                    deviceManager.getUpdateTracker().markResourceForDispatch(rscName);
                     debugOut.println("Device manager notified to adjust the resource '" + rscName.displayValue + "'");
                 }
                 else

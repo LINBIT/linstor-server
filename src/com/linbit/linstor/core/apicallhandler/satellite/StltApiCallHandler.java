@@ -515,7 +515,7 @@ public class StltApiCallHandler
                 slctRsc.add(curRscDfn.getName());
             }
 
-            deviceManager.getUpdateTracker().checkMultipleResources(slctRsc);
+            deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(slctRsc);
             deviceManager.controllerUpdateApplied();
         }
         catch (AccessDeniedException | SQLException exc)

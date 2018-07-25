@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -143,6 +144,73 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         Map<String, String> getProps();
         long getFlags();
         List<? extends Volume.VlmApi> getVlmList();
+    }
+
+    /**
+     * Identifies a resource globally.
+     */
+    class Key implements Comparable<Key>
+    {
+        private final ResourceName resourceName;
+
+        private final NodeName nodeName;
+
+        public Key(Resource resource)
+        {
+            this(resource.getDefinition().getName(), resource.getAssignedNode().getName());
+        }
+
+        public Key(ResourceName resourceNameRef, NodeName nodeNameRef)
+        {
+            resourceName = resourceNameRef;
+            nodeName = nodeNameRef;
+        }
+
+        public ResourceName getResourceName()
+        {
+            return resourceName;
+        }
+
+        public NodeName getNodeName()
+        {
+            return nodeName;
+        }
+
+        @Override
+        // Code style exception: Automatically generated code
+        @SuppressWarnings({"DescendantToken", "ParameterName"})
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+            Key that = (Key) o;
+            return Objects.equals(resourceName, that.resourceName) &&
+                Objects.equals(nodeName, that.nodeName);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(resourceName, nodeName);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = resourceName.compareTo(other.resourceName);
+            if (eq == 0)
+            {
+                eq = nodeName.compareTo(other.nodeName);
+            }
+            return eq;
+        }
     }
 
     public interface InitMaps
