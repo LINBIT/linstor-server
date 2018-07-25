@@ -1600,19 +1600,19 @@ public class CtrlApiCallHandler
         );
     }
 
-    public void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
+    public void updateVolumeData(String resourceName, List<VlmUpdatePojo> vlmUpdates)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
         {
-            rscApiCallHandler.updateVolumeData(satellitePeer, resourceName, vlmUpdates);
+            rscApiCallHandler.updateVolumeData(resourceName, vlmUpdates);
         }
     }
 
-    public void updateRealFreeSpace(Peer satellitePeer, FreeSpacePojo... freeSpacePojos)
+    public void updateRealFreeSpace(FreeSpacePojo... freeSpacePojos)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
         {
-            storPoolApiCallHandler.updateRealFreeSpace(satellitePeer, freeSpacePojos);
+            storPoolApiCallHandler.updateRealFreeSpace(freeSpacePojos);
         }
     }
 

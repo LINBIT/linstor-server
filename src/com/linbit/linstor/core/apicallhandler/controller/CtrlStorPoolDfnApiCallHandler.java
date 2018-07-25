@@ -72,7 +72,7 @@ class CtrlStorPoolDfnApiCallHandler
     private final Provider<Integer> msgIdProvider;
 
     @Inject
-    public CtrlStorPoolDfnApiCallHandler(
+    CtrlStorPoolDfnApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,

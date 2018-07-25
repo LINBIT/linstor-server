@@ -375,14 +375,14 @@ public class CtrlVlmApiCallHandler
             // get resource states of all nodes
             for (final Node node : nodesMap.values())
             {
-                final Peer peer = node.getPeer(peerAccCtx.get());
-                if (peer != null)
+                final Peer satellite = node.getPeer(peerAccCtx.get());
+                if (satellite != null)
                 {
-                    Lock readLock = peer.getSatelliteStateLock().readLock();
+                    Lock readLock = satellite.getSatelliteStateLock().readLock();
                     readLock.lock();
                     try
                     {
-                        final SatelliteState satelliteState = peer.getSatelliteState();
+                        final SatelliteState satelliteState = satellite.getSatelliteState();
 
                         if (satelliteState != null)
                         {

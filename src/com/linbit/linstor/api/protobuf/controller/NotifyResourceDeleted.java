@@ -24,16 +24,13 @@ import java.io.InputStream;
 public class NotifyResourceDeleted implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer satellitePeer;
 
     @Inject
     public NotifyResourceDeleted(
-        CtrlApiCallHandler apiCallHandlerRef,
-        Peer satellitePeerRef
+        CtrlApiCallHandler apiCallHandlerRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
-        satellitePeer = satellitePeerRef;
     }
 
     @Override
@@ -47,7 +44,6 @@ public class NotifyResourceDeleted implements ApiCall
             msgDeletedRsc.getRscName()
         );
         apiCallHandler.updateRealFreeSpace(
-            satellitePeer,
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntDeleteRsc.getFreeSpaceList()
             )

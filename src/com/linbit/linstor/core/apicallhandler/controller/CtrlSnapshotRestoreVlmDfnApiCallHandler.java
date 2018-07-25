@@ -94,7 +94,8 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
 
             ResourceDefinitionData toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
 
-            for (SnapshotVolumeDefinition snapshotVlmDfn : fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
+            for (SnapshotVolumeDefinition snapshotVlmDfn :
+                fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
             {
                 VolumeDefinitionData vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                     peerAccCtx.get(),

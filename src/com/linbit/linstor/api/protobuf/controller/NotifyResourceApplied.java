@@ -23,16 +23,13 @@ import java.util.stream.Collectors;
 public class NotifyResourceApplied implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer satellitePeer;
 
     @Inject
     public NotifyResourceApplied(
-        CtrlApiCallHandler apiCallHandlerRef,
-        Peer satellitePeerRef
+        CtrlApiCallHandler apiCallHandlerRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
-        satellitePeer = satellitePeerRef;
     }
 
     @Override
@@ -46,7 +43,6 @@ public class NotifyResourceApplied implements ApiCall
         // satellite is basically idle
 
         apiCallHandler.updateVolumeData(
-            satellitePeer,
             msgIntAppliedRsc.getRscId().getName(),
             msgIntAppliedRsc.getVlmDataList().stream()
                 .map(v -> new VlmUpdatePojo(v.getVlmNr(), v.getBlockDevicePath(), v.getMetaDisk()))
@@ -54,7 +50,6 @@ public class NotifyResourceApplied implements ApiCall
         );
 
         apiCallHandler.updateRealFreeSpace(
-            satellitePeer,
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )

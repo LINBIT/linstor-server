@@ -48,7 +48,8 @@ public class SnapshotVolumeDefinitionControllerFactory
     {
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        SnapshotVolumeDefinition snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
+        SnapshotVolumeDefinition snapshotVolumeDefinition =
+            snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
 
         if (snapshotVolumeDefinition != null)
         {

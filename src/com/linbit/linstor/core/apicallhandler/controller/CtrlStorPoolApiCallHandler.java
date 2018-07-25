@@ -391,20 +391,20 @@ public class CtrlStorPoolApiCallHandler
             .build();
     }
 
-    void updateRealFreeSpace(Peer peer, FreeSpacePojo[] freeSpacePojos)
+    void updateRealFreeSpace(FreeSpacePojo[] freeSpacePojos)
     {
-        if (!peer.getNode().isDeleted())
+        if (!peer.get().getNode().isDeleted())
         {
-            String nodeName = peer.getNode().getName().displayValue;
+            String nodeName = peer.get().getNode().getName().displayValue;
 
             try
             {
                 for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
                 {
                     ResponseContext context = makeStorPoolContext(
-                        peer,
+                        peer.get(),
                         ApiOperation.makeModifyOperation(),
-                        peer.getNode().getName().displayValue,
+                        peer.get().getNode().getName().displayValue,
                         freeSpacePojo.getStorPoolName()
                     );
 
@@ -437,8 +437,8 @@ public class CtrlStorPoolApiCallHandler
                 ApiCallRc.RcEntry entry = exc.getRcEntry();
                 errorReporter.reportError(
                     exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
-                    peer.getAccessContext(),
-                    peer,
+                    peerAccCtx.get(),
+                    peer.get(),
                     entry.getMessage()
                 );
             }
@@ -616,7 +616,7 @@ public class CtrlStorPoolApiCallHandler
         );
     }
 
-    private final Props getProps(StorPoolData storPool)
+    private Props getProps(StorPoolData storPool)
     {
         Props props;
         try

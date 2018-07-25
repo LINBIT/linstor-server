@@ -836,7 +836,10 @@ public class CtrlNodeApiCallHandler
         catch (IllegalArgumentException illegalArgExc)
         {
             throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_INVLD_NODE_TYPE, "The specified node type '" + nodeTypeStr + "' is invalid.")
+                .entryBuilder(
+                    ApiConsts.FAIL_INVLD_NODE_TYPE,
+                    "The specified node type '" + nodeTypeStr + "' is invalid."
+                )
                 .setCorrection("Valid node types are:\n" +
                     NodeType.CONTROLLER.name() + "\n" +
                     NodeType.SATELLITE.name() + "\n" +

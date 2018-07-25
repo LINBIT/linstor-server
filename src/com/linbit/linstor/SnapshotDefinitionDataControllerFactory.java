@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

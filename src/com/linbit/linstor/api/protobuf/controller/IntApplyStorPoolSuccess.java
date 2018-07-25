@@ -21,16 +21,13 @@ import java.util.UUID;
 public class IntApplyStorPoolSuccess implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer satellite;
 
     @Inject
     public IntApplyStorPoolSuccess(
-        CtrlApiCallHandler apiCallHandlerRef,
-        Peer satelliteRef
+        CtrlApiCallHandler apiCallHandlerRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
-        satellite = satelliteRef;
     }
 
     @Override
@@ -41,7 +38,6 @@ public class IntApplyStorPoolSuccess implements ApiCall
 
         StorPoolFreeSpace freeSpaceProto = successMsg.getFreeSpace();
         apiCallHandler.updateRealFreeSpace(
-            satellite,
             new FreeSpacePojo(
                 UUID.fromString(freeSpaceProto.getStorPoolUuid()),
                 freeSpaceProto.getStorPoolName(),

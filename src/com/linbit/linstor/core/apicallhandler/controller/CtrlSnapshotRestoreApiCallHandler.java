@@ -7,7 +7,6 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
@@ -225,7 +224,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         }
     }
 
-    private final Snapshot loadSnapshot(
+    private Snapshot loadSnapshot(
         Node node,
         SnapshotDefinition snapshotDfn
     )

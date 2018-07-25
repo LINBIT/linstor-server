@@ -31,7 +31,6 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -41,7 +40,6 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.VolumeData;
-import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
@@ -57,7 +55,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.ConfigModule;
-import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -904,7 +901,7 @@ public class CtrlRscApiCallHandler
         }
     }
 
-    private final VolumeDefinitionData loadVlmDfn(
+    private VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
         int vlmNr,
         boolean failIfNull
@@ -913,7 +910,7 @@ public class CtrlRscApiCallHandler
         return loadVlmDfn(rscDfn, LinstorParsingUtils.asVlmNr(vlmNr), failIfNull);
     }
 
-    private final VolumeDefinitionData loadVlmDfn(
+    private VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
         VolumeNumber vlmNr,
         boolean failIfNull
@@ -953,7 +950,7 @@ public class CtrlRscApiCallHandler
         return vlmDfn;
     }
 
-    private final Props getProps(Resource rsc)
+    private Props getProps(Resource rsc)
     {
         Props props;
         try
@@ -972,7 +969,7 @@ public class CtrlRscApiCallHandler
         return props;
     }
 
-    private final Props getProps(Volume vlm)
+    private Props getProps(Volume vlm)
     {
         Props props;
         try
@@ -1125,11 +1122,11 @@ public class CtrlRscApiCallHandler
             .build();
     }
 
-    void updateVolumeData(Peer satellitePeer, String resourceName, List<VlmUpdatePojo> vlmUpdates)
+    void updateVolumeData(String resourceName, List<VlmUpdatePojo> vlmUpdates)
     {
         try
         {
-            NodeName nodeName = satellitePeer.getNode().getName();
+            NodeName nodeName = peer.get().getNode().getName();
             ResourceDefinition rscDfn = rscDfnMap.get(new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
