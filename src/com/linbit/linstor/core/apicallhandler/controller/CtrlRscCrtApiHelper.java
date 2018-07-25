@@ -21,7 +21,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -56,7 +56,7 @@ class CtrlRscCrtApiHelper
     @Inject
     CtrlRscCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
-        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
+        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef

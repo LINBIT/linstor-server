@@ -30,8 +30,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ControllerCoreModule extends AbstractModule
 {
-    public static final String CONTROLLER_PROPS = "ControllerProps";
-    public static final String SATELLITE_PROPS = "SatelliteProps";
 
     public static final String CTRL_CONF_LOCK = "ctrlConfLock";
     public static final String CTRL_ERROR_LIST_LOCK = "ctrlErrorListLock";
@@ -54,7 +52,7 @@ public class ControllerCoreModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(CONTROLLER_PROPS)
+    @Named(LinStor.CONTROLLER_PROPS)
     public Props loadPropsContainer(
         DbConnectionPool dbConnPool,
         PropsContainerFactory propsContainerFactory,
@@ -86,7 +84,7 @@ public class ControllerCoreModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(SATELLITE_PROPS)
+    @Named(LinStor.SATELLITE_PROPS)
     public Props loadSatellitePropsContainer(
         DbConnectionPool dbConnPool,
         PropsContainerFactory propsContainerFactory,

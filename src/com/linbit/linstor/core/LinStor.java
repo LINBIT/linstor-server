@@ -14,6 +14,9 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class LinStor
 {
+    public static final String CONTROLLER_PROPS = "ControllerProps";
+    public static final String SATELLITE_PROPS = "SatelliteProps";
+
     private static final int MEGA_BYTE = 1048576;
 
     public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();

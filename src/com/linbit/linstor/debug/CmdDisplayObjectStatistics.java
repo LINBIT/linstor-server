@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Identity;
@@ -63,7 +64,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef

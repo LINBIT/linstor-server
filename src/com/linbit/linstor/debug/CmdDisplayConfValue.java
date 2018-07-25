@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
@@ -64,7 +65,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
     @Inject
     public CmdDisplayConfValue(
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
         @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef
     )
     {

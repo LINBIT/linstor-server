@@ -81,7 +81,7 @@ public final class ControllerNetComInitializer
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
         @PublicContext AccessContext publicCtxRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         DbConnectionPool dbConnPoolRef,
         CommonMessageProcessor msgProcRef,
         CtrlConnTracker ctrlConnTrackerRef,

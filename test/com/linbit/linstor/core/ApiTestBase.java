@@ -85,10 +85,10 @@ public abstract class ApiTestBase extends GenericDbBase
     @Inject @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)
     protected ObjectProtection storPoolDfnMapProt;
 
-    @Inject @Named(ControllerCoreModule.CONTROLLER_PROPS)
+    @Inject @Named(LinStor.CONTROLLER_PROPS)
     protected Props ctrlConf;
 
-    @Inject @Named(ControllerCoreModule.SATELLITE_PROPS)
+    @Inject @Named(LinStor.SATELLITE_PROPS)
     protected Props stltConf;
 
     @Inject Provider<TransactionMgr> transMgrProvider;

@@ -10,8 +10,8 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -61,7 +61,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(UNINITIALIZED_MINOR_NUMBER_POOL)
     public DynamicNumberPool minorNrPool(
         ErrorReporter errorReporter,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
         DynamicNumberPool minorNrPool = new DynamicNumberPoolImpl(
@@ -128,7 +128,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(UNINITIALIZED_TCP_PORT_POOL)
     public DynamicNumberPool tcpPortPool(
         ErrorReporter errorReporter,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
         DynamicNumberPool tcpPortPool = new DynamicNumberPoolImpl(

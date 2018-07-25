@@ -41,7 +41,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     public SatelliteConnectorImpl(
         ErrorReporter errorReporterRef,
         @SatelliteConnectorContext AccessContext connectorCtxRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         NetComContainer netComContainerRef,
         CtrlAuthenticator authenticatorRef,
         PingTask pingTaskRef,

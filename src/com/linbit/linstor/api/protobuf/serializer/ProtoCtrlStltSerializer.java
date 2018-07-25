@@ -6,8 +6,8 @@ import javax.inject.Singleton;
 
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -24,7 +24,7 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         ErrorReporter errReporter,
         @ApiContext AccessContext serializerCtx,
         CtrlSecurityObjects secObjsRef,
-        @Named(ControllerCoreModule.SATELLITE_PROPS) Props ctrlConfRef)
+        @Named(LinStor.SATELLITE_PROPS) Props ctrlConfRef)
     {
         super(errReporter, serializerCtx);
         secObjs = secObjsRef;

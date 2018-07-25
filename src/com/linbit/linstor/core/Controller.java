@@ -69,7 +69,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.regex.Pattern;
 
 /**
  * linstor controller prototype
@@ -129,7 +128,7 @@ public final class Controller
         Map<ServiceName, SystemService> systemServicesMapRef,
         DbConnectionPool dbConnPoolRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
         TaskScheduleService taskScheduleServiceRef, PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,

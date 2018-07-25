@@ -3,6 +3,7 @@ package com.linbit.linstor.debug;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -51,7 +52,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
     public CmdDeleteConfValue(
         DbConnectionPool dbConnectionPoolRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props confRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
         @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef,
         Provider<TransactionMgr> trnActProviderRef
     )

@@ -34,9 +34,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -102,8 +102,8 @@ public class CtrlConfApiCallHandler
         ErrorReporter errorReporterRef,
         CtrlClientSerializer ctrlClientcomSrzlRef,
         @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
-        @Named(ControllerCoreModule.CONTROLLER_PROPS) Props ctrlConfRef,
-        @Named(ControllerCoreModule.SATELLITE_PROPS) Props stltConfRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @PeerContext AccessContext accCtxRef,
