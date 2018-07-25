@@ -1,15 +1,14 @@
 package com.linbit.linstor.numberpool;
 
+import java.util.regex.Matcher;
+
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
-
-import java.util.regex.Matcher;
 
 public class DynamicNumberPoolImpl implements DynamicNumberPool
 {
@@ -63,7 +62,7 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
 
             if (strRange != null)
             {
-                matcher = Controller.RANGE_PATTERN.matcher(strRange);
+                matcher = NumberPoolModule.RANGE_PATTERN.matcher(strRange);
                 if (matcher.find())
                 {
                     try

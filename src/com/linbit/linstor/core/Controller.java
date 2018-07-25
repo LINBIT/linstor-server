@@ -86,8 +86,6 @@ public final class Controller
     public static final int API_VERSION = 1;
     public static final int API_MIN_VERSION = API_VERSION;
 
-    public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
-
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
 

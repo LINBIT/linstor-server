@@ -34,7 +34,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -732,7 +731,7 @@ public class CtrlConfApiCallHandler
     {
         Props ctrlCfg = ctrlConf;
 
-        Matcher matcher = Controller.RANGE_PATTERN.matcher(value);
+        Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
         if (matcher.find())
         {
             if (
@@ -752,7 +751,7 @@ public class CtrlConfApiCallHandler
         else
         {
             String errMsg = "The given value '" + value + "' is not a valid range. '" +
-                Controller.RANGE_PATTERN.pattern() + "'";
+                NumberPoolModule.RANGE_PATTERN.pattern() + "'";
             apiCallRc.addEntry(
                 errMsg,
                 ApiConsts.FAIL_INVLD_TCP_PORT
@@ -815,7 +814,7 @@ public class CtrlConfApiCallHandler
     {
         Props ctrlCfg = ctrlConf;
 
-        Matcher matcher = Controller.RANGE_PATTERN.matcher(value);
+        Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
         if (matcher.find())
         {
             if (
@@ -835,7 +834,7 @@ public class CtrlConfApiCallHandler
         else
         {
             String errMsg = "The given value '" + value + "' is not a valid range. '" +
-                Controller.RANGE_PATTERN.pattern() + "'";
+                NumberPoolModule.RANGE_PATTERN.pattern() + "'";
             apiCallRc.addEntry(
                 errMsg,
                 ApiConsts.FAIL_INVLD_MINOR_NR

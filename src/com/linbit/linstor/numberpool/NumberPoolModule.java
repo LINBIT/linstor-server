@@ -20,9 +20,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 public class NumberPoolModule extends AbstractModule
 {
+    public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
+
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
 
