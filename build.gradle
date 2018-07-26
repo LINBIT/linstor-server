@@ -167,6 +167,8 @@ project(':satellite') {
 }
 
 version = project(':server').version
+project(':controller').version = version
+project(':satellite').version = version
 
 project(':controller') {
     apply plugin: 'application'
