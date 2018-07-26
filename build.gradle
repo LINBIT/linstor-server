@@ -177,10 +177,17 @@ project(':controller') {
         compile project(':server')
         testCompile project(':server')
 
-        compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
-        compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-        compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
-        runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+        if (gradle.startParameter.isOffline()) {
+            compile fileTree(dir: compileLib)
+            runtime fileTree(dir: runtimeLib)
+            testCompile fileTree(dir: testCompileLib)
+            testRuntime fileTree(dir: testRuntimeLib)
+        } else {
+            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
+            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
+            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
+            runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+        }
 
 //    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
     }
@@ -515,15 +522,19 @@ task deleteLibs(type: Delete) {
     delete "${compileLib}", "${runtimeLib}", "${testCompileLib}", "${testRuntimeLib}", "${libs}/plugins"
 }
 
-task copyToLibs(dependsOn: 'deleteLibs') << {
-    ['compile', 'runtime'].each { scope ->
-        copy {
-            from configurations.getByName(scope).files
-            into "${libs}/${scope}"
+task copyToLibs(dependsOn: 'deleteLibs') {
+    doLast {
+        [':controller', ':server', ':satellite'].each { prj ->
+            ['compile', 'runtime'].each { scope ->
+                copy {
+                    from configurations.getByName(scope).files
+                    into "${libs}/${scope}"
+                }
+            }
         }
-    }
-    copy {
-        from buildscript.configurations.classpath
-        into "${libs}/plugins"
+        copy {
+            from buildscript.configurations.classpath
+            into "${libs}/plugins"
+        }
     }
 }
