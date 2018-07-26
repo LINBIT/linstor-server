@@ -1,7 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.MathUtils;
 
@@ -38,7 +38,7 @@ public class WorkerPoolInitializer
 
     public static WorkerPool createDefaultWorkerThreadPool(
         ErrorReporter errorLog,
-        DbConnectionPool dbConnPool,
+        ControllerDatabase controllerDatabase,
         String namePrefix
     )
     {
@@ -48,13 +48,13 @@ public class WorkerPoolInitializer
         qSize = qSize > DFLT_MIN_WORKQ_SIZE ? qSize : DFLT_MIN_WORKQ_SIZE;
         return WorkerPool.initialize(
             thrCount, qSize, true, namePrefix, errorLog,
-            dbConnPool
+            controllerDatabase
         );
     }
 
     public static WorkerPool createDevMgrWorkerThreadPool(
         ErrorReporter errorLog,
-        DbConnectionPool dbConnPool,
+        ControllerDatabase controllerDatabase,
         String namePrefix
     )
     {
@@ -64,7 +64,7 @@ public class WorkerPoolInitializer
         qSize = qSize > STLT_MIN_WORKQ_SIZE ? qSize : STLT_MIN_WORKQ_SIZE;
         return WorkerPool.initialize(
             thrCount, qSize, true, namePrefix, errorLog,
-            dbConnPool
+            controllerDatabase
         );
     }
 }

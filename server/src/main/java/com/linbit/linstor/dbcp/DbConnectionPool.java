@@ -179,31 +179,22 @@ public class DbConnectionPool implements ControllerDatabase
         flyway.migrate();
     }
 
-    /**
-     * Closes all db connections the calling thread had not closed yet.
-     *
-     * @param skipConnections These connections will not be closed. Mainly used for cleaning up after tests
-     * @return True if there was at least one open connection, false otherwise.
-     */
-    public boolean closeAllThreadLocalConnections(Connection... skipConnections)
+    @Override
+    public boolean closeAllThreadLocalConnections()
     {
-        List<Connection> skipConnList = Arrays.asList(skipConnections);
         boolean ret = false;
         List<Connection> list = threadLocalConnections.get();
         if (list != null)
         {
             for (Connection conn : list)
             {
-                if (!skipConnList.contains(conn))
+                try
                 {
-                    try
-                    {
-                        ret |= !conn.isClosed();
-                        conn.close();
-                    }
-                    catch (SQLException ignored)
-                    {
-                    }
+                    ret |= !conn.isClosed();
+                    conn.close();
+                }
+                catch (SQLException ignored)
+                {
                 }
             }
             list.clear();

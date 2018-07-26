@@ -29,6 +29,13 @@ public interface ControllerDatabase extends SystemService
 
     void migrate(String dbType);
 
+    /**
+     * Close all DB connections the calling thread had not closed yet.
+     *
+     * @return True if there was at least one open connection, false otherwise.
+     */
+    boolean closeAllThreadLocalConnections();
+
     @Override
     void shutdown();
 }

@@ -4,7 +4,7 @@ import java.util.ArrayDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.logging.ErrorReporter;
 
 public class WorkerPool implements WorkQueue
@@ -21,7 +21,7 @@ public class WorkerPool implements WorkQueue
     private final String threadNamePrefix;
 
     private ErrorReporter errorLog;
-    private DbConnectionPool dbConnPool;
+    private ControllerDatabase controllerDatabase;
 
     private WorkerPool(
         int parallelism,
@@ -29,7 +29,7 @@ public class WorkerPool implements WorkQueue
         boolean fair,
         String namePrefix,
         ErrorReporter errorLogRef,
-        DbConnectionPool dbConnPoolRef
+        ControllerDatabase controllerDatabaseRef
     )
     {
         workQueue = new ArrayDeque<>(queueSize);
@@ -40,7 +40,7 @@ public class WorkerPool implements WorkQueue
         workQueueSize = queueSize;
         threadNamePrefix = namePrefix;
         errorLog = errorLogRef;
-        dbConnPool = dbConnPoolRef;
+        controllerDatabase = controllerDatabaseRef;
     }
 
     public static WorkerPool initialize(
@@ -49,10 +49,10 @@ public class WorkerPool implements WorkQueue
         boolean fair,
         String namePrefix,
         ErrorReporter errorLogRef,
-        DbConnectionPool dbConnPool
+        ControllerDatabase controllerDatabase
     )
     {
-        WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix, errorLogRef, dbConnPool);
+        WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix, errorLogRef, controllerDatabase);
 
         for (int threadIndex = 0; threadIndex < parallelism; ++threadIndex)
         {
@@ -193,9 +193,9 @@ public class WorkerPool implements WorkQueue
                             pool.notifyAll();
                         }
                     }
-                    if (pool.dbConnPool != null)
+                    if (pool.controllerDatabase != null)
                     {
-                        if (pool.dbConnPool.closeAllThreadLocalConnections())
+                        if (pool.controllerDatabase.closeAllThreadLocalConnections())
                         {
                             pool.errorLog.reportError(
                                 new ImplementationError(
