@@ -53,16 +53,10 @@ subprojects {
             compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
 
             compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
-            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
-            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
+
             compile 'info.picocli:picocli:2.3.0'
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-
-            runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
-
-//    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
         }
     }
 }
@@ -180,6 +174,13 @@ project(':controller') {
     dependencies {
         compile project(':server')
         testCompile project(':server')
+
+        compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
+        compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
+        compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
+        runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+
+//    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
     }
 
     sourceSets {
