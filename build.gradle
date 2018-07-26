@@ -320,14 +320,17 @@ distributions {
 	}
 }
 
-
-task showMeCache << {
-  configurations.compile.each { println it }
-  configurations.runtime.each { println it }
+task showMeCache {
+    doLast {
+        configurations.compile.each { println it }
+        configurations.runtime.each { println it }
+    }
 }
 
-task showMeTestCache << {
-  configurations.testCompile.each { println it }
+task showMeTestCache {
+    doLast {
+        configurations.testCompile.each { println it }
+    }
 }
 
 /////////////////////////// Test commands ///////////////////////////
