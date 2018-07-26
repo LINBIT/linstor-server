@@ -1,5 +1,6 @@
 import org.gradle.process.internal.ExecException
 
+def protobufVersion = '3.2.0'
 
 ext.libs = "$projectDir/libs"
 ext.compileLib = "${libs}/compile"
@@ -28,28 +29,203 @@ buildscript {
     }
 }
 
+subprojects {
+    apply plugin: 'java'
+    group 'com.linbit'
+    sourceCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+
+        flatDir {
+            dirs 'libs'
+        }
+    }
+
+    dependencies {
+        if (gradle.startParameter.isOffline()) {
+            compile fileTree(dir: compileLib)
+            runtime fileTree(dir: runtimeLib)
+            testCompile fileTree(dir: testCompileLib)
+            testRuntime fileTree(dir: testRuntimeLib)
+        } else {
+            compile group: 'com.google.inject', name: 'guice', version: '4.2.0'
+            compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
+
+            compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
+            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
+            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
+            compile 'info.picocli:picocli:2.3.0'
+            compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+            compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+
+            runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+
+//    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
+        }
+    }
+}
+
+project(':server') {
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java", "generated-src"]
+            }
+            resources {
+                srcDirs = ["src/main/resources", "generated-resources"]
+            }
+        }
+        test {
+            java {
+                srcDirs = ["src/test/java"]
+            }
+        }
+    }
+
+/////////////////////////// Version Info ///////////////////////////
+    task versionInfo() {
+        String propsFile = "$projectDir/generated-resources/version-info.properties"
+
+        if (project.hasProperty('versionOverride')) {
+            logger.warn("Overriding version with $versionOverride")
+            version = versionOverride
+        }
+
+        if (!project.hasProperty('versionOverride')) {
+            File gitFolder = file("$projectDir/../.git")
+            if (gitFolder.exists())
+            {
+                try {
+                    def stdOut = new ByteArrayOutputStream()
+                    def stdErr = new ByteArrayOutputStream()
+                    project.exec {
+                        commandLine 'make', '-C', '..', 'versioninfo'
+                        standardOutput = stdOut
+                        errorOutput = stdErr
+                    }
+                } catch (ExecException exc) {
+                    throw new RuntimeException("Cannot generate version.", exc)
+                }
+            }
+
+            Properties props = new Properties()
+            try {
+                props.load(new FileInputStream(propsFile))
+            } catch (Exception exc) {
+                throw new RuntimeException("Cannot read version.", exc)
+            }
+            version = props.get("version")
+        }
+    }
+
+    processResources.dependsOn versionInfo
+
+    clean {
+        delete "${projectDir}/generated-resources"
+    }
+}
+
+project(':satellite') {
+    apply plugin: 'application'
+
+    dependencies {
+        compile project(':server')
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java"]
+            }
+            resources {
+                srcDirs = ["src/main/resources"]
+            }
+        }
+        test {
+            java {
+                srcDirs = ["src/test/java"]
+            }
+        }
+    }
+
+    startScripts.enabled = false
+    task SatelliteStartup(type: CreateStartScripts) {
+        mainClassName = 'com.linbit.linstor.core.Satellite'
+        applicationName = "Satellite"
+        outputDir = new File(project.buildDir, 'satellite')
+        classpath = jar.outputs.files + project.configurations.runtime + files('conf')
+        doLast {
+            delete windowsScript
+        }
+    }
+
+    distributions {
+        main {
+            contents {
+                from(SatelliteStartup) {
+                    into("bin")
+                }
+            }
+        }
+    }
+}
+
+version = project(':server').version
+
+project(':controller') {
+    apply plugin: 'application'
+
+    dependencies {
+        compile project(':server')
+        testCompile project(':server')
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java"]
+            }
+            resources {
+                srcDirs = ["src/main/resources"]
+            }
+        }
+        test {
+            java {
+                srcDirs = ["src/test/java"]
+            }
+        }
+    }
+
+    startScripts.enabled = false
+    task ControllerStartup(type: CreateStartScripts) {
+        mainClassName = 'com.linbit.linstor.core.Controller'
+        applicationName = "Controller"
+        outputDir = new File(project.buildDir, 'controller')
+        classpath = jar.outputs.files + project.configurations.runtime + files('conf')
+        doLast {
+            delete windowsScript
+        }
+    }
+
+    distributions {
+        main {
+            contents {
+                from(ControllerStartup) {
+                    into("bin")
+                }
+            }
+        }
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
 apply plugin: 'nebula.ospackage'
 
 sourceCompatibility = 1.8
-
-sourceSets {
-    main {
-        java {
-            srcDirs = ["src", "generated-src"]
-        }
-        resources {
-            srcDirs = ["resources", "generated-resources"]
-        }
-    }
-    test {
-        java {
-            srcDirs = ["test"]
-        }
-    }
-}
 
 repositories
 {
@@ -60,87 +236,26 @@ repositories
     }
 }
 
-def protobufVersion = '3.2.0'
-
-dependencies
-{
-    if (gradle.startParameter.isOffline()) {
-        compile fileTree(dir: compileLib)
-        runtime fileTree(dir: runtimeLib)
-        testCompile fileTree(dir: testCompileLib)
-        testRuntime fileTree(dir: testRuntimeLib)
-    } else {
-        compile group: 'com.google.inject', name: 'guice', version: '4.2.0'
-        compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
-
-        compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
-        compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
-        compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-        compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
-        compile 'info.picocli:picocli:2.3.0'
-        compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-        compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-
-        runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
-
-//    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
-
-        testCompile group: 'junit', name: 'junit', version: '4.+'
-        testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
-
-        testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
-        testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
-
-        testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
-    }
-}
-
-mainClassName = 'com.linbit.linstor.core.Controller'
-jar {
-  manifest {
-    attributes(
-      'Main-Class': mainClassName
-    )
-  }
-}
-
-/////////////////////////// Version Info ///////////////////////////
-task versionInfo() {
-    String propsFile = "$projectDir/generated-resources/version-info.properties"
-
-    if (project.hasProperty('versionOverride')) {
-        logger.warn("Overriding version with $versionOverride")
-        version = versionOverride
-    }
-
-    if (!project.hasProperty('versionOverride')) {
-        File gitFolder = file("$projectDir/.git")
-        if (gitFolder.exists())
-        {
-            try {
-                def stdOut = new ByteArrayOutputStream()
-                def stdErr = new ByteArrayOutputStream()
-                project.exec {
-                    commandLine 'make', 'versioninfo'
-                    standardOutput = stdOut
-                    errorOutput = stdErr
-                }
-            } catch (ExecException exc) {
-                throw new RuntimeException("Cannot generate version.", exc)
-            }
+sourceSets {
+    test {
+        java {
+            srcDirs = ["src/test/java"]
         }
-
-        Properties props = new Properties()
-        try {
-            props.load(new FileInputStream(propsFile))
-        } catch (Exception exc) {
-            throw new RuntimeException("Cannot read version.", exc)
-        }
-        version = props.get("version")
     }
 }
 
-processResources.dependsOn versionInfo
+dependencies {
+    compile project(':controller'), project(':satellite')
+    testCompile project(':controller'), project(':satellite')
+
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+    testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
+
+    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
+    testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
+
+    testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
+}
 
 /////////////////////////// Start scripts ///////////////////////////
 startScripts.enabled = false
@@ -298,7 +413,6 @@ compileTestJava {
 
 clean {
     dependsOn cleanTestCommands, cleanCommon
-    delete "${projectDir}/generated-resources"
 }
 
 /////////////////////////// Dependency resolution ///////////////////////////

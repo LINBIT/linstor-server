@@ -3,8 +3,8 @@ MAKE = make
 DOCKERREGISTRY = drbd.io
 DOCKERREGPATH = $(DOCKERREGISTRY)/linstor-controller
 
-GENRES=./generated-resources
-GENSRC=generated-src
+GENRES=./server/generated-resources
+GENSRC=./server/generated-src
 VERSINFO=$(GENRES)/version-info.properties
 
 # echo v0.1 to get it started

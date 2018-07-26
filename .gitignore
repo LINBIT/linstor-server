@@ -1,7 +1,16 @@
 /*
 !src/
 !linstor-common
-!test/
+!server/
+server/build
+server/out
+server/generated-*
+!controller/
+controller/build
+controller/out
+!satellite/
+satellite/build
+satellite/out
 !resources/
 !build.xml
 !build.gradle
@@ -23,9 +32,6 @@ test-data/*
 test-support/TestProcess
 test-support/TestOutput
 test-support/*.o
-
-# generated files
-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java
 
 # debug
 src/com/linbit/linstor/api/protobuf/controller/ResetController.java

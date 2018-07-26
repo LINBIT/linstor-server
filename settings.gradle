@@ -1,2 +1,4 @@
 rootProject.name = 'linstor-server'
 
+include 'server', 'satellite', 'controller'
+
