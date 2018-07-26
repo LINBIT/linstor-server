@@ -53,7 +53,6 @@ import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -425,7 +424,7 @@ public class GenericDbDriver implements DatabaseDriver
                     cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
                     String cmd = cmdBuilder.toString();
                     cmdBuilder.setLength(0);
-                    executeStatement(con, cmd);
+                    GenericDbUtils.executeStatement(con, cmd);
                 }
             }
         }
@@ -448,27 +447,11 @@ public class GenericDbDriver implements DatabaseDriver
                     cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
                     String cmd = cmdBuilder.toString();
                     cmdBuilder.setLength(0);
-                    executeStatement(con, cmd);
+                    GenericDbUtils.executeStatement(con, cmd);
                 }
             }
         }
         con.commit();
-    }
-
-    public static int executeStatement(final Connection con, final String statement)
-        throws SQLException
-    {
-        int ret = 0;
-        try (PreparedStatement stmt = con.prepareStatement(statement))
-        {
-            ret = stmt.executeUpdate();
-        }
-        catch (SQLException throwable)
-        {
-            System.err.println("Error: " + statement);
-            throw throwable;
-        }
-        return ret;
     }
 
     private static <T> BinaryOperator<T> throwingMerger()
