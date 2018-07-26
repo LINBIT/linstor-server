@@ -1,6 +1,6 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.ControllerDatabase;
 
 import javax.inject.Inject;
 import java.sql.Connection;
@@ -8,15 +8,15 @@ import java.sql.SQLException;
 
 public class ControllerTransactionMgr implements TransactionMgr
 {
-    private final DbConnectionPool dbConnectionPool;
+    private final ControllerDatabase controllerDatabase;
     private final Connection dbCon;
     private final TransactionObjectCollection transactionObjectCollection;
 
     @Inject
-    public ControllerTransactionMgr(DbConnectionPool dbConnPool) throws SQLException
+    public ControllerTransactionMgr(ControllerDatabase controllerDatabaseRef) throws SQLException
     {
-        dbConnectionPool = dbConnPool;
-        dbCon = dbConnPool.getConnection();
+        controllerDatabase = controllerDatabaseRef;
+        dbCon = controllerDatabaseRef.getConnection();
         dbCon.setAutoCommit(false);
         transactionObjectCollection = new TransactionObjectCollection();
     }
@@ -75,7 +75,7 @@ public class ControllerTransactionMgr implements TransactionMgr
     @Override
     public void returnConnection()
     {
-        dbConnectionPool.returnConnection(dbCon);
+        controllerDatabase.returnConnection(dbCon);
 
         clearTransactionObjects();
     }
