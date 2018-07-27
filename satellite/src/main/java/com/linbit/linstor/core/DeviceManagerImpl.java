@@ -1095,7 +1095,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 errLog.reportError(exc);
                 // If free space reporting failed, send an empty map
-                freeSpaceMap = new TreeMap();
+                freeSpaceMap = new TreeMap<>();
             }
             byte[] data = interComSerializer
                 .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)

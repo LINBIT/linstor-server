@@ -8,14 +8,6 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -25,7 +17,14 @@ import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
-import static com.linbit.linstor.dbcp.migration.LinstorMigration.PLACEHOLDER_KEY_DB_TYPE;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
 /**
@@ -103,7 +102,6 @@ public class DbConnectionPool implements ControllerDatabase
 
     @Override
     public void initializeDataSource(String dbConnectionUrlRef, Properties propsRef)
-        throws SQLException
     {
         ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrlRef);
         ErrorCheck.ctorNotNull(DbConnectionPool.class, Properties.class, propsRef);
@@ -248,7 +246,7 @@ public class DbConnectionPool implements ControllerDatabase
 
             poolConnFactory.setPool(connPool);
             poolConnFactory.setValidationQueryTimeout(dbTimeout);
-            poolConnFactory.setMaxOpenPrepatedStatements(dbMaxOpen);
+            poolConnFactory.setMaxOpenPreparedStatements(dbMaxOpen);
 
             dataSource = new PoolingDataSource<PoolableConnection>(connPool);
         }
