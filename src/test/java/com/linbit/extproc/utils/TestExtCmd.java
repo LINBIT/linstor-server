@@ -24,7 +24,7 @@ public class TestExtCmd extends ExtCmd
     public TestExtCmd()
     {
         super(new GenericTimer<String, Action<String>>(),
-            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get(""), true, "")
+            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get("build/test-logs"), true, "")
         );
     }
 
