@@ -1,38 +1,21 @@
-/*
-!src/
-!linstor-common
-!server/
-server/build
-server/out
-server/generated-*
-!controller/
-controller/build
-controller/out
-!satellite/
-satellite/build
-satellite/out
-!resources/
-!build.xml
-!build.gradle
-!version-info.gradle
-!nbproject/
-nbproject/genfiles.properties
-nbproject/private/
-nbproject/project.properties
-nbproject/project.xml
-!.gitignore
-!test-support
-!test-data
-!scripts/
-!Makefile
-!Jenkinsfile
-!README.md
-!docs/
-test-data/*
-test-support/TestProcess
-test-support/TestOutput
-test-support/*.o
+# ide files/folders
+.gradle/
+.idea/
+.nb-gradle-properties
 
-# debug
-src/com/linbit/linstor/api/protobuf/controller/ResetController.java
-src/com/linbit/linstor/core/CtrlResetHandler.java
+# build output
+server/generated*
+build/
+out/
+/tools/
+/libs/
+.filelist
+
+# config/runtime files
+database.cfg
+/logs/
+/ssl/
+
+# test output
+test-support/TestOutput
+test-support/TestProcess
