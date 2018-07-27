@@ -1,5 +1,13 @@
 import org.gradle.process.internal.ExecException
 
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'application'
+apply plugin: 'nebula.ospackage'
+
+sourceCompatibility = 1.8
+
 def protobufVersion = '3.2.0'
 
 ext.libs = "$projectDir/libs"
@@ -229,13 +237,6 @@ project(':controller') {
         }
     }
 }
-
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'application'
-apply plugin: 'nebula.ospackage'
-
-sourceCompatibility = 1.8
 
 repositories
 {
