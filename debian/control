@@ -33,6 +33,7 @@ Package: linstor-satellite
 Architecture: all
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
+         drbd-utils (>= 9.0.0),
          thin-provisioning-tools
 Description: DRBD distributed resource management utility
  This is the linstor satellite.
