@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -25,6 +26,7 @@ import javax.inject.Provider;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 
@@ -172,13 +174,18 @@ public class CtrlSatelliteUpdater
         return responses;
     }
 
-    public ApiCallRc updateSatellite(StorPool storPool)
+    public ApiCallRc updateSatellite(final StorPool storPool)
+    {
+        return updateSatellite(storPool.getNode(), storPool.getName(), storPool.getUuid());
+    }
+
+    public ApiCallRc updateSatellite(final Node node, final StorPoolName storPoolName, final UUID storPoolUuid)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         try
         {
-            Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
+            Peer satellitePeer = node.getPeer(apiCtx);
             boolean connected = satellitePeer.isConnected();
             if (connected)
             {
@@ -192,8 +199,8 @@ public class CtrlSatelliteUpdater
                         internalComSerializer
                             .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
                             .changedStorPool(
-                                storPool.getUuid(),
-                                storPool.getName().displayValue
+                                storPoolUuid,
+                                storPoolName.displayValue
                             )
                             .build()
                     );
@@ -204,7 +211,7 @@ public class CtrlSatelliteUpdater
                 responses.addEntry(ApiCallRcImpl
                     .entryBuilder(
                         ApiConsts.WARN_NOT_CONNECTED,
-                        "No active connection to satellite '" + storPool.getNode().getName().displayValue + "'"
+                        "No active connection to satellite '" + node.getName().displayValue + "'"
                     )
                     .setDetails(
                         "The controller is trying to (re-) establish a connection to the satellite. " +

@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
@@ -276,8 +277,16 @@ public class CtrlStorPoolApiCallHandler
             else
             {
                 UUID storPoolUuid = storPool.getUuid(); // cache storpool uuid to avoid access deleted storpool
+                StorPoolName storPoolName = storPool.getName();
+                Node node = storPool.getNode();
                 delete(storPool);
                 ctrlTransactionHelper.commit();
+
+                responseConverter.addWithDetail(
+                    responses,
+                    context,
+                    ctrlSatelliteUpdater.updateSatellite(node, storPoolName, storPoolUuid)
+                );
 
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolUuid, getStorPoolDescription(nodeNameStr, storPoolNameStr)));
