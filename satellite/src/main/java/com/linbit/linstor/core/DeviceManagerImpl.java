@@ -97,6 +97,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     // Tracks objects that are waiting to be updated with data received from the controller
     private final UpdateBundle rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
 
+    // Tracks objects that need to be dispatched to a device handler
+    private final Set<ResourceName> pendingDispatchRscSet = new TreeSet<>();
+
     private Thread svcThr;
 
     private final AtomicBoolean runningFlag     = new AtomicBoolean(false);
@@ -301,17 +304,18 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void controllerUpdateApplied()
+    public void controllerUpdateApplied(Set<ResourceName> rscSet)
     {
         synchronized (sched)
         {
             rcvPendingBundle.updControllerMap.clear();
+            pendingDispatchRscSet.addAll(rscSet);
             sched.notify();
         }
     }
 
     @Override
-    public void nodeUpdateApplied(Set<NodeName> nodeSet)
+    public void nodeUpdateApplied(Set<NodeName> nodeSet, Set<ResourceName> rscSet)
     {
         synchronized (sched)
         {
@@ -319,6 +323,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 rcvPendingBundle.updNodeMap.remove(nodeName);
             }
+            pendingDispatchRscSet.addAll(rscSet);
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -335,6 +340,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 rcvPendingBundle.updRscDfnMap.remove(rscName);
             }
+            pendingDispatchRscSet.addAll(rscDfnSet);
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -343,7 +349,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void storPoolUpdateApplied(Set<StorPoolName> storPoolSet)
+    public void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet)
     {
         synchronized (sched)
         {
@@ -351,6 +357,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 rcvPendingBundle.updStorPoolMap.remove(storPoolName);
             }
+            pendingDispatchRscSet.addAll(rscSet);
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -367,6 +374,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 rcvPendingBundle.updRscMap.remove(resourceKey);
             }
+            pendingDispatchRscSet.addAll(
+                rscKeySet.stream().map(Resource.Key::getResourceName).collect(Collectors.toSet()));
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -383,10 +392,32 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 rcvPendingBundle.updSnapshotMap.remove(snapshotKey);
             }
+            pendingDispatchRscSet.addAll(
+                snapshotKeySet.stream().map(SnapshotDefinition.Key::getResourceName).collect(Collectors.toSet()));
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
             }
+        }
+    }
+
+    @Override
+    public void markResourceForDispatch(ResourceName name)
+    {
+        synchronized (sched)
+        {
+            pendingDispatchRscSet.add(name);
+            sched.notify();
+        }
+    }
+
+    @Override
+    public void markMultipleResourcesForDispatch(Set<ResourceName> rscSet)
+    {
+        synchronized (sched)
+        {
+            pendingDispatchRscSet.addAll(rscSet);
+            sched.notify();
         }
     }
 
@@ -437,9 +468,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
         SyncPoint phaseLock = new AtomicSyncPoint();
 
-        // Tracks objects that need to be dispatched to a device handler
-        final Set<ResourceName> dispatchRscSet = new TreeSet<>();
-
         while (!shutdownFlag.get())
         {
             errLog.logDebug("Begin DeviceManager cycle %d", cycleNr);
@@ -451,8 +479,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 {
                     errLog.logTrace("DeviceManager: Executing device handlers after full sync");
 
-                    // Clear the previous state
-                    dispatchRscSet.clear();
+                    Set<ResourceName> dispatchRscSet = new TreeSet<>();
 
                     Lock rcfgRdLock = reconfigurationLock.readLock();
                     Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
@@ -469,6 +496,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         rscDfnMapRdLock.unlock();
                         rcfgRdLock.unlock();
                     }
+
+                    synchronized (sched)
+                    {
+                        pendingDispatchRscSet.clear();
+                        pendingDispatchRscSet.addAll(dispatchRscSet);
+                    }
                 }
                 else
                 {
@@ -483,7 +516,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     waitUpdFlag.set(false);
 
                     // Requests updates from the controller
-                    phaseRequestUpdateData(dispatchRscSet);
+                    phaseRequestUpdateData();
 
                     // Blocks until all updates have been received from the controller
                     phaseCollectUpdateData();
@@ -494,7 +527,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                 if (stateAvailable)
                 {
-                    phaseDispatchDeviceHandlers(phaseLock, dispatchRscSet);
+                    phaseDispatchDeviceHandlers(phaseLock);
                 }
                 else
                 {
@@ -562,7 +595,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 errLog.logTrace("Collecting update notifications");
                 // Do not block in this phase if updates have been requested from the controller
                 // and are pending receipt
-                updTracker.collectUpdateNotifications(updPendingBundle, svcCondFlag, waitUpdFlag.get());
+                updTracker.collectUpdateNotifications(
+                    updPendingBundle,
+                    svcCondFlag,
+                    waitUpdFlag.get() && pendingDispatchRscSet.isEmpty()
+                );
                 if (svcCondFlag.get())
                 {
                     throw new SvcCondException();
@@ -571,7 +608,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void phaseRequestUpdateData(Set<ResourceName> dispatchRscSet)
+    private void phaseRequestUpdateData()
         throws SvcCondException
     {
         errLog.logTrace("Requesting object updates from the controller");
@@ -584,9 +621,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             // Therefore, rcvPendingBundle must be prepared in the request phase
             // before requesting the updates instead of in the collect phase.
             updPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
-
-            // Schedule all objects that will be updated for a device handler run
-            dispatchRscSet.addAll(updPendingBundle.dispatchRscSet);
 
             // Request updates from the controller
             requestControllerUpdates(updPendingBundle.updControllerMap);
@@ -632,17 +666,18 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         errLog.logTrace("All object updates were received");
     }
 
-    private void phaseDispatchDeviceHandlers(SyncPoint phaseLock, Set<ResourceName> dispatchRscSet)
+    private void phaseDispatchDeviceHandlers(SyncPoint phaseLock)
         throws SvcCondException, AccessDeniedException
     {
         errLog.logTrace("Dispatching resources to device handlers");
 
+        Set<ResourceName> dispatchRscSet;
         synchronized (sched)
         {
-            // Add any check requests that were received in the meantime
-            // into the dispatch set and clear the check requests
-            dispatchRscSet.addAll(updPendingBundle.dispatchRscSet);
-            updPendingBundle.dispatchRscSet.clear();
+            // Add any dispatch requests that were received
+            // into the dispatch set and clear the dispatch requests
+            dispatchRscSet = new TreeSet<>(pendingDispatchRscSet);
+            pendingDispatchRscSet.clear();
         }
 
         // BEGIN DEBUG

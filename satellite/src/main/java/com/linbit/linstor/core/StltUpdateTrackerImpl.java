@@ -57,7 +57,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         synchronized (sched)
         {
             cachedUpdates.updRscDfnMap.put(name, rscDfnUuid);
-            cachedUpdates.dispatchRscSet.add(name);
             sched.notify();
         }
     }
@@ -69,7 +68,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         {
             Resource.Key resourceKey = new Resource.Key(resourceName, nodeName);
             cachedUpdates.updRscMap.put(resourceKey, rscUuid);
-            cachedUpdates.dispatchRscSet.add(resourceKey.getResourceName());
             sched.notify();
         }
     }
@@ -94,27 +92,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         synchronized (sched)
         {
             cachedUpdates.updSnapshotMap.put(new SnapshotDefinition.Key(resourceName, snapshotName), snapshotUuid);
-            cachedUpdates.dispatchRscSet.add(resourceName);
-            sched.notify();
-        }
-    }
-
-    @Override
-    public void markResourceForDispatch(ResourceName name)
-    {
-        synchronized (sched)
-        {
-            cachedUpdates.dispatchRscSet.add(name);
-            sched.notify();
-        }
-    }
-
-    @Override
-    public void markMultipleResourcesForDispatch(Set<ResourceName> rscSet)
-    {
-        synchronized (sched)
-        {
-            cachedUpdates.dispatchRscSet.addAll(rscSet);
             sched.notify();
         }
     }
@@ -137,7 +114,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             // Collect all queued updates
 
             cachedUpdates.copyUpdateRequestsTo(updates);
-            updates.dispatchRscSet.addAll(cachedUpdates.dispatchRscSet);
 
             // Clear queued updates
             clearImpl();
@@ -169,7 +145,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         final Map<Resource.Key, UUID> updRscMap = new TreeMap<>();
         final Map<StorPoolName, UUID> updStorPoolMap = new TreeMap<>();
         final Map<SnapshotDefinition.Key, UUID> updSnapshotMap = new TreeMap<>();
-        final Set<ResourceName> dispatchRscSet = new TreeSet<>();
 
         /**
          * Copies the update notifications, but not the check notifications, to another UpdateBundle
@@ -197,7 +172,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         boolean isEmpty()
         {
             return updControllerMap.isEmpty() && updNodeMap.isEmpty() && updRscDfnMap.isEmpty() &&
-                updRscMap.isEmpty() && updStorPoolMap.isEmpty() && updSnapshotMap.isEmpty() && dispatchRscSet.isEmpty();
+                updRscMap.isEmpty() && updStorPoolMap.isEmpty() && updSnapshotMap.isEmpty();
         }
 
         /**
@@ -212,7 +187,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             updRscMap.clear();
             updStorPoolMap.clear();
             updSnapshotMap.clear();
-            dispatchRscSet.clear();
         }
     }
 }

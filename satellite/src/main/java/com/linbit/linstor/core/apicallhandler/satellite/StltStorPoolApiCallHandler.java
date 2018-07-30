@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -90,7 +91,7 @@ class StltStorPoolApiCallHandler
 
             Set<StorPoolName> storPoolSet = new TreeSet<>();
             storPoolSet.add(storPoolName);
-            deviceManager.storPoolUpdateApplied(storPoolSet);
+            deviceManager.storPoolUpdateApplied(storPoolSet, Collections.emptySet());
         }
         catch (Exception | ImplementationError exc)
         {
@@ -180,9 +181,7 @@ class StltStorPoolApiCallHandler
 
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
-            deviceManager.storPoolUpdateApplied(storPoolSet);
-            deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(changedResources);
-
+            deviceManager.storPoolUpdateApplied(storPoolSet, changedResources);
         }
         catch (Exception | ImplementationError exc)
         {

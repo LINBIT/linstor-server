@@ -16,6 +16,4 @@ public interface StltUpdateTracker
     void updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);
     void updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
     void updateSnapshot(UUID snapshotUuid, ResourceName resourceName, SnapshotName snapshotName);
-    void markResourceForDispatch(ResourceName name);
-    void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);
 }

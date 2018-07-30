@@ -12,10 +12,10 @@ import java.util.Set;
 
 public interface DeviceManager extends DrbdStateChange
 {
-    void controllerUpdateApplied();
-    void nodeUpdateApplied(Set<NodeName> nodeSet);
+    void controllerUpdateApplied(Set<ResourceName> rscSet);
+    void nodeUpdateApplied(Set<NodeName> nodeSet, Set<ResourceName> rscSet);
     void rscDefUpdateApplied(Set<ResourceName> rscDfnSet);
-    void storPoolUpdateApplied(Set<StorPoolName> storPoolSet);
+    void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet);
     void rscUpdateApplied(Set<Resource.Key> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
 
@@ -25,6 +25,9 @@ public interface DeviceManager extends DrbdStateChange
     void notifyResourceDeleted(Resource rsc);
     void notifyVolumeDeleted(Volume vlm);
     void notifySnapshotDeleted(Snapshot snapshot);
+
+    void markResourceForDispatch(ResourceName name);
+    void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);
 
     void fullSyncApplied();
 

@@ -70,7 +70,7 @@ class StltRscDfnApiCallHandler
                 rscData.setCreatePrimary();
                 errorReporter.logInfo("Primary bool set on Resource %s", rscNameStr);
 
-                deviceManager.getUpdateTracker().markResourceForDispatch(rscName);
+                deviceManager.markResourceForDispatch(rscName);
             }
         }
         catch (InvalidNameException ignored)

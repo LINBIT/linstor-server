@@ -109,7 +109,6 @@ class StltSnapshotApiCallHandler
 
             rscDfnMap.put(rscDfn.getName(), rscDfn);
 
-            deviceManager.getUpdateTracker().markResourceForDispatch(rscDfn.getName());
             deviceManager.snapshotUpdateApplied(Collections.singleton(
                 new SnapshotDefinition.Key(rscDfn.getName(), snapshotDfn.getName())));
         }

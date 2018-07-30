@@ -14,6 +14,7 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataSatelliteFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -116,8 +117,7 @@ class StltNodeApiCallHandler
 
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(nodeName);
-            deviceManager.getUpdateTracker().markMultipleResourcesForDispatch(rscToDeleteNames);
-            deviceManager.nodeUpdateApplied(updatedNodes);
+            deviceManager.nodeUpdateApplied(updatedNodes, rscToDeleteNames);
         }
         catch (Exception | ImplementationError exc)
         {
@@ -198,13 +198,18 @@ class StltNodeApiCallHandler
                 }
             }
 
+            Set<ResourceName> rscSet = node.streamResources(apiCtx)
+                .map(Resource::getDefinition)
+                .map(ResourceDefinition::getName)
+                .collect(Collectors.toSet());
+
             transMgrProvider.get().commit();
 
             nodesMap.put(node.getName(), node);
             errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(new NodeName(nodePojo.getName()));
-            deviceManager.nodeUpdateApplied(updatedNodes);
+            deviceManager.nodeUpdateApplied(updatedNodes, rscSet);
         }
         catch (Exception | ImplementationError exc)
         {
