@@ -229,6 +229,22 @@ public class ConfFileBuilder
                         appendLine(format, fromHost);
                         appendLine(format, toHost);
 
+                        if (rscDfn.getProps(accCtx)
+                            .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
+                            )
+                        {
+                            appendLine("");
+                            appendLine("disk");
+                            try (Section ignore = new Section())
+                            {
+                                appendDrbdOptions(
+                                    LinStorObject.CONTROLLER,
+                                    rscDfn.getProps(accCtx),
+                                    ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                );
+                            }
+                        }
+
                         ResourceConnection rscConn = localRsc.getResourceConnection(accCtx, peerRsc);
 
                         if (rscConn != null)
