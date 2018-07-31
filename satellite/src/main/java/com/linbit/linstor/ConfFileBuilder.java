@@ -303,7 +303,8 @@ public class ConfFileBuilder
         appendLine("common");
         try (Section commonSection = new Section())
         {
-            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
+            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent() ||
+                satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent())
             {
                 appendLine("disk");
                 try (Section ignore = new Section())
@@ -312,6 +313,12 @@ public class ConfFileBuilder
                         LinStorObject.CONTROLLER,
                         satelliteProps,
                         ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                    );
+
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        satelliteProps,
+                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                     );
                 }
             }
