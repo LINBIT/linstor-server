@@ -27,16 +27,16 @@ rm -rf ./build/install
 gradle %{GRADLE_TASKS} %{GRADLE_FLAGS}
 
 %install
-mkdir -p $RPM_BUILD_ROOT/%{LS_PREFIX}
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/build/install/linstor-server/lib $RPM_BUILD_ROOT/%{LS_PREFIX}
-mkdir -p $RPM_BUILD_ROOT/%{LS_PREFIX}/bin
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/build/install/linstor-server/bin/Controller $RPM_BUILD_ROOT/%{LS_PREFIX}/bin
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/build/install/linstor-server/bin/Satellite $RPM_BUILD_ROOT/%{LS_PREFIX}/bin
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/build/install/linstor-server/bin/linstor-config $RPM_BUILD_ROOT/%{LS_PREFIX}/bin
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/scripts/postinstall.sh $RPM_BUILD_ROOT/%{LS_PREFIX}/bin/controller.postinst.sh
-mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/scripts/linstor-controller.service $RPM_BUILD_ROOT/%{_unitdir}
-cp -r $RPM_BUILD_DIR/%{NAME_VERS}/scripts/linstor-satellite.service $RPM_BUILD_ROOT/%{_unitdir}
+mkdir -p %{buildroot}/%{LS_PREFIX}
+cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/lib %{buildroot}/%{LS_PREFIX}
+mkdir -p %{buildroot}/%{LS_PREFIX}/bin
+cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Controller %{buildroot}/%{LS_PREFIX}/bin
+cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Satellite %{buildroot}/%{LS_PREFIX}/bin
+cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/linstor-config %{buildroot}/%{LS_PREFIX}/bin
+cp -r %{_builddir}/%{NAME_VERS}/scripts/postinstall.sh %{buildroot}/%{LS_PREFIX}/bin/controller.postinst.sh
+mkdir -p %{buildroot}/%{_unitdir}
+cp -r %{_builddir}/%{NAME_VERS}/scripts/linstor-controller.service %{buildroot}/%{_unitdir}
+cp -r %{_builddir}/%{NAME_VERS}/scripts/linstor-satellite.service %{buildroot}/%{_unitdir}
 
 ### common
 %package common
