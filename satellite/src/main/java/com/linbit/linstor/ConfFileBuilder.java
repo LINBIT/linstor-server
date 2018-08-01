@@ -100,12 +100,21 @@ public class ConfFileBuilder
             // include linstor common
             appendLine("template-file \"linstor_common.conf\";");
 
-            appendDrbdOptions(
-                LinStorObject.CONTROLLER,
-                rscDfn.getProps(accCtx),
-                ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS
-            );
+            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS).isPresent())
+            {
+                appendLine("");
+                appendLine("options");
+                try (Section optionsSection = new Section())
+                {
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        rscDfn.getProps(accCtx),
+                        ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS
+                    );
+                }
+            }
 
+            appendLine("");
             appendLine("net");
             try (Section netSection = new Section())
             {
@@ -123,6 +132,7 @@ public class ConfFileBuilder
 
             if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
             {
+                appendLine("");
                 appendLine("disk");
                 try (Section ignore = new Section())
                 {
@@ -152,6 +162,7 @@ public class ConfFileBuilder
                 LsIpAddress localAddr = localNetIf.getAddress(accCtx);
 
                 String localAddrText = localAddr.getAddress();
+                appendLine("");
                 appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
                 try (Section onSection = new Section())
                 {
@@ -222,6 +233,7 @@ public class ConfFileBuilder
                     String fromHost = fromNode.getName().displayValue;
                     String toHost = toNode.getName().displayValue;
 
+                    appendLine("");
                     appendLine("connection");
                     try (Section connectionSection = new Section())
                     {
