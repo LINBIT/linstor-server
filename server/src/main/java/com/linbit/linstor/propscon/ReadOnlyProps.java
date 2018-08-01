@@ -3,6 +3,7 @@ package com.linbit.linstor.propscon;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -91,6 +92,13 @@ public class ReadOnlyProps implements Props
 
         // Never reached
         return null;
+    }
+
+    @Override
+    public void loadAll()
+        throws SQLException, AccessDeniedException
+    {
+        denyAccess();
     }
 
     @Override

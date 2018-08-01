@@ -35,7 +35,6 @@ public class ControllerCoreModule extends AbstractModule
     public static final String CTRL_ERROR_LIST_LOCK = "ctrlErrorListLock";
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
-    private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
     @Override
     protected void configure()
@@ -53,65 +52,9 @@ public class ControllerCoreModule extends AbstractModule
     @Provides
     @Singleton
     @Named(LinStor.CONTROLLER_PROPS)
-    public Props loadPropsContainer(
-        DbConnectionPool dbConnPool,
-        PropsContainerFactory propsContainerFactory,
-        LinStorScope initScope
-    )
-        throws SQLException
+    public Props createControllerPropsContainer(PropsContainerFactory propsContainerFactory)
     {
-        Props propsContainer;
-        TransactionMgr transMgr = null;
-        try
-        {
-            transMgr = new ControllerTransactionMgr(dbConnPool);
-            initScope.enter();
-            initScope.seed(TransactionMgr.class, transMgr);
-
-            propsContainer = propsContainerFactory.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME);
-            transMgr.commit();
-            initScope.exit();
-        }
-        finally
-        {
-            if (transMgr != null)
-            {
-                transMgr.returnConnection();
-            }
-        }
-        return propsContainer;
-    }
-
-    @Provides
-    @Singleton
-    @Named(LinStor.SATELLITE_PROPS)
-    public Props loadSatellitePropsContainer(
-        DbConnectionPool dbConnPool,
-        PropsContainerFactory propsContainerFactory,
-        LinStorScope initScope
-    )
-        throws SQLException
-    {
-        Props propsContainer;
-        TransactionMgr transMgr = null;
-        try
-        {
-            transMgr = new ControllerTransactionMgr(dbConnPool);
-            initScope.enter();
-            initScope.seed(TransactionMgr.class, transMgr);
-
-            propsContainer = propsContainerFactory.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME);
-            transMgr.commit();
-            initScope.exit();
-        }
-        finally
-        {
-            if (transMgr != null)
-            {
-                transMgr.returnConnection();
-            }
-        }
-        return propsContainer;
+        return propsContainerFactory.create(DB_CONTROLLER_PROPSCON_INSTANCE_NAME);
     }
 
     @Provides

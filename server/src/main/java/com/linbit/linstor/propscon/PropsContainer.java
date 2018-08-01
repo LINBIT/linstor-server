@@ -10,6 +10,7 @@ import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
@@ -420,6 +421,41 @@ public class PropsContainer extends AbsTransactionObject implements Props
         }
         changed = removeAllProps(removeSet, namespace);
         return changed;
+    }
+
+    @Override
+    public void loadAll()
+        throws SQLException, AccessDeniedException
+    {
+        try
+        {
+            Map<String, String> loadedProps = dbDriver.loadAll(instanceName);
+            for (Map.Entry<String, String> entry : loadedProps.entrySet())
+            {
+                String key = entry.getKey();
+                String value = entry.getValue();
+
+                PropsContainer targetContainer = this;
+                int idx = key.lastIndexOf(Props.PATH_SEPARATOR);
+                if (idx != -1)
+                {
+                    targetContainer = ensureNamespaceExists(key.substring(0, idx));
+                }
+                String actualKey = key.substring(idx + 1);
+                String oldValue = targetContainer.getRawPropMap().put(actualKey, value);
+                if (oldValue == null)
+                {
+                    targetContainer.modifySize(1);
+                }
+            }
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                "PropsContainer could not be loaded because a key in the database has an invalid value.",
+                invalidKeyExc
+            );
+        }
     }
 
     @Override

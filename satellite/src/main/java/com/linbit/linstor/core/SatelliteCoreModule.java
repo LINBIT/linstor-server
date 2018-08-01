@@ -1,31 +1,23 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Named;
-import javax.inject.Singleton;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.sql.SQLException;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
-import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.annotation.Uninitialized;
-import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
+
+import javax.inject.Singleton;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SatelliteCoreModule extends AbstractModule
 {
@@ -66,34 +58,6 @@ public class SatelliteCoreModule extends AbstractModule
         bind(Path.class).annotatedWith(Names.named(DRBD_CONFIG_PATH)).toInstance(
             FileSystems.getDefault().getPath(CONFIG_PATH)
         );
-    }
-
-    @Provides
-    @Singleton
-    @Named(LinStor.SATELLITE_PROPS)
-    public Props loadPropsContainer(
-        PropsContainerFactory propsContainerFactory,
-        LinStorScope initScope
-    )
-    {
-        Props propsContainer;
-        try
-        {
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            initScope.enter();
-            initScope.seed(TransactionMgr.class, transMgr);
-
-            propsContainer = propsContainerFactory.getInstance(DB_SATELLITE_PROPSCON_INSTANCE_NAME);
-
-            transMgr.commit();
-            initScope.exit();
-        }
-        catch (SQLException exc)
-        {
-            // not possible
-            throw new ImplementationError(exc);
-        }
-        return propsContainer;
     }
 
     @Provides

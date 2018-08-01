@@ -10,6 +10,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
@@ -102,6 +103,8 @@ public final class Controller
     // Database connection pool service
     private final DbConnectionPool dbConnPool;
 
+    private final DbDataInitializer dbDataInitializer;
+
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
     // Controller configuration properties
@@ -127,10 +130,12 @@ public final class Controller
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         DbConnectionPool dbConnPoolRef,
+        DbDataInitializer dbDataInitializerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
-        TaskScheduleService taskScheduleServiceRef, PingTask pingTaskRef,
+        TaskScheduleService taskScheduleServiceRef,
+        PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
         ErrorReportTimeOutTask errorReportTimeOutTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
@@ -144,6 +149,7 @@ public final class Controller
         reconfigurationLock = reconfigurationLockRef;
         systemServicesMap = systemServicesMapRef;
         dbConnPool = dbConnPoolRef;
+        dbDataInitializer = dbDataInitializerRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         ctrlConf = ctrlConfRef;
         nodesMap = nodesMapRef;
@@ -157,7 +163,7 @@ public final class Controller
     }
 
     public void start()
-        throws InvalidKeyException
+        throws InvalidKeyException, SystemServiceStartException, SQLException
     {
         applicationLifecycleManager.installShutdownHook();
 
@@ -168,22 +174,24 @@ public final class Controller
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
-            systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
-            systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
-
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
             taskScheduleService.addTask(errorReportTimeOutTask);
             taskScheduleService.addTask(new GarbageCollectorTask());
+
+            systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
+            systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
+            systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
+
+            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
+
+            dbDataInitializer.initialize();
 
             controllerNetComInitializer.initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null),
                 errorReporter,
                 initCtx
             );
-
-            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             connectToKnownNodes(errorReporter, initCtx);
 
@@ -372,9 +380,11 @@ public final class Controller
         catch (Throwable error)
         {
             errorLog.reportError(error);
+            System.exit(1);
         }
 
         System.out.println();
+        System.exit(0);
     }
 
     private static void initializeSecurityObjects(

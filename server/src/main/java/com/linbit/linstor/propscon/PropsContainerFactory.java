@@ -1,8 +1,8 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -28,6 +28,22 @@ public class PropsContainerFactory
 
     public PropsContainer getInstance(String instanceName) throws SQLException
     {
+        PropsContainer container = create(instanceName);
+
+        try
+        {
+            container.loadAll();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("Access denied loading container props", exc);
+        }
+
+        return container;
+    }
+
+    public PropsContainer create(String instanceName)
+    {
         PropsContainer container;
         try
         {
@@ -42,42 +58,7 @@ public class PropsContainerFactory
                 keyExc
             );
         }
-
         container.instanceName = instanceName;
-
-        if (transMgrProvider.get() != null)
-        {
-            // container.setConnection(transMgr); // TODO this should not be needed, or committed at the end
-            try
-            {
-                Map<String, String> loadedProps = dbDriver.loadAll(instanceName);
-                for (Map.Entry<String, String> entry : loadedProps.entrySet())
-                {
-                    String key = entry.getKey();
-                    String value = entry.getValue();
-
-                    PropsContainer targetContainer = container;
-                    int idx = key.lastIndexOf(Props.PATH_SEPARATOR);
-                    if (idx != -1)
-                    {
-                        targetContainer = container.ensureNamespaceExists(key.substring(0, idx));
-                    }
-                    String actualKey = key.substring(idx + 1);
-                    String oldValue = targetContainer.getRawPropMap().put(actualKey, value);
-                    if (oldValue == null)
-                    {
-                        targetContainer.modifySize(1);
-                    }
-                }
-            }
-            catch (InvalidKeyException invalidKeyExc)
-            {
-                throw new LinStorSqlRuntimeException(
-                    "PropsContainer could not be loaded because a key in the database has an invalid value.",
-                    invalidKeyExc
-                );
-            }
-        }
 
         return container;
     }

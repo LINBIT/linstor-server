@@ -36,6 +36,8 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
     String removeProp(String key, String namespace)
         throws InvalidKeyException, AccessDeniedException, SQLException;
 
+    void loadAll() throws SQLException, AccessDeniedException;
+
     void clear() throws AccessDeniedException, SQLException;
 
     void delete() throws AccessDeniedException, SQLException;

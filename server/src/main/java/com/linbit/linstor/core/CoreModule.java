@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ServiceName;
@@ -13,6 +14,11 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsContainerFactory;
+
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -27,6 +33,8 @@ public class CoreModule extends AbstractModule
     public static final String RSC_DFN_MAP_LOCK = "rscDfnMapLock";
     public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";
 
+    private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
+
     @Override
     protected void configure()
     {
@@ -34,7 +42,7 @@ public class CoreModule extends AbstractModule
             {
             }
             )
-            .toInstance(new TreeMap<ServiceName, SystemService>());
+            .toInstance(new TreeMap<>());
 
         bind(NodesMap.class).annotatedWith(Uninitialized.class)
             .toInstance(new NodesMapImpl());
@@ -53,6 +61,14 @@ public class CoreModule extends AbstractModule
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(STOR_POOL_DFN_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
+    }
+
+    @Provides
+    @Singleton
+    @Named(LinStor.SATELLITE_PROPS)
+    public Props createSatellitePropsContainer(PropsContainerFactory propsContainerFactory)
+    {
+        return propsContainerFactory.create(DB_SATELLITE_PROPSCON_INSTANCE_NAME);
     }
 
     public interface NodesMap extends Map<NodeName, Node>

@@ -183,42 +183,39 @@ public final class ControllerNetComInitializer
         ErrorReporter errorLogRef,
         AccessContext initCtx
     )
+        throws SystemServiceStartException
     {
         errorLogRef.logInfo("Initializing network communications services");
 
         if (netComProps == null)
         {
             String errorMsg = "The controller configuration does not define any network communication services";
-            errorLogRef.reportError(
-                new SystemServiceStartException(
-                    errorMsg,
-                    errorMsg,
-                    null,
-                    null,
-                    "Define at least one network communication service",
-                    null
-                )
+            throw new SystemServiceStartException(
+                errorMsg,
+                errorMsg,
+                null,
+                null,
+                "Define at least one network communication service",
+                null
             );
         }
-        else
+
+        Iterator<String> namespaces = netComProps.iterateNamespaces();
+        while (namespaces.hasNext())
         {
-            Iterator<String> namespaces = netComProps.iterateNamespaces();
-            while (namespaces.hasNext())
+            try
             {
-                try
-                {
-                    String namespaceStr = namespaces.next();
-                    initNetComService(
-                        namespaceStr,
-                        netComProps,
-                        errorLogRef,
-                        initCtx
-                    );
-                }
-                catch (SystemServiceStartException sysSvcStartExc)
-                {
-                    errorLogRef.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
-                }
+                String namespaceStr = namespaces.next();
+                initNetComService(
+                    namespaceStr,
+                    netComProps,
+                    errorLogRef,
+                    initCtx
+                );
+            }
+            catch (SystemServiceStartException sysSvcStartExc)
+            {
+                errorLogRef.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
             }
         }
     }
@@ -488,6 +485,7 @@ public final class ControllerNetComInitializer
             netComSvc.setServiceInstanceName(serviceName);
             netComContainer.putNetComContainer(serviceName, netComSvc);
             systemServicesMap.put(serviceName, netComSvc);
+            netComSvc.start();
             errorLogRef.logInfo(
                 String.format(
                     "Created network communication service '%s', bound to %s:%d",
