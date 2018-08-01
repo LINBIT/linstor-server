@@ -7,6 +7,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
+import com.google.inject.util.Modules;
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
@@ -44,7 +45,6 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.testutils.TestCoreModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -169,7 +169,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     protected void setUpAndEnterScope() throws Exception
     {
-        setUpWithoutEnteringScope(new TestCoreModule());
+        setUpWithoutEnteringScope(Modules.EMPTY_MODULE);
         enterScope();
     }
 

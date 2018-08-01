@@ -17,7 +17,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.TestApiModule;
 import com.linbit.linstor.security.TestSecurityModule;
-import com.linbit.linstor.testutils.TestCoreModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -63,7 +62,6 @@ public class ResourceDefinitionDataSatelliteTest
             new LoggingModule(new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "")),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
-            new TestCoreModule(),
             new SatelliteDbModule(),
             new SatelliteTransactionMgrModule(),
             new TestApiModule()

@@ -12,7 +12,6 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -44,12 +43,9 @@ public class CoreModule extends AbstractModule
             )
             .toInstance(new TreeMap<>());
 
-        bind(NodesMap.class).annotatedWith(Uninitialized.class)
-            .toInstance(new NodesMapImpl());
-        bind(ResourceDefinitionMap.class).annotatedWith(Uninitialized.class)
-            .toInstance(new ResourceDefinitionMapImpl());
-        bind(StorPoolDefinitionMap.class).annotatedWith(Uninitialized.class)
-            .toInstance(new StorPoolDefinitionMapImpl());
+        bind(NodesMap.class).toInstance(new NodesMapImpl());
+        bind(ResourceDefinitionMap.class).toInstance(new ResourceDefinitionMapImpl());
+        bind(StorPoolDefinitionMap.class).toInstance(new StorPoolDefinitionMapImpl());
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 

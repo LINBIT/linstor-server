@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import com.google.inject.Guice;
-import javax.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.linbit.ControllerLinstorModule;
@@ -62,6 +61,7 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -163,7 +163,7 @@ public final class Controller
     }
 
     public void start()
-        throws InvalidKeyException, SystemServiceStartException, SQLException
+        throws InvalidKeyException, SystemServiceStartException, InitializationException
     {
         applicationLifecycleManager.installShutdownHook();
 

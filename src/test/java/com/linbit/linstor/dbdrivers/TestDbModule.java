@@ -18,7 +18,6 @@ import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -94,7 +93,7 @@ public class TestDbModule extends AbstractModule
         ErrorReporter errorLogRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
         DbConnectionPool dbConnPool,
-        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMap,
         LinStorScope initScopeScope,
         StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver
     )

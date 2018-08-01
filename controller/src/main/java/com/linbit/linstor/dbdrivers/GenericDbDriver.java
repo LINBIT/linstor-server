@@ -39,7 +39,6 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -125,9 +124,9 @@ public class GenericDbDriver implements DatabaseDriver
         SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataGenericDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
-        @Uninitialized CoreModule.NodesMap nodesMapRef,
-        @Uninitialized CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
     )
     {
         dbCtx = privCtx;

@@ -18,7 +18,6 @@ import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.annotation.Uninitialized;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -88,7 +87,7 @@ public class ControllerDbModule extends AbstractModule
     public StorPoolDefinition initializeDisklessStorPoolDfn(
         ErrorReporter errorLogRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
-        @Uninitialized CoreModule.StorPoolDefinitionMap storPoolDfnMap,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMap,
         StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver
     )
     {
