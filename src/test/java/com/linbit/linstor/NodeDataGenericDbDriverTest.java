@@ -679,10 +679,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         Map<NodeData, InitMaps> allNodes = dbDriver.loadAll();
         assertEquals(2, allNodes.size());
 
-        clearCaches();
-        allNodes = dbDriver.loadAll();
-        assertEquals(2, allNodes.size());
-
         Iterator<NodeData> loadedNodesIterator = allNodes.keySet().iterator();
         Node loadedNode0 = loadedNodesIterator.next();
         Node loadedNode1 = loadedNodesIterator.next();

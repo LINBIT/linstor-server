@@ -9,6 +9,7 @@ import java.util.List;
 import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.util.Modules;
+import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
@@ -17,6 +18,7 @@ import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionRepository;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
@@ -76,9 +78,6 @@ public abstract class ApiTestBase extends GenericDbBase
     @Bind @Mock
     protected NetComContainer netComContainer;
 
-    @Inject @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN)
-    protected StorPoolDefinition disklessStorPoolDfn;
-
     @Inject @Named(LinStor.CONTROLLER_PROPS)
     protected Props ctrlConf;
 
@@ -125,7 +124,7 @@ public abstract class ApiTestBase extends GenericDbBase
         }
     }
 
-    private void create(TransactionMgr transMgr, AccessContext accCtx) throws AccessDeniedException, SQLException
+    private void create(TransactionMgr transMgr, AccessContext accCtx) throws Exception
     {
         Identity.create(SYS_CTX, accCtx.subjectId.name);
         SecurityType.create(SYS_CTX, accCtx.subjectDomain.name);
@@ -154,7 +153,8 @@ public abstract class ApiTestBase extends GenericDbBase
         rscDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
         storPoolDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
 
-        ObjectProtection disklessStorPoolDfnProt = disklessStorPoolDfn.getObjProt();
+        ObjectProtection disklessStorPoolDfnProt =
+            storPoolDefinitionRepository.get(SYS_CTX, new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)).getObjProt();
         disklessStorPoolDfnProt.setConnection(transMgr);
         disklessStorPoolDfnProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
     }

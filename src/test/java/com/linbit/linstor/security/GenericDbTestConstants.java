@@ -299,13 +299,6 @@ public interface GenericDbTestConstants
         "    VALUES ('/sys/controller/shutdown', 'SYSTEM', 'SYSADM', 'SYSTEM')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('/sys/controller/shutdown', 'SYSTEM', 15)",
-        "INSERT INTO STOR_POOL_DEFINITIONS VALUES ('f51611c6-528f-4793-a87a-866d09e6733a', 'DFLTSTORPOOL', 'DfltStorPool')",
-        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
-        "    VALUES ('/storpooldefinitions/DFLTSTORPOOL', 'SYSTEM', 'SYSADM', 'SHARED')",
-        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
-        "    VALUES ('/storpooldefinitions/DFLTSTORPOOL', 'PUBLIC', 7)",
-        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
-        "    VALUES ('/storpooldefinitions/DFLTSTORPOOL', 'USER', 7)",
         "INSERT INTO STOR_POOL_DEFINITIONS VALUES ('622807eb-c8c4-44f0-b03d-a08173c8fa1b', 'DFLTDISKLESSSTORPOOL', 'DfltDisklessStorPool')",
         "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
         "    VALUES ('/storpooldefinitions/DFLTDISKLESSSTORPOOL', 'SYSTEM', 'SYSADM', 'SHARED')",

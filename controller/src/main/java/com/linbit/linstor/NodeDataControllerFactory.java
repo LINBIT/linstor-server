@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.dbdrivers.ControllerDbModule;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -13,7 +15,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -25,32 +26,46 @@ public class NodeDataControllerFactory
     private final NodeDataDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final StorPoolDataFactory storPoolDataFactory;
-    private final StorPoolDefinition disklessStorPoolDfn;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final NodeRepository nodeRepository;
+    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
+
+    private static final StorPoolName DISKLESS_STOR_POOL_NAME;
+
+    static
+    {
+        try
+        {
+            DISKLESS_STOR_POOL_NAME = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError("Default diskless stor pool name not valid");
+        }
+    }
 
     @Inject
     public NodeDataControllerFactory(
         NodeDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN) StorPoolDefinition disklessStorPoolDfnRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        NodeRepository nodeRepositoryRef
+        NodeRepository nodeRepositoryRef,
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef
     )
     {
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
-        disklessStorPoolDfn = disklessStorPoolDfnRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         nodeRepository = nodeRepositoryRef;
+        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
     }
 
     public NodeData create(
@@ -89,7 +104,7 @@ public class NodeDataControllerFactory
             storPoolDataFactory.create(
                 accCtx,
                 nodeData,
-                disklessStorPoolDfn,
+                storPoolDefinitionRepository.get(accCtx, DISKLESS_STOR_POOL_NAME),
                 DisklessDriver.class.getSimpleName()
             )
         );

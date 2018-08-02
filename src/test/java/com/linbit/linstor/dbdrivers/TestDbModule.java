@@ -57,8 +57,6 @@ import com.google.inject.Provides;
 
 public class TestDbModule extends AbstractModule
 {
-    public static final String DISKLESS_STOR_POOL_DFN = "disklessStorPoolDfn";
-
     @Override
     protected void configure()
     {
@@ -84,52 +82,5 @@ public class TestDbModule extends AbstractModule
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
         bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataGenericDbDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
-    }
-
-    @Provides
-    @Singleton
-    @Named(DISKLESS_STOR_POOL_DFN)
-    public StorPoolDefinition initializeDisklessStorPoolDfn(
-        ErrorReporter errorLogRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLock,
-        DbConnectionPool dbConnPool,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMap,
-        LinStorScope initScopeScope,
-        StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver
-    )
-    {
-        StorPoolDefinitionData disklessStorPoolDfn = null;
-
-        TransactionMgr transMgr = null;
-        try
-        {
-            storPoolDfnMapLock.writeLock().lock();
-            transMgr = new ControllerTransactionMgr(dbConnPool);
-
-            initScopeScope.enter();
-            initScopeScope.seed(TransactionMgr.class, transMgr);
-
-            disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
-            storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
-
-            transMgr.commit();
-            initScopeScope.exit();
-        }
-        catch (SQLException sqlExc)
-        {
-            errorLogRef.reportError(sqlExc);
-            throw new LinStorRuntimeException(sqlExc.getMessage(), sqlExc);
-        }
-        finally
-        {
-            storPoolDfnMapLock.writeLock().unlock();
-
-            if (transMgr != null)
-            {
-                transMgr.returnConnection();
-            }
-        }
-
-        return disklessStorPoolDfn;
     }
 }

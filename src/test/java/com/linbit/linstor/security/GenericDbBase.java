@@ -208,8 +208,6 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         injector.getInstance(DbDataInitializer.class).initialize();
 
         injector.injectMembers(this);
-
-        clearCaches();
     }
 
     protected void enterScope() throws Exception
@@ -217,13 +215,6 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
         testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
-    }
-
-    protected void clearCaches()
-    {
-        nodesMap.clear();
-        rscDfnMap.clear();
-        storPoolDfnMap.clear();
     }
 
     @After

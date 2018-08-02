@@ -4,17 +4,18 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.ResourceDefinitionRepository;
+import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -37,6 +38,7 @@ public class DbDataInitializer
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final ReadWriteLock reconfigurationLock;
     private final DatabaseDriver databaseDriver;
+    private final StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver;
 
     @Inject
     public DbDataInitializer(
@@ -50,7 +52,8 @@ public class DbDataInitializer
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
-        DatabaseDriver databaseDriverRef
+        DatabaseDriver databaseDriverRef,
+        StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriverRef
     )
     {
         errorReporter = errorReporterRef;
@@ -64,6 +67,7 @@ public class DbDataInitializer
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         reconfigurationLock = reconfigurationLockRef;
         databaseDriver = databaseDriverRef;
+        storPoolDfnDbDriver = storPoolDfnDbDriverRef;
     }
 
     public void initialize()
@@ -86,6 +90,7 @@ public class DbDataInitializer
 
             loadCoreConf();
             loadCoreObjects();
+            initializeDisklessStorPoolDfn();
 
             transMgr.commit();
             initScope.exit();
@@ -125,7 +130,7 @@ public class DbDataInitializer
         stltConf.loadAll();
     }
 
-    void loadCoreObjects()
+    private void loadCoreObjects()
         throws AccessDeniedException, SQLException
     {
         errorReporter.logInfo("Core objects load from database is in progress");
@@ -137,5 +142,12 @@ public class DbDataInitializer
         databaseDriver.loadAll();
 
         errorReporter.logInfo("Core objects load from database completed");
+    }
+
+    private void initializeDisklessStorPoolDfn()
+        throws AccessDeniedException, SQLException
+    {
+        StorPoolDefinitionData disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
+        storPoolDefinitionRepository.put(initCtx, disklessStorPoolDfn.getName(), disklessStorPoolDfn);
     }
 }

@@ -296,8 +296,6 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         );
         objProtDriver.insertOp(resDfnObjProt);
 
-        clearCaches();
-
         Map<ResourceDefinitionData, InitMaps> resourceDefDataList = driver.loadAll();
 
         ResourceDefinitionData res1 = findResourceDefinitionDatabyName(resourceDefDataList, resName);
