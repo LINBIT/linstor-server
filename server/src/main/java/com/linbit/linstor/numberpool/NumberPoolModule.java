@@ -2,24 +2,15 @@ package com.linbit.linstor.numberpool;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.linbit.ImplementationError;
-import com.linbit.ValueInUseException;
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 
 public class NumberPoolModule extends AbstractModule
@@ -28,14 +19,6 @@ public class NumberPoolModule extends AbstractModule
 
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
-
-    // Dependency names for the pools before they have been initialized with data from the DB.
-    // This is necessary because both:
-    // a) Initialization of the pools depends on the initial core data from the DB
-    // b) Initialization of the core data from the DB requires references to the pools to instantiate the data objects
-    // Hence to avoid circular dependencies, uninitialized pools are when loading the initial core data.
-    public static final String UNINITIALIZED_MINOR_NUMBER_POOL = "UninitializedMinorNumberPool";
-    public static final String UNINITIALIZED_TCP_PORT_POOL = "UninitializedTcpPortPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
@@ -58,7 +41,7 @@ public class NumberPoolModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(UNINITIALIZED_MINOR_NUMBER_POOL)
+    @Named(MINOR_NUMBER_POOL)
     public DynamicNumberPool minorNrPool(
         ErrorReporter errorReporter,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
@@ -82,50 +65,7 @@ public class NumberPoolModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(MINOR_NUMBER_POOL)
-    public DynamicNumberPool initializeMinorNrPool(
-        ErrorReporter errorReporter,
-        @SystemContext AccessContext initCtx,
-        @Named(UNINITIALIZED_MINOR_NUMBER_POOL) DynamicNumberPool minorNrPool,
-        CoreModule.ResourceDefinitionMap rscDfnMap
-    )
-    {
-        try
-        {
-            for (ResourceDefinition curRscDfn : rscDfnMap.values())
-            {
-                Iterator<VolumeDefinition> vlmIter = curRscDfn.iterateVolumeDfn(initCtx);
-                while (vlmIter.hasNext())
-                {
-                    VolumeDefinition curVlmDfn = vlmIter.next();
-                    MinorNumber minorNr = curVlmDfn.getMinorNr(initCtx);
-                    try
-                    {
-                        minorNrPool.allocate(minorNr.value);
-                    }
-                    catch (ValueInUseException exc)
-                    {
-                        errorReporter.logError(
-                            "Skipping initial allocation in pool: " + exc.getMessage());
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "An " + accExc.getClass().getSimpleName() + " exception was generated " +
-                    "during number allocation cache initialization",
-                accExc
-            );
-        }
-
-        return minorNrPool;
-    }
-
-    @Provides
-    @Singleton
-    @Named(UNINITIALIZED_TCP_PORT_POOL)
+    @Named(TCP_PORT_POOL)
     public DynamicNumberPool tcpPortPool(
         ErrorReporter errorReporter,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
@@ -143,44 +83,6 @@ public class NumberPoolModule extends AbstractModule
         );
 
         tcpPortPool.reloadRange();
-
-        return tcpPortPool;
-    }
-
-    @Provides
-    @Singleton
-    @Named(TCP_PORT_POOL)
-    public DynamicNumberPool initializeTcpPortPool(
-        ErrorReporter errorReporter,
-        @SystemContext AccessContext initCtx,
-        @Named(UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPool,
-        CoreModule.ResourceDefinitionMap rscDfnMap
-    )
-    {
-        try
-        {
-            for (ResourceDefinition curRscDfn : rscDfnMap.values())
-            {
-                TcpPortNumber portNr = curRscDfn.getPort(initCtx);
-                try
-                {
-                    tcpPortPool.allocate(portNr.value);
-                }
-                catch (ValueInUseException exc)
-                {
-                    errorReporter.logError(
-                        "Skipping initial allocation in pool: " + exc.getMessage());
-                }
-            }
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "An " + accExc.getClass().getSimpleName() + " exception was generated " +
-                    "during number allocation cache initialization",
-                accExc
-            );
-        }
 
         return tcpPortPool;
     }

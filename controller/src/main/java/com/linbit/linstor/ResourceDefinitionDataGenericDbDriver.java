@@ -101,7 +101,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
+        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )

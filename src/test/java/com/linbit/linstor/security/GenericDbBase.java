@@ -117,14 +117,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Mock @Bind @Named(NumberPoolModule.MINOR_NUMBER_POOL)
     protected DynamicNumberPool minorNrPoolMock;
 
-    @Mock @Bind @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL)
-    protected DynamicNumberPool uninitializedMinorNrPoolMock;
-
     @Mock @Bind @Named(NumberPoolModule.TCP_PORT_POOL)
     protected DynamicNumberPool tcpPortPoolMock;
-
-    @Mock @Bind @Named(NumberPoolModule.UNINITIALIZED_TCP_PORT_POOL)
-    protected DynamicNumberPool uninitializedTcpPortPoolMock;
 
     @Inject private DbAccessor secureDbDriver;
     @Inject private DatabaseDriver persistenceDbDriver;

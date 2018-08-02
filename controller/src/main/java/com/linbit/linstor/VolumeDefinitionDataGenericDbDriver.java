@@ -99,7 +99,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.UNINITIALIZED_MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
+        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )

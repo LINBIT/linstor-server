@@ -40,6 +40,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.NetComModule;
+import com.linbit.linstor.numberpool.DbNumberPoolInitializer;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -101,12 +102,10 @@ public final class Controller
     private final DbConnectionPool dbConnPool;
 
     private final DbConnectionPoolInitializer dbConnectionPoolInitializer;
-
     private final DbSecurityInitializer dbSecurityInitializer;
-
     private final DbCoreObjProtInitializer dbCoreObjProtInitializer;
-
     private final DbDataInitializer dbDataInitializer;
+    private final DbNumberPoolInitializer dbNumberPoolInitializer;
 
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
@@ -137,6 +136,7 @@ public final class Controller
         DbSecurityInitializer dbSecurityInitializerRef,
         DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
         DbDataInitializer dbDataInitializerRef,
+        DbNumberPoolInitializer dbNumberPoolInitializerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
@@ -159,6 +159,7 @@ public final class Controller
         dbSecurityInitializer = dbSecurityInitializerRef;
         dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
         dbDataInitializer = dbDataInitializerRef;
+        dbNumberPoolInitializer = dbNumberPoolInitializerRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         ctrlConf = ctrlConfRef;
         nodesMap = nodesMapRef;
@@ -203,6 +204,7 @@ public final class Controller
 
             dbCoreObjProtInitializer.initialize();
             dbDataInitializer.initialize();
+            dbNumberPoolInitializer.initialize();
 
             controllerNetComInitializer.initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null),
