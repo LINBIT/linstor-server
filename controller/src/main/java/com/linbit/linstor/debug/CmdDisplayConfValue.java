@@ -3,13 +3,10 @@ package com.linbit.linstor.debug;
 import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.ControllerCoreModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Named;
 import java.io.PrintStream;
@@ -59,14 +56,12 @@ public class CmdDisplayConfValue extends BaseDebugCmd
     }
 
     private final ReadWriteLock confLock;
-    private final Props conf;
-    private final ObjectProtection confProt;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     public CmdDisplayConfValue(
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
-        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         super(
@@ -81,8 +76,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
         );
 
         confLock = confLockRef;
-        conf = confRef;
-        confProt = confProtRef;
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     @Override
@@ -106,12 +100,10 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             confLock.readLock().lock();
             try
             {
-                confProt.requireAccess(accCtx, AccessType.VIEW);
-
-                Props searchRoot = conf;
+                Props searchRoot = systemConfRepository.getCtrlConfForView(accCtx);
                 if (prmNamespace != null)
                 {
-                    searchRoot = conf.getNamespace(prmNamespace).orElse(null);
+                    searchRoot = searchRoot.getNamespace(prmNamespace).orElse(null);
                     if (searchRoot == null)
                     {
                         throw new NamespaceException(

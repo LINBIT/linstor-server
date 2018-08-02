@@ -106,29 +106,6 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoadGetInstance() throws Exception
-    {
-        driver.create(spdd);
-        storPoolDfnMap.put(spName, spdd);
-
-        StorPoolDefinitionData loadedSpdd = storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName);
-        assertNotNull(loadedSpdd);
-        assertEquals(uuid, loadedSpdd.getUuid());
-        assertEquals(spName, loadedSpdd.getName());
-        assertNotNull(loadedSpdd.getObjProt());
-    }
-
-    @Test
-    public void testCache() throws Exception
-    {
-        driver.create(spdd);
-        super.storPoolDfnMap.put(spName, spdd);
-        // no clearCaches
-
-        assertEquals(spdd, storPoolDefinitionDataFactory.getInstance(SYS_CTX, spName));
-    }
-
-    @Test
     public void testDelete() throws Exception
     {
         driver.create(spdd);

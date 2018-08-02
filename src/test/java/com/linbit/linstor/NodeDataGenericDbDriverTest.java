@@ -217,28 +217,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoadGetInstance() throws Exception
-    {
-        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName);
-        assertNull(loadedNode);
-
-        insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
-        nodesMap.put(nodeName, node);
-        commit();
-
-        Iterator<NodeData> nodeIt = dbDriver.loadAll().keySet().iterator();
-        loadedNode = nodeIt.next();
-
-        assertFalse(nodeIt.hasNext());
-
-        assertNotNull(loadedNode);
-        assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
-        assertEquals(0, loadedNode.getFlags().getFlagsBits(SYS_CTX));
-        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(SYS_CTX));
-        assertEquals(0, loadedNode.getProps(SYS_CTX).size()); // serial number
-    }
-
-    @Test
     @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:variabledeclarationusagedistance"})
     public void testLoadGetInstanceComplete() throws Exception
     {
@@ -491,8 +469,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             commit();
         }
 
-        NodeData loadedNode = nodeDataFactory.getInstance(SYS_CTX, nodeName);
-        NodeData loadedNode2 = nodeDataFactory.getInstance(SYS_CTX, nodeName2);
+        NodeData loadedNode = nodeRepository.get(SYS_CTX, nodeName);
+        NodeData loadedNode2 = nodeRepository.get(SYS_CTX, nodeName2);
 
         assertNotNull(loadedNode);
 
@@ -663,16 +641,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         assertNotNull(nodeConProps);
         assertEquals(nodeConTestValue, nodeConProps.getProp(nodeConTestKey));
         assertEquals(1, nodeConProps.size());
-    }
-
-    @Test
-    public void testCache() throws Exception
-    {
-        dbDriver.create(node);
-        nodesMap.put(nodeName, node);
-        // no clearCaches
-
-        assertEquals(node, nodeDataFactory.getInstance(SYS_CTX, nodeName));
     }
 
     @Test

@@ -2,16 +2,14 @@ package com.linbit.linstor.core;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.linbit.ControllerLinstorModule;
+import com.linbit.ControllerWorkerPoolModule;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.md.MetaDataModule;
-import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.ControllerLinstorModule;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
@@ -24,6 +22,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.debug.ControllerDebugModule;
@@ -47,10 +46,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.Initializer;
+import com.linbit.linstor.security.DbCoreObjProtInitializer;
+import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.tasks.ErrorReportTimeOutTask;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
@@ -64,7 +62,6 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -103,6 +100,12 @@ public final class Controller
     // Database connection pool service
     private final DbConnectionPool dbConnPool;
 
+    private final DbConnectionPoolInitializer dbConnectionPoolInitializer;
+
+    private final DbSecurityInitializer dbSecurityInitializer;
+
+    private final DbCoreObjProtInitializer dbCoreObjProtInitializer;
+
     private final DbDataInitializer dbDataInitializer;
 
     private final ApplicationLifecycleManager applicationLifecycleManager;
@@ -130,6 +133,9 @@ public final class Controller
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         DbConnectionPool dbConnPoolRef,
+        DbConnectionPoolInitializer dbConnectionPoolInitializerRef,
+        DbSecurityInitializer dbSecurityInitializerRef,
+        DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
         DbDataInitializer dbDataInitializerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
@@ -149,6 +155,9 @@ public final class Controller
         reconfigurationLock = reconfigurationLockRef;
         systemServicesMap = systemServicesMapRef;
         dbConnPool = dbConnPoolRef;
+        dbConnectionPoolInitializer = dbConnectionPoolInitializerRef;
+        dbSecurityInitializer = dbSecurityInitializerRef;
+        dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
         dbDataInitializer = dbDataInitializerRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         ctrlConf = ctrlConfRef;
@@ -183,8 +192,16 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
+            dbConnectionPoolInitializer.initialize();
+
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
+            // Object protection loading has a hidden dependency on initializing the security objects
+            // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
+            // Hence the security objects should be initialized first.
+            dbSecurityInitializer.initialize();
+
+            dbCoreObjProtInitializer.initialize();
             dbDataInitializer.initialize();
 
             controllerNetComInitializer.initNetComServices(
@@ -336,6 +353,7 @@ public final class Controller
                 new ConfigModule(),
                 new CoreTimerModule(),
                 new MetaDataModule(),
+                new ControllerWorkerPoolModule(),
                 new ControllerLinstorModule(),
                 new LinStorModule(),
                 new CoreModule(),
@@ -359,16 +377,6 @@ public final class Controller
                     (System.currentTimeMillis() - startDepInjectionTime))
             );
 
-            // Object protection loading has a hidden dependency on initializing the security objects
-            // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
-            // Hence the security objects should be initialized first.
-            initializeSecurityObjects(
-                errorLog,
-                injector.getInstance(Key.get(AccessContext.class, SystemContext.class)),
-                injector.getInstance(ControllerDatabase.class),
-                injector.getInstance(DbAccessor.class)
-            );
-
             Controller instance = injector.getInstance(Controller.class);
             instance.start();
 
@@ -385,30 +393,5 @@ public final class Controller
 
         System.out.println();
         System.exit(0);
-    }
-
-    private static void initializeSecurityObjects(
-        ErrorReporter errorLogRef,
-        AccessContext initCtx,
-        ControllerDatabase ctrlDb,
-        DbAccessor driver
-    )
-        throws InitializationException
-    {
-        // Load security identities, roles, domains/types, etc.
-        errorLogRef.logInfo("Loading security objects");
-        try
-        {
-            Initializer.load(initCtx, ctrlDb, driver);
-        }
-        catch (SQLException | InvalidNameException | AccessDeniedException exc)
-        {
-            throw new InitializationException("Failed to load security objects", exc);
-        }
-
-        errorLogRef.logInfo(
-            "Current security level is %s",
-            SecurityLevel.get().name()
-        );
     }
 }

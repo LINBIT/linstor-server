@@ -3,6 +3,7 @@ package com.linbit.linstor.security;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -46,7 +47,8 @@ public class SecurityModelTest
         objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
             sysCtx,
             transMgrProvider,
-            transObjFactory
+            transObjFactory,
+            new LinStorScope()
         );
         setSecurityLevel(SecurityLevel.MAC);
     }

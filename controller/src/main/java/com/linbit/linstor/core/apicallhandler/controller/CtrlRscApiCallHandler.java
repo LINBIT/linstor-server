@@ -27,6 +27,7 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
@@ -34,6 +35,7 @@ import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
@@ -55,7 +57,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.ConfigModule;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -73,9 +74,6 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
@@ -96,10 +94,8 @@ public class CtrlRscApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ObjectProtection rscDfnMapProt;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection nodesMapProt;
-    private final CoreModule.NodesMap nodesMap;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final NodeRepository nodeRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -116,10 +112,8 @@ public class CtrlRscApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        CoreModule.NodesMap nodesMapRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
+        NodeRepository nodeRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -135,10 +129,8 @@ public class CtrlRscApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        rscDfnMap = rscDfnMapRef;
-        nodesMapProt = nodesMapProtRef;
-        nodesMap = nodesMapRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
+        nodeRepository = nodeRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -719,11 +711,11 @@ public class CtrlRscApiCallHandler
             {
                 responseConverter.addWithOp(
                     responses, context, makeRscDfnDeletedResponse(deletedRscDfnName, rscDfnUuid));
-                rscDfnMap.remove(deletedRscDfnName);
+                resourceDefinitionRepository.remove(apiCtx, deletedRscDfnName);
             }
             if (deletedNodeName != null)
             {
-                nodesMap.remove(deletedNodeName);
+                nodeRepository.remove(apiCtx, deletedNodeName);
                 node.getPeer(apiCtx).closeConnection();
                 responseConverter.addWithOp(responses, context, makeNodeDeletedResponse(deletedNodeName, nodeUuid));
             }
@@ -746,14 +738,11 @@ public class CtrlRscApiCallHandler
         Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-
             final List<String> upperFilterNodes = filterNodes.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterResources =
                 filterResources.stream().map(String::toUpperCase).collect(toList());
 
-            rscDfnMap.values().stream()
+            resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
                 .filter(rscDfn -> upperFilterResources.isEmpty() ||
                     upperFilterResources.contains(rscDfn.getName().value))
                 .forEach(rscDfn ->
@@ -777,7 +766,7 @@ public class CtrlRscApiCallHandler
                 );
 
             // get resource states of all nodes
-            for (final Node node : nodesMap.values())
+            for (final Node node : nodeRepository.getMapForView(peerAccCtx.get()).values())
             {
                 if (upperFilterNodes.isEmpty() || upperFilterNodes.contains(node.getName().value))
                 {
@@ -840,7 +829,7 @@ public class CtrlRscApiCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = nodesMap.get(nodeName);
+            Node node = nodeRepository.get(apiCtx, nodeName);
 
             if (node != null)
             {
@@ -1127,7 +1116,7 @@ public class CtrlRscApiCallHandler
         try
         {
             NodeName nodeName = peer.get().getNode().getName();
-            ResourceDefinition rscDfn = rscDfnMap.get(new ResourceName(resourceName));
+            ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
             for (VlmUpdatePojo vlmUpd : vlmUpdates)

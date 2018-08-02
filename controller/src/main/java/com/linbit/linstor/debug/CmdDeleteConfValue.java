@@ -2,15 +2,11 @@ package com.linbit.linstor.debug;
 
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.ControllerCoreModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -44,16 +40,14 @@ public class CmdDeleteConfValue extends BaseDebugCmd
 
     private final DbConnectionPool dbConnectionPool;
     private final Lock confWrLock;
-    private final Props conf;
-    private final ObjectProtection confProt;
+    private final SystemConfRepository systemConfRepository;
     private final Provider<TransactionMgr> trnActProvider;
 
     @Inject
     public CmdDeleteConfValue(
         DbConnectionPool dbConnectionPoolRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
-        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef,
+        SystemConfRepository systemConfRepositoryRef,
         Provider<TransactionMgr> trnActProviderRef
     )
     {
@@ -70,8 +64,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
 
         dbConnectionPool = dbConnectionPoolRef;
         confWrLock = confLockRef.writeLock();
-        conf = confRef;
-        confProt = confProtRef;
+        systemConfRepository = systemConfRepositoryRef;
         trnActProvider = trnActProviderRef;
     }
 
@@ -94,11 +87,9 @@ public class CmdDeleteConfValue extends BaseDebugCmd
 
             if (key != null)
             {
-                confProt.requireAccess(accCtx, AccessType.CHANGE);
-
                 transMgr = trnActProvider.get();
 
-                String removed = conf.removeProp(key, namespace);
+                String removed = systemConfRepository.removeCtrlProp(accCtx, key, namespace);
                 if (removed == null)
                 {
                     if (namespace == null)
@@ -162,10 +153,6 @@ public class CmdDeleteConfValue extends BaseDebugCmd
             if (transMgr != null)
             {
                 transMgr.returnConnection();
-            }
-            if (conf != null)
-            {
-                conf.setConnection(null);
             }
         }
     }

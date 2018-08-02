@@ -1,26 +1,25 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.UUID;
 
+@Singleton
 public class NodeDataControllerFactory
 {
     private final NodeDataDatabaseDriver dbDriver;
@@ -30,8 +29,7 @@ public class NodeDataControllerFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final CoreModule.NodesMap nodesMap;
-    private final ObjectProtection nodesMapObjProt;
+    private final NodeRepository nodeRepository;
 
     @Inject
     public NodeDataControllerFactory(
@@ -42,8 +40,7 @@ public class NodeDataControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CoreModule.NodesMap nodesMapRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef
+        NodeRepository nodeRepositoryRef
     )
     {
         dbDriver = dbDriverRef;
@@ -53,18 +50,7 @@ public class NodeDataControllerFactory
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
-        nodesMap = nodesMapRef;
-        nodesMapObjProt = nodesMapProtRef;
-    }
-
-    public NodeData getInstance(
-        AccessContext accCtx,
-        NodeName nameRef
-    )
-        throws AccessDeniedException
-    {
-        nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (NodeData) nodesMap.get(nameRef);
+        nodeRepository = nodeRepositoryRef;
     }
 
     public NodeData create(
@@ -75,7 +61,7 @@ public class NodeDataControllerFactory
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        NodeData nodeData = getInstance(accCtx, nameRef);
+        NodeData nodeData = nodeRepository.get(accCtx, nameRef);
 
         if (nodeData != null)
         {

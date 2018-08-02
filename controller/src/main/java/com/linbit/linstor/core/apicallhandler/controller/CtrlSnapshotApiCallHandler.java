@@ -9,6 +9,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDataControllerFactory;
@@ -31,7 +32,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -46,12 +46,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -77,8 +73,7 @@ public class CtrlSnapshotApiCallHandler
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotDataControllerFactory snapshotDataFactory;
     private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
-    private final ObjectProtection rscDfnMapProt;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -97,8 +92,7 @@ public class CtrlSnapshotApiCallHandler
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotDataControllerFactory snapshotDataFactoryRef,
         SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -116,8 +110,7 @@ public class CtrlSnapshotApiCallHandler
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        rscDfnMap = rscDfnMapRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -354,7 +347,7 @@ public class CtrlSnapshotApiCallHandler
 
             Snapshot snapshot = null;
 
-            ResourceDefinition rscDefinition = rscDfnMap.get(resourceName);
+            ResourceDefinition rscDefinition = resourceDefinitionRepository.get(apiCtx, resourceName);
             if (rscDefinition != null)
             {
                 SnapshotDefinition snapshotDfn = rscDefinition.getSnapshotDfn(apiCtx, snapshotName);
@@ -411,8 +404,7 @@ public class CtrlSnapshotApiCallHandler
         ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns = new ArrayList<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-            for (ResourceDefinition rscDfn : rscDfnMap.values())
+            for (ResourceDefinition rscDfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())
             {
                 for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
                 {

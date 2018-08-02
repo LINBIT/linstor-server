@@ -4,16 +4,12 @@ import javax.inject.Inject;
 
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.ControllerCoreModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Named;
@@ -51,16 +47,14 @@ public class CmdSetConfValue extends BaseDebugCmd
 
     private final DbConnectionPool dbConnectionPool;
     private final Lock confWrLock;
-    private final Props conf;
-    private final ObjectProtection confProt;
+    private final SystemConfRepository systemConfRepository;
     private final Provider<TransactionMgr> trnActProvider;
 
     @Inject
     public CmdSetConfValue(
         DbConnectionPool dbConnectionPoolRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
-        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef,
+        SystemConfRepository systemConfRepositoryRef,
         Provider<TransactionMgr> trnActProviderRef
     )
     {
@@ -77,8 +71,7 @@ public class CmdSetConfValue extends BaseDebugCmd
 
         dbConnectionPool = dbConnectionPoolRef;
         confWrLock = confLockRef.writeLock();
-        conf = confRef;
-        confProt = confProtRef;
+        systemConfRepository = systemConfRepositoryRef;
         trnActProvider = trnActProviderRef;
     }
 
@@ -102,12 +95,10 @@ public class CmdSetConfValue extends BaseDebugCmd
 
             if (key != null && value != null)
             {
-                confProt.requireAccess(accCtx, AccessType.CHANGE);
-
                 // Commit changes to the database
                 transMgr = trnActProvider.get();
 
-                String previous = conf.setProp(key, value, namespace);
+                String previous = systemConfRepository.setCtrlProp(accCtx, key, value, namespace);
 
                 transMgr.commit();
 
@@ -173,10 +164,6 @@ public class CmdSetConfValue extends BaseDebugCmd
             if (transMgr != null)
             {
                 transMgr.returnConnection();
-            }
-            if (conf != null)
-            {
-                conf.setConnection(null);
             }
         }
     }

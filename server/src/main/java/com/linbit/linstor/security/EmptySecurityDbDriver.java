@@ -3,6 +3,8 @@ package com.linbit.linstor.security;
 import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -99,10 +101,22 @@ public class EmptySecurityDbDriver implements DbAccessor
         EmptyObjectProtectionDatabaseDriver(
             @SystemContext AccessContext accCtx,
             Provider<TransactionMgr> transMgrProviderRef,
-            TransactionObjectFactory transObjFactoryRef
+            TransactionObjectFactory transObjFactoryRef,
+            LinStorScope initScope
         )
+            throws AccessDeniedException, SQLException
         {
-            objProt = new ObjectProtection(accCtx, "", null, transObjFactoryRef, transMgrProviderRef);
+            // Create a dummy singleton object protection instance which is used everywhere in the satellite
+            objProt = new ObjectProtection(accCtx, "", this, transObjFactoryRef, transMgrProviderRef);
+
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            initScope.enter();
+            initScope.seed(TransactionMgr.class, transMgr);
+
+            objProt.addAclEntry(accCtx, accCtx.getRole(), AccessType.CONTROL);
+
+            transMgr.commit();
+            initScope.exit();
         }
 
         @Override

@@ -3,6 +3,8 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
@@ -20,11 +22,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.UUID;
@@ -36,8 +35,8 @@ public class CtrlWatchApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<Peer> peer;
     private final EventBroker eventBroker;
-    private final ObjectProtection nodesMapProt;
-    private final ObjectProtection rscDfnMapProt;
+    private final NodeRepository nodeRepository;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
 
     @Inject
     public CtrlWatchApiCallHandler(
@@ -45,16 +44,16 @@ public class CtrlWatchApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
         EventBroker eventBrokerRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef
+        NodeRepository nodeRepositoryRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef
     )
     {
         errorReporter = errorReporterRef;
         peerAccCtx = peerAccCtxRef;
         peer = peerRef;
         eventBroker = eventBrokerRef;
-        nodesMapProt = nodesMapProtRef;
-        rscDfnMapProt = rscDfnMapProtRef;
+        nodeRepository = nodeRepositoryRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
     }
 
     public ApiCallRc createWatch(
@@ -147,8 +146,8 @@ public class CtrlWatchApiCallHandler
                 // Watches can result in data being retrieved for objects that do not yet exist.
                 // For these objects we do not know the access requirements.
                 // Hence we require read access to the entire node and resource definition collections.
-                nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-                rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
+                nodeRepository.requireAccess(peerAccCtx.get(), AccessType.VIEW);
+                resourceDefinitionRepository.requireAccess(peerAccCtx.get(), AccessType.VIEW);
 
                 eventBroker.createWatch(new Watch(
                     UUID.randomUUID(), peer.get().getId(), peerWatchId,

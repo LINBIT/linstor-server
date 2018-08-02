@@ -89,8 +89,8 @@ public class NodeApiTest extends ApiTestBase
     @DoNotSeedDefaultPeer
     public void crtFailNodesMapViewAccDenied() throws Exception
     {
-        nodesMapProt.delAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole);
-        nodesMapProt.addAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole, AccessType.VIEW);
+        nodeRepository.getObjProt().delAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole);
+        nodeRepository.getObjProt().addAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole, AccessType.VIEW);
 
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), GenericDbBase.PUBLIC_CTX);
         testScope.seed(Peer.class, mockPeer);

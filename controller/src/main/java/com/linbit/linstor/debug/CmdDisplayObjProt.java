@@ -5,21 +5,23 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessControlEntry;
 import com.linbit.linstor.security.AccessControlList;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.RoleName;
-import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.security.ShutdownProtHolder;
 
 import javax.inject.Named;
 import java.io.PrintStream;
@@ -93,14 +95,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final CoreModule.NodesMap nodesMap;
-    private final ObjectProtection nodesMapProt;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection rscDfnMapProt;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-    private final ObjectProtection storPoolDfnMapProt;
-    private final ObjectProtection confProt;
-    private final ObjectProtection shutdownProt;
+    private final NodeRepository nodeRepository;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
+    private final SystemConfRepository systemConfRepository;
+    private final ShutdownProtHolder shutdownProtHolder;
 
     @Inject
     public CmdDisplayObjProt(
@@ -108,14 +107,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        CoreModule.NodesMap nodesMapRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection confProtRef,
-        @Named(SecurityModule.SHUTDOWN_PROT) ObjectProtection shutdownProtRef
+        NodeRepository nodeRepositoryRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
+        SystemConfRepository systemConfRepositoryRef,
+        ShutdownProtHolder shutdownProtHolderRef
     )
     {
         super(
@@ -133,14 +129,11 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
-        nodesMap = nodesMapRef;
-        nodesMapProt = nodesMapProtRef;
-        rscDfnMap = rscDfnMapRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        storPoolDfnMap = storPoolDfnMapRef;
-        storPoolDfnMapProt = storPoolDfnMapProtRef;
-        confProt = confProtRef;
-        shutdownProt = shutdownProtRef;
+        nodeRepository = nodeRepositoryRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
+        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
+        systemConfRepository = systemConfRepositoryRef;
+        shutdownProtHolder = shutdownProtHolderRef;
     }
 
     @Override
@@ -236,23 +229,23 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         switch (sysObj)
         {
             case SO_NODE_DIR:
-                objProt = nodesMapProt;
+                objProt = nodeRepository.getObjProt();
                 label = PFX_ARTICLE + LBL_NODE_DIR;
                 break;
             case SO_RSCDFN_DIR:
-                objProt = rscDfnMapProt;
+                objProt = resourceDefinitionRepository.getObjProt();
                 label = PFX_ARTICLE + LBL_RSCDFN_DIR;
                 break;
             case SO_STORPOOLDFN_DIR:
-                objProt = storPoolDfnMapProt;
+                objProt = storPoolDefinitionRepository.getObjProt();
                 label = PFX_ARTICLE + LBL_STORPOOLDFN_DIR;
                 break;
             case SO_CFGVAL:
-                objProt = confProt;
+                objProt = systemConfRepository.getObjProt();
                 label = LBL_CFGVAL;
                 break;
             case SO_SHUTDOWN:
-                objProt = shutdownProt;
+                objProt = shutdownProtHolder.getShutdownProt();
                 label = LBL_SHUTDOWN;
                 break;
             default:
@@ -276,14 +269,12 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
-        nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-
         NodeName nodeObjName = new NodeName(objPath);
         Lock nodesMapRdLock = nodesMapLock.readLock();
         nodesMapRdLock.lock();
         try
         {
-            Node nodeObj = nodesMap.get(nodeObjName);
+            Node nodeObj =  nodeRepository.get(accCtx, nodeObjName);
             if (nodeObj != null)
             {
                 printSectionSeparator(debugOut);
@@ -322,14 +313,12 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
-        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-
         ResourceName rscName = new ResourceName(objPath);
         Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
         rscDfnMapRdLock.lock();
         try
         {
-            ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+            ResourceDefinition rscDfn = resourceDefinitionRepository.get(accCtx, rscName);
             if (rscDfn != null)
             {
                 printSectionSeparator(debugOut);
@@ -369,9 +358,6 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
-        nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-
         String[] pathTokens = objPath.split("/", 2);
         if (pathTokens.length == 2)
         {
@@ -383,7 +369,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             rscDfnMapRdLock.lock();
             try
             {
-                Node nodeObj = nodesMap.get(nodeObjName);
+                Node nodeObj = nodeRepository.get(accCtx, nodeObjName);
                 if (nodeObj != null)
                 {
                     Resource rsc = nodeObj.getResource(accCtx, rscName);
@@ -461,14 +447,12 @@ public class CmdDisplayObjProt extends BaseDebugCmd
     )
         throws InvalidNameException, AccessDeniedException
     {
-        storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-
         StorPoolName spName = new StorPoolName(objPath);
         Lock storPoolMapRdLock = storPoolDfnMapLock.readLock();
         storPoolMapRdLock.lock();
         try
         {
-            StorPoolDefinition storPoolObj = storPoolDfnMap.get(spName);
+            StorPoolDefinition storPoolObj = storPoolDefinitionRepository.get(accCtx, spName);
             if (storPoolObj != null)
             {
                 printSectionSeparator(debugOut);

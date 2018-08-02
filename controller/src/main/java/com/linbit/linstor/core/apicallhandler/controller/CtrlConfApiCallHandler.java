@@ -24,6 +24,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -36,7 +37,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -51,8 +51,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
@@ -70,12 +68,10 @@ public class CtrlConfApiCallHandler
 
     private ErrorReporter errorReporter;
     private final CtrlClientSerializer ctrlClientcomSrzl;
-    private final ObjectProtection ctrlConfProt;
-    private final Props ctrlConf;
-    private final Props stltConf;
+    private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
-    private final AccessContext accCtx;
+    private final Provider<AccessContext> peerAccCtx;
     private final CtrlSecurityObjects ctrlSecObj;
     private final Provider<Peer> peerProvider;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -101,12 +97,10 @@ public class CtrlConfApiCallHandler
     public CtrlConfApiCallHandler(
         ErrorReporter errorReporterRef,
         CtrlClientSerializer ctrlClientcomSrzlRef,
-        @Named(ControllerSecurityModule.CTRL_CONF_PROT) ObjectProtection ctrlConfProtRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
-        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
+        SystemConfRepository systemConfRepositoryRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
-        @PeerContext AccessContext accCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlSecurityObjects ctrlSecObjRef,
         Provider<Peer> peerProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -118,12 +112,10 @@ public class CtrlConfApiCallHandler
     {
         errorReporter = errorReporterRef;
         ctrlClientcomSrzl = ctrlClientcomSrzlRef;
-        ctrlConfProt = ctrlConfProtRef;
-        ctrlConf = ctrlConfRef;
-        stltConf = stltConfRef;
+        systemConfRepository = systemConfRepositoryRef;
         tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
-        accCtx = accCtxRef;
+        peerAccCtx = peerAccCtxRef;
         ctrlSecObj = ctrlSecObjRef;
         peerProvider = peerProviderRef;
         transMgrProvider = transMgrProviderRef;
@@ -138,7 +130,7 @@ public class CtrlConfApiCallHandler
     {
         for (Node nodeToContact : nodesMap.values())
         {
-            Peer satellitePeer = nodeToContact.getPeer(accCtx);
+            Peer satellitePeer = nodeToContact.getPeer(peerAccCtx.get());
 
             if (satellitePeer.isConnected() && !satellitePeer.hasFullSyncFailed())
             {
@@ -157,8 +149,6 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            ctrlConfProt.requireAccess(accCtx, AccessType.CHANGE);
-
             String fullKey;
             if (namespace != null && !"".equals(namespace.trim()))
             {
@@ -179,7 +169,7 @@ public class CtrlConfApiCallHandler
                         setMinorNr(key, namespace, value, apiCallRc);
                         break;
                     default:
-                        stltConf.setProp(fullKey, value);
+                        systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, value);
                         break;
                 }
                 transMgrProvider.get().commit();
@@ -216,7 +206,7 @@ public class CtrlConfApiCallHandler
             if (exc instanceof AccessDeniedException)
             {
                 errorMsg = ResponseUtils.getAccDeniedMsg(
-                    accCtx,
+                    peerAccCtx.get(),
                     "set a controller config property"
                 );
                 rc = ApiConsts.FAIL_ACC_DENIED_CTRL_CFG;
@@ -252,7 +242,7 @@ public class CtrlConfApiCallHandler
             apiCallRc.addEntry(errorMsg, rc | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
             errorReporter.reportError(
                 exc,
-                accCtx,
+                peerAccCtx.get(),
                 null,
                 errorMsg
             );
@@ -265,11 +255,11 @@ public class CtrlConfApiCallHandler
         byte[] data = null;
         try
         {
-            ctrlConfProt.requireAccess(accCtx, AccessType.VIEW);
             CtrlClientSerializer.CtrlClientSerializerBuilder builder =
                 ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId);
-            Map<String, String> mergedMap = new TreeMap<>(ctrlConf.map());
-            mergedMap.putAll(stltConf.map());
+            Map<String, String> mergedMap = new TreeMap<>();
+            mergedMap.putAll(systemConfRepository.getCtrlConfForView(peerAccCtx.get()).map());
+            mergedMap.putAll(systemConfRepository.getStltConfForView(peerAccCtx.get()).map());
             builder.ctrlCfgProps(mergedMap);
 
             data = builder.build();
@@ -286,8 +276,6 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            ctrlConfProt.requireAccess(accCtx, AccessType.CHANGE);
-
             String fullKey;
             if (namespace != null && !"".equals(namespace.trim()))
             {
@@ -297,8 +285,8 @@ public class CtrlConfApiCallHandler
             {
                 fullKey = key;
             }
-            String oldValue = ctrlConf.removeProp(key, namespace);
-            stltConf.removeProp(key, namespace);
+            String oldValue = systemConfRepository.removeCtrlProp(peerAccCtx.get(), key, namespace);
+            systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace);
 
             if (oldValue != null)
             {
@@ -332,7 +320,7 @@ public class CtrlConfApiCallHandler
             if (exc instanceof AccessDeniedException)
             {
                 errorMsg = ResponseUtils.getAccDeniedMsg(
-                    accCtx,
+                    peerAccCtx.get(),
                     "delete a controller config property"
                 );
                 rc = ApiConsts.FAIL_ACC_DENIED_CTRL_CFG;
@@ -362,7 +350,7 @@ public class CtrlConfApiCallHandler
             apiCallRc.addEntry(errorMsg, rc);
             errorReporter.reportError(
                 exc,
-                accCtx,
+                peerAccCtx.get(),
                 null,
                 errorMsg
             );
@@ -375,9 +363,8 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            ctrlConfProt.requireAccess(accCtx, AccessType.VIEW);
-
-            Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
+            Props namespace = systemConfRepository.getCtrlConfForView(peerAccCtx.get())
+                .getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
             if (namespace == null || namespace.isEmpty())
             {
                 ResponseUtils.reportStatic(
@@ -387,7 +374,7 @@ public class CtrlConfApiCallHandler
                     null, // objRefs
                     apiCallRc,
                     errorReporter,
-                    accCtx,
+                    peerAccCtx.get(),
                     peerProvider.get()
                 );
             }
@@ -412,7 +399,7 @@ public class CtrlConfApiCallHandler
         catch (AccessDeniedException exc)
         {
             ResponseUtils.addAnswerStatic(
-                ResponseUtils.getAccDeniedMsg(accCtx, "view the controller properties"),
+                ResponseUtils.getAccDeniedMsg(peerAccCtx.get(), "view the controller properties"),
                 null, // cause
                 null, // details
                 null, // correction
@@ -433,7 +420,7 @@ public class CtrlConfApiCallHandler
                 null,
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -446,7 +433,7 @@ public class CtrlConfApiCallHandler
                 null,
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -460,9 +447,8 @@ public class CtrlConfApiCallHandler
         long mask = ApiConsts.MASK_CTRL_CONF;
         try
         {
-            ctrlConfProt.requireAccess(accCtx, AccessType.CHANGE);
-
-            Props namespace = ctrlConf.getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
+            Props namespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
+                .getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
 
             if (oldPassphrase == null)
             {
@@ -549,7 +535,7 @@ public class CtrlConfApiCallHandler
                 null,
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -557,12 +543,12 @@ public class CtrlConfApiCallHandler
         {
             ResponseUtils.reportStatic(
                 accDeniedExc,
-                ResponseUtils.getAccDeniedMsg(accCtx, "access the controller properties"),
+                ResponseUtils.getAccDeniedMsg(peerAccCtx.get(), "access the controller properties"),
                 ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objects
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -575,7 +561,7 @@ public class CtrlConfApiCallHandler
                 null,
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -588,7 +574,7 @@ public class CtrlConfApiCallHandler
                 null,
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -601,7 +587,7 @@ public class CtrlConfApiCallHandler
                 null,
                 apiCallRc,
                 errorReporter,
-                accCtx,
+                peerAccCtx.get(),
                 peerProvider.get()
             );
         }
@@ -611,6 +597,8 @@ public class CtrlConfApiCallHandler
     private void setPassphraseImpl(String newPassphrase, byte[] masterKey)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException, LinStorException
     {
+        Props ctrlConf = systemConfRepository.getCtrlConfForChange(peerAccCtx.get());
+
         // store the hash of the masterkey in the database
         sha512.reset();
         byte[] hash = sha512.digest(masterKey);
@@ -729,8 +717,6 @@ public class CtrlConfApiCallHandler
     )
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException
     {
-        Props ctrlCfg = ctrlConf;
-
         Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
         if (matcher.find())
         {
@@ -739,7 +725,7 @@ public class CtrlConfApiCallHandler
                 isValidTcpPort(matcher.group("max"), apiCallRc)
             )
             {
-                ctrlCfg.setProp(key, value, namespace);
+                systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
                 tcpPortPool.reloadRange();
 
                 apiCallRc.addEntry(
@@ -795,7 +781,7 @@ public class CtrlConfApiCallHandler
             );
             errorReporter.reportError(
                 exc,
-                accCtx,
+                peerAccCtx.get(),
                 null,
                 errorMsg
             );
@@ -812,8 +798,6 @@ public class CtrlConfApiCallHandler
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
     {
-        Props ctrlCfg = ctrlConf;
-
         Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
         if (matcher.find())
         {
@@ -822,7 +806,7 @@ public class CtrlConfApiCallHandler
                 isValidMinorNr(matcher.group("max"), apiCallRc)
             )
             {
-                ctrlCfg.setProp(key, value, namespace);
+                systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
                 minorNrPool.reloadRange();
 
                 apiCallRc.addEntry(
@@ -878,7 +862,7 @@ public class CtrlConfApiCallHandler
             );
             errorReporter.reportError(
                 exc,
-                accCtx,
+                peerAccCtx.get(),
                 null,
                 errorMsg
             );

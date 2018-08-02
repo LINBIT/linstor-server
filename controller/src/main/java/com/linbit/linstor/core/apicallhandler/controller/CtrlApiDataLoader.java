@@ -3,18 +3,18 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -33,22 +33,22 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiC
 public class CtrlApiDataLoader
 {
     private final Provider<AccessContext> peerAccCtx;
-    private final NodeDataControllerFactory nodeDataFactory;
-    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
-    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final NodeRepository nodeRepository;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
 
     @Inject
     public CtrlApiDataLoader(
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        NodeDataControllerFactory nodeDataFactoryRef,
-        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
-        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef
+        NodeRepository nodeRepositoryRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
-        nodeDataFactory = nodeDataFactoryRef;
-        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        nodeRepository = nodeRepositoryRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
+        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
     }
 
     public final NodeData loadNode(String nodeNameStr, boolean failIfNull)
@@ -61,7 +61,7 @@ public class CtrlApiDataLoader
         NodeData node;
         try
         {
-            node = nodeDataFactory.getInstance(
+            node = nodeRepository.get(
                 peerAccCtx.get(),
                 nodeName
             );
@@ -106,7 +106,7 @@ public class CtrlApiDataLoader
         ResourceDefinitionData rscDfn;
         try
         {
-            rscDfn = resourceDefinitionDataFactory.getInstance(
+            rscDfn = resourceDefinitionRepository.get(
                 peerAccCtx.get(),
                 rscName
             );
@@ -218,7 +218,7 @@ public class CtrlApiDataLoader
         StorPoolDefinitionData storPoolDfn;
         try
         {
-            storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+            storPoolDfn = storPoolDefinitionRepository.get(
                 peerAccCtx.get(),
                 storPoolName
             );

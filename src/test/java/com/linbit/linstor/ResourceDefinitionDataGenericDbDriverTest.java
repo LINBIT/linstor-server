@@ -161,62 +161,6 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testLoadGetInstance() throws Exception
-    {
-        ResourceDefinitionData loadedResDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
-            resName
-        );
-
-        assertNull(loadedResDfn);
-
-        driver.create(resDfn);
-
-        rscDfnMap.put(resDfn.getName(), resDfn);
-
-        resourceDataFactory.create(
-            SYS_CTX,
-            resDfn,
-            node1,
-            node1Id,
-            null
-        );
-
-        loadedResDfn = resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
-            resName
-        );
-
-        assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
-        assertEquals(resDfnUuid, loadedResDfn.getUuid());
-        assertEquals(resName, loadedResDfn.getName());
-        assertEquals(port, loadedResDfn.getPort(SYS_CTX).value);
-        assertEquals(secret, loadedResDfn.getSecret(SYS_CTX));
-        assertEquals(transportType, loadedResDfn.getTransportType(SYS_CTX));
-        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(SYS_CTX));
-    }
-
-    @Test
-    public void testCache() throws Exception
-    {
-        ResourceDefinitionData storedInstance = resourceDefinitionDataFactory.create(
-            SYS_CTX,
-            resName,
-            port,
-            null,
-            secret,
-            transportType
-        );
-        rscDfnMap.put(resName, storedInstance);
-        // no clearCaches
-
-        assertEquals(storedInstance, resourceDefinitionDataFactory.getInstance(
-            SYS_CTX,
-            resName
-        ));
-    }
-
-    @Test
     public void testDelete() throws Exception
     {
         driver.create(resDfn);

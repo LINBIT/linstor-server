@@ -12,6 +12,7 @@ import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
@@ -23,7 +24,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
@@ -39,11 +39,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -68,9 +65,7 @@ public class CtrlStorPoolApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
-    private final ObjectProtection nodesMapProt;
-    private final ObjectProtection storPoolDfnMapProt;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -87,9 +82,7 @@ public class CtrlStorPoolApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -105,9 +98,7 @@ public class CtrlStorPoolApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
-        nodesMapProt = nodesMapProtRef;
-        storPoolDfnMapProt = storPoolDfnMapProtRef;
-        storPoolDfnMap = storPoolDfnMapRef;
+        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -357,13 +348,11 @@ public class CtrlStorPoolApiCallHandler
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
         try
         {
-            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-            storPoolDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
             final List<String> upperFilterStorPools =
                 filterStorPools.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterNodes =
                 filterNodes.stream().map(String::toUpperCase).collect(toList());
-            storPoolDfnMap.values().stream()
+            storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
                 .filter(storPoolDfn -> upperFilterStorPools.isEmpty() ||
                     upperFilterStorPools.contains(storPoolDfn.getName().value))
                 .forEach(storPoolDfn ->
@@ -472,7 +461,7 @@ public class CtrlStorPoolApiCallHandler
     {
         try
         {
-            storPoolDfnMapProt.requireAccess(
+            storPoolDefinitionRepository.requireAccess(
                 peerAccCtx.get(),
                 AccessType.CHANGE
             );
@@ -541,7 +530,8 @@ public class CtrlStorPoolApiCallHandler
     {
         try
         {
-            storPoolDfnMap.put(
+            storPoolDefinitionRepository.put(
+                apiCtx,
                 storPool.getName(),
                 storPool.getDefinition(apiCtx)
             );

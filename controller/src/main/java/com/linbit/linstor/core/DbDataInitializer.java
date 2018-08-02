@@ -2,6 +2,9 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.NodeRepository;
+import com.linbit.linstor.ResourceDefinitionRepository;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -29,9 +32,9 @@ public class DbDataInitializer
     private final ControllerDatabase dbConnPool;
     private final Props ctrlConf;
     private final Props stltConf;
-    private final ObjectProtection nodesMapProt;
-    private final ObjectProtection rscDfnMapProt;
-    private final ObjectProtection storPoolDfnMapProt;
+    private final NodeRepository nodeRepository;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final ReadWriteLock reconfigurationLock;
     private final DatabaseDriver databaseDriver;
 
@@ -43,9 +46,9 @@ public class DbDataInitializer
         ControllerDatabase dbConnPoolRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
+        NodeRepository nodeRepositoryRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         DatabaseDriver databaseDriverRef
     )
@@ -56,9 +59,9 @@ public class DbDataInitializer
         dbConnPool = dbConnPoolRef;
         ctrlConf = ctrlConfRef;
         stltConf = stltConfRef;
-        nodesMapProt = nodesMapProtRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        storPoolDfnMapProt = storPoolDfnMapProtRef;
+        nodeRepository = nodeRepositoryRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
+        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         reconfigurationLock = reconfigurationLockRef;
         databaseDriver = databaseDriverRef;
     }
@@ -127,9 +130,9 @@ public class DbDataInitializer
     {
         errorReporter.logInfo("Core objects load from database is in progress");
 
-        nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
-        rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
-        storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+        nodeRepository.requireAccess(initCtx, AccessType.CONTROL);
+        resourceDefinitionRepository.requireAccess(initCtx, AccessType.CONTROL);
+        storPoolDefinitionRepository.requireAccess(initCtx, AccessType.CONTROL);
 
         databaseDriver.loadAll();
 

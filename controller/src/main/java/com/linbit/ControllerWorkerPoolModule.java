@@ -9,7 +9,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-public class ControllerLinstorModule extends AbstractModule
+public class ControllerWorkerPoolModule extends AbstractModule
 {
     @Override
     protected void configure()

@@ -9,9 +9,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.security.ShutdownProtHolder;
 
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -34,7 +33,7 @@ public class ApplicationLifecycleManager
 
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
-    private final ObjectProtection shutdownProt;
+    private final ShutdownProtHolder shutdownProtHolder;
     private final ReadWriteLock reconfigurationLock;
     private final Map<ServiceName, SystemService> systemServicesMap;
 
@@ -45,14 +44,14 @@ public class ApplicationLifecycleManager
     public ApplicationLifecycleManager(
         @SystemContext AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
-        @Named(SecurityModule.SHUTDOWN_PROT) ObjectProtection shutdownProtRef,
+        ShutdownProtHolder shutdownProtHolderRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef
     )
     {
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
-        shutdownProt = shutdownProtRef;
+        shutdownProtHolder = shutdownProtHolderRef;
         reconfigurationLock = reconfigurationLockRef;
         systemServicesMap = systemServicesMapRef;
 
@@ -130,7 +129,7 @@ public class ApplicationLifecycleManager
      */
     public void requireShutdownAccess(AccessContext accCtx) throws AccessDeniedException
     {
-        shutdownProt.requireAccess(accCtx, AccessType.USE);
+        shutdownProtHolder.getShutdownProt().requireAccess(accCtx, AccessType.USE);
     }
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Supplier;
 
 public class CmdDisplayResource extends BaseDebugCmd
 {
@@ -47,7 +48,7 @@ public class CmdDisplayResource extends BaseDebugCmd
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final ObjectProtection rscDfnMapProt;
+    private final Supplier<ObjectProtection> rscDfnMapProt;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
 
     private final FilteredObjectLister<ResourceDefinition> lister;
@@ -56,7 +57,7 @@ public class CmdDisplayResource extends BaseDebugCmd
         ReadWriteLock reconfigurationLockRef,
         ReadWriteLock nodesMapLockRef,
         ReadWriteLock rscDfnMapLockRef,
-        ObjectProtection rscDfnMapProtRef,
+        Supplier<ObjectProtection> rscDfnMapProtRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef
     )
     {
@@ -115,7 +116,7 @@ public class CmdDisplayResource extends BaseDebugCmd
         {
             if (rscDfnMapProt != null)
             {
-                rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+                rscDfnMapProt.get().requireAccess(accCtx, AccessType.VIEW);
             }
         }
 

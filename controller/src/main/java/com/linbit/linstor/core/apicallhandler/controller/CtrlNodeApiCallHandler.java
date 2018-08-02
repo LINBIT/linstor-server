@@ -18,6 +18,7 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
@@ -32,7 +33,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -49,12 +49,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -88,8 +85,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
-    private final ObjectProtection nodesMapProt;
-    private final CoreModule.NodesMap nodesMap;
+    private final NodeRepository nodeRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -138,8 +134,7 @@ public class CtrlNodeApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        CoreModule.NodesMap nodesMapRef,
+        NodeRepository nodeRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -156,8 +151,7 @@ public class CtrlNodeApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
-        nodesMapProt = nodesMapProtRef;
-        nodesMap = nodesMapRef;
+        nodeRepository = nodeRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -274,7 +268,7 @@ public class CtrlNodeApiCallHandler
                 }
 
                 ctrlTransactionHelper.commit();
-                nodesMap.put(nodeName, node);
+                nodeRepository.put(apiCtx, nodeName, node);
 
                 responseConverter.addWithOp(responses, context,
                     ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
@@ -472,7 +466,7 @@ public class CtrlNodeApiCallHandler
 
                     if (!hasRsc)
                     {
-                        nodesMap.remove(nodeName);
+                        nodeRepository.remove(apiCtx, nodeName);
 
                         Peer nodePeer = nodeData.getPeer(apiCtx);
                         if (nodePeer != null)
@@ -602,7 +596,7 @@ public class CtrlNodeApiCallHandler
 
                 ctrlTransactionHelper.commit();
 
-                nodesMap.remove(nodeName);
+                nodeRepository.remove(apiCtx, nodeName);
 
                 responseConverter.addWithOp(responses, context, ApiCallRcImpl
                     .entryBuilder(ApiConsts.DELETED, successMessage)
@@ -625,8 +619,7 @@ public class CtrlNodeApiCallHandler
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
         {
-            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW); // accDeniedExc1
-            for (Node node : nodesMap.values())
+            for (Node node : nodeRepository.getMapForView(peerAccCtx.get()).values())
             {
                 try
                 {
@@ -677,29 +670,35 @@ public class CtrlNodeApiCallHandler
             errReq.errorReports.addAll(errorReports);
         }
 
-        nodesMap.values().stream()
-            .filter(node -> nodes.isEmpty() ||
-                nodes.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase))
-            .forEach( node ->
-                {
-                    try
+        try
+        {
+            nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
+                .filter(node -> nodes.isEmpty() ||
+                    nodes.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase))
+                .forEach(node ->
                     {
-                        Peer peer = node.getPeer(apiCtx);
-                        if (peer != null && peer.isConnected())
+                        try
                         {
-                            String nodeName = node.getName().getDisplayName();
-                            errReq.requestNodes.add(nodeName);
+                            Peer peer = node.getPeer(apiCtx);
+                            if (peer != null && peer.isConnected())
+                            {
+                                String nodeName = node.getName().getDisplayName();
+                                errReq.requestNodes.add(nodeName);
 
-                            byte[] msg = clientComSerializer.builder(ApiConsts.API_REQ_ERROR_REPORTS, errReq.msgReqId)
-                                .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
-                            peer.sendMessage(msg);
+                                byte[] msg = clientComSerializer.builder(ApiConsts.API_REQ_ERROR_REPORTS, errReq.msgReqId)
+                                    .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
+                                peer.sendMessage(msg);
+                            }
+                        }
+                        catch (AccessDeniedException ignored)
+                        {
                         }
                     }
-                    catch (AccessDeniedException ignored)
-                    {
-                    }
-                }
-            );
+                );
+        }
+        catch (AccessDeniedException ignored)
+        {
+        }
 
         // no requests sent, send controller answer
         if (errReq.requestNodes.isEmpty())
@@ -765,7 +764,7 @@ public class CtrlNodeApiCallHandler
             Peer currentPeer = peer.get();
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = nodesMap.get(nodeName);
+            Node node = nodeRepository.get(apiCtx, nodeName);
             if (node != null && !node.isDeleted() && node.getFlags().isUnset(apiCtx, NodeFlag.DELETE))
             {
                 if (node.getUuid().equals(nodeUuid))
@@ -1139,7 +1138,7 @@ public class CtrlNodeApiCallHandler
     {
         try
         {
-            nodesMapProt.requireAccess(
+            nodeRepository.requireAccess(
                 peerAccCtx.get(),
                 AccessType.CHANGE
             );

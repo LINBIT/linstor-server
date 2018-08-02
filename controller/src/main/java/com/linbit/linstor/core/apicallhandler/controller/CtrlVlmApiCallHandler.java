@@ -4,9 +4,11 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
@@ -19,7 +21,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -30,12 +31,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -58,10 +55,8 @@ public class CtrlVlmApiCallHandler
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ObjectProtection rscDfnMapProt;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection nodesMapProt;
-    private final CoreModule.NodesMap nodesMap;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final NodeRepository nodeRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -74,10 +69,8 @@ public class CtrlVlmApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.NODES_MAP_PROT) ObjectProtection nodesMapProtRef,
-        CoreModule.NodesMap nodesMapRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
+        NodeRepository nodeRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -89,10 +82,8 @@ public class CtrlVlmApiCallHandler
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        rscDfnMap = rscDfnMapRef;
-        nodesMapProt = nodesMapProtRef;
-        nodesMap = nodesMapRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
+        nodeRepository = nodeRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -302,16 +293,13 @@ public class CtrlVlmApiCallHandler
         Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-            nodesMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-
             final List<String> upperFilterNodes = filterNodes.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterStorPools =
                 filterStorPools.stream().map(String::toUpperCase).collect(toList());
             final List<String> upperFilterResources =
                 filterResources.stream().map(String::toUpperCase).collect(toList());
 
-            rscDfnMap.values().stream()
+            resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
                 .filter(rscDfn -> upperFilterResources.isEmpty() ||
                     upperFilterResources.contains(rscDfn.getName().value))
                 .forEach(rscDfn ->
@@ -373,7 +361,7 @@ public class CtrlVlmApiCallHandler
                 );
 
             // get resource states of all nodes
-            for (final Node node : nodesMap.values())
+            for (final Node node : nodeRepository.getMapForView(peerAccCtx.get()).values())
             {
                 final Peer satellite = node.getPeer(peerAccCtx.get());
                 if (satellite != null)

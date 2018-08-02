@@ -992,7 +992,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, boolean thin) throws Exception
         {
-            StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+            StorPoolDefinitionData storPoolDfn = storPoolDefinitionRepository.get(
                 ApiTestBase.BOB_ACC_CTX,
                 new StorPoolName(storPoolName)
             );

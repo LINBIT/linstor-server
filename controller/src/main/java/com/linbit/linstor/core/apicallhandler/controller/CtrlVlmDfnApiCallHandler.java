@@ -24,7 +24,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -40,12 +39,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -73,8 +69,6 @@ class CtrlVlmDfnApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ObjectProtection rscDfnMapProt;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CtrlSecurityObjects secObjs;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -89,8 +83,6 @@ class CtrlVlmDfnApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CtrlSecurityObjects secObjsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -104,8 +96,6 @@ class CtrlVlmDfnApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        rscDfnMap = rscDfnMapRef;
         secObjs = secObjsRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -134,8 +124,6 @@ class CtrlVlmDfnApiCallHandler
 
         try
         {
-            ensureRscMapProtAccess(peerAccCtx.get());
-
             if (vlmDfnApiList.isEmpty())
             {
                 throw new ApiRcException(ApiCallRcImpl
@@ -165,8 +153,6 @@ class CtrlVlmDfnApiCallHandler
             }
 
             ctrlTransactionHelper.commit();
-
-            rscDfnMap.put(rscDfn.getName(), rscDfn);
 
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
@@ -294,8 +280,6 @@ class CtrlVlmDfnApiCallHandler
 
         try
         {
-            ensureRscMapProtAccess(peerAccCtx.get());
-
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
 
             if (vlmDfnUuid != null && !vlmDfnUuid.equals(vlmDfn.getUuid()))
@@ -394,8 +378,6 @@ class CtrlVlmDfnApiCallHandler
 
         try
         {
-            ensureRscMapProtAccess(peerAccCtx.get());
-
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
             UUID vlmDfnUuid = vlmDfn.getUuid();
             ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
@@ -464,22 +446,6 @@ class CtrlVlmDfnApiCallHandler
         }
 
         return responses;
-    }
-
-    private void ensureRscMapProtAccess(AccessContext accCtx)
-    {
-        try
-        {
-            rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "change any existing resource definition",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
     }
 
     private VolumeDefinitionData loadVlmDfn(String rscName, int vlmNr)

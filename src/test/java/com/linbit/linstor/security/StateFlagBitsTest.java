@@ -8,6 +8,7 @@ import static com.linbit.linstor.security.Privilege.PRIVILEGE_LIST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.linbit.linstor.api.LinStorScope;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -67,9 +68,10 @@ public class StateFlagBitsTest
         testTransMgrProvider = () -> transMgr;
         transObjFactory = new TransactionObjectFactory(testTransMgrProvider);
         objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
-            sysCtx,
+            rootCtx,
             testTransMgrProvider,
-            transObjFactory
+            transObjFactory,
+            new LinStorScope()
         );
 
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);

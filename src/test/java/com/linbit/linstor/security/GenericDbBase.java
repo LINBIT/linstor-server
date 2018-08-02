@@ -11,6 +11,7 @@ import com.google.inject.util.Modules;
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.ControllerLinstorModule;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node.NodeType;
@@ -18,14 +19,17 @@ import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionDataFactory;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDataFactory;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeConnectionDataFactory;
@@ -33,7 +37,9 @@ import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.DbDataInitializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -127,6 +133,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected CoreModule.ResourceDefinitionMap rscDfnMap;
     @Inject protected CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
+    @Inject protected NodeRepository nodeRepository;
+    @Inject protected ResourceDefinitionRepository resourceDefinitionRepository;
+    @Inject protected StorPoolDefinitionRepository storPoolDefinitionRepository;
+
     @Inject protected ObjectProtectionFactory objectProtectionFactory;
     @Inject protected PropsContainerFactory propsContainerFactory;
     @Inject protected NodeDataControllerFactory nodeDataFactory;
@@ -188,7 +198,9 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new GuiceConfigModule(),
             new LoggingModule(errorReporter),
             new TestSecurityModule(SYS_CTX),
+            new ControllerLinstorModule(),
             new CoreModule(),
+            new ControllerCoreModule(),
             new SharedDbConnectionPoolModule(),
             new TestDbModule(),
             new ControllerTransactionMgrModule(),
@@ -197,18 +209,11 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             additionalModule,
             BoundFieldModule.of(this)
         );
+
+        injector.getInstance(DbCoreObjProtInitializer.class).initialize();
+        injector.getInstance(DbDataInitializer.class).initialize();
+
         injector.injectMembers(this);
-
-        TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
-        testScope.enter();
-        testScope.seed(TransactionMgr.class, transMgr);
-
-        // make sure to seal the internal caches
-        persistenceDbDriver.loadAll();
-
-        transMgr.commit();
-        testScope.exit();
-        transMgr.returnConnection();
 
         clearCaches();
     }

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Supplier;
 
 public class CmdDisplayStorPool extends BaseDebugCmd
 {
@@ -44,13 +45,13 @@ public class CmdDisplayStorPool extends BaseDebugCmd
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private final ObjectProtection storPoolDfnMapProt;
+    private final Supplier<ObjectProtection> storPoolDfnMapProt;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     public CmdDisplayStorPool(
         ReadWriteLock reconfigurationLockRef,
         ReadWriteLock storPoolDfnMapLockRef,
-        ObjectProtection storPoolDfnMapProtRef,
+        Supplier<ObjectProtection> storPoolDfnMapProtRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
     )
     {
@@ -103,7 +104,7 @@ public class CmdDisplayStorPool extends BaseDebugCmd
         {
             if (storPoolDfnMapProt != null)
             {
-                storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
+                storPoolDfnMapProt.get().requireAccess(accCtx, AccessType.VIEW);
             }
         }
 

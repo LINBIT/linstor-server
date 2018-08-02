@@ -14,6 +14,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
@@ -32,7 +33,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -48,11 +48,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -79,8 +76,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
-    private final ObjectProtection rscDfnMapProt;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -97,8 +93,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -114,8 +109,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        rscDfnMap = rscDfnMapRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -152,7 +146,7 @@ public class CtrlRscDfnApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            rscDfnMap.put(rscDfn.getName(), rscDfn);
+            resourceDefinitionRepository.put(apiCtx, rscDfn.getName(), rscDfn);
 
             for (VolumeDefinitionData vlmDfn : createdVlmDfns)
             {
@@ -358,7 +352,7 @@ public class CtrlRscDfnApiCallHandler
                         delete(rscDfn);
                         ctrlTransactionHelper.commit();
 
-                        rscDfnMap.remove(rscName);
+                        resourceDefinitionRepository.remove(apiCtx, rscName);
 
                         successMsg = descriptionFirstLetterCaps + " deleted.";
                         details = descriptionFirstLetterCaps + " UUID was: " + rscDfnUuid;
@@ -436,8 +430,7 @@ public class CtrlRscDfnApiCallHandler
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
         {
-            rscDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-            for (ResourceDefinition rscdfn : rscDfnMap.values())
+            for (ResourceDefinition rscdfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())
             {
                 try
                 {
@@ -464,7 +457,7 @@ public class CtrlRscDfnApiCallHandler
     {
         try
         {
-            rscDfnMapProt.requireAccess(
+            resourceDefinitionRepository.requireAccess(
                 peerAccCtx.get(),
                 AccessType.CHANGE
             );

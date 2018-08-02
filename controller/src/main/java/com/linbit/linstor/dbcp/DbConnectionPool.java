@@ -18,6 +18,8 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAM
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class DbConnectionPool implements ControllerDatabase
 {
     private static final ServiceName SERVICE_NAME;
@@ -68,6 +71,7 @@ public class DbConnectionPool implements ControllerDatabase
         }
     }
 
+    @Inject
     public DbConnectionPool()
     {
         serviceNameInstance = SERVICE_NAME;

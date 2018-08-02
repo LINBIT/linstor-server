@@ -3,16 +3,12 @@ package com.linbit.linstor;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -22,11 +18,12 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
+import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
+@Singleton
 public class ResourceDefinitionDataControllerFactory
 {
     private final ResourceDefinitionDataDatabaseDriver driver;
@@ -35,8 +32,7 @@ public class ResourceDefinitionDataControllerFactory
     private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final ResourceDefinitionMap rscDfnMap;
-    private final ObjectProtection rscDfnMapProt;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
 
     @Inject
     public ResourceDefinitionDataControllerFactory(
@@ -46,8 +42,7 @@ public class ResourceDefinitionDataControllerFactory
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT) ObjectProtection rscDfnMapProtRef
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef
     )
     {
         driver = driverRef;
@@ -56,15 +51,7 @@ public class ResourceDefinitionDataControllerFactory
         tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
-        rscDfnMap = rscDfnMapRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-    }
-
-    public ResourceDefinitionData getInstance(AccessContext accCtx, ResourceName rscName)
-        throws AccessDeniedException
-    {
-        rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceDefinitionData) rscDfnMap.get(rscName);
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
     }
 
     public ResourceDefinitionData create(
@@ -78,7 +65,7 @@ public class ResourceDefinitionDataControllerFactory
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
-        ResourceDefinitionData rscDfn = getInstance(accCtx, rscName);
+        ResourceDefinitionData rscDfn = resourceDefinitionRepository.get(accCtx, rscName);
 
         if (rscDfn != null)
         {

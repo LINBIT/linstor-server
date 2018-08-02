@@ -13,7 +13,10 @@ import com.linbit.ServiceName;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeRepository;
+import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
@@ -76,15 +79,6 @@ public abstract class ApiTestBase extends GenericDbBase
     @Inject @Named(ControllerDbModule.DISKLESS_STOR_POOL_DFN)
     protected StorPoolDefinition disklessStorPoolDfn;
 
-    @Inject @Named(ControllerSecurityModule.NODES_MAP_PROT)
-    protected ObjectProtection nodesMapProt;
-
-    @Inject @Named(ControllerSecurityModule.RSC_DFN_MAP_PROT)
-    protected ObjectProtection rscDfnMapProt;
-
-    @Inject @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT)
-    protected ObjectProtection storPoolDfnMapProt;
-
     @Inject @Named(LinStor.CONTROLLER_PROPS)
     protected Props ctrlConf;
 
@@ -100,7 +94,6 @@ public abstract class ApiTestBase extends GenericDbBase
         super.setUpWithoutEnteringScope(Modules.combine(
             new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule(),
-            new ControllerCoreModule(),
             new ConfigModule()
         ));
 
@@ -145,6 +138,9 @@ public abstract class ApiTestBase extends GenericDbBase
             insertRole(transMgr, accCtx.subjectRole.name, accCtx.subjectDomain.name);
         }
 
+        ObjectProtection nodesMapProt = nodeRepository.getObjProt();
+        ObjectProtection rscDfnMapProt = resourceDefinitionRepository.getObjProt();
+        ObjectProtection storPoolDfnMapProt = storPoolDefinitionRepository.getObjProt();
         nodesMapProt.getSecurityType().addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CHANGE);
         rscDfnMapProt.getSecurityType().addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CHANGE);
         storPoolDfnMapProt.getSecurityType().addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CHANGE);

@@ -13,13 +13,12 @@ import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Supplier;
 
 public class CmdDisplayNodes extends BaseDebugCmd
 {
@@ -40,7 +39,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
-    private final ObjectProtection nodesMapProt;
+    private final Supplier<ObjectProtection> nodesMapProt;
     private final CoreModule.NodesMap nodesMap;
 
     private final FilteredObjectLister<Node> lister;
@@ -48,7 +47,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
     public CmdDisplayNodes(
         ReadWriteLock reconfigurationLockRef,
         ReadWriteLock nodesMapLockRef,
-        ObjectProtection nodesMapProtRef,
+        Supplier<ObjectProtection> nodesMapProtRef,
         CoreModule.NodesMap nodesMapRef
     )
     {
@@ -101,7 +100,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
         {
             if (nodesMapProt != null)
             {
-                nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+                nodesMapProt.get().requireAccess(accCtx, AccessType.VIEW);
             }
         }
 

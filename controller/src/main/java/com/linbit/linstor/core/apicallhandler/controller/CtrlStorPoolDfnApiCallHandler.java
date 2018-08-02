@@ -8,6 +8,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -62,8 +63,7 @@ class CtrlStorPoolDfnApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
-    private final ObjectProtection storPoolDfnMapProt;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -79,8 +79,7 @@ class CtrlStorPoolDfnApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        @Named(ControllerSecurityModule.STOR_POOL_DFN_MAP_PROT) ObjectProtection storPoolDfnMapProtRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -95,8 +94,7 @@ class CtrlStorPoolDfnApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
-        storPoolDfnMapProt = storPoolDfnMapProtRef;
-        storPoolDfnMap = storPoolDfnMapRef;
+        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -126,7 +124,7 @@ class CtrlStorPoolDfnApiCallHandler
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
             ctrlTransactionHelper.commit();
 
-            storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+            storPoolDefinitionRepository.put(apiCtx, storPoolDfn.getName(), storPoolDfn);
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
         }
@@ -235,7 +233,7 @@ class CtrlStorPoolDfnApiCallHandler
                 delete(storPoolDfn);
                 ctrlTransactionHelper.commit();
 
-                storPoolDfnMap.remove(storPoolName);
+                storPoolDefinitionRepository.remove(apiCtx, storPoolName);
 
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolDfnUuid, getStorPoolDfnDescriptionInline(storPoolName.displayValue)));
@@ -267,22 +265,32 @@ class CtrlStorPoolDfnApiCallHandler
         if (candidateList.isEmpty())
         {
             ApiCallRcImpl errRc = new ApiCallRcImpl();
-            if (storPoolName != null && storPoolDfnMap.get(storPoolName) == null)
+            try
             {
-                // check if storpooldfn exists (storPoolName is known)
-                errRc.addEntry(
-                    "Unknown storage pool name",
-                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_INVLD_STOR_POOL_NAME
-                );
-            }
-            else
-            {
-                // else we simply have not enough nodes
-                errRc.addEntry(
-                    "Not enough nodes",
-                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES
-                );
+                if (storPoolName != null && storPoolDefinitionRepository.get(peerAccCtx.get(), storPoolName) == null)
+                {
+                    // check if storpooldfn exists (storPoolName is known)
+                    errRc.addEntry(
+                        "Unknown storage pool name",
+                        ApiConsts.MASK_ERROR | ApiConsts.FAIL_INVLD_STOR_POOL_NAME
+                    );
+                }
+                else
+                {
+                    // else we simply have not enough nodes
+                    errRc.addEntry(
+                        "Not enough nodes",
+                        ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES
+                    );
 
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                errRc.addEntry(
+                    "Access to storage pool definition denied",
+                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
+                );
             }
             result = clientComSerializer
                 .builder(ApiConsts.API_REPLY, msgIdProvider.get())
@@ -340,8 +348,7 @@ class CtrlStorPoolDfnApiCallHandler
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
         {
-            storPoolDfnMapProt.requireAccess(peerAccCtx.get(), AccessType.VIEW);
-            for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
+            for (StorPoolDefinition storPoolDfn : storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values())
             {
                 try
                 {
@@ -403,7 +410,7 @@ class CtrlStorPoolDfnApiCallHandler
     {
         try
         {
-            storPoolDfnMapProt.requireAccess(
+            storPoolDefinitionRepository.requireAccess(
                 peerAccCtx.get(),
                 AccessType.CHANGE
             );
