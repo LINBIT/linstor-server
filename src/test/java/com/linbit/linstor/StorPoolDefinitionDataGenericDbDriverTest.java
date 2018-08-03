@@ -4,6 +4,7 @@ import javax.inject.Inject;
 
 import com.linbit.linstor.StorPoolDefinition.InitMaps;
 import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import org.junit.Before;
@@ -157,8 +158,8 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         Map<StorPoolDefinitionData, InitMaps> storpools = driver.loadAll();
 
-        StorPoolName dfltStorPoolName = new StorPoolName(ConfigModule.DEFAULT_STOR_POOL_NAME);
-        assertNotNull(findStorPoolDefinitionDatabyName(storpools, dfltStorPoolName));
+        StorPoolName disklessStorPoolName = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
+        assertNotNull(findStorPoolDefinitionDatabyName(storpools, disklessStorPoolName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
         assertNotEquals(
