@@ -11,8 +11,12 @@ out/
 /libs/
 .filelist
 /satellite/libs
+/satellite/jar.deps
 /controller/libs
+/controller/jar.deps
 /server/libs
+/server/jar.deps
+
 
 # config/runtime files
 database.cfg

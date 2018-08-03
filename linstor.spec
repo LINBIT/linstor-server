@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.2.6
+Version: 0.2.7
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 %define GRADLE_TASKS installdist
@@ -12,7 +12,7 @@ License: GPLv2+
 URL: https://github.com/LINBIT/linstor-server
 Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{version}.tar.gz
 
-BuildRequires: java-1.8.0-openjdk-headless
+BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python
 
 %description
 TODO.
@@ -29,6 +29,8 @@ gradle %{GRADLE_TASKS} %{GRADLE_FLAGS}
 %install
 mkdir -p %{buildroot}/%{LS_PREFIX}
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/lib %{buildroot}/%{LS_PREFIX}
+rm %{buildroot}/%{LS_PREFIX}/lib/%{NAME_VERS}.jar
+cp -r %{_builddir}/%{NAME_VERS}/server/build/install/server/lib/conf %{buildroot}/%{LS_PREFIX}/lib
 mkdir -p %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Controller %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Satellite %{buildroot}/%{LS_PREFIX}/bin
@@ -47,10 +49,10 @@ Requires: jre-headless
 TODO.
 
 
-%files common
+%files common -f %{_builddir}/%{NAME_VERS}/server/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/*.jar
+%{LS_PREFIX}/lib/server-%{version}.jar
 %dir %{LS_PREFIX}/lib/conf
 %{LS_PREFIX}/lib/conf/logback.xml
 
@@ -63,8 +65,10 @@ Requires: linstor-common = %{version}
 TODO.
 
 
-%files controller
+%files controller -f %{_builddir}/%{NAME_VERS}/controller/jar.deps
 %dir %{LS_PREFIX}
+%dir %{LS_PREFIX}/lib
+%{LS_PREFIX}/lib/controller-%{version}.jar
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Controller
 %{LS_PREFIX}/bin/linstor-config
@@ -89,8 +93,10 @@ Requires: drbd-utils
 TODO.
 
 
-%files satellite
+%files satellite -f %{_builddir}/%{NAME_VERS}/satellite/jar.deps
 %dir %{LS_PREFIX}
+%dir %{LS_PREFIX}/lib
+%{LS_PREFIX}/lib/satellite-%{version}.jar
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Satellite
 %{_unitdir}/linstor-satellite.service

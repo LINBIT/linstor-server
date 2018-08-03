@@ -551,3 +551,14 @@ task copyToLibs(dependsOn: 'deleteLibs') {
         }
     }
 }
+
+// this task is needed for RPM packaging
+// it creates a list of dependency jars needed for the server project
+task showServerRuntimeLibs() {
+	doLast {
+		project(':server').configurations.getByName('runtime').files.each { f ->
+			print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
+		}
+	}
+}
+

@@ -24,6 +24,12 @@ GITHASH := $(shell git rev-parse HEAD)
 	@echo $(VERSINFO) >> .filelist
 	@find $(GENSRC) -name '*.java' >> .filelist
 	@echo libs >> .filelist
+	@echo server/jar.deps >> .filelist
+	@echo controller/jar.deps >> .filelist
+	@echo satellite/jar.deps >> .filelist
+	@echo server/libs >> .filelist
+	@echo controller/libs >> .filelist
+	@echo satellite/libs >> .filelist
 	@echo .filelist >> .filelist
 	@echo "./.filelist updated."
 
@@ -80,8 +86,20 @@ gen-java: getprotc
 	@gradle generateJava
 	@echo "generated java sources"
 
-tarball: check-all-committed check-submods versioninfo gen-java .filelist
-	@gradle copytolibs
+.PHONY: copytolibs
+copytolibs:
+	gradle --console plain copytolibs
+
+server/jar.deps:
+	gradle -q showServerRuntimeLibs > $@
+
+controller/jar.deps satellite/jar.deps: copytolibs
+	./scripts/diffcopy.py -n ./controller/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > controller/jar.deps
+	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
+	./scripts/diffcopy.py -n ./satellite/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > satellite/jar.deps
+	sed -i '/^|usr|share|linstor-server|lib|server-/d' satellite/jar.deps
+
+tarball: check-all-committed check-submods versioninfo gen-java server/jar.deps controller/jar.deps satellite/jar.deps .filelist
 	$(MAKE) tgz
 
 versioninfo:
