@@ -9,15 +9,6 @@ apply plugin: 'nebula.ospackage'
 sourceCompatibility = 1.8
 
 def protobufVersion = '3.2.0'
-
-ext.libs = "$projectDir/libs"
-ext.compileLib = "${libs}/compile"
-ext.runtimeLib = "${libs}/runtime"
-ext.testCompileLib = "${libs}/testCompile"
-ext.testRuntimeLib = "${libs}/testRuntime"
-//ext.pluginLib = "${libs}/plugins"
-
-
 def logbackConfig = "logback.xml"
 
 // workaround to force gradle to download not just the dependencies for --offline use
@@ -52,10 +43,10 @@ subprojects {
 
     dependencies {
         if (gradle.startParameter.isOffline()) {
-            compile fileTree(dir: compileLib)
-            runtime fileTree(dir: runtimeLib)
-            testCompile fileTree(dir: testCompileLib)
-            testRuntime fileTree(dir: testRuntimeLib)
+            compile fileTree(dir: "libs/compile")
+            runtime fileTree(dir: "libs/runtime")
+            testCompile fileTree(dir: "libs/testCompile")
+            testRuntime fileTree(dir: "libs/testRuntime")
         } else {
             compile group: 'com.google.inject', name: 'guice', version: '4.2.0'
             compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
@@ -70,22 +61,35 @@ subprojects {
 }
 
 project(':server') {
+    apply plugin: 'application'
+
+    mainClassName = 'com.linbit.linstor.core.Satellite'
+
     sourceSets {
         main {
-            java {
-                srcDirs = ["src/main/java", "generated-src"]
-            }
-            resources {
-                srcDirs = ["src/main/resources", "generated-resources"]
-            }
+        java {
+            srcDirs = ["src/main/java", "generated-src"]
+        }
+        resources {
+            srcDirs = ["src/main/resources", "generated-resources"]
+        }
         }
         test {
             java {
-                srcDirs = ["src/test/java"]
+            srcDirs = ["src/test/java"]
             }
         }
     }
 
+    distributions {
+        main {
+            contents {
+                from(logbackConfig) {
+                    into("lib/conf")
+                }
+            }
+        }
+    }
 /////////////////////////// Version Info ///////////////////////////
     task versionInfo() {
         String propsFile = "$projectDir/generated-resources/version-info.properties"
@@ -186,10 +190,10 @@ project(':controller') {
         testCompile project(':server')
 
         if (gradle.startParameter.isOffline()) {
-            compile fileTree(dir: compileLib)
-            runtime fileTree(dir: runtimeLib)
-            testCompile fileTree(dir: testCompileLib)
-            testRuntime fileTree(dir: testRuntimeLib)
+            compile fileTree(dir: "libs/compile")
+            runtime fileTree(dir: "libs/runtime")
+            testCompile fileTree(dir: "libs/testCompile")
+            testRuntime fileTree(dir: "libs/testRuntime")
         } else {
             compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
@@ -303,22 +307,22 @@ task LinstorConfigStartup(type: CreateStartScripts) {
 }
 
 distributions {
-	main {
-		contents {
-			from(ControllerStartup) {
-				into("bin")
-			}
-			from(SatelliteStartup) {
-				into("bin")
-			}
-			from(LinstorConfigStartup) {
-				into("bin")
-			}
-			from(logbackConfig) {
-				into("lib/conf")
-			}
-		}
-	}
+    main {
+        contents {
+            from(ControllerStartup) {
+                into("bin")
+            }
+            from(SatelliteStartup) {
+                into("bin")
+            }
+            from(LinstorConfigStartup) {
+                into("bin")
+            }
+            from(logbackConfig) {
+                into("lib/conf")
+            }
+        }
+    }
 }
 
 task showMeCache {
@@ -523,22 +527,27 @@ buildDeb {
 }
 
 task deleteLibs(type: Delete) {
-    delete "${compileLib}", "${runtimeLib}", "${testCompileLib}", "${testRuntimeLib}", "${libs}/plugins"
+    doLast {
+        subprojects.each { prj ->
+            delete "${prj.name}/libs"
+        }
+        delete "${projectDir}/libs/plugins"
+    }
 }
 
 task copyToLibs(dependsOn: 'deleteLibs') {
     doLast {
-        [':controller', ':server', ':satellite'].each { prj ->
+        subprojects.each { prj ->
             ['compile', 'runtime'].each { scope ->
                 copy {
-                    from configurations.getByName(scope).files
-                    into "${libs}/${scope}"
+                    from prj.configurations.getByName(scope).files
+                    into "${prj.name}/libs/${scope}"
                 }
             }
         }
         copy {
             from buildscript.configurations.classpath
-            into "${libs}/plugins"
+            into "${projectDir}/libs/plugins"
         }
     }
 }
