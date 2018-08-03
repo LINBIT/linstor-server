@@ -394,6 +394,5 @@ public final class Controller
         }
 
         System.out.println();
-        System.exit(0);
     }
 }

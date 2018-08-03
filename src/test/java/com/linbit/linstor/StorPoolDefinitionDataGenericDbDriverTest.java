@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 
 import com.linbit.linstor.StorPoolDefinition.InitMaps;
-import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
