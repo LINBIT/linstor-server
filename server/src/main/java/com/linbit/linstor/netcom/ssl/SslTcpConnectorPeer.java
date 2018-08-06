@@ -214,7 +214,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         addToQueue(msgIn);
                         msgIn = createMessage(false);
                         retState = ReadState.FINISHED;
-                        msgState = ReadState.UNFINISHED;
                     }
                     else
                     {
