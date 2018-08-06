@@ -691,7 +691,7 @@ public class TcpConnectorPeer implements Peer
         if (state == ReadState.FINISHED)
         {
             addToQueue(msgIn);
-            msgIn = createMessage(false);
+            nextInMessage();
         }
         return state;
     }
