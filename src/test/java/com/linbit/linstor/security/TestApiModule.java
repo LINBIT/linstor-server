@@ -31,7 +31,7 @@ public class TestApiModule extends AbstractModule
             .toProvider(LinStorScope.<Message>seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(Integer.class)
-            .annotatedWith(Names.named(ApiModule.MSG_ID))
+            .annotatedWith(Names.named(ApiModule.API_CALL_ID))
             .toProvider(LinStorScope.<Integer>seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(TransactionMgr.class)

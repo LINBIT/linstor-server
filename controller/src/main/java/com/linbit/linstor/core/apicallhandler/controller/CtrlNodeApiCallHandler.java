@@ -96,22 +96,22 @@ public class CtrlNodeApiCallHandler
 
     public class ErrorReportRequest
     {
-        public int msgId;
+        public long apiCallId;
         public LocalDateTime requestTime;
-        public int msgReqId;
+        public long msgReqId;
         public TreeSet<ErrorReport> errorReports;
         public TreeSet<String> requestNodes;
 
-        public ErrorReportRequest(int msgIdRef, int msgReqIdRef)
+        public ErrorReportRequest(long apiCallIdRef, long msgReqIdRef)
         {
-            msgId = msgIdRef;
+            apiCallId = apiCallIdRef;
             msgReqId = msgReqIdRef;
             requestTime = LocalDateTime.now();
             errorReports = new TreeSet<>();
             requestNodes = new TreeSet<>();
         }
 
-        public int getMsgReqId()
+        public long getMsgReqId()
         {
             return msgReqId;
         }
@@ -123,7 +123,7 @@ public class CtrlNodeApiCallHandler
         }
     }
 
-    public static Map<Pair<Peer, Integer>, ErrorReportRequest> errorReportMap = new HashMap<>();
+    public static Map<Pair<Peer, Long>, ErrorReportRequest> errorReportMap = new HashMap<>();
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -614,7 +614,7 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    byte[] listNodes(int msgId)
+    byte[] listNodes(long apiCallId)
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
@@ -638,12 +638,12 @@ public class CtrlNodeApiCallHandler
             // for now return an empty list.
         }
 
-        return clientComSerializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
+        return clientComSerializer.answerBuilder(ApiConsts.API_LST_NODE, apiCallId).nodeList(nodes).build();
     }
 
     void listErrorReports(
         Peer client,
-        int msgId,
+        long apiCallId,
         final Set<String> nodes,
         boolean withContent,
         final Optional<Date> since,
@@ -651,12 +651,12 @@ public class CtrlNodeApiCallHandler
         final Set<String> ids
     )
     {
-        Optional<Integer> reqId = errorReportMap.values().stream()
-            .max(Comparator.comparingInt(ErrorReportRequest::getMsgReqId))
+        Optional<Long> reqId = errorReportMap.values().stream()
+            .max(Comparator.comparingLong(ErrorReportRequest::getMsgReqId))
             .map(errReq -> errReq.msgReqId);
 
-        final Pair<Peer, Integer> key = new Pair<>(client, msgId);
-        errorReportMap.put(key, new ErrorReportRequest(msgId, reqId.orElse(1)));
+        final Pair<Peer, Long> key = new Pair<>(client, apiCallId);
+        errorReportMap.put(key, new ErrorReportRequest(apiCallId, reqId.orElse(1L)));
         final ErrorReportRequest errReq = errorReportMap.get(key);
         if (nodes.isEmpty() || nodes.stream().anyMatch("controller"::equalsIgnoreCase)) {
             Set<ErrorReport> errorReports = StdErrorReporter.listReports(
@@ -685,7 +685,7 @@ public class CtrlNodeApiCallHandler
                                 String nodeName = node.getName().getDisplayName();
                                 errReq.requestNodes.add(nodeName);
 
-                                byte[] msg = clientComSerializer.builder(ApiConsts.API_REQ_ERROR_REPORTS, errReq.msgReqId)
+                                byte[] msg = clientComSerializer.answerBuilder(ApiConsts.API_REQ_ERROR_REPORTS, errReq.msgReqId)
                                     .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
                                 peer.sendMessage(msg);
                             }
@@ -704,7 +704,7 @@ public class CtrlNodeApiCallHandler
         if (errReq.requestNodes.isEmpty())
         {
             client.sendMessage(clientComSerializer
-                .builder(ApiConsts.API_LST_ERROR_REPORTS, errReq.msgId)
+                .answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, errReq.apiCallId)
                 .errorReports(errReq.errorReports)
                 .build()
             );
@@ -716,20 +716,20 @@ public class CtrlNodeApiCallHandler
      * Adds received error reports from satellites to the client request.
      *
      * @param nodePeer Satellite peer with error reports
-     * @param msgId
+     * @param apiCallId
      * @param rawErrorReports
      */
     void appendErrorReports(
         final Peer nodePeer,
-        int msgId,
+        long apiCallId,
         Set<ErrorReport> rawErrorReports
     )
     {
-        Pair<Peer, Integer> keyEntry = null;
-        for (Map.Entry<Pair<Peer, Integer>, ErrorReportRequest> entry : errorReportMap.entrySet())
+        Pair<Peer, Long> keyEntry = null;
+        for (Map.Entry<Pair<Peer, Long>, ErrorReportRequest> entry : errorReportMap.entrySet())
         {
             ErrorReportRequest errorReportRequest = entry.getValue();
-            if (errorReportRequest.msgReqId == msgId)
+            if (errorReportRequest.msgReqId == apiCallId)
             {
                 errorReportRequest.errorReports.addAll(rawErrorReports);
 
@@ -741,7 +741,7 @@ public class CtrlNodeApiCallHandler
                 if (errorReportRequest.requestNodes.isEmpty()) {
                     keyEntry = entry.getKey();
                     keyEntry.objA.sendMessage(clientComSerializer
-                        .builder(ApiConsts.API_LST_ERROR_REPORTS, errorReportRequest.msgId)
+                        .answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, errorReportRequest.apiCallId)
                         .errorReports(errorReportRequest.errorReports)
                         .build()
                     );
@@ -757,7 +757,7 @@ public class CtrlNodeApiCallHandler
         }
     }
 
-    void respondNode(int msgId, UUID nodeUuid, String nodeNameStr)
+    void respondNode(long apiCallId, UUID nodeUuid, String nodeNameStr)
     {
         try
         {
@@ -789,7 +789,7 @@ public class CtrlNodeApiCallHandler
                     long serializerId = currentPeer.getNextSerializerId();
                     currentPeer.sendMessage(
                         ctrlStltSerializer
-                            .builder(InternalApiConsts.API_APPLY_NODE, msgId)
+                            .onewayBuilder(InternalApiConsts.API_APPLY_NODE)
                             .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
                             .build()
                     );
@@ -811,7 +811,7 @@ public class CtrlNodeApiCallHandler
                 long fullSyncTimestamp = currentPeer.getFullSyncId();
                 long serializerId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
-                    ctrlStltSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
+                    ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_APPLY_NODE_DELETED)
                         .deletedNodeData(nodeNameStr, fullSyncTimestamp, serializerId)
                         .build()
                 );

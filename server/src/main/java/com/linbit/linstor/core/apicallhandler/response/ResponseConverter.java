@@ -155,7 +155,7 @@ public class ResponseConverter
         return addContext(entry, context, true);
     }
 
-    private ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
+    public ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
     {
         ApiCallRcImpl contextualResponses = new ApiCallRcImpl();
         for (ApiCallRc.RcEntry entry : responses.getEntries())
@@ -165,7 +165,7 @@ public class ResponseConverter
         return contextualResponses;
     }
 
-    private ApiCallRc.RcEntry addContext(ApiCallRc.RcEntry sourceEntry, ResponseContext context, boolean appendDetail)
+    public ApiCallRc.RcEntry addContext(ApiCallRc.RcEntry sourceEntry, ResponseContext context, boolean appendDetail)
     {
         StringJoiner detailsJoiner = new StringJoiner("\n");
 

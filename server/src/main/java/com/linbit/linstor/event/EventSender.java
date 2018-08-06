@@ -386,7 +386,7 @@ public class EventSender
         {
             long eventCounter = watchStore.getAndIncrementEventCounter(watch);
 
-            byte[] eventHeaderBytes = commonSerializer.builder(ApiConsts.API_EVENT)
+            byte[] eventHeaderBytes = commonSerializer.onewayBuilder(ApiConsts.API_EVENT)
                 .event(watch.getPeerWatchId(), eventCounter, eventIdentifier, eventStreamAction)
                 .build();
 

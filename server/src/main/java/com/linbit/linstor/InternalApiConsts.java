@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 public class InternalApiConsts
 {
-
     public static final String API_AUTH        = "Auth";
     public static final String API_AUTH_ACCEPT = "AuthAccept";
     public static final String API_AUTH_ERROR  = "AuthError";
@@ -52,6 +51,8 @@ public class InternalApiConsts
     public static final String API_APPLY_STOR_POOL_SUCCESS = "ApplyStorPoolSuccess";
 
     public static final String API_CRYPT_KEY = "cryptKey";
+
+    public static final String API_REQUEST_FREE_SPACE = "RequestFreeSpace";
 
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 

@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -103,7 +104,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    StorPoolApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    StorPoolApi getApiData(Long freeSpace, AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
     Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
@@ -132,6 +133,73 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         Map<String, String> getStorPoolProps();
         List<Volume.VlmApi> getVlmList();
         Map<String, String> getStorPoolStaticTraits();
+    }
+
+    /**
+     * Identifies a stor pool.
+     */
+    class Key implements Comparable<Key>
+    {
+        private final NodeName nodeName;
+
+        private final StorPoolName storPoolName;
+
+        public Key(NodeName nodeNameRef, StorPoolName storPoolNameRef)
+        {
+            nodeName = nodeNameRef;
+            storPoolName = storPoolNameRef;
+        }
+
+        public Key(StorPool storPool)
+        {
+            this(storPool.getNode().getName(), storPool.getName());
+        }
+
+        public NodeName getNodeName()
+        {
+            return nodeName;
+        }
+
+        public StorPoolName getStorPoolName()
+        {
+            return storPoolName;
+        }
+
+        @Override
+        // Code style exception: Automatically generated code
+        @SuppressWarnings({"DescendantToken", "ParameterName"})
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+            Key that = (Key) o;
+            return Objects.equals(nodeName, that.nodeName) &&
+                Objects.equals(storPoolName, that.storPoolName);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(nodeName, storPoolName);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = nodeName.compareTo(other.nodeName);
+            if (eq == 0)
+            {
+                eq = storPoolName.compareTo(other.storPoolName);
+            }
+            return eq;
+        }
     }
 
     public interface InitMaps

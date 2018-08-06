@@ -1,8 +1,11 @@
 package com.linbit.linstor.netcom;
 
 import javax.net.ssl.SSLException;
+import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
@@ -12,6 +15,8 @@ import com.linbit.linstor.api.protobuf.common.Ping;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 /**
  * Represents the peer of a connection
@@ -136,6 +141,44 @@ public interface Peer
      * @return
      */
     boolean sendMessage(byte[] data);
+
+    /**
+     * Get a zero-based sequence number for this peer.
+     * Suitable for use in {@link #processInOrder(long, Supplier)}.
+     */
+    long getNextIncomingMessageSeq();
+
+    /**
+     * Perform processing in a strictly ordered fashion.
+     *
+     * @param peerSeq A zero-based sequence number giving the order in which to process this call
+     * @param publisher A publisher that will be subscribed to in strict order
+     */
+    void processInOrder(long peerSeq, Publisher<?> publisher);
+
+    /**
+     * Send an API call to this peer.
+     *
+     * @param apiCallName The API call to make
+     * @param data The API call data
+     * @return The stream of answers
+     */
+    Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data);
+
+    /**
+     * Notify the peer that an API call answer has been received.
+     */
+    void apiCallAnswer(long apiCallId, ByteArrayInputStream data);
+
+    /**
+     * Notify the peer that an API call error has been received.
+     */
+    void apiCallError(long apiCallId, Throwable exc);
+
+    /**
+     * Notify the peer that the answers for an API call are complete.
+     */
+    void apiCallComplete(long apiCallId);
 
     /**
      * Closes the connection to the peer

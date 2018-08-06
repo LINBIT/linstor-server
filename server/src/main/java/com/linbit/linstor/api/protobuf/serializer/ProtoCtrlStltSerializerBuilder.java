@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,7 +71,6 @@ import com.linbit.utils.Base64;
 
 import static java.util.stream.Collectors.toList;
 
-@Singleton
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
 {
@@ -83,17 +80,17 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     private final NodeSerializerHelper nodeSerializerHelper;
     private final CtrlSecurityObjects secObjs;
 
-    @Inject
     public ProtoCtrlStltSerializerBuilder(
         ErrorReporter errReporter,
         AccessContext serializerCtx,
         CtrlSecurityObjects secObjsRef,
         Props ctrlConfRef,
         final String apiCall,
-        Integer msgId
+        Long apiCallId,
+        boolean isAnswer
     )
     {
-        super(errReporter, serializerCtx, apiCall, msgId);
+        super(errReporter, serializerCtx, apiCall, apiCallId, isAnswer);
         secObjs = secObjsRef;
 
         ctrlSerializerHelper = new CtrlSerializerHelper(ctrlConfRef);

@@ -371,7 +371,7 @@ public class CtrlRscDfnApiCallHandler
     }
 
     void handlePrimaryResourceRequest(
-        int msgId,
+        long apiCallId,
         String rscNameStr,
         UUID rscUuid
     )
@@ -400,7 +400,7 @@ public class CtrlRscDfnApiCallHandler
 
                 currentPeer.sendMessage(
                     ctrlStltSerializer
-                        .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
+                        .onewayBuilder(InternalApiConsts.API_PRIMARY_RSC)
                         .primaryRequest(rscNameStr, res.getUuid().toString())
                         .build()
                 );
@@ -425,7 +425,7 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
-    byte[] listResourceDefinitions(int msgId)
+    byte[] listResourceDefinitions(long apiCallId)
     {
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
@@ -448,7 +448,7 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return clientComSerializer
-            .builder(ApiConsts.API_LST_RSC_DFN, msgId)
+            .answerBuilder(ApiConsts.API_LST_RSC_DFN, apiCallId)
             .resourceDfnList(rscdfns)
             .build();
     }

@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -38,12 +36,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     protected final ByteArrayOutputStream baos;
     private boolean exceptionOccured;
 
-    @Inject
     public ProtoCommonSerializerBuilder(
         final ErrorReporter errReporterRef,
-        final @ApiContext AccessContext serializerCtxRef,
-        String apiCall,
-        Integer msgId
+        final AccessContext serializerCtxRef,
+        String msgContent,
+        Long apiCallId,
+        boolean isAnswer
     )
     {
         this.errorReporter = errReporterRef;
@@ -52,11 +50,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         baos = new ByteArrayOutputStream();
         exceptionOccured = false;
 
-        if (apiCall != null)
+        if (msgContent != null || apiCallId != null)
         {
             try
             {
-                header(apiCall, msgId);
+                header(msgContent, apiCallId, isAnswer);
             }
             catch (IOException exc)
             {
@@ -81,16 +79,36 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return ret;
     }
 
-    public void header(String apiCall, Integer msgId) throws IOException
+    private void header(String msgContent, Long apiCallId, boolean isAnswer) throws IOException
     {
-        MsgHeaderOuterClass.MsgHeader.Builder builder = MsgHeaderOuterClass.MsgHeader.newBuilder()
-            .setApiCall(apiCall);
-        if (msgId != null)
+        MsgHeaderOuterClass.MsgHeader.Builder headerBuilder = MsgHeaderOuterClass.MsgHeader.newBuilder();
+        if (apiCallId == null)
         {
-            builder
-                .setMsgId(msgId);
+            headerBuilder
+                .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.ONEWAY)
+                .setMsgContent(msgContent);
         }
-        builder
+        else if (msgContent == null)
+        {
+            headerBuilder
+                .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.COMPLETE)
+                .setApiCallId(apiCallId);
+        }
+        else if (isAnswer)
+        {
+            headerBuilder
+                .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.ANSWER)
+                .setApiCallId(apiCallId)
+                .setMsgContent(msgContent);
+        }
+        else
+        {
+            headerBuilder
+                .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.API_CALL)
+                .setApiCallId(apiCallId)
+                .setMsgContent(msgContent);
+        }
+        headerBuilder
             .build()
             .writeDelimitedTo(baos);
     }
@@ -110,6 +128,20 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             )
         );
         exceptionOccured = true;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder bytes(byte[] bytes)
+    {
+        try
+        {
+            baos.write(bytes);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
     }
 
     @Override

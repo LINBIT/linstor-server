@@ -15,6 +15,7 @@ import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.TcpConnectorPeer.ReadState;
 import com.linbit.linstor.security.AccessContext;
@@ -75,7 +76,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
     // Maximum number of connections to accept in one selector iteration
     public static final int MAX_ACCEPT_LOOP = 100;
 
-    private ErrorReporter errorReporter;
+    protected final ErrorReporter errorReporter;
+    protected final CommonSerializer commonSerializer;
     private MessageProcessor msgProcessor;
 
     // Set by shutdown() to shut down the selector loop
@@ -166,7 +168,9 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
     public TcpConnectorService(
         ErrorReporter errorReporterRef,
+        CommonSerializer commonSerializerRef,
         MessageProcessor msgProcessorRef,
+        SocketAddress bindAddressRef,
         AccessContext defaultPeerAccCtxRef,
         AccessContext privilegedAccCtxRef,
         ConnectionObserver connObserverRef
@@ -174,6 +178,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     {
         ErrorCheck.ctorNotNull(TcpConnectorService.class, ErrorReporter.class, errorReporterRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, MessageProcessor.class, msgProcessorRef);
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, defaultPeerAccCtxRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, privilegedAccCtxRef);
         serviceInstanceName = SERVICE_NAME;
@@ -182,6 +187,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         serverSocket    = null;
         serverSelector  = null;
         errorReporter   = errorReporterRef;
+        commonSerializer = commonSerializerRef;
         msgProcessor    = msgProcessorRef;
         // Prevent entering the run() method's selector loop
         // until initialize() has completed
@@ -190,19 +196,6 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
         defaultPeerAccCtx = defaultPeerAccCtxRef;
         privilegedAccCtx = privilegedAccCtxRef;
-    }
-
-    public TcpConnectorService(
-        ErrorReporter errorReporterRef,
-        MessageProcessor msgProcessorRef,
-        SocketAddress bindAddressRef,
-        AccessContext defaultPeerAccCtxRef,
-        AccessContext privilegedAccCtxRef,
-        ConnectionObserver connObserverRef
-    )
-    {
-        this(errorReporterRef, msgProcessorRef, defaultPeerAccCtxRef, privilegedAccCtxRef, connObserverRef);
-        ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         bindAddress = bindAddressRef;
     }
 
@@ -909,7 +902,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     )
     {
         return new TcpConnectorPeer(
-            peerId, this, connKey, defaultPeerAccCtx, node
+            errorReporter, commonSerializer, peerId, this, connKey, defaultPeerAccCtx, node
         );
     }
 

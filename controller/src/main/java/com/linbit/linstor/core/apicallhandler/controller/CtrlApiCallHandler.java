@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
@@ -58,7 +59,7 @@ public class CtrlApiCallHandler
     private final ReadWriteLock ctrlErrorListLock;
 
     private final Provider<Peer> peer;
-    private final Provider<Integer> msgId;
+    private final Provider<Long> apiCallId;
 
     @Inject
     CtrlApiCallHandler(
@@ -86,7 +87,7 @@ public class CtrlApiCallHandler
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
         @Named(ControllerCoreModule.CTRL_ERROR_LIST_LOCK) ReadWriteLock errorListLockRef,
         Provider<Peer> clientRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
@@ -113,7 +114,7 @@ public class CtrlApiCallHandler
         ctrlConfigLock = ctrlConfigLockRef;
         ctrlErrorListLock = errorListLockRef;
         peer = clientRef;
-        msgId = msgIdRef;
+        apiCallId = apiCallIdRef;
     }
 
     public void sendFullSync(long expectedFullSyncId)
@@ -241,7 +242,7 @@ public class CtrlApiCallHandler
         byte[] listNodes;
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
         {
-            listNodes = nodeApiCallHandler.listNodes(msgId.get());
+            listNodes = nodeApiCallHandler.listNodes(apiCallId.get());
         }
         return listNodes;
     }
@@ -259,7 +260,7 @@ public class CtrlApiCallHandler
         {
             nodeApiCallHandler.listErrorReports(
                 client,
-                msgId.get(),
+                apiCallId.get(),
                 nodes,
                 withContent,
                 since,
@@ -278,7 +279,7 @@ public class CtrlApiCallHandler
         {
             nodeApiCallHandler.appendErrorReports(
                 client,
-                msgId.get(),
+                apiCallId.get(),
                 errorReports
             );
         }
@@ -393,7 +394,7 @@ public class CtrlApiCallHandler
         byte[] listResourceDefinitions;
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.readLock()))
         {
-            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(msgId.get());
+            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(apiCallId.get());
         }
         return listResourceDefinitions;
     }
@@ -635,7 +636,7 @@ public class CtrlApiCallHandler
         )
         {
             listResources = rscApiCallHandler.listResources(
-                msgId.get(),
+                apiCallId.get(),
                 filterNodes,
                 filterResources
             );
@@ -651,7 +652,7 @@ public class CtrlApiCallHandler
             nodesMapLock.readLock().lock();
             rscDfnMapLock.readLock().lock();
             listVolumes = vlmApiCallHandler.listVolumes(
-                msgId.get(),
+                apiCallId.get(),
                 filterNodes,
                 filterStorPools,
                 filterResources
@@ -865,23 +866,9 @@ public class CtrlApiCallHandler
         byte[] listStorPoolDefinitions;
         try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.readLock()))
         {
-            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId.get());
+            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(apiCallId.get());
         }
         return listStorPoolDefinitions;
-    }
-
-    public byte[] listStorPool(List<String> filterNodes, List<String> filterStorPools)
-    {
-        byte[] listStorPools;
-        try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.readLock()))
-        {
-            listStorPools = storPoolApiCallHandler.listStorPools(
-                msgId.get(),
-                filterNodes,
-                filterStorPools
-            );
-        }
-        return listStorPools;
     }
 
     /**
@@ -1373,7 +1360,7 @@ public class CtrlApiCallHandler
             )
         )
         {
-            rscApiCallHandler.respondResource(msgId.get(), nodeName, rscUuid, rscName);
+            rscApiCallHandler.respondResource(apiCallId.get(), nodeName, rscUuid, rscName);
         }
     }
 
@@ -1400,7 +1387,7 @@ public class CtrlApiCallHandler
         )
         {
             storPoolApiCallHandler.respondStorPool(
-                msgId.get(),
+                apiCallId.get(),
                 storPoolUuid,
                 storPoolNameStr
             );
@@ -1417,7 +1404,7 @@ public class CtrlApiCallHandler
         )
         {
             snapshotApiCallHandler.respondSnapshot(
-                msgId.get(),
+                apiCallId.get(),
                 resourceName,
                 snapshotUuid,
                 snapshotName
@@ -1437,7 +1424,7 @@ public class CtrlApiCallHandler
         )
         {
             ctrlConfApiCallHandler.respondController(
-                msgId.get(),
+                apiCallId.get(),
                 nodeUuid,
                 nodeNameStr
             );
@@ -1456,7 +1443,7 @@ public class CtrlApiCallHandler
         )
         {
             nodeApiCallHandler.respondNode(
-                msgId.get(),
+                apiCallId.get(),
                 nodeUuid,
                 nodeNameStr
             );
@@ -1470,7 +1457,7 @@ public class CtrlApiCallHandler
     {
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
-            rscDfnApiCallHandler.handlePrimaryResourceRequest(msgId.get(), rscName, rscUuid);
+            rscDfnApiCallHandler.handlePrimaryResourceRequest(apiCallId.get(), rscName, rscUuid);
         }
     }
 
@@ -1489,7 +1476,7 @@ public class CtrlApiCallHandler
         byte[] data;
         try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.readLock()))
         {
-            data  = ctrlConfApiCallHandler.listProps(msgId.get());
+            data  = ctrlConfApiCallHandler.listProps(apiCallId.get());
         }
         return data;
     }
@@ -1735,7 +1722,7 @@ public class CtrlApiCallHandler
         byte[] listSnapshotDefinitions;
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.readLock()))
         {
-            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions(msgId.get());
+            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions(apiCallId.get());
         }
         return listSnapshotDefinitions;
     }

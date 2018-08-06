@@ -1,16 +1,17 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.proto.FilterOuterClass.Filter;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,24 +22,23 @@ import java.util.List;
     name = ApiConsts.API_LST_STOR_POOL,
     description = "Queries the list of storage pools"
 )
-public class ListStorPool implements ApiCall
+@Singleton
+public class ListStorPool implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
 
     @Inject
-    public ListStorPool(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ListStorPool(CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        List<String> nodeNames = new ArrayList<>();
-        List<String> storPoolNames = new ArrayList<>();
+        List<String> nodeNames = Collections.emptyList();
+        List<String> storPoolNames = Collections.emptyList();
         Filter filter = Filter.parseDelimitedFrom(msgDataIn);
         if (filter != null)
         {
@@ -46,9 +46,6 @@ public class ListStorPool implements ApiCall
             storPoolNames = filter.getStorPoolNamesList();
         }
 
-        client.sendMessage(
-            apiCallHandler
-                .listStorPool(nodeNames, storPoolNames)
-        );
+        return ctrlStorPoolListApiCallHandler.listStorPools(nodeNames, storPoolNames);
     }
 }

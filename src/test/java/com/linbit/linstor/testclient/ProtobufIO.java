@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.protobuf.Message;
 
@@ -34,13 +34,13 @@ public class ProtobufIO
 
     public interface MessageCallback
     {
-        void error(int msgId, long retCode, String message, String cause, String correction,
+        void error(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
-        void warn(int msgId, long retCode, String message, String cause, String correction,
+        void warn(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
-        void info(int msgId, long retCode, String message, String cause, String correction,
+        void info(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
-        void success(int msgId, long retCode, String message, String cause, String correction,
+        void success(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
     }
 
@@ -60,7 +60,7 @@ public class ProtobufIO
 
     private List<MessageCallback> callbacks = new ArrayList<>();
 
-    protected AtomicInteger msgIdGen = new AtomicInteger(0);
+    protected AtomicLong apiCallIdGen = new AtomicLong(0);
 
 
     public ProtobufIO(
@@ -82,20 +82,21 @@ public class ProtobufIO
         thread.start();
     }
 
-    public int send(String apiCall, Message msg) throws IOException
+    public long send(String apiCall, Message msg) throws IOException
     {
         return send(
-            getNextMsgId(),
+            getNextApiCallId(),
             apiCall,
             msg
         );
     }
 
-    public int send(int msgIdRef, String apiCallRef, Message... messages) throws IOException
+    public long send(long apiCallIdRef, String apiCallRef, Message... messages) throws IOException
     {
         MsgHeader headerMsg = MsgHeader.newBuilder()
-            .setApiCall(apiCallRef)
-            .setMsgId(msgIdRef)
+            .setMsgType(MsgHeader.MsgType.API_CALL)
+            .setMsgContent(apiCallRef)
+            .setApiCallId(apiCallIdRef)
             .build();
 
         ByteArrayOutputStream baos;
@@ -111,7 +112,7 @@ public class ProtobufIO
 
         send(protoData);
 
-        return msgIdRef;
+        return apiCallIdRef;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -176,14 +177,14 @@ public class ProtobufIO
         callbacks.remove(callback);
     }
 
-    public int getNextMsgId()
+    public long getNextApiCallId()
     {
-        return msgIdGen.incrementAndGet();
+        return apiCallIdGen.incrementAndGet();
     }
 
     public void formatMessage(
         StringBuilder sbRef,
-        int msgId,
+        long apiCallId,
         int responseIdx,
         long retCode,
         String message,
@@ -202,8 +203,8 @@ public class ProtobufIO
         {
             sb = sbRef;
         }
-        sb.append("MsgId: ")
-            .append(msgId)
+        sb.append("ApiCallId: ")
+            .append(apiCallId)
             .append("\n")
             .append("   Response ")
             .append(responseIdx)
@@ -282,7 +283,7 @@ public class ProtobufIO
     }
 
     private void callback(
-        int msgId,
+        long apiCallId,
         long retCode,
         String message,
         String cause,
@@ -297,7 +298,7 @@ public class ProtobufIO
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.error(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -305,7 +306,7 @@ public class ProtobufIO
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.warn(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -313,14 +314,14 @@ public class ProtobufIO
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.info(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.success(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
         }
@@ -419,12 +420,12 @@ public class ProtobufIO
                     sb.setLength(0);
                     int responseIdx = 1;
 
-                    String apiCall = protoHeader.getApiCall();
+                    String apiCall = protoHeader.getMsgContent();
                     if (bais.available() == 0)
                     {
                         // maybe a pong or a header-only answer
-                        sb.append("MsgId: ")
-                            .append(protoHeader.getMsgId())
+                        sb.append("ApiCallId: ")
+                            .append(protoHeader.getApiCallId())
                             .append("\n")
                             .append(apiCall)
                             .append("\n");
@@ -441,12 +442,12 @@ public class ProtobufIO
                             String details = response.getDetails();
                             Map<String, String> objRefsMap = asMap(response.getObjRefsList());
 
-                            callback(protoHeader.getMsgId(), retCode, message, cause, correction,
+                            callback(protoHeader.getApiCallId(), retCode, message, cause, correction,
                                 details, objRefsMap);
 
                             formatMessage(
                                 sb,
-                                protoHeader.getMsgId(),
+                                protoHeader.getApiCallId(),
                                 responseIdx++,
                                 retCode,
                                 message,

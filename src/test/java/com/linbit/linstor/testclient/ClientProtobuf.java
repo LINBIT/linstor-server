@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.protobuf.Message;
 import com.linbit.linstor.NetInterface;
@@ -72,13 +72,13 @@ public class ClientProtobuf implements Runnable
 
     public interface MessageCallback
     {
-        void error(int msgId, long retCode, String message, String cause, String correction,
+        void error(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
-        void warn(int msgId, long retCode, String message, String cause, String correction,
+        void warn(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
-        void info(int msgId, long retCode, String message, String cause, String correction,
+        void info(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
-        void success(int msgId, long retCode, String message, String cause, String correction,
+        void success(long apiCallId, long retCode, String message, String cause, String correction,
             String details, Map<String, String> objRefsMap);
     }
 
@@ -200,7 +200,7 @@ public class ClientProtobuf implements Runnable
     private Socket sock;
     private InputStream inputStream;
     private OutputStream outputStream;
-    private AtomicInteger msgIdGen = new AtomicInteger(0);
+    private AtomicLong apiCallIdGen = new AtomicLong(0);
 
     private Thread thread;
     private boolean shutdown;
@@ -333,12 +333,12 @@ public class ClientProtobuf implements Runnable
                 sb.setLength(0);
                 int responseIdx = 1;
 
-                String apiCall = protoHeader.getApiCall();
+                String apiCall = protoHeader.getMsgContent();
                 if (bais.available() == 0)
                 {
                     // maybe a pong or a header-only answer
-                    sb.append("MsgId: ")
-                        .append(protoHeader.getMsgId())
+                    sb.append("ApiCallId: ")
+                        .append(protoHeader.getApiCallId())
                         .append("\n")
                         .append(apiCall)
                         .append("\n");
@@ -355,12 +355,12 @@ public class ClientProtobuf implements Runnable
                         String details = response.getDetails();
                         Map<String, String> objRefsMap = asMap(response.getObjRefsList());
 
-                        callback(protoHeader.getMsgId(), retCode, message, cause, correction,
+                        callback(protoHeader.getApiCallId(), retCode, message, cause, correction,
                             details, objRefsMap);
 
                         formatMessage(
                             sb,
-                            protoHeader.getMsgId(),
+                            protoHeader.getApiCallId(),
                             responseIdx++,
                             retCode,
                             message,
@@ -395,7 +395,7 @@ public class ClientProtobuf implements Runnable
 
     public void formatMessage(
         StringBuilder sbRef,
-        int msgId,
+        long apiCallId,
         int responseIdx,
         long retCode,
         String message,
@@ -414,8 +414,8 @@ public class ClientProtobuf implements Runnable
         {
             sb = sbRef;
         }
-        sb.append("MsgId: ")
-            .append(msgId)
+        sb.append("ApiCallId: ")
+            .append(apiCallId)
             .append("\n")
             .append("   Response ")
             .append(responseIdx)
@@ -470,7 +470,7 @@ public class ClientProtobuf implements Runnable
     }
 
     private void callback(
-        int msgId, long retCode, String message, String cause, String correction, String details,
+        long apiCallId, long retCode, String message, String cause, String correction, String details,
         Map<String, String> objRefsMap
     )
     {
@@ -480,7 +480,7 @@ public class ClientProtobuf implements Runnable
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.error(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -488,7 +488,7 @@ public class ClientProtobuf implements Runnable
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.warn(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
@@ -496,14 +496,14 @@ public class ClientProtobuf implements Runnable
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.info(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
             else
             {
                 for (MessageCallback cb : callbacks)
                 {
-                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap);
+                    cb.success(apiCallId, retCode, message, cause, correction, details, objRefsMap);
                 }
             }
         }
@@ -577,18 +577,18 @@ public class ClientProtobuf implements Runnable
         }
     }
 
-    public int sendPing() throws IOException
+    public long sendPing() throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
-        send(msgId, ApiConsts.API_PING, null);
-        return msgId;
+        long apiCallId = apiCallIdGen.incrementAndGet();
+        send(apiCallId, ApiConsts.API_PING, null);
+        return apiCallId;
     }
 
     /*
      * Node messages
      */
 
-    public int sendCreateNode(
+    public long sendCreateNode(
         String nodeName,
         String nodeType,
         Map<String, String> props,
@@ -596,7 +596,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         NodeOuterClass.Node.Builder nodeBuilder = NodeOuterClass.Node.newBuilder()
             .setName(nodeName)
             .setType(nodeType);
@@ -609,14 +609,14 @@ public class ClientProtobuf implements Runnable
         msgCrtNodeBuilder.setNode(nodeBuilder.build());
 
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_NODE,
             msgCrtNodeBuilder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyNode(
+    public long sendModifyNode(
         UUID uuid,
         String nodeName,
         String typeName,
@@ -625,7 +625,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModNode.Builder msgBuilder = MsgModNode.newBuilder()
             .setNodeName(nodeName);
         if (uuid != null)
@@ -646,24 +646,24 @@ public class ClientProtobuf implements Runnable
         }
 
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_NODE,
             msgBuilder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteNode(String nodeName) throws IOException
+    public long sendDeleteNode(String nodeName) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_NODE,
             MsgDelNode.newBuilder()
                 .setNodeName(nodeName)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
 
@@ -672,7 +672,7 @@ public class ClientProtobuf implements Runnable
      */
 
 
-    public int sendCreateRscDfn(
+    public long sendCreateRscDfn(
         String resName,
         Integer port,
         Map<String, String> resDfnProps,
@@ -680,7 +680,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         RscDfn.Builder rscDfnBuilder = RscDfn.newBuilder();
         rscDfnBuilder.setRscName(resName);
         if (port != null)
@@ -696,16 +696,16 @@ public class ClientProtobuf implements Runnable
             rscDfnBuilder.addAllVlmDfns(vlmDfn);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_RSC_DFN,
             MsgCrtRscDfn.newBuilder().setRscDfn(
                 rscDfnBuilder.build()
             ).build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyRscDfn(
+    public long sendModifyRscDfn(
         UUID rscDfnUuid,
         String rscName,
         Integer port,
@@ -714,7 +714,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModRscDfn.Builder msgBuilder = MsgModRscDfn.newBuilder()
             .setRscName(rscName);
         if (rscDfnUuid != null)
@@ -734,35 +734,35 @@ public class ClientProtobuf implements Runnable
             msgBuilder.addAllDeletePropKeys(delProps);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_RSC_DFN,
             msgBuilder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteRscDfn(String resName) throws IOException
+    public long sendDeleteRscDfn(String resName) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_RSC_DFN,
             MsgDelRscDfn.newBuilder()
                 .setRscName(resName)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * StorPoolDefinition messages
      */
 
-    public int sendCreateStorPoolDfn(String storPoolName) throws IOException
+    public long sendCreateStorPoolDfn(String storPoolName) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_STOR_POOL_DFN,
             MsgCrtStorPoolDfn.newBuilder()
                 .setStorPoolDfn(
@@ -772,10 +772,10 @@ public class ClientProtobuf implements Runnable
                 )
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyStorPoolDfn(
+    public long sendModifyStorPoolDfn(
         UUID storPoolUuid,
         String storPoolName,
         Map<String, String> overrideProps,
@@ -783,7 +783,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModStorPoolDfn.Builder builder = MsgModStorPoolDfn.newBuilder()
             .setStorPoolName(storPoolName);
         if (storPoolUuid != null)
@@ -799,35 +799,35 @@ public class ClientProtobuf implements Runnable
             builder.addAllDeletePropKeys(delPropKeys);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_STOR_POOL_DFN,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteStorPoolDfn(String storPoolName) throws IOException
+    public long sendDeleteStorPoolDfn(String storPoolName) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_STOR_POOL_DFN,
             MsgDelStorPoolDfn.newBuilder()
                 .setStorPoolName(storPoolName)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * StorPool messages
      */
 
-    public int sendCreateStorPool(String nodeName, String storPoolName, String driver) throws IOException
+    public long sendCreateStorPool(String nodeName, String storPoolName, String driver) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_STOR_POOL,
             MsgCrtStorPool.newBuilder()
                 .setStorPool(
@@ -839,10 +839,10 @@ public class ClientProtobuf implements Runnable
                 )
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyStorPool(
+    public long sendModifyStorPool(
         UUID uuid,
         String nodeName,
         String storPoolName,
@@ -851,7 +851,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
 
         MsgModStorPool.Builder builder = MsgModStorPool.newBuilder()
             .setNodeName(nodeName)
@@ -871,33 +871,33 @@ public class ClientProtobuf implements Runnable
         }
 
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_STOR_POOL,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
 
-    public int sendDeleteStorPool(String nodeName, String storPoolName) throws IOException
+    public long sendDeleteStorPool(String nodeName, String storPoolName) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_STOR_POOL,
             MsgDelStorPool.newBuilder()
                 .setNodeName(nodeName)
                 .setStorPoolName(storPoolName)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * Resource messages
      */
 
-    public int sendCreateRsc(
+    public long sendCreateRsc(
         String nodeName,
         String resName,
         RscFlags[] flags,
@@ -906,7 +906,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         Rsc.Builder rscBuilder = Rsc.newBuilder()
             .setNodeName(nodeName)
             .setName(resName);
@@ -933,7 +933,7 @@ public class ClientProtobuf implements Runnable
             );
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_RSC,
             MsgCrtRsc.newBuilder()
                 .setRsc(
@@ -941,10 +941,10 @@ public class ClientProtobuf implements Runnable
                 )
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyRsc(
+    public long sendModifyRsc(
         UUID uuid,
         String nodeName,
         String rscName,
@@ -953,7 +953,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModRsc.Builder builder = MsgModRsc.newBuilder()
             .setNodeName(nodeName)
             .setRscName(rscName);
@@ -971,46 +971,46 @@ public class ClientProtobuf implements Runnable
             builder.addAllDeletePropKeys(delPropKeys);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_RSC,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteRsc(String nodeName, String resName) throws IOException
+    public long sendDeleteRsc(String nodeName, String resName) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_RSC,
             MsgDelRsc.newBuilder()
                 .setNodeName(nodeName)
                 .setRscName(resName)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * Volume definition messages
      */
 
-    public int sendCreateVlmDfn(String rscName, List<? extends VlmDfn> vlmDfns) throws IOException
+    public long sendCreateVlmDfn(String rscName, List<? extends VlmDfn> vlmDfns) throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_VLM_DFN,
             MsgCrtVlmDfn.newBuilder()
                 .setRscName(rscName)
                 .addAllVlmDfns(vlmDfns)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyVlmDfn(
+    public long sendModifyVlmDfn(
         UUID uuid,
         String rscName,
         int vlmNr,
@@ -1021,7 +1021,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModVlmDfn.Builder builder = MsgModVlmDfn.newBuilder()
             .setRscName(rscName)
             .setVlmNr(vlmNr);
@@ -1047,21 +1047,21 @@ public class ClientProtobuf implements Runnable
             builder.addAllDeletePropKeys(delPropKeys);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_VLM_DFN,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteVlmDfn(
+    public long sendDeleteVlmDfn(
         UUID uuid,
         String rscName,
         int vlmNr
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgDelVlmDfn.Builder builder = MsgDelVlmDfn.newBuilder()
             .setRscName(rscName)
             .setVlmNr(vlmNr);
@@ -1071,21 +1071,21 @@ public class ClientProtobuf implements Runnable
             builder.setVlmDfnUuid(uuid.toString());
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_VLM_DFN,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * Node connection messages
      */
 
-    public int sendCreateNodeConn(String nodeName1, String nodeName2, Map<String, String> props)
+    public long sendCreateNodeConn(String nodeName1, String nodeName2, Map<String, String> props)
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         NodeConn.Builder msgBuilder = NodeConn.newBuilder()
             .setNodeName1(nodeName1)
             .setNodeName2(nodeName2);
@@ -1094,7 +1094,7 @@ public class ClientProtobuf implements Runnable
             msgBuilder.addAllNodeConnProps(asLinStorMapEntryList(props));
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_NODE_CONN,
             MsgCrtNodeConn.newBuilder()
                 .setNodeConn(
@@ -1102,10 +1102,10 @@ public class ClientProtobuf implements Runnable
                 )
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyNodeConn(
+    public long sendModifyNodeConn(
         UUID uuid,
         String nodeName1,
         String nodeName2,
@@ -1114,7 +1114,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModNodeConn.Builder builder = MsgModNodeConn.newBuilder()
             .setNode1Name(nodeName1)
             .setNode2Name(nodeName2);
@@ -1132,36 +1132,36 @@ public class ClientProtobuf implements Runnable
             builder.addAllDeletePropKeys(delPropKeys);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_NODE_CONN,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteNodeConn(String nodeName1, String nodeName2)
+    public long sendDeleteNodeConn(String nodeName1, String nodeName2)
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_NODE_CONN,
             MsgDelNodeConn.newBuilder()
                 .setNodeName1(nodeName1)
                 .setNodeName2(nodeName2)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * Resuorce connection messages
      */
 
-    public int sendCreateRscConn(String nodeName1, String nodeName2, String rscName, Map<String, String> props)
+    public long sendCreateRscConn(String nodeName1, String nodeName2, String rscName, Map<String, String> props)
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         RscConn.Builder msgBuilder = RscConn.newBuilder()
             .setNodeName1(nodeName1)
             .setNodeName2(nodeName2)
@@ -1171,7 +1171,7 @@ public class ClientProtobuf implements Runnable
             msgBuilder.addAllRscConnProps(asLinStorMapEntryList(props));
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_RSC_CONN,
             MsgCrtRscConn.newBuilder()
                 .setRscConn(
@@ -1179,10 +1179,10 @@ public class ClientProtobuf implements Runnable
                 )
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyRscConn(
+    public long sendModifyRscConn(
         UUID uuid,
         String nodeName1,
         String nodeName2,
@@ -1192,7 +1192,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModRscConn.Builder builder = MsgModRscConn.newBuilder()
             .setNode1Name(nodeName1)
             .setNode2Name(nodeName2)
@@ -1211,19 +1211,19 @@ public class ClientProtobuf implements Runnable
             builder.addAllDeletePropKeys(delPropKeys);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_RSC_CONN,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteRscConn(String nodeName1, String nodeName2, String rscName)
+    public long sendDeleteRscConn(String nodeName1, String nodeName2, String rscName)
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_RSC_CONN,
             MsgDelRscConn.newBuilder()
                 .setNodeName1(nodeName1)
@@ -1231,14 +1231,14 @@ public class ClientProtobuf implements Runnable
                 .setResourceName(rscName)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     /*
      * Volume connection message
      */
 
-    public int sendCreateVlmConn(
+    public long sendCreateVlmConn(
         String nodeName1,
         String nodeName2,
         String rscName,
@@ -1247,7 +1247,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         VlmConn.Builder msgBuilder = VlmConn.newBuilder()
             .setNodeName1(nodeName1)
             .setNodeName2(nodeName2)
@@ -1258,7 +1258,7 @@ public class ClientProtobuf implements Runnable
             msgBuilder.addAllVolumeConnProps(asLinStorMapEntryList(props));
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_CRT_VLM_CONN,
             MsgCrtVlmConn.newBuilder()
                 .setVlmConn(
@@ -1266,10 +1266,10 @@ public class ClientProtobuf implements Runnable
                 )
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendModifyVlmConn(
+    public long sendModifyVlmConn(
         UUID uuid,
         String nodeName1,
         String nodeName2,
@@ -1280,7 +1280,7 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         MsgModVlmConn.Builder builder = MsgModVlmConn.newBuilder()
             .setNode1Name(nodeName1)
             .setNode2Name(nodeName2)
@@ -1300,19 +1300,19 @@ public class ClientProtobuf implements Runnable
             builder.addAllDeletePropKeys(delPropKeys);
         }
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_MOD_VLM_CONN,
             builder.build()
         );
-        return msgId;
+        return apiCallId;
     }
 
-    public int sendDeleteVlmConn(String nodeName1, String nodeName2, String rscName, int vlmNr)
+    public long sendDeleteVlmConn(String nodeName1, String nodeName2, String rscName, int vlmNr)
         throws IOException
     {
-        int msgId = msgIdGen.incrementAndGet();
+        long apiCallId = apiCallIdGen.incrementAndGet();
         send(
-            msgId,
+            apiCallId,
             ApiConsts.API_DEL_VLM_CONN,
             MsgDelVlmConn.newBuilder()
                 .setNodeName1(nodeName1)
@@ -1321,15 +1321,16 @@ public class ClientProtobuf implements Runnable
                 .setVolumeNr(vlmNr)
                 .build()
         );
-        return msgId;
+        return apiCallId;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public void send(int msgId, String apiCall, Message msg) throws IOException
+    public void send(long apiCallId, String apiCall, Message msg) throws IOException
     {
         MsgHeader headerMsg = MsgHeader.newBuilder()
-            .setApiCall(apiCall)
-            .setMsgId(msgId)
+            .setMsgType(MsgHeader.MsgType.API_CALL)
+            .setMsgContent(apiCall)
+            .setApiCallId(apiCallId)
             .build();
 
         ByteArrayOutputStream baos;

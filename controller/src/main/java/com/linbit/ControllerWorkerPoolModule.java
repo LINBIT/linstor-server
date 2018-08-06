@@ -18,21 +18,6 @@ public class ControllerWorkerPoolModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(LinStorModule.MAIN_WORKER_POOL_NAME)
-    public WorkQueue initializeWorkerThreadPool(
-        ErrorReporter errorLog,
-        DbConnectionPool dbConnPool
-    )
-    {
-        return WorkerPoolInitializer.createDefaultWorkerThreadPool(
-            errorLog,
-            dbConnPool,
-            "MainWorkerPool"
-        );
-    }
-
-    @Provides
-    @Singleton
     @Named(LinStorModule.EVENT_WRITER_WORKER_POOL_NAME)
     public WorkQueue initializeEventWriterWorkerThreadPool(
         ErrorReporter errorLog,

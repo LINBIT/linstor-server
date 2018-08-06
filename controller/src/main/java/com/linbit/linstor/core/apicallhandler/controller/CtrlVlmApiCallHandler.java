@@ -283,7 +283,7 @@ public class CtrlVlmApiCallHandler
     }
 
     byte[] listVolumes(
-        int msgId,
+        long apiCallId,
         List<String> filterNodes,
         List<String> filterStorPools,
         List<String> filterResources
@@ -391,7 +391,7 @@ public class CtrlVlmApiCallHandler
         }
 
         return clientComSerializer
-            .builder(API_LST_VLM, msgId)
+            .answerBuilder(API_LST_VLM, apiCallId)
             .resourceList(rscs, satelliteStates)
             .build();
     }

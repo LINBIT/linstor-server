@@ -11,15 +11,21 @@ import com.linbit.linstor.logging.ErrorReport;
 
 public interface CommonSerializer
 {
-    CommonSerializerBuilder builder();
+    CommonSerializerBuilder headerlessBuilder();
 
-    CommonSerializerBuilder builder(String apiCall);
+    CommonSerializerBuilder onewayBuilder(String apiCall);
 
-    CommonSerializerBuilder builder(String apiCall, Integer msgId);
+    CommonSerializerBuilder apiCallBuilder(String apiCall, Long apiCallId);
+
+    CommonSerializerBuilder answerBuilder(String msgContent, Long apiCallId);
+
+    CommonSerializerBuilder completionBuilder(Long apiCallId);
 
     interface CommonSerializerBuilder
     {
         byte[] build();
+
+        CommonSerializerBuilder bytes(byte[] bytes);
 
         CommonSerializerBuilder apiCallRcSeries(ApiCallRc apiCallRc);
 

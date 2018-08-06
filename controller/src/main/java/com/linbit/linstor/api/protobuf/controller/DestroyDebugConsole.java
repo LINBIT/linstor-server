@@ -61,7 +61,7 @@ public class DestroyDebugConsole implements ApiCall
         {
             Message reply = client.createMessage();
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
-            apiCallAnswerer.writeProtoMsgHeader(replyOut, "DebugReply");
+            apiCallAnswerer.writeAnswerHeader(replyOut, "DebugReply");
 
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
             try

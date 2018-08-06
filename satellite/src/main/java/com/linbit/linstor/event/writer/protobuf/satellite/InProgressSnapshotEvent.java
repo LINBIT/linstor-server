@@ -44,7 +44,7 @@ public class InProgressSnapshotEvent implements EventWriter
 
         return snapshotState == null ?
             null :
-            ctrlStltSerializer.builder().inProgressSnapshotEvent(snapshotState).build();
+            ctrlStltSerializer.headerlessBuilder().inProgressSnapshotEvent(snapshotState).build();
     }
 
     @Override

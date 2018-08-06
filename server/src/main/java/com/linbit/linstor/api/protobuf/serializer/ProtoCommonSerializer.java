@@ -3,6 +3,8 @@ package com.linbit.linstor.api.protobuf.serializer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -25,20 +27,48 @@ public class ProtoCommonSerializer implements CommonSerializer
     }
 
     @Override
-    public CommonSerializerBuilder builder()
+    public CommonSerializerBuilder headerlessBuilder()
     {
-        return builder(null);
+        return builder(null, null, false);
     }
 
     @Override
-    public CommonSerializerBuilder builder(String apiCall)
+    public CommonSerializerBuilder onewayBuilder(String msgContent)
     {
-        return builder(apiCall, null);
+        return builder(msgContent, null, false);
     }
 
     @Override
-    public CommonSerializerBuilder builder(String apiCall, Integer msgId)
+    public CommonSerializerBuilder apiCallBuilder(String msgContent, Long apiCallId)
     {
-        return new ProtoCommonSerializerBuilder(errorReporter, serializerCtx, apiCall, msgId);
+        checkApiCallIdNotNull(apiCallId);
+        return builder(msgContent, apiCallId, false);
+    }
+
+    @Override
+    public CommonSerializerBuilder answerBuilder(String msgContent, Long apiCallId)
+    {
+        checkApiCallIdNotNull(apiCallId);
+        return builder(msgContent, apiCallId, true);
+    }
+
+    @Override
+    public CommonSerializerBuilder completionBuilder(Long apiCallId)
+    {
+        checkApiCallIdNotNull(apiCallId);
+        return builder(null, apiCallId, false);
+    }
+
+    private CommonSerializerBuilder builder(String msgContent, Long apiCallId, boolean isAnswer)
+    {
+        return new ProtoCommonSerializerBuilder(errorReporter, serializerCtx, msgContent, apiCallId, isAnswer);
+    }
+
+    protected void checkApiCallIdNotNull(Long apiCallId)
+    {
+        if (apiCallId == null)
+        {
+            throw new ImplementationError("API call ID may not be null");
+        }
     }
 }

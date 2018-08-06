@@ -259,7 +259,7 @@ public class SnapshotStateMachine
         {
             snapshot.getNode().getPeer(apiCtx).sendMessage(
                 ctrlStltSerializer
-                    .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
+                    .onewayBuilder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT)
                     .changedSnapshot(
                         snapshotDefinition.getResourceName().displayValue,
                         snapshot.getUuid(),

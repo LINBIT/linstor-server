@@ -38,6 +38,6 @@ public class ResourceStateEvent implements EventWriter
         ResourceStateGenerator.UsageState usageState = resourceStateGenerator.generate(objectIdentifier);
 
         return usageState.getResourceReady() == null ?
-            null : commonSerializer.builder().resourceStateEvent(usageState).build();
+            null : commonSerializer.headerlessBuilder().resourceStateEvent(usageState).build();
     }
 }

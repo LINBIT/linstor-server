@@ -1,16 +1,16 @@
 package com.linbit.linstor.api.protobuf;
 
-import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.BaseApiCall;
 
 public class ApiCallDescriptor
 {
-    private final Class<? extends ApiCall> clazz;
+    private final Class<? extends BaseApiCall> clazz;
     private final String name;
     private final String description;
     private final boolean reqAuth;
 
-    public ApiCallDescriptor(ApiType apiType, Class<? extends ApiCall> clazzRef)
+    public ApiCallDescriptor(ApiType apiType, Class<? extends BaseApiCall> clazzRef)
     {
         clazz = clazzRef;
         name = apiType.getName(clazzRef);
@@ -18,7 +18,7 @@ public class ApiCallDescriptor
         reqAuth = apiType.requiresAuth(clazzRef);
     }
 
-    public Class<? extends ApiCall> getClazz()
+    public Class<? extends BaseApiCall> getClazz()
     {
         return clazz;
     }

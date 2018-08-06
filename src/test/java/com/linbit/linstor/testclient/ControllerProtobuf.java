@@ -55,9 +55,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_PRIMARY_RSC,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .primaryRequest(rscName, rscUuid)
             .build()
@@ -74,9 +74,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_AUTH,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .authMessage(
                 nodeUuid,
@@ -96,9 +96,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_CHANGED_NODE,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .changedNode(nodeUuid, nodeName)
             .build()
@@ -112,9 +112,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_CHANGED_RSC,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .changedResource(rscUuid, rscName)
             .build()
@@ -128,9 +128,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_CHANGED_STOR_POOL,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .changedStorPool(storPoolUuid, storPoolName)
             .build()
@@ -146,9 +146,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_NODE,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .nodeData(
                 node,
@@ -168,9 +168,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_NODE_DELETED,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .deletedNodeData(nodeNameStr, fullSyncId, updateId)
             .build()
@@ -185,9 +185,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_RSC,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .resourceData(
                 localResource,
@@ -206,9 +206,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_RSC_DELETED,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
             .build()
@@ -223,9 +223,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_STOR_POOL,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .storPoolData(
                 storPool,
@@ -244,9 +244,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_STOR_POOL_DELETED,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .deletedStorPoolData(nodeNameStr, fullSyncId, updateId)
             .build()
@@ -264,9 +264,9 @@ public class ControllerProtobuf extends ProtobufIO
         throws IOException
     {
         send(
-            serializer.builder(
+            serializer.apiCallBuilder(
                 InternalApiConsts.API_APPLY_STOR_POOL_DELETED,
-                getNextMsgId()
+                getNextApiCallId()
             )
             .fullSync(
                 nodeSet,

@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +16,6 @@ import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
@@ -50,19 +47,18 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
 
-@Singleton
 public class ProtoCtrlClientSerializerBuilder
     extends ProtoCommonSerializerBuilder implements CtrlClientSerializer.CtrlClientSerializerBuilder
 {
-    @Inject
     public ProtoCtrlClientSerializerBuilder(
         final ErrorReporter errReporterRef,
-        final @ApiContext AccessContext serializerCtxRef,
+        final AccessContext serializerCtxRef,
         final String apiCall,
-        Integer msgId
+        Long apiCallId,
+        boolean isAnswer
     )
     {
-        super(errReporterRef, serializerCtxRef, apiCall, msgId);
+        super(errReporterRef, serializerCtxRef, apiCall, apiCallId, isAnswer);
     }
 
     @Override

@@ -109,7 +109,7 @@ public class FullSync implements ApiCall
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             builder.build().writeDelimitedTo(baos);
             controllerPeer.sendMessage(
-                apiCallAnswerer.prepareMessage(
+                apiCallAnswerer.prepareOnewayMessage(
                     baos.toByteArray(),
                     InternalApiConsts.API_FULL_SYNC_SUCCESS
                 )

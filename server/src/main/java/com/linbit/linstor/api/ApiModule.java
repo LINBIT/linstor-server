@@ -15,14 +15,15 @@ import java.util.List;
 
 public class ApiModule extends AbstractModule
 {
-    public static final String MSG_ID = "msgId";
+    public static final String API_CALL_ID = "apiCallId";
+    public static final String API_CALL_NAME = "apiCallName";
 
     private final ApiType apiType;
-    private final List<Class<? extends ApiCall>> apiCalls;
+    private final List<Class<? extends BaseApiCall>> apiCalls;
 
     public ApiModule(
         ApiType apiTypeRef,
-        List<Class<? extends ApiCall>> apiCallsRef
+        List<Class<? extends BaseApiCall>> apiCallsRef
     )
     {
         apiType = apiTypeRef;
@@ -34,11 +35,11 @@ public class ApiModule extends AbstractModule
     {
         bind(ApiType.class).toInstance(apiType);
 
-        MapBinder<String, ApiCall> apiCallBinder =
-            MapBinder.newMapBinder(binder(), String.class, ApiCall.class);
+        MapBinder<String, BaseApiCall> apiCallBinder =
+            MapBinder.newMapBinder(binder(), String.class, BaseApiCall.class);
         MapBinder<String, ApiCallDescriptor> apiCallDescriptorBinder =
             MapBinder.newMapBinder(binder(), String.class, ApiCallDescriptor.class);
-        for (Class<? extends ApiCall> apiCall : apiCalls)
+        for (Class<? extends BaseApiCall> apiCall : apiCalls)
         {
             ApiCallDescriptor descriptor = new ApiCallDescriptor(apiType, apiCall);
             apiCallBinder.addBinding(descriptor.getName()).to(apiCall);
@@ -59,8 +60,8 @@ public class ApiModule extends AbstractModule
         bind(Message.class)
             .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
-        bind(Integer.class)
-            .annotatedWith(Names.named(ApiModule.MSG_ID))
+        bind(Long.class)
+            .annotatedWith(Names.named(ApiModule.API_CALL_ID))
             .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(TransactionMgr.class)

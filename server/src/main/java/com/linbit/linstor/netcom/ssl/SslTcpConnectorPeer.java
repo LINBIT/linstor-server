@@ -12,6 +12,8 @@ import javax.net.ssl.SSLException;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
@@ -30,6 +32,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     private SslTcpConnectorHandshaker handshaker;
 
     public SslTcpConnectorPeer(
+        final ErrorReporter errorReporter,
+        final CommonSerializer commonSerializer,
         final String peerId,
         final SslTcpConnectorService sslConnectorService,
         final SelectionKey connKey,
@@ -40,7 +44,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     )
         throws SSLException
     {
-        super(peerId, sslConnectorService, connKey, peerAccCtx, node);
+        super(errorReporter, commonSerializer, peerId, sslConnectorService, connKey, peerAccCtx, node);
         sslCtx = sslCtxRef;
         address = peerAddress;
 

@@ -77,7 +77,7 @@ class CtrlFullSyncApiCallHandler
             errorReporter.logTrace("Sending full sync to " + satellite + ".");
             satellite.sendMessage(
                 interComSerializer
-                    .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
+                    .onewayBuilder(InternalApiConsts.API_FULL_SYNC_DATA)
                     .fullSync(nodes, storPools, rscs, snapshots, expectedFullSyncId, -1) // fullSync has -1 as updateId
                     .build()
             );

@@ -13,11 +13,20 @@ import com.linbit.linstor.core.SnapshotState;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
-    CtrlStltSerializerBuilder builder();
+    @Override
+    CtrlStltSerializerBuilder headerlessBuilder();
 
-    CtrlStltSerializerBuilder builder(String apiCall);
+    @Override
+    CtrlStltSerializerBuilder onewayBuilder(String apiCall);
 
-    CtrlStltSerializerBuilder builder(String apiCall, Integer msgId);
+    @Override
+    CtrlStltSerializerBuilder apiCallBuilder(String apiCall, Long apiCallId);
+
+    @Override
+    CtrlStltSerializerBuilder answerBuilder(String msgContent, Long apiCallId);
+
+    @Override
+    CtrlStltSerializerBuilder completionBuilder(Long apiCallId);
 
     public interface CtrlStltSerializerBuilder extends CommonSerializerBuilder
     {

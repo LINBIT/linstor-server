@@ -58,7 +58,7 @@ public class DebugCommand implements ApiCall
         try
         {
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
-            apiCallAnswerer.writeProtoMsgHeader(replyOut, "DebugReply");
+            apiCallAnswerer.writeAnswerHeader(replyOut, "DebugReply");
             ByteArrayOutputStream debugErr = new ByteArrayOutputStream();
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
 

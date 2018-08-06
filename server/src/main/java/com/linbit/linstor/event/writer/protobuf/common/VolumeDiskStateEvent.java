@@ -37,6 +37,6 @@ public class VolumeDiskStateEvent implements EventWriter
     {
         String diskState = volumeDiskStateGenerator.generate(objectIdentifier);
 
-        return diskState == null ? null : commonSerializer.builder().volumeDiskState(diskState).build();
+        return diskState == null ? null : commonSerializer.headerlessBuilder().volumeDiskState(diskState).build();
     }
 }

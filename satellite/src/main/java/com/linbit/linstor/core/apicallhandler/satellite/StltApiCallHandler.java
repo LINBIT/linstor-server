@@ -106,7 +106,7 @@ public class StltApiCallHandler
     private WhitelistPropsReconfigurator whiteListPropsReconfigurator;
     private WhitelistProps whitelistProps;
 
-    private final Provider<Integer> msgId;
+    private final Provider<Long> apiCallId;
     private DrbdStateTracker drbdStateTracker;
     private DrbdEventPublisher drbdEventPublisher;
 
@@ -139,7 +139,7 @@ public class StltApiCallHandler
         EventBroker eventBrokerRef,
         WhitelistProps whiteListPropsRef,
         WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef,
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         DrbdStateTracker drbdStateTrackerRef,
         DrbdEventPublisher drbdEventPublisherRef
     )
@@ -171,7 +171,7 @@ public class StltApiCallHandler
         eventBroker = eventBrokerRef;
         whitelistProps = whiteListPropsRef;
         whiteListPropsReconfigurator = whiteListPropsReconfiguratorRef;
-        msgId = msgIdRef;
+        apiCallId = apiCallIdRef;
         drbdStateTracker = drbdStateTrackerRef;
         drbdEventPublisher = drbdEventPublisherRef;
 
@@ -386,7 +386,7 @@ public class StltApiCallHandler
 
             Peer controllerPeer = controllerPeerConnector.getControllerPeer();
             controllerPeer.sendMessage(
-                interComSerializer.builder(InternalApiConsts.API_FULL_SYNC_FAILED, 0)
+                interComSerializer.onewayBuilder(InternalApiConsts.API_FULL_SYNC_FAILED)
                     .build()
             );
 
@@ -687,7 +687,7 @@ public class StltApiCallHandler
             ids
         );
 
-        return interComSerializer.builder(ApiConsts.API_LST_ERROR_REPORTS, msgId.get())
+        return interComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())
             .errorReports(errorReports).build();
     }
 

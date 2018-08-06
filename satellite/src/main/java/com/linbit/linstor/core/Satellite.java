@@ -21,10 +21,11 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
@@ -294,10 +295,10 @@ public final class Satellite
             ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
             List<String> packageSuffixes = Arrays.asList("common", "satellite");
 
-            List<Class<? extends ApiCall>> apiCalls = classPathLoader.loadClasses(
+            List<Class<? extends BaseApiCall>> apiCalls = classPathLoader.loadClasses(
                 ProtobufApiType.class.getPackage().getName(),
                 packageSuffixes,
-                ApiCall.class,
+                BaseApiCall.class,
                 ProtobufApiCall.class
             );
 
@@ -322,6 +323,7 @@ public final class Satellite
                 new LinStorArgumentsModule(cArgs),
                 new CoreTimerModule(),
                 new SatelliteLinstorModule(),
+                new LinStorModule(),
                 new CoreModule(),
                 new SatelliteCoreModule(),
                 new SatelliteDbModule(),

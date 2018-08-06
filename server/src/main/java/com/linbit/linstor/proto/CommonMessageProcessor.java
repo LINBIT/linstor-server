@@ -1,87 +1,101 @@
 package com.linbit.linstor.proto;
 
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.linbit.WorkQueue;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Message;
-import com.linbit.linstor.netcom.MessageProcessor;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.TcpConnector;
-import com.linbit.linstor.transaction.TransactionMgr;
-
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorModule;
-import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.ApiRcUtils;
+import com.linbit.linstor.api.BaseApiCall;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.MessageTypes;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
-import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.TcpConnector;
+import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader.MsgType;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.Identity;
+import com.linbit.locks.LockGuard;
+import org.slf4j.event.Level;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.UnicastProcessor;
+import reactor.core.scheduler.Scheduler;
+import reactor.util.context.Context;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.slf4j.event.Level;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Function;
 
 /**
  * Dispatcher for received messages
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@Singleton
 public class CommonMessageProcessor implements MessageProcessor
 {
-    private final ReadWriteLock apiLock;
-
     private final ErrorReporter errorLog;
-    private final WorkQueue workQ;
-    private final LinStorScope apiCallScope;
-    private final Provider<TransactionMgr> trnActProvider;
+    private final ScopeRunner scopeRunner;
+    private final CommonSerializer commonSerializer;
+
+    private final FluxSink<Runnable> workerPool;
     private final Map<String, ApiEntry> apiCallMap;
 
     @Inject
     public CommonMessageProcessor(
         ErrorReporter errorLogRef,
-        @Named(LinStorModule.MAIN_WORKER_POOL_NAME) WorkQueue workQRef,
-        LinStorScope apiCallScopeRef,
-        Map<String, Provider<ApiCall>> apiCallProviders,
-        Map<String, ApiCallDescriptor> apiCallDescriptors,
-        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef
+        Scheduler scheduler,
+        ScopeRunner scopeRunnerRef,
+        CommonSerializer commonSerializerRef,
+        Map<String, Provider<BaseApiCall>> apiCallProviders,
+        Map<String, ApiCallDescriptor> apiCallDescriptors
     )
     {
-        ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
-        apiLock         = new ReentrantReadWriteLock();
-        errorLog        = errorLogRef;
-        workQ           = workQRef;
-        apiCallScope    = apiCallScopeRef;
-        trnActProvider  = trnActProviderRef;
-        apiCallMap      = new TreeMap<>();
+        errorLog = errorLogRef;
+        scopeRunner = scopeRunnerRef;
+        commonSerializer = commonSerializerRef;
 
-        for (Map.Entry<String, Provider<ApiCall>> providerEntry : apiCallProviders.entrySet())
+        UnicastProcessor<Runnable> processor = UnicastProcessor.create();
+        workerPool = processor.sink();
+        processor
+            .parallel(LinStor.CPU_COUNT)
+            // minimal prefetch for low latency
+            .runOn(scheduler, 1)
+            .doOnNext(Runnable::run)
+            .subscribe(
+                ignored ->
+                {
+                    // do nothing
+                },
+                exc -> errorLog.reportError(exc, null, null, "Uncaught exception in parallel processor")
+            );
+
+        apiCallMap = new TreeMap<>();
+        for (Map.Entry<String, Provider<BaseApiCall>> providerEntry : apiCallProviders.entrySet())
         {
             String apiName = providerEntry.getKey();
-            Provider<ApiCall> apiProv = providerEntry.getValue();
+            Provider<BaseApiCall> apiProv = providerEntry.getValue();
             ApiCallDescriptor apiDscr = apiCallDescriptors.get(apiName);
             if (apiDscr != null)
             {
@@ -103,51 +117,61 @@ public class CommonMessageProcessor implements MessageProcessor
 
     public Map<String, ApiCallDescriptor> getApiCallDescriptors()
     {
-        Map<String, ApiCallDescriptor> objMap;
+        Map<String, ApiCallDescriptor> objMap = new TreeMap<>();
 
-        Lock readLock = apiLock.readLock();
-        try
+        for (Map.Entry<String, ApiEntry> entry : apiCallMap.entrySet())
         {
-            readLock.lock();
-            objMap = new TreeMap<>();
-            for (Map.Entry<String, ApiEntry> entry : apiCallMap.entrySet())
-            {
-                objMap.put(entry.getKey(), entry.getValue().descriptor);
-            }
+            objMap.put(entry.getKey(), entry.getValue().descriptor);
         }
-        finally
-        {
-            readLock.unlock();
-        }
+
         return objMap;
     }
 
+    /**
+     * May be called on any thread.
+     * For each peer, messages should be delivered in the same order as in the incoming stream.
+     */
     @Override
-    public void processMessage(final Message msg, final TcpConnector connector, final Peer client)
+    public void processMessage(final Message msg, final TcpConnector connector, final Peer peer)
     {
-        workQ.submit(new MessageProcessorInvocation(this, msg, connector, client));
+        long peerSeq = peer.getNextIncomingMessageSeq();
+        workerPool.next(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
     }
 
-    private void processMessageImpl(Message msg, TcpConnector connector, Peer client)
+    /**
+     * Called on a worker pool thread.
+     */
+    private void doProcessMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
     {
+        peer.processInOrder(peerSeq, Flux.defer(() -> this.doProcessInOrderMessage(msg, connector, peer)));
+    }
+
+    /**
+     * Called on a worker pool thread.
+     * The messages from each peer are guaranteed to be delivered in the same order as in the incoming stream.
+     * In particular, no two messages from a given peer will be processed at the same time.
+     */
+    private Flux<?> doProcessInOrderMessage(Message msg, TcpConnector connector, Peer peer)
+    {
+        Flux<?> flux = Flux.empty();
         try
         {
             int msgType = msg.getType();
             switch (msgType)
             {
                 case MessageTypes.DATA:
-                    handleDataMessage(msg, connector, client);
+                    flux = handleDataMessage(msg, connector, peer);
                     break;
                 case MessageTypes.PING:
-                    client.sendPong();
+                    peer.sendPong();
                     break;
                 case MessageTypes.PONG:
-                    client.pongReceived();
+                    peer.pongReceived();
                     break;
                 default:
                     String peerAddress = null;
                     int port = 0;
-                    InetSocketAddress peerSocketAddr = client.peerAddress();
+                    InetSocketAddress peerSocketAddr = peer.peerAddress();
                     if (peerSocketAddr != null)
                     {
                         peerAddress = peerSocketAddr.getAddress().toString();
@@ -158,316 +182,467 @@ public class CommonMessageProcessor implements MessageProcessor
                     {
                         errorLog.logDebug(
                             "Message of unknown type %d received on connector %s " +
-                            "from peer at endpoint %s:%d",
-                            msgType, client.getConnectorInstanceName(), peerAddress, port
+                                "from peer at endpoint %s:%d",
+                            msgType, peer.getConnectorInstanceName(), peerAddress, port
                         );
                     }
                     else
                     {
                         errorLog.logDebug(
                             "Message of unknown type %d received on connector %s " +
-                            "from peer at unknown endpoint address",
-                            msgType, client.getConnectorInstanceName()
+                                "from peer at unknown endpoint address",
+                            msgType, peer.getConnectorInstanceName()
                         );
                     }
                     break;
             }
         }
-        catch (IllegalMessageStateException msgExc)
+        catch (Exception | ImplementationError exc)
         {
             errorLog.reportError(
-                Level.DEBUG,
-                msgExc,
-                client.getAccessContext(),
-                client,
+                Level.ERROR,
+                exc,
+                peer.getAccessContext(),
+                peer,
                 null
             );
         }
+        return flux;
     }
 
-    private void handleDataMessage(
+    private Flux<?> handleDataMessage(
         final Message msg,
         final TcpConnector connector,
-        final Peer client
+        final Peer peer
     )
-        throws IllegalMessageStateException
+        throws IllegalMessageStateException, IOException
     {
-        try
+        Flux<?> flux = Flux.empty();
+
+        byte[] msgData = msg.getData();
+        ByteArrayInputStream msgDataIn = new ByteArrayInputStream(msgData);
+
+        MsgHeaderOuterClass.MsgHeader header = MsgHeaderOuterClass.MsgHeader.parseDelimitedFrom(msgDataIn);
+        if (header != null)
         {
-            byte[] msgData = msg.getData();
-            ByteArrayInputStream msgDataIn = new ByteArrayInputStream(msgData);
+            MsgType msgType = header.getMsgType();
 
-            MsgHeaderOuterClass.MsgHeader header = MsgHeaderOuterClass.MsgHeader.parseDelimitedFrom(msgDataIn);
-            if (header != null)
+            switch (msgType)
             {
-                int msgId = header.getMsgId();
-                String apiCallName = header.getApiCall();
+                case ONEWAY:
+                    // fall-through
+                case API_CALL:
+                    flux = callApi(connector, peer, header, msgDataIn, msgType == MsgType.API_CALL);
+                    break;
+                case ANSWER:
+                    flux = handleAnswer(peer, header, msgDataIn);
+                    break;
+                case COMPLETE:
+                    peer.apiCallComplete(getApiCallId(header));
+                    break;
+                default:
+                    errorLog.logError(
+                        "Message of unknown type " + msgType + " received"
+                    );
+                    break;
+            }
+        }
+        else
+        {
+            errorLog.logError(
+                "Message didn't contain a header: " + msg.toString() + " from " + peer.getId()
+            );
+        }
 
-                errorLog.logTrace("ApiCall '%s' from %s start", apiCallName, client);
+        return flux;
+    }
 
-                Lock readLock = apiLock.readLock();
-                ApiEntry apiMapEntry;
-                try
+    private long getApiCallId(MsgHeaderOuterClass.MsgHeader header)
+    {
+        if (!header.hasApiCallId())
+        {
+            throw new InvalidHeaderException("Expected API call ID not present (for '" + header.getMsgContent() + "')");
+        }
+        return header.getApiCallId();
+    }
+
+    private Flux<?> handleAnswer(
+        Peer peer,
+        MsgHeaderOuterClass.MsgHeader header,
+        ByteArrayInputStream msgDataIn
+    )
+        throws IOException
+    {
+        if (header.getMsgContent().equals(ApiConsts.API_REPLY))
+        {
+            // check for errors
+            msgDataIn.mark(0);
+            while (msgDataIn.available() > 0)
+            {
+                MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse =
+                    MsgApiCallResponseOuterClass.MsgApiCallResponse.parseDelimitedFrom(msgDataIn);
+                if ((apiCallResponse.getRetCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
                 {
-                    readLock.lock();
-                    apiMapEntry = apiCallMap.get(apiCallName);
+                    peer.apiCallError(getApiCallId(header), new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            apiCallResponse.getRetCode(),
+                            "(" + peer + ") " + apiCallResponse.getMessage()
+                        )
+                        .setCause(apiCallResponse.getCause())
+                        .setCorrection(apiCallResponse.getCorrection())
+                        .setDetails(apiCallResponse.getDetails())
+                        .build()
+                    ));
                 }
-                finally
-                {
-                    readLock.unlock();
-                }
-                if (apiMapEntry != null)
-                {
-                    AccessContext clientAccCtx = client.getAccessContext();
-                    // API will execute
-                    // - if no authentication is required for that specific API
-                    // - if authentication is turned off globally by the security subsystem
-                    // - if the client's access context has non-public (= authenticated) identity
-                    if (!(apiMapEntry.reqAuth && Authentication.isRequired()) ||
-                        clientAccCtx.subjectId != Identity.PUBLIC_ID)
-                    {
-                        TransactionMgr transMgr = trnActProvider.get();
-                        apiCallScope.enter();
-                        try
-                        {
-                            apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), clientAccCtx);
-                            apiCallScope.seed(Peer.class, client);
-                            apiCallScope.seed(Message.class, msg);
-                            apiCallScope.seed(Key.get(Integer.class, Names.named(ApiModule.MSG_ID)), msgId);
-                            apiCallScope.seed(TransactionMgr.class, transMgr);
-                            ApiCall apiObj = apiMapEntry.provider.get();
-                            apiObj.execute(msgDataIn);
-                        }
-                        catch (InvalidProtocolBufferException exc)
-                        {
-                            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                            MsgHeader.newBuilder()
-                                .setApiCall(ApiConsts.API_REPLY)
-                                .setMsgId(msgId)
-                                .build()
-                                .writeDelimitedTo(outStream);
+            }
+            msgDataIn.reset();
+        }
+        peer.apiCallAnswer(getApiCallId(header), msgDataIn);
+        return Flux.empty();
+    }
 
-                            MsgApiCallResponse.newBuilder()
-                                .setMessage("Controller couldn't parse message.")
-                                .setCause(exc.getMessage())
-                                .setDetails("The requested function call name was '" + apiCallName + "'.")
-                                .setRetCode(ApiConsts.API_CALL_PARSE_ERROR)
-                                .build()
-                                .writeDelimitedTo(outStream);
+    private Flux<?> callApi(
+        TcpConnector connector,
+        Peer peer,
+        MsgHeaderOuterClass.MsgHeader header,
+        ByteArrayInputStream msgDataIn,
+        boolean respond
+    )
+    {
+        Flux<byte[]> messageFlux;
+        String apiCallName = header.getMsgContent();
 
-                            client.sendMessage(outStream.toByteArray());
+        errorLog.logDebug("Start handling " + (respond ? "API call" : "oneway call") + " " + apiCallName);
 
-                            errorLog.reportError(
-                                Level.ERROR,
-                                exc,
-                                client.getAccessContext(),
-                                client,
-                                "Unable to parse protobuf protocol for '" + apiCallName + "'"
-                            );
-                        }
-                        catch (Exception | ImplementationError exc)
-                        {
-                            errorLog.reportError(
-                                Level.ERROR,
-                                exc,
-                                client.getAccessContext(),
-                                client,
-                                "Execution of the '" + apiCallName + "' API failed due to an unhandled exception"
-                            );
-                        }
-                        finally
-                        {
-                            if (transMgr != null)
-                            {
-                                if (transMgr.isDirty())
-                                {
-                                    try
-                                    {
-                                        transMgr.rollback();
-                                    }
-                                    catch (SQLException sqlExc)
-                                    {
-                                        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                                        MsgHeader.newBuilder()
-                                            .setApiCall(ApiConsts.API_REPLY)
-                                            .setMsgId(msgId)
-                                            .build()
-                                            .writeDelimitedTo(outStream);
+        ApiEntry apiMapEntry = apiCallMap.get(apiCallName);
 
-                                        MsgApiCallResponse.newBuilder()
-                                            .setMessage("A database error occured while trying to rollback dirty data.")
-                                            .setCause(sqlExc.getMessage())
-                                            .setRetCode(ApiConsts.API_CALL_PARSE_ERROR)
-                                            .build()
-                                            .writeDelimitedTo(outStream);
+        if (apiMapEntry != null)
+        {
+            AccessContext peerAccCtx = peer.getAccessContext();
+            // API will execute
+            // - if no authentication is required for that specific API
+            // - if authentication is turned off globally by the security subsystem
+            // - if the peer's access context has non-public (= authenticated) identity
+            if (!(apiMapEntry.reqAuth && Authentication.isRequired()) ||
+                peerAccCtx.subjectId != Identity.PUBLIC_ID)
+            {
+                Long apiCallId = header.getApiCallId();
 
-                                        client.sendMessage(outStream.toByteArray());
-
-                                        errorLog.reportError(
-                                            Level.ERROR,
-                                            sqlExc,
-                                            client.getAccessContext(),
-                                            client,
-                                            "A database error occured while trying to rollback '" + apiCallName + "'"
-                                        );
-                                    }
-                                }
-                                transMgr.returnConnection();
-                            }
-                            apiCallScope.exit();
-                            errorLog.logTrace("ApiCall '%s' from %s finished", apiCallName, client);
-                        }
-                    }
-                    else
-                    if (client.getNode() == null)
-                    {
-                        // Inform the client that the API requires authentication
-                        // (Connected satellites are not notified)
-                        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                        MsgHeader.newBuilder()
-                            .setApiCall(ApiConsts.API_REPLY)
-                            .setMsgId(msgId)
-                            .build()
-                            .writeDelimitedTo(outStream);
-
-                        MsgApiCallResponse.newBuilder()
-                            .setMessage("The client is not authorized to execute the requested function call")
-                            .setCause(
-                                "The requested function call can only be executed by an authenticated identity"
-                            )
-                            .setDetails("The requested function call name was '" + apiCallName + "'.")
-                            .setRetCode(ApiConsts.API_CALL_AUTH_REQ)
-                            .build()
-                            .writeDelimitedTo(outStream);
-
-                        client.sendMessage(outStream.toByteArray());
-                    }
-                    else
-                    {
-                        errorLog.reportError(
-                            new ImplementationError(
-                                "Satellite's API call was rejected because it is not authorized to execute the API call"
-                            )
-                        );
-                    }
-                }
-                else
-                {
-                    // Send error reports to clients only (not to Satellites)
-                    if (client.getNode() == null)
-                    {
-                        errorLog.reportError(
-                            Level.TRACE,
-                            new LinStorException(
-                                "Non-existent API '" + apiCallName + "' called by the client",
-                                "The API call '" + apiCallName + "' cannot be executed.",
-                                "The specified API does not exist",
-                                "- Correct the client application to call a supported API\n" +
-                                    "- Load the API module required by the client application into the server\n",
-                                    "The API call name specified by the client was:\n" +
-                                        apiCallName
-                                ),
-                            client.getAccessContext(),
-                            client,
-                            "The request was received on connector service '" + connector.getInstanceName() + "' " +
-                                "of type '" + connector.getServiceName() + "'"
-                        );
-                        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                        MsgHeaderOuterClass.MsgHeader.newBuilder()
-                            .setApiCall(ApiConsts.API_REPLY)
-                            .setMsgId(msgId)
-                            .build()
-                            .writeDelimitedTo(outStream);
-
-                        MsgApiCallResponseOuterClass.MsgApiCallResponse.newBuilder()
-                            .setMessage("The requested function call cannot be executed.")
-                            .setCause(
-                                "Common causes of this error are:\n" +
-                                "   - The function call name specified by the caller\n" +
-                                "     (client side) is incorrect\n" +
-                                "   - The requested function call was not loaded into\n" +
-                                "     the system (server side)"
-                            )
-                            .setDetails("The requested function call name was '" + apiCallName + "'.")
-                            .setRetCode(ApiConsts.UNKNOWN_API_CALL)
-                            .build()
-                            .writeDelimitedTo(outStream);
-
-                        client.sendMessage(outStream.toByteArray());
-                    }
-                    else
-                    {
-                        errorLog.logDebug(
-                            "Non-existent API '" + apiCallName + "' called by controller or satellite " + client.getId()
-                        );
-                    }
-                }
+                messageFlux = scopeRunner
+                    .fluxInTransactionlessScope(LockGuard.createDeferred(), () -> Flux.just(apiMapEntry.provider.get()))
+                    .flatMap(apiObj -> execute(apiObj, apiCallName, apiCallId, msgDataIn, respond))
+                    .onErrorResume(
+                        InvalidProtocolBufferException.class,
+                        exc -> handleProtobufErrors(exc, apiCallName, peer, peerAccCtx, apiCallId)
+                    )
+                    .onErrorResume(
+                        ApiRcException.class,
+                        exc -> handleApiException(exc, apiCallName, peer, peerAccCtx, apiCallId)
+                    )
+                    .onErrorResume(
+                        ApiAccessDeniedException.class,
+                        exc -> handleApiAccessDeniedException(exc, apiCallName, peer, peerAccCtx, apiCallId)
+                    )
+                    .subscriberContext(Context.of(
+                        ApiModule.API_CALL_NAME, apiCallName,
+                        Peer.class, peer,
+                        AccessContext.class, peerAccCtx,
+                        ApiModule.API_CALL_ID, apiCallId
+                    ));
+            }
+            else if (respond)
+            {
+                messageFlux = Flux.just(makeNotAuthorizedMessage(getApiCallId(header), apiCallName));
             }
             else
             {
-                errorLog.logError(
-                    "Message didn't contain a header: " + msg.toString() + " from " +client.getId()
+                errorLog.reportError(
+                    new ImplementationError(
+                        "One way call was rejected because the peer is not authorized"
+                    )
                 );
+                messageFlux = Flux.empty();
             }
         }
-        catch (IOException ioExc)
+        else
         {
-            // No error messages are sent to a caller of an invalid API call to avoid causing a feedback loop,
-            // where each peer sends out error messages because it does not understand the other peer's API
-            // call for transferring an error message
             errorLog.reportError(
                 Level.DEBUG,
-                ioExc,
-                client.getAccessContext(),
-                client,
-                null
+                new LinStorException(
+                    "Non-existent API '" + apiCallName + "' called by the client",
+                    "The API call '" + apiCallName + "' cannot be executed.",
+                    "The specified API does not exist",
+                    "- Correct the client application to call a supported API\n" +
+                        "- Load the API module required by the client application into the server\n",
+                    "The API call name specified by the client was:\n" +
+                        apiCallName
+                ),
+                peer.getAccessContext(),
+                peer,
+                "The request was received on connector service '" + connector.getInstanceName() + "' " +
+                    "of type '" + connector.getServiceName() + "'"
+            );
+
+            if (respond)
+            {
+                messageFlux = Flux.just(makeUnknownApiCallMessage(getApiCallId(header), apiCallName));
+            }
+            else
+            {
+                messageFlux = Flux.empty();
+            }
+        }
+
+        return respond ?
+            messageFlux
+                .onErrorResume(exc -> errorFallback(exc, peer, header))
+                .concatWith(Flux.just(commonSerializer.completionBuilder(getApiCallId(header)).build()))
+                .doOnNext(peer::sendMessage)
+                .doOnTerminate(() -> errorLog.logDebug("Finish handling API call " + apiCallName)) :
+            messageFlux
+                .doOnNext(ignored ->
+                    errorLog.logDebug("Dropping message generated for oneway call '" + apiCallName + "'"))
+                .doOnTerminate(() -> errorLog.logDebug("Finish handling oneway call " + apiCallName));
+    }
+
+    private Flux<byte[]> execute(
+        BaseApiCall apiObj,
+        String apiCallName,
+        Long apiCallId,
+        ByteArrayInputStream msgDataIn,
+        boolean respond
+    )
+    {
+        Flux<byte[]> flux;
+        if (apiObj instanceof ApiCall)
+        {
+            flux = scopeRunner.fluxInTransactionalScope(
+                LockGuard.createDeferred(),
+                () -> executeNonReactive((ApiCall) apiObj, msgDataIn)
             );
         }
+        else if (apiObj instanceof ApiCallReactive)
+        {
+            Flux<byte[]> executionFlux = Mono
+                .fromCallable(() -> ((ApiCallReactive) apiObj).executeReactive(msgDataIn))
+                .flatMapMany(Function.identity());
+
+            flux = respond ?
+                executionFlux.switchIfEmpty(Flux.just(makeNoResponseMessage(apiCallName, apiCallId))) :
+                executionFlux;
+        }
+        else
+        {
+            throw new ImplementationError("API call of unknown type " + apiObj.getClass());
+        }
+        return flux;
+    }
+
+    private Flux<byte[]> executeNonReactive(ApiCall apiObj, ByteArrayInputStream msgDataIn)
+        throws Exception
+    {
+        apiObj.execute(msgDataIn);
+        return Flux.empty();
+    }
+
+    private Flux<byte[]> handleProtobufErrors(
+        Throwable exc,
+        String apiCallName,
+        Peer peer,
+        AccessContext peerAccCtx,
+        Long apiCallId
+    )
+    {
+        errorLog.reportError(
+            Level.ERROR,
+            exc,
+            peerAccCtx,
+            peer,
+            "Unable to parse protobuf protocol for '" + apiCallName + "'"
+        );
+
+        return Flux.just(makeProtobufErrorMessage(exc, apiCallId, apiCallName));
+    }
+
+    private Flux<byte[]> handleApiException(
+        ApiRcException exc,
+        String apiCallName,
+        Peer peer,
+        AccessContext peerAccCtx,
+        Long apiCallId
+    )
+    {
+        errorLog.reportError(
+            Level.ERROR,
+            exc,
+            peerAccCtx,
+            peer,
+            exc.getMessage()
+        );
+
+        return Flux.just(makeApiErrorMessage(exc, apiCallId));
+    }
+
+    private Flux<byte[]> handleApiAccessDeniedException(
+        ApiAccessDeniedException exc,
+        String apiCallName,
+        Peer peer,
+        AccessContext peerAccCtx,
+        Long apiCallId
+    )
+    {
+        ApiCallRc.RcEntry entry = ApiCallRcImpl
+            .entryBuilder(
+                exc.getRetCode(),
+                ResponseUtils.getAccDeniedMsg(peer.getAccessContext(), exc.getAction())
+            )
+            .setCause(exc.getCause().getMessage())
+            .build();
+
+        errorLog.reportError(
+            Level.ERROR,
+            exc.getCause(),
+            peerAccCtx,
+            peer,
+            entry.getMessage()
+        );
+
+        return Flux.just(commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(entry)).build());
+    }
+
+    private Flux<byte[]> errorFallback(
+        Throwable exc,
+        Peer peer,
+        MsgHeaderOuterClass.MsgHeader header
+    )
+    {
+        errorLog.reportError(
+            exc,
+            peer.getAccessContext(),
+            peer,
+            "Unhandled error executing API call '" + header.getMsgContent() + "'."
+        );
+
+        return Flux.just(makeUnhandledExceptionMessage(getApiCallId(header), header.getMsgContent(), exc));
+    }
+
+    private byte[] makeNotAuthorizedMessage(long apiCallId, String apiCallName)
+    {
+        return commonSerializer
+            .answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                .entryBuilder(ApiConsts.API_CALL_AUTH_REQ,
+                    "The client is not authorized to execute the requested function call")
+                .setCause(
+                    "The requested function call can only be executed by an authenticated identity")
+                .setDetails("The requested function call name was '" + apiCallName + "'.")
+                .build()
+            ))
+            .build();
+    }
+
+    private byte[] makeProtobufErrorMessage(
+        Throwable exc,
+        Long apiCallId,
+        String apiCallName
+    )
+    {
+        return commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                .entryBuilder(ApiConsts.API_CALL_PARSE_ERROR, "Controller couldn't parse message.")
+                .setCause(exc.getMessage())
+                .setDetails("The requested function call name was '" + apiCallName + "'.")
+                .build()
+            ))
+            .build();
+    }
+
+    private byte[] makeApiErrorMessage(ApiRcException exc, Long apiCallId)
+    {
+        ApiCallRc.RcEntry rcEntry = exc.getRcEntry();
+        return commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                .entryBuilder(rcEntry.getReturnCode(), rcEntry.getMessage())
+                .setCause(rcEntry.getCause())
+                .setCorrection(rcEntry.getCorrection())
+                .setDetails(rcEntry.getDetails())
+                .build()
+            ))
+            .build();
+    }
+
+    private byte[] makeUnhandledExceptionMessage(long apiCallId, String apiCallName, Throwable exc)
+    {
+        return commonSerializer
+            .answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Failed with unhandled error")
+                .setCause(exc.getMessage())
+                .setDetails("In API call '" + apiCallName + "'.")
+                .build()
+            ))
+            .build();
+    }
+
+    private byte[] makeUnknownApiCallMessage(long apiCallId, String apiCallName)
+    {
+        String cause =
+            "Common causes of this error are:\n" +
+                "   - The function call name specified by the caller\n" +
+                "     (client side) is incorrect\n" +
+                "   - The requested function call was not loaded into\n" +
+                "     the system (server side)";
+
+        return commonSerializer
+            .answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                .entryBuilder(ApiConsts.UNKNOWN_API_CALL,
+                    "The requested function call cannot be executed.")
+                .setCause(cause)
+                .setDetails("The requested function call name was '" + apiCallName + "'.")
+                .build()
+            ))
+            .build();
+    }
+
+    private byte[] makeNoResponseMessage(String apiCallName, long apiCallId)
+    {
+        return commonSerializer
+            .answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "No response generated by handler.")
+                .setDetails("In API call '" + apiCallName + "'.")
+                .build()
+            ))
+            .build();
     }
 
     private static class ApiEntry
     {
-        final Provider<ApiCall> provider;
+        final Provider<BaseApiCall> provider;
         final ApiCallDescriptor descriptor;
-        final boolean           reqAuth;
+        final boolean reqAuth;
 
         ApiEntry(
-            final Provider<ApiCall> providerRef,
+            final Provider<BaseApiCall> providerRef,
             final ApiCallDescriptor descriptorRef,
-            final boolean           reqAuthFlag
+            final boolean reqAuthFlag
         )
         {
-            provider    = providerRef;
-            descriptor  = descriptorRef;
-            reqAuth     = reqAuthFlag;
+            provider = providerRef;
+            descriptor = descriptorRef;
+            reqAuth = reqAuthFlag;
         }
     }
 
-    private static class MessageProcessorInvocation implements Runnable
+    private static class InvalidHeaderException extends RuntimeException
     {
-        private final CommonMessageProcessor proc;
-
-        private final Message       msg;
-        private final TcpConnector  connector;
-        private final Peer          client;
-
-        MessageProcessorInvocation(
-            final CommonMessageProcessor procRef,
-            final Message msgRef,
-            final TcpConnector connectorRef,
-            final Peer clientRef
-        )
+        public InvalidHeaderException(String message)
         {
-            proc        = procRef;
-            msg         = msgRef;
-            connector   = connectorRef;
-            client      = clientRef;
-        }
-
-        @Override
-        public void run()
-        {
-            proc.processMessageImpl(msg, connector, client);
+            super(message);
         }
     }
 }

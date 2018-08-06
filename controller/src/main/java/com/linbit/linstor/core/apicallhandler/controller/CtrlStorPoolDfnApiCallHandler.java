@@ -69,7 +69,7 @@ class CtrlStorPoolDfnApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final Provider<Integer> msgIdProvider;
+    private final Provider<Long> apiCallIdProvider;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -85,7 +85,7 @@ class CtrlStorPoolDfnApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdProviderRef
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdProviderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -100,7 +100,7 @@ class CtrlStorPoolDfnApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-        msgIdProvider = msgIdProviderRef;
+        apiCallIdProvider = apiCallIdProviderRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -293,7 +293,7 @@ class CtrlStorPoolDfnApiCallHandler
                 );
             }
             result = clientComSerializer
-                .builder(ApiConsts.API_REPLY, msgIdProvider.get())
+                .apiCallBuilder(ApiConsts.API_REPLY, apiCallIdProvider.get())
                 .apiCallRcSeries(errRc)
                 .build();
         }
@@ -302,7 +302,7 @@ class CtrlStorPoolDfnApiCallHandler
             candidateList.sort(Comparator.comparingLong(c -> c.sizeAfterDeployment));
 
             result = clientComSerializer
-                .builder(ApiConsts.API_RSP_MAX_VLM_SIZE, msgIdProvider.get())
+                .answerBuilder(ApiConsts.API_RSP_MAX_VLM_SIZE, apiCallIdProvider.get())
                 .maxVlmSizeCandidateList(candidateList)
                 .build();
         }
@@ -343,7 +343,7 @@ class CtrlStorPoolDfnApiCallHandler
         return iterator;
     }
 
-    byte[] listStorPoolDefinitions(int msgId)
+    byte[] listStorPoolDefinitions(long apiCallId)
     {
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
@@ -369,7 +369,7 @@ class CtrlStorPoolDfnApiCallHandler
         }
 
         return clientComSerializer
-            .builder(ApiConsts.API_LST_STOR_POOL_DFN, msgId)
+            .answerBuilder(ApiConsts.API_LST_STOR_POOL_DFN, apiCallId)
             .storPoolDfnList(storPoolDfns)
             .build();
     }

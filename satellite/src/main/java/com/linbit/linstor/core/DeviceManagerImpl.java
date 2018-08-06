@@ -1035,7 +1035,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             try
             {
                 data = interComSerializer
-                    .builder(InternalApiConsts.API_NOTIFY_RSC_APPLIED, 1)
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
                     .notifyResourceApplied(
                         rsc,
                         apiCallHandlerUtils.getFreeSpace()
@@ -1066,7 +1066,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
                 ctrlPeer.sendMessage(interComSerializer
-                    .builder(InternalApiConsts.API_NOTIFY_VLM_RESIZED)
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_VLM_RESIZED)
                     .notifyVolumeResized(
                         msgNodeName,
                         msgRscName,
@@ -1093,7 +1093,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
             ctrlPeer.sendMessage(interComSerializer
-                .builder(InternalApiConsts.API_NOTIFY_VLM_DRBD_RESIZED)
+                .onewayBuilder(InternalApiConsts.API_NOTIFY_VLM_DRBD_RESIZED)
                 .notifyDrbdVolumeResized(
                     msgNodeName,
                     msgRscName,
@@ -1133,7 +1133,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 freeSpaceMap = new TreeMap<>();
             }
             byte[] data = interComSerializer
-                .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
+                .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_DEL)
                 .notifyResourceDeleted(
                     msgNodeName,
                     msgRscName,
@@ -1162,7 +1162,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
             ctrlPeer.sendMessage(interComSerializer
-                .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
+                .onewayBuilder(InternalApiConsts.API_NOTIFY_VLM_DEL)
                 .notifyVolumeDeleted(
                     msgNodeName,
                     msgRscName,

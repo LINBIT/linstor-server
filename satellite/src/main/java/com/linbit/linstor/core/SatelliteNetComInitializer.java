@@ -7,6 +7,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.PublicContext;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -24,7 +25,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +56,7 @@ public final class SatelliteNetComInitializer
     private static final String NET_COM_CONF_SSL_PROTOCOL_KEY = "ssl-protocol";
 
     private final ErrorReporter errorReporter;
+    private final CommonSerializer commonSerializer;
     private final AccessContext publicCtx;
     private final MessageProcessor msgProc;
     private final StltConnTracker stltConnTracker;
@@ -64,6 +65,7 @@ public final class SatelliteNetComInitializer
     @Inject
     public SatelliteNetComInitializer(
         ErrorReporter errorReporterRef,
+        CommonSerializer commonSerializerRef,
         @PublicContext AccessContext publicCtxRef,
         CommonMessageProcessor msgProcRef,
         StltConnTracker stltConnTrackerRef,
@@ -71,6 +73,7 @@ public final class SatelliteNetComInitializer
     )
     {
         errorReporter = errorReporterRef;
+        commonSerializer = commonSerializerRef;
         publicCtx = publicCtxRef;
         msgProc = msgProcRef;
         stltConnTracker = stltConnTrackerRef;
@@ -116,6 +119,7 @@ public final class SatelliteNetComInitializer
             {
                 netComSvc = new TcpConnectorService(
                     errorReporter,
+                    commonSerializer,
                     msgProc,
                     bindAddress,
                     publicCtx,
@@ -137,6 +141,7 @@ public final class SatelliteNetComInitializer
                 {
                     netComSvc = new SslTcpConnectorService(
                         errorReporter,
+                        commonSerializer,
                         msgProc,
                         bindAddress,
                         publicCtx,

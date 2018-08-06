@@ -81,7 +81,7 @@ public class CtrlAuth implements ApiCall
             builder.build().writeDelimitedTo(baos);
 
             controllerPeer.sendMessage(
-                apiCallAnswerer.prepareMessage(
+                apiCallAnswerer.prepareOnewayMessage(
                     baos.toByteArray(),
                     InternalApiConsts.API_AUTH_ACCEPT
                 )
@@ -91,7 +91,7 @@ public class CtrlAuth implements ApiCall
         {
             // whatever happened should be in the apiCallRc
             controllerPeer.sendMessage(
-                commonSerializer.builder(InternalApiConsts.API_AUTH_ERROR)
+                commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ERROR)
                     .apiCallRcSeries(apiCallRc)
                     .build()
             );

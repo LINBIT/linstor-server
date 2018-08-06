@@ -729,7 +729,7 @@ public class CtrlRscApiCallHandler
     }
 
     byte[] listResources(
-        int msgId,
+        long apiCallId,
         List<String> filterNodes,
         List<String> filterResources
     )
@@ -813,13 +813,13 @@ public class CtrlRscApiCallHandler
         }
 
         return clientComSerializer
-                .builder(API_LST_RSC, msgId)
+                .answerBuilder(API_LST_RSC, apiCallId)
                 .resourceList(rscs, satelliteStates)
                 .build();
     }
 
     public void respondResource(
-        int msgId,
+        long apiCallId,
         String nodeNameStr,
         UUID rscUuid,
         String rscNameStr
@@ -843,7 +843,7 @@ public class CtrlRscApiCallHandler
                 {
                     peer.get().sendMessage(
                         ctrlStltSerializer
-                            .builder(InternalApiConsts.API_APPLY_RSC, msgId)
+                            .onewayBuilder(InternalApiConsts.API_APPLY_RSC)
                             .resourceData(rsc, fullSyncTimestamp, updateId)
                             .build()
                     );
@@ -852,9 +852,9 @@ public class CtrlRscApiCallHandler
                 {
                     peer.get().sendMessage(
                         ctrlStltSerializer
-                        .builder(InternalApiConsts.API_APPLY_RSC_DELETED, msgId)
-                        .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
-                        .build()
+                            .onewayBuilder(InternalApiConsts.API_APPLY_RSC_DELETED)
+                            .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
+                            .build()
                     );
                 }
             }
@@ -1178,7 +1178,7 @@ public class CtrlRscApiCallHandler
         return "resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
     }
 
-    private static ResponseContext makeRscContext(
+    static ResponseContext makeRscContext(
         Peer peer,
         ApiOperation operation,
         String nodeNameStr,

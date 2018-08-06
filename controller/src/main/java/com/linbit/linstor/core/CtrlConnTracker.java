@@ -72,7 +72,7 @@ class CtrlConnTracker implements ConnectionObserver
 
         connPeer.sendMessage(
             ctrlClientSerializer
-                .builder(ApiConsts.API_VERSION, 0)
+                .onewayBuilder(ApiConsts.API_VERSION)
                 .apiVersion(0, controllerInfo.toString())
                 .build()
         );

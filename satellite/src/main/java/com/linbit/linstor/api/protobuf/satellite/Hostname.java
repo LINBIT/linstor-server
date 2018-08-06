@@ -3,7 +3,6 @@ package com.linbit.linstor.api.protobuf.satellite;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -13,11 +12,7 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
-import com.linbit.linstor.proto.MsgHostnameOuterClass.MsgHostname;
 
 /**
  *
@@ -34,26 +29,26 @@ public class Hostname implements ApiCall
     private final Peer client;
     private final CommonSerializer commonSerializer;
 
-    private Provider<Integer> msgId;
+    private Provider<Long> apiCallId;
 
     @Inject
     public Hostname(
         StltApiCallHandler apiCallHandlerRef,
         Peer clientRef,
         CommonSerializer commonSerializerRef,
-        @Named(ApiModule.MSG_ID) Provider<Integer> msgIdRef)
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef)
     {
         apiCallHandler = apiCallHandlerRef;
         client = clientRef;
         commonSerializer = commonSerializerRef;
-        msgId = msgIdRef;
+        apiCallId = apiCallIdRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        client.sendMessage(commonSerializer.builder(ApiConsts.API_HOSTNAME, msgId.get())
+        client.sendMessage(commonSerializer.answerBuilder(ApiConsts.API_HOSTNAME, apiCallId.get())
             .hostName(apiCallHandler.getHostname())
             .build()
         );

@@ -17,13 +17,19 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 public interface CtrlClientSerializer extends CommonSerializer
 {
     @Override
-    CtrlClientSerializerBuilder builder();
+    CtrlClientSerializerBuilder headerlessBuilder();
 
     @Override
-    CtrlClientSerializerBuilder builder(String apiCall);
+    CtrlClientSerializerBuilder onewayBuilder(String apiCall);
 
     @Override
-    CtrlClientSerializerBuilder builder(String apiCall, Integer msgId);
+    CtrlClientSerializerBuilder apiCallBuilder(String apiCall, Long apiCallId);
+
+    @Override
+    CtrlClientSerializerBuilder answerBuilder(String msgContent, Long apiCallId);
+
+    @Override
+    CtrlClientSerializerBuilder completionBuilder(Long apiCallId);
 
     public interface CtrlClientSerializerBuilder extends CommonSerializerBuilder
     {

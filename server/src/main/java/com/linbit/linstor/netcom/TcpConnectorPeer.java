@@ -3,11 +3,21 @@ package com.linbit.linstor.netcom;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.utils.OrderingFlux;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.UnicastProcessor;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -15,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
 import java.nio.channels.SelectionKey;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -24,9 +35,12 @@ import javax.net.ssl.SSLException;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.SocketChannel;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 
 /**
  * Tracks the status of the communication with a peer
@@ -60,6 +74,10 @@ public class TcpConnectorPeer implements Peer
     }
 
     private final Node node;
+
+    private final ErrorReporter errorReporter;
+
+    private final CommonSerializer commonSerializer;
 
     private String peerId;
 
@@ -113,7 +131,15 @@ public class TcpConnectorPeer implements Peer
     private final Queue<Message> finishedMsgInQueue;
     private int opInterest = OP_READ;
 
+    private final AtomicLong nextIncomingMessageSeq = new AtomicLong();
+    private final FluxSink<Tuple2<Long, Publisher<?>>> incomingMessageSink;
+
+    private AtomicLong nextApiCallId = new AtomicLong(1);
+    private Map<Long, FluxSink<ByteArrayInputStream>> openRpcs = Collections.synchronizedMap(new TreeMap<>());
+
     protected TcpConnectorPeer(
+        ErrorReporter errorReporterRef,
+        CommonSerializer commonSerializerRef,
         String peerIdRef,
         TcpConnector connectorRef,
         SelectionKey key,
@@ -121,6 +147,8 @@ public class TcpConnectorPeer implements Peer
         Node nodeRef
     )
     {
+        errorReporter = errorReporterRef;
+        commonSerializer = commonSerializerRef;
         peerId = peerIdRef;
         connector = connectorRef;
         node = nodeRef;
@@ -150,6 +178,20 @@ public class TcpConnectorPeer implements Peer
         }
 
         finishedMsgInQueue = new LinkedList<>();
+
+        UnicastProcessor<Tuple2<Long, Publisher<?>>> processor = UnicastProcessor.create();
+        incomingMessageSink = processor.sink();
+        processor
+            .transform(OrderingFlux::order)
+            .flatMap(Function.identity())
+            .subscribe(
+                ignored ->
+                {
+                    // do nothing
+                },
+                exc -> errorReporterRef.reportError(
+                    exc, null, null, "Uncaught exception in processor for peer '" + this + "'")
+            );
     }
 
     @Override
@@ -298,6 +340,82 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
+    public long getNextIncomingMessageSeq()
+    {
+        return nextIncomingMessageSeq.getAndIncrement();
+    }
+
+    @Override
+    public void processInOrder(long peerSeq, Publisher<?> publisher)
+    {
+        incomingMessageSink.next(Tuples.of(peerSeq, publisher));
+    }
+
+    @Override
+    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data)
+    {
+        return Flux
+            .<ByteArrayInputStream>create(fluxSink ->
+                {
+                    long apiCallId = nextApiCallId.getAndIncrement();
+                    byte[] messageBytes = commonSerializer.apiCallBuilder(apiCallName, apiCallId).bytes(data).build();
+
+                    fluxSink.onDispose(() -> openRpcs.remove(apiCallId));
+
+                    openRpcs.put(apiCallId, fluxSink);
+                    boolean isConnected = sendMessage(messageBytes);
+                    if (!isConnected)
+                    {
+                        fluxSink.error(new PeerNotConnectedException());
+                    }
+                }
+            )
+            .switchIfEmpty(Flux.error(new ApiCallNoResponseException()));
+    }
+
+    @Override
+    public void apiCallAnswer(long apiCallId, ByteArrayInputStream data)
+    {
+        FluxSink<ByteArrayInputStream> rpcSink = openRpcs.get(apiCallId);
+        if (rpcSink == null)
+        {
+            errorReporter.logWarning("Unexpected API call answer received");
+        }
+        else
+        {
+            rpcSink.next(data);
+        }
+    }
+
+    @Override
+    public void apiCallError(long apiCallId, Throwable exc)
+    {
+        FluxSink<ByteArrayInputStream> rpcSink = openRpcs.get(apiCallId);
+        if (rpcSink == null)
+        {
+            errorReporter.logWarning("Unexpected API call answer received");
+        }
+        else
+        {
+            rpcSink.error(exc);
+        }
+    }
+
+    @Override
+    public void apiCallComplete(long apiCallId)
+    {
+        FluxSink<ByteArrayInputStream> rpcSink = openRpcs.get(apiCallId);
+        if (rpcSink == null)
+        {
+            errorReporter.logWarning("Unexpected API call completion received");
+        }
+        else
+        {
+            rpcSink.complete();
+        }
+    }
+
+    @Override
     public TcpConnector getConnector()
     {
         return connector;
@@ -320,6 +438,15 @@ public class TcpConnectorPeer implements Peer
     {
         connected = false;
         authenticated = false;
+
+        synchronized (openRpcs)
+        {
+            for (FluxSink<ByteArrayInputStream> rpcSink : openRpcs.values())
+            {
+                rpcSink.error(new PeerNotConnectedException());
+            }
+            openRpcs.clear();
+        }
     }
 
     @Override

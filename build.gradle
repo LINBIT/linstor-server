@@ -54,6 +54,7 @@ subprojects {
             compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
             compile 'info.picocli:picocli:2.3.0'
+            compile group: 'io.projectreactor', name: 'reactor-core', version: '3.1.8.RELEASE'
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
         }
@@ -270,6 +271,7 @@ dependencies {
     testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
     testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
+    testCompile group: 'io.projectreactor', name: 'reactor-test', version: '3.1.8.RELEASE'
 }
 
 /////////////////////////// Start scripts ///////////////////////////

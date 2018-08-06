@@ -429,7 +429,7 @@ class DrbdDeviceHandler implements DeviceHandler
     )
     {
         byte[] data = interComSerializer
-            .builder(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1)
+            .onewayBuilder(InternalApiConsts.API_REQUEST_PRIMARY_RSC)
             .primaryRequest(rscName, rscUuid)
             .build();
 

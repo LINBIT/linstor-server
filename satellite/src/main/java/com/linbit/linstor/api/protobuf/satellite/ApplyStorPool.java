@@ -109,7 +109,7 @@ public class ApplyStorPool implements ApiCall
                     .build()
                     .writeDelimitedTo(baos);
                 controllerPeer.sendMessage(
-                    apiCallAnswerer.prepareMessage(
+                    apiCallAnswerer.prepareOnewayMessage(
                         baos.toByteArray(),
                         InternalApiConsts.API_APPLY_STOR_POOL_SUCCESS
                     )

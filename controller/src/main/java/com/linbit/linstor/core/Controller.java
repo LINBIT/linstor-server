@@ -14,9 +14,9 @@ import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
@@ -319,10 +319,10 @@ public final class Controller
             ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
             List<String> packageSuffixes = Arrays.asList("common", "controller");
 
-            List<Class<? extends ApiCall>> apiCalls = classPathLoader.loadClasses(
+            List<Class<? extends BaseApiCall>> apiCalls = classPathLoader.loadClasses(
                 ProtobufApiType.class.getPackage().getName(),
                 packageSuffixes,
-                ApiCall.class,
+                BaseApiCall.class,
                 ProtobufApiCall.class
             );
 

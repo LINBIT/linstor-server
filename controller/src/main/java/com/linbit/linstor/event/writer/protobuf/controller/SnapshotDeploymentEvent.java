@@ -94,7 +94,7 @@ public class SnapshotDeploymentEvent implements EventWriter
             rscDfnMapLock.readLock().unlock();
         }
 
-        return ctrlClientSerializer.builder().snapshotDeploymentEvent(apiCallRc).build();
+        return ctrlClientSerializer.headerlessBuilder().snapshotDeploymentEvent(apiCallRc).build();
     }
 
     private ApiCallRc determineResponse(ResourceDefinition rscDfn, SnapshotDefinition snapshotDfn)

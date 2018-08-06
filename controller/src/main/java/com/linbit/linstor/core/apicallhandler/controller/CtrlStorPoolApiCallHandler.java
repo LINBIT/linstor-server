@@ -291,7 +291,7 @@ public class CtrlStorPoolApiCallHandler
         return responses;
     }
 
-    public void respondStorPool(int msgId, UUID storPoolUuid, String storPoolNameStr)
+    public void respondStorPool(long apiCallId, UUID storPoolUuid, String storPoolNameStr)
     {
         try
         {
@@ -306,7 +306,7 @@ public class CtrlStorPoolApiCallHandler
                 long updateId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
                     ctrlStltSerializer
-                        .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
+                        .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL)
                         .storPoolData(storPool, fullSyncTimestamp, updateId)
                         .build()
                 );
@@ -317,7 +317,7 @@ public class CtrlStorPoolApiCallHandler
                 long updateId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
                     ctrlStltSerializer
-                        .builder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED, msgId)
+                        .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED)
                         .deletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId)
                         .build()
                 );
@@ -341,52 +341,6 @@ public class CtrlStorPoolApiCallHandler
                 )
             );
         }
-    }
-
-    byte[] listStorPools(int msgId, List<String> filterNodes, List<String> filterStorPools)
-    {
-        ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
-        try
-        {
-            final List<String> upperFilterStorPools =
-                filterStorPools.stream().map(String::toUpperCase).collect(toList());
-            final List<String> upperFilterNodes =
-                filterNodes.stream().map(String::toUpperCase).collect(toList());
-            storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
-                .filter(storPoolDfn -> upperFilterStorPools.isEmpty() ||
-                    upperFilterStorPools.contains(storPoolDfn.getName().value))
-                .forEach(storPoolDfn ->
-                {
-                    try
-                    {
-                        for (StorPool storPool : storPoolDfn.streamStorPools(peerAccCtx.get())
-                                .filter(storPool -> upperFilterNodes.isEmpty() ||
-                                    upperFilterNodes.contains(storPool.getNode().getName().value))
-                                .collect(toList()))
-                        {
-                            if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
-                            {
-                                storPools.add(storPool.getApiData(peerAccCtx.get(), null, null));
-                            }
-                            // fullSyncId and updateId null, as they are not going to be serialized anyways
-                        }
-                    }
-                    catch (AccessDeniedException accDeniedExc)
-                    {
-                        // don't add storpooldfn without access
-                    }
-                }
-                );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            // for now return an empty list.
-        }
-
-        return clientComSerializer
-            .builder(ApiConsts.API_LST_STOR_POOL, msgId)
-            .storPoolList(storPools)
-            .build();
     }
 
     void updateRealFreeSpace(FreeSpacePojo[] freeSpacePojos)

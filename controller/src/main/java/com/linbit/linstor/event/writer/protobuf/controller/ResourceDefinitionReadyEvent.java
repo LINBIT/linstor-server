@@ -79,6 +79,6 @@ public class ResourceDefinitionReadyEvent implements EventWriter
             }
         }
 
-        return commonSerializer.builder().resourceDefinitionReadyEvent(readyCount, errorCount).build();
+        return commonSerializer.headerlessBuilder().resourceDefinitionReadyEvent(readyCount, errorCount).build();
     }
 }

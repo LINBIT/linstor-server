@@ -8,5 +8,5 @@ package com.linbit.linstor.netcom;
  */
 public interface MessageProcessor
 {
-    void processMessage(Message msg, TcpConnector connector, Peer client);
+    void processMessage(Message msg, TcpConnector connector, Peer peer);
 }

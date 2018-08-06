@@ -11,7 +11,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,9 +42,9 @@ public class StltUpdateRequester
     {
         sendRequest(
             interComSerializer
-            .builder(InternalApiConsts.API_REQUEST_CONTROLLER, 0)
-            .requestControllerUpdate()
-            .build()
+                .onewayBuilder(InternalApiConsts.API_REQUEST_CONTROLLER)
+                .requestControllerUpdate()
+                .build()
         );
     }
 
@@ -53,7 +52,7 @@ public class StltUpdateRequester
     {
         sendRequest(
             interComSerializer
-                .builder(InternalApiConsts.API_REQUEST_NODE, 0)
+                .onewayBuilder(InternalApiConsts.API_REQUEST_NODE)
                 .requestNodeUpdate(nodeUuid, nodeName.getDisplayName())
                 .build()
         );
@@ -63,7 +62,7 @@ public class StltUpdateRequester
     {
         sendRequest(
             interComSerializer
-                .builder(InternalApiConsts.API_REQUEST_RSC_DFN, 0)
+                .onewayBuilder(InternalApiConsts.API_REQUEST_RSC_DFN)
                 .requestResourceDfnUpdate(rscDfnUuid, rscName.getDisplayName())
                 .build()
         );
@@ -73,7 +72,7 @@ public class StltUpdateRequester
     {
         sendRequest(
             interComSerializer
-                .builder(InternalApiConsts.API_REQUEST_RSC, 0)
+                .onewayBuilder(InternalApiConsts.API_REQUEST_RSC)
                 .requestResourceUpdate(rscUuid, nodeName.getDisplayName(), rscName.getDisplayName())
                 .build()
         );
@@ -83,7 +82,7 @@ public class StltUpdateRequester
     {
         sendRequest(
             interComSerializer
-                .builder(InternalApiConsts.API_REQUEST_STOR_POOL, 0)
+                .onewayBuilder(InternalApiConsts.API_REQUEST_STOR_POOL)
                 .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
                 .build()
         );
@@ -93,7 +92,7 @@ public class StltUpdateRequester
     {
         sendRequest(
             interComSerializer
-                .builder(InternalApiConsts.API_REQUEST_IN_PROGRESS_SNAPSHOT, 0)
+                .onewayBuilder(InternalApiConsts.API_REQUEST_IN_PROGRESS_SNAPSHOT)
                 .requestSnapshotUpdate(
                     snapshotKey.getResourceName().getDisplayName(),
                     snapshotUuid,

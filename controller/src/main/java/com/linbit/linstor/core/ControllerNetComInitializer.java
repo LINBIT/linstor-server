@@ -11,6 +11,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
@@ -66,6 +67,7 @@ public final class ControllerNetComInitializer
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
 
     private final ErrorReporter errorReporter;
+    private final CommonSerializer commonSerializer;
     private final AccessContext sysCtx;
     private final AccessContext publicCtx;
     private final Props ctrlConf;
@@ -79,6 +81,7 @@ public final class ControllerNetComInitializer
     @Inject
     public ControllerNetComInitializer(
         ErrorReporter errorReporterRef,
+        CommonSerializer commonSerializerRef,
         @SystemContext AccessContext sysCtxRef,
         @PublicContext AccessContext publicCtxRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
@@ -91,6 +94,7 @@ public final class ControllerNetComInitializer
     )
     {
         errorReporter = errorReporterRef;
+        commonSerializer = commonSerializerRef;
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
         ctrlConf = ctrlConfRef;
@@ -239,6 +243,7 @@ public final class ControllerNetComInitializer
         {
             netComSvc = new TcpConnectorService(
                 errorReporter,
+                commonSerializer,
                 msgProc,
                 bindAddress,
                 publicCtx,
@@ -364,6 +369,7 @@ public final class ControllerNetComInitializer
                 {
                     netComSvc = new SslTcpConnectorService(
                         errorReporter,
+                        commonSerializer,
                         msgProc,
                         bindAddress,
                         publicCtx,

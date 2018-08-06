@@ -80,7 +80,7 @@ public class CtrlSatelliteUpdater
             }
 
             byte[] changedMessage = internalComSerializer
-                .builder(InternalApiConsts.API_CHANGED_NODE, 0)
+                .onewayBuilder(InternalApiConsts.API_CHANGED_NODE)
                 .changedNode(
                     node.getUuid(),
                     node.getName().displayValue
@@ -139,7 +139,7 @@ public class CtrlSatelliteUpdater
                     {
                         connected = currentPeer.sendMessage(
                             internalComSerializer
-                                .builder(InternalApiConsts.API_CHANGED_RSC, 0)
+                                .onewayBuilder(InternalApiConsts.API_CHANGED_RSC)
                                 .changedResource(
                                     currentRsc.getUuid(),
                                     currentRsc.getDefinition().getName().displayValue
@@ -197,7 +197,7 @@ public class CtrlSatelliteUpdater
                 {
                     connected = satellitePeer.sendMessage(
                         internalComSerializer
-                            .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
+                            .onewayBuilder(InternalApiConsts.API_CHANGED_STOR_POOL)
                             .changedStorPool(
                                 storPoolUuid,
                                 storPoolName.displayValue
@@ -252,7 +252,7 @@ public class CtrlSatelliteUpdater
                     {
                         connected = currentPeer.sendMessage(
                             internalComSerializer
-                                .builder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT, 0)
+                                .onewayBuilder(InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT)
                                 .changedSnapshot(
                                     snapshotDfn.getResourceName().displayValue,
                                     snapshot.getUuid(),

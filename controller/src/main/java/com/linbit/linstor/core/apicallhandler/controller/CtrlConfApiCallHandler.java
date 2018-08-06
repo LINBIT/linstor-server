@@ -135,7 +135,7 @@ public class CtrlConfApiCallHandler
             if (satellitePeer.isConnected() && !satellitePeer.hasFullSyncFailed())
             {
                 byte[] changedMessage = ctrlStltSrzl
-                    .builder(InternalApiConsts.API_CHANGED_CONTROLLER, 0)
+                    .onewayBuilder(InternalApiConsts.API_CHANGED_CONTROLLER)
                     .changedController(nodeToContact.getUuid(), nodeToContact.getName().getDisplayName())
                     .build();
 
@@ -250,13 +250,13 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listProps(int msgId)
+    public byte[] listProps(long apiCallId)
     {
         byte[] data = null;
         try
         {
             CtrlClientSerializer.CtrlClientSerializerBuilder builder =
-                ctrlClientcomSrzl.builder(ApiConsts.API_LST_CFG_VAL, msgId);
+                ctrlClientcomSrzl.answerBuilder(ApiConsts.API_LST_CFG_VAL, apiCallId);
             Map<String, String> mergedMap = new TreeMap<>();
             mergedMap.putAll(systemConfRepository.getCtrlConfForView(peerAccCtx.get()).map());
             mergedMap.putAll(systemConfRepository.getStltConfForView(peerAccCtx.get()).map());
@@ -693,7 +693,7 @@ public class CtrlConfApiCallHandler
             {
                 peer = node.getPeer(apiCtx);
                 peer.sendMessage(
-                    ctrlStltSrzl.builder(InternalApiConsts.API_CRYPT_KEY, 0)
+                    ctrlStltSrzl.onewayBuilder(InternalApiConsts.API_CRYPT_KEY)
                         .cryptKey(
                             cryptKey,
                             peer.getFullSyncId(),
@@ -870,7 +870,7 @@ public class CtrlConfApiCallHandler
         return isValid;
     }
 
-    void respondController(int msgId, UUID nodeUuid, String nodeNameStr)
+    void respondController(long apiCallId, UUID nodeUuid, String nodeNameStr)
     {
         try
         {
@@ -879,7 +879,7 @@ public class CtrlConfApiCallHandler
 
             currentPeer.sendMessage(
                 ctrlStltSrzl
-                    .builder(InternalApiConsts.API_APPLY_CONTROLLER, msgId)
+                    .onewayBuilder(InternalApiConsts.API_APPLY_CONTROLLER)
                     .controllerData(currentPeer.getFullSyncId(), currentPeer.getNextSerializerId())
                     .build()
             );

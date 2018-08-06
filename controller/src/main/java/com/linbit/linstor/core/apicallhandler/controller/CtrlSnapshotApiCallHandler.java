@@ -336,7 +336,7 @@ public class CtrlSnapshotApiCallHandler
         return responses;
     }
 
-    public void respondSnapshot(int msgId, String resourceNameStr, UUID snapshotUuid, String snapshotNameStr)
+    public void respondSnapshot(long apiCallId, String resourceNameStr, UUID snapshotUuid, String snapshotNameStr)
     {
         try
         {
@@ -364,7 +364,7 @@ public class CtrlSnapshotApiCallHandler
                 // TODO: check if the snapshot has the same uuid as snapshotUuid
                 currentPeer.sendMessage(
                     ctrlStltSerializer
-                        .builder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT, msgId)
+                        .onewayBuilder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT)
                         .snapshotData(snapshot, fullSyncId, updateId)
                         .build()
                 );
@@ -373,7 +373,7 @@ public class CtrlSnapshotApiCallHandler
             {
                 currentPeer.sendMessage(
                     ctrlStltSerializer
-                        .builder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED, msgId)
+                        .onewayBuilder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED)
                         .endedSnapshotData(resourceNameStr, snapshotNameStr, fullSyncId, updateId)
                         .build()
                 );
@@ -399,7 +399,7 @@ public class CtrlSnapshotApiCallHandler
         }
     }
 
-    byte[] listSnapshotDefinitions(int msgId)
+    byte[] listSnapshotDefinitions(long apiCallId)
     {
         ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns = new ArrayList<>();
         try
@@ -425,7 +425,7 @@ public class CtrlSnapshotApiCallHandler
         }
 
         return clientComSerializer
-            .builder(ApiConsts.API_LST_SNAPSHOT_DFN, msgId)
+            .answerBuilder(ApiConsts.API_LST_SNAPSHOT_DFN, apiCallId)
             .snapshotDfnList(snapshotDfns)
             .build();
     }

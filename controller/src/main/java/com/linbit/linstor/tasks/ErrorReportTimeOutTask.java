@@ -45,8 +45,8 @@ public class ErrorReportTimeOutTask implements TaskScheduleService.Task
     {
         try (LockGuard ls = LockGuard.createLocked(ctrlErrorListLock.writeLock()))
         {
-            List<Pair<Peer, Integer>> deleteList = new ArrayList<>();
-            for (Map.Entry<Pair<Peer, Integer>, CtrlNodeApiCallHandler.ErrorReportRequest> entry :
+            List<Pair<Peer, Long>> deleteList = new ArrayList<>();
+            for (Map.Entry<Pair<Peer, Long>, CtrlNodeApiCallHandler.ErrorReportRequest> entry :
                  CtrlNodeApiCallHandler.errorReportMap.entrySet())
             {
                 CtrlNodeApiCallHandler.ErrorReportRequest errorReportRequest = entry.getValue();

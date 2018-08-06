@@ -47,7 +47,7 @@ public class CtrlAuthenticator
                 // TODO make the shared secret customizable
                 peer.sendMessage(
                     serializer
-                        .builder(InternalApiConsts.API_AUTH, 1)
+                        .onewayBuilder(InternalApiConsts.API_AUTH)
                         .authMessage(
                             peerNode.getUuid(),
                             peerNode.getName().getDisplayName(),

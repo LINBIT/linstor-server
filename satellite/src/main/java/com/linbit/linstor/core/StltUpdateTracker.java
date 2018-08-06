@@ -5,7 +5,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 
-import java.util.Set;
 import java.util.UUID;
 
 public interface StltUpdateTracker

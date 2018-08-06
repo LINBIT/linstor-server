@@ -38,7 +38,8 @@ public class ResourceDeploymentStateEvent implements EventWriter
     {
         ApiCallRc apiCallRc = resourceDeploymentStateGenerator.generate(objectIdentifier);
 
-        return apiCallRc == null ? null : commonSerializer.builder().resourceDeploymentStateEvent(apiCallRc).build();
+        return apiCallRc == null ? null :
+            commonSerializer.headerlessBuilder().resourceDeploymentStateEvent(apiCallRc).build();
     }
 
     @Override

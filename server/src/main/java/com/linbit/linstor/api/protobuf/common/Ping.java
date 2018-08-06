@@ -36,7 +36,7 @@ public class Ping implements ApiCall
         throws IOException
     {
         ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
-        apiCallAnswerer.writeProtoMsgHeader(dataOut, "Pong");
+        apiCallAnswerer.writeAnswerHeader(dataOut, "Pong");
         peer.sendMessage(dataOut.toByteArray());
     }
 }
