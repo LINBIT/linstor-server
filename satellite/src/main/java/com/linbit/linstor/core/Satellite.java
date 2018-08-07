@@ -352,6 +352,7 @@ public final class Satellite
         catch (Throwable error)
         {
             errorLog.reportError(error);
+            System.exit(1);
         }
 
         System.out.println();
