@@ -26,9 +26,6 @@ public class ControllerCoreModule extends AbstractModule
 
         bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_CONF_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
-
-        bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_ERROR_LIST_LOCK))
-            .toInstance(new ReentrantReadWriteLock(true));
     }
 
     @Provides

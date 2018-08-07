@@ -56,7 +56,6 @@ public class CtrlApiCallHandler
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
-    private final ReadWriteLock ctrlErrorListLock;
 
     private final Provider<Peer> peer;
     private final Provider<Long> apiCallId;
@@ -85,7 +84,6 @@ public class CtrlApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
-        @Named(ControllerCoreModule.CTRL_ERROR_LIST_LOCK) ReadWriteLock errorListLockRef,
         Provider<Peer> clientRef,
         @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef
     )
@@ -112,7 +110,6 @@ public class CtrlApiCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
-        ctrlErrorListLock = errorListLockRef;
         peer = clientRef;
         apiCallId = apiCallIdRef;
     }
@@ -245,44 +242,6 @@ public class CtrlApiCallHandler
             listNodes = nodeApiCallHandler.listNodes(apiCallId.get());
         }
         return listNodes;
-    }
-
-    public void listErrorReports(
-        final Peer client,
-        final Set<String> nodes,
-        boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
-        final Set<String> ids
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(ctrlErrorListLock.writeLock()))
-        {
-            nodeApiCallHandler.listErrorReports(
-                client,
-                apiCallId.get(),
-                nodes,
-                withContent,
-                since,
-                to,
-                ids
-            );
-        }
-    }
-
-    public void appendErrorReports(
-        final Peer client,
-        Set<ErrorReport> errorReports
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(ctrlErrorListLock.writeLock()))
-        {
-            nodeApiCallHandler.appendErrorReports(
-                client,
-                apiCallId.get(),
-                errorReports
-            );
-        }
     }
 
     /**

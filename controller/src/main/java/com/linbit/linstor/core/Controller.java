@@ -1,5 +1,14 @@
 package com.linbit.linstor.core;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.linbit.ControllerWorkerPoolModule;
@@ -42,7 +51,6 @@ import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.DbNumberPoolInitializer;
 import com.linbit.linstor.numberpool.NumberPoolModule;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -51,7 +59,6 @@ import com.linbit.linstor.security.DbCoreObjProtInitializer;
 import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
-import com.linbit.linstor.tasks.ErrorReportTimeOutTask;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -59,15 +66,6 @@ import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * linstor controller prototype
@@ -118,7 +116,6 @@ public final class Controller
     private final TaskScheduleService taskScheduleService;
     private final PingTask pingTask;
     private final ReconnectorTask reconnectorTask;
-    private final ErrorReportTimeOutTask errorReportTimeOutTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
     private final SatelliteConnector satelliteConnector;
@@ -143,7 +140,6 @@ public final class Controller
         TaskScheduleService taskScheduleServiceRef,
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
-        ErrorReportTimeOutTask errorReportTimeOutTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         SatelliteConnector satelliteConnectorRef,
         ControllerNetComInitializer controllerNetComInitializerRef
@@ -166,14 +162,13 @@ public final class Controller
         taskScheduleService = taskScheduleServiceRef;
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
-        errorReportTimeOutTask = errorReportTimeOutTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
     }
 
     public void start()
-        throws InvalidKeyException, SystemServiceStartException, InitializationException
+        throws SystemServiceStartException, InitializationException
     {
         applicationLifecycleManager.installShutdownHook();
 
@@ -186,7 +181,6 @@ public final class Controller
 
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
-            taskScheduleService.addTask(errorReportTimeOutTask);
             taskScheduleService.addTask(new GarbageCollectorTask());
 
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);

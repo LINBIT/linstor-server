@@ -1,5 +1,21 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Stream;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -41,36 +57,12 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.utils.Pair;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.stream.Stream;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
@@ -93,37 +85,6 @@ public class CtrlNodeApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-
-    public class ErrorReportRequest
-    {
-        public long apiCallId;
-        public LocalDateTime requestTime;
-        public long msgReqId;
-        public TreeSet<ErrorReport> errorReports;
-        public TreeSet<String> requestNodes;
-
-        public ErrorReportRequest(long apiCallIdRef, long msgReqIdRef)
-        {
-            apiCallId = apiCallIdRef;
-            msgReqId = msgReqIdRef;
-            requestTime = LocalDateTime.now();
-            errorReports = new TreeSet<>();
-            requestNodes = new TreeSet<>();
-        }
-
-        public long getMsgReqId()
-        {
-            return msgReqId;
-        }
-
-        @Override
-        public String toString()
-        {
-            return requestTime.toString();
-        }
-    }
-
-    public static Map<Pair<Peer, Long>, ErrorReportRequest> errorReportMap = new HashMap<>();
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -639,122 +600,6 @@ public class CtrlNodeApiCallHandler
         }
 
         return clientComSerializer.answerBuilder(ApiConsts.API_LST_NODE, apiCallId).nodeList(nodes).build();
-    }
-
-    void listErrorReports(
-        Peer client,
-        long apiCallId,
-        final Set<String> nodes,
-        boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
-        final Set<String> ids
-    )
-    {
-        Optional<Long> reqId = errorReportMap.values().stream()
-            .max(Comparator.comparingLong(ErrorReportRequest::getMsgReqId))
-            .map(errReq -> errReq.msgReqId);
-
-        final Pair<Peer, Long> key = new Pair<>(client, apiCallId);
-        errorReportMap.put(key, new ErrorReportRequest(apiCallId, reqId.orElse(1L)));
-        final ErrorReportRequest errReq = errorReportMap.get(key);
-        if (nodes.isEmpty() || nodes.stream().anyMatch("controller"::equalsIgnoreCase)) {
-            Set<ErrorReport> errorReports = StdErrorReporter.listReports(
-                "Controller",
-                errorReporter.getLogDirectory(),
-                withContent,
-                since,
-                to,
-                ids
-            );
-            errReq.errorReports.addAll(errorReports);
-        }
-
-        try
-        {
-            nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
-                .filter(node -> nodes.isEmpty() ||
-                    nodes.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase))
-                .forEach(node ->
-                    {
-                        try
-                        {
-                            Peer peer = node.getPeer(apiCtx);
-                            if (peer != null && peer.isConnected())
-                            {
-                                String nodeName = node.getName().getDisplayName();
-                                errReq.requestNodes.add(nodeName);
-
-                                byte[] msg = clientComSerializer.answerBuilder(ApiConsts.API_REQ_ERROR_REPORTS, errReq.msgReqId)
-                                    .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
-                                peer.sendMessage(msg);
-                            }
-                        }
-                        catch (AccessDeniedException ignored)
-                        {
-                        }
-                    }
-                );
-        }
-        catch (AccessDeniedException ignored)
-        {
-        }
-
-        // no requests sent, send controller answer
-        if (errReq.requestNodes.isEmpty())
-        {
-            client.sendMessage(clientComSerializer
-                .answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, errReq.apiCallId)
-                .errorReports(errReq.errorReports)
-                .build()
-            );
-            errorReportMap.remove(key);
-        }
-    }
-
-    /**
-     * Adds received error reports from satellites to the client request.
-     *
-     * @param nodePeer Satellite peer with error reports
-     * @param apiCallId
-     * @param rawErrorReports
-     */
-    void appendErrorReports(
-        final Peer nodePeer,
-        long apiCallId,
-        Set<ErrorReport> rawErrorReports
-    )
-    {
-        Pair<Peer, Long> keyEntry = null;
-        for (Map.Entry<Pair<Peer, Long>, ErrorReportRequest> entry : errorReportMap.entrySet())
-        {
-            ErrorReportRequest errorReportRequest = entry.getValue();
-            if (errorReportRequest.msgReqId == apiCallId)
-            {
-                errorReportRequest.errorReports.addAll(rawErrorReports);
-
-                // remove request for node
-                String nodeName = nodePeer.getNode().getName().getDisplayName();
-                errorReportRequest.requestNodes.remove(nodeName);
-
-                // if we received all error reports from requested nodes, answer our client
-                if (errorReportRequest.requestNodes.isEmpty()) {
-                    keyEntry = entry.getKey();
-                    keyEntry.objA.sendMessage(clientComSerializer
-                        .answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, errorReportRequest.apiCallId)
-                        .errorReports(errorReportRequest.errorReports)
-                        .build()
-                    );
-                    break;
-                }
-            }
-        }
-
-        // remove fulfilled request
-        if (keyEntry != null)
-        {
-            errorReportMap.remove(keyEntry);
-        }
     }
 
     void respondNode(long apiCallId, UUID nodeUuid, String nodeNameStr)

@@ -8,11 +8,15 @@ import java.util.Optional;
 import java.util.TreeSet;
 
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
+import reactor.core.publisher.Flux;
 
 /**
  *
@@ -22,29 +26,28 @@ import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
     name = ApiConsts.API_REQ_ERROR_REPORTS,
     description = "Returns the requested error reports."
 )
-public class ReqErrorReports implements ApiCall
+public class ReqErrorReports implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
+    private final CtrlErrorListApiCallHandler errorListApiCallHandler;
     private final Peer client;
 
     @Inject
-    public ReqErrorReports(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ReqErrorReports(CtrlErrorListApiCallHandler apiCallHandlerRef, Peer clientRef)
     {
-        apiCallHandler = apiCallHandlerRef;
+        errorListApiCallHandler = apiCallHandlerRef;
         client = clientRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgReqErrorReport reqErrorReport = MsgReqErrorReport.parseDelimitedFrom(msgDataIn);
         Optional<Date> since = Optional.ofNullable(
             reqErrorReport.hasSince() ? new Date(reqErrorReport.getSince()) : null);
         Optional<Date> to = Optional.ofNullable(reqErrorReport.hasTo() ? new Date(reqErrorReport.getTo()) : null);
-        apiCallHandler
+        return errorListApiCallHandler
             .listErrorReports(
-                client,
                 new TreeSet<>(reqErrorReport.getNodeNamesList()),
                 reqErrorReport.getWithContent(),
                 since,
