@@ -145,7 +145,8 @@ public class CtrlRscApiCallHandler
         String rscNameStr,
         List<String> flagList,
         Map<String, String> rscPropsMap,
-        List<VlmApi> vlmApiList
+        List<VlmApi> vlmApiList,
+        Integer nodeIdInt
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -163,7 +164,8 @@ public class CtrlRscApiCallHandler
                 rscNameStr,
                 flagList,
                 rscPropsMap,
-                vlmApiList
+                vlmApiList,
+                nodeIdInt
             ).extractApiCallRc(responses);
 
             ctrlTransactionHelper.commit();
@@ -375,6 +377,7 @@ public class CtrlRscApiCallHandler
      * @param flagList
      * @param rscPropsMap
      * @param vlmApiList
+     * @param nodeIdInt
      *
      * @return the newly created resource
      */
@@ -383,7 +386,8 @@ public class CtrlRscApiCallHandler
         String rscNameStr,
         List<String> flagList,
         Map<String, String> rscPropsMap,
-        List<VlmApi> vlmApiList
+        List<VlmApi> vlmApiList,
+        Integer nodeIdInt
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -391,7 +395,7 @@ public class CtrlRscApiCallHandler
         NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
-        NodeId nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(rscDfn);
+        NodeId nodeId = resolveNodeId(nodeIdInt, rscDfn);
 
         ResourceData rsc = ctrlRscCrtApiHelper.createResource(rscDfn, node, nodeId, flagList);
         Props rscProps = getProps(rsc);
@@ -475,6 +479,54 @@ public class CtrlRscApiCallHandler
             }
         }
         return new ApiCallRcWith<>(responses, rsc);
+    }
+
+    private NodeId resolveNodeId(Integer nodeIdInt, ResourceDefinitionData rscDfn)
+    {
+        NodeId nodeId;
+
+        if (nodeIdInt == null)
+        {
+            nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(rscDfn);
+        }
+        else
+        {
+            try
+            {
+                NodeId requestedNodeId = new NodeId(nodeIdInt);
+
+                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
+                while (rscIterator.hasNext())
+                {
+                    if (requestedNodeId.equals(rscIterator.next().getNodeId()))
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_NODE_ID,
+                            "The specified node ID is already in use."
+                        ));
+                    }
+                }
+
+                nodeId = requestedNodeId;
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ApiAccessDeniedException(
+                    accDeniedExc,
+                    "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                );
+            }
+            catch (ValueOutOfRangeException outOfRangeExc)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_NODE_ID,
+                    "The specified node ID is out of range."
+                ), outOfRangeExc);
+            }
+        }
+
+        return nodeId;
     }
 
     private boolean isDiskless(Resource rsc)

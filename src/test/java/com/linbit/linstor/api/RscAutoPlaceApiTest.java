@@ -959,7 +959,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     rscNameStrRef,
                     Collections.emptyList(),
                     rscPropsMap,
-                    Collections.emptyList()
+                    Collections.emptyList(),
+                    null
                 );
             }
             return this;

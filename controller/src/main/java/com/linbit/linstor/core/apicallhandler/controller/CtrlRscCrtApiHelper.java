@@ -98,7 +98,7 @@ class CtrlRscCrtApiHelper
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID,
-                "An exception occured during generation of a node id."
+                "An exception occured during generation of a node ID."
             ), exhaustedPoolExc);
         }
         return freeNodeId;

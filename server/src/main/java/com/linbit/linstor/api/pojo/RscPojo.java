@@ -128,6 +128,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return localRscFlags;
     }
 
+    @Override
     public int getLocalRscNodeId()
     {
         return localRscNodeId;

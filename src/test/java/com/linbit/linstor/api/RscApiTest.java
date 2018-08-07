@@ -137,7 +137,8 @@ public class RscApiTest extends ApiTestBase
                 rscName,
                 flags,
                 rscPropsMap,
-                vlmApiDataList
+                vlmApiDataList,
+                null
             );
         }
 

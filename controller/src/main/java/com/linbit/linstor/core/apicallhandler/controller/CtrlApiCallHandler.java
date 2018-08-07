@@ -461,10 +461,11 @@ public class CtrlApiCallHandler
     /**
      * Creates a new {@link Resource}
      *
-     * @param nodeName required
-     * @param rscName required
      * @param rscPropsMap optional
      * @param vlmApiDataList optional
+     * @param nodeName required
+     * @param rscName required
+     * @param nodeIdInt
      * @return
      */
     public ApiCallRc createResource(
@@ -472,7 +473,8 @@ public class CtrlApiCallHandler
         String rscName,
         List<String> flagList,
         Map<String, String> rscPropsMapRef,
-        List<Volume.VlmApi> vlmApiDataListRef
+        List<Volume.VlmApi> vlmApiDataListRef,
+        Integer nodeIdInt
     )
     {
         ApiCallRc apiCallRc;
@@ -498,7 +500,8 @@ public class CtrlApiCallHandler
                 rscName,
                 flagList,
                 rscPropsMap,
-                vlmApiDataList
+                vlmApiDataList,
+                nodeIdInt
             );
         }
 

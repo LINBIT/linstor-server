@@ -53,7 +53,8 @@ public class CreateResource implements ApiCall
             rsc.getName(),
             rsc.getRscFlagsList(),
             ProtoMapUtils.asMap(rsc.getPropsList()),
-            vlmApiDataList
+            vlmApiDataList,
+            msgCrtRsc.getOverrideNodeId() ? rsc.getNodeId() : null
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

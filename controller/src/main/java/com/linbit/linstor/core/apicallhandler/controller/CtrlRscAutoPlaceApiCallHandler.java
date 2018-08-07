@@ -221,7 +221,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                         rscNameStr,
                         Collections.emptyList(),
                         rscPropsMap,
-                        Collections.emptyList()
+                        Collections.emptyList(),
+                        null
                     ).extractApiCallRc(responses);
                     deployedResources.add(rsc);
 
@@ -256,7 +257,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 rscNameStr,
                                 flagList,
                                 rscPropsMap,
-                                Collections.emptyList()
+                                Collections.emptyList(),
+                                null
                             ).extractApiCallRc(responses)
                         );
                     }

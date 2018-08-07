@@ -9,7 +9,7 @@ public class NodeId implements Comparable<NodeId>
     public static final int NODE_ID_MAX = 31;
 
     private static final String NODE_ID_EXC_FORMAT =
-        "Node id %d is out of range [%d - %d]";
+        "Node ID %d is out of range [%d - %d]";
 
     public final int value;
 
