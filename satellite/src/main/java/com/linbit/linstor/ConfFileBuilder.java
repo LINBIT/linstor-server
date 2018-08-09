@@ -13,6 +13,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -241,22 +242,6 @@ public class ConfFileBuilder
                         appendLine(format, fromHost);
                         appendLine(format, toHost);
 
-                        if (rscDfn.getProps(accCtx)
-                            .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
-                            )
-                        {
-                            appendLine("");
-                            appendLine("disk");
-                            try (Section ignore = new Section())
-                            {
-                                appendDrbdOptions(
-                                    LinStorObject.CONTROLLER,
-                                    rscDfn.getProps(accCtx),
-                                    ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
-                                );
-                            }
-                        }
-
                         ResourceConnection rscConn = localRsc.getResourceConnection(accCtx, peerRsc);
 
                         if (rscConn != null)
@@ -269,9 +254,28 @@ public class ConfFileBuilder
                                 appendLine("disk");
                                 try (Section ignore = new Section())
                                 {
+                                    appendConflictingDrbdOptions(
+                                        "resource-definition",
+                                        rscDfn.getProps(accCtx),
+                                        rscConn.getProps(accCtx),
+                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                    );
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (rscDfn.getProps(accCtx)
+                                .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
+                                )
+                            {
+                                appendLine("");
+                                appendLine("disk");
+                                try (Section ignore = new Section())
+                                {
                                     appendDrbdOptions(
                                         LinStorObject.CONTROLLER,
-                                        rscConn.getProps(accCtx),
+                                        rscDfn.getProps(accCtx),
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                                     );
                                 }
@@ -381,6 +385,91 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
+    private boolean checkValidDrbdOption(
+        final String key,
+        final String value
+    )
+    {
+        boolean ret = true;
+        if (!whitelistProps.isAllowed(LinStorObject.CONTROLLER, key, value, true))
+        {
+            ret = false;
+            errorReporter.reportProblem(
+                Level.WARN,
+                new LinStorException(
+                    "Ignoring property '" + key + "' with value '" + value + "' as it is not whitelisted."
+                ),
+                null,
+                null,
+                "The whitelist was generated from 'drbdsetup xml-help {resource,peer-device,net,disk}-options'" +
+                    " when the satellite started."
+            );
+        }
+
+        return ret;
+    }
+
+    private void appendConflictingDrbdOptions(
+        final String parentName,
+        final Props propsParent,
+        final Props props,
+        final String namespace
+    )
+    {
+        Map<String, String> mapParent = propsParent.getNamespace(namespace)
+            .map(Props::map).orElse(new HashMap<>());
+
+        Map<String, String> mapProps = props.getNamespace(namespace)
+            .map(Props::map).orElse(new HashMap<>());
+
+        Set<String> writtenProps = new TreeSet<>();
+
+        for (Map.Entry<String, String> entry : mapParent.entrySet())
+        {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            final String configKey = key.substring(namespace.length() + 1);
+            if (checkValidDrbdOption(key, value))
+            {
+                final String absKey = Props.PATH_SEPARATOR + key; // key needs to be absolute
+                if (mapProps.containsKey(absKey))
+                {
+                    appendCommentLine("%s %s; # set on %s",
+                        configKey,
+                        value,
+                        parentName
+                    );
+                    appendLine("%s %s;",
+                        configKey,
+                        mapProps.get(absKey)
+                    );
+                }
+                else
+                {
+                    appendLine("%s %s;",
+                        configKey,
+                        value
+                    );
+                }
+                writtenProps.add(key);
+            }
+        }
+
+        for (Map.Entry<String, String> entry : mapProps.entrySet())
+        {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            final String configKey = key.substring(namespace.length() + 1);
+            if (!writtenProps.contains(key) && checkValidDrbdOption(key, value))
+            {
+                appendLine("%s %s;",
+                    configKey,
+                    value
+                );
+            }
+        }
+    }
+
     private void appendDrbdOptions(
         final LinStorObject lsObj,
         final Props props,
@@ -394,24 +483,12 @@ public class ConfFileBuilder
         {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (whitelistProps.isAllowed(lsObj, key, value, true))
+            if (checkValidDrbdOption(key, value))
             {
                 appendLine("%s %s;",
                     key.substring(namespace.length() + 1),
                     value
                 );
-            }
-            else
-            {
-                errorReporter.reportProblem(
-                    Level.WARN,
-                    new LinStorException(
-                        "Ignoring property '" + key + "' with value '" + value + "' as it is not whitelisted."
-                    ),
-                    null,
-                    null,
-                    "The whitelist was generated from 'drbdsetup xml-help {resource,peer-device,net,disk}-options'" +
-                    " when the satellite started.");
             }
         }
     }
@@ -570,6 +647,12 @@ public class ConfFileBuilder
         appendIndent();
         append(format, args);
         stringBuilder.append("\n");
+    }
+
+    private void appendCommentLine(String format, Object... args)
+    {
+        stringBuilder.append("#");
+        appendLine(format, args);
     }
 
     private static class ResourceNameComparator implements Comparator<Resource>
