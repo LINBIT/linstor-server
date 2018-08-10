@@ -6,6 +6,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -73,16 +74,18 @@ public class ApplyStorPool implements ApiCall
 
         try
         {
-            Map<StorPool, Long> freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
+            Map<StorPool, SpaceInfo> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
 
             Long requestedFreeSpace = null;
+            Long totalCapacity = null;
 
             String storPoolName = storPoolData.getStorPoolName().toUpperCase();
-            for (Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
+            for (Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
             {
                 if (entry.getKey().getName().value.equals(storPoolName))
                 {
-                    requestedFreeSpace = entry.getValue();
+                    requestedFreeSpace = entry.getValue().freeSpace;
+                    totalCapacity = entry.getValue().totalCapacity;
                     break;
                 }
             }
@@ -104,6 +107,7 @@ public class ApplyStorPool implements ApiCall
                         .setStorPoolUuid(storPoolData.getStorPoolUuid())
                         .setStorPoolName(storPoolData.getStorPoolName())
                         .setFreeSpace(requestedFreeSpace)
+                        .setTotalCapacity(totalCapacity)
                         .build()
                     )
                     .build()
@@ -138,6 +142,7 @@ public class ApplyStorPool implements ApiCall
             Collections.<String, String>emptyMap(),
             storPoolData.getFullSyncId(),
             storPoolData.getUpdateId(),
+            null,
             null
         );
         return storPoolRaw;

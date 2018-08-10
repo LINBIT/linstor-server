@@ -4,6 +4,7 @@ import static com.linbit.linstor.storage.StorageConstants.CONFIG_SIZE_ALIGN_TOLE
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_ZFS_COMMAND_KEY;
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_ZFS_POOL_KEY;
 import static com.linbit.linstor.storage.ZfsDriver.ZFS_COMMAND_DEFAULT;
+import static com.linbit.linstor.storage.ZfsDriver.ZFS_POOL_COMMAND_DEFAULT;
 import static com.linbit.linstor.storage.ZfsDriver.ZFS_POOL_DEFAULT;
 import static com.linbit.linstor.storage.ZfsDriver.ZFS_VOLBLOCKSIZE;
 import static org.junit.Assert.assertEquals;
@@ -508,6 +509,15 @@ public class ZfsDriverTest extends StorageTestUtils
     }
 
     @Test
+    public void testTotalSpace() throws StorageException
+    {
+        final long size = 1L * 1024 * 1024; // 1GiB
+        expectZfsTotalSpaceCommand(ZFS_POOL_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, size, true);
+
+        assertEquals(size, driver.getTotalSpace());
+    }
+
+    @Test
     public void testTraits() throws StorageException
     {
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, "testVolume", TEST_EXTENT_SIZE);
@@ -693,6 +703,41 @@ public class ZfsDriverTest extends StorageTestUtils
             "",
             exists ? 0 : 1
         );
+        ec.setExpectedBehavior(command, outData);
+    }
+
+    protected void expectZfsTotalSpaceCommand(
+        final String zfsCommand,
+        final String pool,
+        long size,
+        boolean poolExists
+    )
+    {
+        final String property = "free";
+        Command command = new Command(
+            zfsCommand,
+            "get", property,
+            "-Hp",
+            pool
+        );
+        OutputData outData;
+        if (poolExists)
+        {
+            outData = new TestOutputData(
+                pool + "\t" + property + "\t" + Long.toString(size * MB) + "\t" + "-",
+                "",
+                0
+            );
+        }
+        else
+        {
+            outData = new TestOutputData(
+                "",
+                "cannot open '" + pool + "': dataset does not exist",
+                1
+            );
+        }
+
         ec.setExpectedBehavior(command, outData);
     }
 

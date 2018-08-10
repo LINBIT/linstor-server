@@ -89,6 +89,17 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     }
 
     @Override
+    public Optional<Long> getTotalCapacity()
+    {
+        Long size = null;
+        if (storPool.hasFreeSpace())
+        {
+            size = storPool.getFreeSpace().getTotalCapacity();
+        }
+        return Optional.ofNullable(size);
+    }
+
+    @Override
     public Map<String, String> getStorPoolProps()
     {
         Map<String, String> ret = new HashMap<>();
@@ -128,7 +139,8 @@ public class StorPoolApiData implements StorPool.StorPoolApi
             StorPoolFreeSpace.Builder storPoolFreeSpcBld = StorPoolFreeSpace.newBuilder();
             storPoolFreeSpcBld.setStorPoolName(apiStorPool.getStorPoolName())
                 .setStorPoolUuid(apiStorPool.getStorPoolUuid().toString())
-                .setFreeSpace(apiStorPool.getFreeSpace().get());
+                .setFreeSpace(apiStorPool.getFreeSpace().get())
+                .setTotalCapacity(apiStorPool.getTotalCapacity().get());
             storPoolBld.setFreeSpace(storPoolFreeSpcBld.build());
         }
 

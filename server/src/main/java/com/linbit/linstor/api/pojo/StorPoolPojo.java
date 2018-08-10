@@ -3,6 +3,7 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final Long fullSyncId;
     private final Long updateId;
     private final Optional<Long> freeSpace;
+    private final Optional<Long> totalSpace;
 
     public StorPoolPojo(
         final UUID storPoolUuidRef,
@@ -37,7 +39,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final Map<String, String> storPoolStaticTraitsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
-        final Optional<Long> freeSpaceRef
+        final Optional<Long> freeSpaceRef,
+        final Optional<Long> totalSpaceRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -53,6 +56,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
         freeSpace = freeSpaceRef;
+        totalSpace = totalSpaceRef;
     }
 
     @Override
@@ -89,6 +93,12 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     public String getDriver()
     {
         return driver;
+    }
+
+    @Override
+    public Optional<Long> getTotalCapacity()
+    {
+        return totalSpace;
     }
 
     @Override

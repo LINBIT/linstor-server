@@ -9,6 +9,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.SnapshotState;
 
 public interface CtrlStltSerializer extends CommonSerializer
@@ -83,11 +84,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             String nodeName,
             String resourceName,
             UUID rscUuid,
-            Map<StorPool, Long> freeSpaceMap
+            Map<StorPool, SpaceInfo> freeSpaceMap
         );
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
-            Map<StorPool, Long> freeSpaceMap
+            Map<StorPool, SpaceInfo> freeSpaceMap
         );
         CtrlStltSerializerBuilder notifyVolumeResized(
             String nodeName,

@@ -23,6 +23,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
@@ -1038,7 +1039,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
                     .notifyResourceApplied(
                         rsc,
-                        apiCallHandlerUtils.getFreeSpace()
+                        apiCallHandlerUtils.getSpaceInfo()
                     )
                     .build();
             }
@@ -1121,10 +1122,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = rsc.getDefinition().getName().displayValue;
             UUID rscUuid = rsc.getUuid();
 
-            Map<StorPool, Long> freeSpaceMap = null;
+            Map<StorPool, SpaceInfo> freeSpaceMap = null;
             try
             {
-                freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
+                freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
             }
             catch (StorageException exc)
             {

@@ -114,6 +114,11 @@ public class DisklessDriver implements StorageDriver
     {
         return true;
     }
+    
+    @Override
+    public long getTotalSpace() {
+        return Long.MAX_VALUE;
+    }
 
     @Override
     public long getFreeSpace()

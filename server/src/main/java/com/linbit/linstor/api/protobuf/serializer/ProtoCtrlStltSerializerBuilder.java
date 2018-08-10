@@ -26,6 +26,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
@@ -498,7 +499,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     @Override
     public ProtoCtrlStltSerializerBuilder notifyResourceApplied(
         Resource resource,
-        Map<StorPool, Long> freeSpaceMap
+        Map<StorPool, SpaceInfo> freeSpaceMap
     )
     {
         try
@@ -545,7 +546,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         String nodeName,
         String resourceName,
         UUID rscUuid,
-        Map<StorPool, Long> freeSpaceMap
+        Map<StorPool, SpaceInfo> freeSpaceMap
     )
     {
         try

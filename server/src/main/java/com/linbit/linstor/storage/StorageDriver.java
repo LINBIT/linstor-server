@@ -116,6 +116,14 @@ public interface StorageDriver
     long getSize(String identifier) throws StorageException;
 
     /**
+     * Returns the total space of the pool.
+     *
+     * @return Size of storage pool.
+     * @throws StorageException If getting the total space fails.
+     */
+    long getTotalSpace() throws StorageException;
+
+    /**
      * Returns the free space in the pool.
      * This is the real capacity available to be used.
      * Defined as 'free_capacity' in

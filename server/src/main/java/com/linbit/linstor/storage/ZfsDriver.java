@@ -20,8 +20,10 @@ public class ZfsDriver extends AbsStorageDriver
 {
     public static final String ZFS_POOL_DEFAULT = "linstorpool";
     public static final String ZFS_COMMAND_DEFAULT = "zfs";
+    public static final String ZFS_POOL_COMMAND_DEFAULT = "zpool";
 
     protected String zfsCommand = ZFS_COMMAND_DEFAULT;
+    protected String zpoolCommand = ZFS_POOL_COMMAND_DEFAULT;
 
     protected String pool = ZFS_POOL_DEFAULT;
 
@@ -362,6 +364,43 @@ public class ZfsDriver extends AbsStorageDriver
     protected String getSnapshotIdentifier(String identifier, String snapshotName)
     {
         return identifier + "@" + snapshotName;
+    }
+
+    @Override
+    public long getTotalSpace() throws StorageException
+    {
+        final String[] command = new String[]
+            {
+                zpoolCommand, "get", "free", "-Hp", pool
+            };
+
+        long totalSpace;
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            OutputData outputData = extCommand.exec(command);
+
+            checkExitCode(outputData, command);
+
+            String strZPoolFree = new String(outputData.stdoutData);
+            String[] cmdSplit = strZPoolFree.split("\t"); // [poolname, property, value, source]
+            String strTotalSpace = cmdSplit[2]; // value
+            totalSpace = Long.parseLong(strTotalSpace.trim()) >> 10; // we have to return free size in KiB
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to get the free size (zfs 'available')",
+                String.format("Failed to get the free size for pool: %s", pool),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+        return totalSpace;
     }
 
     @Override

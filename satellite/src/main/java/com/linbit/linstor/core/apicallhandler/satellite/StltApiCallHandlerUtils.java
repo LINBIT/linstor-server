@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -13,14 +14,14 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.utils.Pair;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import static java.util.stream.Collectors.toList;
 
@@ -58,9 +59,9 @@ public class StltApiCallHandlerUtils
         stltCfgAccessor = stltCfgAccessorRef;
     }
 
-    public Map<StorPool, Long> getFreeSpace() throws StorageException
+    public Map<StorPool, SpaceInfo> getSpaceInfo() throws StorageException
     {
-        Map<StorPool, Long> freeSpaceMap = new HashMap<>();
+        Map<StorPool, SpaceInfo> spaceMap = new HashMap<>();
 
         Lock nodesMapReadLock = nodesMapLock.readLock();
         Lock storPoolDfnMapReadLock = storPoolDfnMapLock.readLock();
@@ -82,8 +83,9 @@ public class StltApiCallHandlerUtils
                 if (storageDriver != null)
                 {
                     storPool.reconfigureStorageDriver(storageDriver);
-                    long freeSpace = storageDriver.getFreeSpace();
-                    freeSpaceMap.put(storPool, freeSpace);
+                    Long freeSpace = storageDriver.getFreeSpace();
+                    Long totalSpace = storageDriver.getTotalSpace();
+                    spaceMap.put(storPool, new SpaceInfo(totalSpace, freeSpace));
                 }
             }
         }
@@ -97,6 +99,6 @@ public class StltApiCallHandlerUtils
             nodesMapReadLock.unlock();
         }
 
-        return freeSpaceMap;
+        return spaceMap;
     }
 }

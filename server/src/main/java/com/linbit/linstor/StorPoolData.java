@@ -288,7 +288,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorPoolApi getApiData(Long freeSpaceRef, AccessContext accCtx, Long fullSyncId, Long updateId)
+    public StorPoolApi getApiData(Long totalSpaceRef, Long freeSpaceRef, AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
         ArrayList<Volume.VlmApi> vlms = new ArrayList<>();
@@ -309,7 +309,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             getTraits(accCtx),
             fullSyncId,
             updateId,
-            Optional.ofNullable(freeSpaceRef)
+            Optional.ofNullable(freeSpaceRef),
+            Optional.ofNullable(totalSpaceRef)
         );
     }
 }

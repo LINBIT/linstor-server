@@ -6,13 +6,13 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.linstor.storage.StorageException;
 import reactor.core.publisher.Flux;
@@ -56,17 +56,18 @@ public class ReqFreeSpace implements ApiCallReactive
         Flux<byte[]> ret;
         try
         {
-            Map<StorPool, Long> freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
+            Map<StorPool, SpaceInfo> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
 
             MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
-            for (Map.Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
+            for (Map.Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
             {
                 StorPool storPool = entry.getKey();
                 builder.addFreeSpace(
                     StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
                         .setStorPoolUuid(storPool.getUuid().toString())
                         .setStorPoolName(storPool.getName().displayValue)
-                        .setFreeSpace(entry.getValue())
+                        .setFreeSpace(entry.getValue().freeSpace)
+                        .setTotalCapacity(entry.getValue().totalCapacity)
                         .build()
                 );
             }

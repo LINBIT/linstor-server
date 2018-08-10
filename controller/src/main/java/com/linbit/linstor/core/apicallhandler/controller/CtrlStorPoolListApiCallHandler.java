@@ -11,6 +11,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
@@ -121,7 +122,7 @@ public class CtrlStorPoolListApiCallHandler
     private byte[] assembleList(
         List<String> upperFilterNodes,
         List<String> upperFilterStorPools,
-        Map<StorPool.Key, Long> freeSpaceMap
+        Map<StorPool.Key, SpaceInfo> freeSpaceMap
     )
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
@@ -142,8 +143,10 @@ public class CtrlStorPoolListApiCallHandler
                                 if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
                                 {
                                     // fullSyncId and updateId null, as they are not going to be serialized anyway
+                                    SpaceInfo spaceInfo = freeSpaceMap.get(new StorPool.Key(storPool));
                                     storPools.add(storPool.getApiData(
-                                        freeSpaceMap.get(new StorPool.Key(storPool)),
+                                        spaceInfo.totalCapacity,
+                                        spaceInfo.freeSpace,
                                         peerAccCtx.get(),
                                         null,
                                         null
@@ -199,10 +202,10 @@ public class CtrlStorPoolListApiCallHandler
         return peer;
     }
 
-    private Map<StorPool.Key, Long> parseFreeSpaces(List<Tuple2<NodeName, ByteArrayInputStream>> freeSpaceAnswers)
+    private Map<StorPool.Key, SpaceInfo> parseFreeSpaces(List<Tuple2<NodeName, ByteArrayInputStream>> freeSpaceAnswers)
         throws IOException, InvalidNameException
     {
-        Map<StorPool.Key, Long> thinFreeSpaceMap = new HashMap<>();
+        Map<StorPool.Key, SpaceInfo> thinFreeSpaceMap = new HashMap<>();
         for (Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer : freeSpaceAnswers)
         {
             NodeName nodeName = freeSpaceAnswer.getT1();
@@ -213,7 +216,7 @@ public class CtrlStorPoolListApiCallHandler
             {
                 thinFreeSpaceMap.put(
                     new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
-                    freeSpace.getFreeSpace()
+                    new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeSpace())
                 );
             }
         }

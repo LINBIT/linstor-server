@@ -104,7 +104,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    StorPoolApi getApiData(Long freeSpace, AccessContext accCtx, Long fullSyncId, Long updateId)
+    StorPoolApi getApiData(Long totalSpace, Long freeSpace, AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
     Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
@@ -120,7 +120,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         return eq;
     }
 
-    public interface StorPoolApi
+    interface StorPoolApi
     {
         UUID getStorPoolUuid();
         String getStorPoolName();
@@ -129,6 +129,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         UUID getNodeUuid();
         String getDriver();
         Optional<Long> getFreeSpace();
+        Optional<Long> getTotalCapacity();
 
         Map<String, String> getStorPoolProps();
         List<Volume.VlmApi> getVlmList();

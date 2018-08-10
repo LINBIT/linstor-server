@@ -449,6 +449,15 @@ public class LvmDriverTest extends StorageTestUtils
     }
 
     @Test
+    public void testTotalSpace() throws StorageException
+    {
+        final long size = 1L * 1024 * 1024; // 1Gib
+        expectVgsTotalSpaceCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
+
+        assertEquals(size, driver.getTotalSpace());
+    }
+
+    @Test
     public void testFreeSpace() throws StorageException
     {
         final long size = 1L * 1024 * 1024 * 1024;

@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
@@ -90,19 +91,20 @@ public class FullSync implements ApiCall
             Base64.decode(fullSync.getMasterKey())
         );
 
-        Map<StorPool, Long> freeSpaceMap;
+        Map<StorPool, SpaceInfo> freeSpaceMap;
         try
         {
-            freeSpaceMap = apiCallHandlerUtils.getFreeSpace();
+            freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
             MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
-            for (Entry<StorPool, Long> entry : freeSpaceMap.entrySet())
+            for (Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
             {
                 StorPool storPool = entry.getKey();
                 builder.addFreeSpace(
                     StorPoolFreeSpace.newBuilder()
                         .setStorPoolUuid(storPool.getUuid().toString())
                         .setStorPoolName(storPool.getName().displayValue)
-                        .setFreeSpace(entry.getValue())
+                        .setFreeSpace(entry.getValue().freeSpace)
+                        .setTotalCapacity(entry.getValue().totalCapacity)
                         .build()
                 );
             }
