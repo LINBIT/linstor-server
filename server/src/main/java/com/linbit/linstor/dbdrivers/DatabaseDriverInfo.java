@@ -16,6 +16,10 @@ public interface DatabaseDriverInfo
             case "postgresql":
                 dbdriver = new PostgresqlDatabaseInfo();
                 break;
+            case "mysql":
+            case "mariadb":
+                dbdriver = new MariaDBInfo(dbType);
+                break;
             default:
                 break;
         }

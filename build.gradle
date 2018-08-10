@@ -200,9 +200,10 @@ project(':controller') {
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
             compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
-        }
 
-//    runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
+//            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
+//            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
+        }
     }
 
     sourceSets {
