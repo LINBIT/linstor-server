@@ -144,9 +144,16 @@ public class CtrlStorPoolListApiCallHandler
                                 {
                                     // fullSyncId and updateId null, as they are not going to be serialized anyway
                                     SpaceInfo spaceInfo = freeSpaceMap.get(new StorPool.Key(storPool));
+                                    Long freeCapacity = null;
+                                    Long totalCapacity = null;
+                                    if (spaceInfo != null)
+                                    {
+                                        freeCapacity = spaceInfo.freeCapacity;
+                                        totalCapacity = spaceInfo.totalCapacity;
+                                    }
                                     storPools.add(storPool.getApiData(
-                                        spaceInfo.totalCapacity,
-                                        spaceInfo.freeSpace,
+                                        totalCapacity,
+                                        freeCapacity,
                                         peerAccCtx.get(),
                                         null,
                                         null
@@ -216,7 +223,7 @@ public class CtrlStorPoolListApiCallHandler
             {
                 thinFreeSpaceMap.put(
                     new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
-                    new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeSpace())
+                    new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeCapacity())
                 );
             }
         }

@@ -78,12 +78,12 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     }
 
     @Override
-    public Optional<Long> getFreeSpace()
+    public Optional<Long> getFreeCapacity()
     {
         Long size = null;
         if (storPool.hasFreeSpace())
         {
-            size = storPool.getFreeSpace().getFreeSpace();
+            size = storPool.getFreeSpace().getFreeCapacity();
         }
         return Optional.ofNullable(size);
     }
@@ -134,12 +134,12 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         storPoolBld.addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()));
         storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));
         storPoolBld.addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()));
-        if (apiStorPool.getFreeSpace().isPresent())
+        if (apiStorPool.getFreeCapacity().isPresent())
         {
             StorPoolFreeSpace.Builder storPoolFreeSpcBld = StorPoolFreeSpace.newBuilder();
             storPoolFreeSpcBld.setStorPoolName(apiStorPool.getStorPoolName())
                 .setStorPoolUuid(apiStorPool.getStorPoolUuid().toString())
-                .setFreeSpace(apiStorPool.getFreeSpace().get())
+                .setFreeCapacity(apiStorPool.getFreeCapacity().get())
                 .setTotalCapacity(apiStorPool.getTotalCapacity().get());
             storPoolBld.setFreeSpace(storPoolFreeSpcBld.build());
         }

@@ -84,7 +84,7 @@ public class ApplyStorPool implements ApiCall
             {
                 if (entry.getKey().getName().value.equals(storPoolName))
                 {
-                    requestedFreeSpace = entry.getValue().freeSpace;
+                    requestedFreeSpace = entry.getValue().freeCapacity;
                     totalCapacity = entry.getValue().totalCapacity;
                     break;
                 }
@@ -106,7 +106,7 @@ public class ApplyStorPool implements ApiCall
                     .setFreeSpace(StorPoolFreeSpace.newBuilder()
                         .setStorPoolUuid(storPoolData.getStorPoolUuid())
                         .setStorPoolName(storPoolData.getStorPoolName())
-                        .setFreeSpace(requestedFreeSpace)
+                        .setFreeCapacity(requestedFreeSpace)
                         .setTotalCapacity(totalCapacity)
                         .build()
                     )

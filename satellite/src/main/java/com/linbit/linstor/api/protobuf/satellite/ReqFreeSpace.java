@@ -66,7 +66,7 @@ public class ReqFreeSpace implements ApiCallReactive
                     StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
                         .setStorPoolUuid(storPool.getUuid().toString())
                         .setStorPoolName(storPool.getName().displayValue)
-                        .setFreeSpace(entry.getValue().freeSpace)
+                        .setFreeCapacity(entry.getValue().freeCapacity)
                         .setTotalCapacity(entry.getValue().totalCapacity)
                         .build()
                 );

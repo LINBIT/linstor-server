@@ -499,7 +499,7 @@ public class CtrlAutoStorPoolSelector
     )
     {
         // the node-lists are already sorted by their storPools.
-        // that means, we only have to compare the freeSpace of the first nodes of cand1 and cand2
+        // that means, we only have to compare the freeCapacity of the first nodes of cand1 and cand2
         int cmp = 0;
         try
         {

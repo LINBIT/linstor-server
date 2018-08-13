@@ -41,7 +41,7 @@ public class IntApplyStorPoolSuccess implements ApiCall
             new FreeSpacePojo(
                 UUID.fromString(freeSpaceProto.getStorPoolUuid()),
                 freeSpaceProto.getStorPoolName(),
-                freeSpaceProto.getFreeSpace()
+                freeSpaceProto.getFreeCapacity()
             )
         );
     }

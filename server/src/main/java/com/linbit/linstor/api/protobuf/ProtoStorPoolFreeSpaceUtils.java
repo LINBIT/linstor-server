@@ -24,7 +24,7 @@ public class ProtoStorPoolFreeSpaceUtils
                 StorPoolFreeSpace.newBuilder()
                 .setStorPoolUuid(storPool.getUuid().toString())
                 .setStorPoolName(storPool.getName().displayValue)
-                .setFreeSpace(entry.getValue().freeSpace)
+                .setFreeCapacity(entry.getValue().freeCapacity)
                 .setTotalCapacity(entry.getValue().totalCapacity)
                 .build()
                 );
@@ -41,7 +41,7 @@ public class ProtoStorPoolFreeSpaceUtils
                 new FreeSpacePojo(
                     UUID.fromString(protoFreeSpace.getStorPoolUuid()),
                     protoFreeSpace.getStorPoolName(),
-                    protoFreeSpace.getFreeSpace()
+                    protoFreeSpace.getFreeCapacity()
                 )
             );
         }

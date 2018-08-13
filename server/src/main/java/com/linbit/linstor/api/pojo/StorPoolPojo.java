@@ -102,7 +102,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     }
 
     @Override
-    public Optional<Long> getFreeSpace()
+    public Optional<Long> getFreeCapacity()
     {
         return freeSpace;
     }

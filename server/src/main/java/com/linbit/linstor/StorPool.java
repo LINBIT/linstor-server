@@ -128,7 +128,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         String getNodeName();
         UUID getNodeUuid();
         String getDriver();
-        Optional<Long> getFreeSpace();
+        Optional<Long> getFreeCapacity();
         Optional<Long> getTotalCapacity();
 
         Map<String, String> getStorPoolProps();

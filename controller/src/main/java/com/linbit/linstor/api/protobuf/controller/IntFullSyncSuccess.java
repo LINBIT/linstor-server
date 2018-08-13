@@ -48,7 +48,7 @@ public class IntFullSyncSuccess implements ApiCall
                 new FreeSpacePojo(
                     UUID.fromString(protoFreeSpace.getStorPoolUuid()),
                     protoFreeSpace.getStorPoolName(),
-                    protoFreeSpace.getFreeSpace()
+                    protoFreeSpace.getFreeCapacity()
                 )
             );
         }
