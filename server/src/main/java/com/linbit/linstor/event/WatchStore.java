@@ -1,8 +1,7 @@
 package com.linbit.linstor.event;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-
-import java.util.Collection;
+import reactor.core.Disposable;
 
 /**
  * Not thread-safe; external synchronization is expected.
@@ -12,15 +11,8 @@ public interface WatchStore
     /**
      * Add a watch.
      */
-    void addWatch(Watch watch)
+    void addWatch(Watch watch, Disposable disposable)
         throws LinStorDataAlreadyExistsException;
-
-    /**
-     * Get all watches for the identified object and all ancestor objects.
-     */
-    Collection<Watch> getWatchesForEvent(EventIdentifier eventIdentifier);
-
-    long getAndIncrementEventCounter(Watch watch);
 
     /**
      * Remove all watchs for a peer.
@@ -31,9 +23,4 @@ public interface WatchStore
      * Remove a specific watch.
      */
     void removeWatchForPeerAndId(String peerId, Integer peerWatchId);
-
-    /**
-     * Remove all watchs for an object but not for descendant objects.
-     */
-    void removeWatchesForObject(ObjectIdentifier objectIdentifier);
 }

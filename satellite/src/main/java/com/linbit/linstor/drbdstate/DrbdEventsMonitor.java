@@ -232,7 +232,7 @@ public class DrbdEventsMonitor
     private void createVolume(Map<String, String> props) throws EventsSourceException
     {
         DrbdResource resource = getResource(props, ACTION_CREATE, OBJ_VOLUME);
-        DrbdVolume volume = DrbdVolume.newFromProps(resource, props);
+        DrbdVolume volume = DrbdVolume.newFromProps(resource, null, props);
         resource.putVolume(volume);
         tracker.multiplexer.volumeCreated(resource, null, volume);
         volume.update(props, tracker.multiplexer);
@@ -242,7 +242,7 @@ public class DrbdEventsMonitor
     {
         DrbdResource resource = getResource(props, ACTION_CREATE, OBJ_PEER_VOLUME);
         DrbdConnection connection = getConnection(resource, props, ACTION_CREATE, OBJ_PEER_VOLUME);
-        DrbdVolume volume = DrbdVolume.newFromProps(resource, props);
+        DrbdVolume volume = DrbdVolume.newFromProps(resource, connection, props);
         connection.putVolume(volume);
         tracker.multiplexer.volumeCreated(resource, connection, volume);
         volume.update(props, tracker.multiplexer);

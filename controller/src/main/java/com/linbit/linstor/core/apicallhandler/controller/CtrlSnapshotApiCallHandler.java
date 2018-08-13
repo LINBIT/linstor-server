@@ -39,8 +39,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.event.EventBroker;
-import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -67,7 +65,6 @@ public class CtrlSnapshotApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final EventBroker eventBroker;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
@@ -86,7 +83,6 @@ public class CtrlSnapshotApiCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        EventBroker eventBrokerRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
@@ -104,7 +100,6 @@ public class CtrlSnapshotApiCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        eventBroker = eventBrokerRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
@@ -247,12 +242,6 @@ public class CtrlSnapshotApiCallHandler
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
-
-            eventBroker.openEventStream(EventIdentifier.snapshotDefinition(
-                ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
-                rscDfn.getName(),
-                snapshotName
-            ));
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultRegisteredEntry(
                 snapshotDfn.getUuid(), getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)));

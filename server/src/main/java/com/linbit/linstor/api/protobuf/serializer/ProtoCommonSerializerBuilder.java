@@ -13,7 +13,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.generator.ResourceStateGenerator;
+import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
@@ -164,7 +164,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     @Override
     public CommonSerializer.CommonSerializerBuilder event(
         Integer watchId,
-        long eventCounter,
         EventIdentifier eventIdentifier,
         String eventStreamAction
     )
@@ -175,7 +174,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
             eventBuilder
                 .setWatchId(watchId)
-                .setEventCounter(eventCounter)
                 .setEventAction(eventStreamAction)
                 .setEventName(eventIdentifier.getEventName());
 
@@ -226,7 +224,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder resourceStateEvent(ResourceStateGenerator.UsageState usageState)
+    public CommonSerializer.CommonSerializerBuilder resourceStateEvent(UsageState usageState)
     {
         try
         {

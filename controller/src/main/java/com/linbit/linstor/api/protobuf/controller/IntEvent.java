@@ -37,7 +37,6 @@ public class IntEvent implements ApiCall
         MsgEventOuterClass.MsgEvent msgEvent = MsgEventOuterClass.MsgEvent.parseDelimitedFrom(msgDataIn);
 
         eventProcessor.handleEvent(
-            msgEvent.getEventCounter(),
             msgEvent.getEventAction(),
             msgEvent.getEventName(),
             msgEvent.hasResourceName() ? msgEvent.getResourceName() : null,

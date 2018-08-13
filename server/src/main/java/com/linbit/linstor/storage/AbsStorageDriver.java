@@ -419,7 +419,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 // we will just verify if the volume is still available.
                 // if it is, we shout, if not, we say everything is fine
 
-                if (volumeExists(identifier, false, volumeType))
+                if (storageVolumeExists(identifier, volumeType))
                 {
                     throw new StorageException(
                         String.format("Volume [%s] still exists.", identifier),
@@ -509,7 +509,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public boolean volumeExists(String identifier, boolean isEncrypted, VolumeType volumeType) throws StorageException
+    public boolean volumeExists(String identifier, boolean isEncrypted) throws StorageException
     {
         boolean exists;
         if (isEncrypted)
@@ -537,7 +537,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         else
         {
-            exists = storageVolumeExists(identifier, volumeType);
+            exists = storageVolumeExists(identifier, VolumeType.VOLUME);
         }
         return exists;
     }

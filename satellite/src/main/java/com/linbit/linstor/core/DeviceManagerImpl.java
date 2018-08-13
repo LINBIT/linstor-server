@@ -1186,8 +1186,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         // Remember the snapshot for removal after the DeviceHandler instances have finished
         synchronized (sched)
         {
-            SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
-            deletedSnapshotSet.add(new SnapshotDefinition.Key(snapshotDefinition));
+            deletedSnapshotSet.add(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()));
         }
     }
 

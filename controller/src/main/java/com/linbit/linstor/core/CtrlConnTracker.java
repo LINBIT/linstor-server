@@ -55,8 +55,6 @@ class CtrlConnTracker implements ConnectionObserver
                 peerMap.put(connPeer.getId(), connPeer);
             }
             reconnectorTask.peerConnected(connPeer);
-
-            eventProcessor.outboundConnectionEstablished(connPeer);
         }
         // TODO: If a satellite has been connected, schedule any necessary actions
     }

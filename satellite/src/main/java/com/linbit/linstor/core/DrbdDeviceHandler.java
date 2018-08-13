@@ -42,8 +42,9 @@ import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
-import com.linbit.linstor.event.EventBroker;
-import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceDeploymentStateEvent;
+import com.linbit.linstor.event.satellite.InProgressSnapshotEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -70,7 +71,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.StringUtils;
@@ -104,8 +104,8 @@ class DrbdDeviceHandler implements DeviceHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final MetaDataApi drbdMd;
     private final WhitelistProps whitelistProps;
-    private final DeploymentStateTracker deploymentStateTracker;
-    private final EventBroker eventBroker;
+    private final ResourceDeploymentStateEvent resourceDeploymentStateEvent;
+    private final InProgressSnapshotEvent inProgressSnapshotEvent;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -133,8 +133,8 @@ class DrbdDeviceHandler implements DeviceHandler
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         WhitelistProps whitelistPropsRef,
-        DeploymentStateTracker deploymentStateTrackerRef,
-        EventBroker eventBrokerRef,
+        ResourceDeploymentStateEvent resourceDeploymentStateEventRef,
+        InProgressSnapshotEvent inProgressSnapshotEventRef,
         StltConfigAccessor stltCfgAccessorRef
     )
     {
@@ -150,8 +150,8 @@ class DrbdDeviceHandler implements DeviceHandler
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         whitelistProps = whitelistPropsRef;
-        deploymentStateTracker = deploymentStateTrackerRef;
-        eventBroker = eventBrokerRef;
+        resourceDeploymentStateEvent = resourceDeploymentStateEventRef;
+        inProgressSnapshotEvent = inProgressSnapshotEventRef;
         stltCfgAccessor = stltCfgAccessorRef;
         drbdMd = new MetaData();
     }
@@ -362,17 +362,15 @@ class DrbdDeviceHandler implements DeviceHandler
 
         try
         {
-            EventIdentifier eventIdentifier = EventIdentifier.resourceDefinition(
-                ApiConsts.EVENT_RESOURCE_DEPLOYMENT_STATE, rscName);
+            ObjectIdentifier objectIdentifier = ObjectIdentifier.resourceDefinition(rscName);
             if (apiCallDelRc != null)
             {
-                deploymentStateTracker.setDeploymentState(rscName, apiCallDelRc);
-                eventBroker.closeEventStream(eventIdentifier);
+                resourceDeploymentStateEvent.get().triggerEvent(objectIdentifier, apiCallDelRc);
+                resourceDeploymentStateEvent.get().closeStream(objectIdentifier);
             }
             else
             {
-                deploymentStateTracker.setDeploymentState(rscName, apiCallRc);
-                eventBroker.openOrTriggerEvent(eventIdentifier);
+                resourceDeploymentStateEvent.get().triggerEvent(objectIdentifier, apiCallRc);
             }
         }
         catch (Exception exc)
@@ -761,14 +759,14 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
                     vlmState.setHasDisk(storDrv.volumeExists(
-                        vlmState.getStorVlmName(), isEncrypted, StorageDriver.VolumeType.VOLUME));
+                        vlmState.getStorVlmName(), isEncrypted));
 
                     if (!vlmState.hasDisk())
                     {
                         attemptVolumeStart(vlmDfn, vlmState, storDrv);
 
                         vlmState.setHasDisk(storDrv.volumeExists(
-                            vlmState.getStorVlmName(), isEncrypted, StorageDriver.VolumeType.VOLUME));
+                            vlmState.getStorVlmName(), isEncrypted));
                     }
                 }
 
@@ -1689,20 +1687,6 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         errLog.logTrace("Handle snapshots for " + rscName.getDisplayName());
 
-        if (errLog.isTraceEnabled())
-        {
-            for (SnapshotState snapshotState : deploymentStateTracker.getSnapshotStates(rscName))
-            {
-                errLog.logTrace("Snapshot Rsc: '" + rscName.getDisplayName() + "', " +
-                    "Snapshot: '" + snapshotState.getSnapshotName().getDisplayName() + "' current state '" +
-                    new StringUtils.ConditionalStringJoiner(", ")
-                        .addIf(snapshotState.isSnapshotDeleted(), "deleted")
-                        .addIf(snapshotState.isSuspended(), "suspended")
-                        .addIf(snapshotState.isSnapshotTaken(), "taken")
-                        .toString() + "'");
-            }
-        }
-
         boolean snapshotInProgress = false;
         boolean shouldSuspend = false;
         for (Snapshot snapshot : snapshots)
@@ -1732,13 +1716,12 @@ class DrbdDeviceHandler implements DeviceHandler
 
         adjustSuspended(rscName, shouldSuspend, isSuspended);
 
-        Set<SnapshotName> alreadySnapshotted = getAlreadySnapshotted(rscName);
-
-        Set<SnapshotName> deletedSnapshots = new HashSet<>();
-        Set<SnapshotName> newlyTakenSnapshots = new HashSet<>();
         for (Snapshot snapshot : snapshots)
         {
             SnapshotName snapshotName = snapshot.getSnapshotName();
+
+            boolean snapshotTaken;
+            boolean snapshotDeleted;
 
             if (snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
             {
@@ -1770,72 +1753,61 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
 
                 deviceManagerProvider.get().notifySnapshotDeleted(snapshot);
-                deletedSnapshots.add(snapshotName);
+
+                snapshotTaken = true;
+                snapshotDeleted = true;
             }
-            else if (snapshot.getTakeSnapshot(wrkCtx) && !alreadySnapshotted.contains(snapshotName))
+            else
             {
-                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(wrkCtx))
+                if (snapshot.getTakeSnapshot(wrkCtx))
                 {
-                    VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
-                        snapshotVolume.getVolumeNumber());
-
-                    try
+                    for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(wrkCtx))
                     {
-                        ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
+                        VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
+                            snapshotVolume.getVolumeNumber());
 
-                        takeVolumeSnapshot(
-                            snapshot.getResourceDefinition(),
-                            snapshotName,
-                            vlmState
-                        );
+                        try
+                        {
+                            ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
+
+                            takeVolumeSnapshot(
+                                snapshot.getResourceDefinition(),
+                                snapshotName,
+                                vlmState
+                            );
+                        }
+                        catch (VolumeException vlmExc)
+                        {
+                            throw new ResourceException(
+                                "Deployment of snapshot '" + snapshotName +
+                                    "' for resource '" + rscName.displayValue +
+                                    "' volume " + vlmState.getVlmNr().value + " failed",
+                                null, vlmExc.getMessage(),
+                                null, null, vlmExc
+                            );
+                        }
                     }
-                    catch (VolumeException vlmExc)
-                    {
-                        throw new ResourceException(
-                            "Deployment of snapshot '" + snapshotName +
-                                "' for resource '" + rscName.displayValue +
-                                "' volume " + vlmState.getVlmNr().value + " failed",
-                            null, vlmExc.getMessage(),
-                            null, null, vlmExc
-                        );
-                    }
+
+                    snapshotTaken = true;
                 }
-                newlyTakenSnapshots.add(snapshotName);
+                else
+                {
+                    snapshotTaken = false;
+                }
+                snapshotDeleted = false;
             }
-        }
 
-        List<SnapshotState> newSnapshotStates = computeNewSnapshotStates(
-            snapshots,
-            shouldSuspend,
-            alreadySnapshotted,
-            newlyTakenSnapshots,
-            deletedSnapshots
-        );
+            ObjectIdentifier objectIdentifier = ObjectIdentifier.snapshotDefinition(rscName, snapshotName);
 
-        deploymentStateTracker.setSnapshotStates(rscName, newSnapshotStates);
+            inProgressSnapshotEvent.get().triggerEvent(objectIdentifier, new SnapshotState(
+                shouldSuspend,
+                snapshotTaken,
+                snapshotDeleted
+            ));
 
-        if (snapshotInProgress)
-        {
-            for (Snapshot snapshot : snapshots)
+            if (snapshotDeleted)
             {
-                eventBroker.openOrTriggerEvent(EventIdentifier.snapshotDefinition(
-                    InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
-                    rscName,
-                    snapshot.getSnapshotName()
-                ));
-            }
-        }
-        else
-        {
-            for (SnapshotState snapshotState : deploymentStateTracker.getSnapshotStates(rscName))
-            {
-                // Send a 'close' event even if the stream is not open so that the controller is notified
-                // of deleted snapshots
-                eventBroker.closeEventStreamEvenIfNotOpen(EventIdentifier.snapshotDefinition(
-                    InternalApiConsts.EVENT_IN_PROGRESS_SNAPSHOT,
-                    rscName,
-                    snapshotState.getSnapshotName()
-                ));
+                inProgressSnapshotEvent.get().closeStream(objectIdentifier);
             }
         }
     }
@@ -1879,35 +1851,6 @@ class DrbdDeviceHandler implements DeviceHandler
                 );
             }
         }
-    }
-
-    private Set<SnapshotName> getAlreadySnapshotted(ResourceName rscName)
-    {
-        return deploymentStateTracker.getSnapshotStates(rscName).stream()
-                .filter(SnapshotState::isSnapshotTaken)
-                .map(SnapshotState::getSnapshotName)
-                .collect(Collectors.toSet());
-    }
-
-    private List<SnapshotState> computeNewSnapshotStates(
-        Collection<Snapshot> snapshots,
-        boolean shouldSuspend,
-        Set<SnapshotName> alreadySnapshotted,
-        Set<SnapshotName> newlyTakenSnapshots,
-        Set<SnapshotName> deletedSnapshots
-    )
-    {
-        Set<SnapshotName> allSnapshotted = Stream.concat(alreadySnapshotted.stream(), newlyTakenSnapshots.stream())
-            .collect(Collectors.toSet());
-
-        return snapshots.stream()
-            .map(snapshot -> new SnapshotState(
-                snapshot.getSnapshotName(),
-                shouldSuspend,
-                allSnapshotted.contains(snapshot.getSnapshotName()),
-                deletedSnapshots.contains(snapshot.getSnapshotName())
-            ))
-            .collect(Collectors.toList());
     }
 
     private void ensureSnapshotVolumeStorageDriver(SnapshotVolume snapshotVolume, VolumeStateDevManager vlmState)
@@ -2005,9 +1948,10 @@ class DrbdDeviceHandler implements DeviceHandler
 
         if (vlmState.getDriver() != null)
         {
+            boolean exists;
             try
             {
-                vlmState.getDriver().createSnapshot(
+                exists = vlmState.getDriver().snapshotExists(
                     vlmState.getStorVlmName(),
                     snapshotName.displayValue
                 );
@@ -2015,14 +1959,37 @@ class DrbdDeviceHandler implements DeviceHandler
             catch (StorageException storExc)
             {
                 throw new VolumeException(
-                    "Snapshot creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    "Snapshot existence check failed for resource '" + rscDfn.getName().displayValue + "' volume " +
                         vlmState.getVlmNr().value,
                     getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    "Creation of the snapshot failed",
+                    null,
                     null,
                     null,
                     storExc
                 );
+            }
+
+            if (!exists)
+            {
+                try
+                {
+                    vlmState.getDriver().createSnapshot(
+                        vlmState.getStorVlmName(),
+                        snapshotName.displayValue
+                    );
+                }
+                catch (StorageException storExc)
+                {
+                    throw new VolumeException(
+                        "Snapshot creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                            vlmState.getVlmNr().value,
+                        getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                        "Creation of the snapshot failed",
+                        null,
+                        null,
+                        storExc
+                    );
+                }
             }
         }
         else

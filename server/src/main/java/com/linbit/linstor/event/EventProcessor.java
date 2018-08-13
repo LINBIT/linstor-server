@@ -3,7 +3,6 @@ package com.linbit.linstor.event;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceName;
@@ -23,10 +22,7 @@ import javax.inject.Singleton;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -45,7 +41,6 @@ public class EventProcessor
     private final ReentrantLock eventHandlingLock;
 
     private final EventStreamStore incomingEventStreamStore;
-    private final Map<String, EventBuffer> pendingEventsPerPeer;
 
     @Inject
     public EventProcessor(
@@ -64,21 +59,6 @@ public class EventProcessor
 
         eventHandlingLock = new ReentrantLock();
         incomingEventStreamStore = new EventStreamStoreImpl();
-        pendingEventsPerPeer = new HashMap<>();
-    }
-
-    public void outboundConnectionEstablished(Peer peer)
-    {
-
-        eventHandlingLock.lock();
-        try
-        {
-            pendingEventsPerPeer.put(peer.getId(), new EventBuffer());
-        }
-        finally
-        {
-            eventHandlingLock.unlock();
-        }
     }
 
     public void connectionClosed(Peer peer)
@@ -104,8 +84,6 @@ public class EventProcessor
                     }
                 }
             }
-            pendingEventsPerPeer.remove(peer.getId());
-            errorReporter.logTrace("Removed pending events from peer '%s' ", peer);
         }
         finally
         {
@@ -114,7 +92,6 @@ public class EventProcessor
     }
 
     public void handleEvent(
-        long eventCounter,
         String eventAction,
         String eventName,
         String resourceNameStr,
@@ -127,104 +104,49 @@ public class EventProcessor
         eventHandlingLock.lock();
         try
         {
-            EventBuffer eventBuffer = pendingEventsPerPeer.get(peer.getId());
-            if (eventBuffer == null)
+            Provider<EventHandler> eventHandlerProvider = eventHandlers.get(eventName);
+            if (eventHandlerProvider == null)
             {
-                errorReporter.logWarning("Received event for unknown peer " + peer);
+                errorReporter.logWarning("Unknown event '%s' received", eventName);
             }
             else
             {
-                eventBuffer.addEvent(new Event(
-                    eventCounter,
-                    eventAction,
-                    eventName,
-                    resourceNameStr,
-                    volumeNr,
-                    snapshotNameStr,
-                    peer,
-                    eventDataIn
+                ResourceName resourceName =
+                    resourceNameStr != null ? new ResourceName(resourceNameStr) : null;
+                VolumeNumber volumeNumber =
+                    volumeNr != null ? new VolumeNumber(volumeNr) : null;
+                SnapshotName snapshotName =
+                    snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
+
+                EventIdentifier eventIdentifier = new EventIdentifier(eventName, new ObjectIdentifier(
+                    peer.getNode().getName(), resourceName, volumeNumber, snapshotName
                 ));
 
-                executePendingEvents(eventBuffer);
+                incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
+
+                errorReporter.logTrace("Handling event '%s %s' start", eventAction, eventIdentifier);
+                eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
+                errorReporter.logTrace("Handling event '%s %s' end", eventAction, eventIdentifier);
+
+                if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
+                {
+                    incomingEventStreamStore.removeEventStream(eventIdentifier);
+                }
             }
+
+            transMgrProvider.get().commit();
+        }
+        catch (InvalidNameException | ValueOutOfRangeException exc)
+        {
+            errorReporter.logWarning("Invalid event received: " + exc.getMessage());
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            errorReporter.reportError(exc);
         }
         finally
         {
             eventHandlingLock.unlock();
-        }
-    }
-
-    private void executePendingEvents(EventBuffer eventBuffer)
-    {
-        Event event = eventBuffer.getNextEvent();
-        while (event != null)
-        {
-            try
-            {
-                Provider<EventHandler> eventHandlerProvider = eventHandlers.get(event.getEventName());
-                if (eventHandlerProvider == null)
-                {
-                    errorReporter.logWarning("Unknown event '%s' received", event.getEventName());
-                }
-                else
-                {
-                    ResourceName resourceName =
-                        event.getResourceNameStr() != null ? new ResourceName(event.getResourceNameStr()) : null;
-                    VolumeNumber volumeNumber =
-                        event.getVolumeNr() != null ? new VolumeNumber(event.getVolumeNr()) : null;
-                    SnapshotName snapshotName =
-                        event.getSnapshotNameStr() != null ? new SnapshotName(event.getSnapshotNameStr()) : null;
-
-                    EventIdentifier eventIdentifier = new EventIdentifier(event.getEventName(), new ObjectIdentifier(
-                        event.getPeer().getNode().getName(), resourceName, volumeNumber, snapshotName
-                    ));
-
-                    String eventAction = event.getEventAction();
-
-
-                    if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN))
-                    {
-                        incomingEventStreamStore.addEventStream(eventIdentifier);
-                    }
-
-                    errorReporter.logTrace("Handling event '%s %s' start", eventAction, eventIdentifier);
-                    eventHandlerProvider.get().execute(eventAction, eventIdentifier, event.getEventDataIn());
-                    errorReporter.logTrace("Handling event '%s %s' end", eventAction, eventIdentifier);
-
-                    if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
-                    {
-                        incomingEventStreamStore.removeEventStream(eventIdentifier);
-                    }
-                }
-
-                transMgrProvider.get().commit();
-            }
-            catch (InvalidNameException | ValueOutOfRangeException exc)
-            {
-                errorReporter.logWarning("Invalid event received: " + exc.getMessage());
-            }
-            catch (LinStorDataAlreadyExistsException exc)
-            {
-                errorReporter.logWarning(
-                    "Ignoring open stream event for stream that is already open: " + exc.getMessage());
-            }
-            catch (Exception | ImplementationError exc)
-            {
-                errorReporter.reportError(exc);
-            }
-            finally
-            {
-                try
-                {
-                    transMgrProvider.get().rollback();
-                }
-                catch (SQLException exc)
-                {
-                    errorReporter.reportError(exc);
-                }
-            }
-
-            event = eventBuffer.getNextEvent();
         }
     }
 
@@ -264,103 +186,6 @@ public class EventProcessor
                 transMgr.returnConnection();
             }
             apiCallScope.exit();
-        }
-    }
-
-    private static class EventBuffer
-    {
-        private final PriorityQueue<Event> events =
-            new PriorityQueue<>(Comparator.comparingLong(Event::getEventCounter));
-
-        private long expectedEventCounter = 1;
-
-        public void addEvent(Event event)
-        {
-            events.add(event);
-        }
-
-        public Event getNextEvent()
-        {
-            Event nextEvent = events.peek();
-            boolean nextIsExpected = nextEvent != null && nextEvent.getEventCounter() == expectedEventCounter;
-            if (nextIsExpected)
-            {
-                expectedEventCounter++;
-            }
-            return nextIsExpected ? events.poll() : null;
-        }
-    }
-
-    private static class Event
-    {
-        private final long eventCounter;
-        private final String eventAction;
-        private final String eventName;
-        private final String resourceNameStr;
-        private final Integer volumeNr;
-        private final String snapshotNameStr;
-        private final Peer peer;
-        private final InputStream eventDataIn;
-
-        private Event(
-            long eventCounterRef,
-            String eventActionRef,
-            String eventNameRef,
-            String resourceNameStrRef,
-            Integer volumeNrRef,
-            String snapshotNameStrRef,
-            Peer peerRef,
-            InputStream eventDataInRef
-        )
-        {
-            eventCounter = eventCounterRef;
-            eventAction = eventActionRef;
-            eventName = eventNameRef;
-            resourceNameStr = resourceNameStrRef;
-            volumeNr = volumeNrRef;
-            snapshotNameStr = snapshotNameStrRef;
-            peer = peerRef;
-            eventDataIn = eventDataInRef;
-        }
-
-        public long getEventCounter()
-        {
-            return eventCounter;
-        }
-
-        public String getEventAction()
-        {
-            return eventAction;
-        }
-
-        public String getEventName()
-        {
-            return eventName;
-        }
-
-        public String getResourceNameStr()
-        {
-            return resourceNameStr;
-        }
-
-        public Integer getVolumeNr()
-        {
-            return volumeNr;
-        }
-
-        public Peer getPeer()
-        {
-            return peer;
-        }
-
-        public InputStream getEventDataIn()
-        {
-            return eventDataIn;
-        }
-
-        public String getSnapshotNameStr()
-        {
-            return snapshotNameStr;
         }
     }
 }

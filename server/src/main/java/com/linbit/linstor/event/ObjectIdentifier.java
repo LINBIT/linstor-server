@@ -17,6 +17,59 @@ public class ObjectIdentifier
 
     private final SnapshotName snapshotName;
 
+    public static ObjectIdentifier global()
+    {
+        return new ObjectIdentifier(null, null, null, null);
+    }
+
+    public static ObjectIdentifier node(NodeName nodeName)
+    {
+        return new ObjectIdentifier(nodeName, null, null, null);
+    }
+
+    /**
+     * When used on a satellite, the node name is implicit, so this represents a resource.
+     */
+    public static ObjectIdentifier resourceDefinition(ResourceName resourceName)
+    {
+        return new ObjectIdentifier(null, resourceName, null, null);
+    }
+
+    /**
+     * When used on a satellite, the node name is implicit, so this represents a volume.
+     */
+    public static ObjectIdentifier volumeDefinition(
+        ResourceName resourceName, VolumeNumber volumeNumber)
+    {
+        return new ObjectIdentifier(null, resourceName, volumeNumber, null);
+    }
+
+    public static ObjectIdentifier resource(NodeName nodeName, ResourceName resourceName)
+    {
+        return new ObjectIdentifier(nodeName, resourceName, null, null);
+    }
+
+    public static ObjectIdentifier volume(
+        NodeName nodeName, ResourceName resourceName, VolumeNumber volumeNumber)
+    {
+        return new ObjectIdentifier(nodeName, resourceName, volumeNumber, null);
+    }
+
+    /**
+     * When used on a satellite, the node name is implicit, so this represents a snapshot.
+     */
+    public static ObjectIdentifier snapshotDefinition(
+        ResourceName resourceName, SnapshotName snapshotName)
+    {
+        return new ObjectIdentifier(null, resourceName, null, snapshotName);
+    }
+
+    public static ObjectIdentifier snapshot(
+        NodeName nodeName, ResourceName resourceName, SnapshotName snapshotName)
+    {
+        return new ObjectIdentifier(nodeName, resourceName, null, snapshotName);
+    }
+
     public ObjectIdentifier(
         NodeName nodeNameRef,
         ResourceName resourceNameRef,

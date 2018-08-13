@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.UnknownEventException;
 import com.linbit.linstor.event.Watch;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -149,7 +150,7 @@ public class CtrlWatchApiCallHandler
                 nodeRepository.requireAccess(peerAccCtx.get(), AccessType.VIEW);
                 resourceDefinitionRepository.requireAccess(peerAccCtx.get(), AccessType.VIEW);
 
-                eventBroker.createWatch(new Watch(
+                eventBroker.createWatch(peer.get(), new Watch(
                     UUID.randomUUID(), peer.get().getId(), peerWatchId,
                     new EventIdentifier(
                         eventName,
@@ -159,6 +160,12 @@ public class CtrlWatchApiCallHandler
 
                 apiCallRc.addEntry("Watch created", ApiConsts.MASK_CRT | ApiConsts.CREATED);
             }
+            catch (UnknownEventException exc)
+            {
+                errorMsg = "Unknown event name '" + exc.getEventName() + "'";
+                rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+                errorExc = exc;
+            }
             catch (AccessDeniedException exc)
             {
                 errorMsg = ResponseUtils.getAccDeniedMsg(
@@ -166,6 +173,7 @@ public class CtrlWatchApiCallHandler
                     "create a watch"
                 );
                 rc = ApiConsts.FAIL_ACC_DENIED_WATCH;
+                errorExc = exc;
             }
         }
 

@@ -15,13 +15,15 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SnapshotState;
-import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.generator.SatelliteStateHelper;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.controller.SnapshotDeploymentEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -41,7 +43,7 @@ public class SnapshotStateMachine
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final SatelliteStateHelper satelliteStateHelper;
-    private final EventBroker eventBroker;
+    private final SnapshotDeploymentEvent snapshotDeploymentEvent;
 
     @Inject
     public SnapshotStateMachine(
@@ -51,7 +53,7 @@ public class SnapshotStateMachine
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         SatelliteStateHelper satelliteStateHelperRef,
-        EventBroker eventBrokerRef
+        SnapshotDeploymentEvent snapshotDeploymentEventRef
     )
     {
         errorReporter = errorReporterRef;
@@ -60,10 +62,14 @@ public class SnapshotStateMachine
         rscDfnMap = rscDfnMapRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         satelliteStateHelper = satelliteStateHelperRef;
-        eventBroker = eventBrokerRef;
+        snapshotDeploymentEvent = snapshotDeploymentEventRef;
     }
 
-    public void stepResourceSnapshots(EventIdentifier eventIdentifier, boolean abort, boolean satelliteDisconnected)
+    public void stepResourceSnapshots(
+        EventIdentifier eventIdentifier,
+        ApiCallRc abortionError,
+        boolean satelliteDisconnected
+    )
     {
         rscDfnMapLock.writeLock().lock();
         try
@@ -87,13 +93,13 @@ public class SnapshotStateMachine
                         {
                             boolean changed;
 
-                            if (abort)
+                            if (abortionError != null)
                             {
                                 SnapshotDfnFlags flag = satelliteDisconnected ?
                                     SnapshotDfnFlags.FAILED_DISCONNECT : SnapshotDfnFlags.FAILED_DEPLOYMENT;
                                 snapshotDefinition.getFlags().enableFlags(apiCtx, flag);
 
-                                changed = abortSnapshot(snapshotDefinition);
+                                changed = abortSnapshot(snapshotDefinition, abortionError);
                             }
                             else
                             {
@@ -126,7 +132,7 @@ public class SnapshotStateMachine
     /**
      * @return true if the in-progress-snapshots have been changed.
      */
-    private boolean abortSnapshot(SnapshotDefinition snapshotDefinition)
+    private boolean abortSnapshot(SnapshotDefinition snapshotDefinition, ApiCallRc abortionError)
         throws AccessDeniedException, SQLException
     {
         boolean snapshotsChanged = false;
@@ -135,7 +141,7 @@ public class SnapshotStateMachine
             errorReporter.logWarning("Aborting snapshot - %s", snapshotDefinition);
             snapshotDefinition.setInCreation(apiCtx, false);
             snapshotsChanged = true;
-            closeSnapshotDeploymentEventStream(snapshotDefinition);
+            closeSnapshotDeploymentEventStream(snapshotDefinition, abortionError);
         }
 
         return snapshotsChanged;
@@ -200,7 +206,7 @@ public class SnapshotStateMachine
 
                     snapshotDefinition.getFlags().enableFlags(apiCtx, SnapshotDfnFlags.SUCCESSFUL);
 
-                    closeSnapshotDeploymentEventStream(snapshotDefinition);
+                    closeSnapshotDeploymentEventStream(snapshotDefinition, null);
 
                     snapshotsChanged = true;
                 }
@@ -270,13 +276,16 @@ public class SnapshotStateMachine
         }
     }
 
-    private void closeSnapshotDeploymentEventStream(SnapshotDefinition snapshotDefinition)
+    private void closeSnapshotDeploymentEventStream(SnapshotDefinition snapshotDefinition, ApiCallRc abortionError)
+        throws AccessDeniedException
     {
-        eventBroker.closeEventStream(EventIdentifier.snapshotDefinition(
-            ApiConsts.EVENT_SNAPSHOT_DEPLOYMENT,
+        ObjectIdentifier objectIdentifier = ObjectIdentifier.snapshotDefinition(
             snapshotDefinition.getResourceName(),
             snapshotDefinition.getName()
-        ));
+        );
+        snapshotDeploymentEvent.get().triggerEvent(
+            objectIdentifier, determineResponse(snapshotDefinition, abortionError));
+        snapshotDeploymentEvent.get().closeStream(objectIdentifier);
     }
 
     private void processSnapshotDeletion(Snapshot snapshot)
@@ -305,5 +314,49 @@ public class SnapshotStateMachine
                 snapshotDefinition.delete(apiCtx);
             }
         }
+    }
+
+    private ApiCallRc determineResponse(SnapshotDefinition snapshotDfn, ApiCallRc abortionError)
+        throws AccessDeniedException
+    {
+        ApiCallRc apiCallRc;
+
+        if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.FAILED_DEPLOYMENT))
+        {
+            apiCallRc = abortionError;
+        }
+        else if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.SUCCESSFUL))
+        {
+            ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
+            entry.setReturnCode(ApiConsts.CREATED | ApiConsts.MASK_SNAPSHOT);
+            entry.setMessage(String.format("Snapshot '%s' of resource '%s' successfully taken.",
+                snapshotDfn.getName().displayValue,
+                snapshotDfn.getResourceName().displayValue));
+            ApiCallRcImpl successRc = new ApiCallRcImpl();
+            successRc.addEntry(entry);
+
+            apiCallRc = successRc;
+        }
+        else if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.FAILED_DISCONNECT))
+        {
+            ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
+            entry.setReturnCode(ApiConsts.FAIL_NOT_CONNECTED);
+            entry.setMessage(String.format(
+                "Snapshot '%s' of resource '%s' failed due to satellite disconnection.",
+                snapshotDfn.getName().displayValue,
+                snapshotDfn.getResourceName().displayValue
+            ));
+            ApiCallRcImpl failedRc = new ApiCallRcImpl();
+            failedRc.addEntry(entry);
+
+            apiCallRc = failedRc;
+        }
+        else
+        {
+            // Still in progress - empty response
+            apiCallRc = new ApiCallRcImpl();
+        }
+
+        return apiCallRc;
     }
 }

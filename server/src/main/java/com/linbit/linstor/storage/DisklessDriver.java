@@ -44,7 +44,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public boolean volumeExists(String identifier, boolean isEncrypted, VolumeType volumeType)
+    public boolean volumeExists(String identifier, boolean isEncrypted)
     {
         return true;
     }
@@ -106,6 +106,13 @@ public class DisklessDriver implements StorageDriver
     public void deleteSnapshot(String volumeIdentifier, String snapshotName)
     {
         // no-op
+    }
+
+    @Override
+    public boolean snapshotExists(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        return true;
     }
 
     @Override

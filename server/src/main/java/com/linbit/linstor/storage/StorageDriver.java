@@ -81,10 +81,9 @@ public interface StorageDriver
      *
      * @param identifier Unique name of the volume
      * @param isEncrypted
-     * @param volumeType
      * @return true if exists, otherwise false
      */
-    boolean volumeExists(String identifier, boolean isEncrypted, VolumeType volumeType) throws StorageException;
+    boolean volumeExists(String identifier, boolean isEncrypted) throws StorageException;
 
     /**
      * Checks whether a volume exists and has the appropriate size
@@ -185,6 +184,15 @@ public interface StorageDriver
      */
     void deleteSnapshot(String volumeIdentifier, String snapshotName)
         throws StorageException;
+
+    /**
+     * Checks whether a snapshot exists.
+     *
+     * @param volumeIdentifier Unique name of the volume
+     * @param snapshotName
+     * @return true if exists, otherwise false
+     */
+    boolean snapshotExists(String volumeIdentifier, String snapshotName) throws StorageException;
 
     enum SizeComparison
     {

@@ -11,7 +11,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.linbit.ControllerWorkerPoolModule;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
@@ -39,12 +38,11 @@ import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.debug.DebugModule;
-import com.linbit.linstor.event.ControllerEventModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.event.writer.EventWriter;
-import com.linbit.linstor.event.writer.protobuf.ProtobufEventWriter;
+import com.linbit.linstor.event.serializer.EventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -320,11 +318,11 @@ public final class Controller
                 ProtobufApiCall.class
             );
 
-            List<Class<? extends EventWriter>> eventWriters = classPathLoader.loadClasses(
-                ProtobufEventWriter.class.getPackage().getName(),
+            List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
+                ProtobufEventSerializer.class.getPackage().getName(),
                 packageSuffixes,
-                EventWriter.class,
-                ProtobufEventWriter.class
+                EventSerializer.class,
+                ProtobufEventSerializer.class
             );
 
             List<Class<? extends EventHandler>> eventHandlers = classPathLoader.loadClasses(
@@ -349,7 +347,6 @@ public final class Controller
                 new ConfigModule(),
                 new CoreTimerModule(),
                 new MetaDataModule(),
-                new ControllerWorkerPoolModule(),
                 new ControllerLinstorModule(),
                 new LinStorModule(),
                 new CoreModule(),
@@ -362,8 +359,7 @@ public final class Controller
                 new ApiModule(apiType, apiCalls),
                 new ApiCallHandlerModule(),
                 new CtrlApiCallHandlerModule(),
-                new EventModule(eventWriters, eventHandlers),
-                new ControllerEventModule(),
+                new EventModule(eventSerializers, eventHandlers),
                 new DebugModule(),
                 new ControllerDebugModule(),
                 new ControllerTransactionMgrModule()

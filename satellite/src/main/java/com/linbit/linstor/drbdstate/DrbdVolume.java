@@ -218,12 +218,6 @@ public class DrbdVolume
     protected DrbdConnection connRef;
     protected Boolean client;
 
-    protected DrbdVolume(DrbdResource resource, VolumeNumber volNr)
-        throws ValueOutOfRangeException
-    {
-        this(resource, null, volNr);
-    }
-
     protected DrbdVolume(DrbdResource resource, DrbdConnection peerConn, VolumeNumber volNr)
         throws ValueOutOfRangeException
     {
@@ -267,7 +261,11 @@ public class DrbdVolume
         return volReplState;
     }
 
-    protected static DrbdVolume newFromProps(DrbdResource resource, Map<String, String> props)
+    protected static DrbdVolume newFromProps(
+        DrbdResource resource,
+        DrbdConnection connection,
+        Map<String, String> props
+    )
         throws EventsSourceException
     {
         String volNrStr = props.get(PROP_KEY_VOL_NR);
@@ -294,7 +292,7 @@ public class DrbdVolume
         DrbdVolume newVolume;
         try
         {
-            newVolume = new DrbdVolume(resource, new VolumeNumber(volNr));
+            newVolume = new DrbdVolume(resource, connection, new VolumeNumber(volNr));
         }
         catch (ValueOutOfRangeException rangeExc)
         {

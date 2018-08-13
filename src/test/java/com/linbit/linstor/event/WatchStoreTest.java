@@ -5,6 +5,8 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import reactor.core.Disposable;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -42,92 +44,35 @@ public class WatchStoreTest
     }
 
     @Test
-    public void getWatchesForPreciseEvent()
-        throws Exception
-    {
-        Watch watch = makeWatch(volumeEventIdentifier);
-        watchStore.addWatch(watch);
-
-        Collection<Watch> watches = watchStore.getWatchesForEvent(volumeEventIdentifier);
-
-        assertThat(watches).containsExactly(watch);
-    }
-
-    @Test
-    public void getWatchesGlobalForVolumeEvent()
-        throws Exception
-    {
-        Watch watch = makeWatch(globalEventIdentifier);
-        watchStore.addWatch(watch);
-
-        Collection<Watch> watches = watchStore.getWatchesForEvent(volumeEventIdentifier);
-
-        assertThat(watches).containsExactly(watch);
-    }
-
-    @Test
-    public void noWatchesResourceForGlobalEvent()
-        throws Exception
-    {
-        Watch watch = makeWatch(resourceEventIdentifier);
-        watchStore.addWatch(watch);
-
-        Collection<Watch> watches = watchStore.getWatchesForEvent(globalEventIdentifier);
-
-        assertThat(watches).isEmpty();
-    }
-
-    @Test
-    public void getWatchesResourceOnlyForResourceEvent()
-        throws Exception
-    {
-        Watch resourceWatch = makeWatch(resourceEventIdentifier);
-        Watch volumeWatch = makeWatch(volumeEventIdentifier);
-        watchStore.addWatch(resourceWatch);
-        watchStore.addWatch(volumeWatch);
-
-        Collection<Watch> watches = watchStore.getWatchesForEvent(resourceEventIdentifier);
-
-        assertThat(watches).containsExactly(resourceWatch);
-    }
-
-    @Test
-    public void getWatchesResourceAndVolumeForVolumeEvent()
-        throws Exception
-    {
-        Watch resourceWatch = makeWatch(resourceEventIdentifier);
-        Watch volumeWatch = makeWatch(volumeEventIdentifier);
-        watchStore.addWatch(resourceWatch);
-        watchStore.addWatch(volumeWatch);
-
-        Collection<Watch> watches = watchStore.getWatchesForEvent(volumeEventIdentifier);
-
-        assertThat(watches).containsExactlyInAnyOrder(resourceWatch, volumeWatch);
-    }
-
-    @Test
     public void removeWatchesForPeer()
         throws Exception
     {
+        Disposable disposable = Mockito.mock(Disposable.class);
+        Disposable otherPeerDisposable = Mockito.mock(Disposable.class);
+
         String testPeerId = "TestPeer";
 
         Watch peerWatch =
             new Watch(UUID.randomUUID(), testPeerId, 0, resourceEventIdentifier);
         Watch otherPeerWatch =
             new Watch(UUID.randomUUID(), "OtherPeer", 0, resourceEventIdentifier);
-        watchStore.addWatch(peerWatch);
-        watchStore.addWatch(otherPeerWatch);
+        watchStore.addWatch(peerWatch, disposable);
+        watchStore.addWatch(otherPeerWatch, otherPeerDisposable);
 
         watchStore.removeWatchesForPeer(testPeerId);
 
-        assertThat(watchStore.getWatchesForEvent(resourceEventIdentifier))
-            .containsExactly(otherPeerWatch);
+        Mockito.verify(disposable).dispose();
+        Mockito.verify(otherPeerDisposable, Mockito.never()).dispose();
     }
 
     @Test
     public void removeWatchForPeerAndId()
         throws Exception
     {
+        Disposable disposable = Mockito.mock(Disposable.class);
+        Disposable otherDisposable = Mockito.mock(Disposable.class);
+        Disposable otherPeerDisposable = Mockito.mock(Disposable.class);
+
         String testPeerId = "TestPeer";
         Integer testWatchId = 7;
 
@@ -137,33 +82,15 @@ public class WatchStoreTest
             new Watch(UUID.randomUUID(), testPeerId, 8, resourceEventIdentifier);
         Watch otherPeerWatch =
             new Watch(UUID.randomUUID(), "OtherPeer", 9, resourceEventIdentifier);
-        watchStore.addWatch(peerWatch);
-        watchStore.addWatch(otherWatch);
-        watchStore.addWatch(otherPeerWatch);
+        watchStore.addWatch(peerWatch, disposable);
+        watchStore.addWatch(otherWatch, otherDisposable);
+        watchStore.addWatch(otherPeerWatch, otherPeerDisposable);
 
         watchStore.removeWatchForPeerAndId(testPeerId, testWatchId);
 
-        assertThat(watchStore.getWatchesForEvent(resourceEventIdentifier))
-            .containsExactlyInAnyOrder(otherWatch, otherPeerWatch);
-    }
-
-    @Test
-    public void removeWatchesForObject()
-        throws Exception
-    {
-        Watch globalWatch = makeWatch(globalEventIdentifier);
-        Watch resourceWatch = makeWatch(resourceEventIdentifier);
-        Watch volumeWatch = makeWatch(volumeEventIdentifier);
-        watchStore.addWatch(globalWatch);
-        watchStore.addWatch(resourceWatch);
-        watchStore.addWatch(volumeWatch);
-
-        watchStore.removeWatchesForObject(
-            new ObjectIdentifier(testNodeName, testResourceName, null, null)
-        );
-
-        assertThat(watchStore.getWatchesForEvent(volumeEventIdentifier))
-            .containsExactlyInAnyOrder(globalWatch, volumeWatch);
+        Mockito.verify(disposable).dispose();
+        Mockito.verify(otherDisposable, Mockito.never()).dispose();
+        Mockito.verify(otherPeerDisposable, Mockito.never()).dispose();
     }
 
     private Watch makeWatch(EventIdentifier resourceEventIdentifier)

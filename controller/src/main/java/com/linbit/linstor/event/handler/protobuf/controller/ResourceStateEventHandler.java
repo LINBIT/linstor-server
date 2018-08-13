@@ -1,56 +1,49 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.generator.SatelliteStateHelper;
+import com.linbit.linstor.event.common.ResourceStateEvent;
+import com.linbit.linstor.event.handler.SatelliteStateHelper;
+import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.event.handler.EventHandler;
-import com.linbit.linstor.event.handler.ResourceDefinitionEventStreamTracker;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufEventHandler(
     eventName = ApiConsts.EVENT_RESOURCE_STATE
 )
+@Singleton
 public class ResourceStateEventHandler implements EventHandler
 {
     private final SatelliteStateHelper satelliteStateHelper;
-    private final EventBroker eventBroker;
-    private final ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTracker;
+    private final ResourceStateEvent resourceStateEvent;
 
     @Inject
     public ResourceStateEventHandler(
-        SatelliteStateHelper satelliteStateHelperRef, EventBroker eventBrokerRef,
-        ResourceDefinitionEventStreamTracker resourceDefinitionEventStreamTrackerRef
+        SatelliteStateHelper satelliteStateHelperRef,
+        ResourceStateEvent resourceStateEventRef
     )
     {
         satelliteStateHelper = satelliteStateHelperRef;
-        eventBroker = eventBrokerRef;
-        resourceDefinitionEventStreamTracker = resourceDefinitionEventStreamTrackerRef;
+        resourceStateEvent = resourceStateEventRef;
     }
 
     @Override
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) || eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
+        UsageState usageState;
+
+        if (eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
         {
             EventRscStateOuterClass.EventRscState eventRscState =
                 EventRscStateOuterClass.EventRscState.parseDelimitedFrom(eventDataIn);
-
-            satelliteStateHelper.onSatelliteState(
-                eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.setOnResource(
-                    eventIdentifier.getResourceName(),
-                    SatelliteResourceState::setReady,
-                    eventRscState.getReady()
-                )
-            );
 
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
@@ -60,6 +53,8 @@ public class ResourceStateEventHandler implements EventHandler
                     eventRscState.getInUse()
                 )
             );
+
+            usageState = new UsageState(eventRscState.getReady(), eventRscState.getInUse());
         }
         else
         {
@@ -67,21 +62,13 @@ public class ResourceStateEventHandler implements EventHandler
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.unsetOnResource(
                     eventIdentifier.getResourceName(),
-                    SatelliteResourceState::setReady
-                )
-            );
-
-            satelliteStateHelper.onSatelliteState(
-                eventIdentifier.getNodeName(),
-                satelliteState -> satelliteState.unsetOnResource(
-                    eventIdentifier.getResourceName(),
                     SatelliteResourceState::setInUse
                 )
             );
+
+            usageState = null;
         }
 
-        eventBroker.forwardEvent(eventIdentifier, eventAction);
-
-        resourceDefinitionEventStreamTracker.resourceEventReceived(eventIdentifier, eventAction);
+        resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, usageState);
     }
 }

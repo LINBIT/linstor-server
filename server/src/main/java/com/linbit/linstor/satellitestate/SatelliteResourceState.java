@@ -2,7 +2,6 @@ package com.linbit.linstor.satellitestate;
 
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.SnapshotState;
 
 import java.util.HashMap;
@@ -12,10 +11,6 @@ import java.util.function.Function;
 
 public class SatelliteResourceState
 {
-    private Boolean ready;
-
-    private ApiCallRc deploymentState;
-
     private Boolean inUse;
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
@@ -28,8 +23,6 @@ public class SatelliteResourceState
 
     public SatelliteResourceState(SatelliteResourceState other)
     {
-        ready = other.ready;
-        deploymentState = other.deploymentState;
         inUse = other.inUse;
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
         {
@@ -37,26 +30,6 @@ public class SatelliteResourceState
         }
         snapshotStates.clear();
         snapshotStates.putAll(other.snapshotStates);
-    }
-
-    public Boolean getReady()
-    {
-        return ready;
-    }
-
-    public void setReady(Boolean readyRef)
-    {
-        ready = readyRef;
-    }
-
-    public ApiCallRc getDeploymentState()
-    {
-        return deploymentState;
-    }
-
-    public void setDeploymentState(ApiCallRc deploymentStateRef)
-    {
-        deploymentState = deploymentStateRef;
     }
 
     public Boolean isInUse()
@@ -120,6 +93,6 @@ public class SatelliteResourceState
 
     public boolean isEmpty()
     {
-        return ready == null && volumeStates.isEmpty() && snapshotStates.isEmpty();
+        return volumeStates.isEmpty() && snapshotStates.isEmpty();
     }
 }

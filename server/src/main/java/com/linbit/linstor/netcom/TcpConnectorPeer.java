@@ -99,7 +99,7 @@ public class TcpConnectorPeer implements Peer
 
     private Object attachment;
 
-    protected boolean connected = false;
+    protected volatile boolean connected = false;
     protected ConnectionStatus connectionStatus = ConnectionStatus.OFFLINE;
     protected boolean authenticated = false;
     protected boolean fullSyncFailed = false;

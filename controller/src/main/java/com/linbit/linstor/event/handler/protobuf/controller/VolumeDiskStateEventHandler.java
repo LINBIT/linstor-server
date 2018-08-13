@@ -1,41 +1,45 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.generator.SatelliteStateHelper;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
+import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufEventHandler(
     eventName = ApiConsts.EVENT_VOLUME_DISK_STATE
 )
+@Singleton
 public class VolumeDiskStateEventHandler implements EventHandler
 {
     private final SatelliteStateHelper satelliteStateHelper;
-    private final EventBroker eventBroker;
+    private final VolumeDiskStateEvent volumeDiskStateEvent;
 
     @Inject
     public VolumeDiskStateEventHandler(
         SatelliteStateHelper satelliteStateHelperRef,
-        EventBroker eventBrokerRef
+        VolumeDiskStateEvent volumeDiskStateEventRef
     )
     {
         satelliteStateHelper = satelliteStateHelperRef;
-        eventBroker = eventBrokerRef;
+        volumeDiskStateEvent = volumeDiskStateEventRef;
     }
 
     @Override
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        if (eventAction.equals(ApiConsts.EVENT_STREAM_OPEN) || eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
+        String diskState;
+
+        if (eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
         {
             EventVlmDiskStateOuterClass.EventVlmDiskState eventVlmDiskState =
                 EventVlmDiskStateOuterClass.EventVlmDiskState.parseDelimitedFrom(eventDataIn);
@@ -49,6 +53,8 @@ public class VolumeDiskStateEventHandler implements EventHandler
                     eventVlmDiskState.getDiskState()
                 )
             );
+
+            diskState = eventVlmDiskState.getDiskState();
         }
         else
         {
@@ -60,8 +66,10 @@ public class VolumeDiskStateEventHandler implements EventHandler
                     SatelliteVolumeState::setDiskState
                 )
             );
+
+            diskState = null;
         }
 
-        eventBroker.forwardEvent(eventIdentifier, eventAction);
+        volumeDiskStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, diskState);
     }
 }

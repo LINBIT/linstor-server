@@ -39,9 +39,8 @@ import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateModule;
 import com.linbit.linstor.event.EventModule;
-import com.linbit.linstor.event.SatelliteEventModule;
-import com.linbit.linstor.event.writer.EventWriter;
-import com.linbit.linstor.event.writer.protobuf.ProtobufEventWriter;
+import com.linbit.linstor.event.serializer.EventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -301,11 +300,11 @@ public final class Satellite
                 ProtobufApiCall.class
             );
 
-            List<Class<? extends EventWriter>> eventWriters = classPathLoader.loadClasses(
-                ProtobufEventWriter.class.getPackage().getName(),
+            List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
+                ProtobufEventSerializer.class.getPackage().getName(),
                 packageSuffixes,
-                EventWriter.class,
-                ProtobufEventWriter.class
+                EventSerializer.class,
+                ProtobufEventSerializer.class
             );
             errorLog.logInfo(String.format(
                 "API classes loading finished: %dms",
@@ -329,8 +328,7 @@ public final class Satellite
                 new DrbdStateModule(),
                 new ApiModule(apiType, apiCalls),
                 new ApiCallHandlerModule(),
-                new EventModule(eventWriters, Collections.emptyList()),
-                new SatelliteEventModule(),
+                new EventModule(eventSerializers, Collections.emptyList()),
                 new DebugModule(),
                 new SatelliteDebugModule(),
                 new SatelliteTransactionMgrModule()

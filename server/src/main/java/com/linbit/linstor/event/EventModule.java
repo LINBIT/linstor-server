@@ -4,21 +4,21 @@ import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.event.writer.EventWriter;
+import com.linbit.linstor.event.serializer.EventSerializer;
 
 import java.util.List;
 
 public class EventModule extends AbstractModule
 {
-    private final List<Class<? extends EventWriter>> eventWriters;
+    private final List<Class<? extends EventSerializer>> eventSerializers;
     private final List<Class<? extends EventHandler>> eventHandlers;
 
     public EventModule(
-        List<Class<? extends EventWriter>> eventWritersRef,
+        List<Class<? extends EventSerializer>> eventSerializersRef,
         List<Class<? extends EventHandler>> eventHandlersRef
     )
     {
-        eventWriters = eventWritersRef;
+        eventSerializers = eventSerializersRef;
         eventHandlers = eventHandlersRef;
     }
 
@@ -27,15 +27,15 @@ public class EventModule extends AbstractModule
     {
         bind(WatchStore.class).to(WatchStoreImpl.class);
 
-        MapBinder<String, EventWriter> eventWriterBinder =
-            MapBinder.newMapBinder(binder(), String.class, EventWriter.class);
-        MapBinder<String, EventWriterDescriptor> eventWriterDescriptorBinder =
-            MapBinder.newMapBinder(binder(), String.class, EventWriterDescriptor.class);
-        for (Class<? extends EventWriter> eventWriter : eventWriters)
+        MapBinder<String, EventSerializer> eventSerializerBinder =
+            MapBinder.newMapBinder(binder(), String.class, EventSerializer.class);
+        MapBinder<String, EventSerializerDescriptor> eventSerializerDescriptorBinder =
+            MapBinder.newMapBinder(binder(), String.class, EventSerializerDescriptor.class);
+        for (Class<? extends EventSerializer> eventSerializer : eventSerializers)
         {
-            EventWriterDescriptor descriptor = new EventWriterDescriptor(eventWriter);
-            eventWriterBinder.addBinding(descriptor.getEventName()).to(eventWriter);
-            eventWriterDescriptorBinder.addBinding(descriptor.getEventName()).toInstance(descriptor);
+            EventSerializerDescriptor descriptor = new EventSerializerDescriptor(eventSerializer);
+            eventSerializerBinder.addBinding(descriptor.getEventName()).to(eventSerializer);
+            eventSerializerDescriptorBinder.addBinding(descriptor.getEventName()).toInstance(descriptor);
         }
 
         MapBinder<String, EventHandler> eventHandlerBinder =

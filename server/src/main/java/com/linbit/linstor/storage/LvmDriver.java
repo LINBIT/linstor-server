@@ -370,6 +370,13 @@ public class LvmDriver extends AbsStorageDriver
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
+    @Override
+    public boolean snapshotExists(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+    }
+
     /**
      * Checks if the given map contains the key for volume group
      * ({@link StorageConstants#CONFIG_LVM_VOLUME_GROUP_KEY}) and

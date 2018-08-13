@@ -278,6 +278,13 @@ public class LvmThinDriver extends LvmDriver
         return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName));
     }
 
+    @Override
+    public boolean snapshotExists(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        return storageVolumeExists(getSnapshotIdentifier(volumeIdentifier, snapshotName), VolumeType.SNAPSHOT);
+    }
+
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException
     {
         super.checkVolumeGroupEntry(config);

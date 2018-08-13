@@ -284,6 +284,13 @@ public class ZfsDriver extends AbsStorageDriver
         };
     }
 
+    @Override
+    public boolean snapshotExists(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        return storageVolumeExists(getSnapshotIdentifier(volumeIdentifier, snapshotName), VolumeType.SNAPSHOT);
+    }
+
     protected void checkPool(Map<String, String> config) throws StorageException
     {
         String newPool = getPoolFromConfig(config).trim();

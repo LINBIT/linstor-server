@@ -15,12 +15,12 @@ public class EventIdentifier
 
     public static EventIdentifier global(String eventName)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(null, null, null, null));
+        return new EventIdentifier(eventName, ObjectIdentifier.global());
     }
 
     public static EventIdentifier node(String eventName, NodeName nodeName)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, null, null, null));
+        return new EventIdentifier(eventName, ObjectIdentifier.node(nodeName));
     }
 
     /**
@@ -28,7 +28,7 @@ public class EventIdentifier
      */
     public static EventIdentifier resourceDefinition(String eventName, ResourceName resourceName)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(null, resourceName, null, null));
+        return new EventIdentifier(eventName, ObjectIdentifier.resourceDefinition(resourceName));
     }
 
     /**
@@ -37,18 +37,18 @@ public class EventIdentifier
     public static EventIdentifier volumeDefinition(
         String eventName, ResourceName resourceName, VolumeNumber volumeNumber)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(null, resourceName, volumeNumber, null));
+        return new EventIdentifier(eventName, ObjectIdentifier.volumeDefinition(resourceName, volumeNumber));
     }
 
     public static EventIdentifier resource(String eventName, NodeName nodeName, ResourceName resourceName)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, resourceName, null, null));
+        return new EventIdentifier(eventName, ObjectIdentifier.resource(nodeName, resourceName));
     }
 
     public static EventIdentifier volume(
         String eventName, NodeName nodeName, ResourceName resourceName, VolumeNumber volumeNumber)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, resourceName, volumeNumber, null));
+        return new EventIdentifier(eventName, ObjectIdentifier.volume(nodeName, resourceName, volumeNumber));
     }
 
     /**
@@ -57,13 +57,13 @@ public class EventIdentifier
     public static EventIdentifier snapshotDefinition(
         String eventName, ResourceName resourceName, SnapshotName snapshotName)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(null, resourceName, null, snapshotName));
+        return new EventIdentifier(eventName, ObjectIdentifier.snapshotDefinition(resourceName, snapshotName));
     }
 
     public static EventIdentifier snapshot(
         String eventName, NodeName nodeName, ResourceName resourceName, SnapshotName snapshotName)
     {
-        return new EventIdentifier(eventName, new ObjectIdentifier(nodeName, resourceName, null, snapshotName));
+        return new EventIdentifier(eventName, ObjectIdentifier.snapshot(nodeName, resourceName, snapshotName));
     }
 
     public EventIdentifier(
