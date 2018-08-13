@@ -119,8 +119,13 @@ public class LinstorConfig
                     "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
                 GenericDbUtils.executeStatement(con, String.format(stmt, controllerPort));
                 con.commit();
+                System.out.println("Controller plain port set to " + controllerPort);
             }
-            System.out.println("Controller plain port set to " + controllerPort);
+            catch (IOException ioExc)
+            {
+                System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
+                System.err.println(ioExc.getMessage());
+            }
             return null;
         }
     }
@@ -145,8 +150,15 @@ public class LinstorConfig
                     "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
                 GenericDbUtils.executeStatement(con, String.format(stmt, listenAddress));
                 con.commit();
+
+                System.out.println("Controller plain listen address set to " + listenAddress);
             }
-            System.out.println("Controller plain listen address set to " + listenAddress);
+            catch (IOException ioExc)
+            {
+                System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
+                System.err.println(ioExc.getMessage());
+            }
+
             return null;
         }
     }
