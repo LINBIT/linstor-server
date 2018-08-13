@@ -26,7 +26,7 @@ public class SatelliteCoreModule extends AbstractModule
 
     // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
     // a value configurable in the cluster configuration
-    public static final String CONFIG_PATH = "/var/lib/drbd.d";
+    public static final String CONFIG_PATH = "/var/lib/linstor.d";
 
     @Override
     protected void configure()
