@@ -1,19 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,6 +10,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import org.slf4j.event.Level;
 
 public class ConfFileBuilder
@@ -246,6 +244,21 @@ public class ConfFileBuilder
 
                         if (rscConn != null)
                         {
+                            if (rscConn.getProps(accCtx)
+                                .getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
+                            {
+                                appendLine("");
+                                appendLine("net");
+                                try (Section ignore = new Section())
+                                {
+                                    appendDrbdOptions(
+                                        LinStorObject.CONTROLLER,
+                                        rscConn.getProps(accCtx),
+                                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS
+                                    );
+                                }
+                            }
+
                             if (rscConn.getProps(accCtx)
                                 .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
                                 )
