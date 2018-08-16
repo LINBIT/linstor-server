@@ -1,7 +1,5 @@
 package com.linbit.linstor.api;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
@@ -13,13 +11,15 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
-
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import junitparams.JUnitParamsRunner;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +28,7 @@ import java.util.TreeMap;
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
 {
-    @Inject private Provider<CtrlRscApiCallHandler> rscApiCallHandlerProvider;
+    @Inject private CtrlRscCrtApiCallHandler rscCrtApiCallHandler;
 
     private NodeName testControllerName;
     private NodeType testControllerType;
@@ -95,11 +95,21 @@ public class RscApiTest extends ApiTestBase
             tesTRscDfnTransportType
         );
         rscDfnMap.put(testRscName, testRscDfn);
+        transMgrProvider.get().commit();
+        cleanUp(true);
+    }
+
+    @After
+    @Override
+    public void tearDown() throws Exception
+    {
+        cleanUp(false);
     }
 
     @Test
     public void createRscSuccess() throws Exception
     {
+        Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
         evaluateTest(
             new CrtRscCall(ApiConsts.CREATED)
         );
@@ -132,14 +142,16 @@ public class RscApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return rscApiCallHandlerProvider.get().createResource(
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            rscCrtApiCallHandler.createResource(
                 nodeName,
                 rscName,
                 flags,
                 rscPropsMap,
                 vlmApiDataList,
                 null
-            );
+            ).subscriberContext(subscriberContext).toStream().forEach(apiCallRc::addEntries);
+            return apiCallRc;
         }
 
     }

@@ -9,8 +9,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.BaseApiCall;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.core.LinStor;
@@ -46,6 +46,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Dispatcher for received messages
@@ -235,7 +236,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     flux = callApi(connector, peer, header, msgDataIn, msgType == MsgType.API_CALL);
                     break;
                 case ANSWER:
-                    flux = handleAnswer(peer, header, msgDataIn);
+                    handleAnswer(peer, header, msgDataIn);
                     break;
                 case COMPLETE:
                     peer.apiCallComplete(getApiCallId(header));
@@ -266,24 +267,25 @@ public class CommonMessageProcessor implements MessageProcessor
         return header.getApiCallId();
     }
 
-    private Flux<?> handleAnswer(
+    private void handleAnswer(
         Peer peer,
         MsgHeaderOuterClass.MsgHeader header,
         ByteArrayInputStream msgDataIn
     )
         throws IOException
     {
+        ApiRcException error = null;
         if (header.getMsgContent().equals(ApiConsts.API_REPLY))
         {
             // check for errors
             msgDataIn.mark(0);
-            while (msgDataIn.available() > 0)
+            while (msgDataIn.available() > 0 && error == null)
             {
                 MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse =
                     MsgApiCallResponseOuterClass.MsgApiCallResponse.parseDelimitedFrom(msgDataIn);
                 if ((apiCallResponse.getRetCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
                 {
-                    peer.apiCallError(getApiCallId(header), new ApiRcException(ApiCallRcImpl
+                    error = new ApiRcException(ApiCallRcImpl
                         .entryBuilder(
                             apiCallResponse.getRetCode(),
                             "(" + peer + ") " + apiCallResponse.getMessage()
@@ -292,13 +294,23 @@ public class CommonMessageProcessor implements MessageProcessor
                         .setCorrection(apiCallResponse.getCorrection())
                         .setDetails(apiCallResponse.getDetails())
                         .build()
-                    ));
+                    );
                 }
             }
             msgDataIn.reset();
         }
-        peer.apiCallAnswer(getApiCallId(header), msgDataIn);
-        return Flux.empty();
+
+        if (!header.getMsgContent().equals(ApiConsts.API_END_OF_IMMEDIATE_ANSWERS))
+        {
+            if (error != null)
+            {
+                peer.apiCallError(getApiCallId(header), error);
+            }
+            else
+            {
+                peer.apiCallAnswer(getApiCallId(header), msgDataIn);
+            }
+        }
     }
 
     private Flux<?> callApi(
@@ -346,7 +358,6 @@ public class CommonMessageProcessor implements MessageProcessor
                     .subscriberContext(Context.of(
                         ApiModule.API_CALL_NAME, apiCallName,
                         Peer.class, peer,
-                        AccessContext.class, peerAccCtx,
                         ApiModule.API_CALL_ID, apiCallId
                     ));
             }
@@ -394,7 +405,15 @@ public class CommonMessageProcessor implements MessageProcessor
         }
 
         return respond ?
-            messageFlux
+            Flux
+                .merge(
+                    messageFlux,
+                    // Insert an API_END_OF_IMMEDIATE_ANSWERS message into the stream after the initial values from
+                    // the main stream. This works because merge subscribes to and drains the available values from
+                    // each of the sources in turn.
+                    Flux.just(commonSerializer.answerBuilder(
+                        ApiConsts.API_END_OF_IMMEDIATE_ANSWERS, getApiCallId(header)).build())
+                )
                 .onErrorResume(exc -> errorFallback(exc, peer, header))
                 .concatWith(Flux.just(commonSerializer.completionBuilder(getApiCallId(header)).build()))
                 .doOnNext(peer::sendMessage)
@@ -480,7 +499,7 @@ public class CommonMessageProcessor implements MessageProcessor
             exc.getMessage()
         );
 
-        return Flux.just(makeApiErrorMessage(exc, apiCallId));
+        return Flux.fromStream(makeApiErrorMessages(exc, apiCallId));
     }
 
     private Flux<byte[]> handleApiAccessDeniedException(
@@ -558,18 +577,21 @@ public class CommonMessageProcessor implements MessageProcessor
             .build();
     }
 
-    private byte[] makeApiErrorMessage(ApiRcException exc, Long apiCallId)
+    private Stream<byte[]> makeApiErrorMessages(ApiRcException exc, Long apiCallId)
     {
-        ApiCallRc.RcEntry rcEntry = exc.getRcEntry();
-        return commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
-            .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                .entryBuilder(rcEntry.getReturnCode(), rcEntry.getMessage())
-                .setCause(rcEntry.getCause())
-                .setCorrection(rcEntry.getCorrection())
-                .setDetails(rcEntry.getDetails())
-                .build()
-            ))
-            .build();
+        ApiCallRc apiCallRc = exc.getApiCallRc();
+        return apiCallRc.getEntries().stream()
+            .map(rcEntry ->
+                commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
+                    .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                        .entryBuilder(rcEntry.getReturnCode(), rcEntry.getMessage())
+                        .setCause(rcEntry.getCause())
+                        .setCorrection(rcEntry.getCorrection())
+                        .setDetails(rcEntry.getDetails())
+                        .build()
+                    ))
+                    .build()
+            );
     }
 
     private byte[] makeUnhandledExceptionMessage(long apiCallId, String apiCallName, Throwable exc)
@@ -640,7 +662,7 @@ public class CommonMessageProcessor implements MessageProcessor
 
     private static class InvalidHeaderException extends RuntimeException
     {
-        public InvalidHeaderException(String message)
+        InvalidHeaderException(String message)
         {
             super(message);
         }

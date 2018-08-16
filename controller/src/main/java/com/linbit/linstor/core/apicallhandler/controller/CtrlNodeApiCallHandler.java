@@ -167,7 +167,6 @@ public class CtrlNodeApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeContext(
-            peer.get(),
             ApiOperation.makeRegisterOperation(),
             nodeNameStr
         );
@@ -296,7 +295,6 @@ public class CtrlNodeApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeNameStr
         );
@@ -346,7 +344,6 @@ public class CtrlNodeApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeNameStr
         );
@@ -477,7 +474,6 @@ public class CtrlNodeApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeNameStr
         );
@@ -1014,7 +1010,6 @@ public class CtrlNodeApiCallHandler
     }
 
     private static ResponseContext makeNodeContext(
-        Peer peer,
         ApiOperation operation,
         String nodeNameStr
     )
@@ -1023,7 +1018,6 @@ public class CtrlNodeApiCallHandler
         objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getNodeDescription(nodeNameStr),
             getNodeDescriptionInline(nodeNameStr),

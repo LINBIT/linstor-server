@@ -22,6 +22,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -43,6 +44,8 @@ import org.slf4j.event.Level;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.linbit.linstor.StorPool;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Scheduler;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -51,10 +54,12 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -98,8 +103,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     // Tracks objects that are waiting to be updated with data received from the controller
     private final UpdateBundle rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
 
-    // Tracks objects that need to be dispatched to a device handler
-    private final Set<ResourceName> pendingDispatchRscSet = new TreeSet<>();
+    // Tracks resources that need to be dispatched to a device handler and the sinks that should receive responses
+    private final Map<ResourceName, List<FluxSink<ApiCallRc>>> pendingDispatchRscs = new TreeMap<>();
+
+    // Tracks sinks that need to be completed once the dispatch phase is complete
+    private final List<FluxSink<ApiCallRc>> pendingResponseSinks = new ArrayList<>();
 
     private Thread svcThr;
 
@@ -108,6 +116,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final AtomicBoolean waitUpdFlag     = new AtomicBoolean(true);
     private final AtomicBoolean fullSyncFlag    = new AtomicBoolean(false);
     private final AtomicBoolean shutdownFlag    = new AtomicBoolean(false);
+
+    private final Map<ResourceName, ApiCallRc> dispatchResponses = new TreeMap<>();
 
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
@@ -172,7 +182,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         LinStorScope deviceMgrScopeRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
-        Provider<DeviceHandlerInvocationFactory> devHandlerInvocFactoryProviderRef
+        Provider<DeviceHandlerInvocationFactory> devHandlerInvocFactoryProviderRef,
+        Scheduler scheduler
     )
     {
         wrkCtx = wrkCtxRef;
@@ -194,7 +205,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         stltSecObj = stltSecObjRef;
         devHandlerInvocFactoryProvider = devHandlerInvocFactoryProviderRef;
 
-        updTracker = new StltUpdateTrackerImpl(sched);
+        updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
         devMgrInstName = DEV_MGR_NAME;
 
@@ -309,8 +320,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            rcvPendingBundle.updControllerMap.clear();
-            pendingDispatchRscSet.addAll(rscSet);
+            markPendingDispatch(rcvPendingBundle.controllerUpdate.orElse(null), rscSet);
+            rcvPendingBundle.controllerUpdate = Optional.empty();
             sched.notify();
         }
     }
@@ -322,9 +333,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             for (NodeName nodeName : nodeSet)
             {
-                rcvPendingBundle.updNodeMap.remove(nodeName);
+                markPendingDispatch(rcvPendingBundle.nodeUpdates.remove(nodeName), rscSet);
             }
-            pendingDispatchRscSet.addAll(rscSet);
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -339,9 +349,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             for (ResourceName rscName : rscDfnSet)
             {
-                rcvPendingBundle.updRscDfnMap.remove(rscName);
+                markPendingDispatch(rcvPendingBundle.rscDfnUpdates.remove(rscName), rscDfnSet);
             }
-            pendingDispatchRscSet.addAll(rscDfnSet);
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -356,9 +365,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             for (StorPoolName storPoolName : storPoolSet)
             {
-                rcvPendingBundle.updStorPoolMap.remove(storPoolName);
+                markPendingDispatch(rcvPendingBundle.storPoolUpdates.remove(storPoolName), rscSet);
             }
-            pendingDispatchRscSet.addAll(rscSet);
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -373,10 +381,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             for (Resource.Key resourceKey : rscKeySet)
             {
-                rcvPendingBundle.updRscMap.remove(resourceKey);
+                markPendingDispatch(
+                    rcvPendingBundle.rscUpdates.remove(resourceKey),
+                    rscKeySet.stream().map(Resource.Key::getResourceName).collect(Collectors.toSet())
+                );
             }
-            pendingDispatchRscSet.addAll(
-                rscKeySet.stream().map(Resource.Key::getResourceName).collect(Collectors.toSet()));
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -391,14 +400,36 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             for (SnapshotDefinition.Key snapshotKey : snapshotKeySet)
             {
-                rcvPendingBundle.updSnapshotMap.remove(snapshotKey);
+                markPendingDispatch(
+                    rcvPendingBundle.snapshotUpdates.remove(snapshotKey),
+                    snapshotKeySet.stream().map(SnapshotDefinition.Key::getResourceName).collect(Collectors.toSet())
+                );
             }
-            pendingDispatchRscSet.addAll(
-                snapshotKeySet.stream().map(SnapshotDefinition.Key::getResourceName).collect(Collectors.toSet()));
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
             }
+        }
+    }
+
+    private void markPendingDispatch(
+        StltUpdateTrackerImpl.UpdateNotification updateNotification,
+        Set<ResourceName> rscSet
+    )
+    {
+        FluxSink<ApiCallRc> responseSink = updateNotification == null ? null : updateNotification.getResponseSink();
+        for (ResourceName rscName : rscSet)
+        {
+            List<FluxSink<ApiCallRc>> responseSinks =
+                pendingDispatchRscs.computeIfAbsent(rscName, ignored -> new ArrayList<>());
+            if (responseSink != null)
+            {
+                responseSinks.add(responseSink);
+            }
+        }
+        if (responseSink != null)
+        {
+            pendingResponseSinks.add(responseSink);
         }
     }
 
@@ -407,7 +438,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            pendingDispatchRscSet.add(name);
+            markPendingDispatch(null, Collections.singleton(name));
             sched.notify();
         }
     }
@@ -417,7 +448,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            pendingDispatchRscSet.addAll(rscSet);
+            markPendingDispatch(null, rscSet);
             sched.notify();
         }
     }
@@ -480,7 +511,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 {
                     errLog.logTrace("DeviceManager: Executing device handlers after full sync");
 
-                    Set<ResourceName> dispatchRscSet = new TreeSet<>();
+                    Map<ResourceName, List<FluxSink<ApiCallRc>>> dispatchRscs = new TreeMap<>();
 
                     Lock rcfgRdLock = reconfigurationLock.readLock();
                     Lock rscDfnMapRdLock = rscDfnMapLock.readLock();
@@ -490,7 +521,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     {
                         rcfgRdLock.lock();
                         rscDfnMapRdLock.lock();
-                        dispatchRscSet.addAll(rscDfnMap.keySet());
+                        for (ResourceName resourceName : rscDfnMap.keySet())
+                        {
+                            dispatchRscs.put(resourceName, new ArrayList<>());
+                        }
                     }
                     finally
                     {
@@ -500,8 +534,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                     synchronized (sched)
                     {
-                        pendingDispatchRscSet.clear();
-                        pendingDispatchRscSet.addAll(dispatchRscSet);
+                        pendingDispatchRscs.clear();
+                        pendingDispatchRscs.putAll(dispatchRscs);
+                        pendingResponseSinks.clear();
                     }
                 }
                 else
@@ -599,7 +634,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 updTracker.collectUpdateNotifications(
                     updPendingBundle,
                     svcCondFlag,
-                    waitUpdFlag.get() && pendingDispatchRscSet.isEmpty()
+                    waitUpdFlag.get() && pendingDispatchRscs.isEmpty()
                 );
                 if (svcCondFlag.get())
                 {
@@ -624,12 +659,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             updPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
 
             // Request updates from the controller
-            requestControllerUpdates(updPendingBundle.updControllerMap);
-            requestNodeUpdates(updPendingBundle.updNodeMap);
-            requestStorPoolUpdates(updPendingBundle.updStorPoolMap);
-            requestRscDfnUpdates(updPendingBundle.updRscDfnMap);
-            requestRscUpdates(updPendingBundle.updRscMap);
-            requestSnapshotUpdates(updPendingBundle.updSnapshotMap);
+            requestControllerUpdates(
+                updPendingBundle.controllerUpdate.map(StltUpdateTrackerImpl.UpdateNotification::getUuid));
+            requestNodeUpdates(extractUuids(updPendingBundle.nodeUpdates));
+            requestStorPoolUpdates(extractUuids(updPendingBundle.storPoolUpdates));
+            requestRscDfnUpdates(extractUuids(updPendingBundle.rscDfnUpdates));
+            requestRscUpdates(extractUuids(updPendingBundle.rscUpdates));
+            requestSnapshotUpdates(extractUuids(updPendingBundle.snapshotUpdates));
 
             updPendingBundle.clear();
         }
@@ -672,20 +708,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         errLog.logTrace("Dispatching resources to device handlers");
 
-        Set<ResourceName> dispatchRscSet;
+        Map<ResourceName, List<FluxSink<ApiCallRc>>> dispatchRscs;
+        List<FluxSink<ApiCallRc>> responseSinks;
         synchronized (sched)
         {
             // Add any dispatch requests that were received
             // into the dispatch set and clear the dispatch requests
-            dispatchRscSet = new TreeSet<>(pendingDispatchRscSet);
-            pendingDispatchRscSet.clear();
+            dispatchRscs = new TreeMap<>(pendingDispatchRscs);
+            pendingDispatchRscs.clear();
+            responseSinks = new ArrayList<>(pendingResponseSinks);
+            pendingResponseSinks.clear();
         }
 
         // BEGIN DEBUG
         // ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
         // END DEBUG
 
-        if (!dispatchRscSet.isEmpty())
+        if (!dispatchRscs.isEmpty())
         {
             reconfigurationLock.readLock().lock();
 
@@ -700,10 +739,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                 abortDevHndFlag = false;
                 NodeData localNode = controllerPeerConnector.getLocalNode();
-                Iterator<ResourceName> rscNameIter = dispatchRscSet.iterator();
-                while (rscNameIter.hasNext() && !abortDevHndFlag)
+
+                for (ResourceName rscName : dispatchRscs.keySet())
                 {
-                    ResourceName rscName = rscNameIter.next();
                     // Dispatch resources that were affected by changes to worker threads
                     // and to the resource's respective handler
                     ResourceDefinition rscDfn = rscDfnMap.get(rscName);
@@ -757,8 +795,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                             "' which is unknown to this satellite"
                         );
                     }
+                    if (abortDevHndFlag)
+                    {
+                        break;
+                    }
                 }
-                dispatchRscSet.clear();
 
                 if (abortDevHndFlag)
                 {
@@ -771,6 +812,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 phaseLock.await();
                 errLog.logTrace("All dispatched resource handlers finished");
 
+                respondToController(dispatchRscs, responseSinks);
+
                 // Cleanup deleted objects
                 deletedObjectsCleanup();
 
@@ -781,6 +824,36 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 transMgr.rollback();
                 deviceMgrScope.exit();
                 reconfigurationLock.readLock().unlock();
+            }
+        }
+    }
+
+    private void respondToController(
+        Map<ResourceName, List<FluxSink<ApiCallRc>>> dispatchRscs,
+        List<FluxSink<ApiCallRc>> responseSinks
+    )
+    {
+        synchronized (sched)
+        {
+            for (Entry<ResourceName, ApiCallRc> dispatchResponseEntry : dispatchResponses.entrySet())
+            {
+                ResourceName resourceName = dispatchResponseEntry.getKey();
+                ApiCallRc response = dispatchResponseEntry.getValue();
+                List<FluxSink<ApiCallRc>> sinks = dispatchRscs.get(resourceName);
+
+                if (sinks != null)
+                {
+                    for (FluxSink<ApiCallRc> sink : sinks)
+                    {
+                        sink.next(response);
+                    }
+                }
+            }
+            dispatchResponses.clear();
+
+            for (FluxSink<ApiCallRc> responseSink : responseSinks)
+            {
+                responseSink.complete();
             }
         }
     }
@@ -930,9 +1003,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestControllerUpdates(Map<NodeName, UUID> updateControllerMap)
+    private void requestControllerUpdates(Optional<UUID> updateController)
     {
-        if (!updateControllerMap.isEmpty())
+        if (updateController.isPresent())
         {
             stltUpdateRequester.requestControllerUpdate();
         }
@@ -962,9 +1035,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestRscUpdates(Map<Resource.Key, UUID> updRscMap)
+    private void requestRscUpdates(Map<Resource.Key, UUID> rscUpdates)
     {
-        for (Entry<Resource.Key, UUID> entry : updRscMap.entrySet())
+        for (Entry<Resource.Key, UUID> entry : rscUpdates.entrySet())
         {
             errLog.logTrace("Requesting update for resource '" + entry.getKey().getResourceName().displayValue + "'");
             stltUpdateRequester.requestRscUpdate(
@@ -975,9 +1048,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestStorPoolUpdates(Map<StorPoolName, UUID> updStorPoolMap)
+    private void requestStorPoolUpdates(Map<StorPoolName, UUID> storPoolUpdates)
     {
-        for (Entry<StorPoolName, UUID> entry : updStorPoolMap.entrySet())
+        for (Entry<StorPoolName, UUID> entry : storPoolUpdates.entrySet())
         {
             errLog.logTrace("Requesting update for storage pool '" + entry.getKey().displayValue + "'");
             stltUpdateRequester.requestStorPoolUpdate(
@@ -987,9 +1060,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestSnapshotUpdates(Map<SnapshotDefinition.Key, UUID> updSnapshotMap)
+    private void requestSnapshotUpdates(Map<SnapshotDefinition.Key, UUID> snapshotUpdates)
     {
-        for (Entry<SnapshotDefinition.Key, UUID> entry : updSnapshotMap.entrySet())
+        for (Entry<SnapshotDefinition.Key, UUID> entry : snapshotUpdates.entrySet())
         {
             errLog.logTrace("Requesting update for snapshot '" + entry.getKey().getSnapshotName().displayValue + "'" +
                 " of resource '" + entry.getKey().getResourceName().displayValue + "'");
@@ -1022,6 +1095,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     public boolean isStarted()
     {
         return runningFlag.get();
+    }
+
+    @Override
+    public void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response)
+    {
+        // Remember the response and to send combined responses after DeviceHandler instances have finished
+        synchronized (sched)
+        {
+            dispatchResponses.put(resourceName, response);
+        }
     }
 
     @Override
@@ -1189,6 +1272,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             deletedSnapshotSet.add(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()));
         }
+    }
+
+    static <K> Map<K, UUID> extractUuids(Map<K, StltUpdateTrackerImpl.UpdateNotification> map)
+    {
+        return map.entrySet().stream()
+            .collect(Collectors.toMap(
+                Entry::getKey,
+                entry -> entry.getValue().getUuid()
+            ));
     }
 
     static class DeviceHandlerInvocation implements Runnable

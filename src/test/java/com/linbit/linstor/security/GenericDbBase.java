@@ -220,6 +220,11 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @After
     public void tearDown() throws Exception
     {
+        cleanUp(true);
+    }
+
+    public void cleanUp(boolean exitScope) throws Exception
+    {
         try
         {
             for (Statement statement : statements)
@@ -239,7 +244,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         }
         finally
         {
-            testScope.exit();
+            if (exitScope)
+            {
+                testScope.exit();
+            }
         }
     }
 

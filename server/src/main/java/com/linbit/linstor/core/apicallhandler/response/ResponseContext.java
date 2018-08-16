@@ -1,12 +1,9 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
-import com.linbit.linstor.netcom.Peer;
-
 import java.util.Map;
 
 public class ResponseContext
 {
-    private final Peer peer;
     private final OperationDescription operationDescription;
     private final String objectDescription;
     private final String objectDescriptionInline;
@@ -15,7 +12,6 @@ public class ResponseContext
     private final Map<String, String> objRefs;
 
     public ResponseContext(
-        Peer peerRef,
         ApiOperation apiOperation,
         String objectDescriptionRef,
         String objectDescriptionInlineRef,
@@ -24,7 +20,6 @@ public class ResponseContext
     )
     {
         this(
-            peerRef,
             apiOperation.getDescription(),
             objectDescriptionRef,
             objectDescriptionInlineRef,
@@ -35,7 +30,6 @@ public class ResponseContext
     }
 
     public ResponseContext(
-        Peer peerRef,
         OperationDescription operationDescriptionRef,
         String objectDescriptionRef,
         String objectDescriptionInlineRef,
@@ -44,18 +38,12 @@ public class ResponseContext
         Map<String, String> objRefsRef
     )
     {
-        peer = peerRef;
         operationDescription = operationDescriptionRef;
         objectDescription = objectDescriptionRef;
         objectDescriptionInline = objectDescriptionInlineRef;
         opMask = opMaskRef;
         objMask = objMaskRef;
         objRefs = objRefsRef;
-    }
-
-    public Peer getPeer()
-    {
-        return peer;
     }
 
     public OperationDescription getOperationDescription()

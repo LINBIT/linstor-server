@@ -38,7 +38,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
@@ -114,7 +113,6 @@ class CtrlVlmDfnApiCallHandler
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
         ResponseContext context = new ResponseContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             "Volume definitions for " + getRscDfnDescriptionInline(rscNameStr),
             "volume definitions for " + getRscDfnDescriptionInline(rscNameStr),
@@ -196,7 +194,6 @@ class CtrlVlmDfnApiCallHandler
         );
 
         ResponseContext context = makeVlmDfnContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             rscDfn.getName().displayValue,
             volNr.value
@@ -254,7 +251,7 @@ class CtrlVlmDfnApiCallHandler
         }
         catch (Exception | ImplementationError exc)
         {
-            throw new ApiRcException(responseConverter.exceptionToResponse(exc, context), exc, true);
+            throw new ApiRcException(responseConverter.exceptionToResponse(peer.get(), context, exc), exc, true);
         }
 
         return vlmDfn;
@@ -272,7 +269,6 @@ class CtrlVlmDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeVlmDfnContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             rscName,
             vlmNr
@@ -370,7 +366,6 @@ class CtrlVlmDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeVlmDfnContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             rscName,
             vlmNr
@@ -682,7 +677,6 @@ class CtrlVlmDfnApiCallHandler
     }
 
     private static ResponseContext makeVlmDfnContext(
-        Peer peer,
         ApiOperation operation,
         String rscNameStr,
         int volumeNr
@@ -693,7 +687,6 @@ class CtrlVlmDfnApiCallHandler
         objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(volumeNr));
 
         return new ResponseContext(
-            peer,
             operation,
             getVlmDfnDescription(rscNameStr, volumeNr),
             getVlmDfnDescriptionInline(rscNameStr, volumeNr),

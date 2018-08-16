@@ -24,7 +24,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -44,16 +43,13 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
-import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlStorPoolApiCallHandler
@@ -116,7 +112,6 @@ public class CtrlStorPoolApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
-            peer.get(),
             ApiOperation.makeRegisterOperation(),
             nodeNameStr,
             storPoolNameStr
@@ -160,7 +155,6 @@ public class CtrlStorPoolApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
             storPoolNameStr
@@ -211,7 +205,6 @@ public class CtrlStorPoolApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeNameStr,
             storPoolNameStr
@@ -354,7 +347,6 @@ public class CtrlStorPoolApiCallHandler
                 for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
                 {
                     ResponseContext context = makeStorPoolContext(
-                        peer.get(),
                         ApiOperation.makeModifyOperation(),
                         peer.get().getNode().getName().displayValue,
                         freeSpacePojo.getStorPoolName()
@@ -378,7 +370,8 @@ public class CtrlStorPoolApiCallHandler
                     catch (Exception | ImplementationError exc)
                     {
                         // Add context to exception
-                        throw new ApiRcException(responseConverter.exceptionToResponse(exc, context), exc, true);
+                        throw new ApiRcException(
+                            responseConverter.exceptionToResponse(peer.get(), context, exc), exc, true);
                     }
                 }
 
@@ -386,13 +379,16 @@ public class CtrlStorPoolApiCallHandler
             }
             catch (ApiRcException exc)
             {
-                ApiCallRc.RcEntry entry = exc.getRcEntry();
-                errorReporter.reportError(
-                    exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
-                    peerAccCtx.get(),
-                    peer.get(),
-                    entry.getMessage()
-                );
+                ApiCallRc apiCallRc = exc.getApiCallRc();
+                for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
+                {
+                    errorReporter.reportError(
+                        exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
+                        peerAccCtx.get(),
+                        peer.get(),
+                        entry.getMessage()
+                    );
+                }
             }
         }
         // else: the node is deleted, thus if it still has any storpools left, those will
@@ -589,7 +585,6 @@ public class CtrlStorPoolApiCallHandler
     }
 
     private static ResponseContext makeStorPoolContext(
-        Peer peer,
         ApiOperation operation,
         String nodeNameStr,
         String storPoolNameStr
@@ -600,7 +595,6 @@ public class CtrlStorPoolApiCallHandler
         objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getStorPoolDescription(nodeNameStr, storPoolNameStr),
             getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr),

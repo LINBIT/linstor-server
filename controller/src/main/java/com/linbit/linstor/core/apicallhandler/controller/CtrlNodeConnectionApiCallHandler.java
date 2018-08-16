@@ -77,7 +77,6 @@ class CtrlNodeConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeConnectionContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             nodeName1Str,
             nodeName2Str
@@ -119,7 +118,6 @@ class CtrlNodeConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeConnectionContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeName1,
             nodeName2
@@ -169,7 +167,6 @@ class CtrlNodeConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeConnectionContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeName1Str,
             nodeName2Str
@@ -329,7 +326,6 @@ class CtrlNodeConnectionApiCallHandler
     }
 
     private static ResponseContext makeNodeConnectionContext(
-        Peer peer,
         ApiOperation operation,
         String nodeName1Str,
         String nodeName2Str
@@ -340,7 +336,6 @@ class CtrlNodeConnectionApiCallHandler
         objRefs.put(ApiConsts.KEY_2ND_NODE, nodeName2Str);
 
         return new ResponseContext(
-            peer,
             operation,
             getNodeConnectionDescription(nodeName1Str, nodeName2Str),
             getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str),

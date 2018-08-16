@@ -82,7 +82,6 @@ class CtrlVlmConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeVlmConnectionContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             nodeName1Str,
             nodeName2Str,
@@ -123,7 +122,6 @@ class CtrlVlmConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeVlmConnectionContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeName1Str,
             nodeName2Str,
@@ -177,7 +175,6 @@ class CtrlVlmConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeVlmConnectionContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeName1Str,
             nodeName2Str,
@@ -420,7 +417,6 @@ class CtrlVlmConnectionApiCallHandler
     }
 
     private static ResponseContext makeVlmConnectionContext(
-        Peer peer,
         ApiOperation operation,
         String nodeName1Str,
         String nodeName2Str,
@@ -435,7 +431,6 @@ class CtrlVlmConnectionApiCallHandler
         objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNrInt));
 
         return new ResponseContext(
-            peer,
             operation,
             getVlmConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),
             getVlmConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt),

@@ -77,7 +77,6 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
-            peer.get(),
             new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
             getSnapshotRestoreVlmDfnDescription(toRscNameStr),
             getSnapshotRestoreVlmDfnDescriptionInline(toRscNameStr),

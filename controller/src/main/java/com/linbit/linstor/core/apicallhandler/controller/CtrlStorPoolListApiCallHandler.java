@@ -18,7 +18,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.linstor.security.AccessContext;

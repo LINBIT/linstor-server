@@ -49,7 +49,6 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
@@ -138,82 +137,6 @@ public class CtrlRscApiCallHandler
         defaultStorPoolName = defaultStorPoolNameRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    public ApiCallRc createResource(
-        String nodeNameStr,
-        String rscNameStr,
-        List<String> flagList,
-        Map<String, String> rscPropsMap,
-        List<VlmApi> vlmApiList,
-        Integer nodeIdInt
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeRscContext(
-            peer.get(),
-            ApiOperation.makeRegisterOperation(),
-            nodeNameStr,
-            rscNameStr
-        );
-
-        try
-        {
-            ResourceData rsc = createResource0(
-                nodeNameStr,
-                rscNameStr,
-                flagList,
-                rscPropsMap,
-                vlmApiList,
-                nodeIdInt
-            ).extractApiCallRc(responses);
-
-            ctrlTransactionHelper.commit();
-
-            if (rsc.getVolumeCount() > 0)
-            {
-                // only notify satellite if there are volumes to deploy.
-                // otherwise a bug occurs when an empty resource is deleted
-                // the controller instantly deletes it (without marking for deletion first)
-                // but doesn't tell the satellite...
-                // the next time a resource with the same name will get a different UUID and
-                // will cause a conflict (and thus, an exception) on the satellite
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rsc));
-            }
-
-            responseConverter.addWithOp(responses, context,
-                ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc)));
-
-            Iterator<Volume> vlmIt = rsc.iterateVolumes();
-            while (vlmIt.hasNext())
-            {
-                Volume vlm = vlmIt.next();
-                int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
-
-                ApiCallRcEntry vlmCreatedRcEntry = new ApiCallRcEntry();
-                vlmCreatedRcEntry.setMessage(
-                    "Volume with number '" + vlmNr + "' on resource '" +
-                        vlm.getResourceDefinition().getName().displayValue + "' on node '" +
-                        vlm.getResource().getAssignedNode().getName().displayValue +
-                        "' successfully registered"
-                    );
-                vlmCreatedRcEntry.setDetails(
-                    "Volume UUID is: " + vlm.getUuid().toString()
-                );
-                vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
-                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
-                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
-
-                responses.addEntry(vlmCreatedRcEntry);
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
     }
 
     private void checkStorPoolLoaded(
@@ -381,7 +304,7 @@ public class CtrlRscApiCallHandler
      *
      * @return the newly created resource
      */
-    ApiCallRcWith<ResourceData> createResource0(
+    public ApiCallRcWith<ResourceData> createResourceDb(
         String nodeNameStr,
         String rscNameStr,
         List<String> flagList,
@@ -553,7 +476,6 @@ public class CtrlRscApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeRscContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
             rscNameStr
@@ -602,7 +524,6 @@ public class CtrlRscApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeRscContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeNameStr,
             rscNameStr
@@ -683,7 +604,6 @@ public class CtrlRscApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeRscContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeNameStr,
             rscNameStr
@@ -1231,7 +1151,6 @@ public class CtrlRscApiCallHandler
     }
 
     static ResponseContext makeRscContext(
-        Peer peer,
         ApiOperation operation,
         String nodeNameStr,
         String rscNameStr
@@ -1242,7 +1161,6 @@ public class CtrlRscApiCallHandler
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getRscDescription(nodeNameStr, rscNameStr),
             getRscDescriptionInline(nodeNameStr, rscNameStr),

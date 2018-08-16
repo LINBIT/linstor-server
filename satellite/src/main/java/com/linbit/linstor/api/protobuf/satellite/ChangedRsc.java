@@ -1,72 +1,73 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_CHANGED_RSC,
     description = "Called by the controller to indicate that a resource was modified"
 )
-public class ChangedRsc implements ApiCall
+@Singleton
+public class ChangedRsc implements ApiCallReactive
 {
-    private final ErrorReporter errorReporter;
     private final DeviceManager deviceManager;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
     public ChangedRsc(
-        ErrorReporter errorReporterRef,
         DeviceManager deviceManagerRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        ControllerPeerConnector controllerPeerConnectorRef,
+        ResponseSerializer responseSerializerRef
     )
     {
-        errorReporter = errorReporterRef;
         deviceManager = deviceManagerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        String rscName = null;
+        MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        String rscNameStr = rscId.getName();
+        UUID rscUuid = UUID.fromString(rscId.getUuid());
+
+        ResourceName rscName;
         try
         {
-            MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-            rscName = rscId.getName();
-            UUID rscUuid = UUID.fromString(rscId.getUuid());
-
-            deviceManager.getUpdateTracker().updateResource(
-                rscUuid,
-                new ResourceName(rscName),
-                controllerPeerConnector.getLocalNodeName()
-            );
+            rscName = new ResourceName(rscNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Controller sent an illegal resource name: " + rscName + ".",
-                    invalidNameExc
-                )
+            throw new ImplementationError(
+                "Controller sent an illegal resource name: " + rscNameStr + ".",
+                invalidNameExc
             );
         }
+
+        return deviceManager.getUpdateTracker()
+            .updateResource(
+                rscUuid,
+                rscName,
+                controllerPeerConnector.getLocalNodeName()
+            )
+            .transform(responseSerializer::transform);
     }
 }

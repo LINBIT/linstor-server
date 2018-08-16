@@ -1,9 +1,12 @@
 package com.linbit.linstor.core;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
@@ -11,6 +14,10 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.api.ApiCallRc;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Scheduler;
 
 /**
  * Tracks update notifications received from a controller
@@ -22,76 +29,65 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     private final Object sched;
 
     private final UpdateBundle cachedUpdates;
+    private final Scheduler scheduler;
 
-    StltUpdateTrackerImpl(Object schedRef)
+    StltUpdateTrackerImpl(Object schedRef, Scheduler schedulerRef)
     {
         sched = schedRef;
+        scheduler = schedulerRef;
         cachedUpdates = new UpdateBundle();
     }
 
     @Override
-    public void updateController(UUID nodeUuid, NodeName name)
+    public Flux<ApiCallRc> updateController(UUID nodeUuid, NodeName name)
     {
-        synchronized (sched)
-        {
-            cachedUpdates.updControllerMap.put(name, nodeUuid);
-            sched.notify();
-        }
+        return update(nodeUuid,
+            updateNotification -> cachedUpdates.controllerUpdate = Optional.of(updateNotification));
     }
 
     @Override
-    public void updateNode(UUID nodeUuid, NodeName name)
+    public Flux<ApiCallRc> updateNode(UUID nodeUuid, NodeName name)
     {
-        synchronized (sched)
-        {
-            cachedUpdates.updNodeMap.put(name, nodeUuid);
-            sched.notify();
-        }
+        return update(nodeUuid,
+            updateNotification -> cachedUpdates.nodeUpdates.put(name, updateNotification));
     }
 
     @Override
-    public void updateResourceDfn(UUID rscDfnUuid, ResourceName name)
+    public Flux<ApiCallRc> updateResourceDfn(UUID rscDfnUuid, ResourceName name)
     {
-        synchronized (sched)
-        {
-            cachedUpdates.updRscDfnMap.put(name, rscDfnUuid);
-            sched.notify();
-        }
+        return update(rscDfnUuid,
+            updateNotification -> cachedUpdates.rscDfnUpdates.put(name, updateNotification));
     }
 
     @Override
-    public void updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName)
+    public Flux<ApiCallRc> updateResource(
+        UUID rscUuid,
+        ResourceName resourceName,
+        NodeName nodeName
+    )
     {
-        synchronized (sched)
-        {
-            Resource.Key resourceKey = new Resource.Key(resourceName, nodeName);
-            cachedUpdates.updRscMap.put(resourceKey, rscUuid);
-            sched.notify();
-        }
+        Resource.Key resourceKey = new Resource.Key(resourceName, nodeName);
+        return update(rscUuid,
+            updateNotification -> cachedUpdates.rscUpdates.put(resourceKey, updateNotification));
     }
 
     @Override
-    public void updateStorPool(UUID storPoolUuid, StorPoolName storPoolName)
+    public Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName)
     {
-        synchronized (sched)
-        {
-            cachedUpdates.updStorPoolMap.put(storPoolName, storPoolUuid);
-            sched.notify();
-        }
+        return update(storPoolUuid,
+            updateNotification -> cachedUpdates.storPoolUpdates.put(storPoolName, updateNotification));
     }
 
     @Override
-    public void updateSnapshot(
+    public Flux<ApiCallRc> updateSnapshot(
         UUID snapshotUuid,
         ResourceName resourceName,
         SnapshotName snapshotName
     )
     {
-        synchronized (sched)
-        {
-            cachedUpdates.updSnapshotMap.put(new SnapshotDefinition.Key(resourceName, snapshotName), snapshotUuid);
-            sched.notify();
-        }
+        SnapshotDefinition.Key snapshotKey = new SnapshotDefinition.Key(resourceName, snapshotName);
+        return update(snapshotUuid,
+            updateNotification -> cachedUpdates.snapshotUpdates.put(snapshotKey, updateNotification));
     }
 
     void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean condFlag, boolean block)
@@ -132,17 +128,62 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         cachedUpdates.clear();
     }
 
+    private Flux<ApiCallRc> update(
+        UUID uuid,
+        Consumer<UpdateNotification> updateSetter
+    )
+    {
+        return Flux
+            .<ApiCallRc>create(fluxSink ->
+                {
+                    synchronized (sched)
+                    {
+                        updateSetter.accept(new UpdateNotification(uuid, fluxSink));
+                        sched.notify();
+                    }
+                }
+            )
+            // Handle dispatch responses asynchronously on the main thread pool
+            .publishOn(scheduler);
+    }
+
+    static class UpdateNotification
+    {
+        private final UUID uuid;
+
+        private final FluxSink<ApiCallRc> responseSink;
+
+        UpdateNotification(
+            UUID uuidRef,
+            FluxSink<ApiCallRc> responseSinkRef
+        )
+        {
+            uuid = uuidRef;
+            responseSink = responseSinkRef;
+        }
+
+        public UUID getUuid()
+        {
+            return uuid;
+        }
+
+        public FluxSink<ApiCallRc> getResponseSink()
+        {
+            return responseSink;
+        }
+    }
+
     /**
      * Groups update notifications and check notifications
      */
     static class UpdateBundle
     {
-        final Map<NodeName, UUID> updControllerMap = new TreeMap<>();
-        final Map<NodeName, UUID> updNodeMap = new TreeMap<>();
-        final Map<ResourceName, UUID> updRscDfnMap = new TreeMap<>();
-        final Map<Resource.Key, UUID> updRscMap = new TreeMap<>();
-        final Map<StorPoolName, UUID> updStorPoolMap = new TreeMap<>();
-        final Map<SnapshotDefinition.Key, UUID> updSnapshotMap = new TreeMap<>();
+        Optional<UpdateNotification> controllerUpdate = Optional.empty();
+        final Map<NodeName, UpdateNotification> nodeUpdates = new TreeMap<>();
+        final Map<ResourceName, UpdateNotification> rscDfnUpdates = new TreeMap<>();
+        final Map<Resource.Key, UpdateNotification> rscUpdates = new TreeMap<>();
+        final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
+        final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
 
         /**
          * Copies the update notifications, but not the check notifications, to another UpdateBundle
@@ -154,12 +195,12 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         {
             other.clear();
 
-            other.updControllerMap.putAll(updControllerMap);
-            other.updNodeMap.putAll(updNodeMap);
-            other.updRscDfnMap.putAll(updRscDfnMap);
-            other.updRscMap.putAll(updRscMap);
-            other.updStorPoolMap.putAll(updStorPoolMap);
-            other.updSnapshotMap.putAll(updSnapshotMap);
+            other.controllerUpdate = controllerUpdate;
+            other.nodeUpdates.putAll(nodeUpdates);
+            other.rscDfnUpdates.putAll(rscDfnUpdates);
+            other.rscUpdates.putAll(rscUpdates);
+            other.storPoolUpdates.putAll(storPoolUpdates);
+            other.snapshotUpdates.putAll(snapshotUpdates);
         }
 
         /**
@@ -169,8 +210,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
          */
         boolean isEmpty()
         {
-            return updControllerMap.isEmpty() && updNodeMap.isEmpty() && updRscDfnMap.isEmpty() &&
-                updRscMap.isEmpty() && updStorPoolMap.isEmpty() && updSnapshotMap.isEmpty();
+            return !controllerUpdate.isPresent() && nodeUpdates.isEmpty() && rscDfnUpdates.isEmpty() &&
+                rscUpdates.isEmpty() && storPoolUpdates.isEmpty() && snapshotUpdates.isEmpty();
         }
 
         /**
@@ -179,12 +220,13 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         void clear()
         {
             // Clear the collected updates
-            updControllerMap.clear();
-            updNodeMap.clear();
-            updRscDfnMap.clear();
-            updRscMap.clear();
-            updStorPoolMap.clear();
-            updSnapshotMap.clear();
+            controllerUpdate = Optional.empty();
+            nodeUpdates.clear();
+            rscDfnUpdates.clear();
+            rscUpdates.clear();
+            storPoolUpdates.clear();
+            snapshotUpdates.clear();
         }
     }
+
 }

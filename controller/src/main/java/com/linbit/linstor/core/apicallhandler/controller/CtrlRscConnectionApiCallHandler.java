@@ -81,7 +81,6 @@ class CtrlRscConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeResourceConnectionContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             nodeName1Str,
             nodeName2Str,
@@ -120,7 +119,6 @@ class CtrlRscConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeResourceConnectionContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeName1,
             nodeName2,
@@ -176,7 +174,6 @@ class CtrlRscConnectionApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeResourceConnectionContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeName1Str,
             nodeName2Str,
@@ -388,7 +385,6 @@ class CtrlRscConnectionApiCallHandler
     }
 
     private static ResponseContext makeResourceConnectionContext(
-        Peer peer,
         ApiOperation operation,
         String nodeName1Str,
         String nodeName2Str,
@@ -401,7 +397,6 @@ class CtrlRscConnectionApiCallHandler
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getResourceConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr),
             getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),

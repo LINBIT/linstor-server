@@ -129,7 +129,6 @@ public class CtrlRscDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeResourceDefinitionContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             rscNameStr
         );
@@ -189,7 +188,6 @@ public class CtrlRscDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeResourceDefinitionContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             rscNameStr
         );
@@ -258,7 +256,6 @@ public class CtrlRscDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeResourceDefinitionContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             rscNameStr
         );
@@ -687,7 +684,6 @@ public class CtrlRscDfnApiCallHandler
     }
 
     private static ResponseContext makeResourceDefinitionContext(
-        Peer peer,
         ApiOperation operation,
         String rscNameStr
     )
@@ -696,7 +692,6 @@ public class CtrlRscDfnApiCallHandler
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getRscDfnDescription(rscNameStr),
             getRscDfnDescriptionInline(rscNameStr),

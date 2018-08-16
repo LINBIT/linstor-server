@@ -1,4 +1,4 @@
-package com.linbit.linstor.proto;
+package com.linbit.linstor.core.apicallhandler;
 
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -6,7 +6,6 @@ import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -31,20 +30,17 @@ public class ScopeRunner
     private final ErrorReporter errorLog;
     private final Provider<TransactionMgr> trnActProvider;
     private final LinStorScope apiCallScope;
-    private final CommonSerializer commonSerializer;
 
     @Inject
     public ScopeRunner(
         ErrorReporter errorLogRef,
         @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef,
-        LinStorScope apiCallScopeRef,
-        CommonSerializer commonSerializerRef
+        LinStorScope apiCallScopeRef
     )
     {
         errorLog = errorLogRef;
         trnActProvider = trnActProviderRef;
         apiCallScope = apiCallScopeRef;
-        commonSerializer = commonSerializerRef;
     }
 
     public <T> Flux<T> callInTransactionalScope(LockGuard lockGuard, Callable<T> callable)
@@ -90,7 +86,6 @@ public class ScopeRunner
     {
         String apiCallName = subscriberContext.get(ApiModule.API_CALL_NAME);
         Peer peer = subscriberContext.get(Peer.class);
-        AccessContext peerAccCtx = subscriberContext.get(AccessContext.class);
         Long apiCallId = subscriberContext.get(ApiModule.API_CALL_ID);
 
         Flux<T> ret;
@@ -103,7 +98,7 @@ public class ScopeRunner
         lockGuard.lock();
         try
         {
-            apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), peerAccCtx);
+            apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), peer.getAccessContext());
             apiCallScope.seed(Peer.class, peer);
             apiCallScope.seed(Key.get(Long.class, Names.named(ApiModule.API_CALL_ID)), apiCallId);
 

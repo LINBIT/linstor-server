@@ -268,7 +268,7 @@ class DrbdDeviceHandler implements DeviceHandler
         );
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        ApiCallRcImpl apiCallDelRc = null;
+        boolean resourceDeleted = false;
         try
         {
             Node localNode = controllerPeerConnector.getLocalNode();
@@ -292,12 +292,13 @@ class DrbdDeviceHandler implements DeviceHandler
                     rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
                 {
                     deleteResource(rsc, rscDfn, localNode, rscState);
-                    apiCallDelRc = makeDeleteRc(rsc, rscName, localNodeName);
+                    apiCallRc.addEntries(makeDeleteRc(rsc, rscName, localNodeName));
+                    resourceDeleted = true;
                 }
                 else
                 {
                     createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
-                    apiCallRc.addEntry("Resource deployed", ApiConsts.CREATED);
+                    apiCallRc.addEntry("Resource '" + rscName + "' deployed", ApiConsts.CREATED);
                 }
             }
 
@@ -360,17 +361,15 @@ class DrbdDeviceHandler implements DeviceHandler
             );
         }
 
+        deviceManagerProvider.get().notifyResourceDispatchResponse(rscName, apiCallRc);
+
         try
         {
             ObjectIdentifier objectIdentifier = ObjectIdentifier.resourceDefinition(rscName);
-            if (apiCallDelRc != null)
+            resourceDeploymentStateEvent.get().triggerEvent(objectIdentifier, apiCallRc);
+            if (resourceDeleted)
             {
-                resourceDeploymentStateEvent.get().triggerEvent(objectIdentifier, apiCallDelRc);
                 resourceDeploymentStateEvent.get().closeStream(objectIdentifier);
-            }
-            else
-            {
-                resourceDeploymentStateEvent.get().triggerEvent(objectIdentifier, apiCallRc);
             }
         }
         catch (Exception exc)

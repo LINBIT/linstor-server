@@ -7,6 +7,7 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.ApiCallRc;
 
 import java.util.Set;
 
@@ -19,6 +20,7 @@ public interface DeviceManager extends DrbdStateChange
     void rscUpdateApplied(Set<Resource.Key> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
 
+    void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
     void notifyResourceApplied(Resource rsc);
     void notifyVolumeResized(Volume vlm);
     void notifyDrbdVolumeResized(Volume vlm);

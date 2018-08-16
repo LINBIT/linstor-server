@@ -3,40 +3,32 @@ package com.linbit.linstor.core;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.List;
 
 import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.util.Modules;
-import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeRepository;
-import com.linbit.linstor.ResourceDefinitionRepository;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
-import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
@@ -50,6 +42,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import reactor.core.scheduler.Scheduler;
+import reactor.test.scheduler.VirtualTimeScheduler;
+import reactor.util.context.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -78,13 +73,19 @@ public abstract class ApiTestBase extends GenericDbBase
     @Bind @Mock
     protected NetComContainer netComContainer;
 
+    @Bind
+    protected Scheduler scheduler = VirtualTimeScheduler.create();
+
     @Inject @Named(LinStor.CONTROLLER_PROPS)
     protected Props ctrlConf;
 
     @Inject @Named(LinStor.SATELLITE_PROPS)
     protected Props stltConf;
 
-    @Inject Provider<TransactionMgr> transMgrProvider;
+    @Inject
+    protected Provider<TransactionMgr> transMgrProvider;
+
+    protected Context subscriberContext;
 
     @Before
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
@@ -95,6 +96,12 @@ public abstract class ApiTestBase extends GenericDbBase
             new CtrlApiCallHandlerModule(),
             new ConfigModule()
         ));
+
+        subscriberContext = Context.of(
+            ApiModule.API_CALL_NAME, "TestApiCallName",
+            Peer.class, mockPeer,
+            ApiModule.API_CALL_ID, 1L
+        );
 
         testScope.enter();
 

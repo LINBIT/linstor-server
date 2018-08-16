@@ -7,12 +7,13 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.utils.StringUtils;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.StringJoiner;
-
-import static com.linbit.linstor.api.ApiCallRcImpl.singletonApiCallRc;
 
 @Singleton
 public class ResponseConverter
@@ -54,21 +55,34 @@ public class ResponseConverter
      */
     public ApiCallRcImpl reportException(Peer peer, ResponseContext context, Throwable exc)
     {
-        ApiCallRc.RcEntry entry = exceptionToResponse(exc, context);
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        apiCallRc.addEntries(exceptionToResponse(peer, context, exc));
 
-        errorReporter.reportError(
-            exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
-            peer.getAccessContext(),
-            peer,
-            entry.getMessage()
-        );
+        for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
+        {
+            errorReporter.reportError(
+                exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
+                peer.getAccessContext(),
+                peer,
+                entry.getMessage()
+            );
+        }
 
-        return singletonApiCallRc(entry);
+        return apiCallRc;
     }
 
-    public ApiCallRc.RcEntry exceptionToResponse(Throwable exc, ResponseContext context)
+    public Flux<ApiCallRc> reportingExceptions(ResponseContext context, Publisher<ApiCallRc> responses)
     {
-        ApiCallRc.RcEntry entry;
+        return Mono.subscriberContext()
+            .flatMapMany(subscriberContext ->
+                Flux.from(responses)
+                    .onErrorResume(exc -> Flux.just(reportException(subscriberContext.get(Peer.class), context, exc)))
+            );
+    }
+
+    public ApiCallRc exceptionToResponse(Peer peer, ResponseContext context, Throwable exc)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         if (exc instanceof ApiRcException)
         {
@@ -76,57 +90,63 @@ public class ResponseConverter
 
             if (apiRcException.hasContext())
             {
-                entry = apiRcException.getRcEntry();
+                apiCallRc.addEntries(apiRcException.getApiCallRc());
             }
             else
             {
-                ApiCallRc.RcEntry sourceEntry = apiRcException.getRcEntry();
+                ApiCallRc sourceApiCallRc = apiRcException.getApiCallRc();
 
-                StringJoiner causeJoiner = new StringJoiner("\n");
-
-                String sourceCause = sourceEntry.getCause();
-                if (sourceCause != null)
+                for (ApiCallRc.RcEntry sourceEntry : sourceApiCallRc.getEntries())
                 {
-                    causeJoiner.add(sourceCause);
-                }
+                    StringJoiner causeJoiner = new StringJoiner("\n");
 
-                Throwable excCause = exc.getCause();
-                if (excCause != null)
-                {
-                    causeJoiner.add(excCause.getMessage());
-                }
+                    String sourceCause = sourceEntry.getCause();
+                    if (sourceCause != null)
+                    {
+                        causeJoiner.add(sourceCause);
+                    }
 
-                entry = ApiCallRcImpl
-                    .entryBuilder(sourceEntry.getReturnCode(), sourceEntry.getMessage())
-                    .setCause(causeJoiner.toString())
-                    .setCorrection(sourceEntry.getCorrection())
-                    .setDetails(sourceEntry.getDetails())
-                    .putAllObjRefs(sourceEntry.getObjRefs())
-                    .build();
+                    Throwable excCause = exc.getCause();
+                    if (excCause != null)
+                    {
+                        causeJoiner.add(excCause.getMessage());
+                    }
+
+                    apiCallRc.addEntry(ApiCallRcImpl
+                        .entryBuilder(sourceEntry.getReturnCode(), sourceEntry.getMessage())
+                        .setCause(causeJoiner.toString())
+                        .setCorrection(sourceEntry.getCorrection())
+                        .setDetails(sourceEntry.getDetails())
+                        .putAllObjRefs(sourceEntry.getObjRefs())
+                        .build()
+                    );
+                }
             }
         }
         else if (exc instanceof ApiAccessDeniedException)
         {
             ApiAccessDeniedException acExc = (ApiAccessDeniedException) exc;
-            entry = ApiCallRcImpl
+            apiCallRc.addEntry(ApiCallRcImpl
                 .entryBuilder(
                     acExc.getRetCode(),
-                    ResponseUtils.getAccDeniedMsg(context.getPeer().getAccessContext(), acExc.getAction())
+                    ResponseUtils.getAccDeniedMsg(peer.getAccessContext(), acExc.getAction())
                 )
                 .setCause(acExc.getCause().getMessage())
-                .build();
+                .build()
+            );
         }
         else if (exc instanceof ApiSQLException)
         {
             ApiSQLException sqlExc = (ApiSQLException) exc;
-            entry = ApiCallRcImpl
+            apiCallRc.addEntry(ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_SQL,
                     ResponseUtils.getSqlMsg(
                         context.getOperationDescription().getProgressive() + " " + context.getObjectDescriptionInline())
                 )
                 .setCause(sqlExc.getCause().getMessage())
-                .build();
+                .build()
+            );
         }
         else
         {
@@ -143,26 +163,17 @@ public class ResponseConverter
                 retCode = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
 
-            entry = ApiCallRcImpl
+            apiCallRc.addEntry(ApiCallRcImpl
                 .entryBuilder(
                     retCode,
                     StringUtils.firstLetterCaps(context.getOperationDescription().getNoun()) + " of " +
                         context.getObjectDescriptionInline() + " failed due to an " + errorType + "."
                 )
-                .build();
+                .build()
+            );
         }
 
-        return addContext(entry, context, true);
-    }
-
-    public ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
-    {
-        ApiCallRcImpl contextualResponses = new ApiCallRcImpl();
-        for (ApiCallRc.RcEntry entry : responses.getEntries())
-        {
-            contextualResponses.addEntry(addContext(entry, context, appendDetail));
-        }
-        return contextualResponses;
+        return addContextAll(apiCallRc, context, true);
     }
 
     public ApiCallRc.RcEntry addContext(ApiCallRc.RcEntry sourceEntry, ResponseContext context, boolean appendDetail)
@@ -189,5 +200,15 @@ public class ResponseConverter
             .putAllObjRefs(sourceEntry.getObjRefs())
             .putAllObjRefs(context.getObjRefs())
             .build();
+    }
+
+    private ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
+    {
+        ApiCallRcImpl contextualResponses = new ApiCallRcImpl();
+        for (ApiCallRc.RcEntry entry : responses.getEntries())
+        {
+            contextualResponses.addEntry(addContext(entry, context, appendDetail));
+        }
+        return contextualResponses;
     }
 }

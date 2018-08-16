@@ -1,16 +1,17 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -19,44 +20,47 @@ import java.util.UUID;
     name = InternalApiConsts.API_CHANGED_NODE,
     description = "Called by the controller to indicate that a node was modified"
 )
-public class ChangedNode implements ApiCall
+public class ChangedNode implements ApiCallReactive
 {
-    private final ErrorReporter errorReporter;
     private final DeviceManager deviceManager;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public ChangedNode(ErrorReporter errorReporterRef, DeviceManager deviceManagerRef)
+    public ChangedNode(
+        DeviceManager deviceManagerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        errorReporter = errorReporterRef;
         deviceManager = deviceManagerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        String nodeName = null;
+        MsgIntObjectId nodeId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        String nodeNameStr = nodeId.getName();
+        UUID nodeUuid = UUID.fromString(nodeId.getUuid());
+
+        NodeName nodeName;
         try
         {
-            MsgIntObjectId nodeId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-            nodeName = nodeId.getName();
-            UUID nodeUuid = UUID.fromString(nodeId.getUuid());
-
-            deviceManager.getUpdateTracker().updateNode(
-                nodeUuid,
-                new NodeName(nodeName)
-            );
+            nodeName = new NodeName(nodeNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Controller sent an illegal node name: " + nodeName + ".",
-                    invalidNameExc
-                )
+            throw new ImplementationError(
+                "Controller sent an illegal node name: " + nodeNameStr + ".",
+                invalidNameExc
             );
         }
+
+        return deviceManager.getUpdateTracker()
+            .updateNode(
+                nodeUuid,
+                nodeName
+            )
+            .transform(responseSerializer::transform);
     }
-
-
 }

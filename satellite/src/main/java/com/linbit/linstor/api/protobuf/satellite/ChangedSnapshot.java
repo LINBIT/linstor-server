@@ -5,12 +5,12 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -21,50 +21,52 @@ import java.util.UUID;
     name = InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT,
     description = "Called by the controller to indicate that a snapshot was modified"
 )
-public class ChangedSnapshot implements ApiCall
+public class ChangedSnapshot implements ApiCallReactive
 {
-    private final ErrorReporter errorReporter;
     private final DeviceManager deviceManager;
-    private final ControllerPeerConnector controllerPeerConnector;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
     public ChangedSnapshot(
-        ErrorReporter errorReporterRef,
         DeviceManager deviceManagerRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        ResponseSerializer responseSerializerRef
     )
     {
-        errorReporter = errorReporterRef;
         deviceManager = deviceManagerRef;
-        controllerPeerConnector = controllerPeerConnectorRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
+        MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        MsgIntObjectId snapshotId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        String rscNameStr = rscId.getName();
+        UUID snapshotUuid = UUID.fromString(snapshotId.getUuid());
+        String snapshotNameStr = snapshotId.getName();
+
+        ResourceName rscName;
+        SnapshotName snapshotName;
         try
         {
-            MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-            MsgIntObjectId snapshotId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-            String rscName = rscId.getName();
-            UUID snapshotUuid = UUID.fromString(snapshotId.getUuid());
-            String snapshotName = snapshotId.getName();
-
-            deviceManager.getUpdateTracker().updateSnapshot(
-                snapshotUuid,
-                new ResourceName(rscName),
-                new SnapshotName(snapshotName)
-            );
+            rscName = new ResourceName(rscNameStr);
+            snapshotName = new SnapshotName(snapshotNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Controller sent an illegal resource/snapshot name: " + invalidNameExc.invalidName + ".",
-                    invalidNameExc
-                )
+            throw new ImplementationError(
+                "Controller sent an illegal resource/snapshot name: " + invalidNameExc.invalidName + ".",
+                invalidNameExc
             );
         }
+
+        return deviceManager.getUpdateTracker()
+            .updateSnapshot(
+                snapshotUuid,
+                rscName,
+                snapshotName
+            )
+            .transform(responseSerializer::transform);
     }
 }

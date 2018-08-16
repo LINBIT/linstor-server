@@ -19,7 +19,6 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
@@ -35,8 +34,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ControllerSecurityModule;
-import com.linbit.linstor.security.ObjectProtection;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -110,7 +107,6 @@ class CtrlStorPoolDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolDfnContext(
-            peer.get(),
             ApiOperation.makeCreateOperation(),
             storPoolNameStr
         );
@@ -145,7 +141,6 @@ class CtrlStorPoolDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolDfnContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             storPoolNameStr
         );
@@ -192,7 +187,6 @@ class CtrlStorPoolDfnApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolDfnContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             storPoolNameStr
         );
@@ -480,7 +474,6 @@ class CtrlStorPoolDfnApiCallHandler
     }
 
     private static ResponseContext makeStorPoolDfnContext(
-        Peer peer,
         ApiOperation operation,
         String storPoolNameStr
     )
@@ -489,7 +482,6 @@ class CtrlStorPoolDfnApiCallHandler
         objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getStorPoolDfnDescription(storPoolNameStr),
             getStorPoolDfnDescriptionInline(storPoolNameStr),

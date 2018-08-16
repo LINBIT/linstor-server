@@ -459,56 +459,6 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates a new {@link Resource}
-     *
-     * @param rscPropsMap optional
-     * @param vlmApiDataList optional
-     * @param nodeName required
-     * @param rscName required
-     * @param nodeIdInt
-     * @return
-     */
-    public ApiCallRc createResource(
-        String nodeName,
-        String rscName,
-        List<String> flagList,
-        Map<String, String> rscPropsMapRef,
-        List<Volume.VlmApi> vlmApiDataListRef,
-        Integer nodeIdInt
-    )
-    {
-        ApiCallRc apiCallRc;
-        Map<String, String> rscPropsMap = rscPropsMapRef;
-        List<Volume.VlmApi> vlmApiDataList = vlmApiDataListRef;
-        if (rscPropsMap == null)
-        {
-            rscPropsMap = Collections.emptyMap();
-        }
-        if (vlmApiDataList == null)
-        {
-            vlmApiDataList = Collections.emptyList();
-        }
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = rscApiCallHandler.createResource(
-                nodeName,
-                rscName,
-                flagList,
-                rscPropsMap,
-                vlmApiDataList,
-                nodeIdInt
-            );
-        }
-
-        return apiCallRc;
-    }
-
-    /**
      * Modifies an existing {@link Resource}
      *
      * @param rscUuid optional, if given checked against persisted UUID

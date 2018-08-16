@@ -35,8 +35,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
-import javax.inject.Provider;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,8 +66,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private static final int MINOR_NR_MIN = 1000;
     private static final AtomicInteger MINOR_GEN = new AtomicInteger(MINOR_NR_MIN);
 
-    @Inject private Provider<CtrlRscAutoPlaceApiCallHandler> rscAutoPlaceApiCallHandlerProvider;
-    @Inject private Provider<CtrlRscApiCallHandler> rscApiCallHandlerProvider;
+    @Inject private CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandler;
+    @Inject private CtrlRscApiCallHandler ctrlRscApiCallHandler;
 
     @Mock
     protected Peer mockSatellite;
@@ -864,7 +862,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return rscAutoPlaceApiCallHandlerProvider.get().autoPlace(
+            return rscAutoPlaceApiCallHandler.autoPlace(
                 rscNameStr,
                 new AutoSelectFilterApi()
                 {
@@ -954,7 +952,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, storPool);
             for (String stltNameStr : stltNameStrs)
             {
-                rscApiCallHandlerProvider.get().createResource(
+                ctrlRscApiCallHandler.createResourceDb(
                     stltNameStr,
                     rscNameStrRef,
                     Collections.emptyList(),

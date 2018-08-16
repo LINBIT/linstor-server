@@ -98,7 +98,6 @@ public class CtrlRscAutoPlaceApiCallHandler
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
         ResponseContext context = new ResponseContext(
-            peer.get(),
             ApiOperation.makeRegisterOperation(),
             getObjectDescription(rscNameStr),
             getObjectDescriptionInline(rscNameStr),
@@ -216,7 +215,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 List<ResourceData> deployedResources = new ArrayList<>();
                 for (Node node : bestCandidate.nodes)
                 {
-                    ResourceData rsc = rscApiCallHandler.createResource0(
+                    ResourceData rsc = rscApiCallHandler.createResourceDb(
                         node.getName().displayValue,
                         rscNameStr,
                         Collections.emptyList(),
@@ -252,7 +251,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     for (Node disklessNode : disklessNodeList)
                     {
                         deployedResources.add(
-                            rscApiCallHandler.createResource0(
+                            rscApiCallHandler.createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
                                 flagList,

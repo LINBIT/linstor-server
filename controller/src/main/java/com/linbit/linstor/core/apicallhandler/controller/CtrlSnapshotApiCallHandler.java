@@ -136,7 +136,6 @@ public class CtrlSnapshotApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeSnapshotContext(
-            peer.get(),
             ApiOperation.makeRegisterOperation(),
             nodeNameStrs,
             rscNameStr,
@@ -280,7 +279,6 @@ public class CtrlSnapshotApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeSnapshotContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             Collections.emptyList(),
             rscNameStr,
@@ -700,7 +698,6 @@ public class CtrlSnapshotApiCallHandler
     }
 
     private static ResponseContext makeSnapshotContext(
-        Peer peer,
         ApiOperation operation,
         List<String> nodeNameStrs,
         String rscNameStr,
@@ -712,7 +709,6 @@ public class CtrlSnapshotApiCallHandler
         objRefs.put(ApiConsts.KEY_SNAPSHOT, snapshotNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getSnapshotDescription(nodeNameStrs, rscNameStr, snapshotNameStr),
             getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr),

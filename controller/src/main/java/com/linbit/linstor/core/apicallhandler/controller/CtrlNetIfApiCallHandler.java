@@ -86,7 +86,6 @@ class CtrlNetIfApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNetIfContext(
-            peer.get(),
             ApiOperation.makeRegisterOperation(),
             nodeNameStr,
             netIfNameStr
@@ -136,7 +135,6 @@ class CtrlNetIfApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNetIfContext(
-            peer.get(),
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
             netIfNameStr
@@ -227,7 +225,6 @@ class CtrlNetIfApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNetIfContext(
-            peer.get(),
             ApiOperation.makeDeleteOperation(),
             nodeNameStr,
             netIfNameStr
@@ -484,7 +481,6 @@ class CtrlNetIfApiCallHandler
     }
 
     private ResponseContext makeNetIfContext(
-        Peer peer,
         ApiOperation operation,
         String nodeNameStr,
         String netIfNameStr
@@ -494,7 +490,6 @@ class CtrlNetIfApiCallHandler
         objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
 
         return new ResponseContext(
-            peer,
             operation,
             getNetIfDescription(nodeNameStr, netIfNameStr),
             getNetIfDescriptionInline(nodeNameStr, netIfNameStr),
