@@ -30,7 +30,7 @@ public class LinstorParsingUtils
         catch (InvalidNameException invalidNameExc)
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_NODE_NAME, "The given node name '%s' is invalid."
+                ApiConsts.FAIL_INVLD_NODE_NAME, "The given node name '" + nodeNameStr + "' is invalid."
             ), invalidNameExc);
         }
         return nodeName;
@@ -130,7 +130,7 @@ public class LinstorParsingUtils
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_RSC_NAME,
-                "The specified resource name '%s' is invalid."
+                "The specified resource name '" + rscNameStr + "' is invalid."
             ), invalidNameExc);
         }
         return resourceName;
@@ -179,7 +179,7 @@ public class LinstorParsingUtils
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                "The given storage pool name '%s' is invalid."
+                "The given storage pool name '" + storPoolNameStr + "' is invalid."
             ), invalidNameExc);
         }
         return storPoolName;
@@ -200,7 +200,7 @@ public class LinstorParsingUtils
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_SNAPSHOT_NAME,
-                "The given snapshot name '%s' is invalid."
+                "The given snapshot name '" + snapshotNameStr + "' is invalid."
             ), invalidNameExc);
         }
         return snapshotName;

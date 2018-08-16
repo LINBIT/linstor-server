@@ -14,20 +14,18 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.event.EventStreamClosedException;
+import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +47,6 @@ public class CtrlRscCrtApiCallHandler
     private final ResponseConverter responseConverter;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final Provider<Peer> peer;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -60,8 +57,7 @@ public class CtrlRscCrtApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        Provider<Peer> peerRef
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -73,7 +69,6 @@ public class CtrlRscCrtApiCallHandler
         responseConverter = responseConverterRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
-        peer = peerRef;
     }
 
     public Flux<ApiCallRc> createResource(
@@ -123,9 +118,6 @@ public class CtrlRscCrtApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        NodeName nodeName = new NodeName(nodeNameStr);
-        ResourceName rscName = new ResourceName(rscNameStr);
-
         ResourceData rsc = ctrlRscApiCallHandler.createResourceDb(
             nodeNameStr,
             rscNameStr,
@@ -147,6 +139,9 @@ public class CtrlRscCrtApiCallHandler
 
         if (rsc.getVolumeCount() > 0)
         {
+            NodeName nodeName = rsc.getAssignedNode().getName();
+            ResourceName rscName = rsc.getDefinition().getName();
+
             // Only notify satellite if there are volumes to deploy.
             // This allows us to delete resources without volumes without notifying the satellites.
             satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc);
