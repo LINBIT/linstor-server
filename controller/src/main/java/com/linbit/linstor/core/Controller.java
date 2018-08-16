@@ -77,7 +77,7 @@ public final class Controller
 
     private static final String PROPSCON_KEY_NETCOM = "netcom";
 
-    public static final int API_VERSION = 1;
+    public static final int API_VERSION = 2;
     public static final int API_MIN_VERSION = API_VERSION;
 
     // Error & exception logging facility
