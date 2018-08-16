@@ -4,7 +4,6 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'application'
-apply plugin: 'nebula.ospackage'
 
 sourceCompatibility = 1.8
 
@@ -22,8 +21,6 @@ buildscript {
     dependencies {
         if (gradle.startParameter.isOffline()) {
             classpath fileTree(dir: "$projectDir/libs/plugins")
-        } else {
-            classpath "com.netflix.nebula:gradle-ospackage-plugin:4.9.3"
         }
     }
 }
@@ -458,75 +455,6 @@ static void resolveConfiguration(configuration) {
     if (!nonResolveableConfigurations.contains(configuration.getName())) {
         configuration.resolve()
     }
-}
-
-/////////////////////////// Packaging ///////////////////////////
-ospackage {
-    packageName 'linstor-server'
-    release '1'
-    os = LINUX
-    user 'root'
-    packager 'LINBIT HA-Solutions GmbH <drbd-user@lists.linbit.com>'
-
-    requires('drbd-utils', '9.2.0', GREATER | EQUAL)
-
-    postInstall file('scripts/postinstall.sh')
-
-    from('scripts/linstor-controller.service') {
-        into '/lib/systemd/system'
-        fileMode 0644
-    }
-    from('scripts/linstor-satellite.service') {
-        into '/lib/systemd/system'
-        fileMode 0644
-    }
-
-    into '/usr/share/linstor-server'
-    from(jar.outputs.files) {
-        into 'lib'
-    }
-    from(configurations.runtime) {
-        into 'lib'
-    }
-    from(logbackConfig) {
-        into 'lib/conf'
-    }
-    from(ControllerStartup) {
-        into 'bin'
-        fileMode 0550
-    }
-    from(SatelliteStartup) {
-        into 'bin'
-        fileMode 0550
-    }
-    from(LinstorConfigStartup) {
-        into 'bin'
-        fileMode 0550
-    }
-}
-
-// we might even split these to generate separate controller/satellite packages
-buildRpm {
-    requires('jre-headless', "1.8.0", GREATER | EQUAL)
-    requires('lvm2')
-
-    from('scripts/firewalld/drbd.xml') {
-        into '/usr/lib/firewalld/services'
-        fileMode 0644
-    }
-    from('scripts/firewalld/linstor-controller.xml') {
-        into '/usr/lib/firewalld/services'
-        fileMode 0644
-    }
-    from('scripts/firewalld/linstor-satellite.xml') {
-        into '/usr/lib/firewalld/services'
-        fileMode 0644
-    }
-}
-
-buildDeb {
-    requires('default-jre-headless')
-    requires('thin-provisioning-tools')
 }
 
 task deleteLibs(type: Delete) {
