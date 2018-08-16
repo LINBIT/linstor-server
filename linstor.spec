@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.2.7
+Version: 0.5.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 %define GRADLE_TASKS installdist

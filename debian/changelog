@@ -1,3 +1,88 @@
+linstor-server (0.5.0-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Collect real free space information from LVM thin pools
+  * Extract satellite updating from AbsApiCallHandler
+  * Extract name parsing utils from AbsApiCallHandler
+  * Extract response utils from AbsApiCallHandler
+  * Extract props methods from AbsApiCallHandler
+  * Delete unused classes
+  * Extract transaction commit method from AbsApiCallHandler
+  * Load directly from parent objects instead of using factories
+  * Remove AbsApiCallHandler
+  * Fix some checkstyle warnings in the controller API call handling code
+  * Simplify tracking of resources to dispatch
+  * Remove the direct dependency of WorkerPool on DbConnectionPool
+  * Remove the direct dependency of ControllerTransactionMgr on DbConnectionPool
+  * Move DB classes into the controller project
+  * Move DB migration resources into the controller project
+  * Simplify tracking of resources to dispatch
+  * Load controller and satellite props at startup
+  * Load DB objects at startup
+  * Start the DB and load security objects explicitly at startup
+  * Initialize number pools at startup
+  * Initialize diskless stor pool at startup
+  * Fix test that expected the default stor pool which is no longer used i [...]
+  * Fix starting the controller without the debug console
+  * Introduce reactor, using it to collect free space from storage pools
+  * Ensure that the satellite exits with a non-zero exit code when it fail [...]
+  * Allow the node ID to be overridden when creating resources
+  * Integrate the events system with reactor
+
+  [ Rene Peinthor ]
+  * netif: add stlt port and encryption type in protobuf messages
+  * error-report: show node name in report
+  * move RANGE_PATTERN to a better location
+  * cleanup imports
+  * move CONTROLLER_PROPS, SATELLITE_PROPS identifier to LinStor class
+  * use LinStor.SATELLITE_PROPS instead of SatelliteCoreModule.
+  * split project into server, satellite, controller sub-projects
+  * move LinstorConfig to controller project
+  * move database dependencies to controller project
+  * set same version for all subprojects
+  * copy libraries from all sub-projects
+  * gradle: fix deprecated syntax
+  * git: explicit .gitignore file
+  * gradle: enable the idea plugin
+  * unittests: generate error logs into `build/test-logs`
+  * code cleanup
+  * storpool: update satellites that their storagepool was deleted.
+  * conffilebuilder: write peer-device options to common conf
+  * conffilebuilder: allow setting of peer-device options on rscdfn
+  * conffilebuilder: fix missing option section for resource options
+  * deb: correctly distribute .jar files to packages
+  * rpm: correctly distribute jar files to packages
+  * SslTcpConnectorPeer: remove unused msgState assignment
+  * TcpConnectorPeer: use nextInMessage() method to update msg counter
+  * error-report-api: redone with reactive library
+  * update submodule ref
+  * conffilebuilder: fix duplicate disk section in connection section
+  * database: add support for mariadb/mysql
+  * allow new-peer('net') options on resource connections
+  * satellite: change linstor drbd.res file directory to /var/lib/linstor.d
+  * report total capacity for storage pools
+  * storpool: rename free_space to free_capacity
+  * linstor-config: improve error message on invalid database.cfg file
+  * bump api version to 2
+
+  [ Gabor Hernadi ]
+  * Rework netcom implemenation, fixes SSL communication
+
+  [ Roland Kammerer ]
+  * build: add drbd-utils as dependency for satellite
+  * build: add proper rpm packaging
+  * build,rpm: use more idiomatic vars
+  * diffcopy.py: add file
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 16 Aug 2018 09:58:55 +0200
+
+linstor-server (0.2.6-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * cmd-parser: don't fail if config directory doesn't exist
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 24 Jul 2018 13:43:44 +0200
+
 linstor-server (0.2.5-1) experimental; urgency=medium
 
   [ Joel Colledge ]
