@@ -39,7 +39,7 @@ tgz:
 	@if [ ! -d .git ]; then \
 		echo >&2 "Not a git directory!"; exit 1; \
 	fi; \
-	tar --transform="s,^,linstor-server-$(VERSION)/,"          \
+	tar --transform="s,^,linstor-server-$(VERSION)/,S"         \
 	   --owner=0 --group=0 -czf - -T .filelist > linstor-server-$(VERSION).tar.gz
 
 # we cannot use 'git submodule foreach':
