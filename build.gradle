@@ -462,17 +462,31 @@ task deleteLibs(type: Delete) {
         subprojects.each { prj ->
             delete "${prj.name}/libs"
         }
-        delete "${projectDir}/libs/plugins"
+        delete "${projectDir}/libs"
     }
 }
 
 task copyToLibs(dependsOn: 'deleteLibs') {
     doLast {
+        ['compile', 'runtime'].each { scope ->
+            copy {
+                from configurations.getByName(scope).files
+                into "libs/${scope}"
+            }
+        }
         subprojects.each { prj ->
             ['compile', 'runtime'].each { scope ->
-                copy {
-                    from prj.configurations.getByName(scope).files
-                    into "${prj.name}/libs/${scope}"
+                mkdir "${prj.name}/libs/${scope}"
+                prj.configurations.getByName(scope).files.each { f ->
+                    if (file("libs/${scope}/" + f.getName()).exists()) {
+                        ant.symlink(resource: "../../../libs/${scope}/" + f.getName(), link: "${prj.name}/libs/${scope}/${f.getName()}")
+                    }
+                    else {
+                        copy {
+                            from f
+                            into "${prj.name}/libs/${scope}"
+                        }
+                    }
                 }
             }
         }
