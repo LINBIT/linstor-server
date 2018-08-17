@@ -45,6 +45,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -56,6 +57,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -66,6 +68,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -129,7 +132,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
                 {
-                    ctrlVlmDfnCrtApiHelper.adjustRscVolumes(rscIterator.next());
+                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rscIterator.next(), vlmDfn);
                 }
             }
 

@@ -1,13 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -36,8 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Provider;
-
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 /**
  * Representation of a resource
@@ -262,93 +255,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         volumeMap.remove(vol.getVolumeDefinition().getVolumeNumber());
-    }
-
-    @Override
-    public void adjustVolumes(AccessContext apiCtx, String defaultStorPoolName)
-        throws InvalidNameException, LinStorException
-    {
-        checkDeleted();
-        Iterator<VolumeDefinition> vlmDfns;
-        try
-        {
-            vlmDfns = resourceDfn.iterateVolumeDfn(apiCtx);
-            while (vlmDfns.hasNext())
-            {
-                VolumeDefinition vlmDfn = vlmDfns.next();
-                PriorityProps prioProps = new PriorityProps(
-                    this.getProps(apiCtx),
-                    vlmDfn.getProps(apiCtx),
-                    resourceDfn.getProps(apiCtx),
-                    assgNode.getProps(apiCtx)
-                );
-
-                if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE))
-                {
-                    // find corresponding volume (if exists) and also set DELETE flag
-                }
-
-                if (!volumeMap.containsKey(vlmDfn.getVolumeNumber()))
-                {
-                    // if vlm not yet deployed
-
-                    StorPool storPool;
-                    if (flags.isSet(apiCtx, RscFlags.DISKLESS))
-                    {
-                        storPool = assgNode.getDisklessStorPool(apiCtx);
-                    }
-                    else
-                    {
-                        String storPoolNameStr;
-                        storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
-                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                        if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                        {
-                            storPoolNameStr = defaultStorPoolName;
-                        }
-                        storPool = assgNode.getStorPool(
-                            apiCtx,
-                            new StorPoolName(storPoolNameStr)
-                        );
-                        if (storPool == null)
-                        {
-                            throw new LinStorException(
-                                "The configured storage pool '" + storPoolNameStr + "' could not be found."
-                            );
-                        }
-                    }
-
-                    volumeDataFactory.create(
-                        apiCtx,
-                        this,
-                        vlmDfn,
-                        storPool,
-                        null, // blockDevicePathRef,
-                        null, // metaDiskPathRef,
-                        null
-                    );
-                }
-            }
-
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(
-                "AccCtx should have been privileged",
-                accDeniedExc
-            );
-        }
-        catch (InvalidKeyException invalidKeyExc)
-        {
-            throw new ImplementationError(
-                "Hardcoded props key is invalid",
-                invalidKeyExc
-            );
-        }
-        catch (LinStorDataAlreadyExistsException | SQLException implExc)
-        {
-            throw new ImplementationError(implExc);
-        }
     }
 
     @Override

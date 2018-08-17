@@ -58,9 +58,6 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     StateFlags<RscFlags> getStateFlags();
 
-    void adjustVolumes(AccessContext apiCtx, String defaultStorPoolName)
-        throws InvalidNameException, LinStorException;
-
     void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 

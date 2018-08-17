@@ -50,6 +50,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 {
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
+    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -60,6 +61,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     public CtrlSnapshotRestoreApiCallHandler(
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
+        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -69,6 +71,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
+        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -214,8 +217,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx.get());
 
-            Volume vlm = ctrlRscCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null);
-            vlm.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_STOR_POOL_NAME, storPool.getName().displayValue);
+            Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null, null);
             vlm.getProps(peerAccCtx.get()).setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
             vlm.getProps(peerAccCtx.get()).setProp(

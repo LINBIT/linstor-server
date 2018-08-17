@@ -1,26 +1,9 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
@@ -30,7 +13,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
@@ -38,7 +20,6 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.VolumeData;
@@ -55,8 +36,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.ConfigModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -66,20 +45,28 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
-import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
-import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
-import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
-import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
@@ -92,6 +79,7 @@ public class CtrlRscApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
+    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
@@ -99,7 +87,6 @@ public class CtrlRscApiCallHandler
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
-    private final String defaultStorPoolName;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
 
@@ -110,6 +97,7 @@ public class CtrlRscApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
+        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
@@ -117,7 +105,6 @@ public class CtrlRscApiCallHandler
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
@@ -127,6 +114,7 @@ public class CtrlRscApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
+        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
@@ -134,157 +122,8 @@ public class CtrlRscApiCallHandler
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
-        defaultStorPoolName = defaultStorPoolNameRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    private void checkStorPoolLoaded(
-        final Resource rsc,
-        StorPool storPool,
-        String storPoolNameStr,
-        final VolumeDefinition vlmDfn
-    )
-    {
-        if (storPool == null)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The storage pool '" + storPoolNameStr + "' " +
-                    "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
-                    "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
-                    "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.")
-                .setDetails("The resource which should be deployed had at least one volume definition " +
-                    "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
-                    "tried to automatically create. " +
-                    "The storage pool's name for this new volume was looked for in " +
-                    "its volume definition's properties, its resource's properties, its node's " +
-                    "properties and finally in a system wide default storage pool name defined by " +
-                    "the LinStor controller.")
-                .build(),
-                new LinStorException("Dependency not found")
-            );
-        }
-    }
-
-    private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
-    {
-        if (storPool != null && storPool.getDriverKind().hasBackingStorage())
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(FAIL_INVLD_STOR_POOL_NAME, "Storage pool with backing disk not allowed with diskless resource.")
-                .setCause(String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
-                        "with backing disk was specified.",
-                    rsc.getDefinition().getName().displayValue,
-                    storPool.getName().displayValue))
-                .setCorrection("Use a storage pool with a diskless driver or remove the diskless flag.")
-                .build(),
-                new LinStorException("Incorrect storage pool used.")
-            );
-        }
-    }
-
-    private ApiCallRc warnAndFlagDiskless(Resource rsc, final StorPool storPool)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        if (storPool != null && !storPool.getDriverKind().hasBackingStorage())
-        {
-            responses.addEntry(ApiCallRcImpl
-                .entryBuilder(
-                    MASK_WARN | MASK_STOR_POOL,
-                    "Resource will be automatically flagged diskless."
-                )
-                .setCause(String.format("Used storage pool '%s' is diskless, " +
-                    "but resource was not flagged diskless", storPool.getName().displayValue))
-                .build()
-            );
-            try
-            {
-                rsc.getStateFlags().enableFlags(apiCtx, RscFlags.DISKLESS);
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (SQLException exc)
-            {
-                throw new ApiSQLException(exc);
-            }
-        }
-
-        return responses;
-    }
-
-    /**
-     * Resolves the correct storage pool and also handles error/warnings in diskless modes.
-     *
-     * @param rsc
-     * @param prioProps
-     * @param vlmDfn
-     * @return
-     * @throws InvalidKeyException
-     * @throws AccessDeniedException
-     * @throws InvalidValueException
-     * @throws SQLException
-     */
-    private ApiCallRcWith<StorPool> resolveStorPool(
-        Resource rsc,
-        final PriorityProps prioProps,
-        final VolumeDefinition vlmDfn
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        StorPool storPool;
-        try
-        {
-            final boolean isRscDiskless = isDiskless(rsc);
-            Props rscProps = getProps(rsc);
-            String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-            if (isRscDiskless)
-            {
-                if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                {
-                    rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-                    storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
-                    storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
-                }
-                else
-                {
-                    storPool = rsc.getAssignedNode().getStorPool(
-                        apiCtx,
-                        LinstorParsingUtils.asStorPoolName(storPoolNameStr)
-                    );
-                }
-
-                checkBackingDiskWithDiskless(rsc, storPool);
-            }
-            else
-            {
-                if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                {
-                    storPoolNameStr = defaultStorPoolName;
-                }
-                storPool = rsc.getAssignedNode().getStorPool(
-                    apiCtx,
-                    LinstorParsingUtils.asStorPoolName(storPoolNameStr)
-                );
-
-                responses.addEntries(warnAndFlagDiskless(rsc, storPool));
-            }
-
-            checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
-        }
-        catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (SQLException exc)
-        {
-            throw new ApiSQLException(exc);
-        }
-
-        return new ApiCallRcWith<>(responses, storPool);
     }
 
     /**
@@ -321,60 +160,25 @@ public class CtrlRscApiCallHandler
         NodeId nodeId = resolveNodeId(nodeIdInt, rscDfn);
 
         ResourceData rsc = ctrlRscCrtApiHelper.createResource(rscDfn, node, nodeId, flagList);
-        Props rscProps = getProps(rsc);
+        Props rscProps = ctrlPropsHelper.getProps(rsc);
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
-
-        boolean isRscDiskless = isDiskless(rsc);
 
         Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
         Props nodeProps = ctrlPropsHelper.getProps(node);
 
-        Map<Integer, Volume> vlmMap = new TreeMap<>();
         for (VlmApi vlmApi : vlmApiList)
         {
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
-            PriorityProps prioProps = new PriorityProps(
-                rscProps,
-                ctrlPropsHelper.getProps(vlmDfn),
-                rscDfnProps,
-                nodeProps
-            );
+            VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                rsc, vlmDfn, vlmApi.getBlockDevice(), vlmApi.getMetaDisk()
+            ).extractApiCallRc(responses);
 
-            StorPool storPool;
-
-            String storPoolNameStr;
-            storPoolNameStr = vlmApi.getStorPoolName();
-            if (storPoolNameStr != null && !storPoolNameStr.isEmpty())
-            {
-                StorPoolDefinitionData storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
-                storPool = ctrlApiDataLoader.loadStorPool(storPoolDfn, node, true);
-
-                if (isRscDiskless)
-                {
-                    checkBackingDiskWithDiskless(rsc, storPool);
-                }
-                else
-                {
-                    responses.addEntries(warnAndFlagDiskless(rsc, storPool));
-                }
-
-                checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
-            }
-            else
-            {
-                storPool = resolveStorPool(rsc, prioProps, vlmDfn).extractApiCallRc(responses);
-            }
-
-            VolumeData vlmData = ctrlRscCrtApiHelper.createVolume(rsc, vlmDfn, storPool, vlmApi);
-
-            Props vlmProps = getProps(vlmData);
+            Props vlmProps = ctrlPropsHelper.getProps(vlmData);
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
-
-            vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
         }
 
         Iterator<VolumeDefinition> iterateVolumeDfn = ctrlRscCrtApiHelper.getVlmDfnIterator(rscDfn);
@@ -387,18 +191,8 @@ public class CtrlRscApiCallHandler
             {
                 // not deployed yet.
 
-                PriorityProps prioProps = new PriorityProps(
-                    ctrlPropsHelper.getProps(vlmDfn),
-                    rscProps,
-                    nodeProps
-                );
-
-                StorPool storPool = resolveStorPool(rsc, prioProps, vlmDfn).extractApiCallRc(responses);
-
-                // storPool is guaranteed to be != null
-                // create missing vlm with default values
-                VolumeData vlm = ctrlRscCrtApiHelper.createVolume(rsc, vlmDfn, storPool, null);
-                vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
+                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn)
+                    .extractApiCallRc(responses);
             }
         }
         return new ApiCallRcWith<>(responses, rsc);
@@ -452,20 +246,6 @@ public class CtrlRscApiCallHandler
         return nodeId;
     }
 
-    private boolean isDiskless(Resource rsc)
-    {
-        boolean isDiskless;
-        try
-        {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS);
-        }
-        catch (AccessDeniedException implError)
-        {
-            throw new ImplementationError(implError);
-        }
-        return isDiskless;
-    }
-
     public ApiCallRc modifyResource(
         UUID rscUuid,
         String nodeNameStr,
@@ -493,7 +273,7 @@ public class CtrlRscApiCallHandler
                 ));
             }
 
-            Props props = getProps(rsc);
+            Props props = ctrlPropsHelper.getProps(rsc);
             Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
@@ -909,45 +689,6 @@ public class CtrlRscApiCallHandler
             );
         }
         return vlmDfn;
-    }
-
-    private Props getProps(Resource rsc)
-    {
-        Props props;
-        try
-        {
-            props = rsc.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
-                    rsc.getAssignedNode().getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        return props;
-    }
-
-    private Props getProps(Volume vlm)
-    {
-        Props props;
-        try
-        {
-            props = vlm.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value +
-                        "' on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
-                    "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_VLM
-            );
-        }
-        return props;
     }
 
     private void markDeleted(ResourceData rscData)

@@ -117,27 +117,4 @@ class CtrlVlmDfnCrtApiHelper
         }
         return vlmDfn;
     }
-
-    void adjustRscVolumes(Resource rsc)
-    {
-        try
-        {
-            rsc.adjustVolumes(apiCtx, defaultStorPoolName);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                "The given stor pool name '" + invalidNameExc.invalidName + "' is invalid"
-            ), invalidNameExc);
-        }
-        catch (LinStorException linStorExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_UNKNOWN_ERROR,
-                "An exception occured while adjusting resources."
-            ), linStorExc);
-        }
-    }
-
 }

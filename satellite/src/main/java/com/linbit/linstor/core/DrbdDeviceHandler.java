@@ -14,7 +14,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
@@ -23,7 +22,6 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
@@ -291,7 +289,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
                     rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
                 {
-                    deleteResource(rsc, rscDfn, localNode, rscState);
+                    deleteResource(rsc, rscDfn, rscState);
                     apiCallRc.addEntries(makeDeleteRc(rsc, rscName, localNodeName));
                     resourceDeleted = true;
                 }
@@ -635,91 +633,45 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void ensureVolumeStorageDriver(
+    private void ensureStorageDriver(
         ResourceName rscName,
-        Node localNode,
-        Volume vlm,
-        VolumeDefinition vlmDfn,
-        VolumeStateDevManager vlmState,
-        Props nodeProps,
-        Props rscProps,
-        Props rscDfnProps
+        StorPool storagePool,
+        VolumeStateDevManager vlmState
     )
         throws AccessDeniedException, VolumeException
     {
-        Props vlmProps = vlm.getProps(wrkCtx);
-        Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
-
-        PriorityProps vlmPrioProps = new PriorityProps(
-            vlmProps, rscProps, vlmDfnProps, rscDfnProps, nodeProps
-        );
-
-        String spNameStr = null;
-        try
+        if (vlmState.getDriver() == null)
         {
-            spNameStr = vlmPrioProps.getProp(ApiConsts.KEY_STOR_POOL_NAME);
-            if (spNameStr == null)
+            try
             {
-                spNameStr = ConfigModule.DEFAULT_STOR_POOL_NAME;
-            }
-
-            StorPoolName spName = new StorPoolName(spNameStr);
-            StorageDriver driver = null;
-            StorPool storagePool = localNode.getStorPool(wrkCtx, spName);
-            if (storagePool != null)
-            {
-                driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor);
-                if (driver != null)
+                StorageDriver driver = null;
+                if (storagePool == null)
                 {
-                    storagePool.reconfigureStorageDriver(driver);
-                    vlmState.setDriver(driver);
-                    vlmState.setStorPoolName(spName);
-                }
-                else
-                {
-                    errLog.logTrace(
-                        "Cannot find storage pool '" + spName.displayValue + "' for volume " +
-                        vlmState.getVlmNr().toString() + " on the local node '" + localNode.getName() + "'"
+                    throw new VolumeException(
+                        "No storage pool set for volume " + vlmState.getVlmNr().value +
+                            " of resource '" + rscName.displayValue + "'"
                     );
                 }
+
+                driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor);
+                if (driver == null)
+                {
+                    throw new VolumeException(
+                        "Cannot find driver for storage pool '" + storagePool.getName().displayValue + "' for volume " +
+                            vlmState.getVlmNr().value + " of resource '" + rscName.displayValue + "'"
+                    );
+                }
+
+                storagePool.reconfigureStorageDriver(driver);
+                vlmState.setDriver(driver);
             }
-        }
-        catch (InvalidKeyException keyExc)
-        {
-            // Thrown if KEY_STOR_POOL_NAME is invalid
-            throw new ImplementationError(
-                "The builtin name constant for storage pools contains an invalid string",
-                keyExc
-            );
-        }
-        catch (StorageException storExc)
-        {
-            throw new ImplementationError(
-                "Storage configuration exception",
-                storExc
-            );
-        }
-        catch (InvalidNameException nameExc)
-        {
-            // Thrown if the name of the storage pool that is selected somewhere in the hierarchy
-            // is invalid
-            String detailsMsg = null;
-            if (spNameStr != null)
+            catch (StorageException storExc)
             {
-                detailsMsg = "The faulty storage pool name is '" + spNameStr + "'";
+                throw new ImplementationError(
+                    "Storage configuration exception",
+                    storExc
+                );
             }
-            throw new VolumeException(
-                "An invalid storage pool name is specified for volume " + vlmState.getVlmNr().value +
-                " of resource '" + rscName.displayValue,
-                getAbortMsg(rscName, vlmState.getVlmNr()),
-                "An invalid storage pool name was specified for the volume",
-                "Correct the property that selects the storage pool for this volume.\n" +
-                "Note that the property may be set on the volume or may be inherited from other objects " +
-                "such as the corresponding resource definition or the node to which the resource is " +
-                "assigned.",
-                detailsMsg,
-                nameExc
-            );
         }
     }
 
@@ -727,12 +679,8 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
-        Node localNode,
         NodeName localNodeName,
-        VolumeStateDevManager vlmState,
-        Props nodeProps,
-        Props rscProps,
-        Props rscDfnProps
+        VolumeStateDevManager vlmState
     )
         throws AccessDeniedException, VolumeException, MdException
     {
@@ -744,88 +692,83 @@ class DrbdDeviceHandler implements DeviceHandler
             "volume " + vlmState.getVlmNr().toString()
         );
 
-        if (!vlmState.isDriverKnown())
-        {
-            ensureVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
-        }
+        ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
 
         StorageDriver storDrv = vlmState.getDriver();
-        if (storDrv != null)
+
+        try
         {
-            try
+            if (!vlmState.hasDisk())
             {
+                boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+                vlmState.setHasDisk(storDrv.volumeExists(
+                    vlmState.getStorVlmName(), isEncrypted));
+
                 if (!vlmState.hasDisk())
                 {
-                    boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+                    attemptVolumeStart(vlmDfn, vlmState, storDrv);
+
                     vlmState.setHasDisk(storDrv.volumeExists(
                         vlmState.getStorVlmName(), isEncrypted));
-
-                    if (!vlmState.hasDisk())
-                    {
-                        attemptVolumeStart(vlmDfn, vlmState, storDrv);
-
-                        vlmState.setHasDisk(storDrv.volumeExists(
-                            vlmState.getStorVlmName(), isEncrypted));
-                    }
                 }
+            }
 
-                if (vlmState.hasDisk())
+            if (vlmState.hasDisk())
+            {
+                // Calculate the backend storage volume's size
+                long netSize = vlmDfn.getVolumeSize(wrkCtx);
+                vlmState.setNetSize(netSize);
+                long requiredSize = drbdMd.getGrossSize(
+                    netSize, vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
+                );
+
+                // Check the size of the backend storage
+                StorageDriver.SizeComparison sizeComparison =
+                    storDrv.compareVolumeSize(vlmState.getStorVlmName(), requiredSize);
+
+                if (sizeComparison == StorageDriver.SizeComparison.TOO_SMALL)
                 {
-                    // Calculate the backend storage volume's size
-                    long netSize = vlmDfn.getVolumeSize(wrkCtx);
-                    vlmState.setNetSize(netSize);
-                    long requiredSize = drbdMd.getGrossSize(
-                        netSize, vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
-                    );
-
-                    // Check the size of the backend storage
-                    StorageDriver.SizeComparison sizeComparison =
-                        storDrv.compareVolumeSize(vlmState.getStorVlmName(), requiredSize);
-
-                    if (sizeComparison == StorageDriver.SizeComparison.TOO_SMALL)
-                    {
-                        errLog.logDebug("Need to resize volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                            rscDfn.getName().displayValue);
-                        vlmState.setDiskNeedsResize(true);
-                    }
-                    else if (sizeComparison == StorageDriver.SizeComparison.TOO_LARGE)
-                    {
-                        throw new VolumeException(
-                            "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                                rscDfn.getName().displayValue + "' too large. Expected " + requiredSize +
-                                "KiB, but was : " + storDrv.getSize(vlmState.getStorVlmName()) + "KiB."
-                        );
-                    }
-
-                    errLog.logTrace(
-                        "Existing storage volume found for resource '" +
-                            rscDfn.getName().displayValue + "' " + "volume " + vlmState.getVlmNr().toString()
+                    errLog.logDebug("Need to resize volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                        rscDfn.getName().displayValue);
+                    vlmState.setDiskNeedsResize(true);
+                }
+                else if (sizeComparison == StorageDriver.SizeComparison.TOO_LARGE)
+                {
+                    throw new VolumeException(
+                        "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                            rscDfn.getName().displayValue + "' too large. Expected " + requiredSize +
+                            "KiB, but was : " + storDrv.getSize(vlmState.getStorVlmName()) + "KiB."
                     );
                 }
-            }
-            catch (TimeoutException timeoutExc)
-            {
-                throw new VolumeException(
-                    "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                    rscDfn.getName().displayValue + "' aborted due to an I/O timeout",
-                    "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                    rscDfn.getName().displayValue + " aborted",
-                    "The check for existance of the volume's backend storage timed out",
-                    "- Check whether the system's performance is within acceptable limits\n" +
-                    "- Check whether the operating system's I/O subsystems work flawlessly\n",
-                    "The filesystem path used by the check that timed out was: " +
-                    vlmState.getStorVlmName(),
-                    timeoutExc
+
+                errLog.logTrace(
+                    "Existing storage volume found for resource '" +
+                        rscDfn.getName().displayValue + "' " + "volume " + vlmState.getVlmNr().toString()
                 );
             }
-            catch (StorageException exc)
-            {
-                throw new VolumeException(
-                    "Storage error for volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                        rscDfn.getName().displayValue + "'",
-                    exc
-                );
-            }
+        }
+        catch (TimeoutException timeoutExc)
+        {
+            throw new VolumeException(
+                "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                rscDfn.getName().displayValue + "' aborted due to an I/O timeout",
+                "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                rscDfn.getName().displayValue + " aborted",
+                "The check for existance of the volume's backend storage timed out",
+                "- Check whether the system's performance is within acceptable limits\n" +
+                "- Check whether the operating system's I/O subsystems work flawlessly\n",
+                "The filesystem path used by the check that timed out was: " +
+                vlmState.getStorVlmName(),
+                timeoutExc
+            );
+        }
+        catch (StorageException exc)
+        {
+            throw new VolumeException(
+                "Storage error for volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
+                    rscDfn.getName().displayValue + "'",
+                exc
+            );
         }
     }
 
@@ -849,44 +792,30 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws MdException, VolumeException
     {
-        if (vlmState.getDriver() != null)
+        try
         {
-            try
-            {
-                vlmState.getDriver().restoreSnapshot(
-                    vlmState.getRestoreVlmName(),
-                    vlmState.getRestoreSnapshotName(),
-                    vlmState.getStorVlmName(),
-                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
-                );
-            }
-            catch (StorageException storExc)
-            {
-                throw new VolumeException(
-                    "Storage volume restoration failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                        vlmState.getVlmNr().value,
-                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    null,
-                    null,
-                    null,
-                    storExc
-                );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+            vlmState.getDriver().restoreSnapshot(
+                vlmState.getRestoreVlmName(),
+                vlmState.getRestoreSnapshotName(),
+                vlmState.getStorVlmName(),
+                rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+            );
         }
-        else
+        catch (StorageException storExc)
         {
             throw new VolumeException(
                 "Storage volume restoration failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                    vlmState.getVlmNr(),
+                    vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
                 null,
-                "The selected storage pool driver for the volume is unavailable",
                 null,
-                null
+                null,
+                storExc
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -896,47 +825,33 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws MdException, VolumeException
     {
-        if (vlmState.getDriver() != null)
+        try
         {
-            try
-            {
-                vlmState.setGrossSize(drbdMd.getGrossSize(
-                    vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
-                ));
-                vlmState.getDriver().createVolume(
-                    vlmState.getStorVlmName(),
-                    vlmState.getGrossSize(),
-                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
-                );
-            }
-            catch (StorageException storExc)
-            {
-                throw new VolumeException(
-                    "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                    vlmState.getVlmNr().value,
-                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    "Creation of the storage volume failed",
-                    "- Check whether there is sufficient space in the storage pool selected for the volume\n" +
-                    "- Check whether the storage pool is operating flawlessly\n",
-                    null,
-                    storExc
-                );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+            vlmState.setGrossSize(drbdMd.getGrossSize(
+                vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
+            ));
+            vlmState.getDriver().createVolume(
+                vlmState.getStorVlmName(),
+                vlmState.getGrossSize(),
+                rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+            );
         }
-        else
+        catch (StorageException storExc)
         {
             throw new VolumeException(
                 "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                    vlmState.getVlmNr(),
+                vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                "Creation of the storage volume failed",
+                "- Check whether there is sufficient space in the storage pool selected for the volume\n" +
+                "- Check whether the storage pool is operating flawlessly\n",
                 null,
-                "The selected storage pool driver for the volume is unavailable",
-                null,
-                null
+                storExc
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -946,47 +861,33 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws MdException, VolumeException
     {
-        if (vlmState.getDriver() != null)
+        try
         {
-            try
-            {
-                vlmState.setGrossSize(drbdMd.getGrossSize(
-                    vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
-                ));
-                vlmState.getDriver().resizeVolume(
-                    vlmState.getStorVlmName(),
-                    vlmState.getGrossSize(),
-                    rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
-                );
-            }
-            catch (StorageException storExc)
-            {
-                throw new VolumeException(
-                    "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                    vlmState.getVlmNr().value,
-                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    "Creation of the storage volume failed",
-                    "- Check whether there is sufficient space in the storage pool selected for the volume\n" +
-                    "- Check whether the storage pool is operating flawlessly\n",
-                    null,
-                    storExc
-                );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+            vlmState.setGrossSize(drbdMd.getGrossSize(
+                vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
+            ));
+            vlmState.getDriver().resizeVolume(
+                vlmState.getStorVlmName(),
+                vlmState.getGrossSize(),
+                rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+            );
         }
-        else
+        catch (StorageException storExc)
         {
             throw new VolumeException(
-                "Storage volume resize failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                    vlmState.getVlmNr(),
+                "Storage volume creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                "Creation of the storage volume failed",
+                "- Check whether there is sufficient space in the storage pool selected for the volume\n" +
+                "- Check whether the storage pool is operating flawlessly\n",
                 null,
-                "The selected storage pool driver for the volume is unavailable",
-                null,
-                null
+                storExc
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -996,49 +897,35 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws VolumeException
     {
-        if (vlmState.getDriver() != null)
+        try
         {
-            try
-            {
-                boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
-                    .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
-                vlmState.getDriver().deleteVolume(vlmState.getStorVlmName(), isEncrypted);
+            boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
+                .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+            vlmState.getDriver().deleteVolume(vlmState.getStorVlmName(), isEncrypted);
 
-                // Notify the controller of successful deletion of the resource
-                deviceManagerProvider.get().notifyVolumeDeleted(
-                    rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
-                        .getVolume(vlmState.getVlmNr())
-                );
-            }
-            catch (StorageException storExc)
-            {
-                throw new VolumeException(
-                    "Deletion of the storage volume failed for resource '" + rscDfn.getName().displayValue +
-                    "' volume " + vlmState.getVlmNr().value,
-                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    "Deletion of the storage volume failed",
-                    "- Check whether the storage pool is operating flawlessly\n",
-                    null,
-                    storExc
-                );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(
-                    "Worker access context has not enough privileges to access resource on satellite.",
-                    exc
-                );
-            }
+            // Notify the controller of successful deletion of the resource
+            deviceManagerProvider.get().notifyVolumeDeleted(
+                rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
+                    .getVolume(vlmState.getVlmNr())
+            );
         }
-        else
+        catch (StorageException storExc)
         {
             throw new VolumeException(
-                "Storage volume deletion failed for resource '" + rscDfn.getName().displayValue +
-                    "' volume " + vlmState.getVlmNr(),
+                "Deletion of the storage volume failed for resource '" + rscDfn.getName().displayValue +
+                "' volume " + vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                "Deletion of the storage volume failed",
+                "- Check whether the storage pool is operating flawlessly\n",
                 null,
-                "The selected storage pool driver for the volume is unavailable",
-                null,
-                null
+                storExc
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(
+                "Worker access context has not enough privileges to access resource on satellite.",
+                exc
             );
         }
     }
@@ -1116,7 +1003,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         adjustResource(rsc, rscState);
 
-        deleteResourceVolumes(localNode, rscName, rsc, rscDfn, rscState);
+        deleteResourceVolumes(rscName, rsc, rscDfn, rscState);
         // TODO: Notify the controller of successful deletion of volumes
 
         // TODO: Wait for the DRBD resource to reach the target state
@@ -1147,8 +1034,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 // Check backend storage
                 evaluateStorageVolume(
-                    rscName, rsc, rscDfn, localNode, localNodeName, vlmState,
-                    nodeProps, rscProps, rscDfnProps
+                    rscName, rsc, rscDfn, localNodeName, vlmState
                 );
 
                 if (!vlmState.isMarkedForDelete())
@@ -1158,13 +1044,8 @@ class DrbdDeviceHandler implements DeviceHandler
                     if (vlm != null)
                     {
                         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-                        if (!vlmState.isDriverKnown())
-                        {
-                            ensureVolumeStorageDriver(
-                                rscName, localNode, vlm, vlmDfn,
-                                vlmState, nodeProps, rscProps, rscDfnProps
-                            );
-                        }
+
+                        ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
 
                         // Check DRBD meta data
                         if (!vlmState.hasDisk())
@@ -1511,7 +1392,6 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void deleteResourceVolumes(
-        Node localNode,
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
@@ -1541,17 +1421,8 @@ class DrbdDeviceHandler implements DeviceHandler
                     // by LINSTOR.
                     if (vlm != null && vlmDfn != null)
                     {
-                        if (!vlmState.isDriverKnown())
-                        {
-                            ensureVolumeStorageDriver(
-                                rscName, localNode, vlm, vlmDfn, vlmState,
-                                nodeProps, rscProps, rscDfnProps
-                            );
-                        }
-                        if (vlmState.getDriver() != null)
-                        {
-                            deleteStorageVolume(rscDfn, vlmState);
-                        }
+                        ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
+                        deleteStorageVolume(rscDfn, vlmState);
                     }
                 }
             }
@@ -1731,7 +1602,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
                     try
                     {
-                        ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
+                        ensureStorageDriver(rscName, snapshotVolume.getStorPool(wrkCtx), vlmState);
 
                         deleteVolumeSnapshot(
                             snapshotVolume,
@@ -1767,7 +1638,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
                         try
                         {
-                            ensureSnapshotVolumeStorageDriver(snapshotVolume, vlmState);
+                            ensureStorageDriver(rscName, snapshotVolume.getStorPool(wrkCtx), vlmState);
 
                             takeVolumeSnapshot(
                                 snapshot.getResourceDefinition(),
@@ -1852,42 +1723,6 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void ensureSnapshotVolumeStorageDriver(SnapshotVolume snapshotVolume, VolumeStateDevManager vlmState)
-        throws AccessDeniedException, StorageException
-    {
-        if (vlmState.getDriver() == null)
-        {
-            StorPool storagePool = snapshotVolume.getStorPool(wrkCtx);
-            if (storagePool != null)
-            {
-                StorageDriver driver = storagePool.getDriver(
-                    wrkCtx,
-                    errLog,
-                    fileSystemWatch,
-                    timer,
-                    stltCfgAccessor
-                );
-                if (driver != null)
-                {
-                    storagePool.reconfigureStorageDriver(driver);
-                    vlmState.setDriver(driver);
-                    vlmState.setStorPoolName(storagePool.getName());
-                }
-                else
-                {
-                    errLog.logError(
-                        "Cannot find driver for pool '" + storagePool.getName().displayValue + "' for volume " +
-                            vlmState.getVlmNr().toString() + " on the local node"
-                    );
-                }
-            }
-            else
-            {
-                errLog.logError("Snapshot volume " + snapshotVolume + " has no storage pool");
-            }
-        }
-    }
-
     private void deleteVolumeSnapshot(
         SnapshotVolume snapshotVolume,
         SnapshotName snapshotName,
@@ -1897,37 +1732,23 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         ResourceDefinition rscDfn = snapshotVolume.getResourceDefinition();
 
-        if (vlmState.getDriver() != null)
+        try
         {
-            try
-            {
-                vlmState.getDriver().deleteSnapshot(
-                    vlmState.getStorVlmName(),
-                    snapshotName.displayValue
-                );
-            }
-            catch (StorageException storExc)
-            {
-                throw new VolumeException(
-                    "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                        vlmState.getVlmNr().value,
-                    getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    "Deletion of the snapshot failed",
-                    null,
-                    null,
-                    storExc
-                );
-            }
+            vlmState.getDriver().deleteSnapshot(
+                vlmState.getStorVlmName(),
+                snapshotName.displayValue
+            );
         }
-        else
+        catch (StorageException storExc)
         {
             throw new VolumeException(
-                "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue +
-                    "' volume " + vlmState.getVlmNr(),
+                "Snapshot deletion failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                "Deletion of the snapshot failed",
                 null,
-                "The selected storage pool driver for the volume is unavailable",
                 null,
-                null
+                storExc
             );
         }
     }
@@ -1945,12 +1766,32 @@ class DrbdDeviceHandler implements DeviceHandler
                 "resource '" + rscDfn.getName().displayValue + "' volume " + vlmState.getVlmNr().value);
         }
 
-        if (vlmState.getDriver() != null)
+        boolean exists;
+        try
         {
-            boolean exists;
+            exists = vlmState.getDriver().snapshotExists(
+                vlmState.getStorVlmName(),
+                snapshotName.displayValue
+            );
+        }
+        catch (StorageException storExc)
+        {
+            throw new VolumeException(
+                "Snapshot existence check failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                null,
+                null,
+                null,
+                storExc
+            );
+        }
+
+        if (!exists)
+        {
             try
             {
-                exists = vlmState.getDriver().snapshotExists(
+                vlmState.getDriver().createSnapshot(
                     vlmState.getStorVlmName(),
                     snapshotName.displayValue
                 );
@@ -1958,49 +1799,15 @@ class DrbdDeviceHandler implements DeviceHandler
             catch (StorageException storExc)
             {
                 throw new VolumeException(
-                    "Snapshot existence check failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    "Snapshot creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
                         vlmState.getVlmNr().value,
                     getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                    null,
+                    "Creation of the snapshot failed",
                     null,
                     null,
                     storExc
                 );
             }
-
-            if (!exists)
-            {
-                try
-                {
-                    vlmState.getDriver().createSnapshot(
-                        vlmState.getStorVlmName(),
-                        snapshotName.displayValue
-                    );
-                }
-                catch (StorageException storExc)
-                {
-                    throw new VolumeException(
-                        "Snapshot creation failed for resource '" + rscDfn.getName().displayValue + "' volume " +
-                            vlmState.getVlmNr().value,
-                        getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
-                        "Creation of the snapshot failed",
-                        null,
-                        null,
-                        storExc
-                    );
-                }
-            }
-        }
-        else
-        {
-            throw new VolumeException(
-                "Snapshot creation failed for resource '" + rscDfn.getName().displayValue +
-                    "' volume " + vlmState.getVlmNr(),
-                null,
-                "The selected storage pool driver for the volume is unavailable",
-                null,
-                null
-            );
         }
     }
 
@@ -2012,7 +1819,6 @@ class DrbdDeviceHandler implements DeviceHandler
     private void deleteResource(
         Resource rsc,
         ResourceDefinition rscDfn,
-        Node localNode,
         ResourceState rscState
     )
         throws AccessDeniedException, ResourceException, NoInitialStateException
@@ -2068,17 +1874,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 // by LINSTOR.
                 if (vlm != null && vlmDfn != null)
                 {
-                    if (!vlmState.isDriverKnown())
-                    {
-                        ensureVolumeStorageDriver(
-                            rscName, localNode, vlm, vlmDfn, vlmState,
-                            nodeProps, rscProps, rscDfnProps
-                        );
-                    }
-                    if (vlmState.getDriver() != null)
-                    {
-                        deleteStorageVolume(rscDfn, vlmState);
-                    }
+                    ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
+                    deleteStorageVolume(rscDfn, vlmState);
                 }
             }
             catch (VolumeException vlmExc)

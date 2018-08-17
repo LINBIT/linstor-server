@@ -12,9 +12,6 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
@@ -42,7 +39,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
 
 @Singleton
 class CtrlRscCrtApiHelper
@@ -60,7 +56,7 @@ class CtrlRscCrtApiHelper
         ResourceDataFactory resourceDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
-        )
+    )
     {
         apiCtx = apiCtxRef;
         stltConf = stltConfRef;
@@ -207,51 +203,6 @@ class CtrlRscCrtApiHelper
             );
         }
         return peerSlots;
-    }
-
-    VolumeData createVolume(
-        Resource rsc,
-        VolumeDefinition vlmDfn,
-        StorPool storPool,
-        Volume.VlmApi vlmApi
-    )
-    {
-        VolumeData vlm;
-        try
-        {
-            String blockDevice = vlmApi == null ? null : vlmApi.getBlockDevice();
-            String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
-
-            vlm = volumeDataFactory.create(
-                peerAccCtx.get(),
-                rsc,
-                vlmDfn,
-                storPool,
-                blockDevice,
-                metaDisk,
-                null // flags
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "register " + getVlmDescriptionInline(rsc, vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_EXISTS_VLM,
-                "The " + getVlmDescriptionInline(rsc, vlmDfn) + " already exists"
-            ), dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-        return vlm;
     }
 
     Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)

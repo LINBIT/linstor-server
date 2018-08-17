@@ -67,6 +67,7 @@ class CtrlVlmDfnApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSecurityObjects secObjs;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -81,6 +82,7 @@ class CtrlVlmDfnApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSecurityObjects secObjsRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -94,6 +96,7 @@ class CtrlVlmDfnApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         secObjs = secObjsRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -145,9 +148,12 @@ class CtrlVlmDfnApiCallHandler
 
             List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnApiList);
 
-            for (Resource rsc : rscList)
+            for (VolumeDefinitionData vlmDfn : vlmDfnsCreated)
             {
-                ctrlVlmDfnCrtApiHelper.adjustRscVolumes(rsc);
+                for (Resource rsc : rscList)
+                {
+                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn);
+                }
             }
 
             ctrlTransactionHelper.commit();

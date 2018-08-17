@@ -2,7 +2,9 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -58,7 +60,7 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(ResourceDefinitionData rscDfn)
+    public Props getProps(ResourceDefinition rscDfn)
     {
         Props props;
         try
@@ -90,6 +92,45 @@ public class CtrlPropsHelper
                 "access properties for volume definition with number '" + vlmDfn.getVolumeNumber().value + "' " +
                     "on resource definition '" + vlmDfn.getResourceDefinition().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return props;
+    }
+
+    public Props getProps(Resource rsc)
+    {
+        Props props;
+        try
+        {
+            props = rsc.getProps(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
+                    rsc.getAssignedNode().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return props;
+    }
+
+    public Props getProps(Volume vlm)
+    {
+        Props props;
+        try
+        {
+            props = vlm.getProps(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value +
+                    "' on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
+                    "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
         return props;
