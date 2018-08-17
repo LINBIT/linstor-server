@@ -506,7 +506,7 @@ public class CtrlRscApiCallHandler
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rsc));
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 rsc.getUuid(), getRscDescriptionInline(rsc)));
         }
         catch (Exception | ImplementationError exc)
