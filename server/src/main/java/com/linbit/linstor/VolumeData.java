@@ -61,6 +61,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, String> metaDiskPath;
 
+    private final TransactionSimpleObject<VolumeData, Long> realSize;
+
     private final VolumeDataDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<VolumeData, Boolean> deleted;
@@ -114,6 +116,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 volDfnRef.getVolumeNumber()
             )
         );
+        realSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
@@ -122,6 +125,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             storPool,
             volumeConnections,
             volumeProps,
+            realSize,
             flags,
             backingDiskPath,
             metaDiskPath,
@@ -303,6 +307,48 @@ public class VolumeData extends BaseTransactionObject implements Volume
         getFlags().enableFlags(accCtx, Volume.VlmFlags.DELETE);
     }
 
+    @Override
+    public boolean isRealSizeSet(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return realSize.get() == null;
+    }
+
+    @Override
+    public void setRealSize(AccessContext accCtx, long size) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        try
+        {
+            realSize.set(size);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError("Driverless TransactionSimpleObject threw sql exc", exc);
+        }
+    }
+
+    @Override
+    public long getRealSize(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return realSize.get();
+    }
+
+    @Override
+    public long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return volumeDfn.getVolumeSize(accCtx);
+    }
 
     @Override
     public void delete(AccessContext accCtx)

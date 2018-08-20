@@ -56,6 +56,14 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
+    boolean isRealSizeSet(AccessContext accCtx) throws AccessDeniedException;
+
+    void setRealSize(AccessContext accCtx, long size) throws AccessDeniedException;
+
+    long getRealSize(AccessContext accCtx) throws AccessDeniedException;
+
+    long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
+
     void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
     @Override

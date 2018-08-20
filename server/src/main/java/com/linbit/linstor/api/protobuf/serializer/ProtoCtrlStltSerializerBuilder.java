@@ -512,6 +512,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setVlmNr(vlm.getVolumeDefinition().getVolumeNumber().value)
                         .setBlockDevicePath(vlm.getBackingDiskPath(serializerCtx))
                         .setMetaDisk(vlm.getMetaDiskPath(serializerCtx))
+                        .setRealSize(vlm.getRealSize(serializerCtx))
                         .build()
                 );
             }
@@ -1023,6 +1024,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 {
                     builder.setMetaDisk(metaDisk);
                 }
+                if (vol.isRealSizeSet(serializerCtx))
+                {
+                    builder.setRealSize(vol.getRealSize(serializerCtx));
+                }
+
                 vlmList.add(builder.build());
             }
             return vlmList;
