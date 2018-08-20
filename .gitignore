@@ -2,6 +2,10 @@
 .gradle/
 .idea/
 .nb-gradle-properties
+.classpath
+.project
+.settings/
+bin/
 
 # build output
 server/generated*
