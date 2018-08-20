@@ -117,6 +117,61 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
+    public long getTotalSpace()
+        throws StorageException
+    {
+        final String qualifiedPoolName = volumeGroup + File.separator + thinPoolName;
+
+        long totalSpace;
+        final String[] command = new String[]
+            {
+                lvmLvsCommand,
+                qualifiedPoolName,
+                "-o", "lv_size",
+                "--units", "k",
+                "--noheadings",
+                "--nosuffix"
+            };
+        String rawOut = null;
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData output = extCommand.exec(command);
+
+            checkExitCode(output, command);
+
+            rawOut = new String(output.stdoutData);
+            totalSpace = StorageUtils.parseDecimalAsLong(rawOut.trim());
+        }
+        catch (NumberFormatException nfexc)
+        {
+            throw new StorageException(
+                "Unable to parse thin pool size.",
+                "Pool: " + qualifiedPoolName + "; size to parse: '" + rawOut + "'",
+                null,
+                null,
+                "External command used to query size: " + glue(command, " "),
+                nfexc
+            );
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to query thin pool size",
+                String.format("Failed to query the size of thin pool: %s", qualifiedPoolName),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+
+        return totalSpace;
+    }
+
+    @Override
     public long getFreeSpace() throws StorageException
     {
         final String qualifiedPoolName = volumeGroup + File.separator + thinPoolName;

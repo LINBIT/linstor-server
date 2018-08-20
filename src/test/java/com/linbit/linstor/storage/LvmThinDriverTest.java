@@ -335,6 +335,15 @@ public class LvmThinDriverTest extends StorageTestUtils
     }
 
     @Test
+    public void testTotalSpace() throws StorageException
+    {
+        final long size = 1L * 1024 * 1024; // 1Gib
+        expectThinLvTotalSpaceCommand(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, LVM_THIN_POOL_DEFAULT, size);
+
+        assertEquals(size, driver.getTotalSpace());
+    }
+
+    @Test
     public void testFreeSpace() throws StorageException
     {
         final long lvSizeKiB = 10000L;
@@ -431,6 +440,29 @@ public class LvmThinDriverTest extends StorageTestUtils
             "",
             "",
             0);
+        ec.setExpectedBehavior(command, outData);
+    }
+
+    private void expectThinLvTotalSpaceCommand(
+        String lvsCommand,
+        String volumeGroup,
+        String lvmThinPool,
+        long totalSpace
+    )
+    {
+        Command command = new Command(
+            lvsCommand,
+            volumeGroup + "/" + lvmThinPool,
+            "-o", "lv_size",
+            "--units", "k",
+            "--noheadings",
+            "--nosuffix"
+        );
+        OutputData outData = new TestOutputData(
+            String.format("  %d", totalSpace),
+            "",
+            0
+        );
         ec.setExpectedBehavior(command, outData);
     }
 
