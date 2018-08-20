@@ -75,7 +75,7 @@ public class VolumeDataFactory
         );
         driver.create(volData);
         ((ResourceData) rsc).putVolume(accCtx, volData);
-        ((StorPoolData) storPool).putVolume(accCtx, volData);
+        storPool.putVolume(accCtx, volData);
         ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
 
         return volData;
@@ -113,7 +113,7 @@ public class VolumeDataFactory
                     new TreeMap<>()
                 );
                 ((ResourceData) rsc).putVolume(accCtx, vlmData);
-                ((StorPoolData) storPoolRef).putVolume(accCtx, vlmData);
+                storPoolRef.putVolume(accCtx, vlmData);
                 ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
             }
         }
