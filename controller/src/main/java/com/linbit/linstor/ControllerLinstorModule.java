@@ -10,6 +10,7 @@ public class ControllerLinstorModule extends AbstractModule
         bind(NodeRepository.class).to(NodeProtectionRepository.class);
         bind(ResourceDefinitionRepository.class).to(ResourceDefinitionProtectionRepository.class);
         bind(StorPoolDefinitionRepository.class).to(StorPoolDefinitionProtectionRepository.class);
+        bind(FreeSpaceMgrRepository.class).to(FreeSpaceMgrProtectionRepository.class);
         bind(SystemConfRepository.class).to(SystemConfProtectionRepository.class);
     }
 }

@@ -32,6 +32,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -63,6 +64,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -822,11 +824,21 @@ public class CtrlRscApiCallHandler
             .build();
     }
 
-    void updateVolumeData(String resourceName, List<VlmUpdatePojo> vlmUpdates)
+    void updateVolumeData(
+        String resourceName,
+        List<VlmUpdatePojo> vlmUpdates,
+        List<FreeSpacePojo> freeSpaceList
+    )
     {
         try
         {
             NodeName nodeName = peer.get().getNode().getName();
+            Map<String, Long> storPoolToFreeSpaceMap = freeSpaceList.stream().collect(
+                Collectors.toMap(
+                    freeSpacePojo -> freeSpacePojo.getStorPoolName().toUpperCase(),
+                    freeSpacePojo -> freeSpacePojo.getFreeSpace()
+                )
+            );
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
@@ -839,6 +851,11 @@ public class CtrlRscApiCallHandler
                     {
                         vlm.setBackingDiskPath(apiCtx, vlmUpd.getBlockDevicePath());
                         vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
+                        vlm.setRealSize(apiCtx, vlmUpd.getRealSize());
+
+                        long freeSpace = storPoolToFreeSpaceMap.get(vlm.getStorPool(apiCtx).getName().value);
+                        vlm.getStorPool(apiCtx).getFreeSpaceManager().volumeAdded(apiCtx, vlm, freeSpace);
+
                     }
                     else
                     {
@@ -856,6 +873,7 @@ public class CtrlRscApiCallHandler
                 {
                 }
             }
+            ctrlTransactionHelper.commit();
         }
         catch (InvalidNameException | AccessDeniedException exc)
         {

@@ -105,6 +105,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             String nodeName,
             String resourceName,
             int volumeNr,
+            long freeSpace,
             UUID vlmUuid
         );
 
@@ -112,7 +113,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
-        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName); 
+        CtrlStltSerializerBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
         CtrlStltSerializerBuilder requestSnapshotUpdate(
             String rscName,
             UUID snapshotUuid,
@@ -122,5 +123,15 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
 
         CtrlStltSerializerBuilder inProgressSnapshotEvent(SnapshotState snapshotState);
+
+        CommonSerializerBuilder vlmRemovedFromDiskless(
+            UUID vlmUuid,
+            String nodeName,
+            String rscName,
+            int vlmNr,
+            UUID storPoolUuid,
+            String StorPoolName,
+            long freeSpace
+        );
     }
 }

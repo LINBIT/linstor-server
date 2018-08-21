@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
@@ -13,7 +12,6 @@ import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SecretGenerator;
-import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.locks.LockGuard;
 
@@ -22,10 +20,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -648,7 +644,8 @@ public class CtrlApiCallHandler
     public ApiCallRc volumeDeleted(
         String nodeName,
         String rscName,
-        int volumeNr
+        int volumeNr,
+        long freespace
     )
     {
         ApiCallRc apiCallRc;
@@ -663,7 +660,8 @@ public class CtrlApiCallHandler
             apiCallRc = vlmApiCallHandler.volumeDeleted(
                 nodeName,
                 rscName,
-                volumeNr
+                volumeNr,
+                freespace
             );
         }
         return apiCallRc;
@@ -781,6 +779,7 @@ public class CtrlApiCallHandler
         String nodeName,
         String storPoolName,
         String driver,
+        String freeSpaceMgrNameStr,
         Map<String, String> storPoolPropsMap
     )
     {
@@ -801,6 +800,7 @@ public class CtrlApiCallHandler
                 nodeName,
                 storPoolName,
                 driver,
+                freeSpaceMgrNameStr,
                 storPoolProps
             );
         }
@@ -1484,19 +1484,23 @@ public class CtrlApiCallHandler
         );
     }
 
-    public void updateVolumeData(String resourceName, List<VlmUpdatePojo> vlmUpdates)
+    public void updateVolumeData(
+        String resourceName,
+        List<VlmUpdatePojo> vlmUpdates,
+        List<FreeSpacePojo> freeSpaceList
+    )
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
         {
-            rscApiCallHandler.updateVolumeData(resourceName, vlmUpdates);
+            rscApiCallHandler.updateVolumeData(resourceName, vlmUpdates, freeSpaceList);
         }
     }
 
-    public void updateRealFreeSpace(FreeSpacePojo... freeSpacePojos)
+    public void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
         {
-            storPoolApiCallHandler.updateRealFreeSpace(freeSpacePojos);
+            storPoolApiCallHandler.updateRealFreeSpace(freeSpacePojoList);
         }
     }
 
@@ -1654,5 +1658,33 @@ public class CtrlApiCallHandler
             );
         }
         return response;
+    }
+
+    public void vlmRemovedFromDiskless(
+        UUID vlmUuid,
+        String nodeName,
+        String rscName,
+        int vlmNr,
+        UUID storPoolUuid,
+        String storPoolName,
+        long freeSpace
+    )
+    {
+        try (LockGuard ls = LockGuard.createLocked(
+            nodesMapLock.writeLock(),
+            rscDfnMapLock.writeLock(),
+            storPoolDfnMapLock.writeLock())
+        )
+        {
+            storPoolApiCallHandler.vlmRemovedFromDiskless(
+                vlmUuid,
+                nodeName,
+                rscName,
+                vlmNr,
+                storPoolUuid,
+                storPoolName,
+                freeSpace
+            );
+        }
     }
 }

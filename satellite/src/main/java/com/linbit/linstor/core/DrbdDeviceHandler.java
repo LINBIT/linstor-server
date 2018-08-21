@@ -906,7 +906,8 @@ class DrbdDeviceHandler implements DeviceHandler
             // Notify the controller of successful deletion of the resource
             deviceManagerProvider.get().notifyVolumeDeleted(
                 rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
-                    .getVolume(vlmState.getVlmNr())
+                    .getVolume(vlmState.getVlmNr()),
+                vlmState.getDriver().getFreeSpace()
             );
         }
         catch (StorageException storExc)
@@ -1119,6 +1120,11 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Set block device paths
                         if (vlmState.hasDisk())
                         {
+                            // store the real size of the volume (after applied extent size, etc)
+                            vlm.setRealSize(
+                                wrkCtx,
+                                vlmState.getDriver().getSize(vlmState.getStorVlmName())
+                            );
 
                             boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
                                 .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);

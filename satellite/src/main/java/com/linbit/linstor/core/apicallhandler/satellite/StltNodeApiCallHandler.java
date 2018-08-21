@@ -203,9 +203,9 @@ class StltNodeApiCallHandler
                 .map(ResourceDefinition::getName)
                 .collect(Collectors.toSet());
 
+            nodesMap.put(node.getName(), node);
             transMgrProvider.get().commit();
 
-            nodesMap.put(node.getName(), node);
             errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
             Set<NodeName> updatedNodes = new TreeSet<>();
             updatedNodes.add(new NodeName(nodePojo.getName()));

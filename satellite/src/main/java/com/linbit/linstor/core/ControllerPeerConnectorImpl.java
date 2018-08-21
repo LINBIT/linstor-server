@@ -101,6 +101,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         return disklessStorPoolDfn;
     }
 
+    @Override
     public NodeName getLocalNodeName()
     {
         return localNodeName;
@@ -148,8 +149,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                     disklessStorPoolDfn
                 );
 
-                transMgrProvider.get().commit();
-
                 nodesMap.clear();
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
@@ -158,6 +157,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                 nodesMap.put(localNode.getName(), localNode);
                 storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
                 setControllerPeerToCurrentLocalNode();
+
+                transMgrProvider.get().commit();
             }
             catch (ImplementationError | SQLException | InvalidNameException exc)
             {

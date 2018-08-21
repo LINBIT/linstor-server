@@ -227,8 +227,8 @@ public class CtrlNodeApiCallHandler
                     ));
                 }
 
-                ctrlTransactionHelper.commit();
                 nodeRepository.put(apiCtx, nodeName, node);
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context,
                     ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
@@ -420,8 +420,6 @@ public class CtrlNodeApiCallHandler
                         successMessage += " deleted.";
                     }
 
-                    ctrlTransactionHelper.commit();
-
                     if (!hasRsc)
                     {
                         nodeRepository.remove(apiCtx, nodeName);
@@ -449,6 +447,8 @@ public class CtrlNodeApiCallHandler
                         responseConverter.addWithDetail(
                             responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData, true));
                     }
+
+                    ctrlTransactionHelper.commit();
 
                     responseConverter.addWithOp(responses, context, ApiCallRcImpl
                         .entryBuilder(ApiConsts.DELETED, successMessage)

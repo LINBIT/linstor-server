@@ -20,6 +20,7 @@ import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.SystemContext;
@@ -93,6 +94,8 @@ public final class Satellite
 
     private final LinStorArguments linStorArguments;
 
+    private final FreeSpaceMgrInitializerStlt freeSpaceMgrInitializer;
+
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
@@ -107,7 +110,8 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
-        LinStorArguments linStorArgumentsRef
+        LinStorArguments linStorArgumentsRef,
+        FreeSpaceMgrInitializerStlt freeSpaceMgrInitializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -123,6 +127,7 @@ public final class Satellite
         drbdEventSvc = drbdEventSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         linStorArguments = linStorArgumentsRef;
+        freeSpaceMgrInitializer = freeSpaceMgrInitializerRef;
     }
 
     public void start()
@@ -146,6 +151,8 @@ public final class Satellite
 
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
+            freeSpaceMgrInitializer.initialize();
+
             errorReporter.logInfo("Initializing main network communications service");
             if (!satelliteNetComInitializer.initMainNetComService(
                 initCtx,
@@ -162,6 +169,13 @@ public final class Satellite
                 "The initialization security context does not have all privileges. " +
                     "Initialization failed.",
                 accessExc
+            );
+        }
+        catch (InitializationException initExc)
+        {
+            throw new ImplementationError(
+                "Could not initialize Satellite.",
+                initExc
             );
         }
         finally

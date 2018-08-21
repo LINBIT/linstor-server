@@ -30,6 +30,7 @@ public abstract class LinStor
     public static final VersionInfoProvider VERSION_INFO_PROVIDER = new VersionInfoProviderImpl();
 
     public static final String DISKLESS_STOR_POOL_NAME = "DfltDisklessStorPool";
+    public static final String DISKLESS_FREE_SPACE_MGR_NAME = "DisklessFreeSpaceManager";
 
     public static void printRunTimeInfo(PrintStream out)
     {

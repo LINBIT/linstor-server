@@ -12,6 +12,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -24,6 +26,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -36,9 +39,12 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private static final String SP_NODE = DbConstants.NODE_NAME;
     private static final String SP_POOL = DbConstants.POOL_NAME;
     private static final String SP_DRIVER = DbConstants.DRIVER_NAME;
+    private static final String SP_FSM_NAME = DbConstants.FREE_SPACE_MGR_NAME;
+    private static final String SP_FSM_DSP_NAME = DbConstants.FREE_SPACE_MGR_DSP_NAME;
 
     private static final String SELECT_ALL =
-        " SElECT " + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER +
+        " SElECT " + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ", " +
+                     SP_FSM_NAME + ", " + SP_FSM_DSP_NAME +
         " FROM " + TBL_NSP;
     private static final String SP_SELECT_BY_NODE =
         SELECT_ALL +
@@ -46,11 +52,15 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private static final String SP_SELECT_BY_NODE_AND_SP =
         SP_SELECT_BY_NODE +
         " AND "  + SP_POOL + " = ?";
+    private static final String SELECT_ALL_FSM =
+        " SELECT DISTINCT " + SP_FSM_DSP_NAME +
+        " FROM " + TBL_NSP;
 
     private static final String SP_INSERT =
         " INSERT INTO " + TBL_NSP +
-        " (" + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ")" +
-        " VALUES (?, ?, ?, ?)";
+        " (" + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ", " +
+               SP_FSM_NAME + ", " + SP_FSM_DSP_NAME + ")" +
+        " VALUES (?, ?, ?, ?, ?, ?)";
     private static final String SP_DELETE =
         " DELETE FROM " + TBL_NSP +
         " WHERE " + SP_NODE + " = ? AND " +
@@ -59,6 +69,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
+    private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -67,6 +78,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     public StorPoolDataGenericDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -74,6 +86,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     {
         dbCtx = dbCtxRef;
         errorReporter = errorReporterRef;
+        objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -86,18 +99,61 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_INSERT))
         {
+            FreeSpaceMgrName fsmName = storPoolData.getFreeSpaceManager().getName();
             stmt.setString(1, storPoolData.getUuid().toString());
             stmt.setString(2, storPoolData.getNode().getName().value);
             stmt.setString(3, storPoolData.getName().value);
             stmt.setString(4, storPoolData.getDriverName());
+            stmt.setString(5, fsmName.value);
+            stmt.setString(6, fsmName.displayValue);
             stmt.executeUpdate();
         }
         errorReporter.logTrace("StorPool created %s", getId(storPoolData));
     }
 
+    public Map<FreeSpaceMgrName, FreeSpaceMgr> loadAllFreeSpaceMgrs()
+        throws SQLException
+    {
+        Map<FreeSpaceMgrName, FreeSpaceMgr> ret = new HashMap<>();
+        errorReporter.logTrace("Loading all free space managers");
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_FSM))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    try
+                    {
+                        FreeSpaceMgrName fsmName = FreeSpaceMgrName.restoreName(resultSet.getString(SP_FSM_DSP_NAME));
+                        ret.put(
+                            fsmName,
+                            new FreeSpaceMgr(
+                                dbCtx,
+                                getObjectProtection(fsmName),
+                                fsmName,
+                                transMgrProvider,
+                                transObjFactory
+                            )
+                        );
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new LinStorSqlRuntimeException(
+                            "The stored free space manager name '" + resultSet.getString(SP_FSM_DSP_NAME) + "' " +
+                                "could not be restored",
+                            invalidNameExc
+                        );
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
     public Map<StorPoolData, InitMaps> loadAll(
         Map<NodeName, ? extends Node> nodesMap,
-        Map<StorPoolName, ? extends StorPoolDefinition> storPoolDfnMap
+        Map<StorPoolName, ? extends StorPoolDefinition> storPoolDfnMap,
+        Map<FreeSpaceMgrName, FreeSpaceMgr> freeSpaceMgrMap
     )
         throws SQLException
     {
@@ -113,11 +169,13 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                     {
                         NodeName nodeName = new NodeName(resultSet.getString(SP_NODE));
                         StorPoolName storPoolName = new StorPoolName(resultSet.getString(SP_POOL));
+                        FreeSpaceMgrName fsmName = FreeSpaceMgrName.restoreName(resultSet.getString(SP_FSM_DSP_NAME));
 
                         Pair<StorPoolData, InitMaps> pair = restoreStorPool(
                             resultSet,
                             nodesMap.get(nodeName),
-                            storPoolDfnMap.get(storPoolName)
+                            storPoolDfnMap.get(storPoolName),
+                            freeSpaceMgrMap.get(fsmName)
                         );
                         storPools.put(
                             pair.objA,
@@ -141,7 +199,8 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private Pair<StorPoolData, InitMaps> restoreStorPool(
         ResultSet resultSet,
         Node node,
-        StorPoolDefinition storPoolDfn
+        StorPoolDefinition storPoolDfn,
+        FreeSpaceMgr freeSpaceMgr
     )
         throws SQLException
     {
@@ -151,6 +210,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             node,
             storPoolDfn,
             resultSet.getString(SP_DRIVER),
+            freeSpaceMgr,
             false,
             this,
             propsContainerFactory,
@@ -234,6 +294,27 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private String getId(String nodeName, String poolName)
     {
         return "(NodeName=" + nodeName + " PoolName=" + poolName + ")";
+    }
+
+    private ObjectProtection getObjectProtection(FreeSpaceMgrName fsmName) throws SQLException
+    {
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPath(fsmName),
+            false // no need to log a warning, as we would fail then anyways
+        );
+        if (objProt == null)
+        {
+            throw new ImplementationError(
+                "FreeSpaceManager is missing an entry in ObjProt table! " + getId(fsmName),
+                null
+            );
+        }
+        return objProt;
+    }
+
+    private String getId(FreeSpaceMgrName fsmName)
+    {
+        return "(FreeSpaceMgrName=" + fsmName.displayValue + ")";
     }
 
     private class StorPoolInitMaps implements StorPool.InitMaps

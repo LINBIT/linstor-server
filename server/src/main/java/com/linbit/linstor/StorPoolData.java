@@ -52,6 +52,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final Props props;
     private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
+    private final FreeSpaceMgr freeSpaceMgr;
 
     private final TransactionMap<String, Volume> volumeMap;
 
@@ -59,13 +60,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private transient StorageDriver storageDriver;
 
-    private transient TransactionSimpleObject<StorPoolData, Long> freeSpace;
-
     StorPoolData(
         UUID id,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         String storageDriverName,
+        FreeSpaceMgr freeSpaceMgrRef,
         boolean allowStorageDriverCreationRef,
         StorPoolDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -80,6 +80,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
         storageDriverKind = StorageDriverLoader.getKind(storageDriverName);
+        freeSpaceMgr = freeSpaceMgrRef;
         allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
@@ -90,13 +91,11 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
-        freeSpace = transObjFactory.createTransactionSimpleObject(this, null, null);
-
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
             props,
             deleted,
-            freeSpace
+            freeSpaceMgr
         );
         activateTransMgr();
     }
@@ -203,15 +202,27 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         volumeMap.put(Volume.getVolumeKey(volume), volume);
+        freeSpaceMgr.addingVolume(accCtx, volume);
     }
 
     @Override
-    public void removeVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    public void removeVolume(AccessContext accCtx, Volume volume, long freeSpaceRef)
+        throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         volumeMap.remove(Volume.getVolumeKey(volume));
+        freeSpaceMgr.volumeRemoved(accCtx, volume, freeSpaceRef);
+    }
+
+    @Override
+    public boolean containsVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return volumeMap.containsKey(Volume.getVolumeKey(volume));
     }
 
     @Override
@@ -223,17 +234,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return volumeMap.values();
     }
 
-    public void setRealFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException, SQLException
-    {
-        node.getObjProt().requireAccess(accCtx, AccessType.USE);
-        freeSpace.set(freeSpaceRef);
-    }
-
     @Override
-    public Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException
+    public FreeSpaceMgr getFreeSpaceManager()
     {
-        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return Optional.ofNullable(freeSpace.get());
+        return freeSpaceMgr;
     }
 
     @Override
@@ -309,6 +313,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             getTraits(accCtx),
             fullSyncId,
             updateId,
+            getFreeSpaceManager().getName().displayValue,
             Optional.ofNullable(freeSpaceRef),
             Optional.ofNullable(totalSpaceRef)
         );

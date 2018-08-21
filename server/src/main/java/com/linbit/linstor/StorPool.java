@@ -84,7 +84,13 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     /**
      * Removes the volume from this storPool
      */
-    void removeVolume(AccessContext accCtx, Volume volume)
+    void removeVolume(AccessContext accCtx, Volume volume, long freeSpace)
+        throws AccessDeniedException;
+
+    /**
+     * Returns true if the storage pool contains the given volume.
+     */
+    boolean containsVolume(AccessContext accCtx, Volume volume)
         throws AccessDeniedException;
 
     /**
@@ -107,7 +113,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     StorPoolApi getApiData(Long totalSpace, Long freeSpace, AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
-    Optional<Long> getFreeSpace(AccessContext accCtx) throws AccessDeniedException;
+    FreeSpaceMgr getFreeSpaceManager();
 
     @Override
     default int compareTo(StorPool otherStorPool)
@@ -128,6 +134,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         String getNodeName();
         UUID getNodeUuid();
         String getDriver();
+        String getFreeSpaceManagerName();
         Optional<Long> getFreeCapacity();
         Optional<Long> getTotalCapacity();
 

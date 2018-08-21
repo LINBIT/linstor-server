@@ -378,7 +378,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 node1,
                 storPoolDfn,
-                storPoolDriver1
+                storPoolDriver1,
+                null
             );
             storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
@@ -387,7 +388,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 node2,
                 storPoolDfn,
-                storPoolDriver2
+                storPoolDriver2,
+                null
             );
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 

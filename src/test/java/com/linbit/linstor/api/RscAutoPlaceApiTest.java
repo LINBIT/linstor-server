@@ -3,6 +3,8 @@ package com.linbit.linstor.api;
 import javax.inject.Inject;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.FreeSpaceMgr;
+import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -986,16 +988,30 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize) throws Exception
         {
-            return addStorPool(storPoolName, storPoolSize, false);
+            return addStorPool(storPoolName, null, storPoolSize, false);
         }
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, boolean thin) throws Exception
+        {
+            return addStorPool(storPoolName, null, storPoolSize, thin);
+        }
+
+        SatelliteBuilder addStorPool(String storPoolName, String freeSpaceMgrName, long storPoolSize, boolean thin)
+            throws Exception
         {
             StorPoolDefinitionData storPoolDfn = storPoolDefinitionRepository.get(
                 ApiTestBase.BOB_ACC_CTX,
                 new StorPoolName(storPoolName)
             );
 
+            FreeSpaceMgr fsm = null;
+            if (freeSpaceMgrName != null)
+            {
+                fsm = freeSpaceMgrFactory.getInstance(
+                    BOB_ACC_CTX,
+                    FreeSpaceMgrName.restoreName(freeSpaceMgrName)
+                );
+            }
             if (storPoolDfn == null)
             {
                 storPoolDfn = storPoolDefinitionDataFactory.create(
@@ -1010,15 +1026,16 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiTestBase.BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,
-                (thin ? LvmThinDriver.class : LvmDriver.class).getSimpleName()
+                (thin ? LvmThinDriver.class : LvmDriver.class).getSimpleName(),
+                fsm
             );
 
-            storPool.setRealFreeSpace(GenericDbBase.SYS_CTX, storPoolSize);
+            storPool.getFreeSpaceManager().setFreeSpace(GenericDbBase.SYS_CTX, storPoolSize);
 
             return this;
         }
 
-        public RscAutoPlaceApiCall build() throws Exception
+        public RscAutoPlaceApiCall build()
         {
             return parent;
         }

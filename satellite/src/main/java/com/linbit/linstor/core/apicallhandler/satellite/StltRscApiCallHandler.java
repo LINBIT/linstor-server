@@ -4,6 +4,9 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
+import com.linbit.linstor.FreeSpaceMgrFactory;
+import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterfaceDataFactory;
@@ -45,6 +48,7 @@ import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -102,6 +106,8 @@ class StltRscApiCallHandler
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
+    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
+    private final CtrlStltSerializer interComSerializer;
 
     @Inject
     StltRscApiCallHandler(
@@ -123,7 +129,9 @@ class StltRscApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
-        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef
+        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
+        FreeSpaceMgrFactory freeSpaceMgrFactoryRef,
+        CtrlStltSerializer interComSerializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -145,6 +153,8 @@ class StltRscApiCallHandler
         stltSecObjs = stltSecObjsRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
+        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
+        interComSerializer = interComSerializerRef;
     }
 
     /**
@@ -766,6 +776,36 @@ class StltRscApiCallHandler
         }
 
         StorPool storPool = getStorPool(vlm.getResource(), vlmApi, remoteRsc);
+        StorPool oldStorPool = vlm.getStorPool(apiCtx);
+        if (oldStorPool != null &&
+            !oldStorPool.getDriverKind().hasBackingStorage() &&
+            storPool.getDriverKind().hasBackingStorage()
+        )
+        {
+            // diskless -> diskfull
+            // send the controller the confirmation that we are removing the vlm from the
+            // diskless storPool and adding it to a diskfull storPool
+
+            // doing so we also have to send the updated freeSpace of the old storPool
+            // but as we are removing the vlm from a diskless storPool, we can return a constant
+            // as the "new" freeSpace. the freeSpace-update for the new storPool will get reported
+            // when the deviceHandler finishes
+
+            controllerPeerConnector.getControllerPeer()
+                .sendMessage(
+                    interComSerializer.onewayBuilder(InternalApiConsts.API_VLM_REMOVED_FROM_DISKLESS)
+                        .vlmRemovedFromDiskless(
+                            vlm.getUuid(),
+                            vlm.getResource().getAssignedNode().getName().displayValue,
+                            vlm.getResourceDefinition().getName().displayValue,
+                            vlm.getVolumeDefinition().getVolumeNumber().value,
+                            oldStorPool.getUuid(),
+                            oldStorPool.getName().displayValue,
+                            Long.MAX_VALUE
+                        )
+                        .build()
+                );
+        }
         vlm.setStorPool(apiCtx, storPool);
 
         Map<String, String> vlmProps = vlm.getProps(apiCtx).map();
@@ -800,13 +840,27 @@ class StltRscApiCallHandler
 
                     storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
-                storPool = storPoolDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    vlmApi.getStorPoolUuid(),
-                    rsc.getAssignedNode(),
-                    storPoolDfn,
-                    vlmApi.getStorDriverSimpleClassName()
-                );
+                try
+                {
+                    storPool = storPoolDataFactory.getInstanceSatellite(
+                        apiCtx,
+                        vlmApi.getStorPoolUuid(),
+                        rsc.getAssignedNode(),
+                        storPoolDfn,
+                        vlmApi.getStorDriverSimpleClassName(),
+                        freeSpaceMgrFactory.getInstance(
+                            apiCtx,
+                            // the satellite does not need to know how the freeSpaceMgr is named
+                            // as the free spaces are storPool-related.
+                            FreeSpaceMgrName.createReservedName(vlmApi.getStorPoolName())
+                        )
+                    );
+                    storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
+                }
+                catch (SQLException sqlExc)
+                {
+                    throw new ImplementationError(sqlExc);
+                }
             }
             else
             {

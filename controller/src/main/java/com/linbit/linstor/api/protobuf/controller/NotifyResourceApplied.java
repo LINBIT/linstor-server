@@ -6,7 +6,6 @@ import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 
 import javax.inject.Inject;
@@ -45,11 +44,15 @@ public class NotifyResourceApplied implements ApiCall
         apiCallHandler.updateVolumeData(
             msgIntAppliedRsc.getRscId().getName(),
             msgIntAppliedRsc.getVlmDataList().stream()
-                .map(v -> new VlmUpdatePojo(v.getVlmNr(), v.getBlockDevicePath(), v.getMetaDisk()))
-                .collect(Collectors.toList())
-        );
-
-        apiCallHandler.updateRealFreeSpace(
+                .map(v ->
+                    new VlmUpdatePojo(
+                        v.getVlmNr(),
+                        v.getBlockDevicePath(),
+                        v.getMetaDisk(),
+                        v.getRealSize()
+                    )
+                )
+                .collect(Collectors.toList()),
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )

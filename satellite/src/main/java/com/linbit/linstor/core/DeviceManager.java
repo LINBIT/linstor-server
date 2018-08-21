@@ -25,7 +25,7 @@ public interface DeviceManager extends DrbdStateChange
     void notifyVolumeResized(Volume vlm);
     void notifyDrbdVolumeResized(Volume vlm);
     void notifyResourceDeleted(Resource rsc);
-    void notifyVolumeDeleted(Volume vlm);
+    void notifyVolumeDeleted(Volume vlm, long freeSpace);
     void notifySnapshotDeleted(Snapshot snapshot);
 
     void markResourceForDispatch(ResourceName name);

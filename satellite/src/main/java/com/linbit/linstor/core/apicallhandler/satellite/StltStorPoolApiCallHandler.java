@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.FreeSpaceMgrFactory;
+import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
@@ -43,6 +45,7 @@ class StltStorPoolApiCallHandler
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataFactory storPoolDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -53,7 +56,8 @@ class StltStorPoolApiCallHandler
         ControllerPeerConnector controllerPeerConnectorRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataFactory storPoolDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        FreeSpaceMgrFactory freeSpaceMgrFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -64,6 +68,7 @@ class StltStorPoolApiCallHandler
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -157,19 +162,16 @@ class StltStorPoolApiCallHandler
                     storPoolRaw.getStorPoolUuid(),
                     controllerPeerConnector.getLocalNode(),
                     storPoolDfn,
-                    storPoolRaw.getDriver()
+                    storPoolRaw.getDriver(),
+                    freeSpaceMgrFactory.getInstance(
+                        apiCtx,
+                        FreeSpaceMgrName.restoreName(storPoolRaw.getFreeSpaceManagerName())
+                    )
                 );
                 storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
             }
 
             changedData = new ChangedData(storPoolDfnToRegister);
-
-            transMgrProvider.get().commit();
-
-            errorReporter.logInfo(
-                "Storage pool '%s' created.",
-                storPoolName.displayValue
-            );
 
             if (changedData.storPoolDfnToRegister != null)
             {
@@ -178,6 +180,12 @@ class StltStorPoolApiCallHandler
                     changedData.storPoolDfnToRegister
                 );
             }
+            transMgrProvider.get().commit();
+
+            errorReporter.logInfo(
+                "Storage pool '%s' created.",
+                storPoolName.displayValue
+            );
 
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);

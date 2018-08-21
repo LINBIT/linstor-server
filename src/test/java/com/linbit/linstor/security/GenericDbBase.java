@@ -12,6 +12,7 @@ import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
+import com.linbit.linstor.FreeSpaceMgrFactory;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node.NodeType;
@@ -140,6 +141,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
     @Inject protected NodeConnectionDataFactory nodeConnectionDataFactory;
     @Inject protected StorPoolDataFactory storPoolDataFactory;
+    @Inject protected FreeSpaceMgrFactory freeSpaceMgrFactory;
     @Inject protected VolumeDataFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;

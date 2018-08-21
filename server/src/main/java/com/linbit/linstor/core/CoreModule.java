@@ -6,6 +6,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.linstor.FreeSpaceMgr;
+import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -15,8 +17,12 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
 
+import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Map;
 import java.util.TreeMap;
@@ -31,6 +37,7 @@ public class CoreModule extends AbstractModule
     public static final String NODES_MAP_LOCK = "nodesMapLock";
     public static final String RSC_DFN_MAP_LOCK = "rscDfnMapLock";
     public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";
+    public static final String FREE_SPACE_MGR_MAP_LOCK = "freeSpaceMgrMapLock";
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
@@ -43,9 +50,10 @@ public class CoreModule extends AbstractModule
             )
             .toInstance(new TreeMap<>());
 
-        bind(NodesMap.class).toInstance(new NodesMapImpl());
-        bind(ResourceDefinitionMap.class).toInstance(new ResourceDefinitionMapImpl());
-        bind(StorPoolDefinitionMap.class).toInstance(new StorPoolDefinitionMapImpl());
+        bind(NodesMap.class).to(NodesMapImpl.class);
+        bind(ResourceDefinitionMap.class).to(ResourceDefinitionMapImpl.class);
+        bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
+        bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -56,6 +64,8 @@ public class CoreModule extends AbstractModule
         bind(ReadWriteLock.class).annotatedWith(Names.named(RSC_DFN_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(STOR_POOL_DFN_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(FREE_SPACE_MGR_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }
 
@@ -83,23 +93,65 @@ public class CoreModule extends AbstractModule
     {
     }
 
+    public interface FreeSpaceMgrMap extends Map<FreeSpaceMgrName, FreeSpaceMgr>
+    {
+    }
+
+    @Singleton
     public static class NodesMapImpl
-        extends TreeMap<NodeName, Node> implements NodesMap
+        extends TransactionMap<NodeName, Node> implements NodesMap
     {
+        @Inject
+        public NodesMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
     }
 
+    @Singleton
     public static class ResourceDefinitionMapImpl
-        extends TreeMap<ResourceName, ResourceDefinition> implements ResourceDefinitionMap
+        extends TransactionMap<ResourceName, ResourceDefinition> implements ResourceDefinitionMap
     {
+        @Inject
+        public ResourceDefinitionMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
     }
 
+    @Singleton
     public static class StorPoolDefinitionMapImpl
-        extends TreeMap<StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
+        extends TransactionMap<StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
     {
+        @Inject
+        public StorPoolDefinitionMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
     }
 
+    @Singleton
+    public static class FreeSpaceMgrMapImpl
+        extends TransactionMap<FreeSpaceMgrName, FreeSpaceMgr> implements FreeSpaceMgrMap
+    {
+        @Inject
+        public FreeSpaceMgrMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+
+    @Singleton
     public static class PeerMapImpl
         extends TreeMap<String, Peer> implements PeerMap
+    // intentionally not a TransactionMap, as the Peer interface would have to extend
+    // TransactionObject, which makes no sense as something like a "socket.close()" cannot
+    // be rolled back
     {
+        @Inject
+        public PeerMapImpl()
+        {
+        }
     }
 }

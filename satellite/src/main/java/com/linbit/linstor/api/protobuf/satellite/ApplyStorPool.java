@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.UUID;
 
 @ProtobufApiCall(
@@ -138,12 +139,13 @@ public class ApplyStorPool implements ApiCall
             storPoolData.getDriver(),
             ProtoMapUtils.asMap(storPoolData.getStorPoolPropsList()),
             ProtoMapUtils.asMap(storPoolData.getStorPoolDfnPropsList()),
-            null,
+            null, // List<Vlmapi> vlmRefs
             Collections.<String, String>emptyMap(),
             storPoolData.getFullSyncId(),
             storPoolData.getUpdateId(),
-            null,
-            null
+            storPoolData.getFreeSpaceMgrName(),
+            Optional.empty(), // free space
+            Optional.empty() // total space
         );
         return storPoolRaw;
     }

@@ -3,6 +3,8 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.FreeSpaceMgr;
+import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.Node;
@@ -105,6 +107,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final CoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
 
     @Inject
     public GenericDbDriver(
@@ -126,7 +129,8 @@ public class GenericDbDriver implements DatabaseDriver
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        CoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef
     )
     {
         dbCtx = privCtx;
@@ -148,6 +152,7 @@ public class GenericDbDriver implements DatabaseDriver
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
+        freeSpaceMgrMap = freeSpaceMgrMapRef;
     }
 
     /**
@@ -198,10 +203,14 @@ public class GenericDbDriver implements DatabaseDriver
                 loadedNodesMap.get(targetNode).getNodeConnMap().put(sourceNode, nodeConn);
             }
 
+            // loading free space managers
+            Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = storPoolDriver.loadAllFreeSpaceMgrs();
+
             // loading storage pools
             Map<StorPool, StorPool.InitMaps> loadedStorPools = Collections.unmodifiableMap(storPoolDriver.loadAll(
                 tmpNodesMap,
-                tmpStorPoolDfnMap
+                tmpStorPoolDfnMap,
+                tmpFreeSpaceMgrMap
             ));
             for (StorPool storPool : loadedStorPools.keySet())
             {
@@ -373,6 +382,7 @@ public class GenericDbDriver implements DatabaseDriver
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
             storPoolDfnMap.putAll(tmpStorPoolDfnMap);
+            freeSpaceMgrMap.putAll(tmpFreeSpaceMgrMap);
         }
         catch (AccessDeniedException exc)
         {

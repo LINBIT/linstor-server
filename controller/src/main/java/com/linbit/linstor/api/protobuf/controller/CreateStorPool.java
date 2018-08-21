@@ -41,6 +41,7 @@ public class CreateStorPool implements ApiCall
             storPool.getNodeName(),
             storPool.getStorPoolName(),
             storPool.getDriver(),
+            storPool.getFreeSpaceMgrName(),
             ProtoMapUtils.asMap(storPool.getPropsList())
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);

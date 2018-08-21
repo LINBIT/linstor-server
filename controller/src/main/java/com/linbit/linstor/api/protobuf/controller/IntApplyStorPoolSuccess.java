@@ -12,6 +12,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntApplyStorPoolSuccessOuterClas
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.UUID;
 
 @ProtobufApiCall(
@@ -38,10 +39,12 @@ public class IntApplyStorPoolSuccess implements ApiCall
 
         StorPoolFreeSpace freeSpaceProto = successMsg.getFreeSpace();
         apiCallHandler.updateRealFreeSpace(
-            new FreeSpacePojo(
-                UUID.fromString(freeSpaceProto.getStorPoolUuid()),
-                freeSpaceProto.getStorPoolName(),
-                freeSpaceProto.getFreeCapacity()
+            Arrays.asList(
+                new FreeSpacePojo(
+                    UUID.fromString(freeSpaceProto.getStorPoolUuid()),
+                    freeSpaceProto.getStorPoolName(),
+                    freeSpaceProto.getFreeCapacity()
+                )
             )
         );
     }

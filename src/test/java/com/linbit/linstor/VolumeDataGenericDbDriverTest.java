@@ -104,7 +104,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             storPoolDfn,
-            LvmDriver.class.getSimpleName()
+            LvmDriver.class.getSimpleName(),
+            null
         );
 
         volNr = new VolumeNumber(13);

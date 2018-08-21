@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -31,6 +32,7 @@ public class NodeDataControllerFactory
     private final Provider<TransactionMgr> transMgrProvider;
     private final NodeRepository nodeRepository;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
+    private final FreeSpaceMgr disklessFreeSpaceMgr;
 
     private static final StorPoolName DISKLESS_STOR_POOL_NAME;
 
@@ -55,7 +57,9 @@ public class NodeDataControllerFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         NodeRepository nodeRepositoryRef,
-        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
+        @SystemContext AccessContext sysCtx,
+        FreeSpaceMgrRepository freeSpaceMgrRepositoryRef
     )
     {
         dbDriver = dbDriverRef;
@@ -66,6 +70,21 @@ public class NodeDataControllerFactory
         transMgrProvider = transMgrProviderRef;
         nodeRepository = nodeRepositoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
+        try
+        {
+            disklessFreeSpaceMgr = freeSpaceMgrRepositoryRef.get(
+                sysCtx,
+                FreeSpaceMgrName.createReservedName(LinStor.DISKLESS_FREE_SPACE_MGR_NAME)
+            );
+            if (disklessFreeSpaceMgr == null)
+            {
+                throw new ImplementationError("diskless free space mgr not initialized yet");
+            }
+        }
+        catch (AccessDeniedException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     public NodeData create(
@@ -105,7 +124,8 @@ public class NodeDataControllerFactory
                 accCtx,
                 nodeData,
                 storPoolDefinitionRepository.get(accCtx, DISKLESS_STOR_POOL_NAME),
-                DisklessDriver.class.getSimpleName()
+                DisklessDriver.class.getSimpleName(),
+                disklessFreeSpaceMgr
             )
         );
 

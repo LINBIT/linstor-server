@@ -2,15 +2,22 @@ package com.linbit.linstor.api.pojo;
 
 public class VlmUpdatePojo
 {
-    private int volumeNumber;
-    private String blockDevicePath;
-    private String metaDiskPath;
+    private final int volumeNumber;
+    private final String blockDevicePath;
+    private final String metaDiskPath;
+    private final long realSize;
 
-    public VlmUpdatePojo(int volumeNumber, String blockDevicePath, String metaDiskPath)
+    public VlmUpdatePojo(
+        int volumeNumberRef,
+        String blockDevicePathRef,
+        String metaDiskPathRef,
+        long realSizeRef
+    )
     {
-        this.volumeNumber = volumeNumber;
-        this.blockDevicePath = blockDevicePath;
-        this.metaDiskPath = metaDiskPath;
+        volumeNumber = volumeNumberRef;
+        blockDevicePath = blockDevicePathRef;
+        metaDiskPath = metaDiskPathRef;
+        realSize = realSizeRef;
     }
 
     public int getVolumeNumber()
@@ -26,5 +33,10 @@ public class VlmUpdatePojo
     public String getMetaDiskPath()
     {
         return metaDiskPath;
+    }
+
+    public long getRealSize()
+    {
+        return realSize;
     }
 }

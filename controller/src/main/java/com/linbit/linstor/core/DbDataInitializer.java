@@ -4,7 +4,6 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.ResourceDefinitionRepository;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.annotation.SystemContext;
@@ -18,7 +17,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.sql.SQLException;

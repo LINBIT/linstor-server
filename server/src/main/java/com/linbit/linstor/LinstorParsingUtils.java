@@ -205,4 +205,22 @@ public class LinstorParsingUtils
         }
         return snapshotName;
     }
+
+    public static FreeSpaceMgrName asFreeSpaceMgrName(String freeSpaceMgrNameStr, String defaultNameStr)
+    {
+        String nameStr = freeSpaceMgrNameStr != null ? freeSpaceMgrNameStr : defaultNameStr;
+        FreeSpaceMgrName fsmName;
+        try
+        {
+            fsmName = FreeSpaceMgrName.createReservedName(nameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_FREE_SPACE_MGR_NAME,
+                "The given snapshot name '" + nameStr + "' is invalid."
+            ), invalidNameExc);
+        }
+        return fsmName;
+    }
 }

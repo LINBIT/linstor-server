@@ -91,10 +91,10 @@ public class ConnectionPropsTest extends GenericDbBase
         storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
 
         storPool1 = storPoolDataFactory.create(
-            SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName()
+            SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName(), null
         );
         storPool2 = storPoolDataFactory.create(
-            SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName()
+            SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), null
         );
 
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);

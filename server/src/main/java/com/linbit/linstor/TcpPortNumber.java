@@ -59,6 +59,7 @@ public class TcpPortNumber implements Comparable<TcpPortNumber>
             result = true;
         }
         else
+        if (other != null)
         {
             try
             {

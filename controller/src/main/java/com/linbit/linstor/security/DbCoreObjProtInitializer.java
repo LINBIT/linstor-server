@@ -1,5 +1,6 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.FreeSpaceMgrProtectionRepository;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.NodeProtectionRepository;
 import com.linbit.linstor.ResourceDefinitionProtectionRepository;
@@ -23,6 +24,7 @@ public class DbCoreObjProtInitializer
     private final NodeProtectionRepository nodesProtectionRepository;
     private final ResourceDefinitionProtectionRepository resourceDefinitionProtectionRepository;
     private final StorPoolDefinitionProtectionRepository storPoolDefinitionProtectionRepository;
+    private final FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepository;
     private final SystemConfProtectionRepository systemConfProtectionRepository;
     private final ShutdownProtHolder shutdownProtHolder;
 
@@ -35,6 +37,7 @@ public class DbCoreObjProtInitializer
         NodeProtectionRepository nodesProtectionRepositoryRef,
         ResourceDefinitionProtectionRepository resourceDefinitionProtectionRepositoryRef,
         StorPoolDefinitionProtectionRepository storPoolDefinitionProtectionRepositoryRef,
+        FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepositoryRef,
         SystemConfProtectionRepository systemConfProtectionRepositoryRef,
         ShutdownProtHolder shutdownProtHolderRef
     )
@@ -46,6 +49,7 @@ public class DbCoreObjProtInitializer
         nodesProtectionRepository = nodesProtectionRepositoryRef;
         resourceDefinitionProtectionRepository = resourceDefinitionProtectionRepositoryRef;
         storPoolDefinitionProtectionRepository = storPoolDefinitionProtectionRepositoryRef;
+        freeSpaceMgrProtectionRepository = freeSpaceMgrProtectionRepositoryRef;
         systemConfProtectionRepository = systemConfProtectionRepositoryRef;
         shutdownProtHolder = shutdownProtHolderRef;
     }
@@ -60,7 +64,7 @@ public class DbCoreObjProtInitializer
             initScope.enter();
             initScope.seed(TransactionMgr.class, transMgr);
 
-            // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
+            // initializing ObjectProtections for nodeMap, rscDfnMap, storPoolMap and freeSpaceMgrMap
             nodesProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("nodesMap"),
@@ -74,6 +78,11 @@ public class DbCoreObjProtInitializer
             storPoolDefinitionProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("storPoolMap"),
+                true
+            ));
+            freeSpaceMgrProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
+                initCtx,
+                ObjectProtection.buildPathController("freeSpaceMgrMap"),
                 true
             ));
 

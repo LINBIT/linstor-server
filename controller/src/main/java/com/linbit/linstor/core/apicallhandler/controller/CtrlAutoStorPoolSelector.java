@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -152,7 +151,9 @@ public class CtrlAutoStorPoolSelector
         {
             hasSpace = storPool.getDriverKind().usesThinProvisioning() ?
                 true :
-                storPool.getFreeSpace(peerAccCtx.get()).orElse(0L) >= rscSize;
+                storPool.getFreeSpaceManager()
+                    .getFreeSpaceCurrentEstimation(peerAccCtx.get())
+                    .orElse(0L) >= rscSize;
         }
         catch (AccessDeniedException exc)
         {
@@ -272,7 +273,9 @@ public class CtrlAutoStorPoolSelector
         {
             try
             {
-                freeSpace = node.getStorPool(peerAccCtx.get(), storPoolName).getFreeSpace(peerAccCtx.get());
+                freeSpace = node.getStorPool(peerAccCtx.get(), storPoolName)
+                    .getFreeSpaceManager()
+                    .getFreeSpaceCurrentEstimation(peerAccCtx.get());
             }
             catch (AccessDeniedException exc)
             {
@@ -516,8 +519,8 @@ public class CtrlAutoStorPoolSelector
             {
                 // compare the arguments in reverse order so that the candidate with more free space comes first
                 cmp = Long.compare(
-                    storPool2.getFreeSpace(accCtx).orElse(0L),
-                    storPool1.getFreeSpace(accCtx).orElse(0L)
+                    storPool2.getFreeSpaceManager().getFreeSpaceCurrentEstimation(accCtx).orElse(0L),
+                    storPool1.getFreeSpaceManager().getFreeSpaceCurrentEstimation(accCtx).orElse(0L)
                 );
             }
         }
@@ -541,8 +544,14 @@ public class CtrlAutoStorPoolSelector
         {
             // compare the arguments in reverse order so that the node with more free space comes first
             cmp = Long.compare(
-                nodeB.getStorPool(accCtx, storPoolName).getFreeSpace(accCtx).orElse(0L),
-                nodeA.getStorPool(accCtx, storPoolName).getFreeSpace(accCtx).orElse(0L)
+                nodeB.getStorPool(accCtx, storPoolName)
+                    .getFreeSpaceManager()
+                    .getFreeSpaceCurrentEstimation(accCtx)
+                    .orElse(0L),
+                nodeA.getStorPool(accCtx, storPoolName)
+                    .getFreeSpaceManager()
+                    .getFreeSpaceCurrentEstimation(accCtx)
+                    .orElse(0L)
             );
         }
         catch (AccessDeniedException exc)

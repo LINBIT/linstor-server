@@ -38,7 +38,8 @@ public class NotifyVolumeDeleted implements ApiCall
         apiCallHandler.volumeDeleted(
             msgDelVlm.getNodeName(),
             msgDelVlm.getRscName(),
-            msgDelVlm.getVlmNr()
+            msgDelVlm.getVlmNr(),
+            msgDelVlm.getFreeSpace()
         );
     }
 }

@@ -111,7 +111,9 @@ public class DbConstants
     public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
 
     // NODE_STOR_POOL column names
-    public static final String DRIVER_NAME = "DRIVER_NAME";
+    public static final String DRIVER_NAME             = "DRIVER_NAME";
+    public static final String FREE_SPACE_MGR_NAME     = "FREE_SPACE_MGR_NAME";
+    public static final String FREE_SPACE_MGR_DSP_NAME = "FREE_SPACE_MGR_DSP_NAME";
 
     // VOLUME_DEFINITIONS column names
     public static final String VLM_NR        = "VLM_NR";

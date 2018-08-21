@@ -22,26 +22,30 @@ public class StorPoolDataFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
 
     @Inject
     public StorPoolDataFactory(
         StorPoolDataDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        FreeSpaceMgrFactory freeSpaceMgrFactoryRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
 
     public StorPoolData create(
         AccessContext accCtx,
         Node node,
         StorPoolDefinition storPoolDef,
-        String storDriverSimpleClassNameRef
+        String storDriverSimpleClassNameRef,
+        FreeSpaceMgr freeSpaceMgrRef
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -61,6 +65,7 @@ public class StorPoolDataFactory
             node,
             storPoolDef,
             storDriverSimpleClassNameRef,
+            freeSpaceMgrRef,
             false,
             driver,
             propsContainerFactory,
@@ -69,6 +74,7 @@ public class StorPoolDataFactory
             new TreeMap<>()
         );
         driver.create(storPoolData);
+        freeSpaceMgrRef.add(accCtx, storPoolData);
         ((NodeData) node).addStorPool(accCtx, storPoolData);
         ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
 
@@ -80,7 +86,8 @@ public class StorPoolDataFactory
         UUID uuid,
         Node node,
         StorPoolDefinition storPoolDef,
-        String storDriverSimpleClassName
+        String storDriverSimpleClassName,
+        FreeSpaceMgr freeSpaceMgrRef
     )
         throws ImplementationError
     {
@@ -91,11 +98,24 @@ public class StorPoolDataFactory
             storPoolData = (StorPoolData) node.getStorPool(accCtx, storPoolDef.getName());
             if (storPoolData == null)
             {
+                FreeSpaceMgr fsm;
+                if (freeSpaceMgrRef == null)
+                {
+                    fsm = freeSpaceMgrFactory.getInstance(
+                        accCtx,
+                        FreeSpaceMgrName.createReservedName(storPoolDef.getName().displayValue)
+                    );
+                }
+                else
+                {
+                    fsm = freeSpaceMgrRef;
+                }
                 storPoolData = new StorPoolData(
                     uuid,
                     node,
                     storPoolDef,
                     storDriverSimpleClassName,
+                    fsm,
                     true,
                     driver,
                     propsContainerFactory,

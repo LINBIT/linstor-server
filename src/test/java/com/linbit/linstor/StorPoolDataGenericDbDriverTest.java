@@ -42,6 +42,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Inject private StorPoolDataGenericDbDriver driver;
 
     private StorPoolDefinitionData disklessSpdd;
+    private FreeSpaceMgr fsm;
 
 
     public StorPoolDataGenericDbDriverTest() throws InvalidNameException
@@ -64,6 +65,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
         spdd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
 
+        fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, FreeSpaceMgrName.createReservedName("TestFsm"));
+
         uuid = randomUUID();
     }
 
@@ -75,6 +78,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
+            fsm,
             false,
             driver,
             propsContainerFactory,
@@ -105,8 +109,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName()
-            // create
+            LvmDriver.class.getSimpleName(),
+            fsm
         );
         commit();
 
@@ -133,6 +137,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
+            fsm,
             false,
             driver,
             propsContainerFactory,
@@ -154,7 +159,11 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             )
         );
 
-        Map<StorPoolData, InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap);
+        Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = new HashMap<>();
+        tmpFreeSpaceMgrMap.put(fsm.getName(), fsm);
+
+
+        Map<StorPoolData, InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap, tmpFreeSpaceMgrMap);
 
         assertNotNull(storPools);
         assertEquals(2, storPools.size());
@@ -182,7 +191,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName()
+            LvmDriver.class.getSimpleName(),
+            fsm
         );
 
         // no clearCaches
@@ -202,6 +212,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
+            fsm,
             false,
             driver,
             propsContainerFactory,
@@ -230,8 +241,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName()
-            // create
+            LvmDriver.class.getSimpleName(),
+            fsm
         );
         commit();
 
@@ -260,6 +271,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
+            fsm,
             false,
             driver,
             propsContainerFactory,
@@ -297,6 +309,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
+            fsm,
             false,
             driver,
             propsContainerFactory,
@@ -312,7 +325,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName()
+            LvmDriver.class.getSimpleName(),
+            fsm
         );
     }
 }

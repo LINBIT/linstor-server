@@ -143,9 +143,9 @@ public class CtrlRscDfnApiCallHandler
 
             List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
-            ctrlTransactionHelper.commit();
-
             resourceDefinitionRepository.put(apiCtx, rscDfn.getName(), rscDfn);
+
+            ctrlTransactionHelper.commit();
 
             for (VolumeDefinitionData vlmDfn : createdVlmDfns)
             {
@@ -347,9 +347,9 @@ public class CtrlRscDfnApiCallHandler
                     {
                         ResourceName rscName = rscDfn.getName();
                         delete(rscDfn);
-                        ctrlTransactionHelper.commit();
 
                         resourceDefinitionRepository.remove(apiCtx, rscName);
+                        ctrlTransactionHelper.commit();
 
                         successMsg = descriptionFirstLetterCaps + " deleted.";
                         details = descriptionFirstLetterCaps + " UUID was: " + rscDfnUuid;

@@ -32,7 +32,7 @@ public class ProtoStorPoolFreeSpaceUtils
         return list;
     }
 
-    public static FreeSpacePojo[] toFreeSpacePojo(List<StorPoolFreeSpace> protoList)
+    public static List<FreeSpacePojo> toFreeSpacePojo(List<StorPoolFreeSpace> protoList)
     {
         List<FreeSpacePojo> list = new ArrayList<>();
         for (StorPoolFreeSpace protoFreeSpace : protoList)
@@ -45,10 +45,7 @@ public class ProtoStorPoolFreeSpaceUtils
                 )
             );
         }
-
-        FreeSpacePojo[] fspArr = new FreeSpacePojo[list.size()];
-        list.toArray(fspArr);
-        return fspArr;
+        return list;
     }
 
     private ProtoStorPoolFreeSpaceUtils()

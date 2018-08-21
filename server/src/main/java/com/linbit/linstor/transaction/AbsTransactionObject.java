@@ -20,11 +20,15 @@ import javax.inject.Provider;
  */
 public abstract class AbsTransactionObject implements TransactionObject
 {
+    private static final boolean DEBUG_MODE = false;
+
     private final Provider<TransactionMgr> transMgrProvider;
 
     private TransactionMgr activeTransMgr = null;
     private boolean inCommit = false;
     private boolean inRollback = false;
+
+    private StackTraceElement[] dbgActivationStackstrace;
 
     public AbsTransactionObject(Provider<TransactionMgr> transMgrProviderRef)
     {
@@ -49,14 +53,34 @@ public abstract class AbsTransactionObject implements TransactionObject
         {
             if (activeTransMgr != null && transMgrRef != null)
             {
+                if (DEBUG_MODE)
+                {
+                    System.err.println("Transcation manager was previously set by: ");
+                    for (StackTraceElement ste : dbgActivationStackstrace)
+                    {
+                        System.err.println("\tat " + ste);
+                    }
+                }
                 throw new ImplementationError("attempt to replace an active transMgr", null);
             }
             if (!hasTransMgr() && isDirtyWithoutTransMgr())
             {
+                if (DEBUG_MODE)
+                {
+                    System.err.println("Transcation manager was previously set by: ");
+                    for (StackTraceElement ste : dbgActivationStackstrace)
+                    {
+                        System.err.println("\tat " + ste);
+                    }
+                }
                 throw new ImplementationError("setConnection was called AFTER data was manipulated: " + this, null);
             }
             if (transMgrRef != null)
             {
+                if (DEBUG_MODE)
+                {
+                    dbgActivationStackstrace = Thread.currentThread().getStackTrace();
+                }
                 transMgrRef.register(getObjectToRegister());
             }
 
@@ -104,6 +128,10 @@ public abstract class AbsTransactionObject implements TransactionObject
             inRollback = true;
             rollbackImpl();
             inRollback = false;
+        }
+        if (DEBUG_MODE)
+        {
+            dbgActivationStackstrace = null;
         }
         activeTransMgr = null;
     }

@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -12,6 +13,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.util.UUID;
@@ -25,6 +27,7 @@ public class NodeDataSatelliteFactory
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CoreModule.NodesMap nodesMap;
+    private final FreeSpaceMgr disklessFreeSpaceMgr;
 
     @Inject
     public NodeDataSatelliteFactory(
@@ -34,7 +37,8 @@ public class NodeDataSatelliteFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CoreModule.NodesMap nodesMapRef
+        CoreModule.NodesMap nodesMapRef,
+        @Named(LinStor.DISKLESS_FREE_SPACE_MGR_NAME) FreeSpaceMgr disklessFreeSpaceMgrRef
     )
     {
         dbDriver = dbDriverRef;
@@ -44,6 +48,7 @@ public class NodeDataSatelliteFactory
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         nodesMap = nodesMapRef;
+        disklessFreeSpaceMgr = disklessFreeSpaceMgrRef;
     }
 
     public NodeData getInstanceSatellite(
@@ -85,7 +90,8 @@ public class NodeDataSatelliteFactory
                     disklessStorPoolUuid,
                     nodeData,
                     disklessStorPoolDfn,
-                    DisklessDriver.class.getSimpleName()
+                    DisklessDriver.class.getSimpleName(),
+                    disklessFreeSpaceMgr
                 ));
             }
         }

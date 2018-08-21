@@ -78,6 +78,12 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     }
 
     @Override
+    public String getFreeSpaceManagerName()
+    {
+        return storPool.getFreeSpaceMgrName();
+    }
+
+    @Override
     public Optional<Long> getFreeCapacity()
     {
         Long size = null;

@@ -118,9 +118,10 @@ class CtrlStorPoolDfnApiCallHandler
             StorPoolDefinitionData storPoolDfn = createStorPool(storPoolNameStr);
             ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
-            ctrlTransactionHelper.commit();
 
             storPoolDefinitionRepository.put(apiCtx, storPoolDfn.getName(), storPoolDfn);
+            ctrlTransactionHelper.commit();
+
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
         }
@@ -225,9 +226,9 @@ class CtrlStorPoolDfnApiCallHandler
                 UUID storPoolDfnUuid = storPoolDfn.getUuid();
                 StorPoolName storPoolName = storPoolDfn.getName();
                 delete(storPoolDfn);
-                ctrlTransactionHelper.commit();
 
                 storPoolDefinitionRepository.remove(apiCtx, storPoolName);
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolDfnUuid, getStorPoolDfnDescriptionInline(storPoolName.displayValue)));

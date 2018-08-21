@@ -34,6 +34,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -953,6 +954,31 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         for (Resource delRsc : rscMap.values())
                         {
                             Node peerNode = delRsc.getAssignedNode();
+
+                            delRsc.streamVolumes().forEach(vlm ->
+                                {
+                                    // we have to explicitly remove the volume from its storPool as that delete
+                                    // method now requires an updated freeSize.
+                                    try
+                                    {
+                                        StorPool storPool = vlm.getStorPool(wrkCtx);
+                                        StorageDriver driver = storPool.getDriver(wrkCtx, null, null, null, null);
+                                        storPool.removeVolume(wrkCtx, vlm, driver.getFreeSpace());
+                                    }
+                                    catch (AccessDeniedException accDeniedExc)
+                                    {
+                                        throw new ImplementationError(
+                                            "Worker context has not enough privileges",
+                                            accDeniedExc
+                                        );
+                                    }
+                                    catch (StorageException storExc)
+                                    {
+                                        errLog.reportError(storExc);
+                                    }
+                                }
+                            );
+
                             delRsc.delete(wrkCtx);
                             if (peerNode != controllerPeerConnector.getLocalNode())
                             {
@@ -966,11 +992,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                                 }
                             }
                         }
-                        transMgrProvider.get().commit();
                         // Since the local node no longer has the resource, it also does not need
                         // to know about the resource definition any longer, therefore
                         // delete the resource definition as well
                         rscDfnMap.remove(curRscName);
+                        transMgrProvider.get().commit();
                     }
                 }
             }
@@ -1236,7 +1262,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void notifyVolumeDeleted(Volume vlm)
+    public void notifyVolumeDeleted(Volume vlm, long freeSpace)
     {
         // Send delete notification to the controller
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
@@ -1251,6 +1277,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     msgNodeName,
                     msgRscName,
                     vlm.getVolumeDefinition().getVolumeNumber().value,
+                    freeSpace,
                     vlm.getUuid()
                 )
                 .build()

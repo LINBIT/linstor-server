@@ -3,6 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
@@ -32,6 +33,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_RESOURCE_DEFINITIONS    = "/resourcedefinitions/";
     private static final String PATH_NODES                   = "/nodes/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
+    private static final String PATH_FREE_SPACE_MGRS         = "/freespacemgrs/";
 
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
@@ -495,6 +497,17 @@ public final class ObjectProtection extends BaseTransactionObject
     public static String buildPathSPD(StorPoolName storPoolName)
     {
         return PATH_STOR_POOL_DEFINITIONS + storPoolName.value;
+    }
+
+    /**
+     * ObjProt-Path for FreeSpaceMgrs
+     *
+     * @param freeSpaceMgrName
+     * @return
+     */
+    public static String buildPath(FreeSpaceMgrName freeSpaceMgrName)
+    {
+        return PATH_FREE_SPACE_MGRS + freeSpaceMgrName.value;
     }
 
     String getObjectProtectionPath()

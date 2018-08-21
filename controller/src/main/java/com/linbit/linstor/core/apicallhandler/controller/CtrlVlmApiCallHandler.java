@@ -9,6 +9,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionRepository;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
@@ -21,6 +22,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -209,7 +211,8 @@ public class CtrlVlmApiCallHandler
     ApiCallRc volumeDeleted(
         String nodeNameStr,
         String rscNameStr,
-        int volumeNr
+        int volumeNr,
+        long freespace
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -229,6 +232,8 @@ public class CtrlVlmApiCallHandler
             UUID vlmUuid = vlm.getUuid(); // prevent access to deleted object
 
             markClean(vlm);
+
+            deleteFromStorPool(vlm, freespace);
 
             boolean allVlmsClean = true;
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
@@ -277,6 +282,25 @@ public class CtrlVlmApiCallHandler
         }
 
         return responses;
+    }
+
+    private void deleteFromStorPool(Volume vlm, long freeSpace)
+    {
+        StorPool storPool = null;
+        try
+        {
+            storPool = vlm.getStorPool(peerAccCtx.get());
+            storPool.removeVolume(peerAccCtx.get(), vlm, freeSpace);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "deleting " + getVlmDescriptionInline(vlm),
+                storPool == null ? ApiConsts.FAIL_ACC_DENIED_STOR_POOL :
+                    ApiConsts.FAIL_ACC_DENIED_FREE_SPACE_MGR
+            );
+        }
     }
 
     byte[] listVolumes(
@@ -480,6 +504,11 @@ public class CtrlVlmApiCallHandler
     {
         return "Node: " + nodeNameStr + ", Resource: " + rscNameStr +
             " Volume number: " + vlmNr;
+    }
+
+    public static String getVlmDescriptionInline(Volume vlm)
+    {
+        return getVlmDescriptionInline(vlm.getResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescriptionInline(Resource rsc, VolumeDefinition vlmDfn)

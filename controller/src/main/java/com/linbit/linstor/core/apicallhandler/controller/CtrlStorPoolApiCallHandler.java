@@ -2,11 +2,15 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.FreeSpaceMgrFactory;
+import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataFactory;
@@ -15,6 +19,7 @@ import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -44,6 +49,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -68,6 +74,7 @@ public class CtrlStorPoolApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -84,7 +91,8 @@ public class CtrlStorPoolApiCallHandler
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        FreeSpaceMgrFactory freeSpaceMgrFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -101,12 +109,14 @@ public class CtrlStorPoolApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
 
     public ApiCallRc createStorPool(
         String nodeNameStr,
         String storPoolNameStr,
         String driver,
+        String freeSpaceMgrNameStr,
         Map<String, String> storPoolPropsMap
     )
     {
@@ -124,13 +134,14 @@ public class CtrlStorPoolApiCallHandler
             // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
             requireStorPoolDfnMapChangeAccess();
 
-            StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver);
+            StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver, freeSpaceMgrNameStr);
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
+            updateStorPoolDfnMap(storPool);
+
             ctrlTransactionHelper.commit();
 
-            updateStorPoolDfnMap(storPool);
             responseConverter.addWithDetail(
                 responses, context, ctrlSatelliteUpdater.updateSatellite(storPool));
 
@@ -336,7 +347,65 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    void updateRealFreeSpace(FreeSpacePojo[] freeSpacePojos)
+    public void vlmRemovedFromDiskless(
+        UUID vlmUuid,
+        String nodeNameStr,
+        String rscNameStr,
+        int vlmNrInt,
+        UUID storPoolUuid,
+        String storPoolNameStr,
+        long freeSpaceRef
+    )
+    {
+        StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
+        // TODO check storPool's uuid
+
+        ResourceName rscName = null;
+        try
+        {
+            rscName = new ResourceName(rscNameStr);
+        }
+        catch (InvalidNameException exc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Invalid resourceName from satellite: " + exc.invalidName
+                )
+            );
+        }
+        VolumeNumber vlmNr = null;
+        try
+        {
+            vlmNr = new VolumeNumber(vlmNrInt);
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Invalid vlmNr from satellite: " + vlmNrInt
+                )
+            );
+        }
+        Volume vlm;
+        try
+        {
+            vlm = storPool.getNode().getResource(apiCtx, rscName).getVolume(vlmNr);
+
+            // TODO check vlm's UUID
+            storPool.getFreeSpaceManager().volumeRemoved(apiCtx, vlm, freeSpaceRef);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Controller's api context has not enough privileges to gather requested data.",
+                    accDeniedExc
+                )
+            );
+        }
+    }
+
+    void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
     {
         if (!peer.get().getNode().isDeleted())
         {
@@ -344,7 +413,7 @@ public class CtrlStorPoolApiCallHandler
 
             try
             {
-                for (FreeSpacePojo freeSpacePojo : freeSpacePojos)
+                for (FreeSpacePojo freeSpacePojo : freeSpacePojoList)
                 {
                     ResponseContext context = makeStorPoolContext(
                         ApiOperation.makeModifyOperation(),
@@ -399,11 +468,17 @@ public class CtrlStorPoolApiCallHandler
     {
         try
         {
-            storPool.setRealFreeSpace(peerAccCtx.get(), freeSpace);
+            storPool.getFreeSpaceManager().setFreeSpace(peerAccCtx.get(), freeSpace);
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException accDeniedExc)
         {
-            throw new ImplementationError(exc);
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "update free space of free space manager '" +
+                    storPool.getFreeSpaceManager().getName().displayValue +
+                    "'",
+                ApiConsts.FAIL_ACC_DENIED_FREE_SPACE_MGR
+            );
         }
     }
 
@@ -426,12 +501,19 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    private StorPoolData createStorPool(String nodeNameStr, String storPoolNameStr, String driver)
+    private StorPoolData createStorPool(
+        String nodeNameStr,
+        String storPoolNameStr,
+        String driver,
+        String freeSpaceMgrNameStr
+    )
     {
         NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
 
         StorPoolData storPool;
+        FreeSpaceMgrName fsmName = LinstorParsingUtils.asFreeSpaceMgrName(freeSpaceMgrNameStr, storPoolNameStr);
+
         try
         {
             if (storPoolDef == null)
@@ -447,7 +529,8 @@ public class CtrlStorPoolApiCallHandler
                 peerAccCtx.get(),
                 node,
                 storPoolDef,
-                driver
+                driver,
+                freeSpaceMgrFactory.getInstance(peerAccCtx.get(), fsmName)
             );
         }
         catch (AccessDeniedException accDeniedExc)

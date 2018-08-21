@@ -28,6 +28,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -65,6 +66,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgInt
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
+import com.linbit.linstor.proto.javainternal.MsgIntVlmRemovedFromDisklessOuterClass.MsgIntVlmRemovedFromDiskless;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -621,6 +623,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         String nodeName,
         String resourceName,
         int volumeNr,
+        long freeSpace,
         UUID vlmUuid
     )
     {
@@ -630,6 +633,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setNodeName(nodeName)
                 .setRscName(resourceName)
                 .setVlmNr(volumeNr)
+                .setFreeSpace(freeSpace)
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -729,6 +733,37 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return this;
     }
 
+    @Override
+    public CommonSerializerBuilder vlmRemovedFromDiskless(
+        UUID vlmUuid,
+        String nodeName,
+        String rscName,
+        int vlmNr,
+        UUID storPoolUuid,
+        String storPoolName,
+        long freeSpace
+    )
+    {
+        try
+        {
+            MsgIntVlmRemovedFromDiskless.newBuilder()
+                .setVlmUuid(vlmUuid.toString())
+                .setNodeName(nodeName)
+                .setRscName(rscName)
+                .setVlmNr(vlmNr)
+                .setStorPoolUuid(storPoolUuid.toString())
+                .setStorPoolName(storPoolName)
+                .setFreeSpace(freeSpace)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
     /*
      * Helper methods
      */
@@ -762,6 +797,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             .setStorPoolDfnUuid(storPoolDfn.getUuid().toString())
             .setStorPoolName(storPool.getName().displayValue)
             .setDriver(storPool.getDriverName())
+            .setFreeSpaceMgrName(storPool.getFreeSpaceManager().getName().displayValue)
             .addAllStorPoolProps(asLinStorList(storPool.getProps(serializerCtx)))
             .addAllStorPoolDfnProps(asLinStorList(storPoolDfn.getProps(serializerCtx)))
             .setFullSyncId(fullSyncTimestamp)
