@@ -290,6 +290,7 @@ public class ConfFileBuilderTest
         when(resource.iterateVolumes()).thenAnswer(makeIteratorAnswer(volume));
         when(resource.getNodeId()).thenReturn(new NodeId(12));
         when(resource.getProps(accessContext)).thenReturn(rscProps);
+        when(resource.disklessForPeers(accessContext)).thenReturn(diskless);
 
         when(assignedNode.getProps(accessContext)).thenReturn(nodeProps);
 

@@ -18,12 +18,20 @@ public class ResourceDataTest
     {
         final long mask = Resource.RscFlags.CLEAN.flagValue |
                 Resource.RscFlags.DELETE.flagValue |
-                Resource.RscFlags.DISKLESS.flagValue;
+                Resource.RscFlags.DISKLESS.flagValue |
+                Resource.RscFlags.DISK_ADD_REQUESTED.flagValue |
+                Resource.RscFlags.DISK_ADDING.flagValue;
         List<String> strList = Resource.RscFlags.toStringList(mask);
         assertEquals(Resource.RscFlags.values().length, strList.size());
 
         assertArrayEquals(
-                new String[]{ApiConsts.FLAG_CLEAN, ApiConsts.FLAG_DELETE, ApiConsts.FLAG_DISKLESS},
+                new String[]{
+                    ApiConsts.FLAG_CLEAN,
+                    ApiConsts.FLAG_DELETE,
+                    ApiConsts.FLAG_DISKLESS,
+                    ApiConsts.FLAG_DISK_ADD_REQUESTED,
+                    ApiConsts.FLAG_DISK_ADDING
+                },
                 strList.toArray());
         assertEquals(mask, Resource.RscFlags.fromStringList(strList));
     }
