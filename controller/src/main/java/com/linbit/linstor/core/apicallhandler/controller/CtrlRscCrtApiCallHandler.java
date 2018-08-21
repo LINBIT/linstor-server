@@ -23,6 +23,7 @@ import com.linbit.linstor.event.common.UsageState;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -144,7 +145,7 @@ public class CtrlRscCrtApiCallHandler
 
             // Only notify satellite if there are volumes to deploy.
             // This allows us to delete resources without volumes without notifying the satellites.
-            satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc);
+            satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc).map(Tuple2::getT2);
 
             resourceReadyResponses = eventWaiter
                 .waitForStream(

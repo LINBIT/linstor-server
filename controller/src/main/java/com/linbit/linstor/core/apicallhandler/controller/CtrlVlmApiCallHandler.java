@@ -467,6 +467,15 @@ public class CtrlVlmApiCallHandler
         }
     }
 
+    public static String getVlmDescription(Volume vlm)
+    {
+        return getVlmDescription(
+            vlm.getResource().getAssignedNode().getName().displayValue,
+            vlm.getResourceDefinition().getName().displayValue,
+            vlm.getVolumeDefinition().getVolumeNumber().value
+        );
+    }
+
     public static String getVlmDescription(String nodeNameStr, String rscNameStr, Integer vlmNr)
     {
         return "Node: " + nodeNameStr + ", Resource: " + rscNameStr +

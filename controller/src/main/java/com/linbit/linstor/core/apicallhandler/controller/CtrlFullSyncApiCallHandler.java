@@ -7,41 +7,82 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
 @Singleton
-class CtrlFullSyncApiCallHandler
+public class CtrlFullSyncApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
+    private final ScopeRunner scopeRunner;
     private final CtrlStltSerializer interComSerializer;
+    private final Set<CtrlSatelliteConnectionListener> satelliteConnectionListeners;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final ReadWriteLock storPoolDfnMapLock;
 
     @Inject
     CtrlFullSyncApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlStltSerializer interComSerializerRef
+        ScopeRunner scopeRunnerRef,
+        CtrlStltSerializer interComSerializerRef,
+        Set<CtrlSatelliteConnectionListener> satelliteConnectionListenersRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
+        scopeRunner = scopeRunnerRef;
         interComSerializer = interComSerializerRef;
+        satelliteConnectionListeners = satelliteConnectionListenersRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
     }
 
-    void sendFullSync(Peer satellite, long expectedFullSyncId)
+    public Flux<?> sendFullSync(Peer satellite, long expectedFullSyncId)
     {
+        return scopeRunner.fluxInTransactionalScope(
+            LockGuard.createDeferred(
+                nodesMapLock.readLock(),
+                rscDfnMapLock.readLock(),
+                storPoolDfnMapLock.readLock(),
+                satellite.getSerializerLock().writeLock()
+            ),
+            () -> sendFullSyncInScope(satellite, expectedFullSyncId)
+        );
+    }
+
+    private Flux<?> sendFullSyncInScope(Peer satellite, long expectedFullSyncId)
+    {
+        Flux<?> flux;
+
         try
         {
             Node localNode = satellite.getNode();
@@ -81,6 +122,8 @@ class CtrlFullSyncApiCallHandler
                     .fullSync(nodes, storPools, rscs, snapshots, expectedFullSyncId, -1) // fullSync has -1 as updateId
                     .build()
             );
+
+            flux = notifyConnectionListeners(localNode);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -90,7 +133,47 @@ class CtrlFullSyncApiCallHandler
                     accDeniedExc
                 )
             );
-
+            flux = Flux.empty();
         }
+
+        return flux;
+    }
+
+    private Flux<?> notifyConnectionListeners(Node localNode)
+    {
+        List<Flux<ApiCallRc>> connectionListenerResponses = new ArrayList<>();
+
+        for (CtrlSatelliteConnectionListener connectionListener : satelliteConnectionListeners)
+        {
+            try
+            {
+                connectionListenerResponses.add(
+                    connectionListener.satelliteConnected(localNode)
+                );
+            }
+            catch (Exception | ImplementationError exc)
+            {
+                errorReporter.reportError(
+                    exc,
+                    null,
+                    null,
+                    "Error performing operations after connecting to " + localNode
+                );
+            }
+        }
+
+        return Flux.fromIterable(connectionListenerResponses)
+            .flatMap(listenerFlux -> listenerFlux.onErrorResume(exc -> handleListenerError(localNode, exc)));
+    }
+
+    private Publisher<? extends ApiCallRc> handleListenerError(Node localNode, Throwable exc)
+    {
+        errorReporter.reportError(
+            exc,
+            null,
+            null,
+            "Error emitted performing operations after connecting to " + localNode
+        );
+        return Flux.empty();
     }
 }

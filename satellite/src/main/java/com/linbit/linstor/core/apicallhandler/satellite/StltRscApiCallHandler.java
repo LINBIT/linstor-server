@@ -64,6 +64,7 @@ import com.linbit.utils.Base64;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -390,10 +391,7 @@ class StltRscApiCallHandler
 
                         if (vlm != null)
                         {
-                            checkUuid(vlm, vlmApi, localRsc.toString());
-
-                            vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
-                            vlm.getFlags().resetFlagsTo(apiCtx, Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
+                            mergeVlm(vlm, vlmApi, false);
                         }
                         else
                         {
@@ -536,8 +534,7 @@ class StltRscApiCallHandler
                                 }
                                 else
                                 {
-                                    StorPool remoteVlmStorPool = vlm.getStorPool(apiCtx);
-                                    remoteVlmStorPool.getProps(apiCtx).map().putAll(remoteVlmApi.getStorPoolProps());
+                                    mergeVlm(vlm, remoteVlmApi, true);
                                 }
                             }
                         }
@@ -741,53 +738,7 @@ class StltRscApiCallHandler
         // Do not load volumes for which we have successfully deleted our local volume
         if (!cleanDeletedVolumeNumbers.contains(vlmApi.getVlmNr()))
         {
-            StorPool storPool = rsc.getAssignedNode().getStorPool(
-                apiCtx,
-                new StorPoolName(vlmApi.getStorPoolName())
-            );
-
-            if (storPool == null)
-            {
-                if (remoteRsc)
-                {
-                    StorPoolDefinition storPoolDfn =
-                        storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
-                    if (storPoolDfn == null)
-                    {
-                        storPoolDfn = storPoolDefinitionDataFactory.getInstance(
-                            apiCtx,
-                            vlmApi.getStorPoolDfnUuid(),
-                            new StorPoolName(vlmApi.getStorPoolName())
-                        );
-
-                        storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
-
-                        storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
-                    }
-                    storPool = storPoolDataFactory.getInstanceSatellite(
-                        apiCtx,
-                        vlmApi.getStorPoolUuid(),
-                        rsc.getAssignedNode(),
-                        storPoolDfn,
-                        vlmApi.getStorDriverSimpleClassName()
-                    );
-                    storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
-                }
-                else
-                {
-                    throw new DivergentDataException("Unknown StorPool: '" + vlmApi.getStorPoolName() + "'");
-                }
-            }
-            if (!remoteRsc && !storPool.getUuid().equals(vlmApi.getStorPoolUuid()))
-            {
-                throw new DivergentUuidsException(
-                    "StorPool",
-                    storPool.toString(),
-                    vlmApi.getStorPoolName(),
-                    storPool.getUuid(),
-                    vlmApi.getStorPoolUuid()
-                );
-            }
+            StorPool storPool = getStorPool(rsc, vlmApi, remoteRsc);
 
             VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
@@ -806,6 +757,79 @@ class StltRscApiCallHandler
         }
     }
 
+    private void mergeVlm(Volume vlm, VlmApi vlmApi, boolean remoteRsc)
+        throws DivergentDataException, AccessDeniedException, SQLException, InvalidNameException
+    {
+        if (!remoteRsc)
+        {
+            checkUuid(vlm, vlmApi);
+        }
+
+        StorPool storPool = getStorPool(vlm.getResource(), vlmApi, remoteRsc);
+        vlm.setStorPool(apiCtx, storPool);
+
+        Map<String, String> vlmProps = vlm.getProps(apiCtx).map();
+        vlmProps.clear();
+        vlmProps.putAll(vlmApi.getVlmProps());
+        vlm.getFlags().resetFlagsTo(apiCtx, Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
+    }
+
+    private StorPool getStorPool(Resource rsc, VlmApi vlmApi, boolean remoteRsc)
+        throws AccessDeniedException, InvalidNameException, DivergentDataException
+    {
+        StorPool storPool = rsc.getAssignedNode().getStorPool(
+            apiCtx,
+            new StorPoolName(vlmApi.getStorPoolName())
+        );
+
+        if (storPool == null)
+        {
+            if (remoteRsc)
+            {
+                StorPoolDefinition storPoolDfn =
+                    storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
+                if (storPoolDfn == null)
+                {
+                    storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+                        apiCtx,
+                        vlmApi.getStorPoolDfnUuid(),
+                        new StorPoolName(vlmApi.getStorPoolName())
+                    );
+
+                    storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
+
+                    storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+                }
+                storPool = storPoolDataFactory.getInstanceSatellite(
+                    apiCtx,
+                    vlmApi.getStorPoolUuid(),
+                    rsc.getAssignedNode(),
+                    storPoolDfn,
+                    vlmApi.getStorDriverSimpleClassName()
+                );
+            }
+            else
+            {
+                throw new DivergentDataException("Unknown StorPool: '" + vlmApi.getStorPoolName() + "'");
+            }
+        }
+        if (!remoteRsc && !storPool.getUuid().equals(vlmApi.getStorPoolUuid()))
+        {
+            throw new DivergentUuidsException(
+                "StorPool",
+                storPool.toString(),
+                vlmApi.getStorPoolName(),
+                storPool.getUuid(),
+                vlmApi.getStorPoolUuid()
+            );
+        }
+
+        Map<String, String> storPoolProps = storPool.getProps(apiCtx).map();
+        storPoolProps.clear();
+        storPoolProps.putAll(vlmApi.getStorPoolProps());
+
+        return storPool;
+    }
 
     private void checkUuid(Node node, OtherRscPojo otherRsc)
         throws DivergentUuidsException
@@ -871,8 +895,7 @@ class StltRscApiCallHandler
 
     private void checkUuid(
         Volume vlm,
-        VlmApi vlmRaw,
-        String remoteRscName
+        VlmApi vlmRaw
     )
         throws DivergentUuidsException
     {
@@ -883,7 +906,7 @@ class StltRscApiCallHandler
             vlm.toString(),
             String.format(
                 "Rsc: '%s', VlmNr: '%d'",
-                remoteRscName,
+                vlm.getResource().getDefinition().getName().displayValue,
                 vlmRaw.getVlmNr()
             )
         );

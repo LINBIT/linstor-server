@@ -114,21 +114,6 @@ public class CtrlApiCallHandler
         apiCallId = apiCallIdRef;
     }
 
-    public void sendFullSync(long expectedFullSyncId)
-    {
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                rscDfnMapLock.readLock(),
-                storPoolDfnMapLock.readLock(),
-                peer.get().getSerializerLock().writeLock()
-            )
-        )
-        {
-            fullSyncApiCallHandler.sendFullSync(peer.get(), expectedFullSyncId);
-        }
-    }
-
     /**
      * Creates a new {@link Node}
      *

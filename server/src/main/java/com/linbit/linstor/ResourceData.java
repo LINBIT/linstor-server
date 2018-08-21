@@ -233,6 +233,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         return volumeMap.get(volNr);
     }
 
+    @Override
     public int getVolumeCount()
     {
         checkDeleted();
@@ -290,6 +291,14 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         checkDeleted();
         return flags;
+    }
+
+    @Override
+    public boolean disklessForPeers(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return flags.isSet(accCtx, RscFlags.DISKLESS) && flags.isUnset(accCtx, RscFlags.DISK_ADDING);
     }
 
     @Override

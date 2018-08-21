@@ -1,7 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -195,5 +198,33 @@ public class ResponseUtils
             "A database error occured while %s.",
             action
         );
+    }
+
+    public static ApiCallRc.RcEntry makeFullSyncFailedResponse(Peer satellite)
+    {
+        return ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.WARN_STLT_NOT_UPDATED,
+                "Satellite reported an error during fullSync. This change will NOT be " +
+                    "delivered to satellte '" + satellite.getNode().getName().displayValue +
+                    "' until the error is resolved. Reconnect the satellite to the controller " +
+                    "to remove this blockade."
+            )
+            .build();
+    }
+
+    public static ApiCallRc.RcEntry makeNotConnectedWarning(NodeName nodeName)
+    {
+        return ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.WARN_NOT_CONNECTED,
+                "No active connection to satellite '" + nodeName + "'"
+            )
+            .setDetails(
+                "The controller is trying to (re-) establish a connection to the satellite. " +
+                    "The controller stored the changes and as soon the satellite is connected, it will " +
+                    "receive this update."
+            )
+            .build();
     }
 }

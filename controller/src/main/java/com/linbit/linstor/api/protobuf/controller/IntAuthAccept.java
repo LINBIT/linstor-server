@@ -1,13 +1,12 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.ImplementationError;
-import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlFullSyncApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
@@ -15,41 +14,44 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Privilege;
+import org.slf4j.event.Level;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import org.slf4j.event.Level;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_AUTH_ACCEPT,
     description = "Called by the satellite to indicate that controller authentication succeeded",
     requiresAuth = false
 )
-public class IntAuthAccept implements ApiCall
+public class IntAuthAccept implements ApiCallReactive
 {
     private final ErrorReporter errorReporter;
-    private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
+    private final Peer peer;
     private final AccessContext sysCtx;
 
     @Inject
     public IntAuthAccept(
         ErrorReporter errorReporterRef,
-        CtrlApiCallHandler apiCallHandlerRef,
-        Peer clientRef,
+        CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
+        Peer peerRef,
         @SystemContext AccessContext sysCtxRef
     )
     {
         errorReporter = errorReporterRef;
-        apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
+        peer = peerRef;
         sysCtx = sysCtxRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
+        Flux<?> flux;
         MsgIntAuthSuccess msgIntAuthSuccess = MsgIntAuthSuccess.parseDelimitedFrom(msgDataIn);
         long expectedFullSyncId = msgIntAuthSuccess.getExpectedFullSyncId();
 
@@ -58,13 +60,13 @@ public class IntAuthAccept implements ApiCall
             msgIntAuthSuccess.getVersionMinor(),
             msgIntAuthSuccess.getVersionPatch()))
         {
-            client.setAuthenticated(true);
-            client.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
+            peer.setAuthenticated(true);
+            peer.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
 
             // Set the satellite's access context
             // Certain APIs called by the satellite are executed with a privileged access context by the controller,
             // while the access context of the peer connection itself remains unprivileged
-            AccessContext curCtx = client.getAccessContext();
+            AccessContext curCtx = peer.getAccessContext();
             AccessContext privCtx = sysCtx.clone();
             try
             {
@@ -74,7 +76,7 @@ public class IntAuthAccept implements ApiCall
                 AccessContext newCtx = privCtx.impersonate(Identity.SYSTEM_ID, curCtx.subjectRole, curCtx.subjectDomain);
                 // Disable all privileges on the Satellite's access context permanently
                 newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
-                client.setAccessContext(privCtx, newCtx);
+                peer.setAccessContext(privCtx, newCtx);
             }
             catch (AccessDeniedException accExc)
             {
@@ -87,23 +89,26 @@ public class IntAuthAccept implements ApiCall
                     )
                 );
             }
-            errorReporter.logDebug("Satellite '" + client.getNode().getName() + "' authenticated");
+            errorReporter.logDebug("Satellite '" + peer.getNode().getName() + "' authenticated");
 
-            apiCallHandler.sendFullSync(expectedFullSyncId);
+            flux = ctrlFullSyncApiCallHandler.sendFullSync(peer, expectedFullSyncId);
         }
         else
         {
-            client.setConnectionStatus(Peer.ConnectionStatus.VERSION_MISMATCH);
+            peer.setConnectionStatus(Peer.ConnectionStatus.VERSION_MISMATCH);
             errorReporter.logError(
                 String.format(
                     "Satellite '%s' version mismatch(v%d.%d.%d).",
-                    client.getNode().getName(),
+                    peer.getNode().getName(),
                     msgIntAuthSuccess.getVersionMajor(),
                     msgIntAuthSuccess.getVersionMinor(),
                     msgIntAuthSuccess.getVersionPatch()
                 )
             );
-            client.closeConnection();
+            peer.closeConnection();
+            flux = Flux.empty();
         }
+
+        return flux.thenMany(Flux.<byte[]>empty());
     }
 }

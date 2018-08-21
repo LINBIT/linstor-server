@@ -14,8 +14,8 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -93,7 +93,7 @@ public class CtrlSatelliteUpdater
                 {
                     if (satellitePeer.hasFullSyncFailed())
                     {
-                        responses.addEntry(makeFullSyncFailedResponse(satellitePeer));
+                        responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(satellitePeer));
                     }
                     else if (satellitePeer.isConnected())
                     {
@@ -133,7 +133,7 @@ public class CtrlSatelliteUpdater
                 {
                     if (currentPeer.hasFullSyncFailed())
                     {
-                        responses.addEntry(makeFullSyncFailedResponse(currentPeer));
+                        responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(currentPeer));
                     }
                     else
                     {
@@ -150,19 +150,7 @@ public class CtrlSatelliteUpdater
                 }
                 else
                 {
-                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
-                    responses.addEntry(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.WARN_NOT_CONNECTED,
-                            "No active connection to satellite '" + nodeName + "'"
-                        )
-                        .setDetails(
-                            "The controller is trying to (re-) establish a connection to the satellite. " +
-                                "The controller stored the changes and as soon the satellite is connected, it will " +
-                                "receive this update."
-                        )
-                        .build()
-                    );
+                    responses.addEntry(ResponseUtils.makeNotConnectedWarning(currentRsc.getAssignedNode().getName()));
                 }
             }
         }
@@ -191,7 +179,7 @@ public class CtrlSatelliteUpdater
             {
                 if (satellitePeer.hasFullSyncFailed())
                 {
-                    responses.addEntry(makeFullSyncFailedResponse(satellitePeer));
+                    responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(satellitePeer));
                 }
                 else
                 {
@@ -208,18 +196,7 @@ public class CtrlSatelliteUpdater
             }
             else
             {
-                responses.addEntry(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.WARN_NOT_CONNECTED,
-                        "No active connection to satellite '" + node.getName().displayValue + "'"
-                    )
-                    .setDetails(
-                        "The controller is trying to (re-) establish a connection to the satellite. " +
-                            "The controller stored the changes and as soon the satellite is connected, it will " +
-                            "receive this update."
-                    )
-                    .build()
-                );
+                responses.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
             }
         }
         catch (AccessDeniedException implError)
@@ -246,7 +223,7 @@ public class CtrlSatelliteUpdater
                 {
                     if (currentPeer.hasFullSyncFailed())
                     {
-                        responses.addEntry(makeFullSyncFailedResponse(currentPeer));
+                        responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(currentPeer));
                     }
                     else
                     {
@@ -264,18 +241,7 @@ public class CtrlSatelliteUpdater
                 }
                 if (!connected)
                 {
-                    responses.addEntry(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.WARN_NOT_CONNECTED,
-                            "No active connection to satellite '" + snapshot.getNodeName().displayValue + "'"
-                        )
-                        .setDetails(
-                            "The controller is trying to (re-) establish a connection to the satellite. " +
-                                "The controller stored the changes and as soon the satellite is connected, it will " +
-                                "receive this update."
-                        )
-                        .build()
-                    );
+                    responses.addEntry(ResponseUtils.makeNotConnectedWarning(snapshot.getNodeName()));
                 }
             }
         }
@@ -285,18 +251,5 @@ public class CtrlSatelliteUpdater
         }
 
         return responses;
-    }
-
-    private static ApiCallRc.RcEntry makeFullSyncFailedResponse(Peer satellite)
-    {
-        return ApiCallRcImpl
-            .entryBuilder(
-                ApiConsts.WARN_STLT_NOT_UPDATED,
-                "Satellite reported an error during fullSync. This change will NOT be " +
-                    "delivered to satellte '" + satellite.getNode().getName().displayValue +
-                    "' until the error is resolved. Reconnect the satellite to the controller " +
-                    "to remove this blockade."
-            )
-            .build();
     }
 }

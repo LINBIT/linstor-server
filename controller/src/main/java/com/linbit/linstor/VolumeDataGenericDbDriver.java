@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.SystemContext;
@@ -58,6 +59,12 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ? AND " +
                     VOL_ID        + " = ?";
+    private static final String UPDATE_STOR_POOL =
+        " UPDATE " + TBL_VOL +
+            " SET "   + VOL_STOR_POOL + " = ? " +
+            " WHERE " + VOL_NODE_NAME + " = ? AND " +
+                        VOL_RES_NAME  + " = ? AND " +
+                        VOL_ID        + " = ?";
     private static final String DELETE =
         " DELETE FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
@@ -68,6 +75,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     private final ErrorReporter errorReporter;
 
     private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
+    private final SingleColumnDatabaseDriver<VolumeData, StorPool> storPoolDriver;
 
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -89,6 +97,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         transMgrProvider = transMgrProviderRef;
 
         flagPersistenceDriver = new VolFlagsPersistence();
+        storPoolDriver = new StorPoolDriver();
     }
 
     public Map<VolumeData, Volume.InitMaps> loadAll(
@@ -224,6 +233,12 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         return flagPersistenceDriver;
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<VolumeData, StorPool> getStorPoolDriver()
+    {
+        return storPoolDriver;
+    }
+
     private String getId(VolumeData volume)
     {
         return getVolId(
@@ -290,6 +305,41 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             catch (AccessDeniedException accessDeniedExc)
             {
                 GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            }
+        }
+    }
+
+    private class StorPoolDriver implements SingleColumnDatabaseDriver<VolumeData, StorPool>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(VolumeData parent, StorPool element) throws SQLException
+        {
+            try
+            {
+                errorReporter.logTrace("Updating Volume's StorPool from [%s] to [%s] %s",
+                    parent.getStorPool(dbCtx).getName().displayValue,
+                    element.getName().displayValue,
+                    getId(parent)
+                );
+                try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_STOR_POOL))
+                {
+                    stmt.setString(1, element.getName().value);
+                    stmt.setString(2, parent.getResource().getAssignedNode().getName().value);
+                    stmt.setString(3, parent.getResource().getDefinition().getName().value);
+                    stmt.setInt(4, parent.getVolumeDefinition().getVolumeNumber().value);
+
+                    stmt.executeUpdate();
+                }
+                errorReporter.logTrace("Volume's StorPool updated from [%s] to [%s] %s",
+                    parent.getStorPool(dbCtx).getName().displayValue,
+                    element.getName().displayValue,
+                    getId(parent)
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
             }
         }
     }

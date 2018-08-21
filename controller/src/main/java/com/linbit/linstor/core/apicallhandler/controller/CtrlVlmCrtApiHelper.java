@@ -86,7 +86,7 @@ class CtrlVlmCrtApiHelper
             createVolume(
                 rsc,
                 vlmDfn,
-                resolveStorPool(rsc, vlmDfn).extractApiCallRc(apiCallRc),
+                resolveStorPool(rsc, vlmDfn, isDiskless(rsc)).extractApiCallRc(apiCallRc),
                 blockDevice,
                 metaDisk
             )
@@ -139,9 +139,10 @@ class CtrlVlmCrtApiHelper
     /**
      * Resolves the correct storage pool and also handles error/warnings in diskless modes.
      */
-    private ApiCallRcWith<StorPool> resolveStorPool(
+    public ApiCallRcWith<StorPool> resolveStorPool(
         Resource rsc,
-        VolumeDefinition vlmDfn
+        VolumeDefinition vlmDfn,
+        boolean isRscDiskless
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -158,7 +159,6 @@ class CtrlVlmCrtApiHelper
                 rscProps, vlmDfnProps, rscDfnProps, nodeProps
             );
 
-            final boolean isRscDiskless = isDiskless(rsc);
             String storPoolNameStr = vlmPrioProps.getProp(KEY_STOR_POOL_NAME);
             if (isRscDiskless)
             {
@@ -206,7 +206,7 @@ class CtrlVlmCrtApiHelper
         return new ApiCallRcWith<>(responses, storPool);
     }
 
-    private boolean isDiskless(Resource rsc)
+    public boolean isDiskless(Resource rsc)
     {
         boolean isDiskless;
         try
@@ -237,9 +237,9 @@ class CtrlVlmCrtApiHelper
                 .setDetails("The resource which should be deployed had at least one volume definition " +
                     "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
                     "tried to automatically create. " +
-                    "The storage pool's name for this new volume was looked for in " +
-                    "its volume definition's properties, its resource's properties, its node's " +
-                    "properties and finally in a system wide default storage pool name defined by " +
+                    "The storage pool name for this new volume was looked for in order in " +
+                    "the properties of the resource, volume definition, resource definition and node, " +
+                    "and finally in a system wide default storage pool name defined by " +
                     "the LinStor controller.")
                 .build(),
                 new LinStorException("Dependency not found")

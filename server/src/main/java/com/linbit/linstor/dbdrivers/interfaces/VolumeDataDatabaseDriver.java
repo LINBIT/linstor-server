@@ -2,6 +2,8 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
 
+import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
@@ -36,4 +38,9 @@ public interface VolumeDataDatabaseDriver
      * A special sub-driver to update the persisted flags
      */
     StateFlagsPersistence<VolumeData> getStateFlagsPersistence();
+
+    /**
+     * A special sub-driver to update the reference to the {@link StorPool}
+     */
+    SingleColumnDatabaseDriver<VolumeData, StorPool> getStorPoolDriver();
 }

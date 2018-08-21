@@ -47,7 +47,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // Reference to the volume definition that defines this volume
     private final VolumeDefinition volumeDfn;
 
-    private final StorPool storPool;
+    private final TransactionSimpleObject<VolumeData, StorPool> storPool;
 
     // Properties container for this volume
     private final Props volumeProps;
@@ -88,10 +88,15 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resource = resRef;
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
-        storPool = storPoolRef;
         backingDiskPath = transObjFactory.createTransactionSimpleObject(this, backingDiskPathRef, null);
         metaDiskPath = transObjFactory.createTransactionSimpleObject(this, metaDiskPathRef, null);
         dbDriver = dbDriverRef;
+
+        storPool = transObjFactory.createTransactionSimpleObject(
+            this,
+            storPoolRef,
+            dbDriver.getStorPoolDriver()
+        );
 
         flags = transObjFactory.createStateFlagsImpl(
             resRef.getObjProt(),
@@ -224,7 +229,16 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return storPool;
+        return storPool.get();
+    }
+
+    @Override
+    public void setStorPool(AccessContext accCtx, StorPool storPoolRef)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        storPool.set(storPoolRef);
     }
 
     @Override
@@ -306,7 +320,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             }
 
             ((ResourceData) resource).removeVolume(accCtx, this);
-            storPool.removeVolume(accCtx, this);
+            storPool.get().removeVolume(accCtx, this);
             ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
 
             volumeProps.delete();

@@ -33,6 +33,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     Volume getVolume(VolumeNumber volNr);
 
+    int getVolumeCount();
+
     Iterator<Volume> iterateVolumes();
 
     Stream<Volume> streamVolumes();
@@ -57,6 +59,12 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         throws AccessDeniedException;
 
     StateFlags<RscFlags> getStateFlags();
+
+    /**
+     * Whether peers should treat this resource as diskless.
+     */
+    boolean disklessForPeers(AccessContext accCtx)
+        throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
@@ -92,7 +100,9 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     {
         CLEAN(1L),
         DELETE(2L),
-        DISKLESS(4L);
+        DISKLESS(4L),
+        DISK_ADD_REQUESTED(8L),
+        DISK_ADDING(16L);
 
         public final long flagValue;
 

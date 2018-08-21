@@ -83,8 +83,6 @@ public class ConfFileBuilder
     {
         Set<Resource> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
         peerRscSet.addAll(remoteResources); // node-alphabetically sorted
-        Set<Resource> clients = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
-        Set<Resource> satellites = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
 
         final Set<Set<String>> nodeMeshes = new HashSet<>();
         final Map<String, List<String>> singleConnections = new HashMap<>();
@@ -141,17 +139,6 @@ public class ConfFileBuilder
                         ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
                     );
                 }
-            }
-
-            // TODO: print options properties
-
-            if (localRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS))
-            {
-                clients.add(localRsc);
-            }
-            else
-            {
-                satellites.add(localRsc);
             }
 
             int port = localRsc.getDefinition().getPort(accCtx).value;
@@ -223,7 +210,7 @@ public class ConfFileBuilder
                 // don't create a connection entry if the resource has the deleted flag
                 // or if it is a connection between two diskless nodes
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE) &&
-                        !(peerRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS) &&
+                        !(peerRsc.disklessForPeers(accCtx) &&
                             localRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS)))
                 {
                     Node fromNode = localRsc.getAssignedNode();
@@ -567,16 +554,16 @@ public class ConfFileBuilder
         {
             final String disk;
             if (vlm.getBackingDiskPath(localAccCtx) == null ||
-                vlm.getResource().getStateFlags().isSet(localAccCtx, RscFlags.DISKLESS))
+                vlm.getResource().disklessForPeers(localAccCtx))
             {
                 disk = "none";
             }
             else
             {
-                String tmpDisk = vlm.getBackingDiskPath(localAccCtx);
-                if (tmpDisk.trim().equals(""))
+                if (vlm.getResource().equals(localRsc))
                 {
-                    if (vlm.getResource().equals(localRsc))
+                    String backingDiskPath = vlm.getBackingDiskPath(localAccCtx);
+                    if (backingDiskPath.trim().equals(""))
                     {
                         throw new LinStorRuntimeException(
                             "Local volume does an empty block device. This might be result of an other error.",
@@ -588,11 +575,13 @@ public class ConfFileBuilder
                             null
                         );
                     }
-                    disk = "/dev/drbd/this/is/not/used";
+                    disk = backingDiskPath;
                 }
                 else
                 {
-                    disk = vlm.getBackingDiskPath(localAccCtx);
+                    // Do not use the backing disk path from the peer resource because it may be 'none' when
+                    // the peer resource is converting from diskless, but the path here should not be 'none'
+                    disk = "/dev/drbd/this/is/not/used";
                 }
             }
             final String metaDisk;
