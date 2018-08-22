@@ -155,7 +155,7 @@ public class ConfFileBuilder
                     Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
                     while (vlmIterator.hasNext())
                     {
-                        appendVlmIfPresent(vlmIterator.next(), accCtx);
+                        appendVlmIfPresent(vlmIterator.next(), accCtx, false);
                     }
                     if (localAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
                     {
@@ -184,7 +184,7 @@ public class ConfFileBuilder
                         Iterator<Volume> peerVlms = peerRsc.iterateVolumes();
                         while (peerVlms.hasNext())
                         {
-                            appendVlmIfPresent(peerVlms.next(), accCtx);
+                            appendVlmIfPresent(peerVlms.next(), accCtx, true);
                         }
 
                         if (peerAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
@@ -547,14 +547,15 @@ public class ConfFileBuilder
         return preferredNetIf;
     }
 
-    private void appendVlmIfPresent(Volume vlm, AccessContext localAccCtx)
+    private void appendVlmIfPresent(Volume vlm, AccessContext localAccCtx, boolean isPeerRsc)
         throws AccessDeniedException
     {
         if (vlm.getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE, Volume.VlmFlags.CLEAN))
         {
             final String disk;
             if (vlm.getBackingDiskPath(localAccCtx) == null ||
-                vlm.getResource().disklessForPeers(localAccCtx))
+                (isPeerRsc && vlm.getResource().disklessForPeers(localAccCtx)) ||
+                (!isPeerRsc && vlm.getResource().getStateFlags().isSet(localAccCtx, RscFlags.DISKLESS)))
             {
                 disk = "none";
             }

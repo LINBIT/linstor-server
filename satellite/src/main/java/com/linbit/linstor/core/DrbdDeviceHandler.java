@@ -893,7 +893,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
     private void deleteStorageVolume(
         ResourceDefinition rscDfn,
-        VolumeStateDevManager vlmState
+        VolumeStateDevManager vlmState,
+        boolean onlyDeleteDisk
     )
         throws VolumeException
     {
@@ -903,12 +904,15 @@ class DrbdDeviceHandler implements DeviceHandler
                 .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
             vlmState.getDriver().deleteVolume(vlmState.getStorVlmName(), isEncrypted);
 
-            // Notify the controller of successful deletion of the resource
-            deviceManagerProvider.get().notifyVolumeDeleted(
-                rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
-                    .getVolume(vlmState.getVlmNr()),
-                vlmState.getDriver().getFreeSpace()
-            );
+            if (!onlyDeleteDisk)
+            {
+                // Notify the controller of successful deletion of the resource
+                deviceManagerProvider.get().notifyVolumeDeleted(
+                    rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
+                        .getVolume(vlmState.getVlmNr()),
+                    vlmState.getDriver().getFreeSpace()
+                );
+            }
         }
         catch (StorageException storExc)
         {
@@ -1000,14 +1004,11 @@ class DrbdDeviceHandler implements DeviceHandler
 
         createResourceConfiguration(rscName, rsc, rscDfn);
 
-        createResourceMetaData(rscName, rsc, rscDfn , rscState);
+        createResourceMetaData(rscName, rsc, rscDfn, rscState);
 
         adjustResource(rsc, rscState);
 
         deleteResourceVolumes(rscName, rsc, rscDfn, rscState);
-        // TODO: Notify the controller of successful deletion of volumes
-
-        // TODO: Wait for the DRBD resource to reach the target state
 
         condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
 
@@ -1405,10 +1406,6 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws AccessDeniedException, ResourceException
     {
-        Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
-        Props rscProps = rsc.getProps(wrkCtx);
-        Props rscDfnProps = rscDfn.getProps(wrkCtx);
-
         // Delete volumes
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
@@ -1416,7 +1413,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
             try
             {
-                if (vlmState.isMarkedForDelete() && !vlmState.isSkip())
+                boolean removingDisk = rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DISK_REMOVING);
+                if ((vlmState.isMarkedForDelete() || removingDisk) && !vlmState.isSkip())
                 {
                     Volume vlm = rsc.getVolume(vlmState.getVlmNr());
                     VolumeDefinition vlmDfn = vlm != null ? vlm.getVolumeDefinition() : null;
@@ -1428,7 +1426,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     if (vlm != null && vlmDfn != null)
                     {
                         ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
-                        deleteStorageVolume(rscDfn, vlmState);
+                        deleteStorageVolume(rscDfn, vlmState, removingDisk);
                     }
                 }
             }
@@ -1881,7 +1879,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 if (vlm != null && vlmDfn != null)
                 {
                     ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
-                    deleteStorageVolume(rscDfn, vlmState);
+                    deleteStorageVolume(rscDfn, vlmState, false);
                 }
             }
             catch (VolumeException vlmExc)

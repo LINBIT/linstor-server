@@ -96,13 +96,16 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
                rsc.getDefinition().getName().value;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     enum RscFlags implements Flags
     {
-        CLEAN(1L),
-        DELETE(2L),
-        DISKLESS(4L),
-        DISK_ADD_REQUESTED(8L),
-        DISK_ADDING(16L);
+        CLEAN(1L << 0),
+        DELETE(1L << 1),
+        DISKLESS(1L << 2),
+        DISK_ADD_REQUESTED(1L << 3),
+        DISK_ADDING(1L << 4),
+        DISK_REMOVE_REQUESTED(1L << 5),
+        DISK_REMOVING(1L << 6);
 
         public final long flagValue;
 

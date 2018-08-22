@@ -17,12 +17,10 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ConfigModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -164,9 +162,9 @@ class CtrlVlmCrtApiHelper
             {
                 if (storPoolNameStr == null || "".equals(storPoolNameStr))
                 {
-                    rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-                    storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
-                    storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
+                    // If the resource was marked as diskless then there should be a resource property identifying the
+                    // diskless pool.
+                    storPool = null;
                 }
                 else
                 {
@@ -194,13 +192,9 @@ class CtrlVlmCrtApiHelper
 
             checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
         }
-        catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
+        catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
-        }
-        catch (SQLException exc)
-        {
-            throw new ApiSQLException(exc);
         }
 
         return new ApiCallRcWith<>(responses, storPool);

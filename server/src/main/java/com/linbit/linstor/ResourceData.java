@@ -298,7 +298,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
         throws AccessDeniedException
     {
         checkDeleted();
-        return flags.isSet(accCtx, RscFlags.DISKLESS) && flags.isUnset(accCtx, RscFlags.DISK_ADDING);
+        return flags.isSet(accCtx, RscFlags.DISKLESS) &&
+            flags.isUnset(accCtx, RscFlags.DISK_ADDING) &&
+            flags.isUnset(accCtx, RscFlags.DISK_REMOVING);
     }
 
     @Override

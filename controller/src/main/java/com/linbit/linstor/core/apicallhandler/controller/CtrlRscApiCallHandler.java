@@ -35,6 +35,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -164,8 +165,10 @@ public class CtrlRscApiCallHandler
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
 
-        Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
-        Props nodeProps = ctrlPropsHelper.getProps(node);
+        if (ctrlVlmCrtApiHelper.isDiskless(rsc) && rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME) == null)
+        {
+            rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+        }
 
         for (VlmApi vlmApi : vlmApiList)
         {

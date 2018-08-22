@@ -668,6 +668,11 @@ public class CtrlRscDfnApiCallHandler
         return vlmNr;
     }
 
+    public static String getRscDfnDescription(ResourceDefinition rscDfn)
+    {
+        return getRscDfnDescription(rscDfn.getName().displayValue);
+    }
+
     public static String getRscDfnDescription(String rscName)
     {
         return "Resource definition: " + rscName;
