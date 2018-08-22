@@ -208,7 +208,8 @@ public class LinstorParsingUtils
 
     public static FreeSpaceMgrName asFreeSpaceMgrName(String freeSpaceMgrNameStr, String defaultNameStr)
     {
-        String nameStr = freeSpaceMgrNameStr != null ? freeSpaceMgrNameStr : defaultNameStr;
+        String nameStr = freeSpaceMgrNameStr != null && !freeSpaceMgrNameStr.isEmpty() ?
+            freeSpaceMgrNameStr : defaultNameStr;
         FreeSpaceMgrName fsmName;
         try
         {
@@ -218,7 +219,7 @@ public class LinstorParsingUtils
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_FREE_SPACE_MGR_NAME,
-                "The given snapshot name '" + nameStr + "' is invalid."
+                "The given free space manager name '" + nameStr + "' is invalid."
             ), invalidNameExc);
         }
         return fsmName;
