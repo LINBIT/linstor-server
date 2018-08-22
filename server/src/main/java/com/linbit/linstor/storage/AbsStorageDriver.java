@@ -27,6 +27,7 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.FileExistsCheck;
@@ -39,12 +40,11 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
-    private static final String CRYPT_PREFIX = "Linstor-Crypt-";
-
     protected final ErrorReporter errorReporter;
     protected final FileSystemWatch fileSystemWatch;
     protected final CoreTimer timer;
     protected final StorageDriverKind storageDriverKind;
+    protected final Crypt crypt;
 
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
@@ -56,7 +56,8 @@ public abstract class AbsStorageDriver implements StorageDriver
         FileSystemWatch fileSystemWatchRef,
         CoreTimer timerRef,
         StorageDriverKind storageDriverKindRef,
-        StltConfigAccessor stltCfgAccessorRef
+        StltConfigAccessor stltCfgAccessorRef,
+        Crypt cryptRef
     )
     {
         errorReporter = errorReporterRef;
@@ -64,6 +65,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         timer = timerRef;
         storageDriverKind = storageDriverKindRef;
         stltCfgAccessor = stltCfgAccessorRef;
+        crypt = cryptRef;
     }
 
     @Override
@@ -77,38 +79,11 @@ public abstract class AbsStorageDriver implements StorageDriver
     {
         if (cryptKey != null)
         {
-            try
-            {
-                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-
-                final VolumeInfo info = getVolumeInfo(identifier);
-                String volumePath = info.getPath();
-
-                // open cryptsetup
-                OutputStream outputStream = extCommand.exec(
-                    ProcessBuilder.Redirect.PIPE,
-                    "cryptsetup", "luksOpen", volumePath, CRYPT_PREFIX + identifier
-                );
-                outputStream.write((cryptKey + "\n").getBytes());
-                outputStream.flush();
-
-                extCommand.syncProcess();
-                outputStream.close(); // just to be sure and get rid of the java warning
-            }
-            catch (IOException ioExc)
-            {
-                throw new StorageException(
-                    "Failed to initialize dm-crypt",
-                    ioExc
-                );
-            }
-            catch (ChildProcessTimeoutException exc)
-            {
-                throw new StorageException(
-                    "Initializing dm-crypt device timed out",
-                    exc
-                );
-            }
+            crypt.openCryptDevice(
+                getVolumeInfo(identifier).getPath(),
+                identifier,
+                cryptKey.getBytes()
+            );
         }
     }
 
@@ -117,27 +92,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     {
         if (isEncrypted)
         {
-            try
-            {
-                final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-
-                // close cryptsetup
-                extCommand.exec("cryptsetup", "close", CRYPT_PREFIX + identifier);
-            }
-            catch (IOException ioExc)
-            {
-                throw new StorageException(
-                    "Failed to initialize dm-crypt",
-                    ioExc
-                );
-            }
-            catch (ChildProcessTimeoutException exc)
-            {
-                throw new StorageException(
-                    "Initializing dm-crypt device timed out",
-                    exc
-                );
-            }
+            crypt.closeCryptDevice(identifier);
         }
     }
 
@@ -181,44 +136,12 @@ public abstract class AbsStorageDriver implements StorageDriver
 
             if (cryptKey != null)
             {
-                try
-                {
-                    // init
-                    command = new String[] {
-                        "cryptsetup",
-                        "-q",
-                        "luksFormat",
-                        volumePath
-                    };
-                    OutputStream outputStream = extCommand.exec(
-                        ProcessBuilder.Redirect.PIPE,
-                        command
-                    );
-                    outputStream.write((cryptKey + "\n").getBytes());
-                    outputStream.flush();
-
-                    output = extCommand.syncProcess();
-                    outputStream.close(); // just to be sure and get rid of the java warning
-
-                    checkExitCode(output, command);
-
-
-                    volumePath = getCryptVolumePath(identifier);
-                }
-                catch (IOException ioExc)
-                {
-                    throw new StorageException(
-                        "Failed to initialize crypt device",
-                        ioExc
-                    );
-                }
-                catch (ChildProcessTimeoutException exc)
-                {
-                    throw new StorageException(
-                        "Initializing dm-crypt device timed out",
-                        exc
-                    );
-                }
+                volumePath = crypt.createCryptDevice(
+                    volumePath,
+                    cryptKey.getBytes(),
+                    this::checkExitCode,
+                    identifier
+                );
             }
             startVolume(identifier, cryptKey);
         }
@@ -1060,7 +983,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected String getCryptVolumePath(String identifier)
     {
-        return "/dev/mapper/" + CRYPT_PREFIX + identifier;
+        return crypt.getCryptVolumePath(identifier);
     }
 
     protected abstract String getExpectedVolumePath(String identifier);

@@ -11,6 +11,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.linstor.timer.CoreTimer;
 
 import java.io.File;
@@ -43,10 +44,11 @@ public class LvmDriver extends AbsStorageDriver
         FileSystemWatch fileSystemWatch,
         CoreTimer timer,
         StorageDriverKind storageDriverKind,
-        StltConfigAccessor stltCfgAccessor
+        StltConfigAccessor stltCfgAccessor,
+        Crypt crypt
     )
     {
-        super(errorReporter, fileSystemWatch, timer, storageDriverKind, stltCfgAccessor);
+        super(errorReporter, fileSystemWatch, timer, storageDriverKind, stltCfgAccessor, crypt);
     }
 
     @Override
