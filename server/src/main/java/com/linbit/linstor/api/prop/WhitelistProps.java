@@ -53,6 +53,10 @@ public class WhitelistProps
             for (String ruleProp : ruleEntry.getValue())
             {
                 Property property = propsByName.get(ruleProp);
+                if (property == null)
+                {
+                    throw new LinStorRuntimeException("rule not found: " + ruleProp);
+                }
                 rulesPropMap.put(property.getKey(), property);
             }
             rules.put(ruleEntry.getKey(), rulesPropMap);

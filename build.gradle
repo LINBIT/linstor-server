@@ -54,6 +54,8 @@ subprojects {
             compile group: 'io.projectreactor', name: 'reactor-core', version: '3.1.8.RELEASE'
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+            compile 'org.apache.httpcomponents:httpclient:4.5.5'
+            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.0'
         }
     }
 }

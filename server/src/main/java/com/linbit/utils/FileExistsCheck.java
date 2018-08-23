@@ -12,7 +12,7 @@ import java.nio.file.Path;
 public class FileExistsCheck implements Runnable
 {
     public static final long DFLT_CHECK_TIMEOUT = 15_000L;
-    
+
     private final String filePath;
     private boolean existsFlag;
 
@@ -25,8 +25,12 @@ public class FileExistsCheck implements Runnable
     @Override
     public void run()
     {
-        Path chkPath = FileSystems.getDefault().getPath(filePath);
-        existsFlag = Files.exists(chkPath);
+        if (filePath != null)
+        {
+            Path chkPath = FileSystems.getDefault().getPath(filePath);
+            existsFlag = Files.exists(chkPath);
+        }
+        // otherwise "existsFlag" was initialized with the desired default value, just keep that value
     }
 
     public boolean fileExists()

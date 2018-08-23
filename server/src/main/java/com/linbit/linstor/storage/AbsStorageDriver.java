@@ -2,7 +2,6 @@ package com.linbit.linstor.storage;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -139,7 +138,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 volumePath = crypt.createCryptDevice(
                     volumePath,
                     cryptKey.getBytes(),
-                    this::checkExitCode,
+                    AbsStorageDriver::checkExitCode,
                     identifier
                 );
             }
@@ -651,7 +650,7 @@ public abstract class AbsStorageDriver implements StorageDriver
      *            exception message)
      * @throws StorageException
      */
-    protected void checkExitCode(OutputData output, String[] command)
+    protected static void checkExitCode(OutputData output, String[] command)
         throws StorageException
     {
         checkExitCode(output, command, null, (Object[]) null);
@@ -674,7 +673,7 @@ public abstract class AbsStorageDriver implements StorageDriver
      * @throws StorageException
      *            If the exitCode of output is not 0, a {@link StorageException} is thrown.
      */
-    protected void checkExitCode(OutputData output, String[] command, String format, Object... args)
+    protected static void checkExitCode(OutputData output, String[] command, String format, Object... args)
         throws StorageException
     {
         if (output.exitCode != 0)
@@ -711,7 +710,7 @@ public abstract class AbsStorageDriver implements StorageDriver
      * @param delimiter
      * @return
      */
-    protected String glue(String[] array, String delimiter)
+    protected static String glue(String[] array, String delimiter)
     {
         StringBuilder sb = new StringBuilder();
         for (String element : array)

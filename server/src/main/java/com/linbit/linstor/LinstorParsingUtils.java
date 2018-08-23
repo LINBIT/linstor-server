@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;

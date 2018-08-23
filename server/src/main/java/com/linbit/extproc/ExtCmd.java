@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -69,9 +70,19 @@ public class ExtCmd extends ChildProcessHandler
     {
         List<String> commandElements = new ArrayList<>();
 
-        for (String commandElement : command)
+        // FIXME: remove this loop (and the if afterwards), but first convert all
+        // 'exec("command option option option")' calls to
+        // 'exec("command", "option", "option", "option")
+        if (command.length == 1)
         {
-            commandElements.add(SPACE_PATTERN.matcher(commandElement).replaceAll("\\\\ "));
+            for (String commandElement : command)
+            {
+                commandElements.add(SPACE_PATTERN.matcher(commandElement).replaceAll("\\\\ "));
+            }
+        }
+        else
+        {
+            commandElements = Arrays.asList(command);
         }
         commandStr = StringUtils.join(commandElements, " ");
 

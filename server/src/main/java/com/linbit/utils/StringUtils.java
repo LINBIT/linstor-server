@@ -2,6 +2,7 @@ package com.linbit.utils;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 /**
@@ -22,12 +23,12 @@ public class StringUtils
         Iterator<?> iter = col.iterator();
         if (iter.hasNext())
         {
-            sb.append(iter.next().toString());
+            sb.append(Objects.toString(iter.next()));
         }
         while (iter.hasNext())
         {
             sb.append(delim);
-            sb.append(iter.next().toString());
+            sb.append(Objects.toString(iter.next()));
         }
         return sb.toString();
     }

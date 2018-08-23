@@ -5,6 +5,7 @@ import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
 
 import com.linbit.ErrorCheck;
 import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -16,10 +17,12 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.SwordfishDriverKind;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -186,7 +189,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         if (storageDriverRef.getKind().hasBackingStorage())
         {
             Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
-            Map<String, String> map = namespace.map(Props::map).orElse(Collections.emptyMap());
+            Map<String, String> map = new HashMap<>(namespace.map(Props::map).orElse(Collections.emptyMap()));
+            if (storageDriverKind instanceof SwordfishDriverKind)
+            {
+                map.put(
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SWORDFISH_LINSTOR_STOR_POOL_KEY,
+                    getName().displayValue
+                );
+            }
             storageDriverRef.setConfiguration(map);
         }
     }

@@ -15,7 +15,10 @@ public class FreeSpaceMgrName extends GenericName
     public static final int MAX_LENGTH = 48;
 
     public static final byte[] VALID_CHARS = {'_'};
-    public static final byte[] VALID_INNER_CHARS = {'_', '-'};
+    // FIXME: as shown below a FreeSpaceMgrName might be a concatenation of
+    // NodeName and StorPoolName. This means FreeSpaceName has to allow
+    // at least as much as NodeName!
+    public static final byte[] VALID_INNER_CHARS = {'_', '-', '.'};
 
     public FreeSpaceMgrName(String freeSpaceMgrNameStr) throws InvalidNameException
     {
