@@ -1,13 +1,13 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 
 /**
- * Provides access to stor pool definitions with automatic security checks.
+ * Provides access to free space managers with automatic security checks.
  */
 public interface FreeSpaceMgrRepository
 {
@@ -25,6 +25,6 @@ public interface FreeSpaceMgrRepository
     void remove(AccessContext accCtx, FreeSpaceMgrName freeSpaceMgrName)
         throws AccessDeniedException;
 
-    CoreModule.FreeSpaceMgrMap getMapForView(AccessContext accCtx)
+    ControllerCoreModule.FreeSpaceMgrMap getMapForView(AccessContext accCtx)
         throws AccessDeniedException;
 }

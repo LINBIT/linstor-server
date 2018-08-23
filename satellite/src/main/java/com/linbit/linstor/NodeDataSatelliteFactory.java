@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -13,32 +12,30 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.util.UUID;
 
 public class NodeDataSatelliteFactory
 {
     private final NodeDataDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
-    private final StorPoolDataFactory storPoolDataFactory;
+    private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
+    private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CoreModule.NodesMap nodesMap;
-    private final FreeSpaceMgr disklessFreeSpaceMgr;
 
     @Inject
     public NodeDataSatelliteFactory(
         NodeDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef,
+        StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
+        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CoreModule.NodesMap nodesMapRef,
-        @Named(LinStor.DISKLESS_FREE_SPACE_MGR_NAME) FreeSpaceMgr disklessFreeSpaceMgrRef
+        CoreModule.NodesMap nodesMapRef
     )
     {
         dbDriver = dbDriverRef;
@@ -46,9 +43,9 @@ public class NodeDataSatelliteFactory
         storPoolDataFactory = storPoolDataFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
+        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         transMgrProvider = transMgrProviderRef;
         nodesMap = nodesMapRef;
-        disklessFreeSpaceMgr = disklessFreeSpaceMgrRef;
     }
 
     public NodeData getInstanceSatellite(
@@ -91,7 +88,7 @@ public class NodeDataSatelliteFactory
                     nodeData,
                     disklessStorPoolDfn,
                     DisklessDriver.class.getSimpleName(),
-                    disklessFreeSpaceMgr
+                    freeSpaceMgrFactory.getInstance()
                 ));
             }
         }

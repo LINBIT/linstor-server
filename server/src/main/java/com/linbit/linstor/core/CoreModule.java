@@ -6,8 +6,6 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
-import com.linbit.linstor.FreeSpaceMgr;
-import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -53,7 +51,6 @@ public class CoreModule extends AbstractModule
         bind(NodesMap.class).to(NodesMapImpl.class);
         bind(ResourceDefinitionMap.class).to(ResourceDefinitionMapImpl.class);
         bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
-        bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -93,10 +90,6 @@ public class CoreModule extends AbstractModule
     {
     }
 
-    public interface FreeSpaceMgrMap extends Map<FreeSpaceMgrName, FreeSpaceMgr>
-    {
-    }
-
     @Singleton
     public static class NodesMapImpl
         extends TransactionMap<NodeName, Node> implements NodesMap
@@ -129,18 +122,6 @@ public class CoreModule extends AbstractModule
             super(new TreeMap<>(), null, transMgrProvider);
         }
     }
-
-    @Singleton
-    public static class FreeSpaceMgrMapImpl
-        extends TransactionMap<FreeSpaceMgrName, FreeSpaceMgr> implements FreeSpaceMgrMap
-    {
-        @Inject
-        public FreeSpaceMgrMapImpl(Provider<TransactionMgr> transMgrProvider)
-        {
-            super(new TreeMap<>(), null, transMgrProvider);
-        }
-    }
-
 
     @Singleton
     public static class PeerMapImpl

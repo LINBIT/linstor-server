@@ -9,7 +9,7 @@ import com.linbit.GenericName;
  */
 public class FreeSpaceMgrName extends GenericName
 {
-    private static final String RESERVED_PREFIX = "SYSTEM:";
+    private static final String RESERVED_CONNECTOR = ":";
 
     public static final int MIN_LENGTH = 3;
     public static final int MAX_LENGTH = 48;
@@ -17,37 +17,32 @@ public class FreeSpaceMgrName extends GenericName
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
-    private FreeSpaceMgrName(String freeSpaceMgrNameStr, boolean isReserved) throws InvalidNameException
+    public FreeSpaceMgrName(String freeSpaceMgrNameStr) throws InvalidNameException
     {
-        super(isReserved ? RESERVED_PREFIX + freeSpaceMgrNameStr : freeSpaceMgrNameStr);
+        super(freeSpaceMgrNameStr);
         Checks.nameCheck(freeSpaceMgrNameStr, MIN_LENGTH, MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    public static FreeSpaceMgrName createName(String fsmName) throws InvalidNameException
+    public FreeSpaceMgrName(NodeName nodeName, StorPoolName storPoolName)
     {
-        return new FreeSpaceMgrName(fsmName, false);
-    }
-
-    public static FreeSpaceMgrName createReservedName(String storPoolName) throws InvalidNameException
-    {
-        return new FreeSpaceMgrName(storPoolName, true);
+        super(nodeName.displayValue + RESERVED_CONNECTOR + storPoolName.displayValue);
     }
 
     public static FreeSpaceMgrName restoreName(String fsmName) throws InvalidNameException
     {
         FreeSpaceMgrName ret;
-        if (!fsmName.startsWith(RESERVED_PREFIX))
+        if (!fsmName.contains(RESERVED_CONNECTOR))
         {
-            ret = createName(fsmName);
+            ret = new FreeSpaceMgrName(fsmName);
         }
         else
         {
-            ret = createReservedName(
-                fsmName.substring(
-                    RESERVED_PREFIX.length(),
-                    fsmName.length()
-                )
-            );
+            String[] parts = fsmName.split(RESERVED_CONNECTOR);
+            if (parts.length != 2)
+            {
+                throw new InvalidNameException("Reserved name has incorrect number of parts", fsmName);
+            }
+            ret = new FreeSpaceMgrName(new NodeName(parts[0]), new StorPoolName(parts[1]));
         }
         return ret;
     }

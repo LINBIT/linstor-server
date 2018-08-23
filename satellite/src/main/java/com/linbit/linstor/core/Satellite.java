@@ -94,8 +94,6 @@ public final class Satellite
 
     private final LinStorArguments linStorArguments;
 
-    private final FreeSpaceMgrInitializerStlt freeSpaceMgrInitializer;
-
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
@@ -110,8 +108,7 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
-        LinStorArguments linStorArgumentsRef,
-        FreeSpaceMgrInitializerStlt freeSpaceMgrInitializerRef
+        LinStorArguments linStorArgumentsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -127,7 +124,6 @@ public final class Satellite
         drbdEventSvc = drbdEventSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         linStorArguments = linStorArgumentsRef;
-        freeSpaceMgrInitializer = freeSpaceMgrInitializerRef;
     }
 
     public void start()
@@ -151,8 +147,6 @@ public final class Satellite
 
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
-            freeSpaceMgrInitializer.initialize();
-
             errorReporter.logInfo("Initializing main network communications service");
             if (!satelliteNetComInitializer.initMainNetComService(
                 initCtx,
@@ -169,13 +163,6 @@ public final class Satellite
                 "The initialization security context does not have all privileges. " +
                     "Initialization failed.",
                 accessExc
-            );
-        }
-        catch (InitializationException initExc)
-        {
-            throw new ImplementationError(
-                "Could not initialize Satellite.",
-                initExc
             );
         }
         finally

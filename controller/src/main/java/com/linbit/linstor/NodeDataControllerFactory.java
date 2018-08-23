@@ -26,13 +26,13 @@ public class NodeDataControllerFactory
 {
     private final NodeDataDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
-    private final StorPoolDataFactory storPoolDataFactory;
+    private final StorPoolDataControllerFactory storPoolDataFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
+    private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final NodeRepository nodeRepository;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
-    private final FreeSpaceMgr disklessFreeSpaceMgr;
 
     private static final StorPoolName DISKLESS_STOR_POOL_NAME;
 
@@ -52,14 +52,14 @@ public class NodeDataControllerFactory
     public NodeDataControllerFactory(
         NodeDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef,
+        StorPoolDataControllerFactory storPoolDataFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
+        FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         NodeRepository nodeRepositoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
-        @SystemContext AccessContext sysCtx,
-        FreeSpaceMgrRepository freeSpaceMgrRepositoryRef
+        @SystemContext AccessContext sysCtx
     )
     {
         dbDriver = dbDriverRef;
@@ -67,24 +67,10 @@ public class NodeDataControllerFactory
         storPoolDataFactory = storPoolDataFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
+        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         transMgrProvider = transMgrProviderRef;
         nodeRepository = nodeRepositoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
-        try
-        {
-            disklessFreeSpaceMgr = freeSpaceMgrRepositoryRef.get(
-                sysCtx,
-                FreeSpaceMgrName.createReservedName(LinStor.DISKLESS_FREE_SPACE_MGR_NAME)
-            );
-            if (disklessFreeSpaceMgr == null)
-            {
-                throw new ImplementationError("diskless free space mgr not initialized yet");
-            }
-        }
-        catch (AccessDeniedException | InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
     }
 
     public NodeData create(
@@ -125,7 +111,7 @@ public class NodeDataControllerFactory
                 nodeData,
                 storPoolDefinitionRepository.get(accCtx, DISKLESS_STOR_POOL_NAME),
                 DisklessDriver.class.getSimpleName(),
-                disklessFreeSpaceMgr
+                freeSpaceMgrFactory.getInstance(accCtx, new FreeSpaceMgrName(nameRef, DISKLESS_STOR_POOL_NAME))
             )
         );
 

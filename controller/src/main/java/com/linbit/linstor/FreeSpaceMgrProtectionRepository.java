@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -16,11 +16,11 @@ import javax.inject.Singleton;
 @Singleton
 public class FreeSpaceMgrProtectionRepository implements FreeSpaceMgrRepository
 {
-    private final CoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
+    private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private ObjectProtection freeSpaceMgrMapObjProt;
 
     @Inject
-    public FreeSpaceMgrProtectionRepository(CoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef)
+    public FreeSpaceMgrProtectionRepository(ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef)
     {
         freeSpaceMgrMap = freeSpaceMgrMapRef;
     }
@@ -80,7 +80,7 @@ public class FreeSpaceMgrProtectionRepository implements FreeSpaceMgrRepository
     }
 
     @Override
-    public CoreModule.FreeSpaceMgrMap getMapForView(AccessContext accCtx)
+    public ControllerCoreModule.FreeSpaceMgrMap getMapForView(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkProtSet();

@@ -113,7 +113,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     StorPoolApi getApiData(Long totalSpace, Long freeSpace, AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
-    FreeSpaceMgr getFreeSpaceManager();
+    FreeSpaceTracker getFreeSpaceTracker();
 
     @Override
     default int compareTo(StorPool otherStorPool)

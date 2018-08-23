@@ -151,7 +151,7 @@ public class CtrlAutoStorPoolSelector
         {
             hasSpace = storPool.getDriverKind().usesThinProvisioning() ?
                 true :
-                storPool.getFreeSpaceManager()
+                storPool.getFreeSpaceTracker()
                     .getFreeSpaceCurrentEstimation(peerAccCtx.get())
                     .orElse(0L) >= rscSize;
         }
@@ -274,7 +274,7 @@ public class CtrlAutoStorPoolSelector
             try
             {
                 freeSpace = node.getStorPool(peerAccCtx.get(), storPoolName)
-                    .getFreeSpaceManager()
+                    .getFreeSpaceTracker()
                     .getFreeSpaceCurrentEstimation(peerAccCtx.get());
             }
             catch (AccessDeniedException exc)
@@ -519,8 +519,8 @@ public class CtrlAutoStorPoolSelector
             {
                 // compare the arguments in reverse order so that the candidate with more free space comes first
                 cmp = Long.compare(
-                    storPool2.getFreeSpaceManager().getFreeSpaceCurrentEstimation(accCtx).orElse(0L),
-                    storPool1.getFreeSpaceManager().getFreeSpaceCurrentEstimation(accCtx).orElse(0L)
+                    storPool2.getFreeSpaceTracker().getFreeSpaceCurrentEstimation(accCtx).orElse(0L),
+                    storPool1.getFreeSpaceTracker().getFreeSpaceCurrentEstimation(accCtx).orElse(0L)
                 );
             }
         }
@@ -545,11 +545,11 @@ public class CtrlAutoStorPoolSelector
             // compare the arguments in reverse order so that the node with more free space comes first
             cmp = Long.compare(
                 nodeB.getStorPool(accCtx, storPoolName)
-                    .getFreeSpaceManager()
+                    .getFreeSpaceTracker()
                     .getFreeSpaceCurrentEstimation(accCtx)
                     .orElse(0L),
                 nodeA.getStorPool(accCtx, storPoolName)
-                    .getFreeSpaceManager()
+                    .getFreeSpaceTracker()
                     .getFreeSpaceCurrentEstimation(accCtx)
                     .orElse(0L)
             );

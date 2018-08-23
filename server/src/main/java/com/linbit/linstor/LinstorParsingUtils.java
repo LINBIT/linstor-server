@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
@@ -206,20 +207,18 @@ public class LinstorParsingUtils
         return snapshotName;
     }
 
-    public static FreeSpaceMgrName asFreeSpaceMgrName(String freeSpaceMgrNameStr, String defaultNameStr)
+    public static FreeSpaceMgrName asFreeSpaceMgrName(String freeSpaceMgrNameStr)
     {
-        String nameStr = freeSpaceMgrNameStr != null && !freeSpaceMgrNameStr.isEmpty() ?
-            freeSpaceMgrNameStr : defaultNameStr;
         FreeSpaceMgrName fsmName;
         try
         {
-            fsmName = FreeSpaceMgrName.createReservedName(nameStr);
+            fsmName = new FreeSpaceMgrName(freeSpaceMgrNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_FREE_SPACE_MGR_NAME,
-                "The given free space manager name '" + nameStr + "' is invalid."
+                "The given free space manager name '" + freeSpaceMgrNameStr + "' is invalid."
             ), invalidNameExc);
         }
         return fsmName;

@@ -42,6 +42,7 @@ import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -107,7 +108,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-    private final CoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
+    private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
 
     @Inject
     public GenericDbDriver(
@@ -130,7 +131,7 @@ public class GenericDbDriver implements DatabaseDriver
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        CoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef
+        ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef
     )
     {
         dbCtx = privCtx;

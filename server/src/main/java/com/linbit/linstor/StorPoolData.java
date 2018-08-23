@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
 
+import com.linbit.ErrorCheck;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -52,7 +53,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final Props props;
     private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
-    private final FreeSpaceMgr freeSpaceMgr;
+    private final FreeSpaceTracker freeSpaceTracker;
 
     private final TransactionMap<String, Volume> volumeMap;
 
@@ -65,7 +66,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         String storageDriverName,
-        FreeSpaceMgr freeSpaceMgrRef,
+        FreeSpaceTracker freeSpaceTrackerRef,
         boolean allowStorageDriverCreationRef,
         StorPoolDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -76,11 +77,13 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         throws SQLException
     {
         super(transMgrProviderRef);
+        ErrorCheck.ctorNotNull(StorPoolData.class, FreeSpaceTracker.class, freeSpaceTrackerRef);
+
         uuid = id;
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
         storageDriverKind = StorageDriverLoader.getKind(storageDriverName);
-        freeSpaceMgr = freeSpaceMgrRef;
+        freeSpaceTracker = freeSpaceTrackerRef;
         allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
@@ -95,7 +98,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             volumeMap,
             props,
             deleted,
-            freeSpaceMgr
+            freeSpaceTracker
         );
         activateTransMgr();
     }
@@ -202,7 +205,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         volumeMap.put(Volume.getVolumeKey(volume), volume);
-        freeSpaceMgr.addingVolume(accCtx, volume);
+        freeSpaceTracker.addingVolume(accCtx, volume);
     }
 
     @Override
@@ -213,7 +216,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         volumeMap.remove(Volume.getVolumeKey(volume));
-        freeSpaceMgr.volumeRemoved(accCtx, volume, freeSpaceRef);
+        freeSpaceTracker.volumeRemoved(accCtx, volume, freeSpaceRef);
     }
 
     @Override
@@ -235,9 +238,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public FreeSpaceMgr getFreeSpaceManager()
+    public FreeSpaceTracker getFreeSpaceTracker()
     {
-        return freeSpaceMgr;
+        return freeSpaceTracker;
     }
 
     @Override
@@ -313,7 +316,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             getTraits(accCtx),
             fullSyncId,
             updateId,
-            getFreeSpaceManager().getName().displayValue,
+            getFreeSpaceTracker().getName().displayValue,
             Optional.ofNullable(freeSpaceRef),
             Optional.ofNullable(totalSpaceRef)
         );

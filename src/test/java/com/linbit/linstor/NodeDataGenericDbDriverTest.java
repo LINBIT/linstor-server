@@ -379,7 +379,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 node1,
                 storPoolDfn,
                 storPoolDriver1,
-                null
+                getFreeSpaceMgr(storPoolDfn, node1)
             );
             storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
@@ -389,7 +389,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 node2,
                 storPoolDfn,
                 storPoolDriver2,
-                null
+                getFreeSpaceMgr(storPoolDfn, node2)
             );
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 

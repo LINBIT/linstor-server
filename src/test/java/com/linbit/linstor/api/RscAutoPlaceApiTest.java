@@ -1004,14 +1004,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 new StorPoolName(storPoolName)
             );
 
-            FreeSpaceMgr fsm = null;
-            if (freeSpaceMgrName != null)
-            {
-                fsm = freeSpaceMgrFactory.getInstance(
-                    BOB_ACC_CTX,
-                    FreeSpaceMgrName.restoreName(freeSpaceMgrName)
-                );
-            }
             if (storPoolDfn == null)
             {
                 storPoolDfn = storPoolDefinitionDataFactory.create(
@@ -1022,6 +1014,13 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
             }
 
+            FreeSpaceMgr fsm = freeSpaceMgrFactory.getInstance(
+                BOB_ACC_CTX,
+                freeSpaceMgrName == null ?
+                    new FreeSpaceMgrName(stlt.getName(), storPoolDfn.getName()) :
+                    FreeSpaceMgrName.restoreName(freeSpaceMgrName)
+            );
+
             StorPoolData storPool = storPoolDataFactory.create(
                 ApiTestBase.BOB_ACC_CTX,
                 stlt,
@@ -1030,7 +1029,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 fsm
             );
 
-            storPool.getFreeSpaceManager().setFreeSpace(GenericDbBase.SYS_CTX, storPoolSize);
+            storPool.getFreeSpaceTracker().setFreeSpace(GenericDbBase.SYS_CTX, storPoolSize);
 
             return this;
         }

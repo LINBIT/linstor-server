@@ -12,9 +12,14 @@ import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
-import com.linbit.linstor.FreeSpaceMgrFactory;
+import com.linbit.linstor.FreeSpaceMgr;
+import com.linbit.linstor.FreeSpaceMgrControllerFactory;
+import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.FreeSpaceMgrRepository;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeConnectionDataFactory;
 import com.linbit.linstor.NodeDataControllerFactory;
@@ -28,7 +33,8 @@ import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDataFactory;
+import com.linbit.linstor.StorPoolDataControllerFactory;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
@@ -131,6 +137,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected NodeRepository nodeRepository;
     @Inject protected ResourceDefinitionRepository resourceDefinitionRepository;
     @Inject protected StorPoolDefinitionRepository storPoolDefinitionRepository;
+    @Inject protected FreeSpaceMgrRepository freeSpaceMgrRepository;
 
     @Inject protected ObjectProtectionFactory objectProtectionFactory;
     @Inject protected PropsContainerFactory propsContainerFactory;
@@ -140,8 +147,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
     @Inject protected NodeConnectionDataFactory nodeConnectionDataFactory;
-    @Inject protected StorPoolDataFactory storPoolDataFactory;
-    @Inject protected FreeSpaceMgrFactory freeSpaceMgrFactory;
+    @Inject protected StorPoolDataControllerFactory storPoolDataFactory;
+    @Inject protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
     @Inject protected VolumeDataFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
@@ -657,6 +664,14 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     )
     {
         return securityTestUtils.createObjectProtection(accCtx, objPath);
+    }
+
+    protected FreeSpaceMgr getFreeSpaceMgr(StorPoolDefinition storPoolDfn, Node node)
+        throws AccessDeniedException, SQLException
+    {
+        return freeSpaceMgrFactory.getInstance(
+            SYS_CTX, new FreeSpaceMgrName(node.getName(), storPoolDfn.getName())
+        );
     }
 
     private class SharedDbConnectionPoolModule extends AbstractModule

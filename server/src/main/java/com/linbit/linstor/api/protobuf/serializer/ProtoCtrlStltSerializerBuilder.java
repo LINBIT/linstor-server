@@ -797,7 +797,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             .setStorPoolDfnUuid(storPoolDfn.getUuid().toString())
             .setStorPoolName(storPool.getName().displayValue)
             .setDriver(storPool.getDriverName())
-            .setFreeSpaceMgrName(storPool.getFreeSpaceManager().getName().displayValue)
+            .setFreeSpaceMgrName(storPool.getFreeSpaceTracker().getName().displayValue)
             .addAllStorPoolProps(asLinStorList(storPool.getProps(serializerCtx)))
             .addAllStorPoolDfnProps(asLinStorList(storPoolDfn.getProps(serializerCtx)))
             .setFullSyncId(fullSyncTimestamp)

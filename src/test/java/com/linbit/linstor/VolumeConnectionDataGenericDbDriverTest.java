@@ -119,10 +119,10 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
         storPool1 = storPoolDataFactory.create(
-            SYS_CTX, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), null
+            SYS_CTX, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), getFreeSpaceMgr(storPoolDfn, nodeSrc)
         );
         storPool2 = storPoolDataFactory.create(
-            SYS_CTX, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), null
+            SYS_CTX, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), getFreeSpaceMgr(storPoolDfn, nodeDst)
         );
 
         volSrc = volumeDataFactory.create(

@@ -41,9 +41,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Inject private StorPoolDefinitionDataGenericDbDriver spdDriver;
     @Inject private StorPoolDataGenericDbDriver driver;
 
-    private StorPoolDefinitionData disklessSpdd;
     private FreeSpaceMgr fsm;
-
+    private FreeSpaceMgr disklessFsm;
 
     public StorPoolDataGenericDbDriverTest() throws InvalidNameException
     {
@@ -65,7 +64,9 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
         spdd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
 
-        fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, FreeSpaceMgrName.createReservedName("TestFsm"));
+        fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, new FreeSpaceMgrName(node.getName(), spdd.getName()));
+        disklessFsm = freeSpaceMgrFactory.getInstance(
+            SYS_CTX, new FreeSpaceMgrName(node.getName(), new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)));
 
         uuid = randomUUID();
     }
@@ -161,7 +162,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 
         Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = new HashMap<>();
         tmpFreeSpaceMgrMap.put(fsm.getName(), fsm);
-
+        tmpFreeSpaceMgrMap.put(disklessFsm.getName(), disklessFsm);
 
         Map<StorPoolData, InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap, tmpFreeSpaceMgrMap);
 

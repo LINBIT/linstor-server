@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class FreeSpaceMgr extends BaseTransactionObject
+public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTracker
 {
     private final AccessContext privCtx;
 
@@ -56,6 +56,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
     /**
      * @return The name of the shared pool
      */
+    @Override
     public FreeSpaceMgrName getName()
     {
         return sharedPoolName;
@@ -67,6 +68,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      * @param storPool
      * @throws AccessDeniedException
      */
+    @Override
     public void add(AccessContext accCtx, StorPool storPool) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -80,6 +82,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      *
      * @param storPool
      */
+    @Override
     public void remove(AccessContext accCtx, StorPool storPool) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -96,6 +99,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      *
      * @param vlm
      */
+    @Override
     public void addingVolume(AccessContext accCtx, Volume vlm) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -114,6 +118,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      * @param vlm
      * @param freeSpaceRef
      */
+    @Override
     public void volumeAdded(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -130,6 +135,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      *
      * @param vlm
      */
+    @Override
     public void removingVolume(AccessContext accCtx, Volume vlm) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -147,6 +153,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      * @param vlm
      * @param freeSpaceRef
      */
+    @Override
     public void volumeRemoved(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -161,6 +168,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      *
      * @throws AccessDeniedException
      */
+    @Override
     public Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -175,6 +183,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
      *
      * @throws AccessDeniedException
      */
+    @Override
     public Optional<Long> getFreeSpaceCurrentEstimation(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -219,18 +228,7 @@ public class FreeSpaceMgr extends BaseTransactionObject
         return ret;
     }
 
-    /**
-     * @param accCtx
-     * @return true if there are pending volumes to add or remove
-     * @throws AccessDeniedException
-     */
-    public boolean isUpdatePending(AccessContext accCtx) throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
-        return !pendingVolumesToAdd.isEmpty() || !pendingVolumesToRemove.isEmpty();
-    }
-
+    @Override
     public void setFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);

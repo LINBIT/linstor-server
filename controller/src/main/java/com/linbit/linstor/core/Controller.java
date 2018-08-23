@@ -55,7 +55,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DbCoreObjProtInitializer;
 import com.linbit.linstor.security.DbSecurityInitializer;
-import com.linbit.linstor.security.FreeSpaceMgrInitializerCtrl;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
@@ -103,7 +102,6 @@ public final class Controller
     private final DbCoreObjProtInitializer dbCoreObjProtInitializer;
     private final DbDataInitializer dbDataInitializer;
     private final DbNumberPoolInitializer dbNumberPoolInitializer;
-    private final FreeSpaceMgrInitializerCtrl freeSpaceMgrInitializer;
 
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
@@ -135,7 +133,6 @@ public final class Controller
         DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
         DbDataInitializer dbDataInitializerRef,
         DbNumberPoolInitializer dbNumberPoolInitializerRef,
-        FreeSpaceMgrInitializerCtrl freeSpaceMgrInitializerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
@@ -158,7 +155,6 @@ public final class Controller
         dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
         dbDataInitializer = dbDataInitializerRef;
         dbNumberPoolInitializer = dbNumberPoolInitializerRef;
-        freeSpaceMgrInitializer = freeSpaceMgrInitializerRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         ctrlConf = ctrlConfRef;
         nodesMap = nodesMapRef;
@@ -202,7 +198,6 @@ public final class Controller
             dbCoreObjProtInitializer.initialize();
             dbDataInitializer.initialize();
             dbNumberPoolInitializer.initialize();
-            freeSpaceMgrInitializer.initialize();
 
             controllerNetComInitializer.initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null),

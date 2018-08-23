@@ -3,7 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.FreeSpaceMgrFactory;
+import com.linbit.linstor.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -13,7 +13,7 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDataFactory;
+import com.linbit.linstor.StorPoolDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionRepository;
@@ -66,7 +66,7 @@ public class CtrlStorPoolApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataFactory storPoolDataFactory;
+    private final StorPoolDataControllerFactory storPoolDataFactory;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
@@ -74,7 +74,7 @@ public class CtrlStorPoolApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
+    private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -84,7 +84,7 @@ public class CtrlStorPoolApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef,
+        StorPoolDataControllerFactory storPoolDataFactoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
@@ -92,7 +92,7 @@ public class CtrlStorPoolApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        FreeSpaceMgrFactory freeSpaceMgrFactoryRef
+        FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -392,7 +392,7 @@ public class CtrlStorPoolApiCallHandler
             vlm = storPool.getNode().getResource(apiCtx, rscName).getVolume(vlmNr);
 
             // TODO check vlm's UUID
-            storPool.getFreeSpaceManager().volumeRemoved(apiCtx, vlm, freeSpaceRef);
+            storPool.getFreeSpaceTracker().volumeRemoved(apiCtx, vlm, freeSpaceRef);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -468,14 +468,14 @@ public class CtrlStorPoolApiCallHandler
     {
         try
         {
-            storPool.getFreeSpaceManager().setFreeSpace(peerAccCtx.get(), freeSpace);
+            storPool.getFreeSpaceTracker().setFreeSpace(peerAccCtx.get(), freeSpace);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "update free space of free space manager '" +
-                    storPool.getFreeSpaceManager().getName().displayValue +
+                    storPool.getFreeSpaceTracker().getName().displayValue +
                     "'",
                 ApiConsts.FAIL_ACC_DENIED_FREE_SPACE_MGR
             );
@@ -512,8 +512,6 @@ public class CtrlStorPoolApiCallHandler
         StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
 
         StorPoolData storPool;
-        FreeSpaceMgrName fsmName = LinstorParsingUtils.asFreeSpaceMgrName(freeSpaceMgrNameStr, storPoolNameStr);
-
         try
         {
             if (storPoolDef == null)
@@ -524,6 +522,10 @@ public class CtrlStorPoolApiCallHandler
                     LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );
             }
+
+            FreeSpaceMgrName fsmName = freeSpaceMgrNameStr != null && !freeSpaceMgrNameStr.isEmpty() ?
+                LinstorParsingUtils.asFreeSpaceMgrName(freeSpaceMgrNameStr) :
+                new FreeSpaceMgrName(node.getName(), storPoolDef.getName());
 
             storPool = storPoolDataFactory.create(
                 peerAccCtx.get(),

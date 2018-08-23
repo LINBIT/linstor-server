@@ -99,7 +99,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_INSERT))
         {
-            FreeSpaceMgrName fsmName = storPoolData.getFreeSpaceManager().getName();
+            FreeSpaceMgrName fsmName = storPoolData.getFreeSpaceTracker().getName();
             stmt.setString(1, storPoolData.getUuid().toString());
             stmt.setString(2, storPoolData.getNode().getName().value);
             stmt.setString(3, storPoolData.getName().value);

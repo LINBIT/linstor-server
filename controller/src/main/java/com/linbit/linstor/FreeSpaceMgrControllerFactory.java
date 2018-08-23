@@ -1,7 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -15,7 +15,7 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class FreeSpaceMgrFactory
+public class FreeSpaceMgrControllerFactory
 {
     private final Map<FreeSpaceMgrName, FreeSpaceMgr> freeSpaceMgrMap;
     private final AccessContext privCtx;
@@ -24,8 +24,8 @@ public class FreeSpaceMgrFactory
     private final TransactionObjectFactory transObjFactory;
 
     @Inject
-    public FreeSpaceMgrFactory(
-        CoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
+    public FreeSpaceMgrControllerFactory(
+        ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
         @SystemContext AccessContext privCtxRef,
         ObjectProtectionFactory objProtFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,

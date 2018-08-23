@@ -105,7 +105,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             node,
             storPoolDfn,
             LvmDriver.class.getSimpleName(),
-            null
+            getFreeSpaceMgr(storPoolDfn, node)
         );
 
         volNr = new VolumeNumber(13);

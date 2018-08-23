@@ -1,14 +1,13 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.FreeSpaceMgrFactory;
-import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDataFactory;
+import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
@@ -43,9 +42,9 @@ class StltStorPoolApiCallHandler
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataFactory storPoolDataFactory;
+    private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
+    private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -55,9 +54,9 @@ class StltStorPoolApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef,
+        StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        FreeSpaceMgrFactory freeSpaceMgrFactoryRef
+        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -163,10 +162,7 @@ class StltStorPoolApiCallHandler
                     controllerPeerConnector.getLocalNode(),
                     storPoolDfn,
                     storPoolRaw.getDriver(),
-                    freeSpaceMgrFactory.getInstance(
-                        apiCtx,
-                        FreeSpaceMgrName.restoreName(storPoolRaw.getFreeSpaceManagerName())
-                    )
+                    freeSpaceMgrFactory.getInstance()
                 );
                 storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
             }

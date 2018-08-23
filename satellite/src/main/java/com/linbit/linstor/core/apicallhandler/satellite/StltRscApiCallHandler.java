@@ -4,8 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
-import com.linbit.linstor.FreeSpaceMgrFactory;
-import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
@@ -32,7 +31,7 @@ import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDataFactory;
+import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
@@ -100,13 +99,13 @@ class StltRscApiCallHandler
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ResourceDataFactory resourceDataFactory;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataFactory storPoolDataFactory;
+    private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
-    private final FreeSpaceMgrFactory freeSpaceMgrFactory;
+    private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
     private final CtrlStltSerializer interComSerializer;
 
     @Inject
@@ -124,13 +123,13 @@ class StltRscApiCallHandler
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         ResourceDataFactory resourceDataFactoryRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataFactory storPoolDataFactoryRef,
+        StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
         SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
-        FreeSpaceMgrFactory freeSpaceMgrFactoryRef,
+        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
         CtrlStltSerializer interComSerializerRef
     )
     {
@@ -840,27 +839,16 @@ class StltRscApiCallHandler
 
                     storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
-                try
-                {
-                    storPool = storPoolDataFactory.getInstanceSatellite(
-                        apiCtx,
-                        vlmApi.getStorPoolUuid(),
-                        rsc.getAssignedNode(),
-                        storPoolDfn,
-                        vlmApi.getStorDriverSimpleClassName(),
-                        freeSpaceMgrFactory.getInstance(
-                            apiCtx,
-                            // the satellite does not need to know how the freeSpaceMgr is named
-                            // as the free spaces are storPool-related.
-                            FreeSpaceMgrName.createReservedName(vlmApi.getStorPoolName())
-                        )
-                    );
-                    storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
-                }
-                catch (SQLException sqlExc)
-                {
-                    throw new ImplementationError(sqlExc);
-                }
+
+                storPool = storPoolDataFactory.getInstanceSatellite(
+                    apiCtx,
+                    vlmApi.getStorPoolUuid(),
+                    rsc.getAssignedNode(),
+                    storPoolDfn,
+                    vlmApi.getStorDriverSimpleClassName(),
+                    freeSpaceMgrFactory.getInstance()
+                );
+                storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
             }
             else
             {
