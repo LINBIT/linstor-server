@@ -144,7 +144,11 @@ public class CommonMessageProcessor implements MessageProcessor
      */
     private void doProcessMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
     {
-        peer.processInOrder(peerSeq, Flux.defer(() -> this.doProcessInOrderMessage(msg, connector, peer)));
+        peer.processInOrder(peerSeq, Flux.defer(() ->
+            peer.isConnected(false) ?
+                this.doProcessInOrderMessage(msg, connector, peer) :
+                Flux.empty()
+        ));
     }
 
     /**
