@@ -84,7 +84,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     /**
      * Removes the volume from this storPool
      */
-    void removeVolume(AccessContext accCtx, Volume volume, long freeSpace)
+    void removeVolume(AccessContext accCtx, Volume volume)
         throws AccessDeniedException;
 
     /**

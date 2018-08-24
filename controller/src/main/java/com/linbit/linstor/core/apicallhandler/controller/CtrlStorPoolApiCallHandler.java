@@ -347,64 +347,6 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    public void vlmRemovedFromDiskless(
-        UUID vlmUuid,
-        String nodeNameStr,
-        String rscNameStr,
-        int vlmNrInt,
-        UUID storPoolUuid,
-        String storPoolNameStr,
-        long freeSpaceRef
-    )
-    {
-        StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
-        // TODO check storPool's uuid
-
-        ResourceName rscName = null;
-        try
-        {
-            rscName = new ResourceName(rscNameStr);
-        }
-        catch (InvalidNameException exc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Invalid resourceName from satellite: " + exc.invalidName
-                )
-            );
-        }
-        VolumeNumber vlmNr = null;
-        try
-        {
-            vlmNr = new VolumeNumber(vlmNrInt);
-        }
-        catch (ValueOutOfRangeException exc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Invalid vlmNr from satellite: " + vlmNrInt
-                )
-            );
-        }
-        Volume vlm;
-        try
-        {
-            vlm = storPool.getNode().getResource(apiCtx, rscName).getVolume(vlmNr);
-
-            // TODO check vlm's UUID
-            storPool.getFreeSpaceTracker().volumeRemoved(apiCtx, vlm, freeSpaceRef);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Controller's api context has not enough privileges to gather requested data.",
-                    accDeniedExc
-                )
-            );
-        }
-    }
-
     void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
     {
         if (!peer.get().getNode().isDeleted())

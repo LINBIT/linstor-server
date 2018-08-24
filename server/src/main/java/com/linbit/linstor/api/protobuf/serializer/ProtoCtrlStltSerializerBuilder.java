@@ -28,7 +28,6 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -66,7 +65,6 @@ import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgInt
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
-import com.linbit.linstor.proto.javainternal.MsgIntVlmRemovedFromDisklessOuterClass.MsgIntVlmRemovedFromDiskless;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -723,37 +721,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setSuspended(snapshotState.isSuspended())
                 .setSnapshotTaken(snapshotState.isSnapshotTaken())
                 .setDeleted(snapshotState.isSnapshotDeleted())
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public CommonSerializerBuilder vlmRemovedFromDiskless(
-        UUID vlmUuid,
-        String nodeName,
-        String rscName,
-        int vlmNr,
-        UUID storPoolUuid,
-        String storPoolName,
-        long freeSpace
-    )
-    {
-        try
-        {
-            MsgIntVlmRemovedFromDiskless.newBuilder()
-                .setVlmUuid(vlmUuid.toString())
-                .setNodeName(nodeName)
-                .setRscName(rscName)
-                .setVlmNr(vlmNr)
-                .setStorPoolUuid(storPoolUuid.toString())
-                .setStorPoolName(storPoolName)
-                .setFreeSpace(freeSpace)
                 .build()
                 .writeDelimitedTo(baos);
         }

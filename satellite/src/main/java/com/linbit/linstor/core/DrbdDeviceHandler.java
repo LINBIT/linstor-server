@@ -46,7 +46,6 @@ import com.linbit.linstor.event.satellite.InProgressSnapshotEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
@@ -1025,10 +1024,6 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws AccessDeniedException, ResourceException
     {
-        Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
-        Props rscProps = rsc.getProps(wrkCtx);
-        Props rscDfnProps = rscDfn.getProps(wrkCtx);
-
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
             VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
@@ -1862,10 +1857,6 @@ class DrbdDeviceHandler implements DeviceHandler
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
             VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
-
-            Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
-            Props rscProps = rsc.getProps(wrkCtx);
-            Props rscDfnProps = rscDfn.getProps(wrkCtx);
 
             try
             {

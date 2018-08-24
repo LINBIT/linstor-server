@@ -18,10 +18,6 @@ public interface FreeSpaceTracker extends TransactionObject
 
     void volumeAdded(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException;
 
-    void removingVolume(AccessContext accCtx, Volume vlm) throws AccessDeniedException;
-
-    void volumeRemoved(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException;
-
     Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx) throws AccessDeniedException;
 
     Optional<Long> getFreeSpaceCurrentEstimation(AccessContext accCtx) throws AccessDeniedException;

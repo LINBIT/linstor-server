@@ -244,13 +244,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         StorPool oldStorPool = storPool.get();
-        if (oldStorPool != null)
-        {
-            if (oldStorPool.containsVolume(accCtx, this))
-            {
-                oldStorPool.getFreeSpaceTracker().removingVolume(accCtx, this);
-            }
-        }
+        oldStorPool.removeVolume(accCtx, this);
+
         storPool.set(storPoolRef);
         storPoolRef.putVolume(accCtx, this);
     }
@@ -315,7 +310,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.USE);
         getFlags().enableFlags(accCtx, Volume.VlmFlags.DELETE);
-        storPool.get().getFreeSpaceTracker().removingVolume(accCtx, this);
     }
 
     @Override
@@ -377,12 +371,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             }
 
             ((ResourceData) resource).removeVolume(accCtx, this);
-            if (storPool.get().containsVolume(accCtx, this))
-            {
-                throw new ImplementationError(
-                    "A volume was not removed from its storPool (which includes an update to the freeSpaceMgr)"
-                );
-            }
+            storPool.get().removeVolume(accCtx, this);
             ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
 
             volumeProps.delete();

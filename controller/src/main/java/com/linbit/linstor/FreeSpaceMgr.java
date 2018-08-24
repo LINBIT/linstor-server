@@ -31,7 +31,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeSpace;
 
     private final Set<Volume> pendingVolumesToAdd = new HashSet<>();
-    private final Set<Volume> pendingVolumesToRemove = new HashSet<>();
 
     public FreeSpaceMgr(
         AccessContext privCtxRef,
@@ -127,41 +126,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     }
 
     /**
-     * This method should be called when a volume was just marked for deletion but is not yet undeployed
-     * on the {@link Satellite}.
-     *
-     * Pending volumes only change the outcome of {@link #getFreeSpaceCurrentEstimation()}
-     * but not of {@link #getFreeSpaceLastUpdated()}.
-     *
-     * @param vlm
-     */
-    @Override
-    public void removingVolume(AccessContext accCtx, Volume vlm) throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.USE);
-        synchronizedAdd(pendingVolumesToRemove, vlm);
-    }
-
-    /**
-     * The given volume is removed from the pending list, and the freespace is updated.
-     *
-     * This method changes the outcome of both {@link #getFreeSpaceCurrentEstimation()} and
-     * {@link #getFreeSpaceLastUpdated()}.
-     * To be more precise, a call of this method followed atomically by a call of
-     * {@link #getFreeSpaceLastUpdated()} returns <code>freeSpaceRef</code>
-     *
-     * @param vlm
-     * @param freeSpaceRef
-     */
-    @Override
-    public void volumeRemoved(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.USE);
-        synchronizedRemove(pendingVolumesToRemove, vlm);
-        setImpl(freeSpaceRef);
-    }
-
-    /**
      * @param accCtx
      * @return the last received free space size (or {@link Optional#empty()} if not initialized yet).
      * This value will not include the changes of pending adds or removes.
@@ -204,19 +168,10 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
                 {
                     pendingAddCopy = new HashSet<>(pendingVolumesToAdd);
                 }
-                HashSet<Volume> pendingRemoveCopy;
-                synchronized (pendingVolumesToRemove)
-                {
-                    pendingRemoveCopy = new HashSet<>(pendingVolumesToRemove);
-                }
 
                 for (Volume vlm : pendingAddCopy)
                 {
                     sum += vlm.getVolumeDefinition().getVolumeSize(privCtx);
-                }
-                for (Volume vlm : pendingRemoveCopy)
-                {
-                    sum -= vlm.getVolumeDefinition().getVolumeSize(privCtx);
                 }
             }
             catch (AccessDeniedException accDeniedExc)
@@ -268,18 +223,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         {
             return set.remove(element);
         }
-    }
-
-    private <T> boolean synchronizedRemove(Set<T> set, T element, boolean throwExcIfNotFound)
-    {
-        boolean found = synchronizedRemove(set, element);
-        if (!found && throwExcIfNotFound)
-        {
-            throw new ImplementationError(
-                "Element '" + element + "' was removed without being in the pending remove list!"
-            );
-        }
-        return found;
     }
 
     private void setImpl(long freeSpaceRef)

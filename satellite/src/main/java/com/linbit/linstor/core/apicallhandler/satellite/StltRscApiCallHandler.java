@@ -775,36 +775,6 @@ class StltRscApiCallHandler
         }
 
         StorPool storPool = getStorPool(vlm.getResource(), vlmApi, remoteRsc);
-        StorPool oldStorPool = vlm.getStorPool(apiCtx);
-        if (oldStorPool != null &&
-            !oldStorPool.getDriverKind().hasBackingStorage() &&
-            storPool.getDriverKind().hasBackingStorage()
-        )
-        {
-            // diskless -> diskfull
-            // send the controller the confirmation that we are removing the vlm from the
-            // diskless storPool and adding it to a diskfull storPool
-
-            // doing so we also have to send the updated freeSpace of the old storPool
-            // but as we are removing the vlm from a diskless storPool, we can return a constant
-            // as the "new" freeSpace. the freeSpace-update for the new storPool will get reported
-            // when the deviceHandler finishes
-
-            controllerPeerConnector.getControllerPeer()
-                .sendMessage(
-                    interComSerializer.onewayBuilder(InternalApiConsts.API_VLM_REMOVED_FROM_DISKLESS)
-                        .vlmRemovedFromDiskless(
-                            vlm.getUuid(),
-                            vlm.getResource().getAssignedNode().getName().displayValue,
-                            vlm.getResourceDefinition().getName().displayValue,
-                            vlm.getVolumeDefinition().getVolumeNumber().value,
-                            oldStorPool.getUuid(),
-                            oldStorPool.getName().displayValue,
-                            Long.MAX_VALUE
-                        )
-                        .build()
-                );
-        }
         vlm.setStorPool(apiCtx, storPool);
 
         Map<String, String> vlmProps = vlm.getProps(apiCtx).map();

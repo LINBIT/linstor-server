@@ -69,20 +69,6 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void removingVolume(AccessContext accCtx, Volume vlm)
-        throws AccessDeniedException
-    {
-        // Ignore
-    }
-
-    @Override
-    public void volumeRemoved(AccessContext accCtx, Volume vlm, long freeSpaceRef)
-        throws AccessDeniedException
-    {
-        // Ignore
-    }
-
-    @Override
     public Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx)
         throws AccessDeniedException
     {

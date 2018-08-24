@@ -123,15 +123,5 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
 
         CtrlStltSerializerBuilder inProgressSnapshotEvent(SnapshotState snapshotState);
-
-        CommonSerializerBuilder vlmRemovedFromDiskless(
-            UUID vlmUuid,
-            String nodeName,
-            String rscName,
-            int vlmNr,
-            UUID storPoolUuid,
-            String StorPoolName,
-            long freeSpace
-        );
     }
 }

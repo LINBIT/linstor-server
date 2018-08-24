@@ -290,7 +290,7 @@ public class CtrlVlmApiCallHandler
         try
         {
             storPool = vlm.getStorPool(peerAccCtx.get());
-            storPool.removeVolume(peerAccCtx.get(), vlm, freeSpace);
+            storPool.removeVolume(peerAccCtx.get(), vlm);
         }
         catch (AccessDeniedException exc)
         {

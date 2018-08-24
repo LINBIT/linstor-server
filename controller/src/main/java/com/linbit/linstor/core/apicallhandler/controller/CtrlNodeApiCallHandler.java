@@ -551,9 +551,9 @@ public class CtrlNodeApiCallHandler
 
                 delete(nodeData);
 
-                ctrlTransactionHelper.commit();
-
                 nodeRepository.remove(apiCtx, nodeName);
+
+                ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context, ApiCallRcImpl
                     .entryBuilder(ApiConsts.DELETED, successMessage)

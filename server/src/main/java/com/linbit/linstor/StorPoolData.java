@@ -209,14 +209,13 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public void removeVolume(AccessContext accCtx, Volume volume, long freeSpaceRef)
+    public void removeVolume(AccessContext accCtx, Volume volume)
         throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         volumeMap.remove(Volume.getVolumeKey(volume));
-        freeSpaceTracker.volumeRemoved(accCtx, volume, freeSpaceRef);
     }
 
     @Override
@@ -254,6 +253,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
             ((NodeData) node).removeStorPool(accCtx, this);
             ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
+            freeSpaceTracker.remove(accCtx, this);
 
             props.delete();
 

@@ -457,11 +457,6 @@ public class CtrlRscApiCallHandler
                 delete(node);
             }
 
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                rscUuid, getRscDescriptionInline(nodeNameStr, rscNameStr)));
-
             if (deletedRscDfnName != null)
             {
                 responseConverter.addWithOp(
@@ -474,6 +469,11 @@ public class CtrlRscApiCallHandler
                 node.getPeer(apiCtx).closeConnection();
                 responseConverter.addWithOp(responses, context, makeNodeDeletedResponse(deletedNodeName, nodeUuid));
             }
+
+            ctrlTransactionHelper.commit();
+
+            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                rscUuid, getRscDescriptionInline(nodeNameStr, rscNameStr)));
         }
         catch (Exception | ImplementationError exc)
         {

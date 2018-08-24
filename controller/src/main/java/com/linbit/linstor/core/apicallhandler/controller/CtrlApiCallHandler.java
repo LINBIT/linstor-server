@@ -1659,32 +1659,4 @@ public class CtrlApiCallHandler
         }
         return response;
     }
-
-    public void vlmRemovedFromDiskless(
-        UUID vlmUuid,
-        String nodeName,
-        String rscName,
-        int vlmNr,
-        UUID storPoolUuid,
-        String storPoolName,
-        long freeSpace
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(
-            nodesMapLock.writeLock(),
-            rscDfnMapLock.writeLock(),
-            storPoolDfnMapLock.writeLock())
-        )
-        {
-            storPoolApiCallHandler.vlmRemovedFromDiskless(
-                vlmUuid,
-                nodeName,
-                rscName,
-                vlmNr,
-                storPoolUuid,
-                storPoolName,
-                freeSpace
-            );
-        }
-    }
 }
