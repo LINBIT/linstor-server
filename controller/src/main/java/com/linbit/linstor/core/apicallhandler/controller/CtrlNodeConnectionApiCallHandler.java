@@ -97,8 +97,8 @@ class CtrlNodeConnectionApiCallHandler
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
 
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1, true));
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2, true));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -294,8 +294,8 @@ class CtrlNodeConnectionApiCallHandler
 
         try
         {
-            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(nodeConn.getSourceNode(apiCtx), true));
-            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(nodeConn.getTargetNode(apiCtx), true));
+            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(nodeConn.getSourceNode(apiCtx)));
+            responses.addEntries(ctrlSatelliteUpdater.updateSatellites(nodeConn.getTargetNode(apiCtx)));
         }
         catch (AccessDeniedException accDeniedExc)
         {

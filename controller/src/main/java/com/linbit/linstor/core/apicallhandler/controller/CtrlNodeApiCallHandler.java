@@ -328,7 +328,7 @@ public class CtrlNodeApiCallHandler
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithDetail(
-                responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
+                responses, context, ctrlSatelliteUpdater.updateSatellites(node));
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 node.getUuid(), getNodeDescriptionInline(node)));
         }
@@ -418,10 +418,7 @@ public class CtrlNodeApiCallHandler
                     {
                         delete(nodeData);
                         successMessage += " deleted.";
-                    }
 
-                    if (!hasRsc)
-                    {
                         nodeRepository.remove(apiCtx, nodeName);
 
                         Peer nodePeer = nodeData.getPeer(apiCtx);
@@ -430,7 +427,10 @@ public class CtrlNodeApiCallHandler
                             nodePeer.closeConnection();
                         }
                     }
-                    else
+
+                    ctrlTransactionHelper.commit();
+
+                    if (hasRsc)
                     {
                         for (ResourceDefinition rscDfn : changedResourceDefinitions)
                         {
@@ -445,10 +445,8 @@ public class CtrlNodeApiCallHandler
                             // node also needs to be deleted, and does so if needed.
                         }
                         responseConverter.addWithDetail(
-                            responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData, true));
+                            responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData));
                     }
-
-                    ctrlTransactionHelper.commit();
 
                     responseConverter.addWithOp(responses, context, ApiCallRcImpl
                         .entryBuilder(ApiConsts.DELETED, successMessage)
@@ -456,9 +454,6 @@ public class CtrlNodeApiCallHandler
                             " UUID is: " + nodeUuid.toString())
                         .build()
                     );
-
-                    // TODO: tell satellites to remove all the corresponding resources and storPools
-                    // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
                 }
             }
         }
@@ -509,11 +504,11 @@ public class CtrlNodeApiCallHandler
                     ));
                 }
 
+                // find nodes that will need to be contacted before deleting the resources
+                Collection<Node> nodesToContact = ctrlSatelliteUpdater.findNodesToContact(nodeData);
+
                 // set node mark deleted for updates to other satellites
                 nodeData.markDeleted(apiCtx);
-                // inform other satellites that the node is gone
-                responseConverter.addWithDetail(
-                    responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData, true));
 
                 // gather all resources of the lost node and circumvent concurrent modification
                 List<Resource> rscToDelete = getRscStream(nodeData).collect(toList());
@@ -554,6 +549,10 @@ public class CtrlNodeApiCallHandler
                 nodeRepository.remove(apiCtx, nodeName);
 
                 ctrlTransactionHelper.commit();
+
+                // inform other satellites that the node is gone
+                responseConverter.addWithDetail(
+                    responses, context, ctrlSatelliteUpdater.updateSatellites(nodeUuid, nodeName, nodesToContact));
 
                 responseConverter.addWithOp(responses, context, ApiCallRcImpl
                     .entryBuilder(ApiConsts.DELETED, successMessage)

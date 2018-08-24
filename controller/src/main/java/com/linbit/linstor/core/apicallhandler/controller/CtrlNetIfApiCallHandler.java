@@ -115,7 +115,7 @@ class CtrlNetIfApiCallHandler
             ctrlTransactionHelper.commit();
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(netIf.getUuid(), getNetIfDescriptionInline(netIf)));
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node));
         }
         catch (Exception | ImplementationError exc)
         {
@@ -169,7 +169,7 @@ class CtrlNetIfApiCallHandler
                 node.getPeer(apiCtx).closeConnection();
                 satelliteConnector.startConnecting(node, apiCtx);
             }
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node, true));
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node));
         }
         catch (Exception | ImplementationError exc)
         {

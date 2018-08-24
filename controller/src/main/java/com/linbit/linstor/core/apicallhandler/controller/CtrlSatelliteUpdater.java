@@ -23,6 +23,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,26 +49,13 @@ public class CtrlSatelliteUpdater
         internalComSerializer = serializerRef;
     }
 
-    public ApiCallRc updateSatellites(Node node)
+    public Collection<Node> findNodesToContact(Node node)
     {
-        return updateSatellites(node, true);
-    }
-
-    /**
-     * @param node Node to gather info which other nodes are to contact
-     * @param contactArgumentNode Flag to indicate if the given node should also be contacted
-     */
-    public ApiCallRc updateSatellites(Node node, boolean contactArgumentNode)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Map<NodeName, Node> nodesToContact = new TreeMap<>();
 
         try
         {
-            Map<NodeName, Node> nodesToContact = new TreeMap<>();
-            if (contactArgumentNode)
-            {
-                nodesToContact.put(node.getName(), node);
-            }
+            nodesToContact.put(node.getName(), node);
             for (Resource rsc : node.streamResources(apiCtx).collect(toList()))
             {
                 ResourceDefinition rscDfn = rsc.getDefinition();
@@ -78,15 +66,38 @@ public class CtrlSatelliteUpdater
                     nodesToContact.put(allRsc.getAssignedNode().getName(), allRsc.getAssignedNode());
                 }
             }
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+        return nodesToContact.values();
+    }
 
+    public ApiCallRc updateSatellites(Node node)
+    {
+        return updateSatellites(node.getUuid(), node.getName(), findNodesToContact(node));
+    }
+
+    /**
+     * @param uuid UUID of changed node
+     * @param nodeName Name of changed node
+     * @param nodesToContact Nodes to update
+     */
+    public ApiCallRc updateSatellites(UUID uuid, NodeName nodeName, Collection<Node> nodesToContact)
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        try
+        {
             byte[] changedMessage = internalComSerializer
                 .onewayBuilder(InternalApiConsts.API_CHANGED_NODE)
                 .changedNode(
-                    node.getUuid(),
-                    node.getName().displayValue
+                    uuid,
+                    nodeName.displayValue
                 )
                 .build();
-            for (Node nodeToContact : nodesToContact.values())
+            for (Node nodeToContact : nodesToContact)
             {
                 Peer satellitePeer = nodeToContact.getPeer(apiCtx);
                 if (satellitePeer != null)

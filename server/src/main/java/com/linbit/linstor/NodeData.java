@@ -605,11 +605,18 @@ public class NodeData extends BaseTransactionObject implements Node
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-            // preventing ConcurrentModificationException
+            // Shallow copy the collection because elements may be removed from it
             ArrayList<NodeConnection> values = new ArrayList<>(nodeConnections.values());
             for (NodeConnection nodeConn : values)
             {
                 nodeConn.delete(accCtx);
+            }
+
+            // Shallow copy the collection because elements may be removed from it
+            ArrayList<StorPool> storPools = new ArrayList<>(storPoolMap.values());
+            for (StorPool storPool : storPools)
+            {
+                storPool.delete(accCtx);
             }
 
             nodeProps.delete();
