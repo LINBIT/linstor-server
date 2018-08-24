@@ -12,7 +12,14 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
     private static final String TBL_STOR_POOL = "NODE_STOR_POOL";
     private static final String NEW_SP_FREE_SPACE_MGR_NAME = "FREE_SPACE_MGR_NAME";
     private static final String NEW_SP_FREE_SPACE_MGR_DSP_NAME = "FREE_SPACE_MGR_DSP_NAME";
-    private static final String OLD_SP_NAME = "POOL_NAME";
+    private static final String POOL_NAME = "POOL_NAME";
+    private static final String NODE_NAME = "NODE_NAME";
+
+    private static final String TBL_OP = "SEC_OBJECT_PROTECTION";
+    private static final String OP_OBJECT_PATH = "OBJECT_PATH";
+    private static final String OP_CREATOR = "CREATOR_IDENTITY_NAME";
+    private static final String OP_OWNER = "OWNER_ROLE_NAME";
+    private static final String OP_SEC_TYPE_NAME = "SECURITY_TYPE_NAME";
 
     @Override
     public void migrate(Connection connection) throws Exception
@@ -41,10 +48,24 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
 
             stmt.executeUpdate(
                 "UPDATE " + TBL_STOR_POOL +
-                " SET " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = CONCAT('SYSTEM:', " + OLD_SP_NAME + "), " +
-                          NEW_SP_FREE_SPACE_MGR_NAME     + " = CONCAT('SYSTEM:', " + OLD_SP_NAME + ")" +
+                " SET " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = CONCAT('SYSTEM:', " + POOL_NAME + "), " +
+                          NEW_SP_FREE_SPACE_MGR_NAME     + " = CONCAT('SYSTEM:', " + POOL_NAME + ")" +
                 " WHERE " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = 'SYSTEM:'"
             );
+
+            // copy the protection from the node to the protection for the free space manager
+            stmt.executeUpdate(
+                "INSERT INTO " + TBL_OP + " " +
+                    "SELECT " +
+                        "CONCAT('/freespacemgrs/', sp." + NEW_SP_FREE_SPACE_MGR_NAME + ") " + OP_OBJECT_PATH + ", " +
+                        "prot." + OP_CREATOR + " " + OP_CREATOR + ", " +
+                        "prot." + OP_OWNER + " " + OP_OWNER + ", " +
+                        "prot." + OP_SEC_TYPE_NAME + " " + OP_SEC_TYPE_NAME + " " +
+                    "FROM " + TBL_STOR_POOL + " sp " +
+                    "JOIN " + TBL_OP + " prot " +
+                        "ON CONCAT('/nodes/', sp." + NODE_NAME + ") = prot." + OP_OBJECT_PATH
+            );
+
             stmt.close();
         }
     }
