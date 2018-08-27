@@ -698,7 +698,8 @@ public class SwordfishDriver implements StorageDriver
         {
             throw new StorageException("Could not retrieve requested space");
         }
-        return space;
+        // linstor uses kb as internal unit, swordfish gives us bytes
+        return space / KIB;
 
     }
 
@@ -786,11 +787,11 @@ public class SwordfishDriver implements StorageDriver
         if (tmpLsStorPool != null)
         {
             @SuppressWarnings("unchecked")
-            Map<String, String> lut =  (Map<String, String>) JSON_OBJ.get(tmpSfStorPool);
+            Map<String, String> lut =  (Map<String, String>) JSON_OBJ.get(tmpLsStorPool);
             if (lut == null)
             {
                 lut = new HashMap<>();
-                JSON_OBJ.put(tmpSfStorPool, lut);
+                JSON_OBJ.put(tmpLsStorPool, lut);
             }
             linstorIdToSwordfishId = lut;
         }
