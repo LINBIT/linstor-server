@@ -135,18 +135,15 @@ public class CtrlRscCrtApiCallHandler
 
         responses.addEntries(makeVolumeRegisteredEntries(rsc));
 
-        Flux<ApiCallRc> satelliteUpdateResponses;
-        Mono<ApiCallRc> resourceReadyResponses;
+        NodeName nodeName = rsc.getAssignedNode().getName();
+        ResourceName rscName = rsc.getDefinition().getName();
 
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc).map(Tuple2::getT2);
+
+        Mono<ApiCallRc> resourceReadyResponses;
+        // Do DRBD resource is created when no volumes are present, so do not wait for it to be ready
         if (rsc.getVolumeCount() > 0)
         {
-            NodeName nodeName = rsc.getAssignedNode().getName();
-            ResourceName rscName = rsc.getDefinition().getName();
-
-            // Only notify satellite if there are volumes to deploy.
-            // This allows us to delete resources without volumes without notifying the satellites.
-            satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc).map(Tuple2::getT2);
-
             resourceReadyResponses = eventWaiter
                 .waitForStream(
                     resourceStateEvent.get(),
@@ -158,7 +155,6 @@ public class CtrlRscCrtApiCallHandler
         }
         else
         {
-            satelliteUpdateResponses = Flux.empty();
             resourceReadyResponses = Mono.empty();
         }
 

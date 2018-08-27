@@ -363,19 +363,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 }
                 ctrlTransactionHelper.commit();
 
-                Flux<ApiCallRc> satelliteUpdateResponses;
-                if (rsc.getVolumeCount() > 0)
-                {
-                    String action = removeDisk ?
-                        "Notified '%s' that disk is being removed" : "Prepared '%s' to expect disk";
-                    satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-                        .transform(updateResponses -> translateDeploymentSuccess(updateResponses,
-                            action + " on '" + rsc.getAssignedNode().getName().displayValue + "'"));
-                }
-                else
-                {
-                    satelliteUpdateResponses = Flux.empty();
-                }
+                String action = removeDisk ?
+                    "Notified '%s' that disk is being removed" : "Prepared '%s' to expect disk";
+                Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+                    .transform(updateResponses -> translateDeploymentSuccess(updateResponses,
+                        action + " on '" + rsc.getAssignedNode().getName().displayValue + "'"));
 
                 responses = satelliteUpdateResponses
                     // If an update fails (e.g. the connection to a node is lost), attempt to reset back to the

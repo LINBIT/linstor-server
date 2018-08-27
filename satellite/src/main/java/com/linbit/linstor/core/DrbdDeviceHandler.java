@@ -294,7 +294,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
                 else
                 {
-                    createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
+                    createResource(localNode, rscName, rsc, rscDfn, rscState);
                     apiCallRc.addEntry("Resource '" + rscName + "' deployed", ApiConsts.CREATED);
                 }
             }
@@ -678,7 +678,6 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
-        NodeName localNodeName,
         VolumeStateDevManager vlmState
     )
         throws AccessDeniedException, VolumeException, MdException
@@ -991,7 +990,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
     private void createResource(
         Node localNode,
-        NodeName localNodeName,
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
@@ -999,24 +997,33 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws AccessDeniedException, ResourceException
     {
-        createResourceStorage(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
+        createResourceStorage(rscName, rsc, rscDfn, rscState);
 
-        createResourceConfiguration(rscName, rsc, rscDfn);
+        if (rsc.getVolumeCount() == 0)
+        {
+            errLog.logDebug("Skipping DRBD configuration steps for empty resource '" + rscName + "'");
+        }
+        else if (allVolumesMarkedForDelete(rscState))
+        {
+            deleteDrbdResource(rscName);
+        }
+        else
+        {
+            createResourceConfiguration(rscName, rsc, rscDfn);
 
-        createResourceMetaData(rscName, rsc, rscDfn, rscState);
+            createResourceMetaData(rscName, rsc, rscDfn, rscState);
 
-        adjustResource(rsc, rscState);
+            adjustResource(rsc, rscState);
+
+            condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
+        }
 
         deleteResourceVolumes(rscName, rsc, rscDfn, rscState);
-
-        condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
 
         deviceManagerProvider.get().notifyResourceApplied(rsc);
     }
 
     private void createResourceStorage(
-        Node localNode,
-        NodeName localNodeName,
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
@@ -1031,7 +1038,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 // Check backend storage
                 evaluateStorageVolume(
-                    rscName, rsc, rscDfn, localNodeName, vlmState
+                    rscName, rsc, rscDfn, vlmState
                 );
 
                 if (!vlmState.isMarkedForDelete())
@@ -1391,6 +1398,22 @@ class DrbdDeviceHandler implements DeviceHandler
                 cmdExc
             );
         }
+    }
+
+    private boolean allVolumesMarkedForDelete(ResourceState rscState)
+        throws AccessDeniedException, ResourceException
+    {
+        boolean deletingAll = true;
+        for (VolumeState vlmStateBase : rscState.getVolumes())
+        {
+            VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
+
+            if (!vlmState.isMarkedForDelete() && !vlmState.isSkip())
+            {
+                deletingAll = false;
+            }
+        }
+        return deletingAll;
     }
 
     private void deleteResourceVolumes(
@@ -1827,30 +1850,14 @@ class DrbdDeviceHandler implements DeviceHandler
         // Determine the state of the DRBD resource
         evaluateDelDrbdResource(rsc, rscDfn, rscState);
 
-        // Shut down the DRBD resource
-        try
+        if (rsc.getVolumeCount() == 0)
         {
-            drbdUtils.down(rscName);
+            errLog.logDebug("Skipping DRBD configuration deletion steps for empty resource '" + rscName + "'");
         }
-        catch (ExtCmdFailedException cmdExc)
+        else
         {
-            throw new ResourceException(
-                "Shutdown of the DRBD resource '" + rscName.displayValue + " failed",
-                getAbortMsg(rscName),
-                "The external command for stopping the DRBD resource failed",
-                "- Check whether the required software is installed\n" +
-                "- Check whether the application's search path includes the location\n" +
-                "  of the external software\n" +
-                "- Check whether the application has execute permission for the external command\n",
-                null,
-                cmdExc
-            );
+            deleteDrbdResource(rscName);
         }
-
-        // TODO: Wait for the DRBD resource to disappear
-
-        // Delete the DRBD resource configuration file
-        deleteResourceConfiguration(rscName);
 
         boolean vlmDelFailed = false;
         // Delete backend storage volumes
@@ -1894,6 +1901,35 @@ class DrbdDeviceHandler implements DeviceHandler
 
         // Notify the controller of successful deletion of the resource
         deviceManagerProvider.get().notifyResourceDeleted(rsc);
+    }
+
+    private void deleteDrbdResource(ResourceName rscName)
+        throws ResourceException
+    {
+        // Shut down the DRBD resource
+        try
+        {
+            drbdUtils.down(rscName);
+        }
+        catch (ExtCmdFailedException cmdExc)
+        {
+            throw new ResourceException(
+                "Shutdown of the DRBD resource '" + rscName.displayValue + " failed",
+                getAbortMsg(rscName),
+                "The external command for stopping the DRBD resource failed",
+                "- Check whether the required software is installed\n" +
+                    "- Check whether the application's search path includes the location\n" +
+                    "  of the external software\n" +
+                    "- Check whether the application has execute permission for the external command\n",
+                null,
+                cmdExc
+            );
+        }
+
+        // TODO: Wait for the DRBD resource to disappear
+
+        // Delete the DRBD resource configuration file
+        deleteResourceConfiguration(rscName);
     }
 
     /**

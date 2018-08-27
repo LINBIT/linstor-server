@@ -12,18 +12,25 @@ import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.GenericDbBase;
 import junitparams.JUnitParamsRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
@@ -46,6 +53,9 @@ public class RscApiTest extends ApiTestBase
     private String testRscDfnSecret;
     private TransportType tesTRscDfnTransportType;
     private ResourceDefinitionData testRscDfn;
+
+    @Mock
+    protected Peer mockSatellite;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public RscApiTest() throws Exception
@@ -78,12 +88,15 @@ public class RscApiTest extends ApiTestBase
             testControllerFlags
         );
         nodesMap.put(testControllerName, testControllerNode);
+
+        Mockito.when(mockSatellite.apiCall(anyString(), any())).thenReturn(Flux.empty());
         testSatelliteNode = nodeDataFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testSatelliteName,
             testSatelliteType,
             testSatelliteFlags // flags
         );
+        testSatelliteNode.setPeer(GenericDbBase.SYS_CTX, mockSatellite);
         nodesMap.put(testSatelliteName, testSatelliteNode);
 
         testRscDfn = resourceDefinitionDataFactory.create(

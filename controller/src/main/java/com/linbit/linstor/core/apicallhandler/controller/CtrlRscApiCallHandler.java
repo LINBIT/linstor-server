@@ -333,33 +333,21 @@ public class CtrlRscApiCallHandler
             }
             else
             {
-                int volumeCount = rscData.getVolumeCount();
-                String successMessage;
-                String details;
-                String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(nodeNameStr, rscNameStr));
-                if (volumeCount > 0)
-                {
-                    successMessage = descriptionFirstLetterCaps + " marked for deletion.";
-                    details = descriptionFirstLetterCaps + " UUID is: " + rscData.getUuid();
-                    markDeleted(rscData);
-                }
-                else
-                {
-                    successMessage = descriptionFirstLetterCaps + " deleted.";
-                    details = descriptionFirstLetterCaps + " UUID was: " + rscData.getUuid();
-                    delete(rscData);
-                }
+                markDeleted(rscData);
 
                 ctrlTransactionHelper.commit();
 
-                if (volumeCount > 0)
-                {
-                    // notify satellites
-                    responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscData));
-                }
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscData));
 
-                responseConverter.addWithOp(responses, context,
-                    ApiCallRcImpl.entryBuilder(ApiConsts.DELETED, successMessage).setDetails(details).build());
+                String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(nodeNameStr, rscNameStr));
+                responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.DELETED,
+                        descriptionFirstLetterCaps + " marked for deletion."
+                    )
+                    .setDetails(descriptionFirstLetterCaps + " UUID is: " + rscData.getUuid())
+                    .build()
+                );
             }
         }
         catch (Exception | ImplementationError exc)

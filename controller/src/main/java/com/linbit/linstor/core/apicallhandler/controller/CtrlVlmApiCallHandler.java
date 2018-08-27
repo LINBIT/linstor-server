@@ -229,15 +229,19 @@ public class CtrlVlmApiCallHandler
             VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
-            UUID vlmUuid = vlm.getUuid(); // prevent access to deleted object
 
             markClean(vlm);
 
             deleteFromStorPool(vlm, freespace);
 
-            boolean allVlmsClean = true;
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+
+            // prevent access to deleted objects
+            UUID vlmUuid = vlm.getUuid();
+            String vlmDescriptionInline = getVlmDescriptionInline(rscData, vlmDfn);
             UUID vlmDfnUuid = vlmDfn.getUuid();
+
+            boolean allVlmsClean = true;
             Iterator<Volume> vlmIterator = getVolumeIterator(vlmDfn);
             while (vlmIterator.hasNext())
             {
@@ -258,7 +262,7 @@ public class CtrlVlmApiCallHandler
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                vlmUuid, getVlmDescriptionInline(rscData, vlmDfn)));
+                vlmUuid, vlmDescriptionInline));
             errorReporter.logDebug(
                 String.format("Volume with number '%d' deleted on node '%s'.", volumeNr, nodeNameStr)
             );

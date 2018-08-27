@@ -130,11 +130,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) > 0)
-            {
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(toRscDfn));
-            }
-            else
+            if (toRscDfn.getVolumeDfnCount(peerAccCtx.get()) == 0)
             {
                 responseConverter.addWithDetail(responses, context, ApiCallRcImpl
                     .entryBuilder(
@@ -142,11 +138,13 @@ public class CtrlSnapshotRestoreApiCallHandler
                         "No volumes to restore."
                     )
                     .setDetails("The target resource definition has no volume definitions. " +
-                                "The restored resources will be empty.")
+                        "The restored resources will be empty.")
                     .setCorrection("Restore the volume definitions to the target resource definition.")
                     .build()
                 );
             }
+
+            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(toRscDfn));
 
             responseConverter.addWithOp(responses, context, ApiCallRcImpl
                 .entryBuilder(
