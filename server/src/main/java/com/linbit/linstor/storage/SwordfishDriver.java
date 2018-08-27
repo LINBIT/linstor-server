@@ -121,14 +121,24 @@ public class SwordfishDriver implements StorageDriver
         try
         {
             Path jsonPath = SF_MAPPING_FILE.toPath();
-            if (!Files.exists(jsonPath))
+            String jsonContent = "{}";
+            if (Files.exists(jsonPath))
+            {
+                jsonContent = new String(Files.readAllBytes(SF_MAPPING_FILE.toPath()));
+            }
+            else
             {
                 Files.createDirectories(jsonPath.getParent());
                 Files.createFile(jsonPath);
-                Files.write(jsonPath, "{}".getBytes());  // otherwise jackson complains about
-                // no json content
             }
-            JSON_OBJ = JSON.std.mapFrom(SF_MAPPING_FILE);
+            if (jsonContent.trim().isEmpty())
+            {
+                JSON_OBJ = JSON.std.mapFrom("{}");
+            }
+            else
+            {
+                JSON_OBJ = JSON.std.mapFrom(jsonContent);
+            }
         }
         catch (IOException exc)
         {
