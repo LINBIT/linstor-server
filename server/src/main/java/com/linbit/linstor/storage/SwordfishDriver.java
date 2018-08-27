@@ -971,25 +971,28 @@ public class SwordfishDriver implements StorageDriver
 
     private void persistJson() throws StorageException
     {
-        boolean writeComplete = false;
-        try
+        synchronized (JSON_OBJ)
         {
-            JSON.std.write(JSON_OBJ, SF_MAPPING_FILE_TMP);
-            writeComplete = true;
-            Files.move(
-                SF_MAPPING_FILE_TMP.toPath(),
-                SF_MAPPING_FILE.toPath(),
-                StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING
-            );
-        }
-        catch (IOException exc)
-        {
-            throw new StorageException(
-                writeComplete ?
-                    "Failed to move swordfish.json.tmp to swordfish.json" :
-                    "Failed to write swordfish.json",
-                exc
-            );
+            boolean writeComplete = false;
+            try
+            {
+                JSON.std.write(JSON_OBJ, SF_MAPPING_FILE_TMP);
+                writeComplete = true;
+                Files.move(
+                    SF_MAPPING_FILE_TMP.toPath(),
+                    SF_MAPPING_FILE.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING
+                );
+            }
+            catch (IOException exc)
+            {
+                throw new StorageException(
+                    writeComplete ?
+                        "Failed to move swordfish.json.tmp to swordfish.json" :
+                        "Failed to write swordfish.json",
+                    exc
+                );
+            }
         }
     }
 }
