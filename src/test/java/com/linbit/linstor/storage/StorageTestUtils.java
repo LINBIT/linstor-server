@@ -115,7 +115,7 @@ public class StorageTestUtils
     {
         try
         {
-            driver.setConfiguration(config);
+            driver.setConfiguration("TestStorPool", config);
             fail(StorageException.class.getName() + " expected");
         }
         catch (StorageException exc)

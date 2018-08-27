@@ -40,7 +40,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.StorageConstants;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -134,13 +133,6 @@ public class CtrlStorPoolApiCallHandler
             StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver, freeSpaceMgrNameStr);
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
-
-            // some storage drivers (i.e. SwordfishDriver) need the name of (linstor's) storPool.
-            storPool.getProps(apiCtx).setProp(
-                StorageConstants.CONFIG_LINSTOR_STOR_POOL_KEY,
-                storPoolNameStr,
-                ApiConsts.NAMESPC_STORAGE_DRIVER
-            );
 
             updateStorPoolDfnMap(storPool);
 

@@ -710,7 +710,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void setConfiguration(Map<String, String> config) throws StorageException
+    public void setConfiguration(String storPoolNameStr, Map<String, String> config) throws StorageException
     {
         // first, check if the config is valid
         boolean requiresHostPort = hostPort == null;
@@ -722,7 +722,6 @@ public class SwordfishDriver implements StorageDriver
         String tmpHostPort = config.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
         String tmpStorSvc = config.get(StorageConstants.CONFIG_SF_STOR_SVC_KEY);
         String tmpSfStorPool = config.get(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
-        String tmpLsStorPool = config.get(StorageConstants.CONFIG_LINSTOR_STOR_POOL_KEY);
         String tmpUserName = config.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
         String tmpUserPw = config.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
         String tmpVlmCrtTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);
@@ -743,7 +742,6 @@ public class SwordfishDriver implements StorageDriver
         );
         appendIfEmptyButRequired("Missing swordfish storage service\n", failErrorMsg, tmpStorSvc, requiresStorSvc);
         appendIfEmptyButRequired("Missing swordfish storage pool\n", failErrorMsg, tmpSfStorPool, requiresSfStorPool);
-        appendIfEmptyButRequired("Missing linstor storage pool name\n", failErrorMsg, tmpLsStorPool, requiresLsStorPool);
         Long tmpVlmCrtTimeoutLong = getLong("poll volume creation timeout", failErrorMsg, tmpVlmCrtTimeout);
         Long tmpVlmCrtTriesLong = getLong("poll volume creation tries", failErrorMsg, tmpVlmCrtRetries);
         Long tmpAttachVlmTimeoutLong = getLong("poll attach volume timeout", failErrorMsg, tmpAttachVlmTimeout);
@@ -783,17 +781,6 @@ public class SwordfishDriver implements StorageDriver
         if (tmpSfStorPool != null)
         {
             storPool = tmpSfStorPool;
-        }
-        if (tmpLsStorPool != null)
-        {
-            @SuppressWarnings("unchecked")
-            Map<String, String> lut =  (Map<String, String>) JSON_OBJ.get(tmpLsStorPool);
-            if (lut == null)
-            {
-                lut = new HashMap<>();
-                JSON_OBJ.put(tmpLsStorPool, lut);
-            }
-            linstorIdToSwordfishId = lut;
         }
         if (tmpStorSvc != null)
         {
@@ -835,6 +822,15 @@ public class SwordfishDriver implements StorageDriver
         {
             composedNodeName = tmpComposedNodeName;
         }
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> lut =  (Map<String, String>) JSON_OBJ.get(storPoolNameStr);
+        if (lut == null)
+        {
+            lut = new HashMap<>();
+            JSON_OBJ.put(storPoolNameStr, lut);
+        }
+        linstorIdToSwordfishId = lut;
     }
 
     private void appendIfEmptyButRequired(String errorMsg, StringBuilder errorMsgBuilder, String str, boolean reqStr)

@@ -850,7 +850,7 @@ public abstract class NoSimDriverTest
     protected void setPoolName(String poolNameRef) throws StorageException
     {
         Map<String, String> config = getPoolConfigMap(poolNameRef);
-        driver.setConfiguration(config);
+        driver.setConfiguration(poolNameRef, config);
     }
 
     protected static Map<String, String> getPoolConfigMap(String poolName)

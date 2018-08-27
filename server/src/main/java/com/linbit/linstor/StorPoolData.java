@@ -187,7 +187,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         {
             Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
             Map<String, String> map = namespace.map(Props::map).orElse(Collections.emptyMap());
-            storageDriverRef.setConfiguration(map);
+            storageDriverRef.setConfiguration(storPoolDef.getName().value, map);
         }
     }
 

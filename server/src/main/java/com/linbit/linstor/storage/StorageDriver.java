@@ -145,11 +145,13 @@ public interface StorageDriver
     /**
      * Sets the driver's configuration options
      *
+     *
+     * @param storPoolNameStr
      * @param config Map of key/value strings to import into the driver's configuration
      * @throws StorageException If the configuration contains options
      *     that are not valid for the driver
      */
-    void setConfiguration(Map<String, String> config) throws StorageException;
+    void setConfiguration(String storPoolNameStr, Map<String, String> config) throws StorageException;
 
     /**
      * Creates a snapshot with the name of the {@code snapshotName} argument for the volume

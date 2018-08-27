@@ -12,11 +12,6 @@ import com.linbit.linstor.api.ApiConsts;
 public class StorageConstants
 {
     /*
-     * Common
-     */
-    public static final String CONFIG_LINSTOR_STOR_POOL_KEY = "swordfishLinstorStorPool";
-
-    /*
      * LVM
      */
     public static final String CONFIG_LVM_VOLUME_GROUP_KEY = ApiConsts.KEY_STOR_POOL_VOLUME_GROUP;

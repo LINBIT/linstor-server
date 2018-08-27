@@ -102,7 +102,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     /**
      * Takes all entries of the reserved namespace for the {@link StorageDriver}
      * from the config {@link Props} and calls
-     * {@link StorageDriver#setConfiguration(java.util.Map)}
+     * {@link StorageDriver#setConfiguration(String, Map)}
      * @throws StorageException
      */
     void reconfigureStorageDriver(StorageDriver storageDriver) throws StorageException;

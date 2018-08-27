@@ -523,7 +523,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public final void setConfiguration(final Map<String, String> config) throws StorageException
+    public final void setConfiguration(String storPoolNameStr, final Map<String, String> config) throws StorageException
     {
         // split into two functions because multiple inheritance levels can still
         // perform an "all or nothing" applyConfiguration without the need of rollbacks

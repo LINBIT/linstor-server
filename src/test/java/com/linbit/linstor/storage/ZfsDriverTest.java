@@ -42,6 +42,7 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 })
 public class ZfsDriverTest extends StorageTestUtils
 {
+    private static final String STOR_POOL_NAME = "TestStorPool";
     private static final long MB = 1024;
     private static final long TEST_SIZE_100MB = 100 * MB;
     private static final long TEST_EXTENT_SIZE = ZFS_VOLBLOCKSIZE;
@@ -61,19 +62,19 @@ public class ZfsDriverTest extends StorageTestUtils
         String poolName = "otherName";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, poolName);
-        driver.setConfiguration(config);
+        driver.setConfiguration(STOR_POOL_NAME, config);
 
         ec.clearBehaviors();
         poolName = "_specialName";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, poolName);
-        driver.setConfiguration(config);
+        driver.setConfiguration(STOR_POOL_NAME, config);
 
         ec.clearBehaviors();
         poolName = "special-Name";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, poolName);
-        driver.setConfiguration(config);
+        driver.setConfiguration(STOR_POOL_NAME, config);
     }
 
     @Test(expected = StorageException.class)
@@ -82,19 +83,19 @@ public class ZfsDriverTest extends StorageTestUtils
         String pool = "valid";
         Map<String, String> config = createMap(CONFIG_ZFS_POOL_KEY, pool);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, pool, false);
-        driver.setConfiguration(config);
+        driver.setConfiguration(STOR_POOL_NAME, config);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupEmpty() throws StorageException
     {
-        driver.setConfiguration(createMap(CONFIG_ZFS_POOL_KEY, ""));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, ""));
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupWhitespacesOnly() throws StorageException
     {
-        driver.setConfiguration(createMap(CONFIG_ZFS_POOL_KEY, "  "));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, "  "));
     }
 
     @Test
@@ -106,11 +107,11 @@ public class ZfsDriverTest extends StorageTestUtils
         File tmpFile = tempFolder.newFile(zfsCommand);
         tmpFile.setExecutable(true);
         expectCheckPoolName(tmpFile.getAbsolutePath(), ZFS_POOL_DEFAULT);
-        driver.setConfiguration(createMap(CONFIG_ZFS_COMMAND_KEY, tmpFile.getAbsolutePath()));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_COMMAND_KEY, tmpFile.getAbsolutePath()));
 
         String pool = "newPool";
         expectCheckPoolName(tmpFile.getAbsolutePath(), pool);
-        driver.setConfiguration(createMap(CONFIG_ZFS_POOL_KEY, pool));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, pool));
     }
 
     @Test
@@ -122,7 +123,7 @@ public class ZfsDriverTest extends StorageTestUtils
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "NaN"));
 
-        driver.setConfiguration(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
 
         String identifier = "identifier";
 

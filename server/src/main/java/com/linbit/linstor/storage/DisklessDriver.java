@@ -80,7 +80,7 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void setConfiguration(Map<String, String> config)
+    public void setConfiguration(String storPoolNameStr, Map<String, String> config)
     {
         // no-op
     }

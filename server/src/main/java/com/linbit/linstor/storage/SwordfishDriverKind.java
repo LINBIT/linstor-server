@@ -50,7 +50,6 @@ public class SwordfishDriverKind implements StorageDriverKind
         keySet.add(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
         keySet.add(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
         keySet.add(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
-        keySet.add(StorageConstants.CONFIG_LINSTOR_STOR_POOL_KEY);
         keySet.add(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);
         keySet.add(StorageConstants.CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY);
         keySet.add(StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY);

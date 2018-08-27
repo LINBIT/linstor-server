@@ -63,7 +63,7 @@ public interface StorageDriverKind
      * Returns a set of this driver type's configuration keys.
      *
      * @return Set of key strings describing the configuration keys accepted by the
-     *     {@link StorageDriver#setConfiguration(Map)} method
+     *     {@link StorageDriver#setConfiguration(String, Map)} method
      */
     Set<String> getConfigurationKeys();
 
