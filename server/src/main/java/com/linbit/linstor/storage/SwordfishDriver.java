@@ -104,7 +104,12 @@ public class SwordfishDriver implements StorageDriver
     private String storPool;
     private String userName;
     private String userPw;
-    private long pollTimeout = 500;
+    private long pollVlmCrtTimeout = 500;
+    private long pollVlmCrtMaxTries = 100;
+    private long pollAttachVlmTimeout = 1000;
+    private long pollAttachVlmMaxTries = 100;
+    private long pollGrepNvmeUuidTimeout = 100;
+    private long pollGrepNvmeUuidMaxTries = 100;
     private String composedNodeName;
 
     private final RestClient restClient;
@@ -241,10 +246,11 @@ public class SwordfishDriver implements StorageDriver
                 taskId
             );
             String vlmLocation = null;
+            long pollVlmCrtTries = 0;
             while (vlmLocation == null)
             {
-                errorReporter.logTrace("waiting %d ms before polling task monitor", pollTimeout);
-                Thread.sleep(pollTimeout);
+                errorReporter.logTrace("waiting %d ms before polling task monitor", pollVlmCrtTimeout);
+                Thread.sleep(pollVlmCrtTimeout);
 
                 RestResponse<Map<String, Object>> crtVlmTaskResp = restClient.execute(
                     RestOp.GET,
@@ -268,6 +274,19 @@ public class SwordfishDriver implements StorageDriver
                             )
                         );
                 }
+                if (pollVlmCrtTries ++ >= pollVlmCrtMaxTries)
+                {
+                    throw new StorageException(
+                        String.format(
+                            "Volume creation not finished after %d x %dms. \n" +
+                            "GET %s did not contain volume-location in http header",
+                            pollVlmCrtTries,
+                            pollVlmCrtTimeout,
+                            hostPort  + taskMonitorLocation
+                        )
+                    );
+                }
+
             }
             // volume created
             // extract the swordfish id of that volume and persist if for later lookups
@@ -295,11 +314,11 @@ public class SwordfishDriver implements StorageDriver
                 SF_ATTACH_RESOURCE_ACTION_INFO;
             boolean attachable = false;
 
-            int failCount = 0;
+            int pollAttachRscTries = 0;
             while (!attachable)
             {
-                errorReporter.logTrace("waiting %d ms before polling node's Actions/AttachResourceActionInfo", pollTimeout);
-                Thread.sleep(pollTimeout);
+                errorReporter.logTrace("waiting %d ms before polling node's Actions/AttachResourceActionInfo", pollAttachVlmTimeout);
+                Thread.sleep(pollAttachVlmTimeout);
 
                 RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
                     RestOp.GET,
@@ -341,10 +360,18 @@ public class SwordfishDriver implements StorageDriver
                     }
                 }
 
-                if (failCount++ >= 300)
+                if (pollAttachRscTries++ >= pollAttachVlmMaxTries)
                 {
                     throw new StorageException(
-                        "Volume is not attachable. node's ActionInfo: " + attachInfoAction + ". volume id: " + vlmOdataId
+                        String.format(
+                            "Volume could not be attached after %d x %dms. \n" +
+                            "Volume did not show up in %s -> %s from GET %s",
+                            pollAttachRscTries,
+                            pollAttachVlmTimeout,
+                            JSON_KEY_PARAMETERS,
+                            JSON_KEY_ALLOWABLE_VALUES,
+                            hostPort  + attachInfoAction
+                        )
                     );
                 }
             }
@@ -553,13 +580,13 @@ public class SwordfishDriver implements StorageDriver
                                 }
                             }
 
-                            if (grepTries++ >= 50)
+                            if (grepTries++ >= pollGrepNvmeUuidMaxTries)
                             {
                                 grepFailed = true;
                             }
                             else
                             {
-                                Thread.sleep(pollTimeout);
+                                Thread.sleep(pollGrepNvmeUuidTimeout);
                             }
                         }
                         break;
@@ -681,53 +708,48 @@ public class SwordfishDriver implements StorageDriver
         boolean requiresLsStorPool = linstorIdToSwordfishId == null;
         boolean requiresComposedNodeName = composedNodeName == null;
 
-        String tmpHostPort = config.get(StorageConstants.CONFIG_SWORDFISH_HOST_PORT_KEY);
-        String tmpStorSvc = config.get(StorageConstants.CONFIG_SWORDFISH_STOR_SVC_KEY);
-        String tmpSfStorPool = config.get(StorageConstants.CONFIG_SWORDFISH_STOR_POOL_KEY);
+        String tmpHostPort = config.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+        String tmpStorSvc = config.get(StorageConstants.CONFIG_SF_STOR_SVC_KEY);
+        String tmpSfStorPool = config.get(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
         String tmpLsStorPool = config.get(StorageConstants.CONFIG_LINSTOR_STOR_POOL_KEY);
-        String tmpUserName = config.get(StorageConstants.CONFIG_SWORDFISH_USER_NAME_KEY);
-        String tmpUserPw = config.get(StorageConstants.CONFIG_SWORDFISH_USER_PW_KEY);
-        String tmpTimeout = config.get(StorageConstants.CONFIG_SWORDFISH_POLL_TIMEOUT_KEY);
-        String tmpComposedNodeName = config.get(StorageConstants.CONFIG_SWORDFISH_COMPOSED_NODE_NAME_KEY);
-        Long tmpTimeoutLong = null;
+        String tmpUserName = config.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
+        String tmpUserPw = config.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
+        String tmpVlmCrtTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);
+        String tmpVlmCrtRetries = config.get(StorageConstants.CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY);
+        String tmpAttachVlmTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY);
+        String tmpAttachVlmRetries = config.get(StorageConstants.CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY);
+        String tmpGrepNvmeUuidTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY);
+        String tmpGrepNvmeUuidRetries = config.get(StorageConstants.CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY);
+        String tmpComposedNodeName = config.get(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
 
-        String failErrorMsg = "";
-        if ((tmpHostPort == null || tmpHostPort.isEmpty()) && requiresHostPort)
-        {
-            failErrorMsg += "Missing swordfish host:port specification as a single value such as \n" +
-                "https://127.0.0.1:1234\n";
-        }
-        if ((tmpStorSvc == null || tmpStorSvc.isEmpty()) && requiresStorSvc)
-        {
-            failErrorMsg += "Missing swordfish storage service\n";
-        }
-        if ((tmpSfStorPool == null || tmpSfStorPool.isEmpty()) && requiresSfStorPool)
-        {
-            failErrorMsg += "Missing swordfish storage pool\n";
-        }
-        if ((tmpLsStorPool == null || tmpLsStorPool.isEmpty()) && requiresLsStorPool)
-        {
-            failErrorMsg += "Missing linstor storage pool name\n";
-        }
-        if (tmpTimeout != null && !tmpTimeout.isEmpty())
-        {
-            try
-            {
-                tmpTimeoutLong = Long.parseLong(tmpTimeout);
-            }
-            catch (NumberFormatException nfe)
-            {
-                failErrorMsg += "Configured timeout value (" + tmpTimeout + ") is not a number";
-            }
-        }
-        if ((tmpComposedNodeName == null || tmpComposedNodeName.isEmpty()) && requiresComposedNodeName)
-        {
-            failErrorMsg += "Missing swordfish composed node name";
-        }
+        StringBuilder failErrorMsg = new StringBuilder();
+        appendIfEmptyButRequired(
+                "Missing swordfish host:port specification as a single value such as \n" +
+                    "https://127.0.0.1:1234\n",
+                failErrorMsg,
+                tmpHostPort,
+                requiresHostPort
+        );
+        appendIfEmptyButRequired("Missing swordfish storage service\n", failErrorMsg, tmpStorSvc, requiresStorSvc);
+        appendIfEmptyButRequired("Missing swordfish storage pool\n", failErrorMsg, tmpSfStorPool, requiresSfStorPool);
+        appendIfEmptyButRequired("Missing linstor storage pool name\n", failErrorMsg, tmpLsStorPool, requiresLsStorPool);
+        Long tmpVlmCrtTimeoutLong = getLong("poll volume creation timeout", failErrorMsg, tmpVlmCrtTimeout);
+        Long tmpVlmCrtTriesLong = getLong("poll volume creation tries", failErrorMsg, tmpVlmCrtRetries);
+        Long tmpAttachVlmTimeoutLong = getLong("poll attach volume timeout", failErrorMsg, tmpAttachVlmTimeout);
+        Long tmpAttachVlmTriesLong = getLong("poll attach volume tries", failErrorMsg, tmpAttachVlmRetries);
+        Long tmpGrepNvmeUuidTimeoutLong = getLong("poll grep nvme uuid timeout", failErrorMsg, tmpGrepNvmeUuidTimeout);
+        Long tmpGrepNvmeUuidTriesLong = getLong("poll grep nvme uuid tries", failErrorMsg, tmpGrepNvmeUuidRetries);
 
-        if (!failErrorMsg.trim().isEmpty())
+        appendIfEmptyButRequired(
+            "Missing swordfish composed node name",
+            failErrorMsg,
+            tmpComposedNodeName,
+            requiresComposedNodeName
+        );
+
+        if (!failErrorMsg.toString().trim().isEmpty())
         {
-            throw new StorageException(failErrorMsg);
+            throw new StorageException(failErrorMsg.toString());
         }
 
         // if all was good, apply the values
@@ -740,6 +762,10 @@ public class SwordfishDriver implements StorageDriver
             if (!tmpHostPort.startsWith("http"))
             {
                 tmpHostPort = "http://" + tmpHostPort;
+            }
+            if (tmpHostPort.endsWith("/redfish/v1"))
+            {
+                tmpHostPort = tmpHostPort.substring(0, tmpHostPort.lastIndexOf("/redfish/v1"));
             }
             hostPort = tmpHostPort + "/";
         }
@@ -770,14 +796,64 @@ public class SwordfishDriver implements StorageDriver
         {
             userName = tmpUserPw;
         }
-        if (tmpTimeoutLong != null)
+        if (tmpVlmCrtTimeoutLong != null)
         {
-            pollTimeout = tmpTimeoutLong;
+            pollVlmCrtTimeout = tmpVlmCrtTimeoutLong;
+        }
+        if (tmpVlmCrtTriesLong != null)
+        {
+            pollVlmCrtMaxTries = tmpVlmCrtTriesLong;
+        }
+        if (tmpAttachVlmTimeoutLong != null)
+        {
+            pollAttachVlmTimeout = tmpAttachVlmTimeoutLong;
+        }
+        if (tmpAttachVlmTriesLong != null)
+        {
+            pollAttachVlmMaxTries = tmpAttachVlmTriesLong;
+        }
+        if (tmpGrepNvmeUuidTimeoutLong != null)
+        {
+            pollGrepNvmeUuidTimeout = tmpGrepNvmeUuidTimeoutLong;
+        }
+        if (tmpGrepNvmeUuidTriesLong != null)
+        {
+            pollGrepNvmeUuidMaxTries = tmpGrepNvmeUuidTriesLong;
         }
         if (tmpComposedNodeName != null)
         {
             composedNodeName = tmpComposedNodeName;
         }
+    }
+
+    private void appendIfEmptyButRequired(String errorMsg, StringBuilder errorMsgBuilder, String str, boolean reqStr)
+    {
+        if ((str == null || str.isEmpty()) && reqStr)
+        {
+            errorMsgBuilder.append(errorMsg);
+        }
+    }
+
+    private Long getLong(String description, StringBuilder failErrorMsg, String str)
+    {
+        Long ret = null;
+        if (str != null && !str.isEmpty())
+        {
+            try
+            {
+                ret = Long.parseLong(str);
+            }
+            catch (NumberFormatException nfe)
+            {
+                failErrorMsg
+                    .append("Configured ")
+                    .append(description)
+                    .append(" value (")
+                    .append(str)
+                    .append(") is not a number\n");
+            }
+        }
+        return ret;
     }
 
     @Override

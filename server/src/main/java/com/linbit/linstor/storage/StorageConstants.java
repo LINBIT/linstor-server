@@ -32,7 +32,6 @@ public class StorageConstants
 
     public static final String CONFIG_SIZE_ALIGN_TOLERANCE_KEY = "alignmentTolerance";
 
-
     /*
      * ZFS
      */
@@ -42,13 +41,18 @@ public class StorageConstants
     /*
      * Swordfish
      */
-    public static final String CONFIG_SWORDFISH_HOST_PORT_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_HOST_PORT;
-    public static final String CONFIG_SWORDFISH_STOR_SVC_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_STOR_SVC;
-    public static final String CONFIG_SWORDFISH_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_STOR_POOL;
-    public static final String CONFIG_SWORDFISH_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_USER_NAME;
-    public static final String CONFIG_SWORDFISH_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_USER_PW;
-    public static final String CONFIG_SWORDFISH_POLL_TIMEOUT_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_POLL_TIMEOUT;
-    public static final String CONFIG_SWORDFISH_COMPOSED_NODE_NAME_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_COMPOSED_NODE_NAME;
+    public static final String CONFIG_SF_HOST_PORT_KEY = ApiConsts.KEY_STOR_POOL_SF_HOST_PORT;
+    public static final String CONFIG_SF_STOR_SVC_KEY = ApiConsts.KEY_STOR_POOL_SF_STOR_SVC;
+    public static final String CONFIG_SF_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_SF_STOR_POOL;
+    public static final String CONFIG_SF_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_SF_USER_NAME;
+    public static final String CONFIG_SF_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_SF_USER_PW;
+    public static final String CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_TIMEOUT_VLM_CRT;
+    public static final String CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_RETRIES_VLM_CRT;
+    public static final String CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_TIMEOUT_ATTACH_VLM;
+    public static final String CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_RETRIES_ATTACH_VLM;
+    public static final String CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_TIMEOUT_GREP_NVME_UUID;
+    public static final String CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_RETRIES_GREP_NVME_UUID;
+    public static final String CONFIG_SF_COMPOSED_NODE_NAME_KEY = ApiConsts.KEY_STOR_POOL_SF_COMPOSED_NODE_NAME;
 
     public static final Map<String, String> KEY_DESCRIPTION = new HashMap<>();
 
