@@ -8,6 +8,7 @@ apply plugin: 'application'
 sourceCompatibility = 1.8
 
 def protobufVersion = '3.2.0'
+def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 
 // workaround to force gradle to download not just the dependencies for --offline use
@@ -90,7 +91,7 @@ project(':server') {
             }
         }
     }
-/////////////////////////// Version Info ///////////////////////////
+    /////////////////////////// Version Info ///////////////////////////
     task versionInfo() {
         String propsFile = "$projectDir/generated-resources/version-info.properties"
 
@@ -126,10 +127,47 @@ project(':server') {
         }
     }
 
+    /**
+     * Generates Java sources from common API definitions. This includes the protobuf compilation.
+     *
+     * For package builds this task is run in the 'make debrelease' stage, the generated sources are bundled in the package
+     * tarball, and it is then skipped when the package is finally built.
+     */
+    task generateJava(type:Exec) {
+        doFirst {
+            if (!protoc.exists()) {
+                throw new GradleException("'protoc' binary not found; run the task 'getProtoc' to download the binary")
+            }
+        }
+
+        workingDir '../linstor-common'
+
+        commandLine 'make', "PROTOC=" + protoc, 'java'
+
+        inputs.files(fileTree("../linstor-common"))
+        outputs.dir(file("${projectDir}/generated-src"))
+    }
+
+    task cleanCommon(type:Exec) {
+        workingDir '../linstor-common'
+
+        commandLine 'make', 'cleanjava'
+
+        outputs.dir(file("${projectDir}/generated-src"))
+    }
+
     processResources.dependsOn versionInfo
+
+    compileJava {
+        dependsOn generateJava
+    }
 
     clean {
         delete "${projectDir}/generated-resources"
+    }
+
+    clean {
+        dependsOn cleanCommon
     }
 }
 
@@ -383,32 +421,6 @@ task getProtoc {
     dependsOn downloadProtoc, unzip
 }
 
-def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
-
-/**
- * Generates Java sources from common API definitions. This includes the protobuf compilation.
- *
- * For package builds this task is run in the 'make debrelease' stage, the generated sources are bundled in the package
- * tarball, and it is then skipped when the package is finally built.
- */
-task generateJava(type:Exec) {
-    doFirst {
-        if (!protoc.exists()) {
-            throw new GradleException("'protoc' binary not found; run the task 'getProtoc' to download the binary")
-        }
-    }
-
-    workingDir 'linstor-common'
-
-    commandLine 'make', "PROTOC=" + protoc, 'java'
-}
-
-task cleanCommon(type:Exec) {
-    workingDir 'linstor-common'
-
-    commandLine 'make', 'cleanjava'
-}
-
 task cleanTestCommands(type:Exec) {
   workingDir 'test-support'
 
@@ -423,16 +435,12 @@ task cleanTestCommands(type:Exec) {
   }
 }
 
-compileJava {
-    dependsOn generateJava
-}
-
 compileTestJava {
   dependsOn buildTestCommands
 }
 
 clean {
-    dependsOn cleanTestCommands, cleanCommon
+    dependsOn cleanTestCommands
 }
 
 /////////////////////////// Dependency resolution ///////////////////////////
