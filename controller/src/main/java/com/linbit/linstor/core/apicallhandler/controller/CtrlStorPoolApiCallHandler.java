@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.InternalApiConsts;
@@ -10,7 +9,6 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataControllerFactory;
@@ -19,7 +17,6 @@ import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -43,7 +40,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-
+import com.linbit.linstor.storage.StorageConstants;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -137,6 +134,13 @@ public class CtrlStorPoolApiCallHandler
             StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver, freeSpaceMgrNameStr);
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
+
+            // some storage drivers (i.e. SwordfishDriver) need the name of (linstor's) storPool.
+            storPool.getProps(apiCtx).setProp(
+                StorageConstants.CONFIG_LINSTOR_STOR_POOL_KEY,
+                storPoolNameStr,
+                ApiConsts.NAMESPC_STORAGE_DRIVER
+            );
 
             updateStorPoolDfnMap(storPool);
 

@@ -12,6 +12,11 @@ import com.linbit.linstor.api.ApiConsts;
 public class StorageConstants
 {
     /*
+     * Common
+     */
+    public static final String CONFIG_LINSTOR_STOR_POOL_KEY = "swordfishLinstorStorPool";
+
+    /*
      * LVM
      */
     public static final String CONFIG_LVM_VOLUME_GROUP_KEY = ApiConsts.KEY_STOR_POOL_VOLUME_GROUP;
@@ -40,7 +45,6 @@ public class StorageConstants
     public static final String CONFIG_SWORDFISH_HOST_PORT_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_HOST_PORT;
     public static final String CONFIG_SWORDFISH_STOR_SVC_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_STOR_SVC;
     public static final String CONFIG_SWORDFISH_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_STOR_POOL;
-    public static final String CONFIG_SWORDFISH_LINSTOR_STOR_POOL_KEY = "swordfishLinstorStorPool";
     public static final String CONFIG_SWORDFISH_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_USER_NAME;
     public static final String CONFIG_SWORDFISH_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_USER_PW;
     public static final String CONFIG_SWORDFISH_POLL_TIMEOUT_KEY = ApiConsts.KEY_STOR_POOL_SWORDFISH_POLL_TIMEOUT;

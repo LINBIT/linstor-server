@@ -7,7 +7,6 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorRuntimeException;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -682,14 +681,14 @@ public class SwordfishDriver implements StorageDriver
         boolean requiresLsStorPool = linstorIdToSwordfishId == null;
         boolean requiresComposedNodeName = composedNodeName == null;
 
-        String tmpHostPort = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_HOST_PORT_KEY);
-        String tmpStorSvc = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_STOR_SVC_KEY);
-        String tmpSfStorPool = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_STOR_POOL_KEY);
-        String tmpLsStorPool = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_LINSTOR_STOR_POOL_KEY);
-        String tmpUserName = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_USER_NAME_KEY);
-        String tmpUserPw = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_USER_PW_KEY);
-        String tmpTimeout = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_POLL_TIMEOUT_KEY);
-        String tmpComposedNodeName = getPrefixed(config, StorageConstants.CONFIG_SWORDFISH_COMPOSED_NODE_NAME_KEY);
+        String tmpHostPort = config.get(StorageConstants.CONFIG_SWORDFISH_HOST_PORT_KEY);
+        String tmpStorSvc = config.get(StorageConstants.CONFIG_SWORDFISH_STOR_SVC_KEY);
+        String tmpSfStorPool = config.get(StorageConstants.CONFIG_SWORDFISH_STOR_POOL_KEY);
+        String tmpLsStorPool = config.get(StorageConstants.CONFIG_LINSTOR_STOR_POOL_KEY);
+        String tmpUserName = config.get(StorageConstants.CONFIG_SWORDFISH_USER_NAME_KEY);
+        String tmpUserPw = config.get(StorageConstants.CONFIG_SWORDFISH_USER_PW_KEY);
+        String tmpTimeout = config.get(StorageConstants.CONFIG_SWORDFISH_POLL_TIMEOUT_KEY);
+        String tmpComposedNodeName = config.get(StorageConstants.CONFIG_SWORDFISH_COMPOSED_NODE_NAME_KEY);
         Long tmpTimeoutLong = null;
 
         String failErrorMsg = "";
@@ -779,11 +778,6 @@ public class SwordfishDriver implements StorageDriver
         {
             composedNodeName = tmpComposedNodeName;
         }
-    }
-
-    private String getPrefixed(Map<String, String> config, String key)
-    {
-        return config.get(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + key);
     }
 
     @Override
