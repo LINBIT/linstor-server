@@ -172,11 +172,11 @@ public class CtrlSnapshotApiCallHandler
                     new SnapshotVlmDfnFlags[]{}
                 );
 
+                Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
                 boolean isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
                 if (isEncrypted)
                 {
                     Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
-                    Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
 
                     String cryptPasswd = vlmDfnPropsMap.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
                     if (cryptPasswd == null)
@@ -188,6 +188,15 @@ public class CtrlSnapshotApiCallHandler
                     snapshotVlmDfnPropsMaps.put(
                         ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
                         cryptPasswd
+                    );
+                }
+
+                String overrideId = vlmDfn.getProps(apiCtx).getProp( ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+                if (overrideId != null)
+                {
+                    snapshotVlmDfnPropsMaps.put(
+                        ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID,
+                        overrideId
                     );
                 }
             }

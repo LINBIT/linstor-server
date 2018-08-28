@@ -160,7 +160,6 @@ class DrbdDeviceHandler implements DeviceHandler
         final ResourceDefinition rscDfn,
         final Collection<VolumeNumber> vlmNrs
     )
-        throws AccessDeniedException
     {
         ResourceState rscState = new ResourceState();
 
@@ -200,17 +199,23 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(vlmNr);
 
-                String restoreFromResourceProp = vlm.getProps(wrkCtx).getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
-                String restoreFromSnapshotProp = vlm.getProps(wrkCtx).getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
+                Props props = vlm.getProps(wrkCtx);
+                String restoreFromResourceProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
+                String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
                 if (restoreFromResourceProp != null && restoreFromSnapshotProp != null)
                 {
-                    // Parse into 'Name' objects in order to validate the property contents
-                    ResourceName restoreFromResourceName =
-                        new ResourceName(restoreFromResourceProp);
-                    SnapshotName restoreFromSnapshotName =
-                        new SnapshotName(vlm.getProps(wrkCtx).getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT));
+                    String overrideVlmIdProp = props.getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+                    String restoreVlmName = overrideVlmIdProp != null ?
+                        overrideVlmIdProp :
+                        computeVlmName(
+                            new ResourceName(restoreFromResourceProp),
+                            vlmNr
+                        );
 
-                    vlmState.setRestoreVlmName(computeVlmName(restoreFromResourceName, vlmNr));
+                    // Parse into 'Name' objects in order to validate the property contents
+                    SnapshotName restoreFromSnapshotName = new SnapshotName(restoreFromSnapshotProp);
+
+                    vlmState.setRestoreVlmName(restoreVlmName);
                     vlmState.setRestoreSnapshotName(restoreFromSnapshotName.displayValue);
                 }
 
@@ -808,7 +813,7 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceDefinition rscDfn,
         VolumeStateDevManager vlmState
     )
-        throws MdException, VolumeException
+        throws VolumeException
     {
         try
         {

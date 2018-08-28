@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -216,10 +217,17 @@ public class CtrlSnapshotRestoreApiCallHandler
             StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx.get());
 
             Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null, null);
-            vlm.getProps(peerAccCtx.get()).setProp(
+            Props vlmProps = vlm.getProps(peerAccCtx.get());
+            vlmProps.setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
-            vlm.getProps(peerAccCtx.get()).setProp(
+            vlmProps.setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue);
+            String overrideId = fromSnapshotVlmDfn.getProps(peerAccCtx.get()).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            if (overrideId != null)
+            {
+                vlmProps.setProp(
+                    ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID, overrideId);
+            }
         }
     }
 
