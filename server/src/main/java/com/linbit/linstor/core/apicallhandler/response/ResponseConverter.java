@@ -202,7 +202,7 @@ public class ResponseConverter
             .build();
     }
 
-    private ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
+    public ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
     {
         ApiCallRcImpl contextualResponses = new ApiCallRcImpl();
         for (ApiCallRc.RcEntry entry : responses.getEntries())

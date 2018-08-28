@@ -161,7 +161,8 @@ public class CtrlRscCrtApiCallHandler
         if (rsc.getVolumeCount() == 0)
         {
             // Do DRBD resource is created when no volumes are present, so do not wait for it to be ready
-            resourceReadyResponses = Mono.just(makeNoVolumesMessage());
+            resourceReadyResponses = Mono.just(responseConverter.addContextAll(
+                makeNoVolumesMessage(), context, false));
         }
         else if (allDiskless(rsc.getDefinition()))
         {

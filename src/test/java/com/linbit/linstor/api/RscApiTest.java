@@ -124,7 +124,11 @@ public class RscApiTest extends ApiTestBase
     {
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
         evaluateTest(
-            new CrtRscCall(ApiConsts.CREATED)
+            new CrtRscCall(
+                ApiConsts.CREATED,
+                // No volumes => WARN_NOT_FOUND response
+                ApiConsts.WARN_NOT_FOUND
+            )
         );
     }
 
