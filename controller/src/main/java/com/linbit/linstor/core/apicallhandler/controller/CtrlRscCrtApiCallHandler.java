@@ -2,14 +2,18 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -20,6 +24,8 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,6 +33,7 @@ import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +42,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
 @Singleton
 public class CtrlRscCrtApiCallHandler
@@ -48,6 +56,7 @@ public class CtrlRscCrtApiCallHandler
     private final ResponseConverter responseConverter;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
+    private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -58,7 +67,8 @@ public class CtrlRscCrtApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -70,6 +80,7 @@ public class CtrlRscCrtApiCallHandler
         responseConverter = responseConverterRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
+        peerAccCtx = peerAccCtxRef;
     }
 
     public Flux<ApiCallRc> createResource(
@@ -141,8 +152,16 @@ public class CtrlRscCrtApiCallHandler
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc).map(Tuple2::getT2);
 
         Mono<ApiCallRc> resourceReadyResponses;
-        // Do DRBD resource is created when no volumes are present, so do not wait for it to be ready
-        if (rsc.getVolumeCount() > 0)
+        if (rsc.getVolumeCount() == 0)
+        {
+            // Do DRBD resource is created when no volumes are present, so do not wait for it to be ready
+            resourceReadyResponses = Mono.empty();
+        }
+        else if (allDiskless(rsc.getDefinition()))
+        {
+            resourceReadyResponses = Mono.just(makeAllDisklessMessage());
+        }
+        else
         {
             resourceReadyResponses = eventWaiter
                 .waitForStream(
@@ -152,10 +171,6 @@ public class CtrlRscCrtApiCallHandler
                 .skipUntil(UsageState::getResourceReady)
                 .next()
                 .thenReturn(makeResourceReadyMessage(context, nodeName, rscName));
-        }
-        else
-        {
-            resourceReadyResponses = Mono.empty();
         }
 
         return Flux
@@ -198,6 +213,31 @@ public class CtrlRscCrtApiCallHandler
         return responses;
     }
 
+    private boolean allDiskless(ResourceDefinition rscDfn)
+    {
+        boolean allDiskless = true;
+        try
+        {
+            Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx.get());
+            while (rscIter.hasNext())
+            {
+                if (!rscIter.next().getStateFlags().isSet(peerAccCtx.get(), Resource.RscFlags.DISKLESS))
+                {
+                    allDiskless = false;
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check diskless state of " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return allDiskless;
+    }
+
     private ApiCallRc makeResourceReadyMessage(
         ResponseContext context,
         NodeName nodeName,
@@ -208,6 +248,14 @@ public class CtrlRscCrtApiCallHandler
             ApiConsts.CREATED,
             "Resource ready"
         ), context, true));
+    }
+
+    private ApiCallRcImpl makeAllDisklessMessage()
+    {
+        return ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
+            ApiConsts.WARN_ALL_DISKLESS,
+            "Resource unusable because it is diskless on all its nodes"
+        ));
     }
 
     private ApiCallRc makeResourceDidNotAppearMessage(ResponseContext context)
