@@ -3,10 +3,13 @@ package com.linbit.linstor.core;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import java.util.Optional;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 
 public class StltConfigAccessor
 {
@@ -39,5 +42,20 @@ public class StltConfigAccessor
         return
             val.equalsIgnoreCase("true") ||
             val.equalsIgnoreCase("yes");
+    }
+
+    public ReadOnlyProps getReadonly (String namespace)
+    {
+        ReadOnlyProps roRet;
+        Optional<Props> ns = stltProps.getNamespace(namespace);
+        if (ns.isPresent())
+        {
+            roRet = new ReadOnlyProps(ns.get());
+        }
+        else
+        {
+            roRet = ReadOnlyProps.emptyRoProps();
+        }
+        return roRet;
     }
 }

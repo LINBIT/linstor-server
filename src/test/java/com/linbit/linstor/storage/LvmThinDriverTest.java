@@ -14,12 +14,10 @@ import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VGS_COMMAND
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY;
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +52,8 @@ public class LvmThinDriverTest extends StorageTestUtils
     private static final long CREATE_VOL_WAIT_TIME = 2000;
     private static final int CRT_VOL_VG_NOT_EXISTS_ERROR_CODE = 5;
 
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
+
     public LvmThinDriverTest() throws Exception
     {
         super(new LvmThinDriverKind());
@@ -67,19 +67,19 @@ public class LvmThinDriverTest extends StorageTestUtils
         String volumeGroup = "otherName";
         config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckThinPool(LVM_VGS_DEFAULT, LVM_LVS_DEFAULT, volumeGroup, LVM_THIN_POOL_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
 
         ec.clearBehaviors();
         volumeGroup = "_specialName";
         config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckThinPool(LVM_VGS_DEFAULT, LVM_LVS_DEFAULT, volumeGroup, LVM_THIN_POOL_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
 
         ec.clearBehaviors();
         volumeGroup = "special-Name";
         config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckThinPool(LVM_VGS_DEFAULT, LVM_LVS_DEFAULT, volumeGroup, LVM_THIN_POOL_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
@@ -88,19 +88,19 @@ public class LvmThinDriverTest extends StorageTestUtils
         String volumeGroup = "valid";
         Map<String, String> config = createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup, false);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupEmpty() throws StorageException
     {
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, ""));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, ""), EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupWhitespacesOnly() throws StorageException
     {
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, "  "));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, "  "), EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test
@@ -115,12 +115,27 @@ public class LvmThinDriverTest extends StorageTestUtils
         String vgsCommand = "otherVgs";
         File tmpFile = tempFolder.newFile(vgsCommand);
         tmpFile.setExecutable(true);
-        expectCheckThinPool(tmpFile.getAbsolutePath(), LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, LVM_THIN_POOL_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VGS_COMMAND_KEY, tmpFile.getAbsolutePath()));
+        expectCheckThinPool(
+            tmpFile.getAbsolutePath(),
+            LVM_LVS_DEFAULT,
+            LVM_VOLUME_GROUP_DEFAULT,
+            LVM_THIN_POOL_DEFAULT
+        );
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_LVM_VGS_COMMAND_KEY, tmpFile.getAbsolutePath()),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
 
         String volumeGroup = "newVolumeGroup";
         expectCheckThinPool(tmpFile.getAbsolutePath(), LVM_LVS_DEFAULT, volumeGroup, LVM_THIN_POOL_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
     }
 
     @Test
@@ -132,7 +147,12 @@ public class LvmThinDriverTest extends StorageTestUtils
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "NaN"));
 
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
 
         final String volumeIdentifier = "identifier";
 

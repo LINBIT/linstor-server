@@ -9,11 +9,10 @@ import static com.linbit.linstor.storage.ZfsDriver.ZFS_POOL_DEFAULT;
 import static com.linbit.linstor.storage.ZfsDriver.ZFS_VOLBLOCKSIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,6 +48,8 @@ public class ZfsDriverTest extends StorageTestUtils
     private static final long TEST_TOLERANCE_FACTOR = 4;
     private static final long CREATE_VOL_WAIT_TIME = 2000;
 
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
+
     public ZfsDriverTest() throws Exception
     {
         super(new ZfsDriverKind());
@@ -62,19 +63,19 @@ public class ZfsDriverTest extends StorageTestUtils
         String poolName = "otherName";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, poolName);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
 
         ec.clearBehaviors();
         poolName = "_specialName";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, poolName);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
 
         ec.clearBehaviors();
         poolName = "special-Name";
         config.put(CONFIG_ZFS_POOL_KEY, poolName);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, poolName);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
@@ -83,19 +84,19 @@ public class ZfsDriverTest extends StorageTestUtils
         String pool = "valid";
         Map<String, String> config = createMap(CONFIG_ZFS_POOL_KEY, pool);
         expectCheckPoolName(ZFS_COMMAND_DEFAULT, pool, false);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupEmpty() throws StorageException
     {
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, ""));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, ""), EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupWhitespacesOnly() throws StorageException
     {
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, "  "));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, "  "), EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test
@@ -107,11 +108,21 @@ public class ZfsDriverTest extends StorageTestUtils
         File tmpFile = tempFolder.newFile(zfsCommand);
         tmpFile.setExecutable(true);
         expectCheckPoolName(tmpFile.getAbsolutePath(), ZFS_POOL_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_COMMAND_KEY, tmpFile.getAbsolutePath()));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_ZFS_COMMAND_KEY, tmpFile.getAbsolutePath()),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
 
         String pool = "newPool";
         expectCheckPoolName(tmpFile.getAbsolutePath(), pool);
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_ZFS_POOL_KEY, pool));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_ZFS_POOL_KEY, pool),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
     }
 
     @Test
@@ -123,7 +134,12 @@ public class ZfsDriverTest extends StorageTestUtils
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "NaN"));
 
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
 
         String identifier = "identifier";
 

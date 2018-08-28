@@ -314,31 +314,40 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    protected void checkConfiguration(Map<String, String> config) throws StorageException
+    protected void checkConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
+        throws StorageException
     {
-        checkCommand(config, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
-        checkCommand(config, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY);
-        checkCommand(config, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
-        checkCommand(config, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
-        checkCommand(config, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
-        checkCommand(config, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY);
-        checkVolumeGroupEntry(config);
-        checkToleranceFactor(config);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY);
+        checkVolumeGroupEntry(storPoolNamespace);
+        checkToleranceFactor(storPoolNamespace);
     }
 
     @Override
-    protected void applyConfiguration(Map<String, String> config)
+    protected void applyConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
     {
-        lvmCreateCommand = getAsString(config, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY, lvmCreateCommand);
-        lvmResizeCommand = getAsString(config, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY, lvmResizeCommand);
-        lvmRemoveCommand = getAsString(config, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY, lvmRemoveCommand);
-        lvmChangeCommand = getAsString(config, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
-        lvmLvsCommand = getLvmLvsCommandFromConfig(config);
-        lvmVgsCommand = getLvmVgsCommandFromConfig(config);
+        lvmCreateCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY, lvmCreateCommand);
+        lvmResizeCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY, lvmResizeCommand);
+        lvmRemoveCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY, lvmRemoveCommand);
+        lvmChangeCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
+        lvmLvsCommand = getLvmLvsCommandFromConfig(storPoolNamespace);
+        lvmVgsCommand = getLvmVgsCommandFromConfig(storPoolNamespace);
 
-        volumeGroup = getVolumeGroupFromConfig(config);
+        volumeGroup = getVolumeGroupFromConfig(storPoolNamespace);
         sizeAlignmentToleranceFactor = uncheckedGetAsInt(
-            config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
+            storPoolNamespace, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
         );
     }
 

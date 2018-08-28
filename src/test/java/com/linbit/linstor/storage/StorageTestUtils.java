@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -115,7 +116,7 @@ public class StorageTestUtils
     {
         try
         {
-            driver.setConfiguration("TestStorPool", config);
+            driver.setConfiguration("TestStorPool", config, Collections.emptyMap(), Collections.emptyMap());
             fail(StorageException.class.getName() + " expected");
         }
         catch (StorageException exc)

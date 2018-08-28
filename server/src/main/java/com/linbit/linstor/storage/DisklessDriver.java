@@ -80,7 +80,13 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void setConfiguration(String storPoolNameStr, Map<String, String> config)
+    public void setConfiguration(
+        String storPoolNameStr,
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
+        throws StorageException
     {
         // no-op
     }
@@ -114,7 +120,7 @@ public class DisklessDriver implements StorageDriver
     {
         return true;
     }
-    
+
     @Override
     public long getTotalSpace() {
         return Long.MAX_VALUE;

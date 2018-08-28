@@ -13,6 +13,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -37,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -179,16 +181,52 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public void reconfigureStorageDriver(StorageDriver storageDriverRef)
+    public void reconfigureStorageDriver(
+        StorageDriver storageDriverRef,
+        ReadOnlyProps nodeStorageDriverNamespace,
+        ReadOnlyProps stltStorageDriverNamespace
+    )
         throws StorageException
     {
         checkDeleted();
         if (storageDriverRef.getKind().hasBackingStorage())
         {
             Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
-            Map<String, String> map = namespace.map(Props::map).orElse(Collections.emptyMap());
-            storageDriverRef.setConfiguration(storPoolDef.getName().value, map);
+            Map<String, String> storPoolNamespace = namespace.map(Props::map).orElse(Collections.emptyMap());
+            Map<String, String> nodeNamespace = nodeStorageDriverNamespace.map();
+            Map<String, String> stltNamespace = stltStorageDriverNamespace.map();
+
+            // TODO: this is only a workaround. ReadOnlyProps.map() renders all keys to their absolute path
+            // this workaround will simply cut the NAMESPC_STORAGE_DRIVER prefix from the keys
+
+            // one way of properly fix this would involve implementing ReadOnlyPropsConMap-accessor classes
+            // just like PropsContainer#PropsconMap inner class (but with exceptions on modification-methods)
+
+            // unfortunately this cannot be extended easily as ReadOnlyProps does not extend PropsContainer.
+            int prefixLen = (NAMESPC_STORAGE_DRIVER + "/").length();
+            nodeNamespace = cutKeyPrefix(nodeNamespace, prefixLen);
+            stltNamespace = cutKeyPrefix(stltNamespace, prefixLen);
+
+            storageDriverRef.setConfiguration(
+                storPoolDef.getName().value,
+                storPoolNamespace,
+                nodeNamespace,
+                stltNamespace
+            );
         }
+    }
+
+    private Map<String, String> cutKeyPrefix(Map<String, String> map, int prefixLen)
+    {
+        Map<String, String> tmp = new HashMap<>();
+        for (Entry<String, String> entry : map.entrySet())
+        {
+            tmp.put(
+                entry.getKey().substring(prefixLen),
+                entry.getValue()
+            );
+        }
+        return tmp;
     }
 
     @Override

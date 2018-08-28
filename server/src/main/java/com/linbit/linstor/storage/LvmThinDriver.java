@@ -276,19 +276,28 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    protected void checkConfiguration(Map<String, String> config) throws StorageException
+    protected void checkConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
+        throws StorageException
     {
-        super.checkConfiguration(config);
-        checkCommand(config, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY);
-        checkThinPoolEntry(config);
+        super.checkConfiguration(storPoolNamespace, nodeNamespace, stltNamespace);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY);
+        checkThinPoolEntry(storPoolNamespace);
     }
 
     @Override
-    protected void applyConfiguration(Map<String, String> config)
+    protected void applyConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
     {
-        super.applyConfiguration(config);
-        thinPoolName = getThinPoolNameFromConfig(config);
-        lvmConvertCommand = getAsString(config, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand);
+        super.applyConfiguration(storPoolNamespace, nodeNamespace, stltNamespace);
+        thinPoolName = getThinPoolNameFromConfig(storPoolNamespace);
+        lvmConvertCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand);
     }
 
     @Override

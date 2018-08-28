@@ -14,11 +14,10 @@ import static com.linbit.linstor.storage.StorageConstants.CONFIG_LVM_VGS_COMMAND
 import static com.linbit.linstor.storage.StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,6 +52,8 @@ public class LvmDriverTest extends StorageTestUtils
     private static final long TEST_TOLERANCE_FACTOR = 4;
     private static final long CREATE_VOL_WAIT_TIME = 2000;
 
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
+
     public LvmDriverTest() throws Exception
     {
         super(new LvmDriverKind());
@@ -66,19 +67,19 @@ public class LvmDriverTest extends StorageTestUtils
         String volumeGroup = "otherName";
         config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
 
         ec.clearBehaviors();
         volumeGroup = "_specialName";
         config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
 
         ec.clearBehaviors();
         volumeGroup = "special-Name";
         config.put(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
@@ -87,19 +88,19 @@ public class LvmDriverTest extends StorageTestUtils
         String volumeGroup = "valid";
         Map<String, String> config = createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         expectCheckVolumeGroup(LVM_VGS_DEFAULT, volumeGroup, false);
-        driver.setConfiguration(STOR_POOL_NAME, config);
+        driver.setConfiguration(STOR_POOL_NAME, config, EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupEmpty() throws StorageException
     {
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, ""));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, ""), EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test(expected = StorageException.class)
     public void testConfigVolumeGroupWhitespacesOnly() throws StorageException
     {
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, "  "));
+        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, "  "), EMPTY_MAP, EMPTY_MAP);
     }
 
     @Test
@@ -115,11 +116,21 @@ public class LvmDriverTest extends StorageTestUtils
         File tmpFile = tempFolder.newFile(vgsCommand);
         tmpFile.setExecutable(true);
         expectCheckVolumeGroup(tmpFile.getAbsolutePath(), LVM_VOLUME_GROUP_DEFAULT);
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VGS_COMMAND_KEY, tmpFile.getAbsolutePath()));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_LVM_VGS_COMMAND_KEY, tmpFile.getAbsolutePath()),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
 
         String volumeGroup = "newVolumeGroup";
         expectCheckVolumeGroup(tmpFile.getAbsolutePath(), volumeGroup);
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
     }
 
     @Test
@@ -131,7 +142,12 @@ public class LvmDriverTest extends StorageTestUtils
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "-1"));
         expectException(createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, "NaN"));
 
-        driver.setConfiguration(STOR_POOL_NAME, createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)));
+        driver.setConfiguration(
+            STOR_POOL_NAME,
+            createMap(CONFIG_SIZE_ALIGN_TOLERANCE_KEY, Long.toString(TEST_TOLERANCE_FACTOR)),
+            EMPTY_MAP,
+            EMPTY_MAP
+        );
 
         final String volumeIdentifier = "identifier";
 

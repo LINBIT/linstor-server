@@ -523,12 +523,18 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public final void setConfiguration(String storPoolNameStr, final Map<String, String> config) throws StorageException
+    public final void setConfiguration(
+        final String storPoolNameStr,
+        final Map<String, String> storPoolNamespace,
+        final Map<String, String> nodeNamespace,
+        final Map<String, String> stltNamespace
+    )
+        throws StorageException
     {
         // split into two functions because multiple inheritance levels can still
         // perform an "all or nothing" applyConfiguration without the need of rollbacks
-        checkConfiguration(config);
-        applyConfiguration(config);
+        checkConfiguration(storPoolNamespace, nodeNamespace, stltNamespace);
+        applyConfiguration(storPoolNamespace, nodeNamespace, stltNamespace);
     }
 
     @Override
@@ -991,9 +997,18 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract long getExtentSize(String identifier) throws StorageException;
 
-    protected abstract void checkConfiguration(Map<String, String> config) throws StorageException;
+    protected abstract void checkConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
+        throws StorageException;
 
-    protected abstract void applyConfiguration(Map<String, String> config);
+    protected abstract void applyConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    );
 
     protected abstract boolean storageVolumeExists(String identifier, VolumeType volumeType) throws StorageException;
 

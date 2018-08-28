@@ -148,7 +148,6 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    @SuppressWarnings("checkstyle:magicnumber")
     protected long getExtentSize(String identifier) throws StorageException
     {
         long extentSize = ZFS_VOLBLOCKSIZE;
@@ -190,21 +189,30 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    protected void checkConfiguration(Map<String, String> config) throws StorageException
+    protected void checkConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
+        throws StorageException
     {
-        checkCommand(config, StorageConstants.CONFIG_ZFS_COMMAND_KEY);
-        checkPool(config);
-        checkToleranceFactor(config);
+        checkCommand(storPoolNamespace, StorageConstants.CONFIG_ZFS_COMMAND_KEY);
+        checkPool(storPoolNamespace);
+        checkToleranceFactor(storPoolNamespace);
     }
 
 
     @Override
-    protected void applyConfiguration(Map<String, String> config)
+    protected void applyConfiguration(
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
     {
-        zfsCommand = getZfsCommandFromConfig(config);
-        pool = getPoolFromConfig(config);
+        zfsCommand = getZfsCommandFromConfig(storPoolNamespace);
+        pool = getPoolFromConfig(storPoolNamespace);
         sizeAlignmentToleranceFactor = uncheckedGetAsInt(
-            config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
+            storPoolNamespace, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor
         );
     }
 

@@ -1,5 +1,6 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -18,6 +19,22 @@ import java.util.Set;
  */
 public class ReadOnlyProps implements Props
 {
+    private static final ReadOnlyProps EMPTY_RO_PROP;
+
+    static
+    {
+        try
+        {
+            EMPTY_RO_PROP = new ReadOnlyProps(
+                new PropsContainer(null, null, null, null)
+            );
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Failed to initialize EMPTY_RO_PROP", exc);
+        }
+    }
+
     private Props propsMap;
 
     public ReadOnlyProps(Props propsRef)
@@ -287,6 +304,11 @@ public class ReadOnlyProps implements Props
             "Attempt to perform an unsupported operation on a read-only view " +
             "of a properties container"
         );
+    }
+
+    public static ReadOnlyProps emptyRoProps()
+    {
+        return EMPTY_RO_PROP;
     }
 
     static class ReadOnlyIterator<T> implements Iterator<T>

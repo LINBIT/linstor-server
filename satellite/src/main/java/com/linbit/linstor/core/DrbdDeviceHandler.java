@@ -46,6 +46,8 @@ import com.linbit.linstor.event.satellite.InProgressSnapshotEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
@@ -65,6 +67,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -661,7 +664,24 @@ class DrbdDeviceHandler implements DeviceHandler
                     );
                 }
 
-                storagePool.reconfigureStorageDriver(driver);
+                Optional<Props> optNodeNamespace = storagePool
+                    .getNode()
+                    .getProps(wrkCtx)
+                    .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
+                ReadOnlyProps nodeNamespace;
+                if (optNodeNamespace.isPresent())
+                {
+                    nodeNamespace = new ReadOnlyProps(optNodeNamespace.get());
+                }
+                else
+                {
+                    nodeNamespace = ReadOnlyProps.emptyRoProps();
+                }
+                storagePool.reconfigureStorageDriver(
+                    driver,
+                    nodeNamespace,
+                    stltCfgAccessor.getReadonly(ApiConsts.NAMESPC_STORAGE_DRIVER)
+                );
                 vlmState.setDriver(driver);
             }
             catch (StorageException storExc)

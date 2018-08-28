@@ -4,18 +4,18 @@ import com.linbit.ImplementationError;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.utils.Pair;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.HashMap;
@@ -82,7 +82,11 @@ public class StltApiCallHandlerUtils
                 );
                 if (storageDriver != null)
                 {
-                    storPool.reconfigureStorageDriver(storageDriver);
+                    storPool.reconfigureStorageDriver(
+                        storageDriver,
+                        new ReadOnlyProps(storPool.getNode().getProps(apiCtx)),
+                        stltCfgAccessor.getReadonly(ApiConsts.NAMESPC_STORAGE_DRIVER)
+                    );
                     Long freeSpace = storageDriver.getFreeSpace();
                     Long totalSpace = storageDriver.getTotalSpace();
                     spaceMap.put(storPool, new SpaceInfo(totalSpace, freeSpace));

@@ -18,17 +18,21 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -45,6 +49,7 @@ class StltStorPoolApiCallHandler
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
+    private final Props stltProps;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -56,7 +61,8 @@ class StltStorPoolApiCallHandler
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
+        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
+        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -68,6 +74,7 @@ class StltStorPoolApiCallHandler
         storPoolDataFactory = storPoolDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
+        stltProps = stltPropsRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -130,7 +137,9 @@ class StltStorPoolApiCallHandler
                 checkUuid(storPool, storPoolRaw);
                 checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
 
-                storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
+                Map<String, String> map = storPool.getProps(apiCtx).map();
+                map.clear();
+                map.putAll(storPoolRaw.getStorPoolProps());
 
                 Collection<Volume> volumes = storPool.getVolumes(apiCtx);
                 for (Volume vlm : volumes)
@@ -164,6 +173,7 @@ class StltStorPoolApiCallHandler
                     storPoolRaw.getDriver(),
                     freeSpaceMgrFactory.getInstance()
                 );
+
                 storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
             }
 

@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -850,7 +851,7 @@ public abstract class NoSimDriverTest
     protected void setPoolName(String poolNameRef) throws StorageException
     {
         Map<String, String> config = getPoolConfigMap(poolNameRef);
-        driver.setConfiguration(poolNameRef, config);
+        driver.setConfiguration(poolNameRef, config, Collections.emptyMap(), Collections.emptyMap());
     }
 
     protected static Map<String, String> getPoolConfigMap(String poolName)

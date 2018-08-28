@@ -7,6 +7,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -189,235 +190,43 @@ public class SwordfishDriver implements StorageDriver
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public String createVolume(String identifier, long size, String cryptKey)
+    public String createVolume(String linstorVlmId, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException
     {
         String volumePath;
         try
         {
-            // create volume
-            // POST to volumes collection
-            RestResponse<Map<String, Object>> crtVlmResp = restClient.execute(
-                RestOp.POST,
-                hostPort + SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES,
-                getDefaultHeader().build(),
-                MapBuilder.defaultImpl().start()
-                    .put(JSON_KEY_CAPACITY_BYTES, size * KIB)
-                    .put(
-                        JSON_KEY_CAPACITY_SOURCES,
-                        CollectionBuilder.defaultImpl().start()
-                            .add(
-                                MapBuilder.defaultImpl().start()
-                                    .put(
-                                        JSON_KEY_PROVIDING_POOLS,
-                                        CollectionBuilder.defaultImpl().start()
-                                            .add(
-                                                MapBuilder.defaultImpl().start()
-                                                    .put(
-                                                        JSON_KEY_ODATA_ID,
-                                                        SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc +
-                                                            SF_STORAGE_POOLS + "/" + storPool
-                                                    )
-                                                    .build()
-                                            )
-                                            .buildArray()
-                                    )
-                                    .build()
-                            )
-                            .buildArray()
-                    )
-                    .build()
-            );
-            // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
-
-            String taskMonitorLocation = crtVlmResp.getHeaders().get(HttpHeader.LOCATION_KEY);
-            // taskLocation should start with SF_BASE + SF_TASK_SERVICE + SF_TASKS followed by "/$taskId/Monitor"
-            String taskId;
-            try
+            String vlmOdataId = null;
+            if (!sfVolumeExists(linstorVlmId))
             {
-                taskId = taskMonitorLocation.substring(
-                    (SF_BASE + SF_TASK_SERVICE + SF_TASKS + "/").length(),
-                    taskMonitorLocation.indexOf(SF_MONITOR)
+                vlmOdataId = createSfVlm(size);
+                // extract the swordfish id of that volume and persist if for later lookups
+                String sfId = vlmOdataId.substring(
+                    (SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES + "/").length()
                 );
+                linstorIdToSwordfishId.put(linstorVlmId, sfId);
+                persistJson();
+                errorReporter.logTrace("volume created with @odata.id: %s",  vlmOdataId);
             }
-            catch (NumberFormatException | ArrayIndexOutOfBoundsException exc)
+            else
             {
-                throw new StorageException(
-                    "Task-id could not be parsed. Task monitor url: " + taskMonitorLocation,
-                    exc
-                );
+                vlmOdataId = buildVlmOdataId(linstorVlmId);
+                errorReporter.logTrace("volume found with @odata.id: %s", vlmOdataId);
             }
+            // volume exists
 
-            errorReporter.logTrace(
-                "volume creation response status code: %d, taskId: %s",
-                crtVlmResp.getStatusCode(),
-                taskId
-            );
-            String vlmLocation = null;
-            long pollVlmCrtTries = 0;
-            while (vlmLocation == null)
-            {
-                errorReporter.logTrace("waiting %d ms before polling task monitor", pollVlmCrtTimeout);
-                Thread.sleep(pollVlmCrtTimeout);
-
-                RestResponse<Map<String, Object>> crtVlmTaskResp = restClient.execute(
-                    RestOp.GET,
-                    hostPort  + taskMonitorLocation,
-                    getDefaultHeader().noContentType().build(),
-                    (String) null
-                );
-                switch (crtVlmTaskResp.getStatusCode())
-                {
-                    case HttpHeader.HTTP_ACCEPTED: // noop, task is still in progress
-                        break;
-                    case HttpHeader.HTTP_CREATED: // task created successfully
-                        vlmLocation = crtVlmTaskResp.getHeaders().get(HttpHeader.LOCATION_KEY);
-                        break;
-                    default: // problem
-                        throw new StorageException(
-                            String.format(
-                                "Unexpected return code from task monitor %s: %d",
-                                taskMonitorLocation,
-                                crtVlmTaskResp.getStatusCode()
-                            )
-                        );
-                }
-                if (pollVlmCrtTries ++ >= pollVlmCrtMaxTries)
-                {
-                    throw new StorageException(
-                        String.format(
-                            "Volume creation not finished after %d x %dms. \n" +
-                            "GET %s did not contain volume-location in http header",
-                            pollVlmCrtTries,
-                            pollVlmCrtTimeout,
-                            hostPort  + taskMonitorLocation
-                        )
-                    );
-                }
-
-            }
-            // volume created
-            // extract the swordfish id of that volume and persist if for later lookups
-            String sfId = vlmLocation.substring(
-                (SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES + "/").length()
-            );
-
-            // extract volume's @odata.id
-            // RestResponse<Map<String, Object>> vlmDataResp = restClient.execute(
-            //     RestOp.GET,
-            //     hostPort + vlmLocation,
-            //     getDefaultHeader().build(),
-            //     null
-            // );
-            String vlmOdataId = vlmLocation;
-
-
-            errorReporter.logTrace("volume created with swordfish id: %s, @odata.id: %s", sfId, vlmOdataId);
-            linstorIdToSwordfishId.put(identifier, sfId);
-            persistJson();
-
-            // volume is create but might not be ready to be attached.
-            // wait until volume shows up in node's Actions/AttachResourceActionInfo
-            String attachInfoAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
-                SF_ATTACH_RESOURCE_ACTION_INFO;
-            boolean attachable = false;
-
-            int pollAttachRscTries = 0;
-            while (!attachable)
-            {
-                errorReporter.logTrace("waiting %d ms before polling node's Actions/AttachResourceActionInfo", pollAttachVlmTimeout);
-                Thread.sleep(pollAttachVlmTimeout);
-
-                RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
-                    RestOp.GET,
-                    hostPort  + attachInfoAction,
-                    getDefaultHeader().noContentType().build(),
-                    (String) null
-                );
-                if (attachRscInfoResp.getStatusCode() != HttpHeader.HTTP_OK)
-                {
-                    throw new StorageException(
-                        String.format(
-                            "Unexpected return code (%d) from %s",
-                            attachRscInfoResp.getStatusCode(),
-                            attachInfoAction
-                        )
-                    );
-                }
-                Map<String, Object> attachRscInfoData = attachRscInfoResp.getData();
-                ArrayList<Object> attachInfoParameters = (ArrayList<Object>) attachRscInfoData.get(JSON_KEY_PARAMETERS);
-                for (Object attachInfoParameter : attachInfoParameters)
-                {
-                    Map<String, Object> attachInfoParamMap = (Map<String, Object>) attachInfoParameter;
-                    ArrayList<Object> paramAllowableValues = (ArrayList<Object>) attachInfoParamMap.get(JSON_KEY_ALLOWABLE_VALUES);
-                    if (paramAllowableValues != null)
-                    {
-                        for (Object paramAllowableValue : paramAllowableValues)
-                        {
-                            if (paramAllowableValue instanceof Map)
-                            {
-                                Map<String, Object> paramAllowableValueMap = (Map<String, Object>) paramAllowableValue;
-                                String attachableVlmId = (String) paramAllowableValueMap.get(JSON_KEY_ODATA_ID);
-                                if (vlmOdataId.equals(attachableVlmId))
-                                {
-                                    attachable = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (pollAttachRscTries++ >= pollAttachVlmMaxTries)
-                {
-                    throw new StorageException(
-                        String.format(
-                            "Volume could not be attached after %d x %dms. \n" +
-                            "Volume did not show up in %s -> %s from GET %s",
-                            pollAttachRscTries,
-                            pollAttachVlmTimeout,
-                            JSON_KEY_PARAMETERS,
-                            JSON_KEY_ALLOWABLE_VALUES,
-                            hostPort  + attachInfoAction
-                        )
-                    );
-                }
-            }
+            // volume might not be attachable yet
+            waitUntilSfVolumeIsAttachable(vlmOdataId);
 
             // attach the volume to the composed node
-            String attachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
-                SF_COMPOSED_NODE_ATTACH_RESOURCE;
-            RestResponse<Map<String, Object>> attachVlmResp = restClient.execute(
-                RestOp.POST,
-                hostPort + attachAction,
-                getDefaultHeader().build(),
-                MapBuilder.defaultImpl().start()
-                    .put(
-                        JSON_KEY_RESOURCE,
-                        MapBuilder.defaultImpl().start()
-                            .put(JSON_KEY_ODATA_ID, vlmOdataId)
-                            .build()
-                    )
-                    .build()
-            );
-            if (attachVlmResp.getStatusCode() != HttpHeader.HTTP_NO_CONTENT)
-            {
-                // problem
-                throw new StorageException(
-                    String.format(
-                        "Unexpected return code from attaching volume %s: %d",
-                        attachAction,
-                        attachVlmResp.getStatusCode()
-                    )
-                );
-            }
+            attachSfVolume(vlmOdataId);
+
             // volume should be attached.
 
             // TODO implement health check on composed node
 
-            volumePath = getVolumePath(identifier, cryptKey != null);
+            volumePath = getVolumePath(linstorVlmId, cryptKey != null);
         }
         catch (InterruptedException interruptedExc)
         {
@@ -430,24 +239,15 @@ public class SwordfishDriver implements StorageDriver
         return volumePath;
     }
 
-    @Override
-    public void deleteVolume(String identifier, boolean isEncrypted) throws StorageException
+    private void attachSfVolume(String vlmOdataId) throws IOException, StorageException
     {
-        try
-        {
-            String vlmOdataId =
-                SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES + "/" +
-                getSwordfishVolumeIdByLinstorId(identifier);
-
-            // detach volume from node
-            String detachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
-                SF_COMPOSED_NODE_DETACH_RESOURCE;
-            // POST to Node/$id/Action/ComposedNode.DetachResource
-            RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
-                RestOp.POST,
-                hostPort + detachAction,
-                getDefaultHeader().build(),
-                MapBuilder.defaultImpl().start()
+        String attachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
+            SF_COMPOSED_NODE_ATTACH_RESOURCE;
+        RestResponse<Map<String, Object>> attachVlmResp = restClient.execute(
+            RestOp.POST,
+            hostPort + attachAction,
+            getDefaultHeader().build(),
+            MapBuilder.defaultImpl().start()
                 .put(
                     JSON_KEY_RESOURCE,
                     MapBuilder.defaultImpl().start()
@@ -455,7 +255,202 @@ public class SwordfishDriver implements StorageDriver
                         .build()
                 )
                 .build()
+        );
+        if (attachVlmResp.getStatusCode() != HttpHeader.HTTP_NO_CONTENT)
+        {
+            throw new StorageException(
+                String.format(
+                    "Unexpected return code from attaching volume %s: %d",
+                    attachAction,
+                    attachVlmResp.getStatusCode()
+                )
             );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void waitUntilSfVolumeIsAttachable(String vlmOdataId)
+        throws InterruptedException, IOException, StorageException
+    {
+        String attachInfoAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
+            SF_ATTACH_RESOURCE_ACTION_INFO;
+        boolean attachable = false;
+
+        int pollAttachRscTries = 0;
+        while (!attachable)
+        {
+            errorReporter.logTrace("waiting %d ms before polling node's Actions/AttachResourceActionInfo", pollAttachVlmTimeout);
+            Thread.sleep(pollAttachVlmTimeout);
+
+            RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
+                RestOp.GET,
+                hostPort  + attachInfoAction,
+                getDefaultHeader().noContentType().build(),
+                (String) null
+            );
+            if (attachRscInfoResp.getStatusCode() != HttpHeader.HTTP_OK)
+            {
+                throw new StorageException(
+                    String.format(
+                        "Unexpected return code (%d) from %s",
+                        attachRscInfoResp.getStatusCode(),
+                        attachInfoAction
+                    )
+                );
+            }
+            Map<String, Object> attachRscInfoData = attachRscInfoResp.getData();
+            ArrayList<Object> attachInfoParameters = (ArrayList<Object>) attachRscInfoData.get(JSON_KEY_PARAMETERS);
+            for (Object attachInfoParameter : attachInfoParameters)
+            {
+                Map<String, Object> attachInfoParamMap = (Map<String, Object>) attachInfoParameter;
+                ArrayList<Object> paramAllowableValues = (ArrayList<Object>) attachInfoParamMap.get(JSON_KEY_ALLOWABLE_VALUES);
+                if (paramAllowableValues != null)
+                {
+                    for (Object paramAllowableValue : paramAllowableValues)
+                    {
+                        if (paramAllowableValue instanceof Map)
+                        {
+                            Map<String, Object> paramAllowableValueMap = (Map<String, Object>) paramAllowableValue;
+                            String attachableVlmId = (String) paramAllowableValueMap.get(JSON_KEY_ODATA_ID);
+                            if (vlmOdataId.equals(attachableVlmId))
+                            {
+                                attachable = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (pollAttachRscTries++ >= pollAttachVlmMaxTries)
+            {
+                throw new StorageException(
+                    String.format(
+                        "Volume could not be attached after %d x %dms. \n" +
+                        "Volume did not show up in %s -> %s from GET %s",
+                        pollAttachRscTries,
+                        pollAttachVlmTimeout,
+                        JSON_KEY_PARAMETERS,
+                        JSON_KEY_ALLOWABLE_VALUES,
+                        hostPort  + attachInfoAction
+                    )
+                );
+            }
+        }
+    }
+
+    private String createSfVlm(long sizeInKiB) throws IOException, StorageException, InterruptedException
+    {
+        // create volume
+        // POST to volumes collection
+        RestResponse<Map<String, Object>> crtVlmResp = restClient.execute(
+            RestOp.POST,
+            hostPort + SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES,
+            getDefaultHeader().build(),
+            MapBuilder.defaultImpl().start()
+                .put(JSON_KEY_CAPACITY_BYTES, sizeInKiB * KIB) // convert to bytes
+                .put(
+                    JSON_KEY_CAPACITY_SOURCES,
+                    CollectionBuilder.defaultImpl().start()
+                        .add(
+                            MapBuilder.defaultImpl().start()
+                                .put(
+                                    JSON_KEY_PROVIDING_POOLS,
+                                    CollectionBuilder.defaultImpl().start()
+                                        .add(
+                                            MapBuilder.defaultImpl().start()
+                                                .put(
+                                                    JSON_KEY_ODATA_ID,
+                                                    SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc +
+                                                        SF_STORAGE_POOLS + "/" + storPool
+                                                )
+                                                .build()
+                                        )
+                                        .buildArray()
+                                )
+                                .build()
+                        )
+                        .buildArray()
+                )
+                .build()
+        );
+        // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
+
+        String taskMonitorLocation = crtVlmResp.getHeaders().get(HttpHeader.LOCATION_KEY);
+        // taskLocation should start with SF_BASE + SF_TASK_SERVICE + SF_TASKS followed by "/$taskId/Monitor"
+        String taskId;
+        try
+        {
+            taskId = taskMonitorLocation.substring(
+                (SF_BASE + SF_TASK_SERVICE + SF_TASKS + "/").length(),
+                taskMonitorLocation.indexOf(SF_MONITOR)
+            );
+        }
+        catch (NumberFormatException | ArrayIndexOutOfBoundsException exc)
+        {
+            throw new StorageException(
+                "Task-id could not be parsed. Task monitor url: " + taskMonitorLocation,
+                exc
+            );
+        }
+
+        errorReporter.logTrace(
+            "volume creation response status code: %d, taskId: %s",
+            crtVlmResp.getStatusCode(),
+            taskId
+        );
+
+        String vlmLocation = null;
+        long pollVlmCrtTries = 0;
+        while (vlmLocation == null)
+        {
+            errorReporter.logTrace("waiting %d ms before polling task monitor", pollVlmCrtTimeout);
+            Thread.sleep(pollVlmCrtTimeout);
+
+            RestResponse<Map<String, Object>> crtVlmTaskResp = restClient.execute(
+                RestOp.GET,
+                hostPort  + taskMonitorLocation,
+                getDefaultHeader().noContentType().build(),
+                (String) null
+            );
+            switch (crtVlmTaskResp.getStatusCode())
+            {
+                case HttpHeader.HTTP_ACCEPTED: // noop, task is still in progress
+                    break;
+                case HttpHeader.HTTP_CREATED: // task created successfully
+                    vlmLocation = crtVlmTaskResp.getHeaders().get(HttpHeader.LOCATION_KEY);
+                    break;
+                default: // problem
+                    throw new StorageException(
+                        String.format(
+                            "Unexpected return code from task monitor %s: %d",
+                            taskMonitorLocation,
+                            crtVlmTaskResp.getStatusCode()
+                        )
+                    );
+            }
+            if (pollVlmCrtTries ++ >= pollVlmCrtMaxTries)
+            {
+                throw new StorageException(
+                    String.format(
+                        "Volume creation not finished after %d x %dms. \n" +
+                        "GET %s did not contain volume-location in http header",
+                        pollVlmCrtTries,
+                        pollVlmCrtTimeout,
+                        hostPort  + taskMonitorLocation
+                    )
+                );
+            }
+        }
+        return vlmLocation;
+    }
+
+    @Override
+    public void deleteVolume(String linstorVlmId, boolean isEncrypted) throws StorageException
+    {
+        try
+        {
+            String vlmOdataId = detatchSfVlm(linstorVlmId);
 
             // TODO health check on composed node
 
@@ -482,21 +477,97 @@ public class SwordfishDriver implements StorageDriver
         {
             throw new StorageException("IO Exception", ioExc);
         }
-        linstorIdToSwordfishId.remove(identifier);
+        linstorIdToSwordfishId.remove(linstorVlmId);
         persistJson();
     }
 
+    private String detatchSfVlm(String linstorVlmId) throws IOException
+    {
+        String vlmOdataId = buildVlmOdataId(linstorVlmId);
+
+        // detach volume from node
+        String detachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
+            SF_COMPOSED_NODE_DETACH_RESOURCE;
+        // POST to Node/$id/Action/ComposedNode.DetachResource
+        RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
+            RestOp.POST,
+            hostPort + detachAction,
+            getDefaultHeader().build(),
+            MapBuilder.defaultImpl().start()
+            .put(
+                JSON_KEY_RESOURCE,
+                MapBuilder.defaultImpl().start()
+                    .put(JSON_KEY_ODATA_ID, vlmOdataId)
+                    .build()
+            )
+            .build()
+        );
+        // detatchVlmResp.getStatusCode() might be 404 (not found) which is fine, just continue
+        // with deletion of the volume
+        return vlmOdataId;
+    }
+
     @Override
-    public boolean volumeExists(String identifier, boolean isEncrypted) throws StorageException
+    public boolean volumeExists(String linstorVlmId, boolean isEncrypted) throws StorageException
     {
         boolean exists = false;
 
         // TODO implement encrypted "volumesExists"
-        if (getSwordfishVolumeIdByLinstorId(identifier) != null)
+        if (getSwordfishVolumeIdByLinstorId(linstorVlmId) != null)
         {
-            exists = getSwordfishVolumeByLinstorId(identifier).getStatusCode() == HttpHeader.HTTP_OK;
+            exists = sfVolumeExists(linstorVlmId) && sfVolumeAttached(linstorVlmId);
         }
         return exists;
+    }
+
+    private boolean sfVolumeExists(String linstorVlmId) throws StorageException
+    {
+        return getSwordfishVolumeByLinstorId(linstorVlmId).getStatusCode() == HttpHeader.HTTP_OK;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean sfVolumeAttached(String linstorVlmId) throws StorageException
+    {
+        boolean attached = false;
+        try
+        {
+            String vlmOdataId = buildVlmOdataId(linstorVlmId);
+
+            String composedNodeAttachAction =
+                SF_BASE + SF_NODES + composedNodeName + SF_ACTIONS + SF_ATTACH_RESOURCE_ACTION_INFO;
+            RestResponse<Map<String, Object>> attachInfoResp = restClient.execute(
+                RestOp.GET,
+                hostPort + composedNodeAttachAction,
+                getDefaultHeader().noContentType().build(),
+                (String) null
+            );
+            if (attachInfoResp.getStatusCode() == HttpHeader.HTTP_OK)
+            {
+                Map<String, Object> attachInfoData = attachInfoResp.getData();
+                Map<String, Object> paramMap = (Map<String, Object>) attachInfoData.get(JSON_KEY_PARAMETERS);
+                Object[] allowableValues = (Object[]) paramMap.get(JSON_KEY_ALLOWABLE_VALUES);
+
+                for (Object allowableValue : allowableValues)
+                {
+                    if (vlmOdataId.equals(
+                        ((Map<String, Object>)allowableValue).get(JSON_KEY_ODATA_ID))
+                    )
+                    {
+                        attached = true;
+                        break;
+                    }
+                }
+            }
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("IO exception", exc);
+        }
+        catch (ClassCastException ccExc)
+        {
+            throw new StorageException("Unexpected datastucture", ccExc);
+        }
+        return attached;
     }
 
     @Override
@@ -508,7 +579,6 @@ public class SwordfishDriver implements StorageDriver
 
         if (response.getStatusCode() == HttpHeader.HTTP_OK)
         {
-            // TODO: double check the rest key
             long actualSize = getLong(response.getData().get(JSON_KEY_CAPACITY_BYTES)) / KIB;
             if (actualSize >= requiredSize)
             {
@@ -531,12 +601,12 @@ public class SwordfishDriver implements StorageDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public String getVolumePath(String identifier, boolean isEncrypted) throws StorageException
+    public String getVolumePath(String linstorVlmId, boolean isEncrypted) throws StorageException
     {
         String path = null;
         if (isEncrypted)
         {
-            path = crypt.getCryptVolumePath(identifier);
+            path = crypt.getCryptVolumePath(linstorVlmId);
         }
         else
         {
@@ -544,7 +614,7 @@ public class SwordfishDriver implements StorageDriver
             {
                 String nqnUuid = null;
 
-                RestResponse<Map<String, Object>> vlmInfo = getSwordfishVolumeByLinstorId(identifier);
+                RestResponse<Map<String, Object>> vlmInfo = getSwordfishVolumeByLinstorId(linstorVlmId);
 
                 Map<String, Object> vlmData = vlmInfo.getData();
                 Map<String, Object> vlmLinks = (Map<String, Object>) vlmData.get(JSON_KEY_LINKS);
@@ -640,10 +710,10 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public long getSize(String identifier) throws StorageException
+    public long getSize(String linstorVlmId) throws StorageException
     {
         return getSpace(
-            getSwordfishVolumeByLinstorId(identifier),
+            getSwordfishVolumeByLinstorId(linstorVlmId),
             JSON_KEY_ALLOCATED_BYTES
         );
     }
@@ -704,44 +774,77 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public Map<String, String> getTraits(String identifier) throws StorageException
+    public Map<String, String> getTraits(String linstorVlmId) throws StorageException
     {
         return Collections.emptyMap();
     }
 
     @Override
-    public void setConfiguration(String storPoolNameStr, Map<String, String> config) throws StorageException
+    public void setConfiguration(
+        String storPoolNameStr,
+        Map<String, String> storPoolNamespace,
+        Map<String, String> nodeNamespace,
+        Map<String, String> stltNamespace
+    )
+        throws StorageException
     {
         // first, check if the config is valid
         boolean requiresHostPort = hostPort == null;
         boolean requiresStorSvc = storSvc == null;
         boolean requiresSfStorPool = storPool == null;
-        boolean requiresLsStorPool = linstorIdToSwordfishId == null;
         boolean requiresComposedNodeName = composedNodeName == null;
 
-        String tmpHostPort = config.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
-        String tmpStorSvc = config.get(StorageConstants.CONFIG_SF_STOR_SVC_KEY);
-        String tmpSfStorPool = config.get(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
-        String tmpUserName = config.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
-        String tmpUserPw = config.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
-        String tmpVlmCrtTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);
-        String tmpVlmCrtRetries = config.get(StorageConstants.CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY);
-        String tmpAttachVlmTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY);
-        String tmpAttachVlmRetries = config.get(StorageConstants.CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY);
-        String tmpGrepNvmeUuidTimeout = config.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY);
-        String tmpGrepNvmeUuidRetries = config.get(StorageConstants.CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY);
-        String tmpComposedNodeName = config.get(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
+        String tmpHostPort = stltNamespace.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+        String tmpUserName = stltNamespace.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
+        String tmpUserPw = stltNamespace.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
+        String tmpComposedNodeName = nodeNamespace.get(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
+        String tmpStorSvc = storPoolNamespace.get(StorageConstants.CONFIG_SF_STOR_SVC_KEY);
+        String tmpSfStorPool = storPoolNamespace.get(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
+        String tmpVlmCrtTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);
+        String tmpVlmCrtRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY);
+        String tmpAttachVlmTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY);
+        String tmpAttachVlmRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY);
+        String tmpGrepNvmeUuidTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY);
+        String tmpGrepNvmeUuidRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY);
+
+        // temporary workaround to not having to disable security to set this property on controller-level
+        if (tmpHostPort == null || tmpHostPort.isEmpty())
+        {
+            tmpHostPort = nodeNamespace.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+        }
+        if (tmpUserName == null || tmpUserName.isEmpty())
+        {
+            tmpUserName = nodeNamespace.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
+        }
+        if (tmpUserPw == null || tmpUserPw.isEmpty())
+        {
+            tmpUserPw = nodeNamespace.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
+        }
 
         StringBuilder failErrorMsg = new StringBuilder();
         appendIfEmptyButRequired(
                 "Missing swordfish host:port specification as a single value such as \n" +
-                    "https://127.0.0.1:1234\n",
+                    "https://127.0.0.1:1234\n"+
+                    "This property has to be set globally:\n\n" +
+                    "linstor controller set-property " +
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_HOST_PORT_KEY +
+                    " <value>\n",
                 failErrorMsg,
                 tmpHostPort,
                 requiresHostPort
         );
         appendIfEmptyButRequired("Missing swordfish storage service\n", failErrorMsg, tmpStorSvc, requiresStorSvc);
         appendIfEmptyButRequired("Missing swordfish storage pool\n", failErrorMsg, tmpSfStorPool, requiresSfStorPool);
+        appendIfEmptyButRequired(
+            "Missing swordfish composed node name\n" +
+                "This property has to be set on node level: \n\n" +
+                "linstor node set-property <node_name> " +
+                ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY +
+                " <composed_node_id>",
+            failErrorMsg,
+            tmpComposedNodeName,
+            requiresComposedNodeName
+        );
         Long tmpVlmCrtTimeoutLong = getLong("poll volume creation timeout", failErrorMsg, tmpVlmCrtTimeout);
         Long tmpVlmCrtTriesLong = getLong("poll volume creation tries", failErrorMsg, tmpVlmCrtRetries);
         Long tmpAttachVlmTimeoutLong = getLong("poll attach volume timeout", failErrorMsg, tmpAttachVlmTimeout);
@@ -749,12 +852,6 @@ public class SwordfishDriver implements StorageDriver
         Long tmpGrepNvmeUuidTimeoutLong = getLong("poll grep nvme uuid timeout", failErrorMsg, tmpGrepNvmeUuidTimeout);
         Long tmpGrepNvmeUuidTriesLong = getLong("poll grep nvme uuid tries", failErrorMsg, tmpGrepNvmeUuidRetries);
 
-        appendIfEmptyButRequired(
-            "Missing swordfish composed node name",
-            failErrorMsg,
-            tmpComposedNodeName,
-            requiresComposedNodeName
-        );
 
         if (!failErrorMsg.toString().trim().isEmpty())
         {
@@ -864,14 +961,14 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void resizeVolume(String identifier, long size, String cryptKey)
+    public void resizeVolume(String linstorVlmId, long size, String cryptKey)
         throws StorageException, MaxSizeException, MinSizeException
     {
         throw new ImplementationError("Resizing swordfish volumes is not supported");
     }
 
     @Override
-    public void createSnapshot(String identifier, String snapshotName) throws StorageException
+    public void createSnapshot(String linstorVlmId, String snapshotName) throws StorageException
     {
         throw new StorageException("Swordfish driver cannot create snapshots");
     }
@@ -902,17 +999,20 @@ public class SwordfishDriver implements StorageDriver
         );
     }
 
-    private RestResponse<Map<String, Object>> getSwordfishVolumeByLinstorId(String identifier) throws StorageException
+    private RestResponse<Map<String, Object>> getSwordfishVolumeByLinstorId(String linstorVlmId) throws StorageException
     {
-        return getSwordfishResource(
-            SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES + "/" +
-            getSwordfishVolumeIdByLinstorId(identifier)
-        );
+        return getSwordfishResource(buildVlmOdataId(linstorVlmId));
     }
 
-    private String getSwordfishVolumeIdByLinstorId(String identifier)
+    private String buildVlmOdataId(String linstorVlmId)
     {
-        return linstorIdToSwordfishId.get(identifier);
+        return SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES + "/" +
+            getSwordfishVolumeIdByLinstorId(linstorVlmId);
+    }
+
+    private String getSwordfishVolumeIdByLinstorId(String linstorVlmId)
+    {
+        return linstorIdToSwordfishId.get(linstorVlmId);
     }
 
     private RestResponse<Map<String, Object>> getSwordfishResource(String odataId)
@@ -967,7 +1067,6 @@ public class SwordfishDriver implements StorageDriver
         }
         return ret;
     }
-
 
     private void persistJson() throws StorageException
     {
