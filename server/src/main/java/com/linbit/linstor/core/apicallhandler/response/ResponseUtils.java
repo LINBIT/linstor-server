@@ -8,6 +8,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
 
 import java.util.Map;
 
@@ -226,5 +228,52 @@ public class ResponseUtils
                     "receive this update."
             )
             .build();
+    }
+
+    public static Flux<ApiCallRc> translateDeploymentSuccess(
+        Flux<Tuple2<NodeName, ApiCallRc>> responses,
+        String messageFormat
+    )
+    {
+        return translateDeploymentSuccess(responses, null, messageFormat, messageFormat);
+    }
+
+    public static Flux<ApiCallRc> translateDeploymentSuccess(
+        Flux<Tuple2<NodeName, ApiCallRc>> responses,
+        NodeName nodeName,
+        String messageFormatSelf,
+        String messageFormatPeer
+    )
+    {
+        return responses.map(namedResponse ->
+            {
+                NodeName responseNodeName = namedResponse.getT1();
+                ApiCallRc response = namedResponse.getT2();
+                ApiCallRcImpl transformedResponses = new ApiCallRcImpl();
+                for (ApiCallRc.RcEntry rcEntry : response.getEntries())
+                {
+                    if (rcEntry.getReturnCode() == ApiConsts.CREATED)
+                    {
+                        String messageFormat = nodeName == null || nodeName.equals(responseNodeName) ?
+                            messageFormatSelf : messageFormatPeer;
+                        if (messageFormat != null)
+                        {
+                            transformedResponses.addEntry(ApiCallRcImpl.simpleEntry(
+                                ApiConsts.MODIFIED,
+                                String.format(
+                                    messageFormat,
+                                    responseNodeName.displayValue
+                                )
+                            ));
+                        }
+                    }
+                    else
+                    {
+                        transformedResponses.addEntry(rcEntry);
+                    }
+                }
+                return transformedResponses;
+            }
+        );
     }
 }

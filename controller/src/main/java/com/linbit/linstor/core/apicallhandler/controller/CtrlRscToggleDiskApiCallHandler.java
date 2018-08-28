@@ -33,7 +33,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -363,11 +362,17 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 }
                 ctrlTransactionHelper.commit();
 
-                String action = removeDisk ?
+                String actionSelf = removeDisk ?
+                    "Removed disk on '%s'" : null;
+                String actionPeer = removeDisk ?
                     "Notified '%s' that disk is being removed" : "Prepared '%s' to expect disk";
                 Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-                    .transform(updateResponses -> translateDeploymentSuccess(updateResponses,
-                        action + " on '" + rsc.getAssignedNode().getName().displayValue + "'"));
+                    .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                        updateResponses,
+                        nodeName,
+                        actionSelf,
+                        actionPeer + " on '" + nodeName.displayValue + "'"
+                    ));
 
                 responses = satelliteUpdateResponses
                     // If an update fails (e.g. the connection to a node is lost), attempt to reset back to the
@@ -411,7 +416,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-            .transform(responses -> translateDeploymentSuccess(responses, "Diskless state temporarily reset on '%s'"));
+            .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                responses,
+                "Diskless state temporarily reset on '%s'"
+            ));
 
         return satelliteUpdateResponses
             .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
@@ -458,11 +466,17 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         ctrlTransactionHelper.commit();
 
-        String action = removeDisk ?
+        String actionSelf = removeDisk ?
+            null : "Added disk on '%s'";
+        String actionPeer = removeDisk ?
             "Notified '%s' that disk has been removed" : "Notified '%s' of addition of new disk";
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-            .transform(updateResponses -> translateDeploymentSuccess(updateResponses,
-                action + " on '" + nodeName.displayValue + "'"));
+            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                updateResponses,
+                nodeName,
+                actionSelf,
+                actionPeer + " on '" + nodeName.displayValue + "'"
+            ));
 
         return Flux
             .<ApiCallRc>just(responses)
@@ -680,35 +694,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return LockGuard.createDeferred(
             nodesMapLock.writeLock(),
             rscDfnMapLock.writeLock()
-        );
-    }
-
-    private static Flux<ApiCallRc> translateDeploymentSuccess(
-        Flux<Tuple2<NodeName, ApiCallRc>> responses,
-        String messageFormat
-    )
-    {
-        return responses.map(namedResponse ->
-            {
-                NodeName responseNodeName = namedResponse.getT1();
-                ApiCallRc response = namedResponse.getT2();
-                ApiCallRcImpl transformedResponses = new ApiCallRcImpl();
-                for (ApiCallRc.RcEntry rcEntry : response.getEntries())
-                {
-                    if (rcEntry.getReturnCode() == ApiConsts.CREATED)
-                    {
-                        transformedResponses.addEntry(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.MODIFIED,
-                            String.format(messageFormat, responseNodeName.displayValue)
-                        ));
-                    }
-                    else
-                    {
-                        transformedResponses.addEntry(rcEntry);
-                    }
-                }
-                return transformedResponses;
-            }
         );
     }
 }

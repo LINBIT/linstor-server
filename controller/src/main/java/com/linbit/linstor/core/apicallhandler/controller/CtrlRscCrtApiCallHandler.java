@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.event.EventWaiter;
@@ -29,7 +30,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -149,13 +149,19 @@ public class CtrlRscCrtApiCallHandler
         NodeName nodeName = rsc.getAssignedNode().getName();
         ResourceName rscName = rsc.getDefinition().getName();
 
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc).map(Tuple2::getT2);
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                updateResponses,
+                nodeName,
+                "Created resource on '%s'",
+                "Added peer on '%s' to resource on '" + nodeName.displayValue + "'"
+            ));
 
         Mono<ApiCallRc> resourceReadyResponses;
         if (rsc.getVolumeCount() == 0)
         {
             // Do DRBD resource is created when no volumes are present, so do not wait for it to be ready
-            resourceReadyResponses = Mono.empty();
+            resourceReadyResponses = Mono.just(makeNoVolumesMessage());
         }
         else if (allDiskless(rsc.getDefinition()))
         {
@@ -248,6 +254,14 @@ public class CtrlRscCrtApiCallHandler
             ApiConsts.CREATED,
             "Resource ready"
         ), context, true));
+    }
+
+    private ApiCallRcImpl makeNoVolumesMessage()
+    {
+        return ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
+            ApiConsts.WARN_NOT_FOUND,
+            "No volumes have been defined"
+        ));
     }
 
     private ApiCallRcImpl makeAllDisklessMessage()
