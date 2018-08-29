@@ -34,14 +34,7 @@ public class StltConfigAccessor
         {
             throw new ImplementationError("Hardcoded invalid property keys", exc);
         }
-        return dmStatsStr != null && getAsBoolean(dmStatsStr);
-    }
-
-    private boolean getAsBoolean(String val)
-    {
-        return
-            val.equalsIgnoreCase("true") ||
-            val.equalsIgnoreCase("yes");
+        return dmStatsStr != null && Boolean.valueOf(dmStatsStr);
     }
 
     public ReadOnlyProps getReadonly (String namespace)

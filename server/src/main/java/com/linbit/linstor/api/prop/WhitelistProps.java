@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.prop;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -215,11 +216,18 @@ public class WhitelistProps
         return validProp;
     }
 
-    public Map<String, String> sanitize(LinStorObject lsObj, Map<String, String> props)
+    /**
+     * Converts the value to its canonical form.
+     * The property should already have been validated with {@link #isAllowed(LinStorObject, String, String, boolean)}.
+     */
+    public String normalize(LinStorObject lsObj, String key, String value)
     {
-        return props.entrySet().stream()
-            .filter(entry -> isAllowed(lsObj, entry.getKey(), entry.getValue(), false))
-            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+        Property rule = rules.get(lsObj).get(key);
+        if (rule == null)
+        {
+            throw new ImplementationError("Cannot normalize unknown property");
+        }
+        return rule.normalize(value);
     }
 
     public String getRuleValue(LinStorObject linstorObj, String key)

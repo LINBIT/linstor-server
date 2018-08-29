@@ -44,12 +44,6 @@ public class NumericOrSymbolProperty implements Property
     }
 
     @Override
-    public PropertyType getType()
-    {
-        return PropertyType.NUMERIC_OR_SYMBOL;
-    }
-
-    @Override
     public String getValue()
     {
         return "(" + min + "-" + max + ") or " + regex.pattern();

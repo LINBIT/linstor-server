@@ -57,11 +57,6 @@ public interface Property
     String getKey();
 
     /**
-     * Returns the type the value has to be interpreted
-     */
-    PropertyType getType();
-
-    /**
      * Returns the value the user input has to match later
      */
     String getValue();
@@ -81,6 +76,14 @@ public interface Property
      * Returns true if the value matches the configured property
      */
     boolean isValid(String value);
+
+    /**
+     * Converts the value to its canonical form
+     */
+    default String normalize(String value)
+    {
+        return value;
+    }
 
     /**
      * Describes this property. It should contain information about type, rule_name, and validation

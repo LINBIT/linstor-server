@@ -149,15 +149,15 @@ public class CtrlPropsHelper
             String value = entry.getValue();
             boolean isAuxProp = key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/");
 
-            // boolean isPropAllowed = true;
             boolean isPropAllowed =
                 isAuxProp ||
                     propsWhiteList.isAllowed(linstorObj, key, value, true);
             if (isPropAllowed)
             {
+                String normalized = isAuxProp ? value : propsWhiteList.normalize(linstorObj, key, value);
                 try
                 {
-                    targetProps.setProp(key, value);
+                    targetProps.setProp(key, normalized);
                 }
                 catch (AccessDeniedException exc)
                 {

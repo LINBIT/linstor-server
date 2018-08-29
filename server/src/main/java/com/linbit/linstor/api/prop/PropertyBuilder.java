@@ -40,13 +40,7 @@ public class PropertyBuilder
                 prop = new RegexProperty(name, key, buildValuesEnumRegex(), internal, info);
                 break;
             case BOOLEAN:
-                prop = new RegexProperty(
-                    name,
-                    key,
-                    "(?i)(?:true|false|yes|no)",
-                    internal,
-                    info
-                );
+                prop = new BooleanProperty(name, key, internal, info);
                 break;
             case RANGE:
                 prop = new RangeProperty(name, key, min, max, internal, info);

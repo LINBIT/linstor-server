@@ -28,12 +28,6 @@ public class StringProperty implements Property
     }
 
     @Override
-    public PropertyType getType()
-    {
-        return PropertyType.STRING;
-    }
-
-    @Override
     public String getValue()
     {
         return "--no restrictions--";

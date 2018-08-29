@@ -160,16 +160,17 @@ public class CtrlConfApiCallHandler
             }
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, fullKey, value, false))
             {
+                String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
                 switch (fullKey)
                 {
                     case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                        setTcpPort(key, namespace, value, apiCallRc);
+                        setTcpPort(key, namespace, normalized, apiCallRc);
                         break;
                     case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
-                        setMinorNr(key, namespace, value, apiCallRc);
+                        setMinorNr(key, namespace, normalized, apiCallRc);
                         break;
                     default:
-                        systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, value);
+                        systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, normalized);
                         break;
                 }
                 transMgrProvider.get().commit();
@@ -177,7 +178,7 @@ public class CtrlConfApiCallHandler
                 updateSatelliteConf();
 
                 apiCallRc.addEntry(
-                    "Successfully set property '" + fullKey + "' to value '" + value + "'",
+                    "Successfully set property '" + fullKey + "' to value '" + normalized + "'",
                     ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT | ApiConsts.CREATED
                 );
             }

@@ -44,12 +44,6 @@ public class RegexProperty implements Property
     }
 
     @Override
-    public PropertyType getType()
-    {
-        return PropertyType.REGEX;
-    }
-
-    @Override
     public String getValue()
     {
         return pattern.pattern();
