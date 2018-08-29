@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -20,7 +22,6 @@ import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.SystemContext;
@@ -173,7 +174,8 @@ public final class Satellite
 
     /**
      * Adds /var/lib/drbd.d/ include to drbd.conf and ensures the /var/lib/drbd.d directory exists
-     * and removes any *.res file from it
+     * and removes any *.res file from it excluding .res files matching the regex from the
+     * "--keep-res" command line argument
      */
     private void ensureDrbdConfigSetup()
     {
@@ -181,12 +183,28 @@ public final class Satellite
         {
             Path varDrbdPath = Paths.get(SatelliteCoreModule.CONFIG_PATH);
             Files.createDirectories(varDrbdPath);
-            errorReporter.logInfo("Removing res files from " + varDrbdPath);
+            final Pattern keepResPattern = linStorArguments.getKeepResPattern();
+            Function<Path, Boolean> keepFunc;
+            if (keepResPattern != null)
+            {
+                errorReporter.logInfo("Removing res files from " + varDrbdPath + ", keeping files matching regex: " +
+                    keepResPattern.pattern()
+                );
+                keepFunc = (path) -> keepResPattern.matcher(path.getFileName().toString()).find();
+            }
+            else
+            {
+                errorReporter.logInfo("Removing all res files from " + varDrbdPath);
+                keepFunc = (path) -> false;
+            }
             Files.list(varDrbdPath).filter(p -> p.toString().endsWith(".res")).forEach(p ->
             {
                 try
                 {
-                    Files.delete(p);
+                    if (!keepFunc.apply(p))
+                    {
+                        Files.delete(p);
+                    }
                 }
                 catch (IOException ioExc)
                 {

@@ -1,7 +1,6 @@
 package com.linbit.linstor.core;
 
 import java.io.File;
-
 import picocli.CommandLine;
 
 public class LinStorArgumentParser
@@ -29,6 +28,14 @@ public class LinStorArgumentParser
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
+
+    @CommandLine.Option(
+        names = {"-k", "--keep-res"},
+        description =
+            "if this regex matches a file of a drbd resource file created by linstor, the " +
+            "matched file will NOT be deleted"
+    )
+    private String keepResourceRegex;
 
     static LinStorArguments parseCommandLine(String[] args)
     {
@@ -89,6 +96,10 @@ public class LinStorArgumentParser
 
         cArgs.setPrintStacktraces(linArgParser.printStackTrace);
         cArgs.setStartDebugConsole(linArgParser.debugConsole);
+        if (linArgParser.keepResourceRegex != null)
+        {
+            cArgs.setKeepResRegex(linArgParser.keepResourceRegex);
+        }
 
         return cArgs;
     }

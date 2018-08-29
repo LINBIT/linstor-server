@@ -1,5 +1,7 @@
 package com.linbit.linstor.core;
 
+import java.util.regex.Pattern;
+
 public class LinStorArguments
 {
     private String configurationDirectory;
@@ -11,6 +13,7 @@ public class LinStorArguments
     private String inMemoryDbAddress;
     private boolean printStacktraces;
     private String logDirectory;
+    private Pattern keepResPattern;
 
     public LinStorArguments()
     {
@@ -20,6 +23,7 @@ public class LinStorArguments
         inMemoryDbPort = 0;
         printStacktraces = false;
         logDirectory = "";
+        keepResPattern = null;
     }
 
     public void setConfigurationDirectory(final String workingDirectoryRef)
@@ -90,5 +94,15 @@ public class LinStorArguments
     public void setLogDirectory(String logDirectory)
     {
         this.logDirectory = logDirectory;
+    }
+
+    public Pattern getKeepResPattern()
+    {
+        return keepResPattern;
+    }
+
+    public void setKeepResRegex(String keepResRegex)
+    {
+        keepResPattern = Pattern.compile(keepResRegex, Pattern.DOTALL);
     }
 }
