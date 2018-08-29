@@ -28,6 +28,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -113,43 +114,37 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     @Override
-    public Flux<ApiCallRc> satelliteConnected(Node node)
+    public Flux<ApiCallRc> resourceDefinitionConnected(ResourceDefinition rscDfn)
     {
         List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
 
         try
         {
-            Iterator<Resource> localRscIter = node.iterateResources(apiCtx);
-            while (localRscIter.hasNext())
-            {
-                Resource localRsc = localRscIter.next();
-                ResourceDefinition rscDfn = localRsc.getDefinition();
-                ResourceName rscName = rscDfn.getName();
+            ResourceName rscName = rscDfn.getName();
 
-                Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
-                while (rscIter.hasNext())
+            Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
+            while (rscIter.hasNext())
+            {
+                Resource rsc = rscIter.next();
+                boolean diskAddRequested =
+                    rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+                boolean diskRemoveRequested =
+                    rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_REMOVE_REQUESTED);
+                if (diskAddRequested || diskRemoveRequested)
                 {
-                    Resource rsc = rscIter.next();
-                    boolean diskAddRequested =
-                        rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
-                    boolean diskRemoveRequested =
-                        rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_REMOVE_REQUESTED);
-                    if (diskAddRequested || diskRemoveRequested)
-                    {
-                        NodeName nodeName = rsc.getAssignedNode().getName();
-                        fluxes.add(Flux
-                            .defer(() -> updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested))
-                            .doOnError(exc ->
-                                errorReporter.reportError(
-                                    exc,
-                                    null,
-                                    null,
-                                    "Failed to continue adding disk for " + rsc
-                                )
+                    NodeName nodeName = rsc.getAssignedNode().getName();
+                    fluxes.add(Flux
+                        .defer(() -> updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested))
+                        .doOnError(exc ->
+                            errorReporter.reportError(
+                                exc,
+                                null,
+                                null,
+                                "Failed to continue adding disk for " + rsc
                             )
-                            .onErrorResume(ignored -> Flux.empty())
-                        );
-                    }
+                        )
+                        .onErrorResume(ignored -> Flux.empty())
+                    );
                 }
             }
         }
@@ -318,78 +313,70 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName.displayValue, rscName.displayValue, true);
 
-        // Avoid performing the operation multiple times simultaneously
-        if ((!removeDisk && hasDiskAdding(rsc)) || (removeDisk && hasDiskRemoving(rsc)))
+        ApiCallRcImpl offlineWarnings = new ApiCallRcImpl();
+
+        try
         {
-            responses = Flux.empty();
+            Iterator<Resource> rscIterator = rsc.getDefinition().iterateResource(apiCtx);
+            while (rscIterator.hasNext())
+            {
+                Resource currentRsc = rscIterator.next();
+                Node node = currentRsc.getAssignedNode();
+                if (node.getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                {
+                    offlineWarnings.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
+                }
+            }
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+
+        // Don't start the operation if any of the required nodes are offline
+        if (!offlineWarnings.getEntries().isEmpty())
+        {
+            responses = Flux.just(offlineWarnings);
         }
         else
         {
-            ApiCallRcImpl offlineWarnings = new ApiCallRcImpl();
-
-            try
+            if (removeDisk)
             {
-                Iterator<Resource> rscIterator = rsc.getDefinition().iterateResource(apiCtx);
-                while (rscIterator.hasNext())
-                {
-                    Resource currentRsc = rscIterator.next();
-                    Node node = currentRsc.getAssignedNode();
-                    if (!node.getPeer(apiCtx).isConnected())
-                    {
-                        offlineWarnings.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
-                    }
-                }
-            }
-            catch (AccessDeniedException implError)
-            {
-                throw new ImplementationError(implError);
-            }
-
-            // Don't start the operation if any of the required nodes are offline
-            if (!offlineWarnings.getEntries().isEmpty())
-            {
-                responses = Flux.just(offlineWarnings);
+                markDiskRemoving(rsc);
             }
             else
             {
-                if (removeDisk)
-                {
-                    markDiskRemoving(rsc);
-                }
-                else
-                {
-                    markDiskAdding(rsc);
-                }
-                ctrlTransactionHelper.commit();
-
-                String actionSelf = removeDisk ?
-                    "Removed disk on '%s'" : null;
-                String actionPeer = removeDisk ?
-                    "Notified '%s' that disk is being removed" : "Prepared '%s' to expect disk";
-                Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-                    .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
-                        updateResponses,
-                        nodeName,
-                        actionSelf,
-                        actionPeer + " on '" + nodeName.displayValue + "'"
-                    ));
-
-                responses = satelliteUpdateResponses
-                    // If an update fails (e.g. the connection to a node is lost), attempt to reset back to the
-                    // initial state. The requested flag is not reset, so the operation will be retried when the
-                    // nodes are next all connected.
-                    // There is no point attempting to reset a disk removal because the underlying storage volume
-                    // may have been removed.
-                    .transform(flux -> removeDisk ? flux :
-                        flux
-                            .onErrorResume(error ->
-                                resetDiskAdding(nodeName, rscName)
-                                    .concatWith(Flux.error(error))
-                            )
-                    )
-                    .concatWith(Flux.defer(() -> finishOperation(nodeName, rscName, removeDisk)))
-                    .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                markDiskAdding(rsc);
             }
+            ctrlTransactionHelper.commit();
+
+            String actionSelf = removeDisk ?
+                "Removed disk on '%s'" : null;
+            String actionPeer = removeDisk ?
+                "Notified '%s' that disk is being removed" : "Prepared '%s' to expect disk";
+            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                    updateResponses,
+                    nodeName,
+                    actionSelf,
+                    actionPeer + " on '" + nodeName.displayValue + "'"
+                ));
+
+            responses = satelliteUpdateResponses
+                // If an update fails (e.g. the connection to a node is lost), attempt to reset back to the
+                // initial state. The requested flag is not reset, so the operation will be retried when the
+                // nodes are next all connected.
+                // There is no point attempting to reset a disk removal because the underlying storage volume
+                // may have been removed.
+                .transform(flux -> removeDisk ? flux :
+                    flux
+                        .onErrorResume(error ->
+                            resetDiskAdding(nodeName, rscName)
+                                .concatWith(Flux.error(error))
+                        )
+                )
+                .concatWith(Flux.defer(() -> finishOperation(nodeName, rscName, removeDisk)))
+                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
         return responses;
@@ -629,8 +616,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISKLESS);
-            rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISK_REMOVING);
+            rsc.getStateFlags().enableFlags(
+                apiCtx,
+                Resource.RscFlags.DISKLESS,
+                Resource.RscFlags.DISK_REMOVING
+            );
         }
         catch (AccessDeniedException | SQLException exc)
         {
@@ -654,9 +644,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rscData.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISKLESS);
-            rscData.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISK_ADDING);
-            rscData.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+            rscData.getStateFlags().disableFlags(
+                apiCtx,
+                Resource.RscFlags.DISKLESS,
+                Resource.RscFlags.DISK_ADDING,
+                Resource.RscFlags.DISK_ADD_REQUESTED
+            );
         }
         catch (AccessDeniedException | SQLException exc)
         {
@@ -668,8 +661,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rscData.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISK_REMOVING);
-            rscData.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISK_REMOVE_REQUESTED);
+            rscData.getStateFlags().disableFlags(
+                apiCtx,
+                Resource.RscFlags.DISK_REMOVING,
+                Resource.RscFlags.DISK_REMOVE_REQUESTED
+            );
         }
         catch (AccessDeniedException | SQLException exc)
         {

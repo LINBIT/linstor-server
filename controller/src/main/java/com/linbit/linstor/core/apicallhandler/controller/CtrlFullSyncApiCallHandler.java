@@ -4,6 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
@@ -28,7 +30,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -68,7 +69,7 @@ public class CtrlFullSyncApiCallHandler
 
     public Flux<?> sendFullSync(Peer satellite, long expectedFullSyncId)
     {
-        return scopeRunner.fluxInTransactionalScope(
+        return scopeRunner.fluxInTransactionlessScope(
             LockGuard.createDeferred(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
@@ -79,10 +80,19 @@ public class CtrlFullSyncApiCallHandler
         );
     }
 
+    public Flux<?> fullSyncSuccess(Peer satellite)
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            LockGuard.createDeferred(
+                nodesMapLock.writeLock(),
+                rscDfnMapLock.readLock()
+            ),
+            () -> fullSyncSuccessInScope(satellite)
+        );
+    }
+
     private Flux<?> sendFullSyncInScope(Peer satellite, long expectedFullSyncId)
     {
-        Flux<?> flux;
-
         try
         {
             Node localNode = satellite.getNode();
@@ -122,8 +132,6 @@ public class CtrlFullSyncApiCallHandler
                     .fullSync(nodes, storPools, rscs, snapshots, expectedFullSyncId, -1) // fullSync has -1 as updateId
                     .build()
             );
-
-            flux = notifyConnectionListeners(localNode);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -133,13 +141,55 @@ public class CtrlFullSyncApiCallHandler
                     accDeniedExc
                 )
             );
-            flux = Flux.empty();
         }
 
-        return flux;
+        return Flux.empty();
     }
 
-    private Flux<?> notifyConnectionListeners(Node localNode)
+    private Flux<?> fullSyncSuccessInScope(Peer satellite)
+    {
+        satellite.setConnectionStatus(Peer.ConnectionStatus.ONLINE);
+
+        Node localNode = satellite.getNode();
+
+        List<Flux<?>> fluxes = new ArrayList<>();
+
+        try
+        {
+            Iterator<Resource> localRscIter = localNode.iterateResources(apiCtx);
+            while (localRscIter.hasNext())
+            {
+                Resource localRsc = localRscIter.next();
+                ResourceDefinition rscDfn = localRsc.getDefinition();
+                ResourceName rscName = rscDfn.getName();
+
+                boolean allOnline = true;
+                Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
+                while (rscIter.hasNext())
+                {
+                    Resource rsc = rscIter.next();
+                    if (rsc.getAssignedNode().getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                    {
+                        allOnline = false;
+                        break;
+                    }
+                }
+
+                if (allOnline)
+                {
+                    fluxes.add(notifyResourceDefinitionConnected(localNode, rscDfn));
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return Flux.merge(fluxes);
+    }
+
+    private Flux<?> notifyResourceDefinitionConnected(Node localNode, ResourceDefinition rscDfn)
     {
         List<Flux<ApiCallRc>> connectionListenerResponses = new ArrayList<>();
 
@@ -148,7 +198,7 @@ public class CtrlFullSyncApiCallHandler
             try
             {
                 connectionListenerResponses.add(
-                    connectionListener.satelliteConnected(localNode)
+                    connectionListener.resourceDefinitionConnected(rscDfn)
                 );
             }
             catch (Exception | ImplementationError exc)

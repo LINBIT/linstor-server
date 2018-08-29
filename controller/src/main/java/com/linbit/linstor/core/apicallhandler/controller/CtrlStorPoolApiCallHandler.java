@@ -343,7 +343,7 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
+    public void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
     {
         if (!peer.get().getNode().isDeleted())
         {
