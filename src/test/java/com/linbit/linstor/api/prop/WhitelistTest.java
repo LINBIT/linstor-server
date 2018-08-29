@@ -77,7 +77,7 @@ public class WhitelistTest
     public void booleanTest()
     {
         WhitelistProps whitelistProps = builder
-            .appendBoolean("testBoolean")
+            .appendBooleanTrueFalse("testBoolean")
             .build();
 
         assertValid(whitelistProps, "testBoolean", "true");
@@ -209,6 +209,13 @@ public class WhitelistTest
         public PropBuilder appendBoolean(String optName)
         {
             appendOptionHeader(optName, "boolean");
+            appendOptionFooter();
+            return this;
+        }
+
+        public PropBuilder appendBooleanTrueFalse(String optName)
+        {
+            appendOptionHeader(optName, "boolean_true_false");
             appendOptionFooter();
             return this;
         }

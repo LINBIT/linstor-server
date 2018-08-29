@@ -2,16 +2,16 @@ package com.linbit.linstor.api.prop;
 
 import java.util.regex.Pattern;
 
-public class BooleanProperty implements Property
+public class BooleanTrueFalseProperty implements Property
 {
-    private static final Pattern PATTERN = Pattern.compile("(?i)(?:yes|no)");
+    private static final Pattern PATTERN = Pattern.compile("(?i)(?:true|false|yes|no)");
 
     private final String name;
     private final String key;
     private boolean internal;
     private String info;
 
-    public BooleanProperty(
+    public BooleanTrueFalseProperty(
         String nameRef,
         String keyRef,
         boolean internalRef,
@@ -33,7 +33,10 @@ public class BooleanProperty implements Property
     @Override
     public String normalize(String value)
     {
-        return value.toLowerCase();
+        return Boolean.toString(
+            value.equalsIgnoreCase("true") ||
+                value.equalsIgnoreCase("yes")
+        );
     }
 
     @Override

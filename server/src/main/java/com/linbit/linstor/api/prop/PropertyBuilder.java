@@ -42,6 +42,9 @@ public class PropertyBuilder
             case BOOLEAN:
                 prop = new BooleanProperty(name, key, internal, info);
                 break;
+            case BOOLEAN_TRUE_FALSE:
+                prop = new BooleanTrueFalseProperty(name, key, internal, info);
+                break;
             case RANGE:
                 prop = new RangeProperty(name, key, min, max, internal, info);
                 break;

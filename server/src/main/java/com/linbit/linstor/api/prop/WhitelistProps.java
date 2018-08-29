@@ -121,6 +121,7 @@ public class WhitelistProps
                     switch (propType.toLowerCase())
                     {
                         case "boolean":
+                        case "boolean_true_false":
                         case "string":
                             // nothing to do
                             break;

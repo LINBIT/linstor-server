@@ -9,7 +9,10 @@ public interface Property
     {
         REGEX,
         SYMBOL("handler"),
+        // 'yes' or 'no'
         BOOLEAN,
+        // 'true' or 'false' (also accepts 'yes' or 'no' as input)
+        BOOLEAN_TRUE_FALSE,
         RANGE("numeric"),
         STRING,
         NUMERIC_OR_SYMBOL;
