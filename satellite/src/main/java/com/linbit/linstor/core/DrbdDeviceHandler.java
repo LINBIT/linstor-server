@@ -755,7 +755,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         rscDfn.getName().displayValue);
                     vlmState.setDiskNeedsResize(true);
                 }
-                else if (sizeComparison == StorageDriver.SizeComparison.TOO_LARGE)
+                else if (sizeComparison == StorageDriver.SizeComparison.TOO_LARGE &&
+                    !Boolean.valueOf(vlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_ALLOW_LARGER_VOLUME_SIZE)))
                 {
                     throw new VolumeException(
                         "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
@@ -792,6 +793,10 @@ class DrbdDeviceHandler implements DeviceHandler
                     rscDfn.getName().displayValue + "'",
                 exc
             );
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
