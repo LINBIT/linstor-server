@@ -264,7 +264,7 @@ project(':controller') {
         mainClassName = 'com.linbit.linstor.core.Controller'
         applicationName = "Controller"
         outputDir = new File(project.buildDir, 'controller')
-        classpath = jar.outputs.files + project.configurations.runtime + files('conf')
+        classpath = jar.outputs.files + project.configurations.runtime + files('conf') + files('*')
         doLast {
             delete windowsScript
         }
