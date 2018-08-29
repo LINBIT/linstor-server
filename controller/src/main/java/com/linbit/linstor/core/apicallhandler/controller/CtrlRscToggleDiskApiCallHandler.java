@@ -350,16 +350,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             }
             ctrlTransactionHelper.commit();
 
-            String actionSelf = removeDisk ?
-                "Removed disk on '%s'" : null;
-            String actionPeer = removeDisk ?
-                "Notified '%s' that disk is being removed" : "Prepared '%s' to expect disk";
+            String actionSelf = removeDisk ? "Removed disk on '%s'" : null;
+            String actionPeer = removeDisk ? null : "Prepared '%s' to expect disk";
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
                 .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
                     updateResponses,
                     nodeName,
                     actionSelf,
-                    actionPeer + " on '" + nodeName.displayValue + "'"
+                    actionPeer == null ? null : actionPeer + " on '" + nodeName.displayValue + "'"
                 ));
 
             responses = satelliteUpdateResponses
@@ -453,16 +451,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         ctrlTransactionHelper.commit();
 
-        String actionSelf = removeDisk ?
-            null : "Added disk on '%s'";
-        String actionPeer = removeDisk ?
-            "Notified '%s' that disk has been removed" : "Notified '%s' of addition of new disk";
+        String actionSelf = removeDisk ? null : "Added disk on '%s'";
+        String actionPeer = removeDisk ? "Notified '%s' that disk has been removed" : null;
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
             .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
                 updateResponses,
                 nodeName,
                 actionSelf,
-                actionPeer + " on '" + nodeName.displayValue + "'"
+                actionPeer == null ? null : actionPeer + " on '" + nodeName.displayValue + "'"
             ));
 
         return Flux
