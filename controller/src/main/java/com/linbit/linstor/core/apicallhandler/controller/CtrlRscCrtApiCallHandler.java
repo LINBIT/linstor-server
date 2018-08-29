@@ -154,7 +154,7 @@ public class CtrlRscCrtApiCallHandler
                 updateResponses,
                 nodeName,
                 "Created resource on '%s'",
-                "Added peer on '%s' to resource on '" + nodeName.displayValue + "'"
+                "Added peer '" + nodeName.displayValue + "' to resource on '%s'"
             ));
 
         Mono<ApiCallRc> resourceReadyResponses;
