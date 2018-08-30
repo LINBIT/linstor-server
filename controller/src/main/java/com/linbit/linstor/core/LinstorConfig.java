@@ -1,11 +1,14 @@
 package com.linbit.linstor.core;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -13,6 +16,7 @@ import java.util.concurrent.Callable;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -35,7 +39,8 @@ public class LinstorConfig
     @CommandLine.Command(name = "linstor-config", subcommands = {
         CmdSetPlainPort.class,
         CmdSetPlainListen.class,
-        CmdCreateDbXMLConfig.class
+        CmdCreateDbXMLConfig.class,
+        CmdSqlScript.class
     })
     private static class LinstorConfigCmd implements Callable<Object>
     {
@@ -94,6 +99,7 @@ public class LinstorConfig
                         dbtype,
                         String.join("', '", supportedDbs))
                 );
+                System.exit(1);
             }
             return null;
         }
@@ -125,6 +131,7 @@ public class LinstorConfig
             {
                 System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
                 System.err.println(ioExc.getMessage());
+                System.exit(1);
             }
             return null;
         }
@@ -157,6 +164,49 @@ public class LinstorConfig
             {
                 System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
                 System.err.println(ioExc.getMessage());
+                System.exit(1);
+            }
+
+            return null;
+        }
+    }
+
+    @CommandLine.Command(name = "sql-script", description = "Runs a SQL script against the Linstor DB.")
+    private static class CmdSqlScript implements Callable<Object>
+    {
+        @CommandLine.Parameters(index = "0", description = "Database configuration file.")
+        private File dbCfgFile = new File("./database.cfg");
+
+        @CommandLine.Parameters(index = "1", description = "SQL script.")
+        private File sqlFile;
+
+        @Override
+        public Object call() throws Exception
+        {
+            try (PoolingDataSource<PoolableConnection> dataSource =
+                     initConnectionProviderFromCfg(dbCfgFile);
+                 Connection con = dataSource.getConnection())
+            {
+                try
+                {
+                    GenericDbDriver.runSql(con, new BufferedReader(new FileReader(sqlFile)));
+                }
+                catch (IOException ioExc)
+                {
+                    System.err.println(String.format("Error reading sql script '%s'", sqlFile.toString()));
+                    System.exit(1);
+                }
+                catch (SQLException sqlExc)
+                {
+                    System.err.println(sqlExc.getMessage());
+                    System.exit(1);
+                }
+            }
+            catch (IOException ioExc)
+            {
+                System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
+                System.err.println(ioExc.getMessage());
+                System.exit(1);
             }
 
             return null;
