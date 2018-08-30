@@ -124,6 +124,7 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(vol.getVlmUuid()),
                     vol.getBackingDisk(),
                     vol.getMetaDisk(),
+                    vol.getDevicePath(),
                     vol.getVlmNr(),
                     vol.getVlmMinorNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),

@@ -375,6 +375,21 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
+    public boolean supportsDrbd(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        boolean supportsDrbd = true;
+        for (Volume vlm : volumeMap.values())
+        {
+            if (!vlm.getStorPool(accCtx).getDriverKind().supportsDrbd())
+            {
+                supportsDrbd = false;
+            }
+        }
+        return supportsDrbd;
+    }
+
+    @Override
     public RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {

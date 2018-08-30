@@ -50,11 +50,15 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
+    String getDevicePath(AccessContext accCtx) throws AccessDeniedException;
+
     void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
     void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
+
+    void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     boolean isRealSizeSet(AccessContext accCtx) throws AccessDeniedException;
 
@@ -156,6 +160,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         String getStorDriverSimpleClassName();
         String getBlockDevice();
         String getMetaDisk();
+        String getDevicePath();
         int getVlmNr();
         int getVlmMinorNr();
         long getFlags();

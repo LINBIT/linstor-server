@@ -16,6 +16,7 @@ public class VlmPojo implements Volume.VlmApi
     private final UUID vlmUuid;
     private final String blockDevice;
     private final String metaDisk;
+    private final String devicePath;
     private final int vlmNr;
     private final int vlmMinorNr;
     private final long vlmFlags;
@@ -32,6 +33,7 @@ public class VlmPojo implements Volume.VlmApi
         final UUID vlmUuidRef,
         final String blockDeviceRef,
         final String metaDiskRef,
+        final String devicePathRef,
         final int vlmNrRef,
         final int vlmMinorNrRef,
         final long vlmFlagsRef,
@@ -48,6 +50,7 @@ public class VlmPojo implements Volume.VlmApi
         vlmUuid = vlmUuidRef;
         blockDevice = blockDeviceRef;
         metaDisk = metaDiskRef;
+        devicePath = devicePathRef;
         vlmNr = vlmNrRef;
         vlmMinorNr = vlmMinorNrRef;
         vlmFlags = vlmFlagsRef;
@@ -92,6 +95,12 @@ public class VlmPojo implements Volume.VlmApi
     public String getMetaDisk()
     {
         return metaDisk;
+    }
+
+    @Override
+    public String getDevicePath()
+    {
+        return devicePath;
     }
 
     @Override

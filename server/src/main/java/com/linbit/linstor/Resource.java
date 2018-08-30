@@ -74,6 +74,9 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     boolean isDeleted();
 
+    boolean supportsDrbd(AccessContext accCtx)
+        throws AccessDeniedException;
+
     RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 

@@ -73,6 +73,12 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
+    public String getDevicePath()
+    {
+        return vlm.getDevicePath();
+    }
+
+    @Override
     public int getVlmNr()
     {
         return vlm.getVlmNr();
@@ -162,11 +168,12 @@ public class VlmApiData implements VlmApi
         {
             builder.setMetaDisk(vlmApi.getMetaDisk());
         }
+        if (vlmApi.getDevicePath() != null)
+        {
+            builder.setDevicePath(vlmApi.getDevicePath());
+        }
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
         builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
-
-        // TODO for now this is "hardcoded" until we support non drbd resources/volumes
-        builder.setDevicePath(String.format("/dev/drbd%d", vlmApi.getVlmMinorNr()));
 
         return builder.build();
     }

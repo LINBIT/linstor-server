@@ -168,7 +168,7 @@ public class CtrlRscCrtApiCallHandler
         {
             resourceReadyResponses = Mono.just(makeAllDisklessMessage());
         }
-        else
+        else if (supportsDrbd(rsc))
         {
             resourceReadyResponses = eventWaiter
                 .waitForStream(
@@ -178,6 +178,10 @@ public class CtrlRscCrtApiCallHandler
                 .skipUntil(UsageState::getResourceReady)
                 .next()
                 .thenReturn(makeResourceReadyMessage(context, nodeName, rscName));
+        }
+        else
+        {
+            resourceReadyResponses = Mono.empty();
         }
 
         return Flux
@@ -243,6 +247,24 @@ public class CtrlRscCrtApiCallHandler
             );
         }
         return allDiskless;
+    }
+
+    private boolean supportsDrbd(Resource rsc)
+    {
+        boolean supportsDrbd;
+        try
+        {
+            supportsDrbd = rsc.supportsDrbd(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check DRBD support of " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return supportsDrbd;
     }
 
     private ApiCallRc makeResourceReadyMessage(

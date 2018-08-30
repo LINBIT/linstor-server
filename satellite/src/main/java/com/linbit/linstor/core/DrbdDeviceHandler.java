@@ -1030,23 +1030,26 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         createResourceStorage(rscName, rsc, rscDfn, rscState);
 
-        if (rsc.getVolumeCount() == 0)
+        if (rsc.supportsDrbd(wrkCtx))
         {
-            errLog.logDebug("Skipping DRBD configuration steps for empty resource '" + rscName + "'");
-        }
-        else if (allVolumesMarkedForDelete(rscState))
-        {
-            deleteDrbdResource(rscName);
-        }
-        else
-        {
-            createResourceConfiguration(rscName, rsc, rscDfn);
+            if (rsc.getVolumeCount() == 0)
+            {
+                errLog.logDebug("Skipping DRBD configuration steps for empty resource '" + rscName + "'");
+            }
+            else if (allVolumesMarkedForDelete(rscState))
+            {
+                deleteDrbdResource(rscName);
+            }
+            else
+            {
+                createResourceConfiguration(rscName, rsc, rscDfn);
 
-            createResourceMetaData(rscName, rsc, rscDfn, rscState);
+                createResourceMetaData(rscName, rsc, rscDfn, rscState);
 
-            adjustResource(rsc, rscState);
+                adjustResource(rsc, rscState);
 
-            condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
+                condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
+            }
         }
 
         deleteResourceVolumes(rscName, rsc, rscDfn, rscState);
@@ -1181,6 +1184,12 @@ class DrbdDeviceHandler implements DeviceHandler
                                 " block device = %s, meta disk = %s",
                             vlm.getBackingDiskPath(wrkCtx),
                             vlm.getMetaDiskPath(wrkCtx)
+                        );
+
+                        vlm.setDevicePath(wrkCtx,
+                            rsc.supportsDrbd(wrkCtx) ?
+                                String.format("/dev/drbd%d", vlmDfn.getMinorNr(wrkCtx).value) :
+                                vlm.getBackingDiskPath(wrkCtx)
                         );
                     }
                     else

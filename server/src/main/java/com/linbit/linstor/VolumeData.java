@@ -61,6 +61,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, String> metaDiskPath;
 
+    private final TransactionSimpleObject<VolumeData, String> devicePath;
+
     private final TransactionSimpleObject<VolumeData, Long> realSize;
 
     private final VolumeDataDatabaseDriver dbDriver;
@@ -92,6 +94,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         volumeDfn = volDfnRef;
         backingDiskPath = transObjFactory.createTransactionSimpleObject(this, backingDiskPathRef, null);
         metaDiskPath = transObjFactory.createTransactionSimpleObject(this, metaDiskPathRef, null);
+        devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         dbDriver = dbDriverRef;
 
         storPool = transObjFactory.createTransactionSimpleObject(
@@ -274,6 +277,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
+    public String getDevicePath(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return devicePath.get();
+    }
+
+    @Override
     public void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException
     {
         checkDeleted();
@@ -296,6 +307,21 @@ public class VolumeData extends BaseTransactionObject implements Volume
         try
         {
             metaDiskPath.set(path);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    @Override
+    public void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        try
+        {
+            devicePath.set(path);
         }
         catch (SQLException exc)
         {
@@ -409,6 +435,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getUuid(),
                 getBackingDiskPath(accCtx),
                 getMetaDiskPath(accCtx),
+                getDevicePath(accCtx),
                 getVolumeDefinition().getVolumeNumber().value,
                 getVolumeDefinition().getMinorNr(accCtx).value,
                 getFlags().getFlagsBits(accCtx),

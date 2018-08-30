@@ -50,6 +50,7 @@ public class NotifyResourceApplied implements ApiCall
                         v.getVlmNr(),
                         v.getBlockDevicePath(),
                         v.getMetaDisk(),
+                        v.getDevicePath(),
                         v.getRealSize(),
                         ProtoMapUtils.asMap(v.getVlmDfnPropsList())
                     )

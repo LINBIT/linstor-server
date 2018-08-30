@@ -81,4 +81,15 @@ public interface StorageDriverKind
      * @return true if and only if this driver has a backing storage.
      */
     boolean hasBackingStorage();
+
+    /**
+     * Returns whether it makes sense to use this volume with DRBD.
+     * E.g. Swordfish volumes are remote, so it does not make much sense to place DRBD resources on them.
+     *
+     * @return true if and only if DRBD should be started on resources containing volumes of this type.
+     */
+    default boolean supportsDrbd()
+    {
+        return true;
+    }
 }

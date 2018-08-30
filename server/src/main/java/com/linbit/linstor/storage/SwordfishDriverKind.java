@@ -75,4 +75,10 @@ public class SwordfishDriverKind implements StorageDriverKind
     {
         return true;
     }
+
+    @Override
+    public boolean supportsDrbd()
+    {
+        return false;
+    }
 }

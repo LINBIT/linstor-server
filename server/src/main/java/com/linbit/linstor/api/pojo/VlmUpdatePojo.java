@@ -7,6 +7,7 @@ public class VlmUpdatePojo
     private final int volumeNumber;
     private final String blockDevicePath;
     private final String metaDiskPath;
+    private final String devicePath;
     private final long realSize;
     private final Map<String, String> vlmDfnPropsMap;
 
@@ -14,6 +15,7 @@ public class VlmUpdatePojo
         int volumeNumberRef,
         String blockDevicePathRef,
         String metaDiskPathRef,
+        String devicePathRef,
         long realSizeRef,
         Map<String, String> vlmDfnPropsMapRef
     )
@@ -21,6 +23,7 @@ public class VlmUpdatePojo
         volumeNumber = volumeNumberRef;
         blockDevicePath = blockDevicePathRef;
         metaDiskPath = metaDiskPathRef;
+        devicePath = devicePathRef;
         realSize = realSizeRef;
         vlmDfnPropsMap = vlmDfnPropsMapRef;
     }
@@ -38,6 +41,11 @@ public class VlmUpdatePojo
     public String getMetaDiskPath()
     {
         return metaDiskPath;
+    }
+
+    public String getDevicePath()
+    {
+        return devicePath;
     }
 
     public long getRealSize()
