@@ -2,6 +2,12 @@ package com.linbit.linstor.storage;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsContainer;
+
 import java.util.Map;
 
 /**
@@ -11,6 +17,8 @@ import java.util.Map;
  */
 public interface StorageDriver
 {
+    String STORAGE_NAMESPACE = InternalApiConsts.NAMESPC_INTERNAL + "/" + ApiConsts.NAMESPC_STORAGE_DRIVER;
+
     /**
      * Get the object representing this type of storage driver.
      *
@@ -24,20 +32,36 @@ public interface StorageDriver
      * @param identifier Unique name of the volume
      * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
      *  be encrypted)
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @throws StorageException If an operation on the storage fails
      */
-    void startVolume(String identifier, String cryptKey) throws StorageException;
+    void startVolume(
+        String identifier,
+        String cryptKey,
+        Props vlmDfnStorageProps
+    )
+        throws StorageException;
 
     /**
      * Shuts down a volume
      *
      * @param identifier Unique name of the volume
      * @param isEncrypted
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @throws StorageException If an operation on the storage fails
      */
-    void stopVolume(String identifier, boolean isEncrypted) throws StorageException;
+    void stopVolume(
+        String identifier,
+        boolean isEncrypted,
+        Props vlmDfnStorageProps
+    )
+        throws StorageException;
 
     /**
      * Creates a new volume
@@ -46,11 +70,19 @@ public interface StorageDriver
      * @param size Size of the volume in KiB
      * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
      *  be encrypted)
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @return Path of the volume's block device file
      * @throws StorageException If an operation on the storage fails
      */
-    String createVolume(String identifier, long size, String cryptKey)
+    String createVolume(
+        String identifier,
+        long size,
+        String cryptKey,
+        Props vlmDfnStorageProps
+    )
         throws StorageException, MaxSizeException, MinSizeException;
 
     /**
@@ -60,10 +92,18 @@ public interface StorageDriver
      * @param size Size of the volume in KiB
      * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
      *  be encrypted)
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @throws StorageException If an operation on the storage fails
      */
-    void resizeVolume(String identifier, long size, String cryptKey)
+    void resizeVolume(
+        String identifier,
+        long size,
+        String cryptKey,
+        Props vlmDfnStorageProps
+    )
         throws StorageException, MaxSizeException, MinSizeException;
 
     /**
@@ -71,49 +111,87 @@ public interface StorageDriver
      *
      * @param identifier Unique name of the volume
      * @param isEncrypted
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @throws StorageException If an operation on the storage fails
      */
-    void deleteVolume(String identifier, boolean isEncrypted) throws StorageException;
+    void deleteVolume(
+        String identifier,
+        boolean isEncrypted,
+        Props vlmDfnStorageProps
+    )
+        throws StorageException;
 
     /**
      * Checks whether a volume exists.
      *
      * @param identifier Unique name of the volume
      * @param isEncrypted
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
+     *
      * @return true if exists, otherwise false
      */
-    boolean volumeExists(String identifier, boolean isEncrypted) throws StorageException;
+    boolean volumeExists(
+        String identifier,
+        boolean isEncrypted,
+        Props vlmDfnStorageProps
+    )
+        throws StorageException;
 
     /**
      * Checks whether a volume exists and has the appropriate size
      *
      * @param identifier Unique name of the volume
      * @param requiredSize Expected size of the volume in kiB
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
+     *
      * @throws StorageException If the check fails
      */
-    SizeComparison compareVolumeSize(String identifier, long requiredSize) throws StorageException;
+    SizeComparison compareVolumeSize(
+        String identifier,
+        long requiredSize,
+        Props vlmDfnStorageProps
+    )
+        throws StorageException;
 
     /**
      * Returns the path of the volume's block device file
      *
      * @param identifier Unique name of the volume
      * @param isEncrypted
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @return Path of the volume's block device file
      * @throws StorageException If determining the path of the volume's
      *     block device files fails
      */
-    String getVolumePath(String identifier, boolean isEncrypted) throws StorageException;
+    String getVolumePath(
+        String identifier,
+        boolean isEncrypted,
+        Props vlmDfnStorageProps
+    )
+        throws StorageException;
 
     /**
      * Returns the size of a volume
      *
      * @param identifier Unique name of the volume
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
+     *
      * @return Size of the volume.
      * @throws StorageException If determining the size of the volume fails
      */
-    long getSize(String identifier) throws StorageException;
+    long getSize(String identifier, Props vlmDfnStorageProps) throws StorageException;
 
     /**
      * Returns the total space of the pool.
@@ -181,6 +259,9 @@ public interface StorageDriver
      * @param targetIdentifier
      * @param cryptKey the crypt key for the encrypted device (can be null if the device is / should not
      *  be encrypted)
+     * @param vlmDfnStorageProps a namespace in the {@link Volume}'s {@link PropsContainer} reserved for
+     *  storage configuration. The {@link StorageDriver} is allowed to write to this namespace, and
+     *  the entries of this namespace will be send back to the controller and persisted.
      *
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
@@ -189,7 +270,8 @@ public interface StorageDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        String cryptKey
+        String cryptKey,
+        Props vlmDfnStorageProps
     )
         throws StorageException;
 

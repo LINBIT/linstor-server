@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.controller;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
@@ -49,7 +50,8 @@ public class NotifyResourceApplied implements ApiCall
                         v.getVlmNr(),
                         v.getBlockDevicePath(),
                         v.getMetaDisk(),
-                        v.getRealSize()
+                        v.getRealSize(),
+                        ProtoMapUtils.asMap(v.getVlmDfnPropsList())
                     )
                 )
                 .collect(Collectors.toList()),

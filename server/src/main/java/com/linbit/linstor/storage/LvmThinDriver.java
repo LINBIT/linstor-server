@@ -18,6 +18,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -52,7 +53,7 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public void startVolume(final String identifier, String cryptKey) throws StorageException
+    public void startVolume(final String identifier, String cryptKey, Props vlmDfnProps) throws StorageException
     {
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]
@@ -82,13 +83,13 @@ public class LvmThinDriver extends LvmDriver
                 exc
             );
         }
-        super.startVolume(identifier, cryptKey); // call to possibly open dm-crypt
+        super.startVolume(identifier, cryptKey, vlmDfnProps); // call to possibly open dm-crypt
     }
 
     @Override
-    public void stopVolume(final String identifier, boolean isEncrypted) throws StorageException
+    public void stopVolume(final String identifier, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
-        super.stopVolume(identifier, isEncrypted); // call to possibly close dm-crypt
+        super.stopVolume(identifier, isEncrypted, vlmDfnProps); // call to possibly close dm-crypt
 
         final String qualifiedIdentifier = volumeGroup + File.separator + identifier;
         final String[] command = new String[]

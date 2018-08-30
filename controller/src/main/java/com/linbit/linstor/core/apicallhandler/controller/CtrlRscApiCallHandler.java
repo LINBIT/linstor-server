@@ -844,6 +844,10 @@ public class CtrlRscApiCallHandler
                         vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
                         vlm.setRealSize(apiCtx, vlmUpd.getRealSize());
 
+                        Map<String, String> propsMap = vlm.getVolumeDefinition().getProps(apiCtx).map();
+                        propsMap.clear();
+                        propsMap.putAll(vlmUpd.getVlmDfnPropsMap());
+
                         long freeSpace = storPoolToFreeSpaceMap.get(vlm.getStorPool(apiCtx).getName().value);
                         vlm.getStorPool(apiCtx).getFreeSpaceTracker().volumeAdded(apiCtx, vlm, freeSpace);
 

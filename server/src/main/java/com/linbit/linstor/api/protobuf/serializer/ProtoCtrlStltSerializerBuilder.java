@@ -513,6 +513,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setBlockDevicePath(vlm.getBackingDiskPath(serializerCtx))
                         .setMetaDisk(vlm.getMetaDiskPath(serializerCtx))
                         .setRealSize(vlm.getRealSize(serializerCtx))
+                        .addAllVlmDfnProps(asLinStorList(vlm.getVolumeDefinition().getProps(serializerCtx)))
                         .build()
                 );
             }

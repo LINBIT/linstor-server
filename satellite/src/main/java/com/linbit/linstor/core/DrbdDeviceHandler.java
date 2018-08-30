@@ -2,7 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.TimeoutException;
 import com.linbit.drbd.DrbdAdm;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
@@ -719,20 +718,23 @@ class DrbdDeviceHandler implements DeviceHandler
 
         StorageDriver storDrv = vlmState.getDriver();
 
+        // TODO: change to createNamespace as soon as it is implemented
+        Props vlmDfnProps = vlm.getVolumeDefinition().getProps(wrkCtx);
+
         try
         {
             if (!vlmState.hasDisk())
             {
                 boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
                 vlmState.setHasDisk(storDrv.volumeExists(
-                    vlmState.getStorVlmName(), isEncrypted));
+                    vlmState.getStorVlmName(), isEncrypted, vlmDfnProps));
 
                 if (!vlmState.hasDisk())
                 {
                     attemptVolumeStart(vlmDfn, vlmState, storDrv);
 
                     vlmState.setHasDisk(storDrv.volumeExists(
-                        vlmState.getStorVlmName(), isEncrypted));
+                        vlmState.getStorVlmName(), isEncrypted, vlmDfnProps));
                 }
             }
 
@@ -747,7 +749,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 // Check the size of the backend storage
                 StorageDriver.SizeComparison sizeComparison =
-                    storDrv.compareVolumeSize(vlmState.getStorVlmName(), requiredSize);
+                    storDrv.compareVolumeSize(vlmState.getStorVlmName(), requiredSize, vlmDfnProps);
 
                 if (sizeComparison == StorageDriver.SizeComparison.TOO_SMALL)
                 {
@@ -761,7 +763,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     throw new VolumeException(
                         "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
                             rscDfn.getName().displayValue + "' too large. Expected " + requiredSize +
-                            "KiB, but was : " + storDrv.getSize(vlmState.getStorVlmName()) + "KiB."
+                            "KiB, but was : " + storDrv.getSize(vlmState.getStorVlmName(), vlmDfnProps) + "KiB."
                     );
                 }
 
@@ -770,21 +772,6 @@ class DrbdDeviceHandler implements DeviceHandler
                         rscDfn.getName().displayValue + "' " + "volume " + vlmState.getVlmNr().toString()
                 );
             }
-        }
-        catch (TimeoutException timeoutExc)
-        {
-            throw new VolumeException(
-                "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                rscDfn.getName().displayValue + "' aborted due to an I/O timeout",
-                "Operations on volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
-                rscDfn.getName().displayValue + " aborted",
-                "The check for existance of the volume's backend storage timed out",
-                "- Check whether the system's performance is within acceptable limits\n" +
-                "- Check whether the operating system's I/O subsystems work flawlessly\n",
-                "The filesystem path used by the check that timed out was: " +
-                vlmState.getStorVlmName(),
-                timeoutExc
-            );
         }
         catch (StorageException exc)
         {
@@ -801,11 +788,11 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void attemptVolumeStart(VolumeDefinition vlmDfn, VolumeStateDevManager vlmState, StorageDriver storDrv)
-        throws AccessDeniedException, TimeoutException
+        throws AccessDeniedException
     {
         try
         {
-            storDrv.startVolume(vlmState.getStorVlmName(), vlmDfn.getKey(wrkCtx));
+            storDrv.startVolume(vlmState.getStorVlmName(), vlmDfn.getKey(wrkCtx), vlmDfn.getProps(wrkCtx));
         }
         catch (StorageException exc)
         {
@@ -822,11 +809,13 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         try
         {
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().restoreSnapshot(
                 vlmState.getRestoreVlmName(),
                 vlmState.getRestoreSnapshotName(),
                 vlmState.getStorVlmName(),
-                rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getProps(wrkCtx)
             );
         }
         catch (StorageException storExc)
@@ -858,10 +847,12 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.setGrossSize(drbdMd.getGrossSize(
                 vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
             ));
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().createVolume(
                 vlmState.getStorVlmName(),
                 vlmState.getGrossSize(),
-                rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getProps(wrkCtx)
             );
         }
         catch (StorageException storExc)
@@ -894,10 +885,12 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.setGrossSize(drbdMd.getGrossSize(
                 vlmState.getNetSize(), vlmState.getPeerSlots(), FIXME_STRIPES, FIXME_STRIPE_SIZE
             ));
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().resizeVolume(
                 vlmState.getStorVlmName(),
                 vlmState.getGrossSize(),
-                rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getKey(wrkCtx)
+                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getProps(wrkCtx)
             );
         }
         catch (StorageException storExc)
@@ -930,14 +923,20 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
                 .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
-            vlmState.getDriver().deleteVolume(vlmState.getStorVlmName(), isEncrypted);
+            Volume vlm = rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
+                .getVolume(vlmState.getVlmNr());
+
+            vlmState.getDriver().deleteVolume(
+                vlmState.getStorVlmName(),
+                isEncrypted,
+                vlm.getVolumeDefinition().getProps(wrkCtx)
+            );
 
             if (!onlyDeleteDisk)
             {
                 // Notify the controller of successful deletion of the resource
                 deviceManagerProvider.get().notifyVolumeDeleted(
-                    rscDfn.getResource(wrkCtx, controllerPeerConnector.getLocalNode().getName())
-                        .getVolume(vlmState.getVlmNr()),
+                    vlm,
                     vlmState.getDriver().getFreeSpace()
                 );
             }
@@ -977,6 +976,9 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
+            VolumeNumber vlmNr = vlmState.getVlmNr();
+
+            Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
 
             String currentGi = null;
             try
@@ -992,7 +994,6 @@ class DrbdDeviceHandler implements DeviceHandler
             }
             if (currentGi == null)
             {
-                VolumeNumber vlmNr = vlmState.getVlmNr();
                 throw new VolumeException(
                     "Meta data creation for resource '" + rscDfn.getName().displayValue + "' volume " +
                     vlmNr.value + " failed",
@@ -1010,7 +1011,7 @@ class DrbdDeviceHandler implements DeviceHandler
             drbdUtils.setGi(
                 rsc.getNodeId(),
                 vlmState.getMinorNr(),
-                vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted),
+                vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted, vlmDfnProps),
                 currentGi,
                 null,
                 false
@@ -1078,6 +1079,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     if (vlm != null)
                     {
                         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                        Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
 
                         ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
 
@@ -1102,7 +1104,9 @@ class DrbdDeviceHandler implements DeviceHandler
                                     .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
 
                                 vlmState.setHasMetaData(drbdUtils.hasMetaData(
-                                    vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted),
+                                    vlmState.getDriver().getVolumePath(
+                                        vlmState.getStorVlmName(), isEncrypted, vlmDfnProps
+                                    ),
                                     vlmState.getMinorNr().value, "internal"
                                 ));
                                 errLog.logTrace(
@@ -1156,13 +1160,14 @@ class DrbdDeviceHandler implements DeviceHandler
                             // store the real size of the volume (after applied extent size, etc)
                             vlm.setRealSize(
                                 wrkCtx,
-                                vlmState.getDriver().getSize(vlmState.getStorVlmName())
+                                vlmState.getDriver().getSize(vlmState.getStorVlmName(), vlmDfnProps)
                             );
 
                             boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
                                 .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
 
-                            String bdPath = vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted);
+                            String bdPath = vlmState.getDriver().getVolumePath(
+                                vlmState.getStorVlmName(), isEncrypted, vlmDfnProps);
                             vlm.setBackingDiskPath(wrkCtx, bdPath);
                             vlm.setMetaDiskPath(wrkCtx, "internal");
                         }

@@ -816,12 +816,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                 // Cleanup deleted objects
                 deletedObjectsCleanup();
-
-                transMgr.commit();
             }
             finally
             {
-                transMgr.rollback();
+                // always commit transaction as we most likely changed our environment which we cannot
+                // rollback
+                transMgr.commit();
                 deviceMgrScope.exit();
                 reconfigurationLock.readLock().unlock();
             }

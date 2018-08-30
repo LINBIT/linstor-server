@@ -1,5 +1,7 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.linstor.propscon.Props;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -19,56 +21,56 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier, String cryptKey)
+    public void startVolume(String identifier, String cryptKey, Props vlmStorageProps)
     {
         // no-op
     }
 
     @Override
-    public void stopVolume(String identifier, boolean isEncrypted)
+    public void stopVolume(String identifier, boolean isEncrypted, Props vlmStorageProps)
     {
         // no-op
     }
 
     @Override
-    public String createVolume(String identifier, long size, String cryptKey)
+    public String createVolume(String identifier, long size, String cryptKey, Props vlmStorageProps)
     {
         return "none";
     }
 
     @Override
-    public void resizeVolume(String identifier, long size, String cryptKey)
+    public void resizeVolume(String identifier, long size, String cryptKey, Props vlmStorageProps)
         throws StorageException
     {
         // no-op
     }
 
     @Override
-    public boolean volumeExists(String identifier, boolean isEncrypted)
+    public boolean volumeExists(String identifier, boolean isEncrypted, Props vlmStorageProps)
     {
         return true;
     }
 
     @Override
-    public void deleteVolume(String identifier, boolean isEncrypted)
+    public void deleteVolume(String identifier, boolean isEncrypted, Props vlmStorageProps)
     {
         // no-op
     }
 
     @Override
-    public SizeComparison compareVolumeSize(String identifier, long requiredSize)
+    public SizeComparison compareVolumeSize(String identifier, long requiredSize, Props vlmStorageProps)
     {
         return SizeComparison.WITHIN_TOLERANCE;
     }
 
     @Override
-    public String getVolumePath(String identifier, boolean isEncrypted)
+    public String getVolumePath(String identifier, boolean isEncrypted, Props vlmStorageProps)
     {
         return "none";
     }
 
     @Override
-    public long getSize(String identifier)
+    public long getSize(String identifier, Props vlmStorageProps)
     {
         return Long.MAX_VALUE;
     }
@@ -102,7 +104,8 @@ public class DisklessDriver implements StorageDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        String cryptKey
+        String cryptKey,
+        Props vlmStorageProps
     )
     {
         // no-op

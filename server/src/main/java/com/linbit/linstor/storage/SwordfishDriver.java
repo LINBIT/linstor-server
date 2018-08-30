@@ -9,6 +9,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.linstor.storage.utils.HttpHeader;
 import com.linbit.linstor.storage.utils.RestClient;
@@ -169,12 +170,12 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier, String cryptKey) throws StorageException
+    public void startVolume(String identifier, String cryptKey, Props vlmDfnProps) throws StorageException
     {
         if (cryptKey != null)
         {
             crypt.openCryptDevice(
-                getVolumePath(identifier, false),
+                getVolumePath(identifier, false, vlmDfnProps),
                 identifier,
                 cryptKey.getBytes()
             );
@@ -182,7 +183,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void stopVolume(String identifier, boolean isEncrypted) throws StorageException
+    public void stopVolume(String identifier, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         if (isEncrypted)
         {
@@ -191,7 +192,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public String createVolume(String linstorVlmId, long size, String cryptKey)
+    public String createVolume(String linstorVlmId, long size, String cryptKey, Props vlmDfnProps)
         throws StorageException, MaxSizeException, MinSizeException
     {
         String volumePath;
@@ -226,7 +227,7 @@ public class SwordfishDriver implements StorageDriver
 
             // TODO implement health check on composed node
 
-            volumePath = getVolumePath(linstorVlmId, cryptKey != null);
+            volumePath = getVolumePath(linstorVlmId, cryptKey != null, vlmDfnProps);
         }
         catch (InterruptedException interruptedExc)
         {
@@ -446,7 +447,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void deleteVolume(String linstorVlmId, boolean isEncrypted) throws StorageException
+    public void deleteVolume(String linstorVlmId, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         try
         {
@@ -508,7 +509,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public boolean volumeExists(String linstorVlmId, boolean isEncrypted) throws StorageException
+    public boolean volumeExists(String linstorVlmId, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         boolean exists = false;
 
@@ -522,7 +523,12 @@ public class SwordfishDriver implements StorageDriver
 
     private boolean sfVolumeExists(String linstorVlmId) throws StorageException
     {
-        return getSwordfishVolumeByLinstorId(linstorVlmId).getStatusCode() == HttpHeader.HTTP_OK;
+        boolean exists = false;
+        if (getSwordfishVolumeIdByLinstorId(linstorVlmId) != null)
+        {
+            exists = getSwordfishVolumeByLinstorId(linstorVlmId).getStatusCode() == HttpHeader.HTTP_OK;
+        }
+        return exists;
     }
 
     @SuppressWarnings("unchecked")
@@ -571,7 +577,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public SizeComparison compareVolumeSize(String identifier, long requiredSize) throws StorageException
+    public SizeComparison compareVolumeSize(String identifier, long requiredSize, Props vlmDfnProps) throws StorageException
     {
         SizeComparison ret;
 
@@ -601,7 +607,7 @@ public class SwordfishDriver implements StorageDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public String getVolumePath(String linstorVlmId, boolean isEncrypted) throws StorageException
+    public String getVolumePath(String linstorVlmId, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         String path = null;
         if (isEncrypted)
@@ -710,7 +716,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public long getSize(String linstorVlmId) throws StorageException
+    public long getSize(String linstorVlmId, Props vlmDfnProps) throws StorageException
     {
         return getSpace(
             getSwordfishVolumeByLinstorId(linstorVlmId),
@@ -961,7 +967,7 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void resizeVolume(String linstorVlmId, long size, String cryptKey)
+    public void resizeVolume(String linstorVlmId, long size, String cryptKey, Props vlmDfnProps)
         throws StorageException, MaxSizeException, MinSizeException
     {
         throw new ImplementationError("Resizing swordfish volumes is not supported");
@@ -974,7 +980,13 @@ public class SwordfishDriver implements StorageDriver
     }
 
     @Override
-    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier, String cryptKey)
+    public void restoreSnapshot(
+        String sourceIdentifier,
+        String snapshotName,
+        String targetIdentifier,
+        String cryptKey,
+        Props vlmDfnProps
+    )
         throws StorageException
     {
         throw new StorageException("Swordfish driver cannot create or restore snapshots");

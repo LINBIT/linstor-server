@@ -70,6 +70,8 @@ public class InternalApiConsts
 
     public static final String RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME = "AutoSelectedStorPoolName";
 
+    public static final String NAMESPC_INTERNAL = "Internal";
+
     private InternalApiConsts()
     {
     }

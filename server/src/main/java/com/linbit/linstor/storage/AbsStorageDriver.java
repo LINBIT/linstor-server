@@ -26,6 +26,7 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.linstor.timer.CoreTimer;
@@ -74,7 +75,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void startVolume(String identifier, String cryptKey) throws StorageException
+    public void startVolume(String identifier, String cryptKey, Props vlmDfnProps) throws StorageException
     {
         if (cryptKey != null)
         {
@@ -87,7 +88,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void stopVolume(String identifier, boolean isEncrypted) throws StorageException
+    public void stopVolume(String identifier, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         if (isEncrypted)
         {
@@ -96,7 +97,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public String createVolume(final String identifier, long size, String cryptKey)
+    public String createVolume(final String identifier, long size, String cryptKey, Props vlmDfnProps)
         throws StorageException, MaxSizeException, MinSizeException
     {
         long effSize = calculateEffectiveSize(identifier, size);
@@ -142,7 +143,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                     identifier
                 );
             }
-            startVolume(identifier, cryptKey);
+            startVolume(identifier, cryptKey, vlmDfnProps);
         }
         catch (NegativeTimeException negTimeExc)
         {
@@ -206,7 +207,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void resizeVolume(String identifier, long size, String cryptKey)
+    public void resizeVolume(String identifier, long size, String cryptKey, Props vlmDfnProps)
         throws StorageException, MaxSizeException, MinSizeException
     {
         long effSize = calculateEffectiveSize(identifier, size);
@@ -294,11 +295,12 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void deleteVolume(final String identifier, boolean isEncrypted) throws StorageException
+    public void deleteVolume(final String identifier, boolean isEncrypted, Props vlmDfnProps)
+        throws StorageException
     {
         try
         {
-            stopVolume(identifier, isEncrypted);
+            stopVolume(identifier, isEncrypted, vlmDfnProps);
         }
         catch (StorageException ignored)
         {
@@ -431,7 +433,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public boolean volumeExists(String identifier, boolean isEncrypted) throws StorageException
+    public boolean volumeExists(String identifier, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         boolean exists;
         if (isEncrypted)
@@ -465,7 +467,8 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public SizeComparison compareVolumeSize(String identifier, long requiredSize) throws StorageException
+    public SizeComparison compareVolumeSize(String identifier, long requiredSize, Props vlmDfnProps)
+        throws StorageException
     {
         try
         {
@@ -500,7 +503,8 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public String getVolumePath(String identifier, boolean isEncrypted) throws StorageException
+    public String getVolumePath(String identifier, boolean isEncrypted, Props vlmDfnProps)
+        throws StorageException
     {
         String volumePath;
         if (isEncrypted)
@@ -516,7 +520,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public long getSize(String identifier) throws StorageException
+    public long getSize(String identifier, Props vlmDfnProps) throws StorageException
     {
         VolumeInfo info = getVolumeInfo(identifier);
         return info.getSize();
@@ -579,7 +583,8 @@ public abstract class AbsStorageDriver implements StorageDriver
         String sourceIdentifier,
         String snapshotName,
         String targetIdentifier,
-        String cryptKey
+        String cryptKey,
+        Props vlmDfnProps
     )
         throws StorageException
     {
@@ -607,7 +612,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                 targetIdentifier
             );
 
-            startVolume(targetIdentifier, cryptKey);
+            startVolume(targetIdentifier, cryptKey, vlmDfnProps);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {

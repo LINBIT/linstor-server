@@ -11,6 +11,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.utils.Crypt;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -89,10 +90,10 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public String createVolume(String identifier, long size, String cryptKey)
+    public String createVolume(String identifier, long size, String cryptKey, Props vlmDfnProps)
         throws StorageException, MaxSizeException, MinSizeException
     {
-        String devPath = super.createVolume(identifier, size, cryptKey);
+        String devPath = super.createVolume(identifier, size, cryptKey, vlmDfnProps);
         callDmStat("dmstats", "create", devPath);
         return devPath;
     }
@@ -109,13 +110,14 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public void deleteVolume(String identifier, boolean isEncrypted) throws StorageException
+    public void deleteVolume(String identifier, boolean isEncrypted, Props vlmDfnProps)
+        throws StorageException
     {
         final VolumeInfo info = getVolumeInfo(identifier, false);
         if (info != null)
         {
             callDmStat("dmstats", "delete", info.getPath(), "--allregions");
-            super.deleteVolume(identifier, isEncrypted);
+            super.deleteVolume(identifier, isEncrypted, vlmDfnProps);
         }
     }
 
@@ -469,7 +471,8 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public String getVolumePath(String identifier, boolean isEncrypted) throws StorageException
+    public String getVolumePath(String identifier, boolean isEncrypted, Props vlmDfnProps)
+        throws StorageException
     {
         String volumePath;
         if (isEncrypted)
