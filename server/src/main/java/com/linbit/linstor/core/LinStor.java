@@ -31,6 +31,8 @@ public abstract class LinStor
 
     public static final String DISKLESS_STOR_POOL_NAME = "DfltDisklessStorPool";
 
+    public static final String SKIP_HOSTNAME_CHECK_KEY = "SkipHostnameCheck";
+
     public static void printRunTimeInfo(PrintStream out)
     {
         Properties sysProps = System.getProperties();

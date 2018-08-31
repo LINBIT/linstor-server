@@ -95,6 +95,8 @@ public final class Satellite
 
     private final LinStorArguments linStorArguments;
 
+    private static boolean skipHostnameCheck;
+
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
@@ -135,6 +137,8 @@ public final class Satellite
 
         try
         {
+            skipHostnameCheck = linStorArguments.isSkipHostnameCheck();
+
             ensureDrbdConfigSetup();
 
             AccessContext initCtx = sysCtx.clone();
@@ -151,7 +155,8 @@ public final class Satellite
             errorReporter.logInfo("Initializing main network communications service");
             if (!satelliteNetComInitializer.initMainNetComService(
                 initCtx,
-                Paths.get(linStorArguments.getConfigurationDirectory()))
+                Paths.get(linStorArguments.getConfigurationDirectory()),
+                linStorArguments.getPlainPortOverride())
             )
             {
                 reconfigurationLock.writeLock().unlock();
@@ -281,6 +286,11 @@ public final class Satellite
                 accExc
             );
         }
+    }
+
+    public static boolean checkHostname()
+    {
+        return !skipHostnameCheck;
     }
 
     public static void main(String[] args)

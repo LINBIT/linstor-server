@@ -44,6 +44,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
@@ -192,7 +193,7 @@ public class StltApiCallHandler
         final String hostName = getHostname();
 
         // Check if satellite hostname is equal to the given nodename
-        if (!hostName.toLowerCase().equals(nodeName))
+        if (Satellite.checkHostname() && !hostName.toLowerCase().equals(nodeName))
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);

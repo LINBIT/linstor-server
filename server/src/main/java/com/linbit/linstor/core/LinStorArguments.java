@@ -14,6 +14,8 @@ public class LinStorArguments
     private boolean printStacktraces;
     private String logDirectory;
     private Pattern keepResPattern;
+    private Integer plainPortOverride;
+    private boolean skipHostnameCheck;
 
     public LinStorArguments()
     {
@@ -24,6 +26,8 @@ public class LinStorArguments
         printStacktraces = false;
         logDirectory = "";
         keepResPattern = null;
+        plainPortOverride = null;
+        skipHostnameCheck = false;
     }
 
     public void setConfigurationDirectory(final String workingDirectoryRef)
@@ -104,5 +108,25 @@ public class LinStorArguments
     public void setKeepResRegex(String keepResRegex)
     {
         keepResPattern = Pattern.compile(keepResRegex, Pattern.DOTALL);
+    }
+
+    public void setOverridePlainPort(Integer plainPortRef)
+    {
+        plainPortOverride = plainPortRef;
+    }
+
+    public Integer getPlainPortOverride()
+    {
+        return plainPortOverride;
+    }
+
+    public void setSkipHostnameCheck(boolean skipHostnameCheckRef)
+    {
+        skipHostnameCheck = skipHostnameCheckRef;
+    }
+
+    public boolean isSkipHostnameCheck()
+    {
+        return skipHostnameCheck;
     }
 }

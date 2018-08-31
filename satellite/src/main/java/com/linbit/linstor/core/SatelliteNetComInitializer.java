@@ -80,7 +80,11 @@ public final class SatelliteNetComInitializer
         systemServicesMap = systemServicesMapRef;
     }
 
-    public boolean initMainNetComService(AccessContext initCtx, Path configurationDirectory)
+    public boolean initMainNetComService(
+        AccessContext initCtx,
+        Path configurationDirectory,
+        Integer plainPort
+    )
     {
         boolean success = false;
         try
@@ -117,6 +121,11 @@ public final class SatelliteNetComInitializer
             String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, NET_COM_DEFAULT_TYPE);
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {
+                if (plainPort != null)
+                {
+                    bindAddress = new InetSocketAddress(addr, plainPort);
+                    port = plainPort;
+                }
                 netComSvc = new TcpConnectorService(
                     errorReporter,
                     commonSerializer,

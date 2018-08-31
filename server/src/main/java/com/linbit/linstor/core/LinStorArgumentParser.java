@@ -37,6 +37,13 @@ public class LinStorArgumentParser
     )
     private String keepResourceRegex;
 
+    @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
+    private Integer plainPort = null;
+
+    @CommandLine.Option(names = {"-s", "--skip-hostname-check"}, description = "skips the hostname check on the " +
+        "satellite when a controller assigns the nodename")
+    private boolean skipHostNameCheck = false;
+
     static LinStorArguments parseCommandLine(String[] args)
     {
         LinStorArgumentParser linArgParser = new LinStorArgumentParser();
@@ -100,6 +107,8 @@ public class LinStorArgumentParser
         {
             cArgs.setKeepResRegex(linArgParser.keepResourceRegex);
         }
+        cArgs.setOverridePlainPort(linArgParser.plainPort);
+        cArgs.setSkipHostnameCheck(linArgParser.skipHostNameCheck);
 
         return cArgs;
     }
