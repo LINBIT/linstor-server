@@ -10,7 +10,8 @@ public class StorageDriverLoader
         new LvmDriverKind(),
         new LvmThinDriverKind(),
         new ZfsDriverKind(),
-        new SwordfishDriverKind()
+        new SwordfishTargetDriverKind(),
+        new SwordfishInitiatorDriverKind()
     );
 
     public static StorageDriverKind getKind(String simpleName)

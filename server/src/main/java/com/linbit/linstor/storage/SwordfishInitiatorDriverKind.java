@@ -12,12 +12,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class SwordfishDriverKind implements StorageDriverKind
+public class SwordfishInitiatorDriverKind implements StorageDriverKind
 {
     @Override
     public String getDriverName()
     {
-        return "SwordfishDriver";
+        return SwordfishInitiatorDriver.class.getSimpleName();
     }
 
     @Override
@@ -28,7 +28,7 @@ public class SwordfishDriverKind implements StorageDriverKind
         StltConfigAccessor stltCfgAccessor
     )
     {
-        return new SwordfishDriver(
+        return new SwordfishInitiatorDriver(
             errorReporter,
             this,
             new RestHttpClient(),
