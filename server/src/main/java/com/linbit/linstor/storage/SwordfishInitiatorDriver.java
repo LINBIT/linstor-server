@@ -125,13 +125,11 @@ public class SwordfishInitiatorDriver implements StorageDriver
             String sfVlmId = getSfVlmId(vlmDfnProps);
             String vlmOdataId = buildVlmOdataId(sfStorSvcId, sfVlmId);
 
-            // volume might not be attachable yet
-            waitUntilSfVlmIsAttachable(vlmOdataId);
-
-            // attach the volume to the composed node
-            attachSfVolume(vlmOdataId);
-
-            // volume should be attached.
+            if (!isSfVolumeAttached(sfStorSvcId, sfVlmId))
+            {
+                waitUntilSfVlmIsAttachable(vlmOdataId);
+                attachSfVolume(vlmOdataId);
+            }
 
             // TODO implement health check on composed node
 
