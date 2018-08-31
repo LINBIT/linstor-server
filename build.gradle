@@ -270,10 +270,23 @@ project(':controller') {
         }
     }
 
+    task LinstorConfigStartup(type: CreateStartScripts) {
+        mainClassName = 'com.linbit.linstor.core.LinstorConfig'
+        applicationName = "linstor-config"
+        outputDir = new File(project.buildDir, 'linstorconfig')
+        classpath = jar.outputs.files + project.configurations.runtime
+        doLast {
+            delete windowsScript
+        }
+    }
+
     distributions {
         main {
             contents {
                 from(ControllerStartup) {
+                    into("bin")
+                }
+                from(LinstorConfigStartup) {
                     into("bin")
                 }
             }
@@ -315,47 +328,16 @@ dependencies {
 /////////////////////////// Start scripts ///////////////////////////
 startScripts.enabled = false
 
-task ControllerStartup(type: CreateStartScripts) {
-    mainClassName = 'com.linbit.linstor.core.Controller'
-    applicationName = "Controller"
-    outputDir = new File(project.buildDir, 'controller')
-    classpath = jar.outputs.files + project.configurations.runtime + files('conf')
-    doLast {
-        delete windowsScript
-    }
-}
-
-
-task SatelliteStartup(type: CreateStartScripts) {
-    mainClassName = 'com.linbit.linstor.core.Satellite'
-    applicationName = "Satellite"
-    outputDir = new File(project.buildDir, 'satellite')
-    classpath = jar.outputs.files + project.configurations.runtime + files('conf')
-    doLast {
-        delete windowsScript
-    }
-}
-
-task LinstorConfigStartup(type: CreateStartScripts) {
-    mainClassName = 'com.linbit.linstor.core.LinstorConfig'
-    applicationName = "linstor-config"
-    outputDir = new File(project.buildDir, 'linstorconfig')
-    classpath = jar.outputs.files + project.configurations.runtime
-    doLast {
-        delete windowsScript
-    }
-}
-
 distributions {
     main {
         contents {
-            from(ControllerStartup) {
+            from(project(":controller").ControllerStartup) {
                 into("bin")
             }
-            from(SatelliteStartup) {
+            from(project(":satellite").SatelliteStartup) {
                 into("bin")
             }
-            from(LinstorConfigStartup) {
+            from(project(":controller").LinstorConfigStartup) {
                 into("bin")
             }
             from(logbackConfig) {
