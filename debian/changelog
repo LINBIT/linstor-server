@@ -1,3 +1,68 @@
+linstor-server (0.6.0-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Create resource using reactive approach
+  * Clear up resource create name validation
+  * Correct resource modified message
+  * Resolve storage pool at volume creation
+  * Fix querying of LVM thin pool total capacity
+  * Add API to add a disk to a diskless resource
+  * Fix tests to expect new disk add flags
+  * Add API to remove a disk making a resource diskless
+  * Fall back to default when the free space manager name is empty
+  * Avoid tracking free space on satellites and ensure storage pools on di [...]
+  * Fix resource deletion by not tracking pending volume deletion
+  * Drop buffered messages when the peer is no longer connected
+  * Avoid contacting satellites before committing node deletion and loss
+  * Add object protection for free space managers for existing storage poo [...]
+  * Remove storage pool property which just duplicated the storage pool name
+  * Send resources to satellites even when they have no volumes
+  * Make generation of API classes a dependency of the server subproject r [...]
+  * Do not expect resources that are diskless everywhere to ever be ready
+  * Improve messages for resource create and toggle disk
+  * Fix resource create API test so that it expects the warning for no volumes
+  * Add property normalization step so that boolean properties are easier  [...]
+  * Add property to allow underlying volume to be larger than expected
+  * Differentiate between yes/no and true/false booleans
+  * Fix resource create peer added message
+  * Make sure toggle disk continues even if it was stopped while the trans [...]
+  * Remove toggle disk notification messages when for updates that don't h [...]
+  * Add support for resources without DRBD determined by storage driver kind
+
+  [ Rene Peinthor ]
+  * make: do not transform symlinks
+  * remove nebula.ospackage plugin
+  * work with symlinks for offline builds
+  * gradle/controller: add all jars in lib/ to classpath
+  * gradle: remove duplicate startup tasks
+  * linstorconfig: add command to run sql scripts
+  * sql: fix incorrect storage pool name length
+
+  [ Gabor Hernadi ]
+  * .gitignore: added eclipse-specific paths
+  * Removed unnecessary casts to StorPoolData
+  * Added realSize to VolumeData
+  * Added shared StorPools
+  * Extracted crypt feature to separate class / interface
+  * Added swordfish storage driver
+  * Removed unnecessary FIXME from ExtCmd
+  * Fixed property bug
+  * Added finer tuning options for swordfish driver
+  * Fixed exception when swordfish.json is empty
+  * Fixed wrong swordfish KEY references in submodule
+  * Fixed minor swordfish bugs
+  * Swordfish: added synchronization for persisting JSON data
+  * Swordfish: driver can now continue with half-created volume
+  * Fixed source snapshotname from migrated resource
+  * Added -k or --keep-res argument
+  * StorageDrivers can now write into VolumeDefinition's Props
+  * Split SwordfishDriver into *TargetDriver and *InitiatorDriver
+  * Added --port and --skip-hostname-check CLI args
+  * Fixed broken tests
+  * SwordfishDriver: added additional check
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 31 Aug 2018 13:01:18 +0200
+
 linstor-server (0.5.0-1) experimental; urgency=medium
 
   [ Joel Colledge ]
