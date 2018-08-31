@@ -18,6 +18,8 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -154,7 +156,11 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, zfsExtent);
 
         {
-            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, TEST_SIZE_100MB);
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(
+                identifier,
+                TEST_SIZE_100MB,
+                ReadOnlyProps.emptyRoProps()
+            );
             assertEquals(
                 "volume size should be in tolerance",
                 StorageDriver.SizeComparison.WITHIN_TOLERANCE,
@@ -172,7 +178,11 @@ public class ZfsDriverTest extends StorageTestUtils
 
         try
         {
-            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, TEST_SIZE_100MB);
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(
+                identifier,
+                TEST_SIZE_100MB,
+                ReadOnlyProps.emptyRoProps()
+            );
             assertEquals(
                 "volume size should be higher than tolerated",
                 StorageDriver.SizeComparison.TOO_LARGE,
@@ -189,28 +199,28 @@ public class ZfsDriverTest extends StorageTestUtils
     public void testStartVolume() throws StorageException
     {
         String identifier = "identifier";
-        driver.startVolume(identifier, null); // null == not encrypted
+        driver.startVolume(identifier, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
     public void testStartUnknownVolume() throws StorageException
     {
         String unknownIdentifier = "unknown";
-        driver.startVolume(unknownIdentifier, null); // null == not encrypted
+        driver.startVolume(unknownIdentifier, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
     public void testStopVolume() throws StorageException
     {
         String identifier = "identifier";
-        driver.stopVolume(identifier, false); // should not trigger anything
+        driver.stopVolume(identifier, false, ReadOnlyProps.emptyRoProps()); // should not trigger anything
     }
 
     @Test
     public void testStopUnknownVolume() throws StorageException
     {
         String unknownIdentifier = "unknown";
-        driver.stopVolume(unknownIdentifier, false); // should not trigger anything
+        driver.stopVolume(unknownIdentifier, false, ReadOnlyProps.emptyRoProps()); // should not trigger anything
     }
 
 
@@ -261,7 +271,7 @@ public class ZfsDriverTest extends StorageTestUtils
             }
         );
         thread.start();
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
@@ -291,7 +301,7 @@ public class ZfsDriverTest extends StorageTestUtils
             emptyFileObserver);
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test(expected = StorageException.class)
@@ -315,7 +325,7 @@ public class ZfsDriverTest extends StorageTestUtils
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event --> timeout
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
 
@@ -328,7 +338,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, TEST_EXTENT_SIZE);
         expectZfsCreateVolumeBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, volumeSize, identifier, true);
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
@@ -361,7 +371,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         testFileEntryGroup.fileEvent(testEntry);
 
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
@@ -388,7 +398,7 @@ public class ZfsDriverTest extends StorageTestUtils
         );
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.deleteVolume(identifier, false);
+        driver.deleteVolume(identifier, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test(expected = StorageException.class)
@@ -409,7 +419,7 @@ public class ZfsDriverTest extends StorageTestUtils
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event
-        driver.deleteVolume(identifier, false);
+        driver.deleteVolume(identifier, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test(expected = StorageException.class)
@@ -420,7 +430,7 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsDeleteVolumeBehavior(ZFS_COMMAND_DEFAULT, identifier, ZFS_POOL_DEFAULT, false);
         expectZfsVolumeExistsBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier);
 
-        driver.deleteVolume(identifier, false);
+        driver.deleteVolume(identifier, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test
@@ -434,7 +444,7 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size);
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, zfsExtent);
 
-        driver.compareVolumeSize(identifier, size);
+        driver.compareVolumeSize(identifier, size, ReadOnlyProps.emptyRoProps());
     }
 
     @Test(expected = StorageException.class)
@@ -443,7 +453,7 @@ public class ZfsDriverTest extends StorageTestUtils
         String identifier = "testVolume";
         long size = MetaData.DRBD_MAX_kiB + 1;
 
-        driver.compareVolumeSize(identifier, size);
+        driver.compareVolumeSize(identifier, size, ReadOnlyProps.emptyRoProps());
     }
 
     @Test
@@ -457,7 +467,11 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size - 10);
         // user wanted at least 100 MB, but we give him a little bit less
 
-        StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, size);
+        StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(
+            identifier,
+            size,
+            ReadOnlyProps.emptyRoProps()
+        );
         assertEquals(
             "volume size should be too small",
             StorageDriver.SizeComparison.TOO_SMALL,
@@ -473,7 +487,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size);
 
-        final String path = driver.getVolumePath(identifier, false);
+        final String path = driver.getVolumePath(identifier, false, ReadOnlyProps.emptyRoProps());
         assertEquals(
             "/dev/zvol/" +
             ZFS_POOL_DEFAULT + "/" +
@@ -490,7 +504,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size, false);
 
-        driver.getVolumePath(identifier, false);
+        driver.getVolumePath(identifier, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test
@@ -501,7 +515,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, expectedSize);
 
-        final long size = driver.getSize(identifier);
+        final long size = driver.getSize(identifier, ReadOnlyProps.emptyRoProps());
         assertEquals(expectedSize, size);
     }
 
@@ -513,7 +527,7 @@ public class ZfsDriverTest extends StorageTestUtils
 
         expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, size, false);
 
-        driver.getSize(identifier);
+        driver.getSize(identifier, ReadOnlyProps.emptyRoProps());
     }
 
     @Test

@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -161,7 +163,11 @@ public class LvmDriverTest extends StorageTestUtils
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, "4096.00k");
 
         {
-            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(
+                volumeIdentifier,
+                TEST_SIZE_100MB,
+                ReadOnlyProps.emptyRoProps()
+            );
             assertEquals(
                 "volume size should be in tolerance",
                 StorageDriver.SizeComparison.WITHIN_TOLERANCE,
@@ -178,7 +184,11 @@ public class LvmDriverTest extends StorageTestUtils
 
         try
         {
-            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(volumeIdentifier, TEST_SIZE_100MB);
+            StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(
+                volumeIdentifier,
+                TEST_SIZE_100MB,
+                ReadOnlyProps.emptyRoProps()
+            );
             assertEquals(
                 "volume size should be higher than tolerated",
                 StorageDriver.SizeComparison.TOO_LARGE,
@@ -195,28 +205,28 @@ public class LvmDriverTest extends StorageTestUtils
     public void testStartVolume() throws StorageException
     {
         final String identifier = "identifier";
-        driver.startVolume(identifier, null); // null == not encrypted
+        driver.startVolume(identifier, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
     public void testStartUnknownVolume() throws StorageException
     {
         final String unknownIdentifier = "unknown";
-        driver.startVolume(unknownIdentifier, null); // null == not encrypted
+        driver.startVolume(unknownIdentifier, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
     public void testStopVolume() throws StorageException
     {
         final String identifier = "identifier";
-        driver.stopVolume(identifier, false); // should not trigger anything
+        driver.stopVolume(identifier, false, ReadOnlyProps.emptyRoProps()); // should not trigger anything
     }
 
     @Test
     public void testStopUnknownVolume() throws StorageException
     {
         final String unknownIdentifier = "unknown";
-        driver.stopVolume(unknownIdentifier, false); // should not trigger anything
+        driver.stopVolume(unknownIdentifier, false, ReadOnlyProps.emptyRoProps()); // should not trigger anything
     }
 
     @Test
@@ -268,7 +278,7 @@ public class LvmDriverTest extends StorageTestUtils
             }
         );
         thread.start();
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
@@ -297,7 +307,7 @@ public class LvmDriverTest extends StorageTestUtils
             emptyFileObserver);
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test(expected = StorageException.class)
@@ -320,7 +330,7 @@ public class LvmDriverTest extends StorageTestUtils
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event
-        driver.createVolume(identifier, volumeSize, null); // null == not encrypted
+        driver.createVolume(identifier, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
 
@@ -333,7 +343,7 @@ public class LvmDriverTest extends StorageTestUtils
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, volumeName, LVM_VOLUME_GROUP_DEFAULT, true);
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
 
-        driver.createVolume(volumeName, volumeSize, null); // null == not encrypted
+        driver.createVolume(volumeName, volumeSize, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
     }
 
     @Test
@@ -361,7 +371,7 @@ public class LvmDriverTest extends StorageTestUtils
             emptyFileObserver);
 
         testFileEntryGroup.fileEvent(testEntry);
-        driver.deleteVolume(identifier, false);
+        driver.deleteVolume(identifier, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test(expected = StorageException.class)
@@ -384,7 +394,7 @@ public class LvmDriverTest extends StorageTestUtils
         PowerMockito.whenNew(FileEntryGroupBuilder.class).withNoArguments().thenReturn(builderMock);
 
         // do not fire file event
-        driver.deleteVolume(identifier, false);
+        driver.deleteVolume(identifier, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test(expected = StorageException.class)
@@ -395,7 +405,7 @@ public class LvmDriverTest extends StorageTestUtils
         expectLvmDeleteVolumeBehavior(LVM_REMOVE_DEFAULT, volumeName, LVM_VOLUME_GROUP_DEFAULT, false);
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, volumeName, 0);
 
-        driver.deleteVolume(volumeName, false);
+        driver.deleteVolume(volumeName, false, ReadOnlyProps.emptyRoProps());
     }
 
     @Test
@@ -407,7 +417,7 @@ public class LvmDriverTest extends StorageTestUtils
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, size);
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, TEST_EXTENT_SIZE);
 
-        driver.compareVolumeSize(identifier, size);
+        driver.compareVolumeSize(identifier, size, ReadOnlyProps.emptyRoProps());
     }
 
     @Test(expected = StorageException.class)
@@ -416,7 +426,7 @@ public class LvmDriverTest extends StorageTestUtils
         final String identifier = "testVolume";
         final long size = MetaData.DRBD_MAX_kiB + 1;
 
-        driver.compareVolumeSize(identifier, size);
+        driver.compareVolumeSize(identifier, size, ReadOnlyProps.emptyRoProps());
     }
 
     @Test
@@ -433,7 +443,11 @@ public class LvmDriverTest extends StorageTestUtils
             identifier,
             size - 10); // user wanted at least 100 MB, but we give him a little bit less
 
-        StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(identifier, size);
+        StorageDriver.SizeComparison sizeComparison = driver.compareVolumeSize(
+            identifier,
+            size,
+            ReadOnlyProps.emptyRoProps()
+        );
         assertEquals(
             "volume size should be too small",
             StorageDriver.SizeComparison.TOO_SMALL,
@@ -446,7 +460,7 @@ public class LvmDriverTest extends StorageTestUtils
     {
         final String identifier = "testVolume";
 
-        final String path = driver.getVolumePath(identifier, false);
+        final String path = driver.getVolumePath(identifier, false, ReadOnlyProps.emptyRoProps());
         assertEquals("/dev/" +
             LVM_VOLUME_GROUP_DEFAULT + "/" +
             identifier,
@@ -461,7 +475,7 @@ public class LvmDriverTest extends StorageTestUtils
 
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
 
-        final long size = driver.getSize(identifier);
+        final long size = driver.getSize(identifier, ReadOnlyProps.emptyRoProps());
         assertEquals(volumeSize, size);
     }
 
@@ -491,7 +505,7 @@ public class LvmDriverTest extends StorageTestUtils
 
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
 
-        driver.getSize("otherVolume");
+        driver.getSize("otherVolume", ReadOnlyProps.emptyRoProps());
     }
 
     @Test

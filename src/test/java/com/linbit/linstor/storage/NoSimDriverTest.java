@@ -19,6 +19,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerImpl;
@@ -316,7 +317,13 @@ public abstract class NoSimDriverTest
 
             String restName = getUnusedIdentifier("", "_rest");
             log("   restoring [%s] from volume [%s] to [%s]", snapName, identifier, restName);
-            driver.restoreSnapshot(identifier, snapName, restName, null); // null == not encrypted
+            driver.restoreSnapshot(
+                identifier,
+                snapName,
+                restName,
+                null,
+                ReadOnlyProps.emptyRoProps()
+            ); // null == not encrypted
             log(" done%n");
 
             // file status orig:
@@ -576,7 +583,7 @@ public abstract class NoSimDriverTest
         IOException
     {
         log(format, identifier, size);
-        driver.createVolume(identifier, size, null); // null == not encrypted
+        driver.createVolume(identifier, size, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
         failIf(!volumeExists(identifier), "Failed to create volume [%s]", identifier);
         log(" done %n");
     }
@@ -584,7 +591,7 @@ public abstract class NoSimDriverTest
     private void checkVolume(String identifier, long size, String format) throws StorageException
     {
         log(format, identifier, size);
-        driver.compareVolumeSize(identifier, size);
+        driver.compareVolumeSize(identifier, size, ReadOnlyProps.emptyRoProps());
         log(" done %n");
     }
 
@@ -592,7 +599,7 @@ public abstract class NoSimDriverTest
         throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        long driverSize = driver.getSize(identifier);
+        long driverSize = driver.getSize(identifier, ReadOnlyProps.emptyRoProps());
         failIf(driverSize != expectedSize, "expected size [%d] but was [%d]", expectedSize, driverSize);
         log(" done %n");
     }
@@ -601,7 +608,7 @@ public abstract class NoSimDriverTest
         throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        String volumePath = driver.getVolumePath(identifier, false);
+        String volumePath = driver.getVolumePath(identifier, false, ReadOnlyProps.emptyRoProps());
         String expectedVolumePath = getVolumePathImpl(identifier);
         failIf(
             !expectedVolumePath.equals(volumePath),
@@ -616,7 +623,7 @@ public abstract class NoSimDriverTest
         throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.stopVolume(identifier, false);
+        driver.stopVolume(identifier, false, ReadOnlyProps.emptyRoProps());
         failIf(isVolumeStartedImpl(identifier), "volume [%s] failed to stop", identifier);
         log(" done %n");
     }
@@ -625,7 +632,7 @@ public abstract class NoSimDriverTest
         throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.startVolume(identifier, null); // null == not encrypted
+        driver.startVolume(identifier, null, ReadOnlyProps.emptyRoProps()); // null == not encrypted
         failIf(!isVolumeStartedImpl(identifier), "volume [%s] failed to start", identifier);
         log(" done %n");
     }
@@ -634,7 +641,7 @@ public abstract class NoSimDriverTest
         throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.deleteVolume(identifier, false);
+        driver.deleteVolume(identifier, false, ReadOnlyProps.emptyRoProps());
         failIf(volumeExists(identifier), "Failed to delete volume [%s]", identifier);
         log(" done %n");
     }
