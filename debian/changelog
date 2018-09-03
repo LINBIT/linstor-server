@@ -1,3 +1,14 @@
+linstor-server (0.6.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * SwordfishTargetDriver: removes vlmDfn entry on deleteVolume
+  * Ctrl: do not connect to Ctrl or Aux nodes
+
+  [ Rene Peinthor ]
+  * Fix missing SEC_ACL_MAP entries for freespacemgrs
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 03 Sep 2018 15:07:42 +0200
+
 linstor-server (0.6.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
