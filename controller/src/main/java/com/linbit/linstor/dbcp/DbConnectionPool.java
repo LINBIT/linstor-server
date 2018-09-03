@@ -46,6 +46,7 @@ public class DbConnectionPool implements ControllerDatabase
 
     public static final int DEFAULT_MIN_IDLE_CONNECTIONS =  10;
     public static final int DEFAULT_MAX_IDLE_CONNECTIONS = 100;
+    public static final int DEFAULT_IDLE_TIMEOUT = 1 * 60 * 60 * 1000; // 1 hour in ms
 
     private int minIdleConnections = DEFAULT_MIN_IDLE_CONNECTIONS;
     private int maxIdleConnections = DEFAULT_MAX_IDLE_CONNECTIONS;
@@ -245,12 +246,12 @@ public class DbConnectionPool implements ControllerDatabase
             poolConfig.setMaxIdle(maxIdleConnections);
             poolConfig.setBlockWhenExhausted(true);
             poolConfig.setFairness(true);
-
             GenericObjectPool<PoolableConnection> connPool = new GenericObjectPool<>(poolConnFactory, poolConfig);
 
             poolConnFactory.setPool(connPool);
             poolConnFactory.setValidationQueryTimeout(dbTimeout);
             poolConnFactory.setMaxOpenPreparedStatements(dbMaxOpen);
+            poolConnFactory.setMaxConnLifetimeMillis(DEFAULT_IDLE_TIMEOUT);
 
             dataSource = new PoolingDataSource<PoolableConnection>(connPool);
         }
