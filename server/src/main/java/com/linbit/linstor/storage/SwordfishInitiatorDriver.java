@@ -63,7 +63,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
     private String userPw;
     private long pollAttachVlmTimeout = 1000;
     private long pollAttachVlmMaxTries = 100;
-    private long pollGrepNvmeUuidTimeout = 100;
+    private long pollGrepNvmeUuidTimeout = 1000;
     private long pollGrepNvmeUuidMaxTries = 100;
     private String composedNodeName;
 

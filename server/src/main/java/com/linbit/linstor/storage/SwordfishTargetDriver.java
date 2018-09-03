@@ -174,6 +174,20 @@ public class SwordfishTargetDriver implements StorageDriver
         }
     }
 
+    private void removeSfVlmId(String linstorVlmId, Props vlmDfnProps) throws StorageException
+    {
+        linstorIdToSwordfishId.remove(linstorVlmId);
+        persistJson();
+        try
+        {
+            vlmDfnProps.removeProp(SwordfishConsts.DRIVER_SF_VLM_ID_KEY, StorageDriver.STORAGE_NAMESPACE);
+        }
+        catch (AccessDeniedException | InvalidKeyException | SQLException exc)
+        {
+            throw new StorageException("Cannot persist swordfish volume id into volume definition props", exc);
+        }
+    }
+
     private String createSfVlm(long sizeInKiB) throws IOException, StorageException, InterruptedException
     {
         // create volume
@@ -312,8 +326,7 @@ public class SwordfishTargetDriver implements StorageDriver
         {
             throw new StorageException("IO Exception", ioExc);
         }
-        linstorIdToSwordfishId.remove(linstorVlmId);
-        persistJson();
+        removeSfVlmId(linstorVlmId, vlmDfnProps);
     }
 
     @Override
