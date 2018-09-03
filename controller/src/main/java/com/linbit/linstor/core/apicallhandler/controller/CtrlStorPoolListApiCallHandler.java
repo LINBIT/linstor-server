@@ -185,10 +185,15 @@ public class CtrlStorPoolListApiCallHandler
 
     private Flux<ByteArrayInputStream> prepareFreeSpaceApiCall(Node node)
     {
-        return getPeer(node)
-            .apiCall(InternalApiConsts.API_REQUEST_FREE_SPACE, new byte[] {})
-            // No data from disconnected satellites
-            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        Peer peer = getPeer(node);
+        Flux<ByteArrayInputStream> result = Flux.empty();
+        if (peer != null)
+        {
+            result = peer.apiCall(InternalApiConsts.API_REQUEST_FREE_SPACE, new byte[]{})
+                // No data from disconnected satellites
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        }
+        return result;
     }
 
     private Peer getPeer(Node node)
