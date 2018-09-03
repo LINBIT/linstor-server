@@ -1,6 +1,8 @@
 package com.linbit.linstor.dbcp.migration;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 @Migration(
@@ -20,6 +22,32 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
     private static final String OP_CREATOR = "CREATOR_IDENTITY_NAME";
     private static final String OP_OWNER = "OWNER_ROLE_NAME";
     private static final String OP_SEC_TYPE_NAME = "SECURITY_TYPE_NAME";
+
+    private void updateFreeSpaceDefaultName(Statement stmt) throws SQLException
+    {
+        stmt.executeUpdate(
+            "UPDATE " + TBL_STOR_POOL +
+                " SET " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = CONCAT(" + NODE_NAME + ", ':', " + POOL_NAME + "), " +
+                NEW_SP_FREE_SPACE_MGR_NAME     + " = CONCAT(" + NODE_NAME + ", ':', " + POOL_NAME + ")" +
+                " WHERE " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = 'SYSTEM:'"
+        );
+    }
+
+    private void updateFreeSpaceObjectProtection(Statement stmt) throws SQLException
+    {
+        // copy the protection from the node to the protection for the free space manager
+        stmt.executeUpdate(
+            "INSERT INTO " + TBL_OP + " " +
+                "SELECT " +
+                "CONCAT('/freespacemgrs/', sp." + NEW_SP_FREE_SPACE_MGR_NAME + ") " + OP_OBJECT_PATH + ", " +
+                "prot." + OP_CREATOR + " " + OP_CREATOR + ", " +
+                "prot." + OP_OWNER + " " + OP_OWNER + ", " +
+                "prot." + OP_SEC_TYPE_NAME + " " + OP_SEC_TYPE_NAME + " " +
+                "FROM " + TBL_STOR_POOL + " sp " +
+                "JOIN " + TBL_OP + " prot " +
+                "ON CONCAT('/nodes/', sp." + NODE_NAME + ") = prot." + OP_OBJECT_PATH
+        );
+    }
 
     @Override
     public void migrate(Connection connection) throws Exception
@@ -46,25 +74,24 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
                     NEW_SP_FREE_SPACE_MGR_NAME + " = UPPER(" + NEW_SP_FREE_SPACE_MGR_DSP_NAME + "))"
             );
 
-            stmt.executeUpdate(
-                "UPDATE " + TBL_STOR_POOL +
-                " SET " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = CONCAT('SYSTEM:', " + POOL_NAME + "), " +
-                          NEW_SP_FREE_SPACE_MGR_NAME     + " = CONCAT('SYSTEM:', " + POOL_NAME + ")" +
-                " WHERE " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " = 'SYSTEM:'"
-            );
+            updateFreeSpaceDefaultName(stmt);
+            updateFreeSpaceObjectProtection(stmt);
 
-            // copy the protection from the node to the protection for the free space manager
-            stmt.executeUpdate(
-                "INSERT INTO " + TBL_OP + " " +
-                    "SELECT " +
-                        "CONCAT('/freespacemgrs/', sp." + NEW_SP_FREE_SPACE_MGR_NAME + ") " + OP_OBJECT_PATH + ", " +
-                        "prot." + OP_CREATOR + " " + OP_CREATOR + ", " +
-                        "prot." + OP_OWNER + " " + OP_OWNER + ", " +
-                        "prot." + OP_SEC_TYPE_NAME + " " + OP_SEC_TYPE_NAME + " " +
-                    "FROM " + TBL_STOR_POOL + " sp " +
-                    "JOIN " + TBL_OP + " prot " +
-                        "ON CONCAT('/nodes/', sp." + NODE_NAME + ") = prot." + OP_OBJECT_PATH
-            );
+            stmt.close();
+        }
+        else
+        {
+            Statement stmt = connection.createStatement();
+            ResultSet result = stmt.executeQuery(
+                "SELECT COUNT(*) FROM NODE_STOR_POOL WHERE FREE_SPACE_MGR_NAME='SYSTEM:'");
+            result.next();
+            int systemNames = result.getInt(1);
+            result.close();
+            if (systemNames > 0)
+            {
+                updateFreeSpaceDefaultName(stmt);
+                updateFreeSpaceObjectProtection(stmt);
+            }
 
             stmt.close();
         }
