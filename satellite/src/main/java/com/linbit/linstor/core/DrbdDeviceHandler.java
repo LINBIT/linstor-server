@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.drbd.DrbdAdm;
+import com.linbit.drbd.MdSuperblockBuffer;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
@@ -1109,12 +1110,30 @@ class DrbdDeviceHandler implements DeviceHandler
                                 boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
                                     .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
 
-                                vlmState.setHasMetaData(drbdUtils.hasMetaData(
-                                    vlmState.getDriver().getVolumePath(
-                                        vlmState.getStorVlmName(), isEncrypted, vlmDfnProps
-                                    ),
-                                    vlmState.getMinorNr().value, "internal"
-                                ));
+
+                                String vlmPath = vlmState.getDriver().getVolumePath(
+                                    vlmState.getStorVlmName(), isEncrypted, vlmDfnProps
+                                );
+
+                                boolean hasMdFlag = false;
+                                try
+                                {
+                                    MdSuperblockBuffer mdBfr = new MdSuperblockBuffer();
+                                    // Read DRBD meta data
+                                    mdBfr.readObject(vlmPath);
+                                    // If a DRBD magic is present, check whether drbd-utils can read the meta data
+                                    if (mdBfr.hasMetaData())
+                                    {
+                                        hasMdFlag = drbdUtils.hasMetaData(
+                                            vlmPath, vlmState.getMinorNr().value, "internal"
+                                        );
+                                    }
+                                }
+                                catch (IOException ignored)
+                                {
+                                }
+                                vlmState.setHasMetaData(hasMdFlag);
+
                                 errLog.logTrace(
                                     "%s",
                                     "Resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
