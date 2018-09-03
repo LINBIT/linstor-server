@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -67,7 +68,7 @@ public class StorPoolDataSatelliteFactory
                     uuid,
                     node,
                     storPoolDef,
-                    storDriverSimpleClassName,
+                    StorageDriverLoader.getKind(storDriverSimpleClassName),
                     fsm,
                     true,
                     driver,

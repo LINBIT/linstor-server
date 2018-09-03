@@ -8,11 +8,20 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.DisklessDriverKind;
+import com.linbit.linstor.storage.LvmDriverKind;
+import com.linbit.linstor.storage.LvmThinDriverKind;
+import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
+import com.linbit.linstor.storage.SwordfishTargetDriverKind;
+import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -119,17 +128,43 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
 
     enum NodeType implements Flags
     {
-        CONTROLLER(1),
-        SATELLITE(2),
-        COMBINED(3),
-
-        AUXILIARY(4);
+        CONTROLLER(1, Collections.emptyList()),
+        SATELLITE(
+            2,
+            Arrays.asList(
+                DisklessDriverKind.class,
+                LvmDriverKind.class,
+                LvmThinDriverKind.class,
+                SwordfishInitiatorDriverKind.class,
+                ZfsDriverKind.class
+            )
+        ),
+        COMBINED(
+            3,
+            Arrays.asList(
+                DisklessDriverKind.class,
+                LvmDriverKind.class,
+                LvmThinDriverKind.class,
+                SwordfishInitiatorDriverKind.class,
+                ZfsDriverKind.class
+            )
+        ),
+        AUXILIARY(4, Collections.emptyList()),
+        SWORDFISH_TARGET(
+            5,
+            Arrays.asList(
+                SwordfishTargetDriverKind.class
+            )
+        );
 
         private final int flag;
+        private final List<Class<? extends StorageDriverKind>> allowedKindClasses;
 
-        NodeType(int flagValue)
+        NodeType(int flagValue, List<Class<? extends StorageDriverKind>> allowedKindClassesRef)
         {
+
             flag = flagValue;
+            allowedKindClasses = Collections.unmodifiableList(allowedKindClassesRef);
         }
 
         @Override
@@ -165,6 +200,21 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
                 }
             }
             return ret;
+        }
+
+        public List<Class<? extends StorageDriverKind>> getAllowedKindClasses()
+        {
+            return allowedKindClasses;
+        }
+
+        public boolean isStorageKindAllowed(Class<? extends StorageDriverKind> kindClass)
+        {
+            return allowedKindClasses.contains(kindClass);
+        }
+
+        public boolean isStorageKindAllowed(StorageDriverKind storageDriverKind)
+        {
+            return isStorageKindAllowed(storageDriverKind.getClass());
         }
     }
 

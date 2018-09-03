@@ -19,7 +19,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.BaseTransactionObject;
@@ -67,7 +66,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         UUID id,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        String storageDriverName,
+        StorageDriverKind storageDriverKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
         boolean allowStorageDriverCreationRef,
         StorPoolDataDatabaseDriver dbDriverRef,
@@ -84,7 +83,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         uuid = id;
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
-        storageDriverKind = StorageDriverLoader.getKind(storageDriverName);
+        storageDriverKind = storageDriverKindRef;
         freeSpaceTracker = freeSpaceTrackerRef;
         allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;

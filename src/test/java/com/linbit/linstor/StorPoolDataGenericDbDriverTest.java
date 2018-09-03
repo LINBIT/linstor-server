@@ -6,6 +6,8 @@ import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.LvmDriver;
+import com.linbit.linstor.storage.LvmDriverKind;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -78,7 +80,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            new LvmDriverKind(),
             fsm,
             false,
             driver,
@@ -137,7 +139,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            new LvmDriverKind(),
             fsm,
             false,
             driver,
@@ -212,7 +214,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            new LvmDriverKind(),
             fsm,
             false,
             driver,
@@ -271,7 +273,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            new LvmDriverKind(),
             fsm,
             false,
             driver,
@@ -309,7 +311,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            new LvmDriverKind(),
             fsm,
             false,
             driver,

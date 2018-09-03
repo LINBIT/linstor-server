@@ -180,15 +180,6 @@ public class CtrlNodeApiCallHandler
         try
         {
             requireNodesMapChangeAccess();
-            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-
-            NodeType type = asNodeType(nodeTypeStr);
-
-            Node node = createNode(nodeName, type);
-
-            ctrlPropsHelper.fillProperties(
-                LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
-
             if (netIfs.isEmpty())
             {
                 // TODO for auxiliary nodes maybe no netif required?
@@ -196,6 +187,15 @@ public class CtrlNodeApiCallHandler
             }
             else
             {
+                NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
+
+                NodeType type = asNodeType(nodeTypeStr);
+
+                Node node = createNode(nodeName, type);
+
+                ctrlPropsHelper.fillProperties(
+                    LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
+
                 Map<String, NetInterface> netIfMap = new TreeMap<>();
 
                 for (NetInterfaceApi netIfApi : netIfs)

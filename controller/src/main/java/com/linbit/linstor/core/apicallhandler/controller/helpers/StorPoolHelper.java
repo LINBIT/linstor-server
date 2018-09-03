@@ -14,6 +14,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStorageDriverException;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -105,6 +106,16 @@ public class StorPoolHelper
         catch (SQLException sqlExc)
         {
             throw new ApiSQLException(sqlExc);
+        }
+        catch (IllegalStorageDriverException illStorDrivExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.copyFromLinstorExc(
+                    ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                    illStorDrivExc
+                ),
+                illStorDrivExc
+            );
         }
         return storPool;
     }

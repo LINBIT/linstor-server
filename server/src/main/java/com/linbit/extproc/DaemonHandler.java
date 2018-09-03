@@ -47,13 +47,16 @@ public class DaemonHandler
     {
         outProxy.expectShutdown();
         errProxy.expectShutdown();
-        if (force)
+        if (process != null)
         {
-            process.destroyForcibly();
-        }
-        else
-        {
-            process.destroy();
+            if (force)
+            {
+                process.destroyForcibly();
+            }
+            else
+            {
+                process.destroy();
+            }
         }
         outThread.interrupt();
         errThread.interrupt();

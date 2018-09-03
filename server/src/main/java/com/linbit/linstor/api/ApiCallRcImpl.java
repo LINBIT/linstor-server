@@ -1,5 +1,7 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.LinStorException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -216,5 +218,33 @@ public class ApiCallRcImpl implements ApiCallRc
             entry.putAllObjRef(objRefs);
             return entry;
         }
+    }
+
+    public static RcEntry copyFromLinstorExc(long retCode, LinStorException linstorExc)
+    {
+        ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCode(retCode);
+        if (linstorExc.getDescriptionText() != null)
+        {
+            entry.setMessage(linstorExc.getDescriptionText());
+        }
+        else
+        {
+            entry.setMessage(linstorExc.getMessage());
+        }
+
+        if (linstorExc.getCauseText() != null)
+        {
+            entry.setCause(linstorExc.getCauseText());
+        }
+        if (linstorExc.getCorrectionText() != null)
+        {
+            entry.setCorrection(linstorExc.getCorrectionText());
+        }
+        if (linstorExc.getDetailsText() != null)
+        {
+            entry.setDetails(linstorExc.getDetailsText());
+        }
+        return entry;
     }
 }
