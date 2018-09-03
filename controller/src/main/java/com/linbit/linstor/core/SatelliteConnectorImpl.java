@@ -7,6 +7,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.EncryptionType;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -62,58 +63,66 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     {
         try
         {
-            NetInterface stltConn = node.getSatelliteConnection(accCtx);
-            if (stltConn != null)
+            NodeType nodeType = node.getNodeType(accCtx);
+            if (nodeType.equals(NodeType.SATELLITE) || nodeType.equals(NodeType.COMBINED))
             {
-                EncryptionType type = stltConn.getStltConnEncryptionType(accCtx);
-                String serviceType;
-                switch (type)
+                NetInterface stltConn = node.getSatelliteConnection(accCtx);
+                if (stltConn != null)
                 {
-                    case PLAIN:
-                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
-                        break;
-                    case SSL:
-                        serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
-                        break;
-                    default:
-                        throw new ImplementationError(
-                            "Unhandled default case for EncryptionType",
-                            null
+                    EncryptionType type = stltConn.getStltConnEncryptionType(accCtx);
+                    String serviceType;
+                    switch (type)
+                    {
+                        case PLAIN:
+                            serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
+                            break;
+                        case SSL:
+                            serviceType = ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
+                            break;
+                        default:
+                            throw new ImplementationError(
+                                "Unhandled default case for EncryptionType",
+                                null
+                            );
+                    }
+                    ServiceName dfltConSvcName;
+                    try
+                    {
+                        dfltConSvcName = new ServiceName(
+                            ctrlConf.getProp(serviceType)
                         );
-                }
-                ServiceName dfltConSvcName;
-                try
-                {
-                    dfltConSvcName = new ServiceName(
-                        ctrlConf.getProp(serviceType)
-                    );
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    throw new LinStorRuntimeException(
-                        "The ServiceName of the default TCP connector is not valid",
-                        invalidNameExc
-                    );
-                }
-                TcpConnector tcpConnector = netComContainer.getNetComConnector(dfltConSvcName);
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new LinStorRuntimeException(
+                            "The ServiceName of the default TCP connector is not valid",
+                            invalidNameExc
+                        );
+                    }
+                    TcpConnector tcpConnector = netComContainer.getNetComConnector(dfltConSvcName);
 
-                if (tcpConnector != null)
-                {
-                    connectSatellite(
-                        new InetSocketAddress(
-                            stltConn.getAddress(accCtx).getAddress(),
-                            stltConn.getStltConnPort(accCtx).value
-                        ),
-                        tcpConnector,
-                        node
-                    );
+                    if (tcpConnector != null)
+                    {
+                        connectSatellite(
+                            new InetSocketAddress(
+                                stltConn.getAddress(accCtx).getAddress(),
+                                stltConn.getStltConnPort(accCtx).value
+                            ),
+                            tcpConnector,
+                            node
+                        );
+                    }
+                    else
+                    {
+                        throw new LinStorRuntimeException(
+                            "Attempt to establish a " + type + " connection without a proper connector defined"
+                        );
+                    }
                 }
-                else
-                {
-                    throw new LinStorRuntimeException(
-                        "Attempt to establish a " + type + " connection without a proper connector defined"
-                    );
-                }
+            }
+            else
+            {
+                errorReporter.logDebug("Not connecting to " + nodeType.name() + " node: '" + node.getName().displayValue + "'");
             }
         }
         catch (AccessDeniedException | InvalidKeyException exc)

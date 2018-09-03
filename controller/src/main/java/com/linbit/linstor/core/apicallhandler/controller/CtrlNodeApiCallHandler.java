@@ -233,10 +233,7 @@ public class CtrlNodeApiCallHandler
                 responseConverter.addWithOp(responses, context,
                     ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
 
-                if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
-                {
-                    satelliteConnector.startConnecting(node, peerAccCtx.get());
-                }
+                satelliteConnector.startConnecting(node, peerAccCtx.get());
             }
         }
         catch (Exception | ImplementationError exc)
