@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.6.0
+Version: 0.6.1
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 %define GRADLE_TASKS installdist
@@ -46,7 +46,7 @@ Summary: Common files shared between controller and satellite
 Requires: jre-headless
 
 %description common
-TODO.
+Linstor shared components between linstor-controller and linstor-satellite
 
 
 %files common -f %{_builddir}/%{NAME_VERS}/server/jar.deps
@@ -62,7 +62,7 @@ Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
 
 %description controller
-TODO.
+Linstor controller manages linstor satellites and persistant data storage.
 
 
 %files controller -f %{_builddir}/%{NAME_VERS}/controller/jar.deps
@@ -90,7 +90,8 @@ Requires: lvm2
 Requires: drbd-utils
 
 %description satellite
-TODO.
+Linstor satellite, communicates with linstor-controller
+and creates drbd resource files.
 
 
 %files satellite -f %{_builddir}/%{NAME_VERS}/satellite/jar.deps

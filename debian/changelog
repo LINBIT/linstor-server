@@ -1,3 +1,15 @@
+linstor-server (0.6.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gradle: also add lib/* to linstor-config cp tool startup script
+  * db: fix broken freespace manager migration script
+  * Fix NPE if node currently doesn't have a peer
+
+  [ Gabor Hernadi ]
+  * Added 1 hour db-connection idle timeout
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 03 Sep 2018 11:07:48 +0200
+
 linstor-server (0.6.0-1) experimental; urgency=medium
 
   [ Joel Colledge ]
