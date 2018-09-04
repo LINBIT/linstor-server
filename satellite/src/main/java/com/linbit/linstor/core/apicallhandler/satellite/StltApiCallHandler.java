@@ -182,8 +182,6 @@ public class StltApiCallHandler
     public ApiCallRcImpl authenticate(
         UUID nodeUuid,
         String nodeName,
-        UUID disklessStorPoolDfnUuid,
-        UUID disklessStorPoolUuid,
         Peer controllerPeer
     )
     {
@@ -220,9 +218,7 @@ public class StltApiCallHandler
             controllerPeerConnector.setControllerPeer(
                 controllerPeer,
                 nodeUuid,
-                nodeName,
-                disklessStorPoolDfnUuid,
-                disklessStorPoolUuid
+                nodeName
             );
 
             // FIXME In the absence of any means of identification, assume the identity of the privileged API context

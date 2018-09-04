@@ -41,7 +41,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     private final AccessContext sysCtx;
 
-    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final NodeDataSatelliteFactory nodeDataFactory;
 
     private final Provider<TransactionMgr> transMgrProvider;
@@ -51,7 +50,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     // The currently connected controller peer (can be null)
     private Peer controllerPeer;
-    private StorPoolDefinitionData disklessStorPoolDfn;
 
     @Inject
     public ControllerPeerConnectorImpl(
@@ -78,7 +76,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         errorReporter = errorReporterRef;
         sysCtx = sysCtxRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         nodeDataFactory = nodeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -96,25 +93,13 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     }
 
     @Override
-    public StorPoolDefinitionData getDisklessStorPoolDfn()
-    {
-        return disklessStorPoolDfn;
-    }
-
-    @Override
     public NodeName getLocalNodeName()
     {
         return localNodeName;
     }
 
     @Override
-    public void setControllerPeer(
-        Peer controllerPeerRef,
-        UUID nodeUuid,
-        String nodeName,
-        UUID disklessStorPoolDfnUuid,
-        UUID disklessStorPoolUuid
-    )
+    public void setControllerPeer(Peer controllerPeerRef, UUID nodeUuid, String nodeName)
     {
         try
         {
@@ -131,12 +116,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             NodeData localNode;
             try
             {
-                disklessStorPoolDfn = storPoolDefinitionDataFactory.getInstance(
-                    tmpCtx,
-                    disklessStorPoolDfnUuid,
-                    new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)
-                );
-
                 localNodeName = new NodeName(nodeName);
 
                 localNode = nodeDataFactory.getInstanceSatellite(
@@ -144,9 +123,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                     nodeUuid,
                     localNodeName,
                     Node.NodeType.SATELLITE,
-                    new Node.NodeFlag[] {},
-                    disklessStorPoolUuid,
-                    disklessStorPoolDfn
+                    new Node.NodeFlag[] {}
                 );
 
                 nodesMap.clear();
@@ -155,7 +132,6 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                 // TODO: make sure everything is cleared
 
                 nodesMap.put(localNode.getName(), localNode);
-                storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
                 setControllerPeerToCurrentLocalNode();
 
                 transMgrProvider.get().commit();

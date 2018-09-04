@@ -92,8 +92,6 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private TransactionSimpleObject<NodeData, Boolean> deleted;
 
-    private transient StorPoolData disklessStorPool;
-
     NodeData(
         UUID uuidRef,
         ObjectProtection objProtRef,
@@ -429,15 +427,6 @@ public class NodeData extends BaseTransactionObject implements Node
         return storPoolMap.get(poolName);
     }
 
-    @Override
-    public StorPool getDisklessStorPool(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
-        return disklessStorPool;
-    }
-
     void addStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException
     {
@@ -454,11 +443,6 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.remove(pool.getName());
-    }
-
-    void setDisklessStorPool(StorPoolData newDisklessStorPool)
-    {
-        disklessStorPool = newDisklessStorPool;
     }
 
     @Override
@@ -678,8 +662,7 @@ public class NodeData extends BaseTransactionObject implements Node
                     otherNode.getName().displayValue,
                     otherNode.getNodeType(accCtx).name(),
                     otherNode.getFlags().getFlagsBits(accCtx),
-                    nodeConn.getProps(accCtx).map(),
-                    otherNode.getDisklessStorPool(accCtx).getUuid()
+                    nodeConn.getProps(accCtx).map()
                 )
             );
         }
@@ -695,7 +678,6 @@ public class NodeData extends BaseTransactionObject implements Node
             nodeConns,
             getProps(accCtx).map(),
             tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
-            disklessStorPool.getUuid(),
             fullSyncId,
             updateId
         );

@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.netcom.Peer;
@@ -293,7 +294,7 @@ public class CtrlAutoStorPoolSelector
     {
         return new ApiAccessDeniedException(
             exc,
-            "query free space of " + CtrlStorPoolApiCallHandler.getStorPoolDescriptionInline(
+            "query free space of " + StorPoolHelper.getStorPoolDescriptionInline(
                 nodeName.displayValue,
                 storPoolName.displayValue
             ),

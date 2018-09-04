@@ -129,8 +129,13 @@ public class CtrlStorPoolListApiCallHandler
         try
         {
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
-                .filter(storPoolDfn -> upperFilterStorPools.isEmpty() ||
-                    upperFilterStorPools.contains(storPoolDfn.getName().value))
+                .filter(storPoolDfn ->
+                    (
+                        upperFilterStorPools.isEmpty() ||
+                        upperFilterStorPools.contains(storPoolDfn.getName().value)
+                    ) &&
+                    !LinStor.DISKLESS_STOR_POOL_NAME.equals(storPoolDfn.getName().value)
+                )
                 .forEach(storPoolDfn ->
                     {
                         try
@@ -140,25 +145,22 @@ public class CtrlStorPoolListApiCallHandler
                                     upperFilterNodes.contains(storPool.getNode().getName().value))
                                 .collect(toList()))
                             {
-                                if (!storPool.getName().getDisplayName().equals(LinStor.DISKLESS_STOR_POOL_NAME))
+                                // fullSyncId and updateId null, as they are not going to be serialized anyway
+                                SpaceInfo spaceInfo = freeSpaceMap.get(new StorPool.Key(storPool));
+                                Long freeCapacity = null;
+                                Long totalCapacity = null;
+                                if (spaceInfo != null)
                                 {
-                                    // fullSyncId and updateId null, as they are not going to be serialized anyway
-                                    SpaceInfo spaceInfo = freeSpaceMap.get(new StorPool.Key(storPool));
-                                    Long freeCapacity = null;
-                                    Long totalCapacity = null;
-                                    if (spaceInfo != null)
-                                    {
-                                        freeCapacity = spaceInfo.freeCapacity;
-                                        totalCapacity = spaceInfo.totalCapacity;
-                                    }
-                                    storPools.add(storPool.getApiData(
-                                        totalCapacity,
-                                        freeCapacity,
-                                        peerAccCtx.get(),
-                                        null,
-                                        null
-                                    ));
+                                    freeCapacity = spaceInfo.freeCapacity;
+                                    totalCapacity = spaceInfo.totalCapacity;
                                 }
+                                storPools.add(storPool.getApiData(
+                                    totalCapacity,
+                                    freeCapacity,
+                                    peerAccCtx.get(),
+                                    null,
+                                    null
+                                ));
                             }
                         }
                         catch (AccessDeniedException accDeniedExc)

@@ -56,16 +56,8 @@ public class CtrlAuth implements ApiCall
         MsgIntAuth auth = MsgIntAuth.parseDelimitedFrom(msgDataIn);
         String nodeName = auth.getNodeName();
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
-        UUID disklessStorPoolDfnUuid = UUID.fromString(auth.getNodeDisklessStorPoolDfnUuid());
-        UUID disklessStorPoolUuid = UUID.fromString(auth.getNodeDisklessStorPoolUuid());
 
-        ApiCallRcImpl apiCallRc = apiCallHandler.authenticate(
-            nodeUuid,
-            nodeName,
-            disklessStorPoolDfnUuid,
-            disklessStorPoolUuid,
-            controllerPeer
-        );
+        ApiCallRcImpl apiCallRc = apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer);
 
         if (apiCallRc == null)
         {

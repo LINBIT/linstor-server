@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -218,11 +217,6 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             transMgrProvider,
             vlmMap
         );
-        if (storPool.getName().displayValue.equals(LinStor.DISKLESS_STOR_POOL_NAME) &&
-            node instanceof NodeData)
-        {
-            ((NodeData) node).setDisklessStorPool(storPool);
-        }
         return new Pair<>(storPool, new StorPoolInitMaps(vlmMap));
     }
 

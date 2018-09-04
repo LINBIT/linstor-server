@@ -55,7 +55,6 @@ public class ApplyNode implements ApiCall
             extractNodeConns(nodeData.getNodeConnsList()),
             ProtoMapUtils.asMap(nodeData.getNodePropsList()),
             Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
-            UUID.fromString(nodeData.getNodeDisklessStorPoolUuid()),
             nodeData.getFullSyncId(),
             nodeData.getUpdateId()
         );
@@ -91,8 +90,7 @@ public class ApplyNode implements ApiCall
                     nodeConn.getOtherNodeName(),
                     nodeConn.getOtherNodeType(),
                     nodeConn.getOtherNodeFlags(),
-                    ProtoMapUtils.asMap(nodeConn.getNodeConnPropsList()),
-                    UUID.fromString(nodeConn.getOtherNodeDisklessStorPoolUuid())
+                    ProtoMapUtils.asMap(nodeConn.getNodeConnPropsList())
                 )
             );
         }

@@ -7,7 +7,6 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -53,9 +52,7 @@ public class NodeDataSatelliteFactory
         UUID uuid,
         NodeName nameRef,
         Node.NodeType typeRef,
-        Node.NodeFlag[] flags,
-        UUID disklessStorPoolUuid,
-        StorPoolDefinition disklessStorPoolDfn
+        Node.NodeFlag[] flags
     )
         throws ImplementationError
     {
@@ -81,15 +78,6 @@ public class NodeDataSatelliteFactory
                     transObjFactory,
                     transMgrProvider
                 );
-
-                nodeData.setDisklessStorPool(storPoolDataFactory.getInstanceSatellite(
-                    accCtx,
-                    disklessStorPoolUuid,
-                    nodeData,
-                    disklessStorPoolDfn,
-                    DisklessDriver.class.getSimpleName(),
-                    freeSpaceMgrFactory.getInstance()
-                ));
             }
         }
         catch (Exception exc)

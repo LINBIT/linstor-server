@@ -49,7 +49,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -63,6 +65,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.DisklessDriver;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
@@ -85,6 +88,7 @@ public class CtrlNodeApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final StorPoolHelper storPoolHelper;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -102,6 +106,7 @@ public class CtrlNodeApiCallHandler
         SatelliteConnector satelliteConnectorRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
+        StorPoolHelper storPoolHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -119,6 +124,7 @@ public class CtrlNodeApiCallHandler
         satelliteConnector = satelliteConnectorRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
+        storPoolHelper = storPoolHelperRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -228,6 +234,17 @@ public class CtrlNodeApiCallHandler
                 }
 
                 nodeRepository.put(apiCtx, nodeName, node);
+
+                // create default diskless storage pool
+                // this has to happen AFTER we added the node into the nodeRepository
+                // otherwise createStorPool will not find the node by its nodeNameStr
+                storPoolHelper.createStorPool(
+                    nodeNameStr,
+                    LinStor.DISKLESS_STOR_POOL_NAME,
+                    DisklessDriver.class.getSimpleName(),
+                    (String) null
+                );
+
                 ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(responses, context,

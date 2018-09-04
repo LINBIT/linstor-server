@@ -64,13 +64,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendAuthMessage(
-        final UUID nodeUuid,
-        final String nodeName,
-        final byte[] sharedSecret,
-        final UUID nodeDisklessStorPoolDfnUuid,
-        final UUID nodeDisklessStorPoolUuid
-    )
+    public void sendAuthMessage(final UUID nodeUuid, final String nodeName, final byte[] sharedSecret)
         throws IOException
     {
         send(
@@ -78,13 +72,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_AUTH,
                 getNextApiCallId()
             )
-            .authMessage(
-                nodeUuid,
-                nodeName,
-                sharedSecret,
-                nodeDisklessStorPoolDfnUuid,
-                nodeDisklessStorPoolUuid
-            )
+            .authMessage(nodeUuid, nodeName, sharedSecret)
             .build()
         );
     }

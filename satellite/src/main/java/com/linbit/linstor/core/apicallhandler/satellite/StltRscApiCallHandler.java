@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.FreeSpaceMgrSatelliteFactory;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterfaceDataFactory;
@@ -29,7 +28,6 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
@@ -47,7 +45,6 @@ import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -102,11 +99,9 @@ class StltRscApiCallHandler
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final ResourceConnectionDataFactory resourceConnectionDataFactory;
-    private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
-    private final CtrlStltSerializer interComSerializer;
 
     @Inject
     StltRscApiCallHandler(
@@ -128,9 +123,7 @@ class StltRscApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
-        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
-        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
-        CtrlStltSerializer interComSerializerRef
+        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -151,9 +144,7 @@ class StltRscApiCallHandler
         transMgrProvider = transMgrProviderRef;
         stltSecObjs = stltSecObjsRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
-        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
-        interComSerializer = interComSerializerRef;
     }
 
     /**
@@ -194,7 +185,6 @@ class StltRscApiCallHandler
         }
     }
 
-    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void applyChanges(RscPojo rscRawData)
     {
         try
@@ -320,9 +310,7 @@ class StltRscApiCallHandler
                         otherRscRaw.getNodeUuid(),
                         new NodeName(otherRscRaw.getNodeName()),
                         NodeType.valueOf(otherRscRaw.getNodeType()),
-                        NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
-                        otherRscRaw.getNodeDisklessStorPoolUuid(),
-                        controllerPeerConnector.getDisklessStorPoolDfn()
+                        NodeFlag.restoreFlags(otherRscRaw.getNodeFlags())
                     );
                     checkUuid(remoteNode, otherRscRaw);
 
@@ -468,9 +456,7 @@ class StltRscApiCallHandler
                                 otherRsc.getNodeUuid(),
                                 nodeName,
                                 NodeType.valueOf(otherRsc.getNodeType()),
-                                NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
-                                otherRsc.getNodeDisklessStorPoolUuid(),
-                                controllerPeerConnector.getDisklessStorPoolDfn()
+                                NodeFlag.restoreFlags(otherRsc.getNodeFlags())
                             );
 
                             // set node's netinterfaces

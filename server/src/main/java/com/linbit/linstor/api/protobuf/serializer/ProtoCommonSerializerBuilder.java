@@ -49,8 +49,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
         baos = new ByteArrayOutputStream();
         exceptionOccured = false;
-
         if (msgContent != null || apiCallId != null)
+
         {
             try
             {

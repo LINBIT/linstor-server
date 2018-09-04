@@ -36,13 +36,7 @@ public interface CtrlStltSerializer extends CommonSerializer
          */
         CtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid);
 
-        CtrlStltSerializerBuilder authMessage(
-            UUID nodeUuid,
-            String nodeName,
-            byte[] sharedSecret,
-            UUID nodeDisklessStorPoolDfnUuid,
-            UUID nodeDisklessStorPoolUuid
-        );
+        CtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret);
 
         CtrlStltSerializerBuilder changedController(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName);

@@ -11,7 +11,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -104,16 +103,6 @@ public class NodeDataControllerFactory
             transMgrProvider
         );
         dbDriver.create(nodeData);
-
-        nodeData.setDisklessStorPool(
-            storPoolDataFactory.create(
-                accCtx,
-                nodeData,
-                storPoolDefinitionRepository.get(accCtx, DISKLESS_STOR_POOL_NAME),
-                DisklessDriver.class.getSimpleName(),
-                freeSpaceMgrFactory.getInstance(accCtx, new FreeSpaceMgrName(nameRef, DISKLESS_STOR_POOL_NAME))
-            )
-        );
 
         return nodeData;
     }

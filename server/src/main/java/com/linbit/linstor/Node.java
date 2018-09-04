@@ -79,9 +79,6 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException;
 
-    StorPool getDisklessStorPool(AccessContext accCtx)
-        throws AccessDeniedException;
-
     Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
@@ -242,7 +239,6 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         Map<String, String> getProps();
         long getFlags();
         List<NetInterface.NetInterfaceApi> getNetInterfaces();
-        UUID getDisklessStorPoolUuid();
     }
 
     interface InitMaps

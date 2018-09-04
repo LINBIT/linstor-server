@@ -103,10 +103,4 @@ public class NodeApiData implements Node.NodeApi
 
         return bld.build();
     }
-
-    @Override
-    public UUID getDisklessStorPoolUuid()
-    {
-        return UUID.fromString(node.getDisklessStorPoolUuid());
-    }
 }

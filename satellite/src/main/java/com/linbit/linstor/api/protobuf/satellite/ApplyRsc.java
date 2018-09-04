@@ -163,7 +163,6 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(protoNode.getUuid()),
                     protoNode.getType(),
                     otherRsc.getNodeFlags(),
-                    UUID.fromString(protoNode.getDisklessStorPoolUuid()),
                     ProtoMapUtils.asMap(protoNode.getPropsList()),
                     extractNetIfs(protoNode),
                     UUID.fromString(otherRsc.getRscUuid()),

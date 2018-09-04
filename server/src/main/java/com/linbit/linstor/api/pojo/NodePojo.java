@@ -18,7 +18,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final List<NetInterface.NetInterfaceApi> nodeNetInterfaces;
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
-    private final UUID disklessStorPoolUuid;
     private final Long fullSyncId;
     private final Long updateId;
 
@@ -31,7 +30,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final List<NodeConnPojo> nodeConnsRef,
         final Map<String, String> nodePropsRef,
         final Peer.ConnectionStatus connectionStatusRef,
-        final UUID disklessStorPoolUuidRef,
         final Long fullSyncIdRef,
         final Long updateIdRef
     )
@@ -43,7 +41,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         nodeNetInterfaces = nodeNetInterfacesRef;
         nodeConns = nodeConnsRef;
         nodeProps = nodePropsRef;
-        disklessStorPoolUuid = disklessStorPoolUuidRef;
         connectionStatus = connectionStatusRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
@@ -107,11 +104,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return nodeName.compareTo(otherNodePojo.nodeName);
     }
 
-    @Override
-    public UUID getDisklessStorPoolUuid()
-    {
-        return disklessStorPoolUuid;
-    }
 
     public long getFullSyncId()
     {
@@ -131,7 +123,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         private final String otherNodeType;
         private final long otherNodeFlags;
         private final Map<String, String> nodeConnProps;
-        private final UUID otherNodeDisklessStorPoolUuid;
 
         public NodeConnPojo(
             UUID nodeConnUuidRef,
@@ -139,8 +130,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
             String otherNodeNameRef,
             String otherNodeTypeRef,
             long otherNodeFlagsRef,
-            Map<String, String> nodeConnPropsRef,
-            UUID otherNodeDisklessStorPoolUuidRef
+            Map<String, String> nodeConnPropsRef
         )
         {
             nodeConnUuid = nodeConnUuidRef;
@@ -149,7 +139,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
             otherNodeType = otherNodeTypeRef;
             otherNodeFlags = otherNodeFlagsRef;
             nodeConnProps = nodeConnPropsRef;
-            otherNodeDisklessStorPoolUuid = otherNodeDisklessStorPoolUuidRef;
         }
 
         public UUID getNodeConnUuid()
@@ -180,11 +169,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         public Map<String, String> getNodeConnProps()
         {
             return nodeConnProps;
-        }
-
-        public UUID getOtherNodeDisklessStorPoolUuid()
-        {
-            return otherNodeDisklessStorPoolUuid;
         }
     }
 }

@@ -104,13 +104,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
      * Controller -> Satellite
      */
     @Override
-    public ProtoCtrlStltSerializerBuilder authMessage(
-        UUID nodeUuid,
-        String nodeName,
-        byte[] sharedSecret,
-        UUID nodeDisklessStorPoolDfnUuid,
-        UUID nodeDisklessStorPoolUuid
-    )
+    public ProtoCtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret)
     {
         try
         {
@@ -118,8 +112,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setNodeUuid(nodeUuid.toString())
                 .setNodeName(nodeName)
                 .setSharedSecret(ByteString.copyFrom(sharedSecret))
-                .setNodeDisklessStorPoolDfnUuid(nodeDisklessStorPoolDfnUuid.toString())
-                .setNodeDisklessStorPoolUuid(nodeDisklessStorPoolUuid.toString())
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -803,9 +795,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllNodeProps(
                     ProtoMapUtils.fromMap(node.getProps(serializerCtx).map())
                 )
-                .setNodeDisklessStorPoolUuid(
-                    node.getDisklessStorPool(serializerCtx).getUuid().toString()
-                )
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build();
@@ -1073,7 +1062,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setUuid(node.getUuid().toString())
                 .setName(node.getName().displayValue)
                 .setType(node.getNodeType(serializerCtx).name())
-                .setDisklessStorPoolUuid(node.getDisklessStorPool(serializerCtx).getUuid().toString())
                 .addAllProps(ProtoMapUtils.fromMap(nodeProps))
                 .addAllNetInterfaces(buildNodeNetInterfaces(node))
                 .build();

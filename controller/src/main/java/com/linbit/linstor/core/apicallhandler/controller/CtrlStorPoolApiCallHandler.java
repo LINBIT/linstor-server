@@ -1,19 +1,14 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescription;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.FreeSpaceMgrControllerFactory;
-import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDataControllerFactory;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
@@ -22,10 +17,11 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FreeSpacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -61,16 +57,13 @@ public class CtrlStorPoolApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataControllerFactory storPoolDataFactory;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
-    private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
+    private final StorPoolHelper storPoolHelper;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -79,16 +72,13 @@ public class CtrlStorPoolApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataControllerFactory storPoolDataFactoryRef,
+        StorPoolHelper storPoolHelperRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         errorReporter = errorReporterRef;
@@ -96,16 +86,13 @@ public class CtrlStorPoolApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
+        storPoolHelper = storPoolHelperRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
 
     public ApiCallRc createStorPool(
@@ -130,7 +117,12 @@ public class CtrlStorPoolApiCallHandler
             // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
             requireStorPoolDfnMapChangeAccess();
 
-            StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver, freeSpaceMgrNameStr);
+            StorPoolData storPool = storPoolHelper.createStorPool(
+                nodeNameStr,
+                storPoolNameStr,
+                driver,
+                freeSpaceMgrNameStr
+            );
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
 
@@ -219,6 +211,17 @@ public class CtrlStorPoolApiCallHandler
 
         try
         {
+            if (LinStor.DISKLESS_STOR_POOL_NAME.equalsIgnoreCase(storPoolNameStr))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                        "The default diskless storage pool cannot be deleted!"
+                    )
+                    .build()
+                );
+            }
+
             StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
 
             if (storPool == null)
@@ -439,66 +442,6 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    private StorPoolData createStorPool(
-        String nodeNameStr,
-        String storPoolNameStr,
-        String driver,
-        String freeSpaceMgrNameStr
-    )
-    {
-        NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-        StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
-
-        StorPoolData storPool;
-        try
-        {
-            if (storPoolDef == null)
-            {
-                // implicitly create storage pool definition if it doesn't exist
-                storPoolDef = storPoolDefinitionDataFactory.create(
-                    peerAccCtx.get(),
-                    LinstorParsingUtils.asStorPoolName(storPoolNameStr)
-                );
-            }
-
-            FreeSpaceMgrName fsmName = freeSpaceMgrNameStr != null && !freeSpaceMgrNameStr.isEmpty() ?
-                LinstorParsingUtils.asFreeSpaceMgrName(freeSpaceMgrNameStr) :
-                new FreeSpaceMgrName(node.getName(), storPoolDef.getName());
-
-            storPool = storPoolDataFactory.create(
-                peerAccCtx.get(),
-                node,
-                storPoolDef,
-                driver,
-                freeSpaceMgrFactory.getInstance(peerAccCtx.get(), fsmName)
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "register " + getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr),
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-            );
-        }
-        catch (LinStorDataAlreadyExistsException alreadyExistsExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_EXISTS_STOR_POOL,
-                    getStorPoolDescription(nodeNameStr, storPoolNameStr) + " already exists."
-                )
-                .build(),
-                alreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-        return storPool;
-    }
-
     private void updateStorPoolDfnMap(StorPoolData storPool)
     {
         try
@@ -543,7 +486,7 @@ public class CtrlStorPoolApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "delete " + getStorPoolDescriptionInline(storPool),
+                "delete " + StorPoolHelper.getStorPoolDescriptionInline(storPool),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
@@ -551,32 +494,6 @@ public class CtrlStorPoolApiCallHandler
         {
             throw new ApiSQLException(sqlExc);
         }
-    }
-
-    public static String getStorPoolDescription(String nodeNameStr, String storPoolNameStr)
-    {
-        return "Node: " + nodeNameStr + ", Storage pool name: " + storPoolNameStr;
-    }
-
-    public static String getStorPoolDescriptionInline(StorPool storPool)
-    {
-        return getStorPoolDescriptionInline(
-            storPool.getNode().getName().displayValue,
-            storPool.getName().displayValue
-        );
-    }
-
-    public static String getStorPoolDescriptionInline(NodeData node, StorPoolDefinitionData storPoolDfn)
-    {
-        return getStorPoolDescriptionInline(
-            node.getName().displayValue,
-            storPoolDfn.getName().displayValue
-        );
-    }
-
-    public static String getStorPoolDescriptionInline(String nodeNameStr, String storPoolNameStr)
-    {
-        return "storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'";
     }
 
     private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
