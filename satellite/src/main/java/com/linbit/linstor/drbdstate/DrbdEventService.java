@@ -33,6 +33,8 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     public static final String DRBDSETUP_COMMAND = "drbdsetup";
     private static final int EVENT_QUEUE_DEFAULT_SIZE = 10_000;
 
+    private static final int RESTART_TIMEOUT = 5_000;
+
     private ServiceName instanceName;
     private boolean started = false;
 
@@ -98,12 +100,13 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 else
                 if (event instanceof StdErrEvent)
                 {
-                    errorReporter.logTrace(
+                    errorReporter.logWarning(
                         "DRBD 'events2' returned error: %n%s",
                         new String(((StdErrEvent) event).data)
                     );
-                    errorReporter.logTrace("Restarting DRBD 'events2'");
                     demonHandler.stop(true);
+                    errorReporter.logTrace("Restarting DRBD 'events2' in " + RESTART_TIMEOUT + "ms");
+                    Thread.sleep(RESTART_TIMEOUT);
                     demonHandler.start();
                 }
                 else
