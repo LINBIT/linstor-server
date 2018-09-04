@@ -66,7 +66,7 @@ public class NodeApiData implements Node.NodeApi
         Peer.ConnectionStatus connectionStatus = Peer.ConnectionStatus.UNKNOWN;
         if (node.hasConnectionStatus())
         {
-            connectionStatus = Peer.ConnectionStatus.fromInt(node.getConnectionStatus());
+            connectionStatus = Peer.ConnectionStatus.fromInt(node.getConnectionStatus().getNumber());
         }
         return connectionStatus;
     }
@@ -99,7 +99,7 @@ public class NodeApiData implements Node.NodeApi
         bld.addAllProps(ProtoMapUtils.fromMap(nodeApi.getProps()));
         bld.addAllFlags(Node.NodeFlag.toStringList(nodeApi.getFlags()));
         bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
-        bld.setConnectionStatus(nodeApi.connectionStatus().value());
+        bld.setConnectionStatus(NodeOuterClass.Node.ConnectionStatus.forNumber(nodeApi.connectionStatus().value()));
 
         return bld.build();
     }
