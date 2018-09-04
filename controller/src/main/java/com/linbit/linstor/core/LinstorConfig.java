@@ -27,6 +27,8 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import picocli.CommandLine;
 
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
+
 public class LinstorConfig
 {
     private static CommandLine commandLine;
@@ -121,6 +123,7 @@ public class LinstorConfig
                      initConnectionProviderFromCfg(dbCfgFile);
                  Connection con = dataSource.getConnection())
             {
+                con.setSchema(DATABASE_SCHEMA_NAME);
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
                     "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
                 GenericDbUtils.executeStatement(con, String.format(stmt, controllerPort));
@@ -153,6 +156,7 @@ public class LinstorConfig
                      initConnectionProviderFromCfg(dbCfgFile);
                  Connection con = dataSource.getConnection())
             {
+                con.setSchema(DATABASE_SCHEMA_NAME);
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
                     "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
                 GenericDbUtils.executeStatement(con, String.format(stmt, listenAddress));
