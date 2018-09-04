@@ -99,7 +99,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @param vlm
      */
     @Override
-    public void addingVolume(AccessContext accCtx, Volume vlm) throws AccessDeniedException
+    public void vlmCreating(AccessContext accCtx, Volume vlm) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         // TODO: add check if vlm is part of a registered storPool
@@ -118,7 +118,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @param freeSpaceRef
      */
     @Override
-    public void volumeAdded(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException
+    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         synchronizedRemove(pendingVolumesToAdd, vlm);

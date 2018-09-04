@@ -295,6 +295,10 @@ public class CtrlVlmApiCallHandler
         {
             storPool = vlm.getStorPool(peerAccCtx.get());
             storPool.removeVolume(peerAccCtx.get(), vlm);
+
+            // if storpool's freeSpaceMgr still has to volume as "pendingCreation",
+            // we have to delete it from that list
+            storPool.getFreeSpaceTracker().vlmCreationFinished(apiCtx, vlm, freeSpace);
         }
         catch (AccessDeniedException exc)
         {

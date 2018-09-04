@@ -850,7 +850,7 @@ public class CtrlRscApiCallHandler
                         propsMap.putAll(vlmUpd.getVlmDfnPropsMap());
 
                         long freeSpace = storPoolToFreeSpaceMap.get(vlm.getStorPool(apiCtx).getName().value);
-                        vlm.getStorPool(apiCtx).getFreeSpaceTracker().volumeAdded(apiCtx, vlm, freeSpace);
+                        vlm.getStorPool(apiCtx).getFreeSpaceTracker().vlmCreationFinished(apiCtx, vlm, freeSpace);
 
                     }
                     else
