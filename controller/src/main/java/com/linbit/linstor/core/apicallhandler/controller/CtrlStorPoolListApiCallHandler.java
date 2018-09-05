@@ -134,7 +134,7 @@ public class CtrlStorPoolListApiCallHandler
                         upperFilterStorPools.isEmpty() ||
                         upperFilterStorPools.contains(storPoolDfn.getName().value)
                     ) &&
-                    !LinStor.DISKLESS_STOR_POOL_NAME.equals(storPoolDfn.getName().value)
+                    !LinStor.DISKLESS_STOR_POOL_NAME.equalsIgnoreCase(storPoolDfn.getName().value)
                 )
                 .forEach(storPoolDfn ->
                     {
