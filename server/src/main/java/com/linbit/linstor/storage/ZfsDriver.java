@@ -461,7 +461,7 @@ public class ZfsDriver extends AbsStorageDriver
         return freeSpace;
     }
 
-    private String getPoolFromConfig(Map<String, String> config)
+    protected String getPoolFromConfig(Map<String, String> config)
     {
         return getAsString(config, StorageConstants.CONFIG_ZFS_POOL_KEY, pool);
     }

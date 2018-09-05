@@ -15,6 +15,8 @@ import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
+import com.linbit.linstor.storage.ZfsThinDriver;
+import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -136,7 +138,8 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
                 LvmDriverKind.class,
                 LvmThinDriverKind.class,
                 SwordfishInitiatorDriverKind.class,
-                ZfsDriverKind.class
+                ZfsDriverKind.class,
+                ZfsThinDriverKind.class
             )
         ),
         COMBINED(
@@ -146,7 +149,8 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
                 LvmDriverKind.class,
                 LvmThinDriverKind.class,
                 SwordfishInitiatorDriverKind.class,
-                ZfsDriverKind.class
+                ZfsDriverKind.class,
+                ZfsThinDriverKind.class
             )
         ),
         AUXILIARY(4, Collections.emptyList()),
