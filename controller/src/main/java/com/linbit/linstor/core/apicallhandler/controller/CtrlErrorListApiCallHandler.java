@@ -124,11 +124,15 @@ public class CtrlErrorListApiCallHandler
         final Set<String> ids)
     {
         Peer peer = getPeer(node);
-        byte[] msg = clientComSerializer.headerlessBuilder()
-            .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
-
-        return peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
-            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        Flux<ByteArrayInputStream> fluxReturn = Flux.empty();
+        if (peer != null)
+        {
+            byte[] msg = clientComSerializer.headerlessBuilder()
+                .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
+            fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        }
+        return fluxReturn;
     }
 
     private Peer getPeer(Node node)
