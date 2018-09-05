@@ -376,12 +376,24 @@ public class ZfsDriver extends AbsStorageDriver
         return identifier + "@" + snapshotName;
     }
 
+    private String getRootPool()
+    {
+        String rootPool = pool;
+        int subPoolSep = pool.indexOf(File.separator);
+        if (subPoolSep >= 0)
+        {
+            rootPool = pool.substring(0, subPoolSep);
+        }
+        return rootPool;
+    }
+
     @Override
     public long getTotalSpace() throws StorageException
     {
+        final String rootPool = getRootPool();
         final String[] command = new String[]
             {
-                zpoolCommand, "get", "size", "-Hp", pool
+                zpoolCommand, "get", "size", "-Hp", rootPool
             };
 
         long totalSpace;
@@ -400,8 +412,8 @@ public class ZfsDriver extends AbsStorageDriver
         catch (ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
-                "Failed to get the free size (zfs 'available')",
-                String.format("Failed to get the free size for pool: %s", pool),
+                "Failed to get the total size (zfs 'size')",
+                String.format("Failed to get the total size for pool: %s", pool),
                 (exc instanceof ChildProcessTimeoutException) ?
                     "External command timed out" :
                     "External command threw an IOException",
