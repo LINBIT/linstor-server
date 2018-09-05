@@ -78,8 +78,8 @@ public class ConnectionPropsTest extends GenericDbBase
         blockDev2 = "/dev/vol2/block";
         metaDisk2 = "/dev/vol2/meta";
 
-        node1 = nodeDataFactory.create(SYS_CTX, nodeName1, NodeType.CONTROLLER, null);
-        node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.CONTROLLER, null);
+        node1 = nodeDataFactory.create(SYS_CTX, nodeName1, NodeType.SATELLITE, null);
+        node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.SATELLITE, null);
 
         resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType

@@ -309,7 +309,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             NodeData node1 = nodeDataFactory.create(
                 SYS_CTX,
                 nodeName,
-                NodeType.AUXILIARY,
+                NodeType.COMBINED,
                 new NodeFlag[] {NodeFlag.QIGNORE}
             );
             node1.getProps(SYS_CTX).setProp(node1TestKey, node1TestValue);
@@ -332,7 +332,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             NodeData node2 = nodeDataFactory.create(
                 SYS_CTX,
                 nodeName2,
-                NodeType.AUXILIARY,
+                NodeType.COMBINED,
                 null
             );
 
@@ -491,7 +491,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             assertEquals(netIfUuid, netIf.getUuid());
         }
 
-        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(SYS_CTX));
+        assertEquals(NodeType.COMBINED, loadedNode.getNodeType(SYS_CTX));
         assertNotNull(loadedNode.getObjProt());
         {
             Props nodeProps = loadedNode.getProps(SYS_CTX);

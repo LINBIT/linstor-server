@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.GenericDbBase;
@@ -63,7 +64,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_NODE_STOR_POOL
         );
 
-        node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
+        node = nodeDataFactory.create(SYS_CTX, nodeName, NodeType.SATELLITE, null);
         spdd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
 
         fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, new FreeSpaceMgrName(node.getName(), spdd.getName()));
@@ -169,7 +170,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         Map<StorPoolData, InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap, tmpFreeSpaceMgrMap);
 
         assertNotNull(storPools);
-        assertEquals(2, storPools.size());
+        assertEquals(1, storPools.size()); // we didn't create the dfltDisklessStorPool here
 
         // one of the entries should be the default diskless stor pool, we just skip that
         StorPoolData storPoolData = storPools.keySet().stream()

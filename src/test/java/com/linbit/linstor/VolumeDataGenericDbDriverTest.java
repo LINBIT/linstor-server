@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.InitMaps;
 import com.linbit.linstor.Volume.VlmFlags;
@@ -70,7 +71,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         node = nodeDataFactory.create(
             SYS_CTX,
             nodeName,
-            null,
+            NodeType.SATELLITE,
             null
         );
 

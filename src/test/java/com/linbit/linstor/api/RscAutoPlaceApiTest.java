@@ -2,6 +2,7 @@ package com.linbit.linstor.api;
 
 import javax.inject.Inject;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.FreeSpaceMgr;
 import com.linbit.linstor.FreeSpaceMgrName;
@@ -21,6 +22,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
@@ -29,6 +31,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.storage.LvmThinDriver;
 import org.junit.Assert;
@@ -70,6 +73,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
     @Inject private CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandler;
     @Inject private CtrlRscApiCallHandler ctrlRscApiCallHandler;
+
+    private static final StorPoolName DFLT_DISKLESS_STOR_POOL_NAME;
+
+    static
+    {
+        try
+        {
+            DFLT_DISKLESS_STOR_POOL_NAME = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
 
     @Mock
     protected Peer mockSatellite;
@@ -920,6 +937,26 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             stlt.setPeer(GenericDbBase.SYS_CTX, mockSatellite);
             nodesMap.put(stlt.getName(), stlt);
+            StorPoolDefinitionData dfltDisklessStorPoolDfn =
+                storPoolDefinitionRepository.get(SYS_CTX, DFLT_DISKLESS_STOR_POOL_NAME);
+            if (dfltDisklessStorPoolDfn == null)
+            {
+                dfltDisklessStorPoolDfn = storPoolDefinitionDataFactory.create(
+                    BOB_ACC_CTX,
+                    DFLT_DISKLESS_STOR_POOL_NAME
+                );
+            }
+            FreeSpaceMgr fsm = freeSpaceMgrFactory.getInstance(
+                BOB_ACC_CTX,
+                new FreeSpaceMgrName(stlt.getName(), DFLT_DISKLESS_STOR_POOL_NAME)
+            );
+            storPoolDataFactory.create(
+                BOB_ACC_CTX,
+                stlt,
+                dfltDisklessStorPoolDfn,
+                DisklessDriver.class.getSimpleName(),
+                fsm
+            );
 
             return new SatelliteBuilder(this, stlt);
         }

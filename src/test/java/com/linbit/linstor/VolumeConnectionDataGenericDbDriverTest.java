@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -98,9 +99,9 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
+        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, NodeType.SATELLITE, null);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
+        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, NodeType.SATELLITE, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         resDfn = resourceDefinitionDataFactory.create(
