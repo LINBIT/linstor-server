@@ -381,7 +381,7 @@ public class ZfsDriver extends AbsStorageDriver
     {
         final String[] command = new String[]
             {
-                zpoolCommand, "get", "free", "-Hp", pool
+                zpoolCommand, "get", "size", "-Hp", pool
             };
 
         long totalSpace;

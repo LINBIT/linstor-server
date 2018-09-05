@@ -744,7 +744,7 @@ public class ZfsDriverTest extends StorageTestUtils
         boolean poolExists
     )
     {
-        final String property = "free";
+        final String property = "size";
         Command command = new Command(
             zfsCommand,
             "get", property,
