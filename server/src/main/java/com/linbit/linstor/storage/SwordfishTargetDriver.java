@@ -473,10 +473,10 @@ public class SwordfishTargetDriver implements StorageDriver
         boolean requiresStorSvc = storSvc == null;
         boolean requiresSfStorPool = storPool == null;
 
-        String tmpHostPort = stltNamespace.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+        String tmpHostPort = stltNamespace.get(StorageConstants.CONFIG_SF_URL_KEY);
         String tmpUserName = stltNamespace.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
         String tmpUserPw = stltNamespace.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
-        String tmpStorSvc = storPoolNamespace.get(StorageConstants.CONFIG_SF_STOR_SVC_KEY);
+        String tmpStorSvc = nodeNamespace.get(StorageConstants.CONFIG_SF_STOR_SVC_KEY);
         String tmpSfStorPool = storPoolNamespace.get(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
         String tmpVlmCrtTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);
         String tmpVlmCrtRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY);
@@ -484,7 +484,7 @@ public class SwordfishTargetDriver implements StorageDriver
         // temporary workaround to not having to disable security to set this property on controller-level
         if (tmpHostPort == null || tmpHostPort.isEmpty())
         {
-            tmpHostPort = nodeNamespace.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+            tmpHostPort = nodeNamespace.get(StorageConstants.CONFIG_SF_URL_KEY);
         }
         if (tmpUserName == null || tmpUserName.isEmpty())
         {
@@ -497,15 +497,15 @@ public class SwordfishTargetDriver implements StorageDriver
 
         StringBuilder failErrorMsg = new StringBuilder();
         appendIfEmptyButRequired(
-                "Missing swordfish host:port specification as a single value such as \n" +
-                    "https://127.0.0.1:1234\n"+
-                    "This property has to be set globally:\n\n" +
-                    "linstor controller set-property " +
-                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_HOST_PORT_KEY +
-                    " <value>\n",
-                failErrorMsg,
-                tmpHostPort,
-                requiresHostPort
+            "Missing swordfish host:port specification as a single value such as \n" +
+                "https://127.0.0.1:1234\n" +
+                "This property has to be set globally:\n\n" +
+                "linstor controller set-property " +
+                ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_URL_KEY +
+                " <value>\n",
+            failErrorMsg,
+            tmpHostPort,
+            requiresHostPort
         );
         appendIfEmptyButRequired("Missing swordfish storage service\n", failErrorMsg, tmpStorSvc, requiresStorSvc);
         appendIfEmptyButRequired("Missing swordfish storage pool\n", failErrorMsg, tmpSfStorPool, requiresSfStorPool);

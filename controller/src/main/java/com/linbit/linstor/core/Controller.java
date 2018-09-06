@@ -119,6 +119,7 @@ public final class Controller
     private final SatelliteConnector satelliteConnector;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
+    private final SwordfishTargetProcessManager swordfishTargetProcessManager;
 
     @Inject
     public Controller(
@@ -141,7 +142,8 @@ public final class Controller
         ReconnectorTask reconnectorTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         SatelliteConnector satelliteConnectorRef,
-        ControllerNetComInitializer controllerNetComInitializerRef
+        ControllerNetComInitializer controllerNetComInitializerRef,
+        SwordfishTargetProcessManager swordfishTargetProcessManagerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -164,6 +166,7 @@ public final class Controller
         debugConsoleCreator = debugConsoleCreatorRef;
         satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
+        swordfishTargetProcessManager = swordfishTargetProcessManagerRef;
     }
 
     public void start()
@@ -204,6 +207,8 @@ public final class Controller
                 errorReporter,
                 initCtx
             );
+
+            swordfishTargetProcessManager.initialize();
 
             connectToKnownNodes(errorReporter, initCtx);
 

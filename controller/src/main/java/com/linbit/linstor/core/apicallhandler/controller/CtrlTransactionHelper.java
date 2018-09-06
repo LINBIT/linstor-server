@@ -30,4 +30,16 @@ public class CtrlTransactionHelper
             throw new ApiSQLException(sqlExc);
         }
     }
+
+    public void rollback()
+    {
+        try
+        {
+            transMgrProvider.get().rollback();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
 }

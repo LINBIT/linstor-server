@@ -36,7 +36,7 @@ public class StorageConstants
     /*
      * Swordfish
      */
-    public static final String CONFIG_SF_HOST_PORT_KEY = ApiConsts.KEY_STOR_POOL_SF_HOST_PORT;
+    public static final String CONFIG_SF_URL_KEY = ApiConsts.KEY_STOR_POOL_SF_URL;
     public static final String CONFIG_SF_STOR_SVC_KEY = ApiConsts.KEY_STOR_POOL_SF_STOR_SVC;
     public static final String CONFIG_SF_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_SF_STOR_POOL;
     public static final String CONFIG_SF_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_SF_USER_NAME;

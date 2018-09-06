@@ -1,20 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.stream.Stream;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+import static java.util.stream.Collectors.toList;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
@@ -48,9 +35,12 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -61,14 +51,32 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.DisklessDriver;
+import com.linbit.linstor.storage.DisklessDriverKind;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-import static java.util.stream.Collectors.toList;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 @Singleton
 public class CtrlNodeApiCallHandler
@@ -89,6 +97,8 @@ public class CtrlNodeApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final StorPoolHelper storPoolHelper;
+    private final DynamicNumberPool sfTargetPortPool;
+    private final SwordfishTargetProcessManager sfTargetProcessMgr;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -107,7 +117,9 @@ public class CtrlNodeApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         StorPoolHelper storPoolHelperRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        @Named(NumberPoolModule.SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
+        SwordfishTargetProcessManager sfTargetProcessMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -126,6 +138,8 @@ public class CtrlNodeApiCallHandler
         peer = peerRef;
         storPoolHelper = storPoolHelperRef;
         peerAccCtx = peerAccCtxRef;
+        sfTargetPortPool = sfTargetPortPoolRef;
+        sfTargetProcessMgr = sfTargetProcessMgrRef;
     }
 
     /**
@@ -179,62 +193,85 @@ public class CtrlNodeApiCallHandler
 
         try
         {
-            requireNodesMapChangeAccess();
-            if (netIfs.isEmpty())
+            createNodeImpl(nodeNameStr, nodeTypeStr, netIfs, propsMap, responses, context);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            responses = responseConverter.reportException(peer.get(), context, exc);
+        }
+
+        return responses;
+    }
+
+    private NodeData createNodeImpl(
+        String nodeNameStr,
+        String nodeTypeStr,
+        List<NetInterfaceApi> netIfs,
+        Map<String, String> propsMap,
+        ApiCallRcImpl responses,
+        ResponseContext context
+    )
+        throws AccessDeniedException
+    {
+        requireNodesMapChangeAccess();
+        NodeData node = null;
+        if (netIfs.isEmpty())
+        {
+            // TODO for auxiliary nodes maybe no netif required?
+            reportMissingNetInterfaces(nodeNameStr); // throws exception
+        }
+        else
+        {
+            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
+
+            NodeType type = asNodeType(nodeTypeStr);
+
+            node = createNode(nodeName, type);
+
+            ctrlPropsHelper.fillProperties(
+                LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
+
+            Map<String, NetInterface> netIfMap = new TreeMap<>();
+
+            for (NetInterfaceApi netIfApi : netIfs)
             {
-                // TODO for auxiliary nodes maybe no netif required?
-                reportMissingNetInterfaces(nodeNameStr);
+                TcpPortNumber port = null;
+                EncryptionType encrType = null;
+                if (netIfApi.isUsableAsSatelliteConnection())
+                {
+                    port = LinstorParsingUtils.asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
+                    encrType = asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
+                }
+
+                NetInterfaceData netIf = createNetInterface(
+                    node,
+                    LinstorParsingUtils.asNetInterfaceName(netIfApi.getName()),
+                    LinstorParsingUtils.asLsIpAddress(netIfApi.getAddress()),
+                    port,
+                    encrType
+                );
+
+                if (netIfApi.isUsableAsSatelliteConnection() &&
+                    getCurrentStltConn(node) == null
+                )
+                {
+                    setCurrentStltConn(node, netIf);
+                }
+                netIfMap.put(netIfApi.getName(), netIf);
             }
-            else
+
+            if (getCurrentStltConn(node) == null)
             {
-                NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
+                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NO_STLT_CONN_DEFINED,
+                    "No satellite connection defined for " + getNodeDescriptionInline(nodeNameStr)
+                ));
+            }
 
-                NodeType type = asNodeType(nodeTypeStr);
+            nodeRepository.put(apiCtx, nodeName, node);
 
-                Node node = createNode(nodeName, type);
-
-                ctrlPropsHelper.fillProperties(
-                    LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
-
-                Map<String, NetInterface> netIfMap = new TreeMap<>();
-
-                for (NetInterfaceApi netIfApi : netIfs)
-                {
-                    TcpPortNumber port = null;
-                    EncryptionType encrType = null;
-                    if (netIfApi.isUsableAsSatelliteConnection())
-                    {
-                        port = LinstorParsingUtils.asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
-                        encrType = asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
-                    }
-
-                    NetInterfaceData netIf = createNetInterface(
-                        node,
-                        LinstorParsingUtils.asNetInterfaceName(netIfApi.getName()),
-                        LinstorParsingUtils.asLsIpAddress(netIfApi.getAddress()),
-                        port,
-                        encrType
-                    );
-
-                    if (netIfApi.isUsableAsSatelliteConnection() &&
-                        getCurrentStltConn(node) == null
-                    )
-                    {
-                        setCurrentStltConn(node, netIf);
-                    }
-                    netIfMap.put(netIfApi.getName(), netIf);
-                }
-
-                if (getCurrentStltConn(node) == null)
-                {
-                    responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
-                        ApiConsts.WARN_NO_STLT_CONN_DEFINED,
-                        "No satellite connection defined for " + getNodeDescriptionInline(nodeNameStr)
-                    ));
-                }
-
-                nodeRepository.put(apiCtx, nodeName, node);
-
+            if (type.isStorageKindAllowed(DisklessDriverKind.class))
+            {
                 // create default diskless storage pool
                 // this has to happen AFTER we added the node into the nodeRepository
                 // otherwise createStorPool will not find the node by its nodeNameStr
@@ -244,13 +281,71 @@ public class CtrlNodeApiCallHandler
                     DisklessDriver.class.getSimpleName(),
                     (String) null
                 );
+            }
 
-                ctrlTransactionHelper.commit();
+            ctrlTransactionHelper.commit();
 
-                responseConverter.addWithOp(responses, context,
-                    ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
+            responseConverter.addWithOp(responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
 
-                satelliteConnector.startConnecting(node, peerAccCtx.get());
+            satelliteConnector.startConnecting(node, peerAccCtx.get());
+        }
+        return node;
+    }
+
+    public ApiCallRc createSwordfishTargetNode(String nodeNameStr, Map<String, String> propsMap)
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeNodeContext(
+            ApiOperation.makeRegisterOperation(),
+            nodeNameStr
+        );
+
+        try
+        {
+            boolean retry = true;
+            while (retry)
+            {
+                retry = false;
+                try
+                {
+                    int sfTargetPort = sfTargetPortPool.autoAllocate();
+
+                    List<NetInterfaceApi> netIfs = new ArrayList<>();
+                    netIfs.add(
+                        new NetInterfacePojo(
+                            UUID.randomUUID(),
+                            "default",
+                            "127.0.0.1",
+                            sfTargetPort,
+                            ApiConsts.VAL_NETCOM_TYPE_PLAIN
+                        )
+                    );
+                    NodeData node = createNodeImpl(
+                        nodeNameStr,
+                        NodeType.SWORDFISH_TARGET.name(),
+                        netIfs,
+                        propsMap,
+                        responses,
+                        context
+                    );
+                    sfTargetProcessMgr.startLocalSatelliteProcess(node);
+                }
+                catch (PortAlreadyInUseException exc)
+                {
+                    /*
+                     * By rolling back the transaction, we undo the node-creation.
+                     * The process was not started either.
+                     * The only thing that remains from our previous try is the port-allocation
+                     * of sfTargetPortPool, which should remember that the just tried port is
+                     * unavailable.
+                     *
+                     * The only thing we have to do here is to retry the node-creation, with a new
+                     * port number
+                     */
+                    ctrlTransactionHelper.rollback();
+                    retry = true;
+                }
             }
         }
         catch (Exception | ImplementationError exc)
@@ -951,7 +1046,13 @@ public class CtrlNodeApiCallHandler
     {
         try
         {
+            NodeType nodeType = node.getNodeType(apiCtx);
             node.delete(peerAccCtx.get());
+
+            if (NodeType.SWORDFISH_TARGET.equals(nodeType))
+            {
+                sfTargetProcessMgr.stopProcess(node);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -972,6 +1073,32 @@ public class CtrlNodeApiCallHandler
         NodeType nodeType = asNodeType(nodeTypeStr);
         try
         {
+            if (!node.streamStorPools(apiCtx)
+                .map(StorPool::getDriverKind)
+                .allMatch(nodeType::isStorageKindAllowed)
+            )
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                        "Failed to change node type"
+                    )
+                    .setCause("The current node has at least one storage pool with a storage driver " +
+                        "that is not compatible with node type '" + nodeTypeStr + "'")
+                    .build()
+                );
+            }
+            if (NodeType.SWORDFISH_TARGET.equals(nodeType) && node.streamNetInterfaces(apiCtx).count() != 1)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INVLD_NODE_TYPE,
+                        "Failed to change node type"
+                    )
+                    .setCause("A node with type 'swordfish_target' is only allowed to have 1 network interface")
+                    .build()
+                );
+            }
             node.setNodeType(peerAccCtx.get(), nodeType);
         }
         catch (AccessDeniedException accDeniedExc)

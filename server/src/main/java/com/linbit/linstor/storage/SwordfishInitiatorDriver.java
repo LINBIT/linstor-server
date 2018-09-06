@@ -621,7 +621,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
         boolean requiresHostPort = hostPort == null;
         boolean requiresComposedNodeName = composedNodeName == null;
 
-        String tmpHostPort = stltNamespace.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+        String tmpHostPort = stltNamespace.get(StorageConstants.CONFIG_SF_URL_KEY);
         String tmpUserName = stltNamespace.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
         String tmpUserPw = stltNamespace.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
         String tmpComposedNodeName = nodeNamespace.get(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
@@ -633,7 +633,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
         // temporary workaround to not having to disable security to set this property on controller-level
         if (tmpHostPort == null || tmpHostPort.isEmpty())
         {
-            tmpHostPort = nodeNamespace.get(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+            tmpHostPort = nodeNamespace.get(StorageConstants.CONFIG_SF_URL_KEY);
         }
         if (tmpUserName == null || tmpUserName.isEmpty())
         {
@@ -650,7 +650,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
                     "https://127.0.0.1:1234\n"+
                     "This property has to be set globally:\n\n" +
                     "linstor controller set-property " +
-                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_HOST_PORT_KEY +
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_URL_KEY +
                     " <value>\n",
                 failErrorMsg,
                 tmpHostPort,

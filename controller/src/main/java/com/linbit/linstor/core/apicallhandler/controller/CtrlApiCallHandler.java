@@ -225,6 +225,16 @@ public class CtrlApiCallHandler
         return listNodes;
     }
 
+    public ApiCallRc createSwordfishTargetNode(String nodeName, Map<String, String> props)
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lock = LockGuard.createLocked(nodesMapLock.writeLock()))
+        {
+            apiCallRc = nodeApiCallHandler.createSwordfishTargetNode(nodeName, props);
+        }
+        return apiCallRc;
+    }
+
     /**
      * Creates new {@link ResourceDefinition}
      *

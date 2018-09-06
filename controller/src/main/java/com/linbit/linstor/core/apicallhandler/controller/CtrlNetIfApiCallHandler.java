@@ -6,6 +6,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.EncryptionType;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
@@ -18,6 +19,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -26,10 +28,13 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -51,6 +56,8 @@ class CtrlNetIfApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final SwordfishTargetProcessManager sfTargetProcessMgr;
+    private final DynamicNumberPool sfTargetPortPool;
 
     @Inject
     CtrlNetIfApiCallHandler(
@@ -62,7 +69,9 @@ class CtrlNetIfApiCallHandler
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        SwordfishTargetProcessManager sfTargetProcessMgrRef,
+        @Named(NumberPoolModule.SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef
     )
     {
         apiCtx = apiCtxRef;
@@ -74,6 +83,8 @@ class CtrlNetIfApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        sfTargetProcessMgr = sfTargetProcessMgrRef;
+        sfTargetPortPool = sfTargetPortPoolRef;
     }
 
     public ApiCallRc createNetIf(
@@ -94,11 +105,23 @@ class CtrlNetIfApiCallHandler
         try
         {
             NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+
+            if (NodeType.SWORDFISH_TARGET.equals(node.getNodeType(apiCtx)))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_NODE_TYPE,
+                        "Only one network interface allowed for 'swordfish target' nodes"
+                    )
+                );
+            }
+
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
 
             if (node.getSatelliteConnection(apiCtx) != null && stltPort != null)
             {
-                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_EXISTS_STLT_CONN,
                         "Only one satellite connection allowed"
                     ), new LinStorException("This node has already a satellite connection defined"));
@@ -143,14 +166,43 @@ class CtrlNetIfApiCallHandler
         try
         {
             NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
+
+            NodeType nodeType = netIf.getNode().getNodeType(apiCtx);
+
             boolean needsReconnect = addressChanged(netIf, addressStr);
+
+            if (needsReconnect && NodeType.SWORDFISH_TARGET.equals(nodeType))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INVLD_NODE_TYPE,
+                        "Modifying netinterface " + getNetIfDescriptionInline(netIf) + " failed"
+                    )
+                    .setCause("Changing the address of a swordfish_target is prohibited")
+                    .build()
+                );
+            }
 
             setAddress(netIf, addressStr);
 
             Node node = netIf.getNode();
             if (stltPort != null && stltEncrType != null)
             {
-                needsReconnect |= setStltConn(netIf, stltPort, stltEncrType);
+                TcpPortNumber oldPort = netIf.getStltConnPort(apiCtx);
+                boolean needsStartProc = false;
+                if (stltPort != oldPort.value && NodeType.SWORDFISH_TARGET.equals(nodeType))
+                {
+                    sfTargetProcessMgr.stopProcess(netIf.getNode());
+                    sfTargetPortPool.deallocate(oldPort.value);
+                    sfTargetPortPool.allocate(stltPort);
+                    needsStartProc = true;
+                }
+                needsReconnect = setStltConn(netIf, stltPort, stltEncrType);
+
+                if (needsStartProc)
+                {
+                    sfTargetProcessMgr.startLocalSatelliteProcess(node);
+                }
 
                 NetInterface currStltConn = getSatelliteConnection(node);
                 if (currStltConn == null)
@@ -410,7 +462,10 @@ class CtrlNetIfApiCallHandler
         try
         {
             changed = netIf.setStltConn(
-                peerAccCtx.get(), LinstorParsingUtils.asTcpPortNumber(stltPort), asEncryptionType(stltEncrType));
+                peerAccCtx.get(),
+                LinstorParsingUtils.asTcpPortNumber(stltPort),
+                asEncryptionType(stltEncrType)
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {

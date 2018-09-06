@@ -45,7 +45,7 @@ public class SwordfishTargetDriverKind implements StorageDriverKind
     {
         final HashSet<String> keySet = new HashSet<>();
 
-        keySet.add(StorageConstants.CONFIG_SF_HOST_PORT_KEY);
+        keySet.add(StorageConstants.CONFIG_SF_URL_KEY);
         keySet.add(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
         keySet.add(StorageConstants.CONFIG_SF_STOR_POOL_KEY);
         keySet.add(StorageConstants.CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY);

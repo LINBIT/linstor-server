@@ -19,6 +19,7 @@ public class NumberPoolModule extends AbstractModule
 
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
+    public static final String SF_TARGET_PORT_POOL = "SfTargetPortPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
@@ -33,6 +34,11 @@ public class NumberPoolModule extends AbstractModule
     // invalid ranges (e.g. -1 for port), we will fall back to these defaults
     private static final int DEFAULT_TCP_PORT_MIN = 7000;
     private static final int DEFAULT_TCP_PORT_MAX = 7999;
+
+    private static final int DEFAULT_SF_TARGET_TCP_PORT_MIN = 10_000;
+    private static final int DEFAULT_SF_TARGET_TCP_PORT_MAX = 10_999;
+
+    private static final String SF_TARGET_TCP_ELEMENT_NAME = "Swordfish target TCP port";
 
     @Override
     protected void configure()
@@ -85,5 +91,29 @@ public class NumberPoolModule extends AbstractModule
         tcpPortPool.reloadRange();
 
         return tcpPortPool;
+    }
+
+    @Provides
+    @Singleton
+    @Named(SF_TARGET_PORT_POOL)
+    public DynamicNumberPool sfTargetPortPool(
+        ErrorReporter errorReporter,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+    )
+    {
+        DynamicNumberPool sfTargetPortPool = new DynamicNumberPoolImpl(
+            errorReporter,
+            ctrlConfRef,
+            ApiConsts.KEY_SF_TARGET_PORT_AUTO_RANGE,
+            SF_TARGET_TCP_ELEMENT_NAME,
+            TcpPortNumber::tcpPortNrCheck,
+            TcpPortNumber.PORT_NR_MAX,
+            DEFAULT_SF_TARGET_TCP_PORT_MIN,
+            DEFAULT_SF_TARGET_TCP_PORT_MAX
+        );
+
+        sfTargetPortPool.reloadRange();
+
+        return sfTargetPortPool;
     }
 }
