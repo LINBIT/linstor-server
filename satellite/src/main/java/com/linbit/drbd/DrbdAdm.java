@@ -339,7 +339,7 @@ public class DrbdAdm
 
         // Using -c disables /etc/drbd.d/global_common.conf
         // execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
-        execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
+        // execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
     }
 
     private void simpleSetupCommand(ResourceName rscName, String subcommand) throws ExtCmdFailedException

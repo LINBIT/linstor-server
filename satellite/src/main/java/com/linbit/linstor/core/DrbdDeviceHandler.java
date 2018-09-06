@@ -54,7 +54,6 @@ import com.linbit.linstor.storage.StorageException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -119,6 +118,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
     // DRBD configuration file suffix; this should be replaced by a meaningful constant
     private static final String DRBD_CONFIG_SUFFIX = ".res";
+    private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
     private StltConfigAccessor stltCfgAccessor;
 
     @Inject
@@ -1271,30 +1271,8 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
-        Path tmpResFileOut;
-        try
-        {
-            tmpResFileOut = Files.createTempFile("linstor-" + rscName.displayValue + ".", null);
-        }
-        catch (IOException ioExc)
-        {
-            String ioErrorMsg = ioExc.getMessage();
-            if (ioErrorMsg == null)
-            {
-                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
-                    "the I/O error";
-            }
-            throw new ResourceException(
-                "Unable to generated a temporary resource file for resource '" + rscName.displayValue + "'",
-                getAbortMsg(rscName),
-                "Creation of the temporary DRBD configuration file failed due to an I/O error",
-                "- Check whether enough free space is available for the creation of the file\n" +
-                    "- Check whether the application has write access to the target directory\n" +
-                    "- Check whether the storage is operating flawlessly",
-                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                ioExc
-            );
-        }
+        Path actualResFile = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX);
+        Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_TMP_SUFFIX);
 
         try (
             FileOutputStream resFileOut = new FileOutputStream(tmpResFileOut.toFile())
@@ -1332,9 +1310,26 @@ class DrbdDeviceHandler implements DeviceHandler
 
         try
         {
+            drbdUtils.checkResFile(rscName, tmpResFileOut, actualResFile);
+        }
+        catch (ExtCmdFailedException exc)
+        {
+            String errMsg = exc.getMessage();
+            throw new ResourceException(
+                "Generated resource file for resource '" + rscName.displayValue + "' is invalid.",
+                getAbortMsg(rscName),
+                "Verification of resource file failed",
+                null,
+                "The error reported by the runtime environment or operating system is:\n" + errMsg,
+                exc
+            );
+        }
+
+        try
+        {
             Files.move(
                 tmpResFileOut,
-                Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX),
+                actualResFile,
                 StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
             );
         }
