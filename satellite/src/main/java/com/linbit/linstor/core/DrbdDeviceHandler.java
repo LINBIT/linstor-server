@@ -54,11 +54,14 @@ import com.linbit.linstor.storage.StorageException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1268,10 +1271,33 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
+        Path tmpResFileOut;
+        try
+        {
+            tmpResFileOut = Files.createTempFile("linstor-" + rscName.displayValue + ".", null);
+        }
+        catch (IOException ioExc)
+        {
+            String ioErrorMsg = ioExc.getMessage();
+            if (ioErrorMsg == null)
+            {
+                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
+                    "the I/O error";
+            }
+            throw new ResourceException(
+                "Unable to generated a temporary resource file for resource '" + rscName.displayValue + "'",
+                getAbortMsg(rscName),
+                "Creation of the temporary DRBD configuration file failed due to an I/O error",
+                "- Check whether enough free space is available for the creation of the file\n" +
+                    "- Check whether the application has write access to the target directory\n" +
+                    "- Check whether the storage is operating flawlessly",
+                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                ioExc
+            );
+        }
+
         try (
-            FileOutputStream resFileOut = new FileOutputStream(
-                SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
-            )
+            FileOutputStream resFileOut = new FileOutputStream(tmpResFileOut.toFile())
         )
         {
             String content = new ConfFileBuilder(
@@ -1297,6 +1323,29 @@ class DrbdDeviceHandler implements DeviceHandler
                 getAbortMsg(rscName),
                 "Creation of the DRBD configuration file failed due to an I/O error",
                 "- Check whether enough free space is available for the creation of the file\n" +
+                    "- Check whether the application has write access to the target directory\n" +
+                    "- Check whether the storage is operating flawlessly",
+                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                ioExc
+            );
+        }
+
+        try
+        {
+            Files.move(
+                tmpResFileOut,
+                Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX),
+                StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+            );
+        }
+        catch (IOException ioExc)
+        {
+            String ioErrorMsg = ioExc.getMessage();
+            throw new ResourceException(
+                "Unable to move temporary DRBD resource file '" + tmpResFileOut.toString() + "' to resource directory.",
+                getAbortMsg(rscName),
+                "Unable to move temporary DRBD resource file due to an I/O error",
+                "- Check whether enough free space is available for moving the file\n" +
                     "- Check whether the application has write access to the target directory\n" +
                     "- Check whether the storage is operating flawlessly",
                 "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,

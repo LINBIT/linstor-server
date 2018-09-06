@@ -6,6 +6,10 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Iterator;
@@ -466,44 +470,99 @@ public class StltApiCallHandler
 
             transMgrProvider.get().commit();
 
-            try (
-                FileOutputStream commonFileOut = new FileOutputStream(
-                    SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"
-                )
-            )
+            Path tmpResFileOut = null;
+            try
             {
-                ConfFileBuilder confFileBuilder = new ConfFileBuilder(
-                    errorReporter,
-                    whitelistProps
-                );
-                commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
+                tmpResFileOut = Files.createTempFile("linstor-common.", null);
             }
             catch (IOException ioExc)
             {
-                String ioErrorMsg = ioExc.getMessage();
-                if (ioErrorMsg == null)
-                {
-                    ioErrorMsg = "The runtime environment or operating system did not provide a " +
-                        "description of the I/O error";
-                }
-
                 errorReporter.reportProblem(
                     Level.ERROR,
                     new LinStorException(
-                        "Creation of the common Linstor DRBD configuration file " +
-                        "'linstor_common.conf' failed due to an I/O error",
+                        "Unable to generated a temporary common resource file.'",
                         null,
-                        "Creation of the DRBD configuration file failed due to an I/O error",
+                        "Creation of the temporary DRBD configuration file failed due to an I/O error",
                         "- Check whether enough free space is available for the creation of the file\n" +
                             "- Check whether the application has write access to the target directory\n" +
                             "- Check whether the storage is operating flawlessly",
-                        "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                        "The error reported by the runtime environment or operating system is:\n" + ioExc.getMessage(),
                         ioExc
                     ),
                     apiCtx,
                     null,
-                    ioErrorMsg
+                    ioExc.getMessage()
                 );
+            }
+
+            if (tmpResFileOut != null)
+            {
+                try (
+                    FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
+                )
+                {
+                    ConfFileBuilder confFileBuilder = new ConfFileBuilder(
+                        errorReporter,
+                        whitelistProps
+                    );
+                    commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
+                } catch (IOException ioExc)
+                {
+                    String ioErrorMsg = ioExc.getMessage();
+                    if (ioErrorMsg == null)
+                    {
+                        ioErrorMsg = "The runtime environment or operating system did not provide a " +
+                            "description of the I/O error";
+                    }
+
+                    errorReporter.reportProblem(
+                        Level.ERROR,
+                        new LinStorException(
+                            "Creation of the common Linstor DRBD configuration file " +
+                                "'linstor_common.conf' failed due to an I/O error",
+                            null,
+                            "Creation of the DRBD configuration file failed due to an I/O error",
+                            "- Check whether enough free space is available for the creation of the file\n" +
+                                "- Check whether the application has write access to the target directory\n" +
+                                "- Check whether the storage is operating flawlessly",
+                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                            ioExc
+                        ),
+                        apiCtx,
+                        null,
+                        ioErrorMsg
+                    );
+                }
+
+                try
+                {
+                    Files.move(
+                        tmpResFileOut,
+                        Paths.get(SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"),
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+                    );
+                }
+                catch (IOException ioExc)
+                {
+                    String ioErrorMsg = ioExc.getMessage();
+                    errorReporter.reportProblem(
+                        Level.ERROR,
+                        new LinStorException(
+                            "Unable to move temporary common Linstor DRBD configuration file " +
+                                "'linstor_common.conf' failed due to an I/O error",
+                            null,
+                            "Creation of the DRBD configuration file failed due to an I/O error",
+                            "- Check whether enough free space is available for the creation of the file\n" +
+                                "- Check whether the application has write access to the target directory\n" +
+                                "- Check whether the storage is operating flawlessly",
+                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                            ioExc
+                        ),
+                        apiCtx,
+                        null,
+                        ioErrorMsg
+                    );
+                }
             }
 
             Set<ResourceName> slctRsc = new TreeSet<>();
