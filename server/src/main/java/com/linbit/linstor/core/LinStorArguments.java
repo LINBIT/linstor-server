@@ -16,6 +16,7 @@ public class LinStorArguments
     private Pattern keepResPattern;
     private Integer plainPortOverride;
     private boolean skipHostnameCheck;
+    private String bindAddress;
 
     public LinStorArguments()
     {
@@ -128,5 +129,15 @@ public class LinStorArguments
     public boolean isSkipHostnameCheck()
     {
         return skipHostnameCheck;
+    }
+
+    public void setBindAddress(String bindAddressRef)
+    {
+        bindAddress = bindAddressRef;
+    }
+
+    public String getBindAddress()
+    {
+        return bindAddress;
     }
 }

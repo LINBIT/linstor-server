@@ -44,6 +44,9 @@ public class LinStorArgumentParser
         "satellite when a controller assigns the nodename")
     private boolean skipHostNameCheck = false;
 
+    @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
+    private String bindAddress = null;
+
     static LinStorArguments parseCommandLine(String[] args)
     {
         LinStorArgumentParser linArgParser = new LinStorArgumentParser();
@@ -109,6 +112,7 @@ public class LinStorArgumentParser
         }
         cArgs.setOverridePlainPort(linArgParser.plainPort);
         cArgs.setSkipHostnameCheck(linArgParser.skipHostNameCheck);
+        cArgs.setBindAddress(linArgParser.bindAddress);
 
         return cArgs;
     }

@@ -246,7 +246,7 @@ public class StltApiCallHandler
                     )
                 );
             }
-            errorReporter.logInfo("Controller connected and authenticated");
+            errorReporter.logInfo("Controller connected and authenticated (" + controllerPeer.getId() + ")");
         }
 
         return apiCallRc;

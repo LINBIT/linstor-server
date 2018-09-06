@@ -156,6 +156,7 @@ public final class Satellite
             if (!satelliteNetComInitializer.initMainNetComService(
                 initCtx,
                 Paths.get(linStorArguments.getConfigurationDirectory()),
+                linStorArguments.getBindAddress(),
                 linStorArguments.getPlainPortOverride())
             )
             {

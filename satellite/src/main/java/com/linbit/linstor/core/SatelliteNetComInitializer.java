@@ -83,6 +83,7 @@ public final class SatelliteNetComInitializer
     public boolean initMainNetComService(
         AccessContext initCtx,
         Path configurationDirectory,
+        String bindAddressStr,
         Integer plainPort
     )
     {
@@ -103,12 +104,14 @@ public final class SatelliteNetComInitializer
                     // still happens it can be ignored, as every property has a default-value
                 }
             }
-            InetAddress addr = InetAddress.getByName(
-                netComProps.getProperty(
+            if (bindAddressStr == null)
+            {
+                bindAddressStr = netComProps.getProperty(
                     NET_COM_CONF_BIND_ADDR_KEY,
                     NET_COM_DEFAULT_ADDR
-                )
-            );
+                );
+            }
+            InetAddress addr = InetAddress.getByName(bindAddressStr);
             String portProp = netComProps.getProperty(
                 NET_COM_CONF_PORT_KEY,
                 Integer.toString(NET_COM_DEFAULT_PORT)
