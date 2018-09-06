@@ -360,9 +360,19 @@ public class TcpConnectorPeer implements Peer
                     long apiCallId = nextApiCallId.getAndIncrement();
                     byte[] messageBytes = commonSerializer.apiCallBuilder(apiCallName, apiCallId).bytes(data).build();
 
-                    fluxSink.onDispose(() -> openRpcs.remove(apiCallId));
+                    fluxSink.onDispose(
+                        () -> {
+                            synchronized (openRpcs)
+                            {
+                                openRpcs.remove(apiCallId);
+                            }
+                        }
+                    );
 
-                    openRpcs.put(apiCallId, fluxSink);
+                    synchronized (openRpcs)
+                    {
+                        openRpcs.put(apiCallId, fluxSink);
+                    }
                     boolean isConnected = sendMessage(messageBytes);
                     if (!isConnected)
                     {
