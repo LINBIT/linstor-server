@@ -24,6 +24,8 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinitionRepository;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
@@ -89,6 +91,7 @@ public class CtrlNodeApiCallHandler
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final NodeRepository nodeRepository;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -110,6 +113,7 @@ public class CtrlNodeApiCallHandler
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         NodeRepository nodeRepositoryRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -130,6 +134,7 @@ public class CtrlNodeApiCallHandler
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         nodeRepository = nodeRepositoryRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -622,8 +627,24 @@ public class CtrlNodeApiCallHandler
                 // gather all resources of the lost node and circumvent concurrent modification
                 List<Resource> rscToDelete = getRscStream(nodeData).collect(toList());
 
+                // compile a list of used resource definitions, that should be checked if they need deleting
+                List<ResourceDefinition> rscDfnToCheck = rscToDelete.stream()
+                    .map(Resource::getDefinition)
+                    .collect(toList());
+
                 // delete all resources of the lost node
                 rscToDelete.forEach(this::delete);
+
+                for (ResourceDefinition rscDfn : rscDfnToCheck)
+                {
+                    if (rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.RscDfnFlags.DELETE) &&
+                        rscDfn.getResourceCount() == 0)
+                    {
+                        final ResourceName rscName = rscDfn.getName();
+                        rscDfn.delete(apiCtx);
+                        resourceDefinitionRepository.remove(apiCtx, rscName);
+                    }
+                }
 
                 // If the node has no resources, then there should not be any volumes referenced
                 // by the storage pool -- double check and delete storage pools
