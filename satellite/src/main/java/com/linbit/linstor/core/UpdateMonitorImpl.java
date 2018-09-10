@@ -3,6 +3,9 @@ package com.linbit.linstor.core;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -18,6 +21,7 @@ public class UpdateMonitorImpl implements UpdateMonitor
     private boolean currentFullSyncApplied = false;
 
     private final AtomicLong awaitedUpdateId;
+    private final List<Object> waitObjects = new ArrayList<>();
 
     @Inject
     public UpdateMonitorImpl(
@@ -86,11 +90,35 @@ public class UpdateMonitorImpl implements UpdateMonitor
     public void setFullSyncApplied()
     {
         currentFullSyncApplied = true;
+        for (Object waitObject : waitObjects)
+        {
+            synchronized (waitObject)
+            {
+                waitObject.notifyAll();
+            }
+        }
     }
 
     @Override
     public boolean isCurrentFullSyncApplied()
     {
         return currentFullSyncApplied;
+    }
+
+    @Override
+    public void waitUntilCurrentFullSyncApplied(Object waitObject) throws InterruptedException
+    {
+        if (!currentFullSyncApplied)
+        {
+            synchronized (waitObject)
+            {
+                if (!currentFullSyncApplied)
+                {
+                    waitObjects.add(waitObject);
+                    waitObject.wait();
+                }
+            }
+        }
+
     }
 }

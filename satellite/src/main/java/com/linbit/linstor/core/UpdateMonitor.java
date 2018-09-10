@@ -13,4 +13,6 @@ public interface UpdateMonitor
     void setFullSyncApplied();
 
     boolean isCurrentFullSyncApplied();
+
+    void waitUntilCurrentFullSyncApplied(Object waitObject) throws InterruptedException;
 }

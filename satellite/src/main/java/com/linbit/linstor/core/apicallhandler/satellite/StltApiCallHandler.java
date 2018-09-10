@@ -364,6 +364,8 @@ public class StltApiCallHandler
 
                 updateMonitor.setFullSyncApplied();
 
+                errorReporter.logTrace("FullSync registered");
+
                 // There are no explicit controller - satellite watches.
                 // FullSync implicitly creates a watch for all events.
                 createWatchForPeer();
@@ -377,7 +379,9 @@ public class StltApiCallHandler
             else
             {
                 errorReporter.logWarning(
-                    "Ignored an incoming but outdated fullsync"
+                    "Ignored an incoming but outdated fullsync (%d, expected: %d)",
+                    fullSyncId,
+                    updateMonitor.getCurrentFullSyncId()
                 );
             }
         }

@@ -162,6 +162,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
 
+    private UpdateMonitor updateMonitor;
+
 
     @Inject
     DeviceManagerImpl(
@@ -183,7 +185,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
         Provider<DeviceHandlerInvocationFactory> devHandlerInvocFactoryProviderRef,
-        Scheduler scheduler
+        Scheduler scheduler,
+        UpdateMonitor updateMonitorRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -204,6 +207,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
         devHandlerInvocFactoryProvider = devHandlerInvocFactoryProviderRef;
+        updateMonitor = updateMonitorRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -551,6 +555,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     // will be nonblocking
                     waitUpdFlag.set(false);
 
+                    updateMonitor.waitUntilCurrentFullSyncApplied(sched);
+                    if (shutdownFlag.get())
+                    {
+                        throw new SvcCondException();
+                    }
+
                     // Requests updates from the controller
                     phaseRequestUpdateData();
 
@@ -645,7 +655,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     private void phaseRequestUpdateData()
-        throws SvcCondException
     {
         errLog.logTrace("Requesting object updates from the controller");
 
