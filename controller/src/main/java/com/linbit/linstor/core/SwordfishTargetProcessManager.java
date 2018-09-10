@@ -85,9 +85,11 @@ public class SwordfishTargetProcessManager
         }
         catch (IOException exc)
         {
-            throw new LinStorRuntimeException(
-                "Could not start necessary swordfish target node due to IO error",
-                exc
+            errorReporter.reportError(
+                exc,
+                sysCtx,
+                null,
+                "Could not start necessary swordfish target node due to IO error"
             );
         }
         catch (PortAlreadyInUseException exc)
