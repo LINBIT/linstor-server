@@ -135,37 +135,15 @@ public class CommonMessageProcessor implements MessageProcessor
     @Override
     public void processMessage(final Message msg, final TcpConnector connector, final Peer peer)
     {
-        long peerSeq = peer.getNextIncomingMessageSeq();
-        workerPool.next(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
-    }
-
-    /**
-     * Called on a worker pool thread.
-     */
-    private void doProcessMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
-    {
-        peer.processInOrder(peerSeq, Flux.defer(() ->
-            peer.isConnected(false) ?
-                this.doProcessInOrderMessage(msg, connector, peer) :
-                Flux.empty()
-        ));
-    }
-
-    /**
-     * Called on a worker pool thread.
-     * The messages from each peer are guaranteed to be delivered in the same order as in the incoming stream.
-     * In particular, no two messages from a given peer will be processed at the same time.
-     */
-    private Flux<?> doProcessInOrderMessage(Message msg, TcpConnector connector, Peer peer)
-    {
-        Flux<?> flux = Flux.empty();
+        int msgType;
         try
         {
-            int msgType = msg.getType();
+            msgType = msg.getType();
             switch (msgType)
             {
                 case MessageTypes.DATA:
-                    flux = handleDataMessage(msg, connector, peer);
+                    long peerSeq = peer.getNextIncomingMessageSeq();
+                    workerPool.next(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
                     break;
                 case MessageTypes.PING:
                     peer.sendPong();
@@ -201,6 +179,42 @@ public class CommonMessageProcessor implements MessageProcessor
                     }
                     break;
             }
+        }
+        catch (IllegalMessageStateException exc)
+        {
+            errorLog.reportError(
+                Level.ERROR,
+                exc,
+                peer.getAccessContext(),
+                peer,
+                null
+            );
+        }
+    }
+
+    /**
+     * Called on a worker pool thread.
+     */
+    private void doProcessMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
+    {
+        peer.processInOrder(peerSeq, Flux.defer(() ->
+            peer.isConnected(false) ?
+                this.doProcessInOrderMessage(msg, connector, peer) :
+                Flux.empty()
+        ));
+    }
+
+    /**
+     * Called on a worker pool thread.
+     * The messages from each peer are guaranteed to be delivered in the same order as in the incoming stream.
+     * In particular, no two messages from a given peer will be processed at the same time.
+     */
+    private Flux<?> doProcessInOrderMessage(Message msg, TcpConnector connector, Peer peer)
+    {
+        Flux<?> flux = Flux.empty();
+        try
+        {
+            flux = handleDataMessage(msg, connector, peer);
         }
         catch (Exception | ImplementationError exc)
         {
