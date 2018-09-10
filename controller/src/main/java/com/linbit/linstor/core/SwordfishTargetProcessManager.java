@@ -18,7 +18,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -28,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 public class SwordfishTargetProcessManager
 {
     private static final String LOCALHOST = "localhost";
-    private static final String SATELLITE_BIN = "/usr/share/linstor-server/bin/Satellite";
     private static final String SATELLITE_OUT_FILE_FORMAT = "sfTargets/satellite-%d.log";
 
     private final NodesMap nodesMap;
@@ -98,6 +101,29 @@ public class SwordfishTargetProcessManager
         }
     }
 
+    private Path getSatellitePath()
+    {
+        URL uLoc = getClass().getProtectionDomain().getCodeSource().getLocation();
+        Path satellitePath = null;
+        try
+        {
+            Path sourcePath = Paths.get(uLoc.toURI());
+            if (sourcePath.toString().endsWith(".jar"))
+            {
+                satellitePath = sourcePath.getParent().resolve("../bin/Satellite").normalize();
+            }
+            else
+            {
+                satellitePath = sourcePath.resolve("Satellite").normalize();
+            }
+        }
+        catch (URISyntaxException ignore)
+        {
+        }
+
+        return satellitePath;
+    }
+
     /**
      * <p>
      * Starts a satellite process with parameters
@@ -115,7 +141,7 @@ public class SwordfishTargetProcessManager
      *  to also shut down (gracefully if possible).
      * </p>
      *
-     * @param sfTargetPort
+     * @param node
      * @return
      * @throws IOException
      * @throws PortAlreadyInUseException
@@ -141,7 +167,7 @@ public class SwordfishTargetProcessManager
             }
 
             ProcessBuilder pb = new ProcessBuilder(
-                SATELLITE_BIN,
+                getSatellitePath().toString(),
                 "-s",
                 "--port",
                 Integer.toString(port),
