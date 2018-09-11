@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,37 +92,38 @@ public class FullSync implements ApiCall
             Base64.decode(fullSync.getMasterKey())
         );
 
-        Map<StorPool, SpaceInfo> freeSpaceMap;
+        Map<StorPool, SpaceInfo> freeSpaceMap = new HashMap<>();
         try
         {
             freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
-            MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
-            for (Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
-            {
-                StorPool storPool = entry.getKey();
-                builder.addFreeSpace(
-                    StorPoolFreeSpace.newBuilder()
-                        .setStorPoolUuid(storPool.getUuid().toString())
-                        .setStorPoolName(storPool.getName().displayValue)
-                        .setFreeCapacity(entry.getValue().freeCapacity)
-                        .setTotalCapacity(entry.getValue().totalCapacity)
-                        .build()
-                );
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            builder.build().writeDelimitedTo(baos);
-            controllerPeer.sendMessage(
-                apiCallAnswerer.prepareOnewayMessage(
-                    baos.toByteArray(),
-                    InternalApiConsts.API_FULL_SYNC_SUCCESS
-                )
-            );
         }
         catch (StorageException storageExc)
         {
             // TODO: report about this error to the controller
             errorReporter.reportError(storageExc);
         }
+
+        MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
+        for (Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
+        {
+            StorPool storPool = entry.getKey();
+            builder.addFreeSpace(
+                StorPoolFreeSpace.newBuilder()
+                    .setStorPoolUuid(storPool.getUuid().toString())
+                    .setStorPoolName(storPool.getName().displayValue)
+                    .setFreeCapacity(entry.getValue().freeCapacity)
+                    .setTotalCapacity(entry.getValue().totalCapacity)
+                    .build()
+            );
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        builder.build().writeDelimitedTo(baos);
+        controllerPeer.sendMessage(
+            apiCallAnswerer.prepareOnewayMessage(
+                baos.toByteArray(),
+                InternalApiConsts.API_FULL_SYNC_SUCCESS
+            )
+        );
     }
 
     private ArrayList<NodePojo> asNodes(List<MsgIntNodeData> nodesList)
