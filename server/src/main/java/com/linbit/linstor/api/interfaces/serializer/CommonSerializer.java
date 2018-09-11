@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
@@ -20,6 +22,8 @@ public interface CommonSerializer
     CommonSerializerBuilder answerBuilder(String msgContent, Long apiCallId);
 
     CommonSerializerBuilder completionBuilder(Long apiCallId);
+
+    ApiCallRc parseApiCallRc(ByteArrayInputStream msgApiCallRc) throws IOException;
 
     interface CommonSerializerBuilder
     {
