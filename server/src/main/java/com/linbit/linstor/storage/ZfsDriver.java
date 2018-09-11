@@ -318,10 +318,11 @@ public class ZfsDriver extends AbsStorageDriver
         }
         catch (InvalidNameException ine)
         {
+            final String cause = String.format("Invalid pool name: %s", newPool);
             throw new StorageException(
-                "Invalid configuration",
+                "Invalid configuration, " + cause,
                 null,
-                String.format("Invalid pool name: %s", newPool),
+                cause,
                 "Specify a valid and existing pool name",
                 null
             );
@@ -341,10 +342,11 @@ public class ZfsDriver extends AbsStorageDriver
             final OutputData output = extCommand.exec(poolCheckCommand);
             if (output.exitCode != 0)
             {
+                final String cause = String.format("pool [%s] not found.", newPool);
                 throw new StorageException(
-                    "Invalid configuration",
+                    "Invalid configuration: " + cause,
                     "Unknown pool",
-                    String.format("pool [%s] not found.", newPool),
+                    cause,
                     "Specify a valid and existing pool name or create the desired pool manually",
                     null
                 );

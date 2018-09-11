@@ -414,10 +414,11 @@ public class LvmDriver extends AbsStorageDriver
         }
         catch (InvalidNameException invalidNameExc)
         {
+            final String cause = String.format("Invalid name for volume group: %s", newVolumeGroup);
             throw new StorageException(
-                "Invalid configuration",
+                "Invalid configuration, " + cause,
                 null,
-                String.format("Invalid name for volume group: %s", newVolumeGroup),
+                cause,
                 "Specify a valid and existing volume group name",
                 null
             );
@@ -446,10 +447,11 @@ public class LvmDriver extends AbsStorageDriver
             }
             if (!found)
             {
+                final String cause = String.format("Volume group [%s] not found.", newVolumeGroup);
                 throw new StorageException(
-                    "Invalid configuration",
+                    "Invalid configuration: " + cause,
                     "Unknown volume group",
-                    String.format("Volume group [%s] not found.", newVolumeGroup),
+                    cause,
                     "Specify a valid and existing volume group name or create the desired volume group manually",
                     null
                 );
