@@ -9,23 +9,27 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
 import javax.inject.Inject;
@@ -95,14 +99,14 @@ public class CtrlStorPoolListApiCallHandler
             )
             .collect(Collectors.toList())
             .flatMapMany(freeSpaceAnswers ->
-                scopeRunner.callInTransactionlessScope(
+                scopeRunner.fluxInTransactionalScope(
                     LockGuard.createDeferred(storPoolDfnMapLock.readLock()),
                     () -> assembleList(upperFilterNodes, upperFilterStorPools, parseFreeSpaces(freeSpaceAnswers))
                 )
             );
     }
 
-    private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleRequests(List<String> upperFilterNodes)
+    private Flux<Tuple3<NodeName, ByteArrayInputStream, Boolean>> assembleRequests(List<String> upperFilterNodes)
         throws AccessDeniedException
     {
         Stream<Node> nodeStream = upperFilterNodes.isEmpty() ?
@@ -116,16 +120,33 @@ public class CtrlStorPoolListApiCallHandler
         return Flux
             .fromIterable(nameAndRequests)
             .flatMap(nameAndRequest -> nameAndRequest.getT2()
-                .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream)));
+                .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream, false))
+                .onErrorResume(error -> {
+                    if (error instanceof ApiRcException)
+                    {
+                        ApiRcException apiExc = (ApiRcException)error;
+                        return Mono.just(Tuples.of(
+                            nameAndRequest.getT1(),
+                            new ByteArrayInputStream(
+                                clientComSerializer.headerlessBuilder()
+                                    .apiCallRcSeries(apiExc.getApiCallRc())
+                                    .build()),
+                            true
+                        ));
+                    }
+                    return Mono.empty();
+                })
+            );
     }
 
-    private byte[] assembleList(
+    private Flux<byte[]> assembleList(
         List<String> upperFilterNodes,
         List<String> upperFilterStorPools,
-        Map<StorPool.Key, SpaceInfo> freeSpaceMap
+        Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>> freeSpaceAnswers
     )
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
+        final Map<StorPool.Key, SpaceInfo> freeSpaceMap = freeSpaceAnswers.getT1();
         try
         {
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
@@ -179,10 +200,22 @@ public class CtrlStorPoolListApiCallHandler
             );
         }
 
-        return clientComSerializer
+        Flux<byte[]> flux =  Flux.just(
+            clientComSerializer
             .answerBuilder(ApiConsts.API_LST_STOR_POOL, apiCallId.get())
             .storPoolList(storPools)
-            .build();
+            .build()
+        );
+
+        for (ApiCallRc apiCallRc : freeSpaceAnswers.getT2()) {
+            flux = flux.concatWith(Flux.just(clientComSerializer
+                .answerBuilder(ApiConsts.API_REPLY, apiCallId.get())
+                .apiCallRcSeries(apiCallRc)
+                .build())
+            );
+        }
+
+        return flux;
     }
 
     private Flux<ByteArrayInputStream> prepareFreeSpaceApiCall(Node node)
@@ -216,24 +249,34 @@ public class CtrlStorPoolListApiCallHandler
         return peer;
     }
 
-    private Map<StorPool.Key, SpaceInfo> parseFreeSpaces(List<Tuple2<NodeName, ByteArrayInputStream>> freeSpaceAnswers)
+    private Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>> parseFreeSpaces(
+        List<Tuple3<NodeName, ByteArrayInputStream, Boolean>> freeSpaceAnswers)
         throws IOException, InvalidNameException
     {
         Map<StorPool.Key, SpaceInfo> thinFreeSpaceMap = new HashMap<>();
-        for (Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer : freeSpaceAnswers)
+        List<ApiCallRc> apiCallRcs = new ArrayList<>();
+        for (Tuple3<NodeName, ByteArrayInputStream, Boolean> freeSpaceAnswer : freeSpaceAnswers)
         {
             NodeName nodeName = freeSpaceAnswer.getT1();
             ByteArrayInputStream freeSpaceMsgDataIn = freeSpaceAnswer.getT2();
+            boolean isApiCallRc = freeSpaceAnswer.getT3();
 
-            MsgIntFreeSpace freeSpaces = MsgIntFreeSpace.parseDelimitedFrom(freeSpaceMsgDataIn);
-            for (StorPoolFreeSpaceOuterClass.StorPoolFreeSpace freeSpace : freeSpaces.getFreeSpaceList())
+            if (isApiCallRc)
             {
-                thinFreeSpaceMap.put(
-                    new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
-                    new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeCapacity())
-                );
+                apiCallRcs.add(clientComSerializer.parseApiCallRc(freeSpaceMsgDataIn));
+            }
+            else
+            {
+                MsgIntFreeSpace freeSpaces = MsgIntFreeSpace.parseDelimitedFrom(freeSpaceMsgDataIn);
+                for (StorPoolFreeSpaceOuterClass.StorPoolFreeSpace freeSpace : freeSpaces.getFreeSpaceList())
+                {
+                    thinFreeSpaceMap.put(
+                        new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
+                        new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeCapacity())
+                    );
+                }
             }
         }
-        return thinFreeSpaceMap;
+        return Tuples.of(thinFreeSpaceMap, apiCallRcs);
     }
 }
