@@ -397,6 +397,7 @@ public class ZfsDriver extends AbsStorageDriver
             };
 
         long totalSpace;
+        String strZPoolFree = "";
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
@@ -404,10 +405,21 @@ public class ZfsDriver extends AbsStorageDriver
 
             checkExitCode(outputData, command);
 
-            String strZPoolFree = new String(outputData.stdoutData);
+            strZPoolFree = new String(outputData.stdoutData);
             String[] cmdSplit = strZPoolFree.split("\t"); // [poolname, property, value, source]
             String strTotalSpace = cmdSplit[2]; // value
             totalSpace = Long.parseLong(strTotalSpace.trim()) >> 10; // we have to return free size in KiB
+        }
+        catch (NumberFormatException nfexc)
+        {
+            throw new StorageException(
+                "Unable to parse volume group's total size.",
+                "ZFS pool: " + pool + "; total size to parse: '" + strZPoolFree + "'",
+                null,
+                null,
+                "External command used to query total size: " + glue(command, " "),
+                nfexc
+            );
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -435,6 +447,7 @@ public class ZfsDriver extends AbsStorageDriver
         };
 
         long freeSpace;
+        String strFreeSpace = "";
         try
         {
             final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
@@ -442,8 +455,19 @@ public class ZfsDriver extends AbsStorageDriver
 
             checkExitCode(outputData, command);
 
-            String strFreeSpace = new String(outputData.stdoutData);
+            strFreeSpace = new String(outputData.stdoutData);
             freeSpace = Long.parseLong(strFreeSpace.trim()) >> 10; // we have to return free size in KiB
+        }
+        catch (NumberFormatException nfexc)
+        {
+            throw new StorageException(
+                "Unable to parse volume group's free size.",
+                "ZFS pool: " + pool + "; free size to parse: '" + strFreeSpace + "'",
+                null,
+                null,
+                "External command used to query free size: " + glue(command, " "),
+                nfexc
+            );
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
