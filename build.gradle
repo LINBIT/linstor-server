@@ -94,6 +94,7 @@ project(':server') {
     /////////////////////////// Version Info ///////////////////////////
     task versionInfo() {
         String propsFile = "$projectDir/generated-resources/version-info.properties"
+        outputs.file(propsFile)
 
         if (project.hasProperty('versionOverride')) {
             logger.warn("Overriding version with $versionOverride")
@@ -498,4 +499,3 @@ task showServerRuntimeLibs() {
 		}
 	}
 }
-
