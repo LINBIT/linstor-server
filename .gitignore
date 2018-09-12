@@ -5,6 +5,8 @@
 .classpath
 .project
 .settings/
+nbproject/
+nbproject/build-impl.xml
 bin/
 
 # build output
