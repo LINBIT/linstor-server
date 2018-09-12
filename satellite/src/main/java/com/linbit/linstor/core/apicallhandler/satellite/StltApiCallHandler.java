@@ -474,31 +474,7 @@ public class StltApiCallHandler
 
             transMgrProvider.get().commit();
 
-            Path tmpResFileOut = null;
-            try
-            {
-                tmpResFileOut = Files.createTempFile("linstor-common.", null);
-            }
-            catch (IOException ioExc)
-            {
-                errorReporter.reportProblem(
-                    Level.ERROR,
-                    new LinStorException(
-                        "Unable to generated a temporary common resource file.'",
-                        null,
-                        "Creation of the temporary DRBD configuration file failed due to an I/O error",
-                        "- Check whether enough free space is available for the creation of the file\n" +
-                            "- Check whether the application has write access to the target directory\n" +
-                            "- Check whether the storage is operating flawlessly",
-                        "The error reported by the runtime environment or operating system is:\n" + ioExc.getMessage(),
-                        ioExc
-                    ),
-                    apiCtx,
-                    null,
-                    ioExc.getMessage()
-                );
-            }
-
+            Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
             if (tmpResFileOut != null)
             {
                 try (
