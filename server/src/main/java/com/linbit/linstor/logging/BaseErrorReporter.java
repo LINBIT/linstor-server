@@ -9,6 +9,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
@@ -51,7 +53,12 @@ public abstract class BaseErrorReporter
     {
         dmModule = moduleName;
         nodeName = nodeNameRef;
-        instanceId = String.format("%07X", ((System.currentTimeMillis() / 1000) & 0x7FFFFFFF));
+        HashFunction finger = Hashing.farmHashFingerprint64();
+        int fingerprint = finger.hashUnencodedChars(nodeName).asInt();
+        // this of course has a fairly chance to colide using only 20bit of the 64bit hash
+        // but combined with the timestamp, it still should be very unlikely that a collision will happen
+        final int nodeHash =  !dmModule.equals("Controller") ? fingerprint & 0xFFFFF : 0;
+        instanceId = String.format("%08X-%05X", (System.currentTimeMillis() / 1000), nodeHash);
         cal = Calendar.getInstance();
         printStackTraces = printStackTracesRef;
     }
