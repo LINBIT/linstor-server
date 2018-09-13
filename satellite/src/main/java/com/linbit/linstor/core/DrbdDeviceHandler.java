@@ -229,6 +229,11 @@ class DrbdDeviceHandler implements DeviceHandler
                 vlmState.setPeerSlots(peerSlots);
 
                 rscState.setRequiresAdjust(rscState.requiresAdjust() | vlmState.isMarkedForDelete());
+
+                if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DISKLESS))
+                {
+                    vlmState.setCheckMetaData(false);
+                }
             }
         }
 
@@ -592,6 +597,10 @@ class DrbdDeviceHandler implements DeviceHandler
                         {
                             vlmState.setDiskFailed(true);
                             rscState.setRequiresAdjust(true);
+                        }
+                        else
+                        {
+                            vlmState.setCheckMetaData(false);
                         }
                         break;
                     case DETACHING:
@@ -1200,6 +1209,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         {
                             vlm.setBackingDiskPath(wrkCtx, "none");
                             vlm.setMetaDiskPath(wrkCtx, null);
+                            vlmState.setCheckMetaData(false);
                         }
                         errLog.logTrace(
                             "Resource '" + rscName + "' volume " + vlmState.getVlmNr().toString() +
@@ -1383,7 +1393,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 try
                 {
-                    if (vlmState.hasDisk() && !vlmState.hasMetaData())
+                    if (!rsc.isDiskless(wrkCtx) && vlmState.hasDisk() && !vlmState.hasMetaData())
                     {
                         errLog.logTrace(
                             "%s",
