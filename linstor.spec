@@ -2,6 +2,7 @@ Name: linstor
 Version: 0.6.3
 Release: 1%{?dist}
 Summary: LINSTOR SDS
+BuildArch: noarch
 %define GRADLE_TASKS installdist
 %define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
