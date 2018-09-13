@@ -82,6 +82,9 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     boolean isCreatePrimary();
 
+    boolean isDiskless(AccessContext accCtx)
+        throws AccessDeniedException;
+
     @Override
     default int compareTo(Resource otherRsc)
     {

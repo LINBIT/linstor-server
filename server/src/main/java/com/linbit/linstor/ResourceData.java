@@ -375,6 +375,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
+    public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getStateFlags().isSet(accCtx, RscFlags.DISKLESS);
+    }
+
+    @Override
     public boolean supportsDrbd(AccessContext accCtx)
         throws AccessDeniedException
     {
