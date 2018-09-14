@@ -6,6 +6,7 @@ BuildArch: noarch
 %define GRADLE_TASKS installdist
 %define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
+%define FIREWALLD_SERVICES /usr/lib/firewalld/services
 %define NAME_VERS %{name}-server-%{version}
 
 Group: System Environment/Daemons
@@ -40,6 +41,10 @@ cp -r %{_builddir}/%{NAME_VERS}/scripts/postinstall.sh %{buildroot}/%{LS_PREFIX}
 mkdir -p %{buildroot}/%{_unitdir}
 cp -r %{_builddir}/%{NAME_VERS}/scripts/linstor-controller.service %{buildroot}/%{_unitdir}
 cp -r %{_builddir}/%{NAME_VERS}/scripts/linstor-satellite.service %{buildroot}/%{_unitdir}
+mkdir -p %{buildroot}/%{FIREWALLD_SERVICES}
+cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/drbd.xml %{buildroot}/%{FIREWALLD_SERVICES}
+cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-controller.xml %{buildroot}/%{FIREWALLD_SERVICES}
+cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-satellite.xml %{buildroot}/%{FIREWALLD_SERVICES}
 
 ### common
 %package common
@@ -75,10 +80,12 @@ Linstor controller manages linstor satellites and persistant data storage.
 %{LS_PREFIX}/bin/linstor-config
 %{LS_PREFIX}/bin/controller.postinst.sh
 %{_unitdir}/linstor-controller.service
+%{FIREWALLD_SERVICES}/linstor-controller.xml
 
 %post controller
 %{LS_PREFIX}/bin/controller.postinst.sh
 %systemd_post linstor-controller.service
+test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 
 %preun controller
 %systemd_preun linstor-controller.service
@@ -102,9 +109,12 @@ and creates drbd resource files.
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Satellite
 %{_unitdir}/linstor-satellite.service
+%{FIREWALLD_SERVICES}/linstor-satellite.xml
+%{FIREWALLD_SERVICES}/drbd.xml
 
 %post satellite
 %systemd_post linstor-satellite.service
+test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 
 %preun satellite
 %systemd_preun linstor-satellite.service
