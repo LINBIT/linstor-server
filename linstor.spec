@@ -122,3 +122,6 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %changelog
 * Fri Sep 14 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.6.4-1
 - Atomic move fix, fix storage pool list on error case
+
+* Mon Jul 30 2018 Roland Kammerer <roland.kammerer@linbit.com> 0.2.6-1
+- New upstream release.
