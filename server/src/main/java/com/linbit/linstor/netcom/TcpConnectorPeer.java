@@ -111,6 +111,8 @@ public class TcpConnectorPeer implements Peer
     // therefore requiring atomic read and write
     private volatile long msgSentCtr = 0;
     private volatile long msgRecvCtr = 0;
+    private volatile long msgSentSizePeak = 0;
+    private volatile long msgRecvSizePeak = 0;
 
     protected long lastPingSent = -1;
     private long lastPongReceived = -1;
@@ -271,6 +273,12 @@ public class TcpConnectorPeer implements Peer
         {
             synchronized (this)
             {
+                long msgSize = msg.getData().length;
+                if (msgSize > msgSentSizePeak)
+                {
+                    msgSentSizePeak = msgSize;
+                }
+
                 // Queue the message for sending
                 if (msgOut == null)
                 {
@@ -599,6 +607,18 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
+    public long msgSentMaxSize()
+    {
+        return msgSentSizePeak;
+    }
+
+    @Override
+    public long msgRecvMaxSize()
+    {
+        return msgRecvSizePeak;
+    }
+
+    @Override
     public InetSocketAddress peerAddress()
     {
         InetSocketAddress peerAddr = null;
@@ -923,6 +943,23 @@ public class TcpConnectorPeer implements Peer
 
     protected void addToQueue(Message msg)
     {
+        try
+        {
+            // This method is single-threaded, no need to synchronize
+            long msgSize = msg.getData().length;
+            if (msgSize > msgRecvSizePeak)
+            {
+                msgRecvSizePeak = msgSize;
+            }
+        }
+        catch (IllegalMessageStateException exc)
+        {
+            throw new ImplementationError(
+                "Illegal message state, suspected error: Outbound message added to InQ",
+                exc
+            );
+        }
+
         finishedMsgInQueue.add(msg);
         if (finishedMsgInQueue.size() >= MAX_INCOMING_QUEUE_SIZE)
         {

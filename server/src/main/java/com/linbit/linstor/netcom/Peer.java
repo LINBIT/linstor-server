@@ -239,6 +239,21 @@ public interface Peer
     long msgRecvCount();
 
     /**
+     * Returns the size of the biggest message that was sent to the peer
+     *
+     * @return Size of the biggest message sent, in bytes
+     */
+    long msgSentMaxSize();
+
+
+    /**
+     * Returns the size of the biggest message that was received from the peer
+     *
+     * @return Size of the biggest message received, in bytes
+     */
+    long msgRecvMaxSize();
+
+    /**
      * Returns the destination internet address of the peer connection
      *
      * @return Internet address of the peer

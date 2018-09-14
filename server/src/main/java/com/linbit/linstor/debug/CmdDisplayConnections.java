@@ -242,9 +242,11 @@ public class CmdDisplayConnections extends BaseDebugCmd
                         if (detailStats)
                         {
                             debugOut.printf(
-                                "    MsgRecv: %8d   MsgSent: %8d   OutQ: %5d  QCap: %5d\n",
+                                "    MsgRecv: %8d   MsgSent: %8d   OutQ: %5d  QCap: %5d  " +
+                                "RecvPeakSz: %8d  SentPeakSz: %8d\n",
                                 curPeer.msgRecvCount(), curPeer.msgSentCount(),
-                                curPeer.outQueueCount(), curPeer.outQueueCapacity()
+                                curPeer.outQueueCount(), curPeer.outQueueCapacity(),
+                                curPeer.msgRecvMaxSize(), curPeer.msgSentMaxSize()
                             );
                         }
                         if (detailId)
