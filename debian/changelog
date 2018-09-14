@@ -1,3 +1,30 @@
+linstor-server (0.6.4-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * zfsdriver-sizes: catch NumberformatException
+  * CommonSerializer: add parseApiCallRc method
+  * list-storpool: forward satellite errors to client
+  * storage-driver: improve invalid configuration message
+  * satellite: Allow a successful full sync with broken storage pool
+  * linstor-common: improve the chance the atomic move will work
+  * gradle: specify output file of versionInfo task
+  * resource: add isDiskless() method
+  * drbdDeviceHandler: do not attempt to generated metadata for diskless
+  * error-reports: rework instance id
+
+  [ Robert Altnoeder ]
+  * Added nbproject to .gitignore, deleted build-impl.xml from index
+  * Added class MdSuperblockBuffer
+  * Added an additional check for DRBD meta data
+
+  [ Gabor Hernadi ]
+  * Fixed race condition in DevMgr
+
+  [ Roland Kammerer ]
+  * build,rpm: generate noarch packages
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 14 Sep 2018 08:58:59 +0200
+
 linstor-server (0.6.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

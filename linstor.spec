@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.6.3
+Version: 0.6.4
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -120,5 +120,5 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
-* Mon Jul 30 2018 Roland Kammerer <roland.kammerer@linbit.com> 0.2.6-1
-- New upstream release.
+* Fri Sep 14 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.6.4-1
+- Atomic move fix, fix storage pool list on error case
