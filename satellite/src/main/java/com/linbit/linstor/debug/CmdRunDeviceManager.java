@@ -6,14 +6,14 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.StltUpdateTracker;
 import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Named;
 import java.io.PrintStream;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Matcher;
@@ -96,7 +96,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                 nameMatcher = namePattern.matcher("");
             }
 
-            Set<ResourceName> slctRsc = new TreeSet<>();
+            Map<ResourceName, UUID> slctRsc = new TreeMap<>();
             try
             {
                 rscDfnRdLock.lock();
@@ -105,10 +105,8 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                     // Select all resources
                     for (ResourceDefinition curRscDfn : rscDfnMap.values())
                     {
-                        slctRsc.add(curRscDfn.getName());
+                        slctRsc.put(curRscDfn.getName(), curRscDfn.getUuid());
                     }
-                    deviceManager.markMultipleResourcesForDispatch(slctRsc);
-                    debugOut.println("Device manager notified to adjust all resources.");
                 }
                 else
                 {
@@ -119,16 +117,29 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                         nameMatcher.reset(rscName.value);
                         if (nameMatcher.find())
                         {
-                            slctRsc.add(rscName);
+                            slctRsc.put(rscName, curRscDfn.getUuid());
                         }
                     }
-                    deviceManager.markMultipleResourcesForDispatch(slctRsc);
-                    debugOut.println("Device manager notified to adjust " + slctRsc.size() + " selected resources.");
                 }
             }
             finally
             {
                 rscDfnRdLock.unlock();
+            }
+
+            StltUpdateTracker updTracker = deviceManager.getUpdateTracker();
+            for (Map.Entry<ResourceName, UUID> entry : slctRsc.entrySet())
+            {
+                updTracker.updateResourceDfn(entry.getValue(), entry.getKey());
+            }
+
+            if (nameMatcher == null)
+            {
+                debugOut.println("Device manager notified to adjust all resources.");
+            }
+            else
+            {
+                debugOut.println("Device manager notified to adjust " + slctRsc.size() + " selected resources.");
             }
         }
         else
@@ -165,7 +176,7 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                 if (rscDfn != null)
                 {
                     ResourceName rscName = rscDfn.getName();
-                    deviceManager.markResourceForDispatch(rscName);
+                    deviceManager.getUpdateTracker().updateResourceDfn(rscDfn.getUuid(), rscName);
                     debugOut.println("Device manager notified to adjust the resource '" + rscName.displayValue + "'");
                 }
                 else
