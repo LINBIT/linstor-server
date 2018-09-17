@@ -597,12 +597,23 @@ class StltRscApiCallHandler
                 Resource sourceResource = rscDfn.getResource(apiCtx, new NodeName(rscConnApi.getSourceNodeName()));
                 Resource targetResource = rscDfn.getResource(apiCtx, new NodeName(rscConnApi.getTargetNodeName()));
 
-                ResourceConnection rscConn = resourceConnectionDataFactory.getInstanceSatellite(
-                    apiCtx, rscConnApi.getUuid(), sourceResource, targetResource);
+                /*
+                 *  When the remote resource was just deleted within this call, the controller
+                 *  still serialized the resource-connection between that remote resource and our local resource
+                 *  as the controller only "marked" the remote resource for deletion.
+                 *
+                 *  As we just deleted that remote resource, the next lookup for that ResourceConnection could result
+                 *  in a NPE if one of the resources is already deleted (unlinked from every Map).
+                 */
+                if (sourceResource != null && targetResource != null)
+                {
+                    ResourceConnection rscConn = resourceConnectionDataFactory.getInstanceSatellite(
+                        apiCtx, rscConnApi.getUuid(), sourceResource, targetResource);
 
-                Map<String, String> propMap = rscConn.getProps(apiCtx).map();
-                propMap.clear();
-                propMap.putAll(rscConnApi.getProps());
+                    Map<String, String> propMap = rscConn.getProps(apiCtx).map();
+                    propMap.clear();
+                    propMap.putAll(rscConnApi.getProps());
+                }
             }
 
             if (rscDfnToRegister != null)
