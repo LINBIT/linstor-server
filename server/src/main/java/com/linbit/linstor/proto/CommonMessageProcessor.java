@@ -138,6 +138,7 @@ public class CommonMessageProcessor implements MessageProcessor
         int msgType;
         try
         {
+            peer.pongReceived();
             msgType = msg.getType();
             switch (msgType)
             {
@@ -149,7 +150,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     peer.sendPong();
                     break;
                 case MessageTypes.PONG:
-                    peer.pongReceived();
+                    // pongReceived is called for every case, making this case a no-op.
                     break;
                 default:
                     String peerAddress = null;
