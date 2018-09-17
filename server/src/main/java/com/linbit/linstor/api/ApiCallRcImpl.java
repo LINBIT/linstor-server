@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class ApiCallRcImpl implements ApiCallRc
 {
@@ -71,6 +73,7 @@ public class ApiCallRcImpl implements ApiCallRc
         private String cause;
         private String correction;
         private String details;
+        private Set<String> errorIds = new TreeSet<>();
 
         public void setReturnCode(long returnCodeRef)
         {
@@ -112,6 +115,11 @@ public class ApiCallRcImpl implements ApiCallRc
             objRefs.putAll(map);
         }
 
+        public void addErrorId(String errorId)
+        {
+            errorIds.add(errorId);
+        }
+
         @Override
         public long getReturnCode()
         {
@@ -146,6 +154,12 @@ public class ApiCallRcImpl implements ApiCallRc
         public String getDetails()
         {
             return details;
+        }
+
+        @Override
+        public Set<String> getErrorIds()
+        {
+            return errorIds;
         }
 
         @Override

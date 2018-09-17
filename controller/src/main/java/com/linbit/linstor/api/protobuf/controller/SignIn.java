@@ -93,6 +93,7 @@ public class SignIn implements ApiCall
             {
                 rcEntry.setDetails("A problem report was filed under report ID " + reportId);
             }
+            rcEntry.addErrorId(reportId);
             reply.addEntry(rcEntry);
         }
         catch (InvalidNameException nameExc)

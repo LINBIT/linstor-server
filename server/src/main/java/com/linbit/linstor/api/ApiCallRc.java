@@ -2,6 +2,7 @@ package com.linbit.linstor.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Return codes of an API call
@@ -17,7 +18,7 @@ public interface ApiCallRc
     /**
      * Return code entry
      */
-    public interface RcEntry
+    interface RcEntry
     {
         /**
          * Numeric return code describing the result of an operation
@@ -58,5 +59,16 @@ public interface ApiCallRc
          * @return Details information
          */
         String getDetails();
+
+        /**
+         * Error ids linked to this apicallrc.
+         * @return List of error ids
+         */
+        Set<String> getErrorIds();
+
+        /**
+         * Add an error id to this api call rc
+         */
+        void addErrorId(String errorId);
     }
 }

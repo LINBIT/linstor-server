@@ -60,12 +60,13 @@ public class ResponseConverter
 
         for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
         {
-            errorReporter.reportError(
+            final String errorId = errorReporter.reportError(
                 exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
                 peer.getAccessContext(),
                 peer,
                 entry.getMessage()
             );
+            entry.addErrorId(errorId);
         }
 
         return apiCallRc;

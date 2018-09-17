@@ -379,6 +379,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 msgApiCallResponseBuilder.setMessage(apiCallEntry.getMessage());
             }
+            msgApiCallResponseBuilder.addAllErrorReportIds(apiCallEntry.getErrorIds());
             msgApiCallResponseBuilder.addAllObjRefs(ProtoMapUtils.fromMap(apiCallEntry.getObjRefs()));
 
             MsgApiCallResponseOuterClass.MsgApiCallResponse protoMsg = msgApiCallResponseBuilder.build();
