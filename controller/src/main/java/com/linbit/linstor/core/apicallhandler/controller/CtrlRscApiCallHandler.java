@@ -533,7 +533,7 @@ public class CtrlRscApiCallHandler
                         vlm.setBackingDiskPath(apiCtx, vlmUpd.getBlockDevicePath());
                         vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
                         vlm.setDevicePath(apiCtx, vlmUpd.getDevicePath());
-                        vlm.setRealSize(apiCtx, vlmUpd.getRealSize());
+                        vlm.setNettoSize(apiCtx, vlmUpd.getRealSize());
 
                         Map<String, String> propsMap = vlm.getVolumeDefinition().getProps(apiCtx).map();
                         propsMap.clear();

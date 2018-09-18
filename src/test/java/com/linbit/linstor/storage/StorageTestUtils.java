@@ -238,11 +238,12 @@ public class StorageTestUtils
         final OutputData outData;
         if (volumeExists)
         {
-            outData = new TestOutputData("", "", 0);
+            outData = new TestOutputData(command.getRawCommand(), "", "", 0);
         }
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "One or more specified logical volume(s, retCode) not found.",
                 START_VOL_NOT_EXISTS_ERROR_CODE
@@ -265,11 +266,12 @@ public class StorageTestUtils
         final OutputData outData;
         if (volumeExists)
         {
-            outData = new TestOutputData("", "", 0);
+            outData = new TestOutputData(command.getRawCommand(), "", "", 0);
         }
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "One or more specified logical volume(s, retCode) not found.",
                 STOP_VOL_NOT_EXISTS_ERROR_CODE
@@ -293,6 +295,7 @@ public class StorageTestUtils
         if (volumeExists)
         {
             outData = new TestOutputData(
+                cmd.getRawCommand(),
                 "Logical volume \"" + identifier + "\" successfully removed",
                 "",
                 0);
@@ -300,6 +303,7 @@ public class StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                cmd.getRawCommand(),
                 "",
                 "One or more specified logical volume(s) not found.",
                 DEL_VOL_EXISTS_ERROR_CODE
@@ -327,6 +331,7 @@ public class StorageTestUtils
         if (volumeExists)
         {
             outData = new TestOutputData(
+                cmd.getRawCommand(),
                 "",
                 "Logical volume \"" + identifier + "\" already exists in volume group \"" + volumeGroup + "\"",
                 CREATE_VOL_EXISTS_ERROR_CODE
@@ -335,6 +340,7 @@ public class StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                cmd.getRawCommand(),
                 "Logical volume \"identifier\" created",
                 "",
                 0);
@@ -359,6 +365,7 @@ public class StorageTestUtils
         if (success)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "   " + volumeGroup,
                 "",
                 0);
@@ -366,6 +373,7 @@ public class StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "  Volume groug \"" + volumeGroup + "\" not found",
                 CHECK_VLM_GROUP_ERROR_CODE
@@ -414,6 +422,7 @@ public class StorageTestUtils
         if (exists)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 sb
                 .append(identifier)
                 .append(LVM_EXT_CMD_SEPARATOR)
@@ -426,7 +435,7 @@ public class StorageTestUtils
         }
         else
         {
-            outData = new TestOutputData("", "", 0);
+            outData = new TestOutputData(command.getRawCommand(), "", "", 0);
         }
 
         ec.setExpectedBehavior(command, outData);
@@ -469,7 +478,7 @@ public class StorageTestUtils
             "--units", "k",
             "--noheadings",
             "--nosuffix");
-        OutputData outData = new TestOutputData("   " + extentSize, "", 0);
+        OutputData outData = new TestOutputData(command.getRawCommand(), "   " + extentSize, "", 0);
         ec.setExpectedBehavior(command, outData);
     }
 }

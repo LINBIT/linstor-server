@@ -85,7 +85,7 @@ public class StltApiCallHandlerUtils
                     storPool.reconfigureStorageDriver(
                         storageDriver,
                         new ReadOnlyProps(storPool.getNode().getProps(apiCtx)),
-                        stltCfgAccessor.getReadonly(ApiConsts.NAMESPC_STORAGE_DRIVER)
+                        stltCfgAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
                     );
                     Long freeSpace = storageDriver.getFreeSpace();
                     Long totalSpace = storageDriver.getTotalSpace();

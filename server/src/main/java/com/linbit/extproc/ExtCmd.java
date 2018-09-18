@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import com.linbit.ChildProcessTimeoutException;
@@ -28,6 +26,7 @@ public class ExtCmd extends ChildProcessHandler
     private ErrorReporter   errLog;
     private long            startTime;
 
+    private String[] command;
     private String commandStr;
 
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
@@ -67,14 +66,8 @@ public class ExtCmd extends ChildProcessHandler
     public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException
     {
-        List<String> commandElements = new ArrayList<>();
-
-        for (String commandElement : command)
-        {
-            commandElements.add(SPACE_PATTERN.matcher(commandElement).replaceAll("\\\\ "));
-        }
-
-        commandStr = StringUtils.join(commandElements, " ");
+        this.command = command;
+        commandStr = StringUtils.join(" ", command);
 
         errLog.logDebug("Executing command: %s", commandStr);
 
@@ -99,7 +92,12 @@ public class ExtCmd extends ChildProcessHandler
         int exitCode = waitFor();
         outReceiver.finish();
         errReceiver.finish();
-        OutputData outData = new OutputData(outReceiver.getData(), errReceiver.getData(), exitCode);
+        OutputData outData = new OutputData(
+            command,
+            outReceiver.getData(),
+            errReceiver.getData(),
+            exitCode
+        );
 
         errLog.logTrace(
             "External command finished in %dms: %s",
@@ -112,12 +110,14 @@ public class ExtCmd extends ChildProcessHandler
 
     public static class OutputData
     {
-        public byte[] stdoutData;
-        public byte[] stderrData;
-        public int exitCode;
+        public final String[] executedCommand;
+        public final byte[] stdoutData;
+        public final byte[] stderrData;
+        public final int exitCode;
 
-        protected OutputData(byte[] out, byte[] err, int retCode)
+        protected OutputData(String[] executeCmd, byte[] out, byte[] err, int retCode)
         {
+            executedCommand = executeCmd;
             stdoutData = out;
             stderrData = err;
             exitCode = retCode;

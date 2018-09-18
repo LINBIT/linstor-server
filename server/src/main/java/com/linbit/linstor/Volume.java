@@ -60,11 +60,17 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
 
-    boolean isRealSizeSet(AccessContext accCtx) throws AccessDeniedException;
+    boolean isNettoSizeSet(AccessContext accCtx) throws AccessDeniedException;
 
-    void setRealSize(AccessContext accCtx, long size) throws AccessDeniedException;
+    void setNettoSize(AccessContext accCtx, long size) throws AccessDeniedException;
 
-    long getRealSize(AccessContext accCtx) throws AccessDeniedException;
+    long getNettoSize(AccessContext accCtx) throws AccessDeniedException;
+
+    boolean isBruttoSizeSet(AccessContext accCtx) throws AccessDeniedException;
+
+    void setBruttoSize(AccessContext accCtx, long size) throws AccessDeniedException;
+
+    long getBruttoSize(AccessContext accCtx) throws AccessDeniedException;
 
     long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
 

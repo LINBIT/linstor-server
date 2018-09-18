@@ -166,6 +166,11 @@ public class TestExtCmd extends ExtCmd
         {
             return "Command " + Arrays.toString(commandParts);
         }
+
+        public String[] getRawCommand()
+        {
+            return commandParts;
+        }
     }
 
 
@@ -177,9 +182,9 @@ public class TestExtCmd extends ExtCmd
      */
     public static class TestOutputData extends ExtCmd.OutputData
     {
-        public TestOutputData(String out, String err, int retCode)
+        public TestOutputData(String[] executedCommand, String out, String err, int retCode)
         {
-            super(out.getBytes(), err.getBytes(), retCode);
+            super(executedCommand, out.getBytes(), err.getBytes(), retCode);
         }
 
         @Override

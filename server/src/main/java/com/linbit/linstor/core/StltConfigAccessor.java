@@ -37,7 +37,12 @@ public class StltConfigAccessor
         return dmStatsStr != null && Boolean.valueOf(dmStatsStr);
     }
 
-    public ReadOnlyProps getReadonly(String namespace)
+    public ReadOnlyProps getReadonlyProps()
+    {
+        return getReadonlyProps(null);
+    }
+
+    public ReadOnlyProps getReadonlyProps(String namespace)
     {
         ReadOnlyProps roRet;
         Optional<Props> ns = stltProps.getNamespace(namespace);

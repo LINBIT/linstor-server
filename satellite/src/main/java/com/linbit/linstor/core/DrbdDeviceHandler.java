@@ -53,6 +53,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -701,7 +702,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 storagePool.reconfigureStorageDriver(
                     driver,
                     nodeNamespace,
-                    stltCfgAccessor.getReadonly(ApiConsts.NAMESPC_STORAGE_DRIVER)
+                    stltCfgAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
                 );
                 vlmState.setDriver(driver);
             }
@@ -1194,7 +1195,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         if (vlmState.hasDisk())
                         {
                             // store the real size of the volume (after applied extent size, etc)
-                            vlm.setRealSize(
+                            vlm.setNettoSize(
                                 wrkCtx,
                                 vlmState.getDriver().getSize(vlmState.getStorVlmName(), vlmDfnProps)
                             );

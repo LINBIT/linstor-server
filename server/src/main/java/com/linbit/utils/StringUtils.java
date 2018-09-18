@@ -43,6 +43,17 @@ public class StringUtils
         return join(col, ",");
     }
 
+    public static String join(String delimiter, String... array)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (String element : array)
+        {
+            sb.append(element).append(delimiter);
+        }
+        sb.setLength(sb.length() - delimiter.length());
+        return sb.toString();
+    }
+
     public static String firstLetterCaps(String string)
     {
         return string.substring(0, 1).toUpperCase() + string.substring(1);

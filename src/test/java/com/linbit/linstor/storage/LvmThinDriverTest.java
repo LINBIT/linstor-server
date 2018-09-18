@@ -434,12 +434,13 @@ public class LvmThinDriverTest extends StorageTestUtils
             "--thinpool", thinPool,
             "--name", identifier,
             volumeGroup
-            );
+        );
 
         final OutputData outData;
         if (volumeExists)
         {
             outData = new TestOutputData(
+                cmd.getRawCommand(),
                 "",
                 "Logical volume \"" + identifier + "\" already exists in volume group \"" + volumeGroup + "\"",
                 CRT_VOL_VG_NOT_EXISTS_ERROR_CODE
@@ -448,6 +449,7 @@ public class LvmThinDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                cmd.getRawCommand(),
                 "Logical volume \"identifier\" created",
                 "",
                 0);
@@ -471,6 +473,7 @@ public class LvmThinDriverTest extends StorageTestUtils
         );
         OutputData outData;
         outData = new TestOutputData(
+            command.getRawCommand(),
             "",
             "",
             0);
@@ -493,6 +496,7 @@ public class LvmThinDriverTest extends StorageTestUtils
             "--nosuffix"
         );
         OutputData outData = new TestOutputData(
+            command.getRawCommand(),
             String.format("  %d", totalSpace),
             "",
             0
@@ -518,6 +522,7 @@ public class LvmThinDriverTest extends StorageTestUtils
             "--nosuffix"
         );
         OutputData outData = new TestOutputData(
+            command.getRawCommand(),
             String.format("  %d;%d.%02d", lvSizeKiB * 1024L, dataPerTenThousand / 100L, dataPerTenThousand % 100L),
             "",
             0

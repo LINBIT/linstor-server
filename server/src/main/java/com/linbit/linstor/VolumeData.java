@@ -63,7 +63,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, String> devicePath;
 
-    private final TransactionSimpleObject<VolumeData, Long> realSize;
+    private final TransactionSimpleObject<VolumeData, Long> nettoSize;
+
+    private final TransactionSimpleObject<VolumeData, Long> bruttoSize;
 
     private final VolumeDataDatabaseDriver dbDriver;
 
@@ -119,7 +121,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 volDfnRef.getVolumeNumber()
             )
         );
-        realSize = transObjFactory.createTransactionSimpleObject(this, null, null);
+        nettoSize = transObjFactory.createTransactionSimpleObject(this, null, null);
+        bruttoSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
@@ -128,7 +131,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             storPool,
             volumeConnections,
             volumeProps,
-            realSize,
+            nettoSize,
             flags,
             backingDiskPath,
             metaDiskPath,
@@ -339,23 +342,23 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public boolean isRealSizeSet(AccessContext accCtx) throws AccessDeniedException
+    public boolean isNettoSizeSet(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
-        return realSize.get() != null;
+        return nettoSize.get() != null;
     }
 
     @Override
-    public void setRealSize(AccessContext accCtx, long size) throws AccessDeniedException
+    public void setNettoSize(AccessContext accCtx, long size) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         try
         {
-            realSize.set(size);
+            nettoSize.set(size);
         }
         catch (SQLException exc)
         {
@@ -364,12 +367,43 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public long getRealSize(AccessContext accCtx) throws AccessDeniedException
+    public long getNettoSize(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
-        return realSize.get();
+        return nettoSize.get();
+    }
+
+    @Override
+    public boolean isBruttoSizeSet(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return bruttoSize.get() != null;
+    }
+
+    @Override
+    public void setBruttoSize(AccessContext accCtx, long size) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        try
+        {
+            bruttoSize.set(size);
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError("Driverless TransactionSimpleObject threw sql exc", exc);
+        }
+    }
+
+    @Override
+    public long getBruttoSize(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return bruttoSize.get();
     }
 
     @Override
@@ -429,21 +463,21 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public Volume.VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
         return new VlmPojo(
-                getStorPool(accCtx).getName().getDisplayName(),
-                getStorPool(accCtx).getUuid(),
-                getVolumeDefinition().getUuid(),
-                getUuid(),
-                getBackingDiskPath(accCtx),
-                getMetaDiskPath(accCtx),
-                getDevicePath(accCtx),
-                getVolumeDefinition().getVolumeNumber().value,
-                getVolumeDefinition().getMinorNr(accCtx).value,
-                getFlags().getFlagsBits(accCtx),
-                getProps(accCtx).map(),
-                getStorPool(accCtx).getDriverName(),
-                getStorPool(accCtx).getDefinition(accCtx).getUuid(),
-                getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
-                getStorPool(accCtx).getProps(accCtx).map()
+            getStorPool(accCtx).getName().getDisplayName(),
+            getStorPool(accCtx).getUuid(),
+            getVolumeDefinition().getUuid(),
+            getUuid(),
+            getBackingDiskPath(accCtx),
+            getMetaDiskPath(accCtx),
+            getDevicePath(accCtx),
+            getVolumeDefinition().getVolumeNumber().value,
+            getVolumeDefinition().getMinorNr(accCtx).value,
+            getFlags().getFlagsBits(accCtx),
+            getProps(accCtx).map(),
+            getStorPool(accCtx).getDriverName(),
+            getStorPool(accCtx).getDefinition(accCtx).getUuid(),
+            getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
+            getStorPool(accCtx).getProps(accCtx).map()
         );
     }
 }

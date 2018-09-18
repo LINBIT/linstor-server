@@ -598,6 +598,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (poolExists)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 pool,
                 "",
                 0
@@ -606,6 +607,7 @@ public class ZfsDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "cannot open '" + pool + "': dataset does not exist",
                 1
@@ -638,7 +640,7 @@ public class ZfsDriverTest extends StorageTestUtils
             pool + "/" + identifier // the specified volume
         );
 
-        OutputData outData = new TestOutputData("", "", 0);
+        OutputData outData = new TestOutputData(command.getRawCommand(),"", "", 0);
         ec.setExpectedBehavior(command, outData);
     }
 
@@ -662,6 +664,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (poolExists)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 Long.toString(size * MB),
                 "",
                 0
@@ -670,6 +673,7 @@ public class ZfsDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "cannot open '" + pool + "/" + identifier + "': dataset does not exist",
                 1
@@ -730,6 +734,7 @@ public class ZfsDriverTest extends StorageTestUtils
             pool + '/' + identifier
         );
         OutputData outData = new TestOutputData(
+            command.getRawCommand(),
             "",
             "",
             exists ? 0 : 1
@@ -755,6 +760,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (poolExists)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 pool + "\t" + property + "\t" + Long.toString(size * MB) + "\t" + "-",
                 "",
                 0
@@ -763,6 +769,7 @@ public class ZfsDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "cannot open '" + pool + "': dataset does not exist",
                 1
@@ -797,6 +804,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (poolExists)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 Long.toString(size * MB),
                 "",
                 0
@@ -805,6 +813,7 @@ public class ZfsDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "cannot open '" + pool + "': dataset does not exist",
                 1
@@ -842,6 +851,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (!volumeExists)
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "",
                 0
@@ -850,6 +860,7 @@ public class ZfsDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "cannot create '" + pool + "/" + identifier + "': dataset already exists",
                 1
@@ -884,6 +895,7 @@ public class ZfsDriverTest extends StorageTestUtils
         if (volumeExists)
         {
            outData = new TestOutputData(
+               command.getRawCommand(),
                "",
                "",
                0
@@ -892,6 +904,7 @@ public class ZfsDriverTest extends StorageTestUtils
         else
         {
             outData = new TestOutputData(
+                command.getRawCommand(),
                 "",
                 "cannot open '" + pool + "/identifier" + "': dataset does not exist",
                 1

@@ -543,9 +543,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             builder.setDevicePath(devicePath);
         }
 
-        if (vlm.isRealSizeSet(serializerCtx))
+        if (vlm.isNettoSizeSet(serializerCtx))
         {
-            builder.setRealSize(vlm.getRealSize(serializerCtx));
+            builder.setRealSize(vlm.getNettoSize(serializerCtx));
         }
 
         return builder.build();
@@ -976,9 +976,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 {
                     builder.setMetaDisk(metaDisk);
                 }
-                if (vol.isRealSizeSet(serializerCtx))
+                if (vol.isNettoSizeSet(serializerCtx))
                 {
-                    builder.setRealSize(vol.getRealSize(serializerCtx));
+                    builder.setRealSize(vol.getNettoSize(serializerCtx));
                 }
 
                 vlmList.add(builder.build());
