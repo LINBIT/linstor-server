@@ -1,7 +1,11 @@
 package com.linbit.linstor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -22,15 +26,15 @@ public class PriorityProps
     {
         if (volumeConnection != null)
         {
-            propList.add(volumeConnection.getProps(accCtx));
+            addProps(volumeConnection.getProps(accCtx));
         }
         if (resourceConnection != null)
         {
-            propList.add(resourceConnection.getProps(accCtx));
+            addProps(resourceConnection.getProps(accCtx));
         }
         if (nodeConnection != null)
         {
-            propList.add(nodeConnection.getProps(accCtx));
+            addProps(nodeConnection.getProps(accCtx));
         }
     }
 
@@ -67,5 +71,31 @@ public class PriorityProps
     public String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
+    }
+
+    public Map<String, String> renderRelativeMap(String namespace)
+    {
+        Map<String, String> ret = new HashMap<>();
+        for (Props prop : propList)
+        {
+            Optional<Props> optNs = prop.getNamespace(namespace);
+            if (optNs.isPresent())
+            {
+                int nsLen = namespace.length();
+                if (nsLen > 0)
+                {
+                    nsLen++; // also cut the trailing "/"
+                }
+                for (Entry<String, String> entry : optNs.get().map().entrySet())
+                {
+                    ret.putIfAbsent(
+                        entry.getKey().substring(nsLen),
+                        entry.getValue()
+                    );
+                }
+            }
+        }
+
+        return ret;
     }
 }
