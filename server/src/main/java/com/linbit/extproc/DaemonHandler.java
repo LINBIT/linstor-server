@@ -29,10 +29,7 @@ public class DaemonHandler
 
     public void start() throws IOException
     {
-        if (process != null)
-        {
-            stop(true);
-        }
+        stop(true);
 
         process = processBuilder.start();
         outProxy = new OutputProxy(process.getInputStream(), deque, DELIMITER, true);
@@ -45,10 +42,10 @@ public class DaemonHandler
 
     public void stop(boolean force)
     {
-        outProxy.expectShutdown();
-        errProxy.expectShutdown();
         if (process != null)
         {
+            outProxy.expectShutdown();
+            errProxy.expectShutdown();
             if (force)
             {
                 process.destroyForcibly();
@@ -57,9 +54,9 @@ public class DaemonHandler
             {
                 process.destroy();
             }
+            outThread.interrupt();
+            errThread.interrupt();
+            process = null;
         }
-        outThread.interrupt();
-        errThread.interrupt();
-        process = null;
     }
 }
