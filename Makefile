@@ -90,10 +90,10 @@ gen-java: getprotc
 copytolibs:
 	gradle --console plain copytolibs
 
-server/jar.deps:
+server/jar.deps: build.gradle
 	gradle -q showServerRuntimeLibs > $@
 
-controller/jar.deps satellite/jar.deps: copytolibs
+controller/jar.deps satellite/jar.deps: build.gradle copytolibs
 	./scripts/diffcopy.py -n ./controller/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > controller/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
 	./scripts/diffcopy.py -n ./satellite/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > satellite/jar.deps
