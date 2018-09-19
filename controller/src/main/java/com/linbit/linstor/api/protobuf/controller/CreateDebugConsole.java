@@ -77,7 +77,7 @@ public class CreateDebugConsole implements ApiCall
                 }
 
                 msgDbgReplyBld.addDebugOut(
-                    LinStor.PROGRAM + ", Module " + Controller.MODULE
+                    LinStor.PROGRAM + ", Module " + LinStor.CONTROLLER_MODULE
                 );
                 msgDbgReplyBld.addDebugOut(
                     "Version: " + LinStor.VERSION_INFO_PROVIDER.getVersion() + " " +

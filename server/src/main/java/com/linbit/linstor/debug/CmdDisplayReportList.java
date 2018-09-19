@@ -139,7 +139,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
                     {
                         reportId = fileName.substring(pfxLength, nameLength - sfxLength);
                     }
-                    debugOut.printf("%-17s (%s)\n", reportId, fileName);
+                    debugOut.printf("%-23s (%s)\n", reportId, fileName);
                 }
                 if (reportFileList.length == 0)
                 {
@@ -217,7 +217,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
                         boolean instanceMatches = instanceId == null;
                         if (instanceId != null)
                         {
-                            int splitIdx = reportId.indexOf('-');
+                            int splitIdx = reportId.lastIndexOf('-');
                             if (splitIdx != -1)
                             {
                                 String reportInstanceId = reportId.substring(0, splitIdx);

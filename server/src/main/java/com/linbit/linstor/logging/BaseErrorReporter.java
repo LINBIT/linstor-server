@@ -57,7 +57,7 @@ public abstract class BaseErrorReporter
         int fingerprint = finger.hashUnencodedChars(nodeName).asInt();
         // this of course has a fairly chance to colide using only 20bit of the 64bit hash
         // but combined with the timestamp, it still should be very unlikely that a collision will happen
-        final int nodeHash =  !dmModule.equals("Controller") ? fingerprint & 0xFFFFF : 0;
+        final int nodeHash = !dmModule.equals(LinStor.CONTROLLER_MODULE) ? fingerprint & 0xFFFFF : 0;
         instanceId = String.format("%08X-%05X", (System.currentTimeMillis() / 1000), nodeHash);
         cal = Calendar.getInstance();
         printStackTraces = printStackTracesRef;

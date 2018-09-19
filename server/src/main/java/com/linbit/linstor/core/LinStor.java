@@ -33,6 +33,10 @@ public abstract class LinStor
 
     public static final String SKIP_HOSTNAME_CHECK_KEY = "SkipHostnameCheck";
 
+    public static final String CONTROLLER_MODULE = "Controller";
+    
+    public static final String SATELLITE_MODULE = "Satellite";
+
     public static void printRunTimeInfo(PrintStream out)
     {
         Properties sysProps = System.getProperties();

@@ -72,9 +72,6 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
  */
 public final class Controller
 {
-    // System module information
-    public static final String MODULE = "Controller";
-
     private static final String PROPSCON_KEY_NETCOM = "netcom";
 
     public static final int API_VERSION = 2;
@@ -290,18 +287,18 @@ public final class Controller
 
     public static void main(String[] args)
     {
-        System.setProperty("log.module", MODULE);
+        System.setProperty("log.module", LinStor.CONTROLLER_MODULE);
 
         ControllerCmdlArguments cArgs = ControllerArgumentParser.parseCommandLine(args);
 
         System.out.printf(
             "%s, Module %s\n",
-            LinStor.PROGRAM, Controller.MODULE
+            LinStor.PROGRAM, LinStor.CONTROLLER_MODULE
         );
         LinStor.printStartupInfo();
 
         ErrorReporter errorLog = new StdErrorReporter(
-            Controller.MODULE,
+            LinStor.CONTROLLER_MODULE,
             Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces(),
             LinStor.getHostName()

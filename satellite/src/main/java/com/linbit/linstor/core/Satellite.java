@@ -62,9 +62,6 @@ import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
  */
 public final class Satellite
 {
-    // System module information
-    public static final String MODULE = "Satellite";
-
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
 
@@ -296,18 +293,18 @@ public final class Satellite
 
     public static void main(String[] args)
     {
-        System.setProperty("log.module", MODULE);
+        System.setProperty("log.module", LinStor.SATELLITE_MODULE);
 
         SatelliteCmdlArguments cArgs = SatelliteArgumentParser.parseCommandLine(args);
 
         System.out.printf(
             "%s, Module %s\n",
-            LinStor.PROGRAM, Satellite.MODULE
+            LinStor.PROGRAM, LinStor.SATELLITE_MODULE
         );
         LinStor.printStartupInfo();
 
         ErrorReporter errorLog = new StdErrorReporter(
-            Satellite.MODULE,
+            LinStor.SATELLITE_MODULE,
             Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces(),
             LinStor.getHostName()

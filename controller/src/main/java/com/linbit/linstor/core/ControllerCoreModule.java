@@ -30,7 +30,7 @@ public class ControllerCoreModule extends AbstractModule
     protected void configure()
     {
         bind(String.class).annotatedWith(Names.named(CoreModule.MODULE_NAME))
-            .toInstance(Controller.MODULE);
+            .toInstance(LinStor.CONTROLLER_MODULE);
 
         bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
 

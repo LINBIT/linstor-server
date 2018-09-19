@@ -26,6 +26,7 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -165,10 +166,10 @@ public class CtrlErrorListApiCallHandler
         Set<ErrorReport> errorReports = new TreeSet<>();
 
         // Controller error reports
-        if (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(Controller.MODULE::equalsIgnoreCase))
+        if (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase))
         {
             errorReports.addAll(StdErrorReporter.listReports(
-                Controller.MODULE,
+                LinStor.CONTROLLER_MODULE,
                 errorReporter.getLogDirectory(),
                 withContent,
                 since,
