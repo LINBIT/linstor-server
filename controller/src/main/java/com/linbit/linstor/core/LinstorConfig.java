@@ -221,7 +221,7 @@ public class LinstorConfig
     {
         commandLine = new CommandLine(new LinstorConfigCmd());
 
-        commandLine.parseWithHandler(new CommandLine.RunLast(), System.err, args);
+        commandLine.parseWithHandler(new CommandLine.RunLast(), args);
     }
 
     private static PoolingDataSource<PoolableConnection> initConnectionProvider(
