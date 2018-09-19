@@ -29,6 +29,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.Identity;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.MathUtils;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -44,7 +45,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Queue;
 import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -63,6 +66,11 @@ public class CommonMessageProcessor implements MessageProcessor
     private final FluxSink<Runnable> workerPool;
     private final Map<String, ApiEntry> apiCallMap;
 
+    public static final int MIN_THR_COUNT = 4;
+    public static final int MAX_THR_COUNT = 1024;
+    public static final int MIN_QUEUE_SIZE = 4 * MIN_THR_COUNT;
+    public static final int MAX_QUEUE_SIZE = 4 * MAX_THR_COUNT;
+
     @Inject
     public CommonMessageProcessor(
         ErrorReporter errorLogRef,
@@ -77,10 +85,24 @@ public class CommonMessageProcessor implements MessageProcessor
         scopeRunner = scopeRunnerRef;
         commonSerializer = commonSerializerRef;
 
-        UnicastProcessor<Runnable> processor = UnicastProcessor.create();
+        int queueSize = MathUtils.bounds(
+            MIN_QUEUE_SIZE,
+            Math.max(LinStor.CPU_COUNT, MAX_THR_COUNT) * 4,
+            MAX_QUEUE_SIZE
+        );
+        int thrCount = MathUtils.bounds(MIN_THR_COUNT, LinStor.CPU_COUNT, MAX_THR_COUNT);
+
+        MsgProcQueue runQueue = new MsgProcQueue(queueSize, true);
+        UnicastProcessor<Runnable> processor = UnicastProcessor.create(
+            runQueue,
+            // On overflow, block submissions until an active task is complete
+            task -> runQueue.put(task),
+            // On terminate, clear the queue
+            () -> runQueue.clear()
+        );
         workerPool = processor.sink();
         processor
-            .parallel(LinStor.CPU_COUNT)
+            .parallel(thrCount)
             // minimal prefetch for low latency
             .runOn(scheduler, 1)
             .doOnNext(Runnable::run)
@@ -684,6 +706,31 @@ public class CommonMessageProcessor implements MessageProcessor
         InvalidHeaderException(String message)
         {
             super(message);
+        }
+    }
+
+    private static class MsgProcQueue extends ArrayBlockingQueue<Runnable>
+    {
+        MsgProcQueue(int capacity, boolean fair)
+        {
+            super(capacity, fair);
+        }
+
+        @Override
+        public void put(Runnable task)
+        {
+            // Retry put() if it had blocked and the thread was interrupted while waiting
+            while (true)
+            {
+                try
+                {
+                    super.put(task);
+                    break;
+                }
+                catch (InterruptedException ignored)
+                {
+                }
+            }
         }
     }
 }
