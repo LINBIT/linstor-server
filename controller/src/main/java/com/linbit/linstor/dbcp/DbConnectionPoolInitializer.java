@@ -1,7 +1,8 @@
 package com.linbit.linstor.dbcp;
 
 import com.linbit.linstor.InitializationException;
-import com.linbit.linstor.core.LinStorArguments;
+import com.linbit.linstor.core.ControllerCmdlArguments;
+import com.linbit.linstor.core.LinStorCmdlArguments;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import com.linbit.linstor.dbdrivers.H2DatabaseInfo;
@@ -33,13 +34,13 @@ public class DbConnectionPoolInitializer
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
 
     private final ErrorReporter errorLog;
-    private final LinStorArguments args;
+    private final ControllerCmdlArguments args;
     private final DbConnectionPool dbConnPool;
 
     @Inject
     public DbConnectionPoolInitializer(
         ErrorReporter errorLogRef,
-        LinStorArguments argsRef,
+        ControllerCmdlArguments argsRef,
         DbConnectionPool dbConnPoolRef
     )
     {

@@ -1,9 +1,10 @@
 package com.linbit.linstor.core;
 
 import java.io.File;
+
 import picocli.CommandLine;
 
-public class LinStorArgumentParser
+class ControllerArgumentParser
 {
     @CommandLine.Option(names = {"-c", "--config-directory"},
         description = "Configuration directory for the controller"
@@ -29,27 +30,15 @@ public class LinStorArgumentParser
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
-    @CommandLine.Option(
-        names = {"-k", "--keep-res"},
-        description =
-            "if this regex matches a file of a drbd resource file created by linstor, the " +
-            "matched file will NOT be deleted"
-    )
-    private String keepResourceRegex;
-
     @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
     private Integer plainPort = null;
-
-    @CommandLine.Option(names = {"-s", "--skip-hostname-check"}, description = "skips the hostname check on the " +
-        "satellite when a controller assigns the nodename")
-    private boolean skipHostNameCheck = false;
 
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
     private String bindAddress = null;
 
-    static LinStorArguments parseCommandLine(String[] args)
+    static ControllerCmdlArguments parseCommandLine(String[] args)
     {
-        LinStorArgumentParser linArgParser = new LinStorArgumentParser();
+        ControllerArgumentParser linArgParser = new ControllerArgumentParser();
         CommandLine cmd = new CommandLine(linArgParser);
         cmd.setCommandName("Controller");
 
@@ -70,7 +59,7 @@ public class LinStorArgumentParser
             System.exit(0);
         }
 
-        LinStorArguments cArgs = new LinStorArguments();
+        ControllerCmdlArguments cArgs = new ControllerCmdlArguments();
         if (linArgParser.configurationDirectory != null)
         {
                 cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
@@ -106,18 +95,11 @@ public class LinStorArgumentParser
 
         cArgs.setPrintStacktraces(linArgParser.printStackTrace);
         cArgs.setStartDebugConsole(linArgParser.debugConsole);
-        if (linArgParser.keepResourceRegex != null)
-        {
-            cArgs.setKeepResRegex(linArgParser.keepResourceRegex);
-        }
-        cArgs.setOverridePlainPort(linArgParser.plainPort);
-        cArgs.setSkipHostnameCheck(linArgParser.skipHostNameCheck);
-        cArgs.setBindAddress(linArgParser.bindAddress);
 
         return cArgs;
     }
 
-    private LinStorArgumentParser()
+    private ControllerArgumentParser()
     {
     }
 }

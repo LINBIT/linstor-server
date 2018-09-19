@@ -93,7 +93,7 @@ public final class Satellite
 
     private final SatelliteNetComInitializer satelliteNetComInitializer;
 
-    private final LinStorArguments linStorArguments;
+    private final SatelliteCmdlArguments satelliteCmdlArguments;
 
     private static boolean skipHostnameCheck;
 
@@ -111,7 +111,7 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
-        LinStorArguments linStorArgumentsRef
+        SatelliteCmdlArguments satelliteCmdlArgumentsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -126,7 +126,7 @@ public final class Satellite
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
-        linStorArguments = linStorArgumentsRef;
+        satelliteCmdlArguments = satelliteCmdlArgumentsRef;
     }
 
     public void start()
@@ -137,7 +137,7 @@ public final class Satellite
 
         try
         {
-            skipHostnameCheck = linStorArguments.isSkipHostnameCheck();
+            skipHostnameCheck = satelliteCmdlArguments.isSkipHostnameCheck();
 
             ensureDrbdConfigSetup();
 
@@ -155,9 +155,9 @@ public final class Satellite
             errorReporter.logInfo("Initializing main network communications service");
             if (!satelliteNetComInitializer.initMainNetComService(
                 initCtx,
-                Paths.get(linStorArguments.getConfigurationDirectory()),
-                linStorArguments.getBindAddress(),
-                linStorArguments.getPlainPortOverride())
+                Paths.get(satelliteCmdlArguments.getConfigurationDirectory()),
+                satelliteCmdlArguments.getBindAddress(),
+                satelliteCmdlArguments.getPlainPortOverride())
             )
             {
                 reconfigurationLock.writeLock().unlock();
@@ -189,7 +189,7 @@ public final class Satellite
         {
             Path varDrbdPath = Paths.get(SatelliteCoreModule.CONFIG_PATH);
             Files.createDirectories(varDrbdPath);
-            final Pattern keepResPattern = linStorArguments.getKeepResPattern();
+            final Pattern keepResPattern = satelliteCmdlArguments.getKeepResPattern();
             Function<Path, Boolean> keepFunc;
             if (keepResPattern != null)
             {
@@ -298,7 +298,7 @@ public final class Satellite
     {
         System.setProperty("log.module", MODULE);
 
-        LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
+        SatelliteCmdlArguments cArgs = SatelliteArgumentParser.parseCommandLine(args);
 
         System.out.printf(
             "%s, Module %s\n",
@@ -348,7 +348,7 @@ public final class Satellite
                 new LoggingModule(errorLog),
                 new SecurityModule(),
                 new SatelliteSecurityModule(),
-                new LinStorArgumentsModule(cArgs),
+                new SatelliteArgumentsModule(cArgs),
                 new CoreTimerModule(),
                 new SatelliteLinstorModule(),
                 new LinStorModule(),

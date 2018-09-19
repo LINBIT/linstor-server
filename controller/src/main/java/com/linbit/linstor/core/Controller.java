@@ -292,7 +292,7 @@ public final class Controller
     {
         System.setProperty("log.module", MODULE);
 
-        LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
+        ControllerCmdlArguments cArgs = ControllerArgumentParser.parseCommandLine(args);
 
         System.out.printf(
             "%s, Module %s\n",
@@ -349,7 +349,7 @@ public final class Controller
                 new LoggingModule(errorLog),
                 new SecurityModule(),
                 new ControllerSecurityModule(),
-                new LinStorArgumentsModule(cArgs),
+                new ControllerArgumentsModule(cArgs),
                 new ConfigModule(),
                 new CoreTimerModule(),
                 new MetaDataModule(),
