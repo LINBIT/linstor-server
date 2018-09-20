@@ -27,8 +27,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 import javax.net.ssl.SSLException;
 
@@ -368,19 +370,10 @@ public class TcpConnectorPeer implements Peer
                     long apiCallId = nextApiCallId.getAndIncrement();
                     byte[] messageBytes = commonSerializer.apiCallBuilder(apiCallName, apiCallId).bytes(data).build();
 
-                    fluxSink.onDispose(
-                        () -> {
-                            synchronized (openRpcs)
-                            {
-                                openRpcs.remove(apiCallId);
-                            }
-                        }
-                    );
+                    fluxSink.onDispose(() -> openRpcs.remove(apiCallId));
 
-                    synchronized (openRpcs)
-                    {
-                        openRpcs.put(apiCallId, fluxSink);
-                    }
+                    openRpcs.put(apiCallId, fluxSink);
+
                     boolean isConnected = sendMessage(messageBytes);
                     if (!isConnected)
                     {
@@ -459,11 +452,13 @@ public class TcpConnectorPeer implements Peer
 
         synchronized (openRpcs)
         {
-            for (FluxSink<ByteArrayInputStream> rpcSink : openRpcs.values())
+            // preventing ConcurrentModificationException with "#apiCall's fluxSink.onDispose(...openRpcs.remove(...))
+            Set<FluxSink<ByteArrayInputStream>> copyOpenRpcsSet = new HashSet<>(openRpcs.values());
+            for (FluxSink<ByteArrayInputStream> rpcSink : copyOpenRpcsSet)
             {
                 rpcSink.error(new PeerNotConnectedException());
             }
-            openRpcs.clear();
+            openRpcs.clear(); // basically no-op, more for documentation purpose
         }
     }
 
