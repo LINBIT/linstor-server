@@ -133,8 +133,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 if (diskAddRequested || diskRemoveRequested)
                 {
                     NodeName nodeName = rsc.getAssignedNode().getName();
-                    fluxes.add(Flux
-                        .defer(() -> updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested))
+                    fluxes.add(updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested)
                         .doOnError(exc ->
                             errorReporter.reportError(
                                 exc,
@@ -169,13 +168,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             rscNameStr
         );
 
-        return Flux
-            .defer(() ->
-                scopeRunner
-                    .fluxInTransactionalScope(
-                        createLockGuard(),
-                        () -> toggleDiskInTransaction(nodeNameStr, rscNameStr, storPoolNameStr, removeDisk)
-                    )
+        return scopeRunner
+            .fluxInTransactionalScope(
+                createLockGuard(),
+                () -> toggleDiskInTransaction(nodeNameStr, rscNameStr, storPoolNameStr, removeDisk)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -290,7 +286,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         return Flux
             .<ApiCallRc>just(responses)
-            .concatWith(Flux.defer(() -> updateAndAdjustDisk(nodeName, rscName, removeDisk)));
+            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk));
     }
 
     // Restart from here when connection established and flag set
@@ -373,7 +369,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                                 .concatWith(Flux.error(error))
                         )
                 )
-                .concatWith(Flux.defer(() -> finishOperation(nodeName, rscName, removeDisk)))
+                .concatWith(finishOperation(nodeName, rscName, removeDisk))
                 .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
