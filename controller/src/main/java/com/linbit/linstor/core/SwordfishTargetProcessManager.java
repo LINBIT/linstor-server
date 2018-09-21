@@ -119,7 +119,7 @@ public class SwordfishTargetProcessManager
                 satellitePath = sourcePath.resolve("Satellite").normalize();
             }
         }
-        catch (URISyntaxException ignore)
+        catch (URISyntaxException ignored)
         {
         }
 
@@ -211,7 +211,7 @@ public class SwordfishTargetProcessManager
             {
                 process.waitFor(2, TimeUnit.SECONDS);
             }
-            catch (InterruptedException ignore)
+            catch (InterruptedException ignored)
             {
             }
             if (process.isAlive())

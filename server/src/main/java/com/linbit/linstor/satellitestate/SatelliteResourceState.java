@@ -37,9 +37,9 @@ public class SatelliteResourceState
         return inUse;
     }
 
-    public void setInUse(Boolean inUse)
+    public void setInUse(Boolean value)
     {
-        this.inUse = inUse;
+        inUse = value;
     }
 
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()

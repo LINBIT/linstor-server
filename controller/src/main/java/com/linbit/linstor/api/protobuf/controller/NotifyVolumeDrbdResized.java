@@ -4,9 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntResizedDrbdVlmOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntResizedDrbdVlmOuterClass.MsgIntResizedDrbdVlm;
-import com.linbit.linstor.proto.javainternal.MsgIntResizedVlmOuterClass.MsgIntResizedVlm;
 
 import javax.inject.Inject;
 import java.io.IOException;

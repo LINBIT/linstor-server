@@ -1,6 +1,7 @@
 package com.linbit.linstor.api;
 
-public class SpaceInfo {
+public class SpaceInfo
+{
     public Long totalCapacity;
     public Long freeCapacity;
 

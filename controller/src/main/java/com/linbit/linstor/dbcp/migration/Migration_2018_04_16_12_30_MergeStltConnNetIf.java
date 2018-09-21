@@ -71,7 +71,7 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
             "       " + NET_NAME  + " = ?";
         String insertNodeProps =
             " INSERT INTO " + TBL_PROPS_CONTAINERS +
-            " (" + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE + ") "+
+            " (" + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE + ") " +
             " VALUES (?, ?, ?)";
 
 

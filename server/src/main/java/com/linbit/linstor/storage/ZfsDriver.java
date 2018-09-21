@@ -171,7 +171,8 @@ public class ZfsDriver extends AbsStorageDriver
 
                 String strBlockSize = new String(outputData.stdoutData);
                 extentSize = Long.parseLong(strBlockSize.trim()) >> 10; // we have to return extent size in KiB
-            } catch (ChildProcessTimeoutException | IOException exc)
+            }
+            catch (ChildProcessTimeoutException | IOException exc)
             {
                 throw new StorageException(
                     "Failed to get the extent size (zfs 'volblocksize')",

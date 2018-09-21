@@ -186,7 +186,8 @@ public class SwordfishInitiatorDriver implements StorageDriver
         int pollAttachRscTries = 0;
         while (!attachable)
         {
-            errorReporter.logTrace("waiting %d ms before polling node's Actions/AttachResourceActionInfo", pollAttachVlmTimeout);
+            errorReporter.logTrace("waiting %d ms before polling node's Actions/AttachResourceActionInfo",
+                                   pollAttachVlmTimeout);
             Thread.sleep(pollAttachVlmTimeout);
 
             RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
@@ -210,7 +211,8 @@ public class SwordfishInitiatorDriver implements StorageDriver
             for (Object attachInfoParameter : attachInfoParameters)
             {
                 Map<String, Object> attachInfoParamMap = (Map<String, Object>) attachInfoParameter;
-                ArrayList<Object> paramAllowableValues = (ArrayList<Object>) attachInfoParamMap.get(JSON_KEY_ALLOWABLE_VALUES);
+                ArrayList<Object> paramAllowableValues =
+                    (ArrayList<Object>) attachInfoParamMap.get(JSON_KEY_ALLOWABLE_VALUES);
                 if (paramAllowableValues != null)
                 {
                     for (Object paramAllowableValue : paramAllowableValues)
@@ -321,26 +323,26 @@ public class SwordfishInitiatorDriver implements StorageDriver
     private String getSfProp(Props vlmDfnProps, String propKey, String errObjDescr)
         throws StorageException, ImplementationError
     {
+        String sfVlmId;
         try
         {
-            String sfVlmId = vlmDfnProps.getProp(
+            sfVlmId = vlmDfnProps.getProp(
                 propKey,
                 StorageDriver.STORAGE_NAMESPACE
             );
-            if (sfVlmId == null)
-            {
-                throw new StorageException(
-                    "No swordfish " + errObjDescr + " given. This usually happens if you forgot to " +
-                        "create a resource of this resource definition using a swordfishTargetDriver"
-                );
-            }
-
-            return sfVlmId;
         }
         catch (InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
+        if (sfVlmId == null)
+        {
+            throw new StorageException(
+                "No swordfish " + errObjDescr + " given. This usually happens if you forgot to " +
+                "create a resource of this resource definition using a swordfishTargetDriver"
+            );
+        }
+        return sfVlmId;
     }
 
     private boolean sfVolumeExists(String sfStorSvcId, String sfVlmId) throws StorageException
@@ -373,7 +375,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
                 for (Object allowableValue : allowableValues)
                 {
                     if (vlmOdataId.equals(
-                        ((Map<String, Object>)allowableValue).get(JSON_KEY_ODATA_ID))
+                        ((Map<String, Object>) allowableValue).get(JSON_KEY_ODATA_ID))
                     )
                     {
                         attached = true;
@@ -394,7 +396,8 @@ public class SwordfishInitiatorDriver implements StorageDriver
     }
 
     @Override
-    public SizeComparison compareVolumeSize(String lsIdentifier, long requiredSize, Props vlmDfnProps) throws StorageException
+    public SizeComparison compareVolumeSize(String lsIdentifier, long requiredSize, Props vlmDfnProps)
+        throws StorageException
     {
         SizeComparison ret;
 
@@ -447,7 +450,8 @@ public class SwordfishInitiatorDriver implements StorageDriver
                 Map<String, Object> vlmLinks = (Map<String, Object>) vlmData.get(JSON_KEY_LINKS);
                 Map<String, Object> linksOem = (Map<String, Object>) vlmLinks.get(JSON_KEY_OEM);
                 Map<String, Object> oemIntelRackscale = (Map<String, Object>) linksOem.get(JSON_KEY_INTEL_RACK_SCALE);
-                ArrayList<Object> intelRackscaleEndpoints = (ArrayList<Object>) oemIntelRackscale.get(JSON_KEY_ENDPOINTS);
+                ArrayList<Object> intelRackscaleEndpoints =
+                    (ArrayList<Object>) oemIntelRackscale.get(JSON_KEY_ENDPOINTS);
                 Map<String, Object> endpoint = (Map<String, Object>) intelRackscaleEndpoints.get(0);
                 String endpointOdataId = (String) endpoint.get(JSON_KEY_ODATA_ID);
 
@@ -471,7 +475,8 @@ public class SwordfishInitiatorDriver implements StorageDriver
                             OutputData outputData = extCmd.exec(
                                 "/bin/bash",
                                 "-c",
-                                "grep -H --color=never " + nqnUuid + " /sys/devices/virtual/nvme-fabrics/ctl/nvme*/subsysnqn"
+                                "grep -H --color=never " + nqnUuid +
+                                " /sys/devices/virtual/nvme-fabrics/ctl/nvme*/subsysnqn"
                             );
                             if (outputData.exitCode == 0)
                             {
@@ -577,7 +582,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
             Object spaceObj = capacityData.get(key);
             if (spaceObj instanceof Integer)
             {
-                space = ((Integer)spaceObj).longValue();
+                space = ((Integer) spaceObj).longValue();
             }
             else
             if (spaceObj instanceof Long)
@@ -627,8 +632,10 @@ public class SwordfishInitiatorDriver implements StorageDriver
         String tmpComposedNodeName = nodeNamespace.get(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
         String tmpAttachVlmTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY);
         String tmpAttachVlmRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY);
-        String tmpGrepNvmeUuidTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY);
-        String tmpGrepNvmeUuidRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY);
+        String tmpGrepNvmeUuidTimeout =
+            storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY);
+        String tmpGrepNvmeUuidRetries =
+            storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY);
 
         // temporary workaround to not having to disable security to set this property on controller-level
         if (tmpHostPort == null || tmpHostPort.isEmpty())
@@ -647,7 +654,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
         StringBuilder failErrorMsg = new StringBuilder();
         appendIfEmptyButRequired(
                 "Missing swordfish host:port specification as a single value such as \n" +
-                    "https://127.0.0.1:1234\n"+
+                    "https://127.0.0.1:1234\n" +
                     "This property has to be set globally:\n\n" +
                     "linstor controller set-property " +
                     ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_URL_KEY +

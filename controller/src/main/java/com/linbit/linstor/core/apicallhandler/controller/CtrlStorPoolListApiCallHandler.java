@@ -121,21 +121,31 @@ public class CtrlStorPoolListApiCallHandler
             .fromIterable(nameAndRequests)
             .flatMap(nameAndRequest -> nameAndRequest.getT2()
                 .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream, false))
-                .onErrorResume(error -> {
-                    if (error instanceof ApiRcException)
+                .onErrorResume(
+                    error ->
                     {
-                        ApiRcException apiExc = (ApiRcException)error;
-                        return Mono.just(Tuples.of(
-                            nameAndRequest.getT1(),
-                            new ByteArrayInputStream(
-                                clientComSerializer.headerlessBuilder()
-                                    .apiCallRcSeries(apiExc.getApiCallRc())
-                                    .build()),
-                            true
-                        ));
+                        Mono<Tuple3<NodeName, ByteArrayInputStream, Boolean>> errRc;
+                        if (error instanceof ApiRcException)
+                        {
+                            ApiRcException apiExc = (ApiRcException) error;
+                            errRc = Mono.just(
+                                Tuples.of(
+                                    nameAndRequest.getT1(),
+                                    new ByteArrayInputStream(
+                                        clientComSerializer.headerlessBuilder()
+                                            .apiCallRcSeries(apiExc.getApiCallRc())
+                                            .build()),
+                                    true
+                                )
+                            );
+                        }
+                        else
+                        {
+                            errRc = Mono.empty();
+                        }
+                        return errRc;
                     }
-                    return Mono.empty();
-                })
+                )
             );
     }
 
@@ -207,7 +217,8 @@ public class CtrlStorPoolListApiCallHandler
             .build()
         );
 
-        for (ApiCallRc apiCallRc : freeSpaceAnswers.getT2()) {
+        for (ApiCallRc apiCallRc : freeSpaceAnswers.getT2())
+        {
             flux = flux.concatWith(Flux.just(clientComSerializer
                 .answerBuilder(ApiConsts.API_REPLY, apiCallId.get())
                 .apiCallRcSeries(apiCallRc)

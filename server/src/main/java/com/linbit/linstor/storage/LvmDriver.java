@@ -340,10 +340,14 @@ public class LvmDriver extends AbsStorageDriver
         Map<String, String> stltNamespace
     )
     {
-        lvmCreateCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY, lvmCreateCommand);
-        lvmResizeCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY, lvmResizeCommand);
-        lvmRemoveCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY, lvmRemoveCommand);
-        lvmChangeCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
+        lvmCreateCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY,
+                                       lvmCreateCommand);
+        lvmResizeCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_RESIZE_COMMAND_KEY,
+                                       lvmResizeCommand);
+        lvmRemoveCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY,
+                                       lvmRemoveCommand);
+        lvmChangeCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY,
+                                       lvmChangeCommand);
         lvmLvsCommand = getLvmLvsCommandFromConfig(storPoolNamespace);
         lvmVgsCommand = getLvmVgsCommandFromConfig(storPoolNamespace);
 
@@ -489,7 +493,8 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    public long getTotalSpace() throws StorageException {
+    public long getTotalSpace() throws StorageException
+    {
         long totalSpace;
         final String[] command = new String[]
             {

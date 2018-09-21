@@ -191,7 +191,7 @@ public class CtrlSnapshotApiCallHandler
                     );
                 }
 
-                String overrideId = vlmDfn.getProps(apiCtx).getProp( ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+                String overrideId = vlmDfn.getProps(apiCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
                 if (overrideId != null)
                 {
                     snapshotVlmDfnPropsMaps.put(

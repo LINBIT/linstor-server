@@ -222,7 +222,9 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
             vlmProps.setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue);
-            String overrideId = fromSnapshotVlmDfn.getProps(peerAccCtx.get()).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            String overrideId = fromSnapshotVlmDfn.getProps(
+                peerAccCtx.get()).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID
+            );
             if (overrideId != null)
             {
                 vlmProps.setProp(

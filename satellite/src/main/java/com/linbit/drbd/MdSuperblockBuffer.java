@@ -23,6 +23,9 @@ public class MdSuperblockBuffer
     // Size of the DRBD superblock
     private static final int SUPERBLK_SIZE = 4096;
 
+    // Bitwise AND mask for aligning to a 4k boundary
+    private static final long ALIGN_4K_MASK = 0xFFFFFFFFFFFFF000L;
+
     private byte[] data;
     private ByteBuffer buffer;
 
@@ -59,7 +62,7 @@ public class MdSuperblockBuffer
             long fileSize = inChan.size();
 
             // Align to a 4 kiB boundary
-            fileSize &= ~0xFFFL;
+            fileSize &= ALIGN_4K_MASK;
 
             // Calculate the offset where to find the DRBD meta data superblock
             if (fileSize < SUPERBLK_SIZE)

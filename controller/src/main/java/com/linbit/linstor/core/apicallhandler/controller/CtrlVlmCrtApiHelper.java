@@ -246,7 +246,8 @@ class CtrlVlmCrtApiHelper
         if (storPool != null && storPool.getDriverKind().hasBackingStorage())
         {
             throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(FAIL_INVLD_STOR_POOL_NAME, "Storage pool with backing disk not allowed with diskless resource.")
+                .entryBuilder(FAIL_INVLD_STOR_POOL_NAME,
+                              "Storage pool with backing disk not allowed with diskless resource.")
                 .setCause(String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
                         "with backing disk was specified.",
                     rsc.getDefinition().getName().displayValue,

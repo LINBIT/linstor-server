@@ -81,10 +81,10 @@ public final class SatelliteNetComInitializer
     }
 
     public boolean initMainNetComService(
-        AccessContext initCtx,
-        Path configurationDirectory,
-        String bindAddressStr,
-        Integer plainPort
+        final AccessContext initCtx,
+        final Path configurationDirectory,
+        final String ovrdBindAddressStr,
+        final Integer ovrdPlainPort
     )
     {
         boolean success = false;
@@ -104,6 +104,8 @@ public final class SatelliteNetComInitializer
                     // still happens it can be ignored, as every property has a default-value
                 }
             }
+
+            String bindAddressStr = ovrdBindAddressStr;
             if (bindAddressStr == null)
             {
                 bindAddressStr = netComProps.getProperty(
@@ -124,10 +126,10 @@ public final class SatelliteNetComInitializer
             String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, NET_COM_DEFAULT_TYPE);
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {
-                if (plainPort != null)
+                if (ovrdPlainPort != null)
                 {
-                    bindAddress = new InetSocketAddress(addr, plainPort);
-                    port = plainPort;
+                    bindAddress = new InetSocketAddress(addr, ovrdPlainPort);
+                    port = ovrdPlainPort;
                 }
                 netComSvc = new TcpConnectorService(
                     errorReporter,

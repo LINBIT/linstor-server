@@ -1300,8 +1300,12 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
-        Path actualResFile = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX);
-        Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_TMP_SUFFIX);
+        Path actualResFile = Paths.get(
+            SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
+        );
+        Path tmpResFileOut = Paths.get(
+            SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_TMP_SUFFIX
+        );
 
         try (
             FileOutputStream resFileOut = new FileOutputStream(tmpResFileOut.toFile())

@@ -6,7 +6,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;

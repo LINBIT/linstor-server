@@ -4,7 +4,6 @@ import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.linbit.ImplementationError;

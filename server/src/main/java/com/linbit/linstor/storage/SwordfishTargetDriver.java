@@ -253,6 +253,7 @@ public class SwordfishTargetDriver implements StorageDriver
         long pollVlmCrtTries = 0;
         while (vlmLocation == null)
         {
+            ++pollVlmCrtTries;
             errorReporter.logTrace("waiting %d ms before polling task monitor", pollVlmCrtTimeout);
             Thread.sleep(pollVlmCrtTimeout);
 
@@ -278,7 +279,7 @@ public class SwordfishTargetDriver implements StorageDriver
                         )
                     );
             }
-            if (pollVlmCrtTries ++ >= pollVlmCrtMaxTries)
+            if (vlmLocation == null && pollVlmCrtTries >= pollVlmCrtMaxTries)
             {
                 throw new StorageException(
                     String.format(
@@ -353,7 +354,8 @@ public class SwordfishTargetDriver implements StorageDriver
     }
 
     @Override
-    public SizeComparison compareVolumeSize(String identifier, long requiredSize, Props vlmDfnProps) throws StorageException
+    public SizeComparison compareVolumeSize(String identifier, long requiredSize, Props vlmDfnProps)
+        throws StorageException
     {
         SizeComparison ret;
 
@@ -428,7 +430,7 @@ public class SwordfishTargetDriver implements StorageDriver
             Object spaceObj = capacityData.get(key);
             if (spaceObj instanceof Integer)
             {
-                space = ((Integer)spaceObj).longValue();
+                space = ((Integer) spaceObj).longValue();
             }
             else
             if (spaceObj instanceof Long)

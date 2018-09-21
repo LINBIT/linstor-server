@@ -73,7 +73,9 @@ public class IntAuthAccept implements ApiCallReactive
                 privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                 // FIXME In the absence of any means of identification, assume the system identity for the peer.
                 // Set the SYSTEM identity on the Satellite's access context
-                AccessContext newCtx = privCtx.impersonate(Identity.SYSTEM_ID, curCtx.subjectRole, curCtx.subjectDomain);
+                AccessContext newCtx = privCtx.impersonate(
+                    Identity.SYSTEM_ID, curCtx.subjectRole, curCtx.subjectDomain
+                );
                 // Disable all privileges on the Satellite's access context permanently
                 newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
                 peer.setAccessContext(privCtx, newCtx);
@@ -83,8 +85,8 @@ public class IntAuthAccept implements ApiCallReactive
                 errorReporter.reportError(
                     Level.ERROR,
                     new ImplementationError(
-                        "Creation of an access context for a Satellite by the " + privCtx.subjectRole.name.displayValue +
-                            " role failed",
+                        "Creation of an access context for a Satellite by the " +
+                            privCtx.subjectRole.name.displayValue + " role failed",
                         accExc
                     )
                 );

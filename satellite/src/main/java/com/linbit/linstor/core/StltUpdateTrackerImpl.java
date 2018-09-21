@@ -227,5 +227,4 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             snapshotUpdates.clear();
         }
     }
-
 }

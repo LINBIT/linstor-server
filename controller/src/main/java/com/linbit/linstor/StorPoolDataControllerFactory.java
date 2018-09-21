@@ -75,15 +75,18 @@ public class StorPoolDataControllerFactory
                 null,
                 "The allowed storage drivers for the current node type are:\n   " +
                 nodeType.getAllowedKindClasses().stream()
-                    .map(clazz -> {
-                        String simpleName = clazz.getSimpleName();
-                        int kindIdx = simpleName.lastIndexOf("Kind");
-                        if (kindIdx > 0)
+                    .map(
+                        clazz ->
                         {
-                            simpleName = simpleName.substring(0, kindIdx);
+                            String simpleName = clazz.getSimpleName();
+                            int kindIdx = simpleName.lastIndexOf("Kind");
+                            if (kindIdx > 0)
+                            {
+                                simpleName = simpleName.substring(0, kindIdx);
+                            }
+                            return simpleName;
                         }
-                        return simpleName;
-                    })
+                    )
                     .collect(Collectors.joining("\n   ")),
                 null
             );

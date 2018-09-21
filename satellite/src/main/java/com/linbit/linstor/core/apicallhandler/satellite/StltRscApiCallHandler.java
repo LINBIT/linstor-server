@@ -192,10 +192,6 @@ class StltRscApiCallHandler
             ResourceName rscName;
 
             ResourceDefinitionData rscDfnToRegister = null;
-            List<NodeData> nodesToRegister = new ArrayList<>();
-
-            Set<Resource.Key> createdRscSet = new TreeSet<>();
-            Set<Resource.Key> updatedRscSet = new TreeSet<>();
 
             rscName = new ResourceName(rscRawData.getName());
             String rscDfnSecret = rscRawData.getRscDfnSecret();
@@ -281,6 +277,9 @@ class StltRscApiCallHandler
                 }
             }
 
+            final List<NodeData> nodesToRegister = new ArrayList<>();
+            final Set<Resource.Key> createdRscSet = new TreeSet<>();
+            final Set<Resource.Key> updatedRscSet = new TreeSet<>();
             Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
             if (!rscIterator.hasNext())
             {

@@ -17,14 +17,14 @@ public class GidGenerator
     private static final int LOOP_GUARD = 100;
 
     // SecureRandom is multithreading-safe
-    private static final SecureRandom rnd = new SecureRandom();
-    private static final TreeSet<Long> invalidGidSet = new TreeSet<>();
+    private static final SecureRandom RND = new SecureRandom();
+    private static final TreeSet<Long> INVALID_GID_SET = new TreeSet<>();
 
     static
     {
         for (Long value : RESERVED_GID_VALUES)
         {
-            invalidGidSet.add(value);
+            INVALID_GID_SET.add(value);
         }
     }
 
@@ -51,8 +51,8 @@ public class GidGenerator
         {
             ++counter;
             // Clear the lowest-order bit, which is used to indicate Primary/Secondary in DRBD
-            gid = rnd.nextLong() & ~1L;
-            invalid = invalidGidSet.contains(gid);
+            gid = RND.nextLong() & ~1L;
+            invalid = INVALID_GID_SET.contains(gid);
         }
         if (invalid)
         {
@@ -64,7 +64,7 @@ public class GidGenerator
                 "as generation identifier, despite multiple attempts to generate a different number.\n" +
                 "It is likely that random number generation does not work properly on this system.",
                 "Check whether the generation of random numbers is supported and works correctly on this system.",
-                "Generator used: " + rnd.getClass().getSimpleName() + ", Attempts: " + LOOP_GUARD
+                "Generator used: " + RND.getClass().getSimpleName() + ", Attempts: " + LOOP_GUARD
             );
         }
         return String.format("%X", gid);

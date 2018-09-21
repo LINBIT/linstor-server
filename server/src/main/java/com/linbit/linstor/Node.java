@@ -15,7 +15,6 @@ import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
-import com.linbit.linstor.storage.ZfsThinDriver;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.transaction.TransactionObject;
 

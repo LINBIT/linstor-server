@@ -7,7 +7,7 @@ import java.security.SecureRandom;
 public class SecretGenerator
 {
     // SecureRandom is multithreading-safe
-    public static final SecureRandom rnd = new SecureRandom();
+    public static final SecureRandom RND = new SecureRandom();
 
     // Random data size for automatic DRBD shared secret generation
     // The random data will be Base64 encoded, so the length of the
@@ -49,7 +49,7 @@ public class SecretGenerator
     public static byte[] generateSecret(int size)
     {
         byte[] randomBytes = new byte[size];
-        rnd.nextBytes(randomBytes);
+        RND.nextBytes(randomBytes);
         return randomBytes;
     }
 

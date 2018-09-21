@@ -7,7 +7,6 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.logging.ErrorReporter;

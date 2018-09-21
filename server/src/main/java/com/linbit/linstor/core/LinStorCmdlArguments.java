@@ -49,8 +49,8 @@ public class LinStorCmdlArguments
         return logDirectory;
     }
 
-    public void setLogDirectory(String logDirectory)
+    public void setLogDirectory(String newLogDirectory)
     {
-        this.logDirectory = logDirectory;
+        logDirectory = newLogDirectory;
     }
 }

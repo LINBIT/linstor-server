@@ -18,7 +18,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 import java.util.List;
@@ -380,9 +379,9 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         PrintStream reportPrinter = null;
         try
         {
-            Path f = getLogDirectory().resolve(RPT_PREFIX + logName + RPT_SUFFIX);
+            Path filePath = getLogDirectory().resolve(RPT_PREFIX + logName + RPT_SUFFIX);
             OutputStream reportStream = new FileOutputStream(
-                f.toFile()
+                filePath.toFile()
             );
             reportPrinter = new PrintStream(reportStream);
         }
@@ -436,60 +435,67 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         try
         {
             Files.list(logDirectory)
-                .filter(f -> f.getFileName().toString().startsWith("ErrorReport"))
-                .filter(f -> {
-                    boolean ret = false;
-                    for (String fileId : fileIds)
+                .filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
+                .filter(
+                    file ->
                     {
-                        if (f.getFileName().toString().startsWith(fileId))
+                        boolean ret = false;
+                        for (String fileId : fileIds)
                         {
-                            ret = true;
-                            break;
-                        }
-                    }
-                    return ret;
-                })
-                .forEach(f -> {
-                    String fileName = f.getFileName().toString();
-
-                    try
-                    {
-                        BasicFileAttributes attr = Files.readAttributes(f, BasicFileAttributes.class);
-
-                        if (since.orElse(new Date(0)).getTime() < attr.creationTime().toMillis() &&
-                            attr.creationTime().toMillis() < to.orElse(now).getTime())
-                        {
-                            StringBuilder sb = new StringBuilder();
-                            if (withText)
+                            if (file.getFileName().toString().startsWith(fileId))
                             {
-                                try (BufferedReader br = Files.newBufferedReader(f))
+                                ret = true;
+                                break;
+                            }
+                        }
+                        return ret;
+                    }
+                )
+                .forEach(
+                    file ->
+                    {
+                        String fileName = file.getFileName().toString();
+
+                        try
+                        {
+                            BasicFileAttributes attr = Files.readAttributes(file, BasicFileAttributes.class);
+
+                            if (since.orElse(new Date(0)).getTime() < attr.creationTime().toMillis() &&
+                                attr.creationTime().toMillis() < to.orElse(now).getTime())
+                            {
+                                StringBuilder sb = new StringBuilder();
+                                if (withText)
                                 {
-                                    String line = br.readLine();
-                                    while (line != null)
+                                    try (BufferedReader br = Files.newBufferedReader(file))
                                     {
-//                                    if (date == null && line.startsWith(errorTimeLabel))
-//                                    {
-//                                        String dateStr = line.substring(errorTimeLabel.length()).trim();
-//                                        date = TIMESTAMP_FORMAT.parse(dateStr);
-//                                    }
+                                        String line = br.readLine();
+                                        while (line != null)
+                                        {
+    //                                    if (date == null && line.startsWith(errorTimeLabel))
+    //                                    {
+    //                                        String dateStr = line.substring(errorTimeLabel.length()).trim();
+    //                                        date = TIMESTAMP_FORMAT.parse(dateStr);
+    //                                    }
 
-                                        sb.append(line).append('\n');
+                                            sb.append(line).append('\n');
 
-                                        line = br.readLine();
+                                            line = br.readLine();
+                                        }
                                     }
                                 }
+                                errors.add(new ErrorReport(
+                                    nodeName,
+                                    fileName,
+                                    new Date(attr.creationTime().toMillis()),
+                                    sb.toString())
+                                );
                             }
-                            errors.add(new ErrorReport(
-                                nodeName,
-                                fileName,
-                                new Date(attr.creationTime().toMillis()),
-                                sb.toString())
-                            );
                         }
-                    } catch (IOException /*| ParseException*/ ignored)
-                    {
+                        catch (IOException /*| ParseException*/ ignored)
+                        {
+                        }
                     }
-                });
+                );
         }
         catch (IOException ignored)
         {

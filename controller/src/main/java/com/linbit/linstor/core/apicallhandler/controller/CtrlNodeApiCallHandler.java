@@ -619,7 +619,7 @@ public class CtrlNodeApiCallHandler
                 }
 
                 // find nodes that will need to be contacted before deleting the resources
-                Collection<Node> nodesToContact = ctrlSatelliteUpdater.findNodesToContact(nodeData);
+                final Collection<Node> nodesToContact = ctrlSatelliteUpdater.findNodesToContact(nodeData);
 
                 // set node mark deleted for updates to other satellites
                 nodeData.markDeleted(apiCtx);
@@ -682,7 +682,8 @@ public class CtrlNodeApiCallHandler
 
                 // inform other satellites that the node is gone
                 responseConverter.addWithDetail(
-                    responses, context, ctrlSatelliteUpdater.updateSatellites(nodeUuid, nodeName, nodesToContact));
+                    responses, context, ctrlSatelliteUpdater.updateSatellites(nodeUuid, nodeName, nodesToContact)
+                );
 
                 responseConverter.addWithOp(responses, context, ApiCallRcImpl
                     .entryBuilder(ApiConsts.DELETED, successMessage)

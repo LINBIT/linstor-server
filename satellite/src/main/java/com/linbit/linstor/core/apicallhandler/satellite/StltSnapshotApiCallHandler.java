@@ -119,7 +119,8 @@ class StltSnapshotApiCallHandler
     }
 
     private ResourceDefinition mergeResourceDefinition(ResourceDefinition.RscDfnApi rscDfnApi)
-        throws InvalidNameException, ValueOutOfRangeException, DivergentUuidsException, AccessDeniedException, SQLException, ValueInUseException
+        throws InvalidNameException, ValueOutOfRangeException, DivergentUuidsException,
+        AccessDeniedException, SQLException, ValueInUseException
     {
         ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
 
@@ -294,7 +295,9 @@ class StltSnapshotApiCallHandler
                     snapshotName
                 );
 
-                deviceManager.snapshotUpdateApplied(Collections.singleton(new SnapshotDefinition.Key(rscName, snapshotName)));
+                deviceManager.snapshotUpdateApplied(
+                    Collections.singleton(new SnapshotDefinition.Key(rscName, snapshotName))
+                );
             }
         }
         catch (Exception | ImplementationError exc)

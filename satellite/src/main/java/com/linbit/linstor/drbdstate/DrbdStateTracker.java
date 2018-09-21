@@ -62,22 +62,21 @@ public class DrbdStateTracker
     // Observe everything
     public static final long OBS_ALL        = 0xFFFFFFFFFFFFFFFFL;
 
-    // FIXME: These should probably be constants, and obsSlotCount should be initialized statically, not per instance
     // Observer list table indexes
-    private final int OBS_RES_CRT_SLOT;
-    private final int OBS_RES_DSTR_SLOT;
-    private final int OBS_ROLE_SLOT;
-    private final int OBS_PEER_ROLE_SLOT;
-    private final int OBS_VOL_CRT_SLOT;
-    private final int OBS_VOL_DSTR_SLOT;
-    private final int OBS_MINOR_SLOT;
-    private final int OBS_DISK_SLOT;
-    private final int OBS_REPL_SLOT;
-    private final int OBS_CONN_CRT_SLOT;
-    private final int OBS_CONN_DSTR_SLOT;
-    private final int OBS_CONN_SLOT;
+    private static final int OBS_RES_CRT_SLOT;
+    private static final int OBS_RES_DSTR_SLOT;
+    private static final int OBS_ROLE_SLOT;
+    private static final int OBS_PEER_ROLE_SLOT;
+    private static final int OBS_VOL_CRT_SLOT;
+    private static final int OBS_VOL_DSTR_SLOT;
+    private static final int OBS_MINOR_SLOT;
+    private static final int OBS_DISK_SLOT;
+    private static final int OBS_REPL_SLOT;
+    private static final int OBS_CONN_CRT_SLOT;
+    private static final int OBS_CONN_DSTR_SLOT;
+    private static final int OBS_CONN_SLOT;
 
-    private int obsSlotCount;
+    private static int obsSlotCount;
     private Set<ResourceObserver>[] observers;
     private Map<ResourceObserver, Long> obsMaskMap;
     List<DrbdStateChange> drbdStateChangeObservers;
@@ -87,8 +86,7 @@ public class DrbdStateTracker
 
     private final long validEventsMask;
 
-    @Inject
-    public DrbdStateTracker()
+    static
     {
         // Initialize number of observer slots to minimum
         // The number of actually required slots is set by the
@@ -109,7 +107,11 @@ public class DrbdStateTracker
         OBS_CONN_CRT_SLOT    = initBitToSlot(OBS_CONN_CRT);
         OBS_CONN_DSTR_SLOT   = initBitToSlot(OBS_CONN_DSTR);
         OBS_CONN_SLOT        = initBitToSlot(OBS_CONN);
+    }
 
+    @Inject
+    public DrbdStateTracker()
+    {
         observers = new HashSet[obsSlotCount];
         for (int slot = 0; slot < obsSlotCount; ++slot)
         {
@@ -181,7 +183,7 @@ public class DrbdStateTracker
         return removedRes;
     }
 
-    private int initBitToSlot(long eventId)
+    private static int initBitToSlot(long eventId)
     {
         int slot = DrbdStateTracker.bitToSlot(eventId);
         if (slot > obsSlotCount)

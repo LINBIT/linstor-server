@@ -128,7 +128,11 @@ public class EventBroker
         errorReporter.logTrace("Event 'connection closed' end: %s", peer);
     }
 
-    private <T> Flux<byte[]> createWatchForEvent(Watch watch, EventSerializer.Serializer<T> eventSerializer, String eventName)
+    private <T> Flux<byte[]> createWatchForEvent(
+        Watch watch,
+        EventSerializer.Serializer<T> eventSerializer,
+        String eventName
+    )
     {
         return eventSerializer.getEvent()
             .watchForStreams(watch.getEventIdentifier().getObjectIdentifier())

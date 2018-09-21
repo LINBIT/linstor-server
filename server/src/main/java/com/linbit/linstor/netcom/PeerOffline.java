@@ -37,7 +37,9 @@ public class PeerOffline implements Peer
         {
             serviceName = new ServiceName("PeerOffline");
         }
-        catch (InvalidNameException ignore) {}
+        catch (InvalidNameException ignored)
+        {
+        }
 
         if (node != null)
         {

@@ -391,7 +391,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         {
             hasDiskless = rsc.getStateFlags().isSet(accCtx, Resource.RscFlags.DISKLESS);
             if (hasDiskless)
+            {
                 break;
+            }
         }
         return hasDiskless;
     }

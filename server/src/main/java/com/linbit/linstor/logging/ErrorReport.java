@@ -11,17 +11,17 @@ public class ErrorReport implements Comparable
 
     public ErrorReport(final String nodeNameRef, final String fileNameRef, Date dateRef)
     {
-        this.nodeName = nodeNameRef;
-        this.fileName = fileNameRef;
-        this.dateTime = dateRef;
+        nodeName = nodeNameRef;
+        fileName = fileNameRef;
+        dateTime = dateRef;
     }
 
     public ErrorReport(final String nodeNameRef, final String fileNameRef, Date dateRef, final String textRef)
     {
-        this.nodeName = nodeNameRef;
-        this.fileName = fileNameRef;
-        this.dateTime = dateRef;
-        this.text = textRef;
+        nodeName = nodeNameRef;
+        fileName = fileNameRef;
+        dateTime = dateRef;
+        text = textRef;
     }
 
     public Date getDateTime()
@@ -39,22 +39,28 @@ public class ErrorReport implements Comparable
         return text;
     }
 
-    public void setText(String text)
+    public void setText(String newText)
     {
-        this.text = text;
+        text = newText;
     }
 
-    public String getNodeName() {
+    public String getNodeName()
+    {
         return nodeName;
     }
 
     @Override
-    public int compareTo(Object o) {
-        ErrorReport b = (ErrorReport)o;
-        int cmp = this.dateTime.compareTo(b.dateTime);
+    public int compareTo(Object obj)
+    {
+        ErrorReport errRpt = (ErrorReport) obj;
+        int cmp = dateTime.compareTo(errRpt.dateTime);
         if (cmp == 0)
         {
-            cmp = (this.nodeName + this.fileName).compareTo(b.nodeName + b.fileName);
+            cmp = nodeName.compareTo(errRpt.nodeName);
+            if (cmp == 0)
+            {
+                cmp = fileName.compareTo(errRpt.fileName);
+            }
         }
         return cmp;
     }

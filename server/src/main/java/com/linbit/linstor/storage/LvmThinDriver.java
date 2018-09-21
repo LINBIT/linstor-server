@@ -298,7 +298,9 @@ public class LvmThinDriver extends LvmDriver
     {
         super.applyConfiguration(storPoolNamespace, nodeNamespace, stltNamespace);
         thinPoolName = getThinPoolNameFromConfig(storPoolNamespace);
-        lvmConvertCommand = getAsString(storPoolNamespace, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand);
+        lvmConvertCommand = getAsString(
+            storPoolNamespace, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand
+        );
     }
 
     @Override

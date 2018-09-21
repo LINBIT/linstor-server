@@ -200,23 +200,25 @@ public final class Satellite
                 errorReporter.logInfo("Removing all res files from " + varDrbdPath);
                 keepFunc = (path) -> false;
             }
-            Files.list(varDrbdPath).filter(p -> p.toString().endsWith(".res")).forEach(p ->
-            {
-                try
+            Files.list(varDrbdPath).filter(path -> path.toString().endsWith(".res")).forEach(
+                filteredPathName ->
                 {
-                    if (!keepFunc.apply(p))
+                    try
                     {
-                        Files.delete(p);
+                        if (!keepFunc.apply(filteredPathName))
+                        {
+                            Files.delete(filteredPathName);
+                        }
+                    }
+                    catch (IOException ioExc)
+                    {
+                        throw new ImplementationError(
+                            "Unable to delete drbd resource file: " + filteredPathName,
+                            ioExc
+                        );
                     }
                 }
-                catch (IOException ioExc)
-                {
-                    throw new ImplementationError(
-                        "Unable to delete drbd resource file: " + p,
-                        ioExc
-                    );
-                }
-            });
+            );
         }
         catch (IOException ioExc)
         {

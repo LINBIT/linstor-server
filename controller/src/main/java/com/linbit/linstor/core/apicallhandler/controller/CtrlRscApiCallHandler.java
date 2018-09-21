@@ -394,7 +394,7 @@ public class CtrlRscApiCallHandler
 
             ResourceDefinition rscDfn = rscData.getDefinition();
             Node node = rscData.getAssignedNode();
-            UUID rscUuid = rscData.getUuid();
+            final UUID rscUuid = rscData.getUuid();
 
             delete(rscData); // also deletes all of its volumes
 
@@ -513,14 +513,14 @@ public class CtrlRscApiCallHandler
             {
                 if (upperFilterNodes.isEmpty() || upperFilterNodes.contains(node.getName().value))
                 {
-                    final Peer peer = node.getPeer(peerAccCtx.get());
-                    if (peer != null)
+                    final Peer curPeer = node.getPeer(peerAccCtx.get());
+                    if (curPeer != null)
                     {
-                        Lock readLock = peer.getSatelliteStateLock().readLock();
+                        Lock readLock = curPeer.getSatelliteStateLock().readLock();
                         readLock.lock();
                         try
                         {
-                            final SatelliteState satelliteState = peer.getSatelliteState();
+                            final SatelliteState satelliteState = curPeer.getSatelliteState();
 
                             if (satelliteState != null)
                             {
@@ -662,10 +662,10 @@ public class CtrlRscApiCallHandler
                         "Volume definition with number '" + vlmNr.value + "' on resource definition '" +
                             rscName + "' not found."
                     )
-                    .setCause("The specified volume definition with number '" + vlmNr.value + "' on resource definition '" +
-                        rscName + "' could not be found in the database")
-                    .setCorrection("Create a volume definition with number '" + vlmNr.value + "' on resource definition '" +
-                        rscName + "' first.")
+                    .setCause("The specified volume definition with number '" + vlmNr.value +
+                        "' on resource definition '" + rscName + "' could not be found in the database")
+                    .setCorrection("Create a volume definition with number '" + vlmNr.value +
+                        "' on resource definition '" + rscName + "' first.")
                     .build()
                 );
             }

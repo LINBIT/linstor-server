@@ -45,7 +45,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.Queue;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Function;
@@ -70,6 +69,7 @@ public class CommonMessageProcessor implements MessageProcessor
     public static final int MAX_THR_COUNT = 1024;
     public static final int MIN_QUEUE_SIZE = 4 * MIN_THR_COUNT;
     public static final int MAX_QUEUE_SIZE = 4 * MAX_THR_COUNT;
+    public static final int THR_QUEUE_FACTOR = 4;
 
     @Inject
     public CommonMessageProcessor(
@@ -87,7 +87,7 @@ public class CommonMessageProcessor implements MessageProcessor
 
         int queueSize = MathUtils.bounds(
             MIN_QUEUE_SIZE,
-            Math.max(LinStor.CPU_COUNT, MAX_THR_COUNT) * 4,
+            Math.max(LinStor.CPU_COUNT, MAX_THR_COUNT) * THR_QUEUE_FACTOR,
             MAX_QUEUE_SIZE
         );
         int thrCount = MathUtils.bounds(MIN_THR_COUNT, LinStor.CPU_COUNT, MAX_THR_COUNT);
@@ -188,7 +188,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     {
                         errorLog.logDebug(
                             "Message of unknown type %d received on connector %s " +
-                                "from peer at endpoint %s:%d",
+                            "from peer at endpoint %s:%d",
                             msgType, peer.getConnectorInstanceName(), peerAddress, port
                         );
                     }

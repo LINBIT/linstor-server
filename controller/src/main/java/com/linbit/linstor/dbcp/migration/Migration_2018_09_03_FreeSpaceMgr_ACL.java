@@ -1,10 +1,9 @@
 package com.linbit.linstor.dbcp.migration;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 
+@SuppressWarnings("checkstyle:typename")
 @Migration(
     version = "2018.09.03.14.30",
     description = "Fix FreeSpaceMgr SEC_ACL_MAP entries."

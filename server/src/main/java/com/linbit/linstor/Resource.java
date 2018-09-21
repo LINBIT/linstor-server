@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.InvalidNameException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

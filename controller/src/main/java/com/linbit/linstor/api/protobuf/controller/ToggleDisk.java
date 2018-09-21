@@ -2,21 +2,15 @@ package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
-import com.linbit.linstor.proto.MsgModRscOuterClass.MsgModRsc;
-import com.linbit.linstor.proto.MsgToggleDiskOuterClass;
 import com.linbit.linstor.proto.MsgToggleDiskOuterClass.MsgToggleDisk;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @ProtobufApiCall(

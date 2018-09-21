@@ -486,7 +486,8 @@ public class StltApiCallHandler
                         whitelistProps
                     );
                     commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
-                } catch (IOException ioExc)
+                }
+                catch (IOException ioExc)
                 {
                     String ioErrorMsg = ioExc.getMessage();
                     if (ioErrorMsg == null)

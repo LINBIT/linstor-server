@@ -9,7 +9,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
-import java.util.Map;
 
 public class PropsContainerFactory
 {

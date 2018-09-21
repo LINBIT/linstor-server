@@ -12,8 +12,6 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.AutoSelectFilterOuterClass;
-import com.linbit.linstor.proto.AutoSelectFilterOuterClass.AutoSelectFilter;
 import com.linbit.linstor.proto.MsgAutoPlaceRscOuterClass.MsgAutoPlaceRsc;
 import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
 
