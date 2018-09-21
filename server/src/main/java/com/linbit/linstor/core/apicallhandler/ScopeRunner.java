@@ -43,16 +43,6 @@ public class ScopeRunner
         apiCallScope = apiCallScopeRef;
     }
 
-    public <T> Flux<T> callInTransactionalScope(LockGuard lockGuard, Callable<T> callable)
-    {
-        return fluxInScope(lockGuard, () -> Flux.just(callable.call()), true);
-    }
-
-    public <T> Flux<T> callInTransactionlessScope(LockGuard lockGuard, Callable<T> callable)
-    {
-        return fluxInScope(lockGuard, () -> Flux.just(callable.call()), false);
-    }
-
     public <T> Flux<T> fluxInTransactionalScope(LockGuard lockGuard, Callable<Flux<T>> callable)
     {
         return fluxInScope(lockGuard, callable, true);
