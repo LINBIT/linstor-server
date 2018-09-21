@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public interface StltUpdateTracker
 {
-    Flux<ApiCallRc> updateController(UUID nodeUuid, NodeName name);
+    Flux<ApiCallRc> updateController();
     Flux<ApiCallRc> updateNode(UUID nodeUuid, NodeName name);
     Flux<ApiCallRc> updateResourceDfn(UUID rscDfnUuid, ResourceName name);
     Flux<ApiCallRc> updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);

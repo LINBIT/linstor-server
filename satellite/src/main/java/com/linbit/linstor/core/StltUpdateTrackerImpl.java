@@ -6,8 +6,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
@@ -39,9 +37,10 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     }
 
     @Override
-    public Flux<ApiCallRc> updateController(UUID nodeUuid, NodeName name)
+    public Flux<ApiCallRc> updateController()
     {
-        return update(nodeUuid,
+        return update(
+            UUID.randomUUID(), // anything, except null
             updateNotification -> cachedUpdates.controllerUpdate = Optional.of(updateNotification));
     }
 

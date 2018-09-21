@@ -1421,8 +1421,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         "Meta data creation for resource '" + rscName.displayValue + "' volume " +
                         vlmState.getVlmNr().value + " failed",
                         getAbortMsg(rscName),
-                        "Meta data creation for volume " + vlmState.getVlmNr().value + " +" +
-                        "failed",
+                        "Meta data creation for volume " + vlmState.getVlmNr().value +
+                        " failed",
                         null,
                         null,
                         vlmExc
@@ -1434,8 +1434,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         "Meta data creation for resource '" + rscName.displayValue + "' volume " +
                         vlmState.getVlmNr().value + " failed",
                         getAbortMsg(rscName),
-                        "Meta data creation for volume " + vlmState.getVlmNr().value + " +" +
-                        "failed because the execution of an external command failed",
+                        "Meta data creation for volume " + vlmState.getVlmNr().value +
+                        " failed because the execution of an external command failed",
                         "- Check whether the required software is installed\n" +
                         "- Check whether the application's search path includes the location\n" +
                         "  of the external software\n" +

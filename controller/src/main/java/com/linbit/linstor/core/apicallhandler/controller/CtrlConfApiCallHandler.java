@@ -50,7 +50,6 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
@@ -136,7 +135,6 @@ public class CtrlConfApiCallHandler
             {
                 byte[] changedMessage = ctrlStltSrzl
                     .onewayBuilder(InternalApiConsts.API_CHANGED_CONTROLLER)
-                    .changedController(nodeToContact.getUuid(), nodeToContact.getName().getDisplayName())
                     .build();
 
                 satellitePeer.sendMessage(changedMessage);

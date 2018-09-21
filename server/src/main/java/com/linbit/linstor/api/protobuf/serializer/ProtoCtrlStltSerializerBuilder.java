@@ -122,12 +122,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return this;
     }
 
-    @Override
-    public ProtoCtrlStltSerializerBuilder changedController(UUID nodeUuid, String nodeName)
-    {
-        return changedNode(nodeUuid, nodeName);
-    }
-
     // no fullSync- or update-id needed
     @Override
     public ProtoCtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName)
