@@ -43,7 +43,7 @@ public class ZfsThinDriverKind implements StorageDriverKind
     {
         final HashMap<String, String> traits = new HashMap<>();
 
-        traits.put(ApiConsts.KEY_STOR_POOL_PROVISIONING, ApiConsts.VAL_STOR_POOL_PROVISIONING_FAT);
+        traits.put(ApiConsts.KEY_STOR_POOL_PROVISIONING, ApiConsts.VAL_STOR_POOL_PROVISIONING_THIN);
 
         return traits;
     }
