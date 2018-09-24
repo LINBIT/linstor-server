@@ -111,7 +111,7 @@ public class RestHttpClient implements RestClient
 
     private void logSend(HttpRequest req) throws IOException
     {
-//        System.out.println(">>> " + req.getRequestLine().toString());
+//System.out.println(">>> " + req.getRequestLine().toString());
 //        if (req instanceof HttpEntityEnclosingRequest)
 //        {
 //            HttpEntityEnclosingRequest enclReq = (HttpEntityEnclosingRequest) req;

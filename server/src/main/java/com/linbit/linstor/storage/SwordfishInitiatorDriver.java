@@ -709,7 +709,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
         }
         if (tmpUserPw != null)
         {
-            userName = tmpUserPw;
+            userPw = tmpUserPw;
         }
         if (tmpAttachVlmTimeoutLong != null)
         {

@@ -551,7 +551,7 @@ public class SwordfishTargetDriver implements StorageDriver
         }
         if (tmpUserPw != null)
         {
-            userName = tmpUserPw;
+            userPw = tmpUserPw;
         }
         if (tmpVlmCrtTimeoutLong != null)
         {
