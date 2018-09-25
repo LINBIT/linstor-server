@@ -312,14 +312,15 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 stltConn = peer.getNode().getSatelliteConnection(privilegedAccCtx);
                 if (stltConn == null)
                 {
-                    throw new ImplementationError(
-                        "Attempt to connect to a satellite with unknown port / encryption type",
-                        null
-                    );
+                    // this might happen when the node was rolled back and thus no longer has any content
+                    address = getInetSockAddress(peer);
                 }
-                final String host = stltConn.getAddress(privilegedAccCtx).getAddress();
-                final int port = stltConn.getStltConnPort(privilegedAccCtx).value;
-                address = new InetSocketAddress(host, port);
+                else
+                {
+                    final String host = stltConn.getAddress(privilegedAccCtx).getAddress();
+                    final int port = stltConn.getStltConnPort(privilegedAccCtx).value;
+                    address = new InetSocketAddress(host, port);
+                }
             }
             catch (AccessDeniedException exc)
             {

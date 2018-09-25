@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import com.linbit.linstor.Node;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -96,7 +97,28 @@ public class ReconnectorTask implements Task
                 {
                     synchronized (syncObj)
                     {
-                        peerList.add(peer.getConnector().reconnect(peer));
+                        Node node = peer.getNode();
+                        if (node != null && !node.isDeleted())
+                        {
+                            peerList.add(peer.getConnector().reconnect(peer));
+                        }
+                        else
+                        {
+                            if (node == null)
+                            {
+                                errorReporter.logTrace(
+                                    "Peer %s's node is null (possibly rollbacked), removing from reconnector list",
+                                    peer.getId()
+                                );
+                            }
+                            else
+                            {
+                                errorReporter.logTrace(
+                                    "Peer %s's node got deleted, removing from reconnector list",
+                                    peer.getId()
+                                );
+                            }
+                        }
                         peerList.remove(peer);
                     }
                 }

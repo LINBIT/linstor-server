@@ -61,6 +61,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.storage.DisklessDriverKind;
+import com.linbit.linstor.tasks.ReconnectorTask;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -102,6 +103,7 @@ public class CtrlNodeApiCallHandler
     private final StorPoolHelper storPoolHelper;
     private final DynamicNumberPool sfTargetPortPool;
     private final SwordfishTargetProcessManager sfTargetProcessMgr;
+    private final ReconnectorTask reconnectorTask;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -123,7 +125,8 @@ public class CtrlNodeApiCallHandler
         StorPoolHelper storPoolHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @Named(NumberPoolModule.SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
-        SwordfishTargetProcessManager sfTargetProcessMgrRef
+        SwordfishTargetProcessManager sfTargetProcessMgrRef,
+        ReconnectorTask reconnectorTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -145,6 +148,7 @@ public class CtrlNodeApiCallHandler
         peerAccCtx = peerAccCtxRef;
         sfTargetPortPool = sfTargetPortPoolRef;
         sfTargetProcessMgr = sfTargetProcessMgrRef;
+        reconnectorTask = reconnectorTaskRef;
     }
 
     /**
@@ -198,7 +202,7 @@ public class CtrlNodeApiCallHandler
 
         try
         {
-            createNodeImpl(nodeNameStr, nodeTypeStr, netIfs, propsMap, responses, context);
+            createNodeImpl(nodeNameStr, nodeTypeStr, netIfs, propsMap, responses, context, true);
         }
         catch (Exception | ImplementationError exc)
         {
@@ -214,7 +218,8 @@ public class CtrlNodeApiCallHandler
         List<NetInterfaceApi> netIfs,
         Map<String, String> propsMap,
         ApiCallRcImpl responses,
-        ResponseContext context
+        ResponseContext context,
+        boolean autoCommit
     )
         throws AccessDeniedException
     {
@@ -288,7 +293,10 @@ public class CtrlNodeApiCallHandler
                 );
             }
 
-            ctrlTransactionHelper.commit();
+            if (autoCommit)
+            {
+                ctrlTransactionHelper.commit();
+            }
 
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
@@ -312,6 +320,7 @@ public class CtrlNodeApiCallHandler
             while (retry)
             {
                 retry = false;
+                NodeData node = null;
                 try
                 {
                     int sfTargetPort = sfTargetPortPool.autoAllocate();
@@ -326,15 +335,18 @@ public class CtrlNodeApiCallHandler
                             ApiConsts.VAL_NETCOM_TYPE_PLAIN
                         )
                     );
-                    NodeData node = createNodeImpl(
+                    node = createNodeImpl(
                         nodeNameStr,
                         NodeType.SWORDFISH_TARGET.name(),
                         netIfs,
                         propsMap,
                         responses,
-                        context
+                        context,
+                        false
                     );
                     sfTargetProcessMgr.startLocalSatelliteProcess(node);
+
+                    ctrlTransactionHelper.commit();
                 }
                 catch (PortAlreadyInUseException exc)
                 {
@@ -349,6 +361,10 @@ public class CtrlNodeApiCallHandler
                      * port number
                      */
                     ctrlTransactionHelper.rollback();
+                    if (node != null)
+                    {
+                        reconnectorTask.removePeer(node.getPeer(apiCtx));
+                    }
                     retry = true;
                 }
             }

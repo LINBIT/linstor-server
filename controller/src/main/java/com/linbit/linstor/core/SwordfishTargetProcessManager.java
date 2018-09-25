@@ -20,6 +20,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -225,19 +227,33 @@ public class SwordfishTargetProcessManager
     private void ensurePortisAvailable(Integer port) throws PortAlreadyInUseException
     {
         ServerSocketChannel ssc = null;
+        Selector selector = null;
         try
         {
             SocketAddress bindAddress = new InetSocketAddress(LOCALHOST, port);
             ssc = ServerSocketChannel.open();
             ssc.bind(bindAddress);
-
+            ssc.configureBlocking(false);
+            selector = Selector.open();
+            ssc.register(selector, SelectionKey.OP_ACCEPT);
         }
-        catch (IOException exc)
+        catch (IOException | RuntimeException exc)
         {
             throw new PortAlreadyInUseException(port);
         }
         finally
         {
+            if (selector != null)
+            {
+                try
+                {
+                    selector.close();
+                }
+                catch (IOException exc)
+                {
+                    throw new LinStorRuntimeException("Failed to close testing selector", exc);
+                }
+            }
             if (ssc != null)
             {
                 try
