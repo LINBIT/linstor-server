@@ -128,15 +128,13 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         return scopeRunner
             .fluxInTransactionalScope(
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
-                () -> deleteResourceInTransaction(context, nodeNameStr, rscNameStr)
+                () -> deleteResourceInTransaction(nodeNameStr, rscNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> deleteResourceInTransaction(ResponseContext context, String nodeNameStr, String rscNameStr)
+    private Flux<ApiCallRc> deleteResourceInTransaction(String nodeNameStr, String rscNameStr)
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
         ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
@@ -181,7 +179,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ctrlTransactionHelper.commit();
 
         String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
-        responseConverter.addWithOp(responses, context, ApiCallRcImpl
+        ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.DELETED,
                 descriptionFirstLetterCaps + " marked for deletion."
@@ -191,7 +189,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         );
 
         return Flux
-            .<ApiCallRc>just(responses)
+            .just(responses)
             .concatWith(updateSatellites(nodeName, rscName));
     }
 

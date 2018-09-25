@@ -105,12 +105,12 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return scopeRunner
             .fluxInTransactionalScope(
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
-                () -> deleteResourceDefinitionInTransaction(context, rscNameStr)
+                () -> deleteResourceDefinitionInTransaction(rscNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> deleteResourceDefinitionInTransaction(ResponseContext context, String rscNameStr)
+    private Flux<ApiCallRc> deleteResourceDefinitionInTransaction(String rscNameStr)
     {
         requireRscDfnMapChangeAccess();
 
@@ -157,19 +157,17 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         String descriptionFirstLetterCaps = firstLetterCaps(getRscDfnDescriptionInline(rscNameStr));
         if (rscDfn.getResourceCount() > 0)
         {
-            ApiCallRcImpl responses = new ApiCallRcImpl();
-
             markDeleted(rscDfn);
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithOp(responses, context,
+            ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(
                 ApiCallRcImpl.entryBuilder(ApiConsts.DELETED, descriptionFirstLetterCaps + " marked for deletion.")
                     .setDetails(descriptionFirstLetterCaps + " UUID is: " + rscDfnUuid).build()
             );
 
             flux = Flux
-                .<ApiCallRc>just(responses)
+                .just(responses)
                 // first delete diskless resources, because DRBD raises an error if all peers with disks are
                 // removed from a diskless resource
                 .concatWith(deleteDiskless(rscName));

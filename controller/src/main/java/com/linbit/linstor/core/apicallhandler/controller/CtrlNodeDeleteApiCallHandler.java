@@ -173,14 +173,13 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             {
                 Peer nodePeer = getPeerPriveleged(node);
 
-                ApiCallRcImpl.ApiCallRcEntry response = disconnectNode(nodeUuid, nodeDescription, nodePeer);
-                responseConverter.addWithOp(responses, context, response);
+                responses.addEntry(disconnectNode(nodeUuid, nodeDescription, nodePeer));
 
                 responseFlux = Flux.just(responses);
             }
             else
             {
-                responseConverter.addWithOp(responses, context, ApiCallRcImpl
+                responses.addEntry(ApiCallRcImpl
                     .entryBuilder(ApiConsts.DELETED, nodeDescription + " marked for deletion.")
                     .setDetails(nodeDescription + " UUID is: " + nodeUuid.toString())
                     .build()

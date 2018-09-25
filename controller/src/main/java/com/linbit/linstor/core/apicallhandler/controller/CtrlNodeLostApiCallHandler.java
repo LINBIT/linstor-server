@@ -112,12 +112,12 @@ public class CtrlNodeLostApiCallHandler
         return scopeRunner
             .fluxInTransactionalScope(
                 LockGuard.createDeferred(nodesMapLock.writeLock()),
-                () -> lostNodeInTransaction(context, nodeNameStr)
+                () -> lostNodeInTransaction(nodeNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> lostNodeInTransaction(ResponseContext context, String nodeNameStr)
+    private Flux<ApiCallRc> lostNodeInTransaction(String nodeNameStr)
     {
         requireNodesMapChangeAccess();
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
@@ -217,9 +217,7 @@ public class CtrlNodeLostApiCallHandler
                 .collect(Collectors.toSet())
         );
 
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        responseConverter.addWithOp(responses, context, ApiCallRcImpl
+        ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
             .entryBuilder(ApiConsts.DELETED, successMessage)
             .setDetails(firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) +
                 " UUID was: " + nodeUuid.toString())
@@ -236,7 +234,7 @@ public class CtrlNodeLostApiCallHandler
                 .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
 
         return Flux
-            .<ApiCallRc>just(responses)
+            .just(responses)
             .concatWith(satelliteUpdateResponses)
             .concatWith(operationContinuation.thenMany(Flux.empty()));
     }

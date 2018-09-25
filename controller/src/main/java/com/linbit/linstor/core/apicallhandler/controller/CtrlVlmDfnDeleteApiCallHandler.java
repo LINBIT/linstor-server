@@ -115,19 +115,13 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return scopeRunner
             .fluxInTransactionalScope(
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
-                () -> deleteVolumeDefinitionInTransaction(context, rscNameStr, vlmNrInt)
+                () -> deleteVolumeDefinitionInTransaction(rscNameStr, vlmNrInt)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> deleteVolumeDefinitionInTransaction(
-        ResponseContext context,
-        String rscNameStr,
-        int vlmNrInt
-    )
+    private Flux<ApiCallRc> deleteVolumeDefinitionInTransaction(String rscNameStr, int vlmNrInt)
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
         VolumeNumber vlmNr = LinstorParsingUtils.asVlmNr(vlmNrInt);
         VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
@@ -190,7 +184,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         ctrlTransactionHelper.commit();
 
-        responseConverter.addWithOp(responses, context, ApiCallRcImpl
+        ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.DELETED,
                 firstLetterCaps(getVlmDfnDescriptionInline(rscDfn, vlmNr)) + deleteAction
@@ -200,7 +194,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         );
 
         return Flux
-            .<ApiCallRc>just(responses)
+            .just(responses)
             .concatWith(updateResponses);
     }
 

@@ -77,6 +77,7 @@ public class ResponseConverter
         return Mono.subscriberContext()
             .flatMapMany(subscriberContext ->
                 Flux.from(responses)
+                    .map(apiCallRc -> addContextAll(apiCallRc, context, false))
                     .onErrorResume(exc -> Flux.just(reportException(subscriberContext.get(Peer.class), context, exc)))
             );
     }
