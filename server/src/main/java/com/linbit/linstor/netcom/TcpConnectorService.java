@@ -73,6 +73,11 @@ public class TcpConnectorService implements Runnable, TcpConnector
     public static final InetAddress DEFAULT_BIND_INET_ADDRESS;
     public static final SocketAddress DEFAULT_BIND_ADDRESS;
 
+    // IPv4 127.0.0.1
+    public static final byte[] FALLBACK_LOOPBACK_ADDR = new byte[] {0x7F, 0, 0, 1};
+    // IPv4 0.0.0.0
+    public static final byte[] FALLBACK_ANY_LOCAL_ADDR = new byte[] {0, 0, 0, 0};
+
     // Maximum number of connections to accept in one selector iteration
     public static final int MAX_ACCEPT_LOOP = 100;
 
@@ -1034,6 +1039,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             serverSocket = ServerSocketChannel.open();
             serverSelector = Selector.open();
+            IOException savedExc = null;
             try
             {
                 serverSocket.bind(bindAddress);
@@ -1054,7 +1060,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 // Thrown if the socket can not be bound, because the type of
                 // address to bind the socket to is unsupported
-                throw new IOException(
+                savedExc = new IOException(
                     "Server socket creation failed, the specified server address " +
                     "is not of a supported type.",
                     addrExc
@@ -1063,12 +1069,104 @@ public class TcpConnectorService implements Runnable, TcpConnector
             catch (ClosedChannelException closeExc)
             {
                 // Thrown if the socket is closed when bind() is called
-                throw new IOException(
+                savedExc = new IOException(
                     "Server socket creation failed. The server socket was closed " +
                     "while its initialization was still in progress.",
                     closeExc
                 );
             }
+            catch (IOException ioExc)
+            {
+                savedExc = ioExc;
+            }
+
+            // If binding the socket failed for a local or 'anylocal' IPv6 address,
+            // fall back to the corresponding IPv4 addresses
+            if (savedExc != null)
+            {
+                InetSocketAddress inetBindAddress;
+                try
+                {
+                    inetBindAddress = (InetSocketAddress) bindAddress;
+                }
+                catch (ClassCastException ccExc)
+                {
+                    // bindAddress is not a known IP protocol
+                    // No automatic failback is possible, throw the original exception
+                    throw savedExc;
+                }
+
+                InetAddress addr = inetBindAddress.getAddress();
+                if (addr instanceof Inet6Address)
+                {
+                    SocketAddress fallbackAddress = null;
+                    if (addr.isLoopbackAddress())
+                    {
+                        errorReporter.logWarning(
+                            "%s: Connector %s: Binding the socket to the IPv6 loopback address failed, " +
+                            "attempting fallback to IPv4",
+                            SERVICE_NAME, serviceInstanceName
+                        );
+                        // IPv6 ::1 address, fallback to IPv4 127.0.0.1
+                        fallbackAddress = new InetSocketAddress(
+                            InetAddress.getByAddress(FALLBACK_LOOPBACK_ADDR),
+                            inetBindAddress.getPort()
+                        );
+                    }
+                    else
+                    if (addr.isAnyLocalAddress())
+                    {
+                        errorReporter.logWarning(
+                            "%s: Connector %s: Binding the socket to the IPv6 anylocal address failed, " +
+                            "attempting fallback to IPv4",
+                            SERVICE_NAME, serviceInstanceName
+                        );
+                        // IPv6 ::0 address, fallback to IPv4 0.0.0.0
+                        fallbackAddress = new InetSocketAddress(
+                            InetAddress.getByAddress(FALLBACK_ANY_LOCAL_ADDR),
+                            inetBindAddress.getPort()
+                        );
+                    }
+
+                    if (fallbackAddress != null)
+                    {
+                        try
+                        {
+                            serverSocket.bind(fallbackAddress);
+                            // Fallback succeeded, discard the exception
+                            savedExc = null;
+                        }
+                        catch (AlreadyBoundException boundExc)
+                        {
+                            // Thrown if this server socket is already bound.
+                            // This is NOT the same error as if the TCP port is already in use,
+                            // see code comment further above in this same method for details.
+                            throw new ImplementationError(
+                                "The IPv6 to IPv4 fallback code failed to bind the server socket, " +
+                                "because the socket is bound already.",
+                                boundExc
+                            );
+                        }
+                        catch (UnsupportedAddressTypeException | IOException ignored)
+                        {
+                            // Fallback attempt failed
+                            // Will throw the original exception further below
+                            errorReporter.logError(
+                                "%s: Connector %s: Attempt to fallback to IPv4 failed",
+                                SERVICE_NAME, serviceInstanceName
+                            );
+                        }
+                    }
+                }
+
+                // If there was no known IPv4 fallback method or if the fallback attempt failed,
+                // throw the original exception
+                if (savedExc != null)
+                {
+                    throw savedExc;
+                }
+            }
+
             serverSocket.configureBlocking(false);
             try
             {
