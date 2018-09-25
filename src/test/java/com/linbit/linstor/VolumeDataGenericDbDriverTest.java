@@ -136,7 +136,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             null,
             null,
-            VlmFlags.CLEAN.flagValue,
+            VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -156,7 +156,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(blockDevicePath, null);
         assertEquals(metaDiskPath, null);
-        assertEquals(VlmFlags.CLEAN.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(VlmFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -174,7 +174,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            new VlmFlags[] {VlmFlags.CLEAN}
+            new VlmFlags[] {VlmFlags.DELETE}
         );
         commit();
 
@@ -183,7 +183,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(blockDevicePath, volData.getBackingDiskPath(SYS_CTX));
         assertEquals(metaDiskPath, volData.getMetaDiskPath(SYS_CTX));
         assertNotNull(volData.getFlags());
-        assertTrue(volData.getFlags().isSet(SYS_CTX, VlmFlags.CLEAN));
+        assertTrue(volData.getFlags().isSet(SYS_CTX, VlmFlags.DELETE));
         assertNotNull(volData.getProps(SYS_CTX));
         assertEquals(res, volData.getResource());
         assertEquals(resDfn, volData.getResourceDefinition());
@@ -198,7 +198,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(blockDevicePath, null);
         assertEquals(metaDiskPath, null);
-        assertEquals(VlmFlags.CLEAN.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(VlmFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -216,7 +216,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
+            VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -251,7 +251,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
+            VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -294,7 +294,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
+            0L,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -333,7 +333,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
+            0L,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -363,7 +363,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
+            0L,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -402,7 +402,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(blockDevicePath, loadedVol.getBackingDiskPath(SYS_CTX));
         assertEquals(metaDiskPath, loadedVol.getMetaDiskPath(SYS_CTX));
         assertNotNull(loadedVol.getFlags());
-        assertTrue(loadedVol.getFlags().isSet(SYS_CTX, VlmFlags.CLEAN));
+        assertTrue(loadedVol.getFlags().isSet(SYS_CTX, VlmFlags.DELETE));
         assertNotNull(loadedVol.getProps(SYS_CTX));
         assertEquals(res.getDefinition().getName(), loadedVol.getResource().getDefinition().getName());
         assertEquals(volDfn.getMinorNr(SYS_CTX), loadedVol.getVolumeDefinition().getMinorNr(SYS_CTX));
@@ -421,7 +421,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            VlmFlags.CLEAN.flagValue,
+            0L,
             driver,
             propsContainerFactory,
             transObjFactory,

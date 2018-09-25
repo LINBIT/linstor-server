@@ -244,8 +244,7 @@ public class ConfFileBuilderTest
                 varArgEq(
                     new Volume.VlmFlags[]
                     {
-                        Volume.VlmFlags.DELETE,
-                        VlmFlags.CLEAN
+                        Volume.VlmFlags.DELETE
                     }
                 )
             )

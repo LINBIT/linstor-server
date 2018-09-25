@@ -412,7 +412,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 storPool1,
                 vol1TestBlockDev,
                 vol1TestMetaDisk,
-                new VlmFlags[] {VlmFlags.CLEAN}
+                new VlmFlags[] {}
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
             vol1Uuid = vol1.getUuid();
@@ -436,7 +436,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 storPool2,
                 vol2TestBlockDev,
                 vol2TestMetaDisk,
-                new VlmFlags[] {VlmFlags.CLEAN}
+                new VlmFlags[] {}
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
             vol2Uuid = vol2.getUuid();
@@ -540,11 +540,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             {
                 Volume vol = res.getVolume(volDfnNr);
                 assertNotNull(vol);
-                {
-                    StateFlags<VlmFlags> flags = vol.getFlags();
-                    assertNotNull(flags);
-                    flags.isSet(SYS_CTX, Volume.VlmFlags.CLEAN);
-                }
                 {
                     Props volProps = vol.getProps(SYS_CTX);
                     assertNotNull(volProps);

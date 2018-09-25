@@ -78,7 +78,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Singleton
 class StltRscApiCallHandler
@@ -224,8 +223,6 @@ class StltRscApiCallHandler
             rscDfnProps.putAll(rscRawData.getRscDfnProps());
             rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
 
-            Set<Integer> cleanDeletedVolumeNumbers = findCleanDeletedVolumeNumbers(rscRawData.getLocalVlms());
-
             // merge vlmDfns
             {
                 Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
@@ -235,32 +232,28 @@ class StltRscApiCallHandler
                     VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
                     VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
 
-                    // Do not load volume definitions for which we have successfully deleted our local volume
-                    if (!cleanDeletedVolumeNumbers.contains(vlmNr.value))
+                    VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
+                        apiCtx,
+                        vlmDfnRaw.getUuid(),
+                        rscDfn,
+                        vlmNr,
+                        vlmDfnRaw.getSize(),
+                        new MinorNumber(vlmDfnRaw.getMinorNr()),
+                        VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
+                    );
+                    checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
+                    Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
+
+                    vlmDfnPropsMap.clear();
+                    vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+
+                    vlmDfn.setVolumeSize(apiCtx, vlmDfnRaw.getSize());
+
+                    // corresponding volumes will be created later when iterating over (local|remote)vlmApis
+
+                    if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
                     {
-                        VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
-                            apiCtx,
-                            vlmDfnRaw.getUuid(),
-                            rscDfn,
-                            vlmNr,
-                            vlmDfnRaw.getSize(),
-                            new MinorNumber(vlmDfnRaw.getMinorNr()),
-                            VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
-                        );
-                        checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
-                        Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
-
-                        vlmDfnPropsMap.clear();
-                        vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
-
-                        vlmDfn.setVolumeSize(apiCtx, vlmDfnRaw.getSize());
-
-                        // corresponding volumes will be created later when iterating over (local|remote)vlmApis
-
-                        if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
-                        {
-                            vlmDfnsToDelete.put(vlmNr, vlmDfn);
-                        }
+                        vlmDfnsToDelete.put(vlmNr, vlmDfn);
                     }
                 }
 
@@ -295,7 +288,6 @@ class StltRscApiCallHandler
                     new NodeId(rscRawData.getLocalRscNodeId()),
                     RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
-                    cleanDeletedVolumeNumbers,
                     rscRawData.getLocalVlms(),
                     false
                 );
@@ -333,7 +325,6 @@ class StltRscApiCallHandler
                         new NodeId(otherRscRaw.getRscNodeId()),
                         RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
-                        cleanDeletedVolumeNumbers,
                         otherRscRaw.getVlms(),
                         true
                     );
@@ -391,7 +382,7 @@ class StltRscApiCallHandler
                         }
                         else
                         {
-                            createVlm(cleanDeletedVolumeNumbers, vlmApi, localRsc, false);
+                            createVlm(vlmApi, localRsc, false);
                         }
                     }
                 }
@@ -488,7 +479,6 @@ class StltRscApiCallHandler
                             new NodeId(otherRsc.getRscNodeId()),
                             RscFlags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
-                            cleanDeletedVolumeNumbers,
                             otherRsc.getVlms(),
                             true
                         );
@@ -524,7 +514,7 @@ class StltRscApiCallHandler
                                 Volume vlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
                                 if (vlm == null)
                                 {
-                                    createVlm(cleanDeletedVolumeNumbers, remoteVlmApi, remoteRsc, true);
+                                    createVlm(remoteVlmApi, remoteRsc, true);
                                 }
                                 else
                                 {
@@ -700,7 +690,6 @@ class StltRscApiCallHandler
         NodeId nodeId,
         RscFlags[] flags,
         Map<String, String> rscProps,
-        Set<Integer> cleanDeletedVolumeNumbers,
         List<VolumeData.VlmApi> vlms,
         boolean remoteRsc
     )
@@ -729,40 +718,35 @@ class StltRscApiCallHandler
 
         for (Volume.VlmApi vlmRaw : vlms)
         {
-            createVlm(cleanDeletedVolumeNumbers, vlmRaw, rsc, remoteRsc);
+            createVlm(vlmRaw, rsc, remoteRsc);
         }
 
         return rsc;
     }
 
     private void createVlm(
-        Set<Integer> cleanDeletedVolumeNumbers,
         VlmApi vlmApi,
         Resource rsc,
         boolean remoteRsc
     )
         throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException
     {
-        // Do not load volumes for which we have successfully deleted our local volume
-        if (!cleanDeletedVolumeNumbers.contains(vlmApi.getVlmNr()))
-        {
-            StorPool storPool = getStorPool(rsc, vlmApi, remoteRsc);
+        StorPool storPool = getStorPool(rsc, vlmApi, remoteRsc);
 
-            VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
+        VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
-            VolumeData vlm = volumeDataFactory.getInstanceSatellite(
-                apiCtx,
-                vlmApi.getVlmUuid(),
-                rsc,
-                vlmDfn,
-                storPool,
-                vlmApi.getBlockDevice(),
-                vlmApi.getMetaDisk(),
-                Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
-            );
+        VolumeData vlm = volumeDataFactory.getInstanceSatellite(
+            apiCtx,
+            vlmApi.getVlmUuid(),
+            rsc,
+            vlmDfn,
+            storPool,
+            vlmApi.getBlockDevice(),
+            vlmApi.getMetaDisk(),
+            Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
+        );
 
-            vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
-        }
+        vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
     }
 
     private void mergeVlm(Volume vlm, VlmApi vlmApi, boolean remoteRsc)
@@ -936,24 +920,5 @@ class StltRscApiCallHandler
                 remoteUuid
             );
         }
-    }
-
-    private Set<Integer> findCleanDeletedVolumeNumbers(List<Volume.VlmApi> localVlms)
-    {
-        return localVlms.stream()
-            .filter(this::isVolumeCleanDeleted)
-            .map(VlmApi::getVlmNr)
-            .collect(Collectors.toSet());
-    }
-
-    private boolean isVolumeCleanDeleted(VlmApi vlmApi)
-    {
-        return streamVolumeFlags(vlmApi).anyMatch(vlmFlag -> vlmFlag.equals(Volume.VlmFlags.DELETE)) &&
-            streamVolumeFlags(vlmApi).anyMatch(vlmFlag -> vlmFlag.equals(Volume.VlmFlags.CLEAN));
-    }
-
-    private Stream<Volume.VlmFlags> streamVolumeFlags(VlmApi vlmApi)
-    {
-        return Stream.of(Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
     }
 }

@@ -156,42 +156,25 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         // mark volumes to delete or check if all a 'CLEAN'
         Iterator<Volume> itVolumes = getVolumeIteratorPriveleged(vlmDfn);
-        boolean allVlmClean = true;
         while (itVolumes.hasNext())
         {
             Volume vlm = itVolumes.next();
-            if (!isMarkedAsClean(vlm))
-            {
-                markDeleted(vlm);
-                allVlmClean = false;
-            }
+            markDeleted(vlm);
         }
 
-        Flux<ApiCallRc> updateResponses;
-        String deleteAction;
-        if (allVlmClean)
-        {
-            deletePriveleged(vlmDfn);
-            deleteAction = " was deleted.";
-            updateResponses = Flux.empty();
-        }
-        else
-        {
-            markDeleted(vlmDfn);
-            deleteAction = " marked for deletion.";
-            updateResponses = updateSatellites(rscName, vlmNr);
-        }
-
+        markDeleted(vlmDfn);
         ctrlTransactionHelper.commit();
 
         ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.DELETED,
-                firstLetterCaps(getVlmDfnDescriptionInline(rscDfn, vlmNr)) + deleteAction
+                firstLetterCaps(getVlmDfnDescriptionInline(rscDfn, vlmNr)) + " marked for deletion."
             )
             .setDetails(firstLetterCaps(getVlmDfnDescriptionInline(rscDfn, vlmNr)) + " UUID is: " + vlmDfnUuid)
             .build()
         );
+
+        Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr);
 
         return Flux
             .just(responses)
@@ -296,20 +279,6 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             throw new ImplementationError(accDeniedExc);
         }
         return iterator;
-    }
-
-    private boolean isMarkedAsClean(Volume vlm)
-    {
-        boolean isMarkedAsClean;
-        try
-        {
-            isMarkedAsClean = vlm.getFlags().isSet(apiCtx, Volume.VlmFlags.CLEAN);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return isMarkedAsClean;
     }
 
     private void markDeleted(VolumeDefinition vlmDfn)

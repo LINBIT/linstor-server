@@ -550,7 +550,7 @@ public class ConfFileBuilder
     private void appendVlmIfPresent(Volume vlm, AccessContext localAccCtx, boolean isPeerRsc)
         throws AccessDeniedException
     {
-        if (vlm.getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE, Volume.VlmFlags.CLEAN))
+        if (vlm.getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE))
         {
             final String disk;
             if (vlm.getBackingDiskPath(localAccCtx) == null ||
