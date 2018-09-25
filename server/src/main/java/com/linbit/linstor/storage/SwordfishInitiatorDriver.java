@@ -62,9 +62,9 @@ public class SwordfishInitiatorDriver implements StorageDriver
     private String userName;
     private String userPw;
     private long pollAttachVlmTimeout = 1000;
-    private long pollAttachVlmMaxTries = 100;
+    private long pollAttachVlmMaxTries = 300;
     private long pollGrepNvmeUuidTimeout = 1000;
-    private long pollGrepNvmeUuidMaxTries = 100;
+    private long pollGrepNvmeUuidMaxTries = 300;
     private String composedNodeName;
 
     private final RestClient restClient;
@@ -231,7 +231,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
                 }
             }
 
-            if (pollAttachRscTries++ >= pollAttachVlmMaxTries)
+            if (++pollAttachRscTries >= pollAttachVlmMaxTries)
             {
                 throw new StorageException(
                     String.format(
@@ -492,7 +492,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
                                 }
                             }
 
-                            if (grepTries++ >= pollGrepNvmeUuidMaxTries)
+                            if (++grepTries >= pollGrepNvmeUuidMaxTries)
                             {
                                 grepFailed = true;
                             }
