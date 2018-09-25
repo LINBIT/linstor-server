@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
@@ -16,6 +17,8 @@ import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -137,11 +140,53 @@ public class CtrlApiDataLoader
         return rscDfn;
     }
 
+    public VolumeDefinitionData loadVlmDfn(String rscNameStr, int vlmNrInt, boolean failIfNull)
+    {
+        return loadVlmDfn(LinstorParsingUtils.asRscName(rscNameStr), LinstorParsingUtils.asVlmNr(vlmNrInt), failIfNull);
+    }
+
+    public VolumeDefinitionData loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
+    {
+        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+        VolumeDefinitionData vlmDfn;
+        try
+        {
+            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+
+            if (failIfNull && vlmDfn == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
+                        "Volume definition '" + rscName + "' with volume number '" + vlmNr + "' not found."
+                    )
+                    .setCause("The specified volume definition '" + rscName +
+                        "' with volume number '" + vlmNr + "' could not be found in the database")
+                    .setCorrection("Create a volume definition with the name '" + rscName + "' first.")
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "load volume definition '" + vlmNr + "' from resource definition '" + rscName + "'",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return vlmDfn;
+    }
+
     public ResourceData loadRsc(String nodeName, String rscName, boolean failIfNull)
+    {
+        return loadRsc(LinstorParsingUtils.asNodeName(nodeName), LinstorParsingUtils.asRscName(rscName), failIfNull);
+    }
+
+    public ResourceData loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
     {
         Node node = loadNode(nodeName, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
-
         ResourceData rscData;
         try
         {
@@ -150,7 +195,7 @@ public class CtrlApiDataLoader
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
-                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                        ApiConsts.FAIL_NOT_FOUND_RSC,
                         "Resource '" + rscName + "' on node '" + nodeName + "' not found."
                     )
                     .setCause("The specified resource '" + rscName + "' on node '" + nodeName + "' could not " +

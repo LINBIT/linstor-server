@@ -333,7 +333,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
                     ", "
                 );
 
-                errorReporter.logTrace("Updating Reource's flags from [%s] to [%s] %s",
+                errorReporter.logTrace("Updating Resource's flags from [%s] to [%s] %s",
                     fromFlags,
                     toFlags,
                     getId(resource)
@@ -347,7 +347,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
 
                     stmt.executeUpdate();
 
-                    errorReporter.logTrace("Reource's flags updated from [%s] to [%s] %s",
+                    errorReporter.logTrace("Resource's flags updated from [%s] to [%s] %s",
                         fromFlags,
                         toFlags,
                         getId(resource)

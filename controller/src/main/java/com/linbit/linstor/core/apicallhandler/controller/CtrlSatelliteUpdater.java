@@ -49,17 +49,17 @@ public class CtrlSatelliteUpdater
         internalComSerializer = serializerRef;
     }
 
-    public Collection<Node> findNodesToContact(Node node)
+    public static Collection<Node> findNodesToContact(AccessContext accCtx, Node node)
     {
         Map<NodeName, Node> nodesToContact = new TreeMap<>();
 
         try
         {
             nodesToContact.put(node.getName(), node);
-            for (Resource rsc : node.streamResources(apiCtx).collect(toList()))
+            for (Resource rsc : node.streamResources(accCtx).collect(toList()))
             {
                 ResourceDefinition rscDfn = rsc.getDefinition();
-                Iterator<Resource> allRscsIterator = rscDfn.iterateResource(apiCtx);
+                Iterator<Resource> allRscsIterator = rscDfn.iterateResource(accCtx);
                 while (allRscsIterator.hasNext())
                 {
                     Resource allRsc = allRscsIterator.next();
@@ -76,7 +76,7 @@ public class CtrlSatelliteUpdater
 
     public ApiCallRc updateSatellites(Node node)
     {
-        return updateSatellites(node.getUuid(), node.getName(), findNodesToContact(node));
+        return updateSatellites(node.getUuid(), node.getName(), findNodesToContact(apiCtx, node));
     }
 
     /**

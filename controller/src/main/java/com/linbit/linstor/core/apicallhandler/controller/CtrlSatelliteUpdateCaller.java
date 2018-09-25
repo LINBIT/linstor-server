@@ -32,9 +32,11 @@ import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -60,6 +62,77 @@ public class CtrlSatelliteUpdateCaller
     {
         apiCtx = apiCtxRef;
         internalComSerializer = serializerRef;
+    }
+
+    /**
+     * @param uuid UUID of changed node
+     * @param nodeName Name of changed node
+     * @param nodesToContact Nodes to update
+     */
+    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(
+        UUID uuid,
+        NodeName nodeName,
+        Collection<Node> nodesToContact
+    )
+    {
+        List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
+
+        try
+        {
+            byte[] changedMessage = internalComSerializer
+                .headerlessBuilder()
+                .changedNode(
+                    uuid,
+                    nodeName.displayValue
+                )
+                .build();
+            for (Node nodeToContact : nodesToContact)
+            {
+                Peer peer = nodeToContact.getPeer(apiCtx);
+                if (peer != null && peer.isConnected())
+                {
+                    Flux<ApiCallRc> response = updateSatellite(nodeToContact, changedMessage);
+
+                    responses.add(Tuples.of(nodeToContact.getName(), response));
+                }
+            }
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+
+        return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
+    }
+
+    private Flux<ApiCallRc> updateSatellite(Node satelliteToUpdate, byte[] changedMessage)
+        throws AccessDeniedException
+    {
+        Flux<ApiCallRc> response;
+        Peer peer = satelliteToUpdate.getPeer(apiCtx);
+
+        if (peer.isConnected() && peer.hasFullSyncFailed())
+        {
+            response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(peer)));
+        }
+        else
+        {
+            NodeName nodeName = satelliteToUpdate.getName();
+
+            response = peer
+                .apiCall(
+                    InternalApiConsts.API_CHANGED_NODE,
+                    changedMessage
+                )
+
+                .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
+
+                .onErrorMap(PeerNotConnectedException.class, ignored ->
+                    new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+                );
+        }
+
+        return response;
     }
 
     /**

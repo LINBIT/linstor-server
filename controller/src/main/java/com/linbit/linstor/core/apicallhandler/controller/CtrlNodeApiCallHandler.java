@@ -1,8 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -23,11 +20,8 @@ import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionRepository;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -67,11 +61,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +71,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlNodeApiCallHandler
@@ -470,253 +463,6 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    ApiCallRc deleteNode(String nodeNameStr)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeNodeContext(
-            ApiOperation.makeDeleteOperation(),
-            nodeNameStr
-        );
-
-        try
-        {
-            requireNodesMapChangeAccess();
-            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-            NodeData nodeData = ctrlApiDataLoader.loadNode(nodeName, false);
-            if (nodeData == null)
-            {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.WARN_NOT_FOUND,
-                        "Deletion of node '" + nodeName + "' had no effect."
-                    )
-                    .setCause("Node '" + nodeName + "' does not exist.")
-                    .build()
-                );
-            }
-            else
-            {
-                boolean success = true;
-                boolean hasRsc = false;
-
-                Set<ResourceDefinition> changedResourceDefinitions = new HashSet<>();
-
-                for (Resource rsc : getRscStream(nodeData).collect(toList()))
-                {
-                    hasRsc = true;
-                    markDeleted(rsc);
-                    changedResourceDefinitions.add(rsc.getDefinition());
-                }
-                if (!hasRsc)
-                {
-                    // If the node has no resources, then there should not be any volumes referenced
-                    // by the storage pool -- double check
-                    Iterator<StorPool> storPoolIterator = getStorPoolIterator(nodeData);
-                    while (storPoolIterator.hasNext())
-                    {
-                        StorPool storPool = storPoolIterator.next();
-                        if (!hasVolumes(storPool))
-                        {
-                            delete(storPool);
-                        }
-                        else
-                        {
-                            success = false;
-                            responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_EXISTS_VLM,
-                                String.format(
-                                    "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
-                                        "on this node, although the node does not reference any resources",
-                                    nodeNameStr,
-                                    storPool.getName().displayValue
-                                )
-                            ));
-                        }
-                    }
-                }
-
-                if (success)
-                {
-                    String successMessage = firstLetterCaps(getNodeDescriptionInline(nodeNameStr));
-                    UUID nodeUuid = nodeData.getUuid(); // store node uuid to avoid deleted node acess
-                    if (hasRsc)
-                    {
-                        markDeleted(nodeData);
-                        successMessage += " marked for deletion.";
-                    }
-                    else
-                    {
-                        delete(nodeData);
-                        successMessage += " deleted.";
-
-                        nodeRepository.remove(apiCtx, nodeName);
-
-                        Peer nodePeer = nodeData.getPeer(apiCtx);
-                        if (nodePeer != null)
-                        {
-                            nodePeer.closeConnection();
-                        }
-                    }
-
-                    ctrlTransactionHelper.commit();
-
-                    if (hasRsc)
-                    {
-                        for (ResourceDefinition rscDfn : changedResourceDefinitions)
-                        {
-                            // in case the node still has some resources deployed, we just marked
-                            // those to be deleted and now we have to send the new DELETE-flags
-                            // to the satellites.
-                            responseConverter.addWithDetail(
-                                responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
-
-                            // when they finished undeploying the resource(s), the corresponding
-                            // "resourceDeleted" method in CtrlRscApiCallHandler will check if the
-                            // node also needs to be deleted, and does so if needed.
-                        }
-                        responseConverter.addWithDetail(
-                            responses, context, ctrlSatelliteUpdater.updateSatellites(nodeData));
-                    }
-
-                    responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                        .entryBuilder(ApiConsts.DELETED, successMessage)
-                        .setDetails(firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) +
-                            " UUID is: " + nodeUuid.toString())
-                        .build()
-                    );
-                }
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    ApiCallRc lostNode(String nodeNameStr)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeNodeContext(
-            ApiOperation.makeDeleteOperation(),
-            nodeNameStr
-        );
-
-        try
-        {
-            requireNodesMapChangeAccess();
-            NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-            NodeData nodeData = ctrlApiDataLoader.loadNode(nodeName, false);
-            if (nodeData == null)
-            {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.WARN_NOT_FOUND,
-                        "Deletion of node '" + nodeName + "' had no effect."
-                    )
-                    .setCause("Node '" + nodeName + "' does not exist.")
-                    .build()
-                );
-            }
-            else
-            {
-                Peer nodePeer = nodeData.getPeer(apiCtx);
-                if (nodePeer != null && nodePeer.isConnected())
-                {
-                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_NODE_CONN,
-                        String.format(
-                            "Node '%s' still connected, please use the '%s' api.",
-                            nodeNameStr,
-                            ApiConsts.API_DEL_NODE
-                        )
-                    ));
-                }
-
-                // find nodes that will need to be contacted before deleting the resources
-                final Collection<Node> nodesToContact = ctrlSatelliteUpdater.findNodesToContact(nodeData);
-
-                // set node mark deleted for updates to other satellites
-                nodeData.markDeleted(apiCtx);
-
-                // gather all resources of the lost node and circumvent concurrent modification
-                List<Resource> rscToDelete = getRscStream(nodeData).collect(toList());
-
-                // compile a list of used resource definitions, that should be checked if they need deleting
-                List<ResourceDefinition> rscDfnToCheck = rscToDelete.stream()
-                    .map(Resource::getDefinition)
-                    .collect(toList());
-
-                // delete all resources of the lost node
-                rscToDelete.forEach(this::delete);
-
-                for (ResourceDefinition rscDfn : rscDfnToCheck)
-                {
-                    if (rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.RscDfnFlags.DELETE) &&
-                        rscDfn.getResourceCount() == 0)
-                    {
-                        final ResourceName rscName = rscDfn.getName();
-                        rscDfn.delete(apiCtx);
-                        resourceDefinitionRepository.remove(apiCtx, rscName);
-                    }
-                }
-
-                // If the node has no resources, then there should not be any volumes referenced
-                // by the storage pool -- double check and delete storage pools
-                Iterator<StorPool> storPoolIterator = getStorPoolIterator(nodeData);
-                while (storPoolIterator.hasNext())
-                {
-                    StorPool storPool = storPoolIterator.next();
-                    if (!hasVolumes(storPool))
-                    {
-                        delete(storPool);
-                    }
-                    else
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_EXISTS_VLM,
-                            String.format(
-                                "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
-                                    "on this node, although the node does not reference any resources",
-                                nodeNameStr,
-                                storPool.getName().displayValue
-                            )
-                        ));
-                    }
-                }
-
-
-                String successMessage = firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) + " deleted.";
-                UUID nodeUuid = nodeData.getUuid(); // store node uuid to avoid deleted node access
-
-                delete(nodeData);
-
-                nodeRepository.remove(apiCtx, nodeName);
-
-                ctrlTransactionHelper.commit();
-
-                // inform other satellites that the node is gone
-                responseConverter.addWithDetail(
-                    responses, context, ctrlSatelliteUpdater.updateSatellites(nodeUuid, nodeName, nodesToContact)
-                );
-
-                responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                    .entryBuilder(ApiConsts.DELETED, successMessage)
-                    .setDetails(firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) +
-                        " UUID is: " + nodeUuid.toString())
-                    .build()
-                );
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
     byte[] listNodes(long apiCallId)
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
@@ -965,147 +711,6 @@ public class CtrlNodeApiCallHandler
         return netIf;
     }
 
-    private Stream<Resource> getRscStream(NodeData nodeData)
-    {
-        Stream<Resource> stream;
-        try
-        {
-            stream = nodeData.streamResources(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return stream;
-    }
-
-    private void markDeleted(Resource rsc)
-    {
-        try
-        {
-            rsc.markDeleted(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private Iterator<StorPool> getStorPoolIterator(NodeData node)
-    {
-        Iterator<StorPool> iterateStorPools;
-        try
-        {
-            // Shallow-copy the storage pool map, because the Iterator is used for
-            // Node.delete(), which removes objects from the original map
-            Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
-            node.copyStorPoolMap(apiCtx, storPoolMap);
-
-            iterateStorPools = storPoolMap.values().iterator();
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return iterateStorPools;
-    }
-
-    private boolean hasVolumes(StorPool storPool)
-    {
-        boolean hasVolumes;
-        try
-        {
-            hasVolumes = !storPool.getVolumes(apiCtx).isEmpty();
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return hasVolumes;
-    }
-
-    private void delete(StorPool storPool)
-    {
-        try
-        {
-            storPool.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void delete(Resource rsc)
-    {
-        try
-        {
-            rsc.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void markDeleted(NodeData node)
-    {
-        try
-        {
-            node.markDeleted(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "delete the node '" + node.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void delete(NodeData node)
-    {
-        try
-        {
-            NodeType nodeType = node.getNodeType(apiCtx);
-            node.delete(peerAccCtx.get());
-
-            if (NodeType.SWORDFISH_TARGET.equals(nodeType))
-            {
-                sfTargetProcessMgr.stopProcess(node);
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "delete the node '" + node.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
     private void setNodeType(NodeData node, String nodeTypeStr)
     {
         NodeType nodeType = asNodeType(nodeTypeStr);
@@ -1187,7 +792,7 @@ public class CtrlNodeApiCallHandler
         return "node '" + nodeNameStr + "'";
     }
 
-    private static ResponseContext makeNodeContext(
+    static ResponseContext makeNodeContext(
         ApiOperation operation,
         String nodeNameStr
     )

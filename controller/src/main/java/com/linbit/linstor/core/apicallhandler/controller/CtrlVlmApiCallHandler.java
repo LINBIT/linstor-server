@@ -9,7 +9,6 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionRepository;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
@@ -22,10 +21,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -37,14 +33,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_VLM;
@@ -208,109 +202,6 @@ public class CtrlVlmApiCallHandler
         return responses;
     }
 
-    ApiCallRc volumeDeleted(
-        String nodeNameStr,
-        String rscNameStr,
-        int volumeNr,
-        long freespace
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeVlmContext(
-            ApiOperation.makeDeleteOperation(),
-            nodeNameStr,
-            rscNameStr,
-            volumeNr
-        );
-
-        try
-        {
-            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
-            VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
-
-            Volume vlm = rscData.getVolume(volumeNumber);
-
-            markClean(vlm);
-
-            deleteFromStorPool(vlm, freespace);
-
-            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-
-            // prevent access to deleted objects
-            UUID vlmUuid = vlm.getUuid();
-            String vlmDescriptionInline = getVlmDescriptionInline(rscData, vlmDfn);
-            UUID vlmDfnUuid = vlmDfn.getUuid();
-
-            boolean allVlmsClean = true;
-            Iterator<Volume> vlmIterator = getVolumeIterator(vlmDfn);
-            while (vlmIterator.hasNext())
-            {
-                Volume volume = vlmIterator.next();
-                if (!isMarkedAsClean(volume))
-                {
-                    allVlmsClean = false;
-                    break;
-                }
-            }
-            boolean vlmDfnDeleted = false;
-            if (allVlmsClean && isMarkedForDeletion(vlmDfn))
-            {
-                delete(vlmDfn); // also deletes all of its volumes
-                vlmDfnDeleted = true;
-            }
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                vlmUuid, vlmDescriptionInline));
-            errorReporter.logDebug(
-                String.format("Volume with number '%d' deleted on node '%s'.", volumeNr, nodeNameStr)
-            );
-            if (vlmDfnDeleted)
-            {
-                responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.DELETED,
-                        "Volume definition with number '" + volumeNumber.value + "' of resource definition '" +
-                            rscData.getDefinition().getName().displayValue + "' deleted."
-                    )
-                    .setDetails(
-                        "Volume definition's UUID was: " + vlmDfnUuid.toString()
-                    )
-                    .build());
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    private void deleteFromStorPool(Volume vlm, long freeSpace)
-    {
-        StorPool storPool = null;
-        try
-        {
-            storPool = vlm.getStorPool(peerAccCtx.get());
-            storPool.removeVolume(peerAccCtx.get(), vlm);
-
-            // if storpool's freeSpaceMgr still has to volume as "pendingCreation",
-            // we have to delete it from that list
-            storPool.getFreeSpaceTracker().vlmCreationFinished(apiCtx, vlm, freeSpace);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "deleting " + getVlmDescriptionInline(vlm),
-                storPool == null ? ApiConsts.FAIL_ACC_DENIED_STOR_POOL :
-                    ApiConsts.FAIL_ACC_DENIED_FREE_SPACE_MGR
-            );
-        }
-    }
-
     byte[] listVolumes(
         long apiCallId,
         List<String> filterNodes,
@@ -425,80 +316,6 @@ public class CtrlVlmApiCallHandler
             .build();
     }
 
-    private void markClean(Volume vol)
-    {
-        try
-        {
-            vol.getFlags().enableFlags(apiCtx, VlmFlags.CLEAN);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private Iterator<Volume> getVolumeIterator(VolumeDefinition vlmDfn)
-    {
-        Iterator<Volume> iterator;
-        try
-        {
-            iterator = vlmDfn.iterateVolumes(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return iterator;
-    }
-
-    private boolean isMarkedAsClean(Volume vlm)
-    {
-        boolean isMarkedAsClean;
-        try
-        {
-            isMarkedAsClean = vlm.getFlags().isSet(apiCtx, VlmFlags.CLEAN);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return isMarkedAsClean;
-    }
-
-    private boolean isMarkedForDeletion(VolumeDefinition vlmDfn)
-    {
-        boolean isMarkedAsDeleted;
-        try
-        {
-            isMarkedAsDeleted = vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return isMarkedAsDeleted;
-    }
-
-    private void delete(VolumeDefinition vlmDfn)
-    {
-        try
-        {
-            vlmDfn.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
     public static String getVlmDescription(Volume vlm)
     {
         return getVlmDescription(
@@ -534,7 +351,7 @@ public class CtrlVlmApiCallHandler
             nodeNameStr + "'";
     }
 
-    private static ResponseContext makeVlmContext(
+    static ResponseContext makeVlmContext(
         ApiOperation operation,
         String nodeNameStr,
         String rscNameStr,

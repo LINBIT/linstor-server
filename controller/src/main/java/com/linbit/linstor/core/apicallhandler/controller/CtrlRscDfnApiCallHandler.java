@@ -8,7 +8,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -55,10 +54,8 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -250,123 +247,6 @@ public class CtrlRscDfnApiCallHandler
         return responses;
     }
 
-    public ApiCallRc deleteResourceDefinition(
-        String rscNameStr
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeResourceDefinitionContext(
-            ApiOperation.makeDeleteOperation(),
-            rscNameStr
-        );
-
-        try
-        {
-            requireRscDfnMapChangeAccess();
-
-            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, false);
-            if (rscDfn == null)
-            {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_NOT_FOUND,
-                    getRscDfnDescription(rscNameStr) + " not found."
-                ));
-            }
-            else if (!rscDfn.getSnapshotDfns(apiCtx).isEmpty())
-            {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
-                    "Cannot delete " + getRscDfnDescriptionInline(rscNameStr) + " because it has snapshots."
-                ));
-            }
-            else
-            {
-                Optional<Resource> rscInUse = rscDfn.anyResourceInUse(apiCtx);
-                if (rscInUse.isPresent())
-                {
-                    NodeName nodeName = rscInUse.get().getAssignedNode().getName();
-                    responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.FAIL_IN_USE,
-                            String.format("Resource '%s' on node '%s' is still in use.",
-                                rscNameStr, nodeName.displayValue)
-                        )
-                        .setCause("Resource is mounted/in use.")
-                        .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.",
-                                        rscNameStr,
-                                        nodeName.displayValue))
-                        .build()
-                    );
-                }
-                else
-                {
-                    Iterator<Resource> rscIterator = getPrivilegedRscIterator(rscDfn);
-                    String successMsg;
-                    String details;
-                    UUID rscDfnUuid = rscDfn.getUuid();
-                    String descriptionFirstLetterCaps = firstLetterCaps(getRscDfnDescriptionInline(rscNameStr));
-                    if (rscIterator.hasNext())
-                    {
-                        markDeleted(rscDfn);
-
-                        if (rscDfn.hasDiskless(apiCtx))
-                        {
-                            // if the resource definition has diskless resource
-                            // first delete them, as we can't delete diskfull before
-                            // diskfull resource will be delete trigger later in the notify
-                            // resource deleted api
-                            while (rscIterator.hasNext())
-                            {
-                                Resource rsc = rscIterator.next();
-                                if (rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS))
-                                {
-                                    markDeletedPrivileged(rsc);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // mark all resources deleted
-                            while (rscIterator.hasNext())
-                            {
-                                Resource rsc = rscIterator.next();
-                                markDeletedPrivileged(rsc);
-                            }
-                        }
-
-                        ctrlTransactionHelper.commit();
-
-                        // notify satellites
-                        responseConverter.addWithDetail(
-                            responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
-
-                        successMsg = descriptionFirstLetterCaps + " marked for deletion.";
-                        details = descriptionFirstLetterCaps + " UUID is: " + rscDfnUuid;
-                    }
-                    else
-                    {
-                        ResourceName rscName = rscDfn.getName();
-                        delete(rscDfn);
-
-                        resourceDefinitionRepository.remove(apiCtx, rscName);
-                        ctrlTransactionHelper.commit();
-
-                        successMsg = descriptionFirstLetterCaps + " deleted.";
-                        details = descriptionFirstLetterCaps + " UUID was: " + rscDfnUuid;
-                    }
-                    responseConverter.addWithOp(responses, context,
-                        ApiCallRcImpl.entryBuilder(ApiConsts.DELETED, successMsg).setDetails(details).build());
-                }
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
     void handlePrimaryResourceRequest(
         long apiCallId,
         String rscNameStr,
@@ -545,77 +425,6 @@ public class CtrlRscDfnApiCallHandler
         return rscDfn;
     }
 
-
-    private void delete(ResourceDefinitionData rscDfn)
-    {
-        try
-        {
-            rscDfn.delete(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "delete " + getRscDfnDescriptionInline(rscDfn),
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void markDeleted(ResourceDefinitionData rscDfn)
-    {
-        try
-        {
-            rscDfn.markDeleted(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "mark " + getRscDfnDescriptionInline(rscDfn) + " as deleted",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void markDeletedPrivileged(Resource rsc)
-    {
-        try
-        {
-            rsc.markDeleted(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private Iterator<Resource> getPrivilegedRscIterator(ResourceDefinitionData rscDfn)
-    {
-        Iterator<Resource> iterator;
-        try
-        {
-            iterator = rscDfn.iterateResource(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return iterator;
-    }
-
     static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
         throws ValueOutOfRangeException, LinStorException
     {
@@ -680,7 +489,12 @@ public class CtrlRscDfnApiCallHandler
 
     public static String getRscDfnDescriptionInline(ResourceDefinition rscDfn)
     {
-        return getRscDfnDescriptionInline(rscDfn.getName().displayValue);
+        return getRscDfnDescriptionInline(rscDfn.getName());
+    }
+
+    public static String getRscDfnDescriptionInline(ResourceName rscName)
+    {
+        return getRscDfnDescriptionInline(rscName.displayValue);
     }
 
     public static String getRscDfnDescriptionInline(String rscName)
@@ -688,7 +502,7 @@ public class CtrlRscDfnApiCallHandler
         return "resource definition '" + rscName + "'";
     }
 
-    private static ResponseContext makeResourceDefinitionContext(
+    static ResponseContext makeResourceDefinitionContext(
         ApiOperation operation,
         String rscNameStr
     )

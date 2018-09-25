@@ -621,7 +621,10 @@ class StltRscApiCallHandler
             }
             for (Node node : nodesToRegister)
             {
-                nodesMap.put(node.getName(), node);
+                if (!node.isDeleted())
+                {
+                    nodesMap.put(node.getName(), node);
+                }
             }
 
             // decrypt all new volume definition keys

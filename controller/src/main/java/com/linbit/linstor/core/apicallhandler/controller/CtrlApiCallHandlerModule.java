@@ -15,6 +15,10 @@ public class CtrlApiCallHandlerModule extends AbstractModule
         Multibinder<CtrlSatelliteConnectionListener> commandsBinder =
             Multibinder.newSetBinder(binder(), CtrlSatelliteConnectionListener.class);
 
+        commandsBinder.addBinding().to(CtrlNodeDeleteApiCallHandler.class);
+        commandsBinder.addBinding().to(CtrlRscDeleteApiCallHandler.class);
+        commandsBinder.addBinding().to(CtrlRscDfnDeleteApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlRscToggleDiskApiCallHandler.class);
+        commandsBinder.addBinding().to(CtrlVlmDfnDeleteApiCallHandler.class);
     }
 }

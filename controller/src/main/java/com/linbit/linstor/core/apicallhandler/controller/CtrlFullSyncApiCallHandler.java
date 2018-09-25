@@ -5,11 +5,9 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -18,7 +16,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
@@ -39,8 +36,8 @@ public class CtrlFullSyncApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
+    private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final CtrlStltSerializer interComSerializer;
-    private final Set<CtrlSatelliteConnectionListener> satelliteConnectionListeners;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
@@ -50,8 +47,8 @@ public class CtrlFullSyncApiCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
+        CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
         CtrlStltSerializer interComSerializerRef,
-        Set<CtrlSatelliteConnectionListener> satelliteConnectionListenersRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
@@ -60,8 +57,8 @@ public class CtrlFullSyncApiCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
+        ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         interComSerializer = interComSerializerRef;
-        satelliteConnectionListeners = satelliteConnectionListenersRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -161,24 +158,8 @@ public class CtrlFullSyncApiCallHandler
             {
                 Resource localRsc = localRscIter.next();
                 ResourceDefinition rscDfn = localRsc.getDefinition();
-                ResourceName rscName = rscDfn.getName();
 
-                boolean allOnline = true;
-                Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
-                while (rscIter.hasNext())
-                {
-                    Resource rsc = rscIter.next();
-                    if (rsc.getAssignedNode().getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
-                    {
-                        allOnline = false;
-                        break;
-                    }
-                }
-
-                if (allOnline)
-                {
-                    fluxes.add(notifyResourceDefinitionConnected(localNode, rscDfn));
-                }
+                fluxes.add(ctrlSatelliteConnectionNotifier.checkResourceDefinitionConnected(rscDfn));
             }
         }
         catch (AccessDeniedException exc)
@@ -187,43 +168,5 @@ public class CtrlFullSyncApiCallHandler
         }
 
         return Flux.merge(fluxes);
-    }
-
-    private Flux<?> notifyResourceDefinitionConnected(Node localNode, ResourceDefinition rscDfn)
-    {
-        List<Flux<ApiCallRc>> connectionListenerResponses = new ArrayList<>();
-
-        for (CtrlSatelliteConnectionListener connectionListener : satelliteConnectionListeners)
-        {
-            try
-            {
-                connectionListenerResponses.add(
-                    connectionListener.resourceDefinitionConnected(rscDfn)
-                );
-            }
-            catch (Exception | ImplementationError exc)
-            {
-                errorReporter.reportError(
-                    exc,
-                    null,
-                    null,
-                    "Error performing operations after connecting to " + localNode
-                );
-            }
-        }
-
-        return Flux.fromIterable(connectionListenerResponses)
-            .flatMap(listenerFlux -> listenerFlux.onErrorResume(exc -> handleListenerError(localNode, exc)));
-    }
-
-    private Publisher<? extends ApiCallRc> handleListenerError(Node localNode, Throwable exc)
-    {
-        errorReporter.reportError(
-            exc,
-            null,
-            null,
-            "Error emitted performing operations after connecting to " + localNode
-        );
-        return Flux.empty();
     }
 }

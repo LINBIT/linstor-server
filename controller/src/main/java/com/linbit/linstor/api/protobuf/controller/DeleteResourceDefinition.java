@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,27 +16,28 @@ import java.io.InputStream;
     name = ApiConsts.API_DEL_RSC_DFN,
     description = "Deletes a resource definition"
 )
-public class DeleteResourceDefinition implements ApiCall
+public class DeleteResourceDefinition implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlRscDfnDeleteApiCallHandler ctrlRscDfnDeleteApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public DeleteResourceDefinition(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public DeleteResourceDefinition(
+        CtrlRscDfnDeleteApiCallHandler ctrlRscDfnDeleteApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlRscDfnDeleteApiCallHandler = ctrlRscDfnDeleteApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgDelRscDfn msgDeleteRscDfn = MsgDelRscDfn.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = apiCallHandler.deleteResourceDefinition(
-            msgDeleteRscDfn.getRscName()
-        );
-
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+        return ctrlRscDfnDeleteApiCallHandler
+            .deleteResourceDefinition(msgDeleteRscDfn.getRscName())
+            .transform(responseSerializer::transform);
     }
 }

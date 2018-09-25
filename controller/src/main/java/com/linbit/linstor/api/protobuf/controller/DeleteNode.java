@@ -1,43 +1,43 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.proto.MsgDelNodeOuterClass.MsgDelNode;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_DEL_NODE,
-    description = "Marks a node for deletion"
+    description = "Deletes a node"
 )
-public class DeleteNode implements ApiCall
+public class DeleteNode implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public DeleteNode(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public DeleteNode(
+        CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlNodeDeleteApiCallHandler = ctrlNodeDeleteApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgDelNode msgDeleteNode = MsgDelNode.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = apiCallHandler.deleteNode(
-            msgDeleteNode.getNodeName()
-        );
-
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+        return ctrlNodeDeleteApiCallHandler
+            .deleteNode(msgDeleteNode.getNodeName())
+            .transform(responseSerializer::transform);
     }
-
 }

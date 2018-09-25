@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @ProtobufApiCall(
     name = InternalApiConsts.API_NOTIFY_RSC_APPLIED,
     description = "Called by the satellite to notify the controller of successful " +
-                  "resource creation or modification"
+                  "resource creation, modification or deletion"
 )
 public class NotifyResourceApplied implements ApiCall
 {

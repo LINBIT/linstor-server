@@ -733,7 +733,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         // ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
         // END DEBUG
 
-        if (!dispatchRscs.isEmpty())
+        if (!dispatchRscs.isEmpty() || !responseSinks.isEmpty())
         {
             reconfigurationLock.readLock().lock();
 
@@ -943,8 +943,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     if (curRscDfn != null)
                     {
                         VolumeDefinition curVlmDfn = curRscDfn.getVolumeDfn(wrkCtx, volumeKey.vlmNr);
-                        if (curVlmDfn != null &&
-                            curVlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE))
+                        if (curVlmDfn != null)
                         {
                             curVlmDfn.delete(wrkCtx);
                         }
@@ -1206,37 +1205,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void notifyResourceDeleted(Resource rsc)
     {
-        // Send delete notification to the controller
-        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            String msgNodeName = rsc.getAssignedNode().getName().displayValue;
-            String msgRscName = rsc.getDefinition().getName().displayValue;
-            UUID rscUuid = rsc.getUuid();
-
-            Map<StorPool, SpaceInfo> freeSpaceMap = null;
-            try
-            {
-                freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
-            }
-            catch (StorageException exc)
-            {
-                errLog.reportError(exc);
-                // If free space reporting failed, send an empty map
-                freeSpaceMap = new TreeMap<>();
-            }
-            byte[] data = interComSerializer
-                .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_DEL)
-                .notifyResourceDeleted(
-                    msgNodeName,
-                    msgRscName,
-                    rscUuid,
-                    freeSpaceMap
-                )
-                .build();
-            ctrlPeer.sendMessage(data);
-        }
-
         // Remember the resource for removal after the DeviceHandler instances have finished
         synchronized (sched)
         {
@@ -1247,26 +1215,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void notifyVolumeDeleted(Volume vlm, long freeSpace)
     {
-        // Send delete notification to the controller
-        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
-            String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
-
-            ctrlPeer.sendMessage(interComSerializer
-                .onewayBuilder(InternalApiConsts.API_NOTIFY_VLM_DEL)
-                .notifyVolumeDeleted(
-                    msgNodeName,
-                    msgRscName,
-                    vlm.getVolumeDefinition().getVolumeNumber().value,
-                    freeSpace,
-                    vlm.getUuid()
-                )
-                .build()
-            );
-        }
-
         // Remember the volume for removal after the DeviceHandler instances have finished
         synchronized (sched)
         {

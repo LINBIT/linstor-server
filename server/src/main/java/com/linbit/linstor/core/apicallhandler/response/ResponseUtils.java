@@ -11,6 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
+import java.text.MessageFormat;
 import java.util.Map;
 
 public class ResponseUtils
@@ -252,7 +253,7 @@ public class ResponseUtils
                 ApiCallRcImpl transformedResponses = new ApiCallRcImpl();
                 for (ApiCallRc.RcEntry rcEntry : response.getEntries())
                 {
-                    if (rcEntry.getReturnCode() == ApiConsts.CREATED)
+                    if (rcEntry.getReturnCode() == ApiConsts.MODIFIED)
                     {
                         String messageFormat = nodeName == null || nodeName.equals(responseNodeName) ?
                             messageFormatSelf : messageFormatPeer;
@@ -260,9 +261,10 @@ public class ResponseUtils
                         {
                             transformedResponses.addEntry(ApiCallRcImpl.simpleEntry(
                                 ApiConsts.MODIFIED,
-                                String.format(
+                                MessageFormat.format(
                                     messageFormat,
-                                    responseNodeName.displayValue
+                                    "'" + responseNodeName.displayValue + "'",
+                                    "'" + rcEntry.getObjRefs().get(ApiConsts.KEY_RSC_DFN) + "'"
                                 )
                             ));
                         }

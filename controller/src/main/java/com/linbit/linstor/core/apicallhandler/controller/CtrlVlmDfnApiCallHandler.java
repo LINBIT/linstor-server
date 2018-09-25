@@ -7,10 +7,8 @@ import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
@@ -49,13 +47,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 class CtrlVlmDfnApiCallHandler
@@ -282,7 +278,7 @@ class CtrlVlmDfnApiCallHandler
 
         try
         {
-            VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
+            VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
 
             if (vlmDfnUuid != null && !vlmDfnUuid.equals(vlmDfn.getUuid()))
             {
@@ -363,130 +359,6 @@ class CtrlVlmDfnApiCallHandler
         }
 
         return responses;
-    }
-
-    ApiCallRc deleteVolumeDefinition(
-        String rscName,
-        int vlmNr
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeVlmDfnContext(
-            ApiOperation.makeDeleteOperation(),
-            rscName,
-            vlmNr
-        );
-
-        try
-        {
-            VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, vlmNr);
-            UUID vlmDfnUuid = vlmDfn.getUuid();
-            ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
-
-            Optional<Resource> rscInUse = rscDfn.anyResourceInUse(apiCtx);
-            if (rscInUse.isPresent())
-            {
-                NodeName nodeName = rscInUse.get().getAssignedNode().getName();
-                String rscNameStr = rscDfn.getName().displayValue;
-                responses.addEntry(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_IN_USE,
-                        String.format("Resource '%s' on node '%s' is still in use.", rscNameStr, nodeName.displayValue)
-                    )
-                    .setCause("Resource is mounted/in use.")
-                    .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.",
-                        rscNameStr,
-                        nodeName.displayValue))
-                    .build()
-                );
-            }
-            else
-            {
-                // mark volumes to delete or check if all a 'CLEAN'
-                Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(peerAccCtx.get());
-                boolean allVlmClean = true;
-                while (itVolumes.hasNext())
-                {
-                    Volume vlm = itVolumes.next();
-                    if (vlm.getFlags().isUnset(peerAccCtx.get(), Volume.VlmFlags.CLEAN))
-                    {
-                        vlm.markDeleted(peerAccCtx.get());
-                        allVlmClean = false;
-                    }
-                }
-
-                String deleteAction;
-                if (allVlmClean)
-                {
-                    vlmDfn.delete(peerAccCtx.get());
-                    deleteAction = " was deleted.";
-                }
-                else
-                {
-                    vlmDfn.markDeleted(peerAccCtx.get());
-                    deleteAction = " marked for deletion.";
-                }
-
-                ctrlTransactionHelper.commit();
-
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
-
-                responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.DELETED,
-                        firstLetterCaps(getVlmDfnDescriptionInline(rscName, vlmNr)) + deleteAction
-                    )
-                    .setDetails(firstLetterCaps(getVlmDfnDescriptionInline(rscName, vlmNr)) + " UUID is:" + vlmDfnUuid)
-                    .build()
-                );
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    private VolumeDefinitionData loadVlmDfn(String rscName, int vlmNr)
-    {
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
-        VolumeDefinitionData vlmDfn;
-        try
-        {
-            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), new VolumeNumber(vlmNr));
-
-            if (vlmDfn == null)
-            {
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
-                        "Volume definition '" + rscName + "' with volume number '" + vlmNr + "' not found."
-                    )
-                    .setCause("The specified volume definition '" + rscName +
-                        "' with volume number '" + vlmNr + "' could not be found in the database")
-                    .setCorrection("Create a volume definition with the name '" + rscName + "' first.")
-                    .build()
-                );
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load volume definition '" + vlmNr + "' from resource definition '" + rscName + "'",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (ValueOutOfRangeException valueOutOfRangeExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_VLM_NR,
-                "The given volume number '" + vlmNr + "' is invalid."
-            ), valueOutOfRangeExc);
-        }
-        return vlmDfn;
     }
 
     private Iterator<Resource> getRscIterator(ResourceDefinition rscDfn)
@@ -682,7 +554,7 @@ class CtrlVlmDfnApiCallHandler
         return "volume definition with number '" + vlmNr + "' of resource definition '" + rscName + "'";
     }
 
-    private static ResponseContext makeVlmDfnContext(
+    static ResponseContext makeVlmDfnContext(
         ApiOperation operation,
         String rscNameStr,
         int volumeNr

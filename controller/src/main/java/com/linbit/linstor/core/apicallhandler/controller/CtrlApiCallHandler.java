@@ -178,43 +178,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    /**
-     * Marks the given {@link Node} for deletion.
-     *
-     * The node is only deleted once the satellite confirms that it has no more
-     * {@link Resource}s and {@link StorPool}s deployed.
-     *
-     * @param nodeName required
-     * @return
-     */
-    public ApiCallRc deleteNode(String nodeName)
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lock = LockGuard.createLocked(nodesMapLock.writeLock()))
-        {
-            apiCallRc = nodeApiCallHandler.deleteNode(nodeName);
-        }
-        return apiCallRc;
-    }
-
-    /**
-     * Deletes a unrecoverable {@link Node}.
-     *
-     * This call is used if a node can't reached or recovered, but has to be removed from the system.
-     *
-     * @param nodeName Nodename to be removed/lost.
-     * @return ApiCall return code.
-     */
-    public ApiCallRc lostNode(String nodeName)
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lock = LockGuard.createLocked(nodesMapLock.writeLock()))
-        {
-            apiCallRc = nodeApiCallHandler.lostNode(nodeName);
-        }
-        return apiCallRc;
-    }
-
     public byte[] listNode()
     {
         byte[] listNodes;
@@ -318,27 +281,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    /**
-     * Marks a {@link ResourceDefinition} for deletion.
-     *
-     * It will only be removed when all satellites confirm the deletion of the corresponding
-     * {@link Resource}s.
-     *
-     * @param resourceName required
-     * @return
-     */
-    public ApiCallRc deleteResourceDefinition(
-        String resourceName
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
-        {
-            apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(resourceName);
-        }
-        return apiCallRc;
-    }
-
     public byte[] listResourceDefinition()
     {
         byte[] listResourceDefinitions;
@@ -427,29 +369,6 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Deletes a {@link VolumeDefinition} for a given {@link ResourceDefinition} and volume nr.
-     *
-     * @param rscName required
-     * @param volumeNr required
-     * @return ApiCallResponse with status of the operation
-     */
-    public ApiCallRc deleteVolumeDefinition(
-        String rscName,
-        int volumeNr
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
-        {
-            apiCallRc = vlmDfnApiCallHandler.deleteVolumeDefinition(
-                rscName,
-                volumeNr
-            );
-        }
-        return apiCallRc;
-    }
-
-    /**
      * Modifies an existing {@link Resource}
      *
      * @param rscUuid optional, if given checked against persisted UUID
@@ -496,38 +415,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    /**
-     * Marks a {@link Resource} for deletion.
-     *
-     * The {@link Resource} is only deleted once the corresponding satellite confirmed
-     * that it has undeployed (deleted) the {@link Resource}
-     *
-     * @param nodeName required
-     * @param rscName required
-     * @return
-     */
-    public ApiCallRc deleteResource(
-        String nodeName,
-        String rscName
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = rscApiCallHandler.deleteResource(
-                nodeName,
-                rscName
-            );
-        }
-
-        return apiCallRc;
-    }
-
     public byte[] listResource(List<String> filterNodes, List<String> filterResources)
     {
         byte[] listResources;
@@ -569,38 +456,6 @@ public class CtrlApiCallHandler
         return listVolumes;
     }
 
-    /**
-     * Called if a satellite deleted the resource.
-     *
-     * Resource will be deleted (NOT marked) and if all resources
-     * of the resource definition are deleted, cleanup will be called.
-     *
-     * @param nodeName required
-     * @param rscName required
-     * @return
-     */
-    public ApiCallRc resourceDeleted(
-        String nodeName,
-        String rscName
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = rscApiCallHandler.resourceDeleted(
-                nodeName,
-                rscName
-            );
-        }
-
-        return apiCallRc;
-    }
-
     public ApiCallRc volumeResized(String nodeName, String rscName, int volumeNr, long vlmSize)
     {
         ApiCallRc apiCallRc;
@@ -637,41 +492,6 @@ public class CtrlApiCallHandler
                 nodeName,
                 rscName,
                 volumeNr
-            );
-        }
-        return apiCallRc;
-    }
-
-    /**
-     * Called if a satellite deleted the volume.
-     *
-     * Volume will be deleted (NOT marked).
-     *
-     * @param nodeName required
-     * @param rscName required
-     * @return
-     */
-    public ApiCallRc volumeDeleted(
-        String nodeName,
-        String rscName,
-        int volumeNr,
-        long freespace
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock(),
-                storPoolDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = vlmApiCallHandler.volumeDeleted(
-                nodeName,
-                rscName,
-                volumeNr,
-                freespace
             );
         }
         return apiCallRc;

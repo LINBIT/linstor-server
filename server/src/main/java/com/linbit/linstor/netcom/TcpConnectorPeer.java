@@ -390,7 +390,7 @@ public class TcpConnectorPeer implements Peer
         FluxSink<ByteArrayInputStream> rpcSink = openRpcs.get(apiCallId);
         if (rpcSink == null)
         {
-            errorReporter.logWarning("Unexpected API call answer received");
+            errorReporter.logDebug("Unexpected API call answer received");
         }
         else
         {
@@ -404,7 +404,7 @@ public class TcpConnectorPeer implements Peer
         FluxSink<ByteArrayInputStream> rpcSink = openRpcs.get(apiCallId);
         if (rpcSink == null)
         {
-            errorReporter.logWarning("Unexpected API call answer received");
+            errorReporter.logDebug("Unexpected API call error received");
         }
         else
         {
@@ -418,7 +418,7 @@ public class TcpConnectorPeer implements Peer
         FluxSink<ByteArrayInputStream> rpcSink = openRpcs.get(apiCallId);
         if (rpcSink == null)
         {
-            errorReporter.logWarning("Unexpected API call completion received");
+            errorReporter.logDebug("Unexpected API call completion received");
         }
         else
         {

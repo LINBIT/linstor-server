@@ -153,8 +153,8 @@ public class CtrlRscCrtApiCallHandler
             .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
                 updateResponses,
                 nodeName,
-                "Created resource on '%s'",
-                "Added peer '" + nodeName.displayValue + "' to resource on '%s'"
+                "Created resource on {0}",
+                "Added peer ''" + nodeName.displayValue + "'' to resource on {0}"
             ));
 
         Mono<ApiCallRc> resourceReadyResponses;

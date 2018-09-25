@@ -1,43 +1,43 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
+import com.linbit.linstor.proto.MsgDelNodeOuterClass.MsgDelNode;
+import reactor.core.publisher.Flux;
+
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgDelNodeOuterClass.MsgDelNode;
 
 @ProtobufApiCall(
     name = ApiConsts.API_LOST_NODE,
     description = "Deletes a node that will never appear again"
 )
-public class LostNode implements ApiCall
+public class LostNode implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public LostNode(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public LostNode(
+        CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlNodeLostApiCallHandler = ctrlNodeLostApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgDelNode msgDeleteNode = MsgDelNode.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = apiCallHandler.lostNode(
-            msgDeleteNode.getNodeName()
-        );
-
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+        return ctrlNodeLostApiCallHandler
+            .lostNode(msgDeleteNode.getNodeName())
+            .transform(responseSerializer::transform);
     }
-
 }

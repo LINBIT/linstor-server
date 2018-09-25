@@ -73,12 +73,6 @@ public interface CtrlStltSerializer extends CommonSerializer
         /*
          * Satellite -> Controller
          */
-        CtrlStltSerializerBuilder notifyResourceDeleted(
-            String nodeName,
-            String resourceName,
-            UUID rscUuid,
-            Map<StorPool, SpaceInfo> freeSpaceMap
-        );
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
             Map<StorPool, SpaceInfo> freeSpaceMap
@@ -93,13 +87,6 @@ public interface CtrlStltSerializer extends CommonSerializer
             String nodeName,
             String resourceName,
             int volumeNr
-        );
-        CtrlStltSerializerBuilder notifyVolumeDeleted(
-            String nodeName,
-            String resourceName,
-            int volumeNr,
-            long freeSpace,
-            UUID vlmUuid
         );
 
         CtrlStltSerializerBuilder requestControllerUpdate();

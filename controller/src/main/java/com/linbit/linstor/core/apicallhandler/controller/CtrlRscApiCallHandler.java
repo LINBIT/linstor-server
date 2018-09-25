@@ -6,7 +6,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
@@ -14,7 +13,6 @@ import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
@@ -39,14 +37,12 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -54,7 +50,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -69,7 +64,6 @@ import java.util.stream.Collectors;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
@@ -300,177 +294,6 @@ public class CtrlRscApiCallHandler
         return responses;
     }
 
-    public ApiCallRc deleteResource(
-        String nodeNameStr,
-        String rscNameStr
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeRscContext(
-            ApiOperation.makeDeleteOperation(),
-            nodeNameStr,
-            rscNameStr
-        );
-
-        try
-        {
-            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
-
-            SatelliteState stltState = rscData.getAssignedNode().getPeer(apiCtx).getSatelliteState();
-            SatelliteResourceState rscState = stltState.getResourceStates().get(rscData.getDefinition().getName());
-
-            if (rscState != null && rscState.isInUse() != null && rscState.isInUse())
-            {
-                responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_IN_USE,
-                        String.format("Resource '%s' is still in use.", rscNameStr)
-                    )
-                    .setCause("Resource is mounted/in use.")
-                    .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscNameStr, nodeNameStr))
-                    .build()
-                );
-            }
-            else
-            {
-                markDeleted(rscData);
-
-                ctrlTransactionHelper.commit();
-
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscData));
-
-                String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(nodeNameStr, rscNameStr));
-                responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.DELETED,
-                        descriptionFirstLetterCaps + " marked for deletion."
-                    )
-                    .setDetails(descriptionFirstLetterCaps + " UUID is: " + rscData.getUuid())
-                    .build()
-                );
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-
-
-    /**
-     * This is called if a satellite has deleted its resource to notify the controller
-     * that it can delete the resource.
-     *
-     * @param nodeNameStr Node name where the resource was deleted.
-     * @param rscNameStr Resource name of the deleted resource.
-     * @return Apicall response for the call.er
-     */
-    public ApiCallRc resourceDeleted(
-        String nodeNameStr,
-        String rscNameStr
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeRscContext(
-            ApiOperation.makeDeleteOperation(),
-            nodeNameStr,
-            rscNameStr
-        );
-
-        try
-        {
-            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
-
-            if (rscData == null)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_NOT_FOUND,
-                    firstLetterCaps(getRscDescription(nodeNameStr, rscNameStr)) + " not found"
-                ));
-            }
-
-            ResourceDefinition rscDfn = rscData.getDefinition();
-            Node node = rscData.getAssignedNode();
-            final UUID rscUuid = rscData.getUuid();
-
-            delete(rscData); // also deletes all of its volumes
-
-            UUID rscDfnUuid = null;
-            ResourceName deletedRscDfnName = null;
-            UUID nodeUuid = null;
-            NodeName deletedNodeName = null;
-
-            // check if only diskfull resources are left in the rscDfn that is to be deleted
-            // and if so, mark the diskfull as deleted
-            if (!rscDfn.hasDiskless(apiCtx) && isMarkedForDeletion(rscDfn))
-            {
-                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(toList()))
-                {
-                    rsc.markDeleted(apiCtx);
-                }
-            }
-
-            // cleanup resource definition if empty and marked for deletion
-            if (rscDfn.getResourceCount() == 0)
-            {
-                if (isMarkedForDeletion(rscDfn))
-                {
-                    deletedRscDfnName = rscDfn.getName();
-                    rscDfnUuid = rscDfn.getUuid();
-                    delete(rscDfn);
-                }
-                else
-                {
-                    // remove primary flag
-                    errorReporter.logDebug(
-                        String.format("Resource definition '%s' empty, deleting primary flag.", rscNameStr)
-                    );
-                    rscDfn.getProps(apiCtx).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
-                }
-            }
-
-            // cleanup node if empty and marked for deletion
-            if (node.getResourceCount() == 0 &&
-                isMarkedForDeletion(node)
-            )
-            {
-                // TODO check if the remaining storage pools have deployed values left (impl error)
-
-
-                deletedNodeName = node.getName();
-                nodeUuid = node.getUuid();
-                delete(node);
-            }
-
-            if (deletedRscDfnName != null)
-            {
-                responseConverter.addWithOp(
-                    responses, context, makeRscDfnDeletedResponse(deletedRscDfnName, rscDfnUuid));
-                resourceDefinitionRepository.remove(apiCtx, deletedRscDfnName);
-            }
-            if (deletedNodeName != null)
-            {
-                nodeRepository.remove(apiCtx, deletedNodeName);
-                node.getPeer(apiCtx).closeConnection();
-                responseConverter.addWithOp(responses, context, makeNodeDeletedResponse(deletedNodeName, nodeUuid));
-            }
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                rscUuid, getRscDescriptionInline(nodeNameStr, rscNameStr)));
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
     byte[] listResources(
         long apiCallId,
         List<String> filterNodes,
@@ -680,139 +503,6 @@ public class CtrlRscApiCallHandler
             );
         }
         return vlmDfn;
-    }
-
-    private void markDeleted(ResourceData rscData)
-    {
-        try
-        {
-            rscData.markDeleted(peerAccCtx.get());
-            Iterator<Volume> volumesIterator = rscData.iterateVolumes();
-            while (volumesIterator.hasNext())
-            {
-                Volume vlm = volumesIterator.next();
-                vlm.markDeleted(peerAccCtx.get());
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "mark " + getRscDescription(rscData) + " as deleted",
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void delete(ResourceData rscData)
-    {
-        try
-        {
-            rscData.delete(peerAccCtx.get()); // also deletes all of its volumes
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "delete " + getRscDescription(rscData),
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void delete(ResourceDefinition rscDfn)
-    {
-        try
-        {
-            rscDfn.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void delete(Node node)
-    {
-        try
-        {
-            node.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private boolean isMarkedForDeletion(ResourceDefinition rscDfn)
-    {
-        boolean isMarkedForDeletion;
-        try
-        {
-            isMarkedForDeletion = rscDfn.getFlags().isSet(apiCtx, RscDfnFlags.DELETE);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return isMarkedForDeletion;
-    }
-
-    private boolean isMarkedForDeletion(Node node)
-    {
-        boolean isMarkedForDeletion;
-        try
-        {
-            isMarkedForDeletion = node.getFlags().isSet(apiCtx, NodeFlag.DELETE);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return isMarkedForDeletion;
-    }
-
-    private ApiCallRc.RcEntry makeRscDfnDeletedResponse(ResourceName rscName, UUID rscDfnUuid)
-    {
-        String rscDeletedMsg = CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline(rscName.displayValue) +
-            " deleted.";
-        rscDeletedMsg = rscDeletedMsg.substring(0, 1).toUpperCase() + rscDeletedMsg.substring(1);
-
-        errorReporter.logInfo(rscDeletedMsg);
-
-        return ApiCallRcImpl.entryBuilder(ApiConsts.MASK_RSC_DFN | ApiConsts.DELETED, rscDeletedMsg)
-            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue)
-            .putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString())
-            .build();
-    }
-
-    private ApiCallRc.RcEntry makeNodeDeletedResponse(NodeName nodeName, UUID nodeUuid)
-    {
-        String rscDeletedMsg = CtrlNodeApiCallHandler.getNodeDescriptionInline(nodeName.displayValue) +
-            " deleted.";
-
-        errorReporter.logInfo(rscDeletedMsg);
-
-        return ApiCallRcImpl.entryBuilder(ApiConsts.MASK_NODE | ApiConsts.DELETED, rscDeletedMsg)
-            .putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue)
-            .putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString())
-            .build();
     }
 
     void updateVolumeData(

@@ -493,16 +493,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             List<MsgIntApplyRscSuccessOuterClass.VlmData> vlmDatas = new ArrayList<>();
             for (Volume vlm : resource.streamVolumes().collect(toList()))
             {
-                vlmDatas.add(
-                    MsgIntApplyRscSuccessOuterClass.VlmData.newBuilder()
-                        .setVlmNr(vlm.getVolumeDefinition().getVolumeNumber().value)
-                        .setBlockDevicePath(vlm.getBackingDiskPath(serializerCtx))
-                        .setMetaDisk(vlm.getMetaDiskPath(serializerCtx))
-                        .setDevicePath(vlm.getDevicePath(serializerCtx))
-                        .setRealSize(vlm.getRealSize(serializerCtx))
-                        .addAllVlmDfnProps(asLinStorList(vlm.getVolumeDefinition().getProps(serializerCtx)))
-                        .build()
-                );
+                vlmDatas.add(buildResourceAppliedVolume(vlm));
             }
 
             MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
@@ -530,35 +521,37 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return this;
     }
 
-    @Override
-    public ProtoCtrlStltSerializerBuilder notifyResourceDeleted(
-        String nodeName,
-        String resourceName,
-        UUID rscUuid,
-        Map<StorPool, SpaceInfo> freeSpaceMap
-    )
+    private MsgIntApplyRscSuccessOuterClass.VlmData buildResourceAppliedVolume(Volume vlm)
+        throws AccessDeniedException
     {
-        try
+        MsgIntApplyRscSuccessOuterClass.VlmData.Builder builder = MsgIntApplyRscSuccessOuterClass.VlmData.newBuilder()
+            .setVlmNr(vlm.getVolumeDefinition().getVolumeNumber().value)
+            .addAllVlmDfnProps(asLinStorList(vlm.getVolumeDefinition().getProps(serializerCtx)));
+
+        String backingDiskPath = vlm.getBackingDiskPath(serializerCtx);
+        if (backingDiskPath != null)
         {
-            MsgIntDelRscOuterClass.MsgIntDelRsc.newBuilder()
-                .setDeletedRsc(
-                    MsgDelRsc.newBuilder()
-                        .setNodeName(nodeName)
-                        .setRscName(resourceName)
-                        .setUuid(rscUuid.toString())
-                        .build()
-                )
-                .addAllFreeSpace(
-                    ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
-                )
-                .build()
-                .writeDelimitedTo(baos);
+            builder.setBlockDevicePath(backingDiskPath);
         }
-        catch (IOException exc)
+
+        String metaDiskPath = vlm.getMetaDiskPath(serializerCtx);
+        if (metaDiskPath != null)
         {
-            handleIOException(exc);
+            builder.setMetaDisk(metaDiskPath);
         }
-        return this;
+
+        String devicePath = vlm.getDevicePath(serializerCtx);
+        if (devicePath != null)
+        {
+            builder.setDevicePath(devicePath);
+        }
+
+        if (vlm.isRealSizeSet(serializerCtx))
+        {
+            builder.setRealSize(vlm.getRealSize(serializerCtx));
+        }
+
+        return builder.build();
     }
 
     @Override
@@ -594,32 +587,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setNodeName(nodeName)
                 .setRscName(resourceName)
                 .setVlmNr(volumeNr)
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public ProtoCtrlStltSerializerBuilder notifyVolumeDeleted(
-        String nodeName,
-        String resourceName,
-        int volumeNr,
-        long freeSpace,
-        UUID vlmUuid
-    )
-    {
-        try
-        {
-            MsgIntDelVlmOuterClass.MsgIntDelVlm.newBuilder()
-                .setNodeName(nodeName)
-                .setRscName(resourceName)
-                .setVlmNr(volumeNr)
-                .setFreeSpace(freeSpace)
                 .build()
                 .writeDelimitedTo(baos);
         }

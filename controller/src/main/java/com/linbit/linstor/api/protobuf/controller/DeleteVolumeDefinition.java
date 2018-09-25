@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,29 +20,32 @@ import java.io.InputStream;
     name = ApiConsts.API_DEL_VLM_DFN,
     description = "Deletes a volume definition"
 )
-public class DeleteVolumeDefinition implements ApiCall
+public class DeleteVolumeDefinition implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlVlmDfnDeleteApiCallHandler ctrlVlmDfnDeleteApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public DeleteVolumeDefinition(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public DeleteVolumeDefinition(
+        CtrlVlmDfnDeleteApiCallHandler ctrlVlmDfnDeleteApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlVlmDfnDeleteApiCallHandler = ctrlVlmDfnDeleteApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgDelVlmDfn msgDelVlmDfn = MsgDelVlmDfn.parseDelimitedFrom(msgDataIn);
 
-        ApiCallRc apiCallRc = apiCallHandler.deleteVolumeDefinition(
+        return ctrlVlmDfnDeleteApiCallHandler
+            .deleteVolumeDefinition(
                 msgDelVlmDfn.getRscName(),
                 msgDelVlmDfn.getVlmNr()
-        );
-
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+            )
+            .transform(responseSerializer::transform);
     }
 }

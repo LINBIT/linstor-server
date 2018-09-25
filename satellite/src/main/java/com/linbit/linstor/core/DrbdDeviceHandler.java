@@ -27,6 +27,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -223,8 +224,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
 
                 vlmState.setNetSize(vlmDfn.getVolumeSize(wrkCtx));
-                vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
-                    vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE));
+                vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE));
                 vlmState.setMinorNr(vlmDfn.getMinorNr(wrkCtx));
                 vlmState.setPeerSlots(peerSlots);
 
@@ -301,18 +301,22 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 fillResourceState(rsc, rscState);
 
-                if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
-                    rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
+                if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE))
                 {
                     deleteResource(rsc, rscDfn, rscState);
-                    apiCallRc.addEntries(makeDeleteRc(rsc, rscName, localNodeName));
-                    resourceDeleted = true;
                 }
                 else
                 {
                     createResource(localNode, rscName, rsc, rscDfn, rscState);
-                    apiCallRc.addEntry("Resource '" + rscName + "' deployed", ApiConsts.CREATED);
                 }
+
+                deviceManagerProvider.get().notifyResourceApplied(rsc);
+
+                apiCallRc.addEntry(ApiCallRcImpl
+                    .entryBuilder(ApiConsts.MODIFIED, "Resource '" + rscName + "' deployed")
+                    .putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue)
+                    .build()
+                );
             }
 
             {
@@ -1066,8 +1070,6 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         deleteResourceVolumes(rscName, rsc, rscDfn, rscState);
-
-        deviceManagerProvider.get().notifyResourceApplied(rsc);
     }
 
     private void createResourceStorage(
