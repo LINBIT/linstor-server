@@ -187,7 +187,7 @@ public class TcpConnectorPeer implements Peer
         incomingMessageSink = processor.sink();
         processor
             .transform(OrderingFlux::order)
-            .flatMap(Function.identity())
+            .flatMap(Function.identity(), Integer.MAX_VALUE)
             .subscribe(
                 ignored ->
                 {
