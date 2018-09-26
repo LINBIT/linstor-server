@@ -24,7 +24,6 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
@@ -43,7 +42,6 @@ import org.slf4j.event.Level;
 
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
-import com.linbit.linstor.StorPool;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;
 
@@ -421,20 +419,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Set<ResourceName> rscSet
     )
     {
-        FluxSink<ApiCallRc> responseSink = updateNotification == null ? null : updateNotification.getResponseSink();
+        List<FluxSink<ApiCallRc>> responseSink = updateNotification == null ?
+            Collections.emptyList() :
+            updateNotification.getResponseSinks();
         for (ResourceName rscName : rscSet)
         {
             List<FluxSink<ApiCallRc>> responseSinks =
                 pendingDispatchRscs.computeIfAbsent(rscName, ignored -> new ArrayList<>());
-            if (responseSink != null)
-            {
-                responseSinks.add(responseSink);
-            }
+            responseSinks.addAll(responseSink);
         }
-        if (responseSink != null)
-        {
-            pendingResponseSinks.add(responseSink);
-        }
+        pendingResponseSinks.addAll(responseSink);
     }
 
     @Override
@@ -668,8 +662,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             updPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
 
             // Request updates from the controller
-            requestControllerUpdates(
-                updPendingBundle.controllerUpdate.map(StltUpdateTrackerImpl.UpdateNotification::getUuid));
+            requestControllerUpdates(updPendingBundle.controllerUpdate.isPresent());
             requestNodeUpdates(extractUuids(updPendingBundle.nodeUpdates));
             requestStorPoolUpdates(extractUuids(updPendingBundle.storPoolUpdates));
             requestRscDfnUpdates(extractUuids(updPendingBundle.rscDfnUpdates));
@@ -1011,9 +1004,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    private void requestControllerUpdates(Optional<UUID> updateController)
+    private void requestControllerUpdates(boolean updateController)
     {
-        if (updateController.isPresent())
+        if (updateController)
         {
             stltUpdateRequester.requestControllerUpdate();
         }

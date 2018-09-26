@@ -1,11 +1,12 @@
 package com.linbit.linstor.core;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
@@ -39,23 +40,19 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     @Override
     public Flux<ApiCallRc> updateController()
     {
-        return update(
-            UUID.randomUUID(), // anything, except null
-            updateNotification -> cachedUpdates.controllerUpdate = Optional.of(updateNotification));
+        return update(cachedUpdates.controllerUpdate.orElse(new UpdateNotification(null)));
     }
 
     @Override
     public Flux<ApiCallRc> updateNode(UUID nodeUuid, NodeName name)
     {
-        return update(nodeUuid,
-            updateNotification -> cachedUpdates.nodeUpdates.put(name, updateNotification));
+        return update(cachedUpdates.nodeUpdates.computeIfAbsent(name, ignored -> new UpdateNotification(nodeUuid)));
     }
 
     @Override
     public Flux<ApiCallRc> updateResourceDfn(UUID rscDfnUuid, ResourceName name)
     {
-        return update(rscDfnUuid,
-            updateNotification -> cachedUpdates.rscDfnUpdates.put(name, updateNotification));
+        return update(cachedUpdates.rscDfnUpdates.computeIfAbsent(name, ignored -> new UpdateNotification(rscDfnUuid)));
     }
 
     @Override
@@ -66,15 +63,15 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     )
     {
         Resource.Key resourceKey = new Resource.Key(resourceName, nodeName);
-        return update(rscUuid,
-            updateNotification -> cachedUpdates.rscUpdates.put(resourceKey, updateNotification));
+        return update(cachedUpdates.rscUpdates.computeIfAbsent(
+            resourceKey, ignored -> new UpdateNotification(rscUuid)));
     }
 
     @Override
     public Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName)
     {
-        return update(storPoolUuid,
-            updateNotification -> cachedUpdates.storPoolUpdates.put(storPoolName, updateNotification));
+        return update(cachedUpdates.storPoolUpdates.computeIfAbsent(
+            storPoolName, ignored -> new UpdateNotification(storPoolUuid)));
     }
 
     @Override
@@ -85,8 +82,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     )
     {
         SnapshotDefinition.Key snapshotKey = new SnapshotDefinition.Key(resourceName, snapshotName);
-        return update(snapshotUuid,
-            updateNotification -> cachedUpdates.snapshotUpdates.put(snapshotKey, updateNotification));
+        return update(cachedUpdates.snapshotUpdates.computeIfAbsent(
+            snapshotKey, ignored -> new UpdateNotification(snapshotUuid)));
     }
 
     void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean condFlag, boolean block)
@@ -127,17 +124,14 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         cachedUpdates.clear();
     }
 
-    private Flux<ApiCallRc> update(
-        UUID uuid,
-        Consumer<UpdateNotification> updateSetter
-    )
+    private Flux<ApiCallRc> update(UpdateNotification updateNotification)
     {
         return Flux
             .<ApiCallRc>create(fluxSink ->
                 {
                     synchronized (sched)
                     {
-                        updateSetter.accept(new UpdateNotification(uuid, fluxSink));
+                        updateNotification.addResponseSink(fluxSink);
                         sched.notify();
                     }
                 }
@@ -150,15 +144,12 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         private final UUID uuid;
 
-        private final FluxSink<ApiCallRc> responseSink;
+        private final List<FluxSink<ApiCallRc>> responseSinks;
 
-        UpdateNotification(
-            UUID uuidRef,
-            FluxSink<ApiCallRc> responseSinkRef
-        )
+        UpdateNotification(UUID uuidRef)
         {
             uuid = uuidRef;
-            responseSink = responseSinkRef;
+            responseSinks = new ArrayList<>();
         }
 
         public UUID getUuid()
@@ -166,9 +157,14 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             return uuid;
         }
 
-        public FluxSink<ApiCallRc> getResponseSink()
+        public void addResponseSink(FluxSink<ApiCallRc> sink)
         {
-            return responseSink;
+            responseSinks.add(sink);
+        }
+
+        public List<FluxSink<ApiCallRc>> getResponseSinks()
+        {
+            return responseSinks;
         }
     }
 
