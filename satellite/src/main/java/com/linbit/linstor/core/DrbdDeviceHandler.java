@@ -27,7 +27,6 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -281,7 +280,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 rscName.displayValue + "'"
         );
 
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        final ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         boolean resourceDeleted = false;
         try
         {
@@ -304,7 +303,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE))
                 {
-                    deleteResource(rsc, rscDfn, rscState);
+                    deleteResource(rsc, rscDfn, rscState)
+                        .ifPresent(apiCallRc::addEntry);
                 }
                 else
                 {
@@ -657,6 +657,54 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
+    private void ensureStorageDriverExc(
+        ResourceName rscName,
+        StorPool storagePool,
+        VolumeStateDevManager vlmState
+    )
+        throws AccessDeniedException, VolumeException, StorageException
+    {
+        if (vlmState.getDriver() == null)
+        {
+            StorageDriver driver = null;
+            if (storagePool == null)
+            {
+                throw new VolumeException(
+                    "No storage pool set for volume " + vlmState.getVlmNr().value +
+                        " of resource '" + rscName.displayValue + "'"
+                );
+            }
+
+            driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor);
+            if (driver == null)
+            {
+                throw new VolumeException(
+                    "Cannot find driver for storage pool '" + storagePool.getName().displayValue + "' for volume " +
+                        vlmState.getVlmNr().value + " of resource '" + rscName.displayValue + "'"
+                );
+            }
+
+            Optional<Props> optNodeNamespace = storagePool
+                .getNode()
+                .getProps(wrkCtx)
+                .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
+            ReadOnlyProps nodeNamespace;
+            if (optNodeNamespace.isPresent())
+            {
+                nodeNamespace = new ReadOnlyProps(optNodeNamespace.get());
+            } else
+            {
+                nodeNamespace = ReadOnlyProps.emptyRoProps();
+            }
+            storagePool.reconfigureStorageDriver(
+                driver,
+                nodeNamespace,
+                stltCfgAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
+            );
+            vlmState.setDriver(driver);
+        }
+    }
+
     private void ensureStorageDriver(
         ResourceName rscName,
         StorPool storagePool,
@@ -664,55 +712,16 @@ class DrbdDeviceHandler implements DeviceHandler
     )
         throws AccessDeniedException, VolumeException
     {
-        if (vlmState.getDriver() == null)
+        try
         {
-            try
-            {
-                StorageDriver driver = null;
-                if (storagePool == null)
-                {
-                    throw new VolumeException(
-                        "No storage pool set for volume " + vlmState.getVlmNr().value +
-                            " of resource '" + rscName.displayValue + "'"
-                    );
-                }
-
-                driver = storagePool.getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor);
-                if (driver == null)
-                {
-                    throw new VolumeException(
-                        "Cannot find driver for storage pool '" + storagePool.getName().displayValue + "' for volume " +
-                            vlmState.getVlmNr().value + " of resource '" + rscName.displayValue + "'"
-                    );
-                }
-
-                Optional<Props> optNodeNamespace = storagePool
-                    .getNode()
-                    .getProps(wrkCtx)
-                    .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
-                ReadOnlyProps nodeNamespace;
-                if (optNodeNamespace.isPresent())
-                {
-                    nodeNamespace = new ReadOnlyProps(optNodeNamespace.get());
-                }
-                else
-                {
-                    nodeNamespace = ReadOnlyProps.emptyRoProps();
-                }
-                storagePool.reconfigureStorageDriver(
-                    driver,
-                    nodeNamespace,
-                    stltCfgAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
-                );
-                vlmState.setDriver(driver);
-            }
-            catch (StorageException storExc)
-            {
-                throw new ImplementationError(
-                    "Storage configuration exception",
-                    storExc
-                );
-            }
+            ensureStorageDriverExc(rscName, storagePool, vlmState);
+        }
+        catch (StorageException storExc)
+        {
+            throw new ImplementationError(
+                "Storage configuration exception",
+                storExc
+            );
         }
     }
 
@@ -1567,8 +1576,15 @@ class DrbdDeviceHandler implements DeviceHandler
                     // by LINSTOR.
                     if (vlm != null && vlmDfn != null)
                     {
-                        ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
-                        deleteStorageVolume(rscDfn, vlmState, removingDisk);
+                        try
+                        {
+                            ensureStorageDriverExc(rscName, vlm.getStorPool(wrkCtx), vlmState);
+                            deleteStorageVolume(rscDfn, vlmState, removingDisk);
+                        }
+                        catch (StorageException storExc)
+                        {
+                            errLog.reportError(storExc, wrkCtx, null, "Storage configuration exception");
+                        }
                     }
                 }
             }
@@ -1962,13 +1978,14 @@ class DrbdDeviceHandler implements DeviceHandler
      * (and will somehow have to inform the device manager, or directly the controller, if the resource
      * was successfully deleted)
      */
-    private void deleteResource(
+    private Optional<ApiCallRcImpl.ApiCallRcEntry> deleteResource(
         Resource rsc,
         ResourceDefinition rscDfn,
         ResourceState rscState
     )
         throws AccessDeniedException, ResourceException, NoInitialStateException
     {
+        ApiCallRcImpl.ApiCallRcEntry rcEntry = null;
         ResourceName rscName = rscDfn.getName();
 
         // Determine the state of the DRBD resource
@@ -2000,8 +2017,19 @@ class DrbdDeviceHandler implements DeviceHandler
                 // by LINSTOR.
                 if (vlm != null && vlmDfn != null)
                 {
-                    ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
-                    deleteStorageVolume(rscDfn, vlmState, false);
+                    try
+                    {
+                        ensureStorageDriverExc(rscName, vlm.getStorPool(wrkCtx), vlmState);
+                        deleteStorageVolume(rscDfn, vlmState, false);
+                    }
+                    catch (StorageException storExc)
+                    {
+                        rcEntry = ApiCallRcImpl.entryBuilder(ApiConsts.WARN_STORAGE_ERROR, "Storage exception")
+                            .setDetails(storExc.getMessage())
+                            .setCorrection("Check storage and maybe manually cleanup any volumes.")
+                            .build();
+                        errLog.reportError(storExc, wrkCtx, null, "Storage configuration exception");
+                    }
                 }
             }
             catch (VolumeException vlmExc)
@@ -2025,6 +2053,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
         // Notify the controller of successful deletion of the resource
         deviceManagerProvider.get().notifyResourceDeleted(rsc);
+
+        return Optional.ofNullable(rcEntry);
     }
 
     private void deleteDrbdResource(ResourceName rscName)
