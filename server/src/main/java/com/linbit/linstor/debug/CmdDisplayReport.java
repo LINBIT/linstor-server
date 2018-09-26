@@ -66,7 +66,7 @@ public class CmdDisplayReport extends BaseDebugCmd
                 // If the reportId consists of only an error number,
                 // default to the instanceId of the current linstor instance
                 {
-                    int splitIdx = prmReportId.indexOf('-');
+                    int splitIdx = prmReportId.lastIndexOf('-');
                     if (prmReportId.indexOf('-') != -1)
                     {
                         instanceId = prmReportId.substring(0, splitIdx).toUpperCase();
