@@ -250,7 +250,8 @@ public class CtrlRscDfnApiCallHandler
     void handlePrimaryResourceRequest(
         long apiCallId,
         String rscNameStr,
-        UUID rscUuid
+        UUID rscUuid,
+        boolean alreadyInitialized
     )
     {
         Peer currentPeer = peer.get();
@@ -275,12 +276,15 @@ public class CtrlRscDfnApiCallHandler
 
                 ctrlSatelliteUpdater.updateSatellites(resDfn);
 
-                currentPeer.sendMessage(
-                    ctrlStltSerializer
-                        .onewayBuilder(InternalApiConsts.API_PRIMARY_RSC)
-                        .primaryRequest(rscNameStr, res.getUuid().toString())
-                        .build()
-                );
+                if (!alreadyInitialized)
+                {
+                    currentPeer.sendMessage(
+                        ctrlStltSerializer
+                            .onewayBuilder(InternalApiConsts.API_PRIMARY_RSC)
+                            .primaryRequest(rscNameStr, res.getUuid().toString(), false)
+                            .build()
+                    );
+                }
             }
         }
         catch (InvalidKeyException | InvalidValueException | AccessDeniedException ignored)

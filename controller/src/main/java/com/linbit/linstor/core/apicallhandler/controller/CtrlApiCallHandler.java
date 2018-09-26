@@ -1179,12 +1179,13 @@ public class CtrlApiCallHandler
 
     public void handlePrimaryResourceRequest(
         String rscName,
-        UUID rscUuid
+        UUID rscUuid,
+        boolean alreadyInitialized
     )
     {
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
-            rscDfnApiCallHandler.handlePrimaryResourceRequest(apiCallId.get(), rscName, rscUuid);
+            rscDfnApiCallHandler.handlePrimaryResourceRequest(apiCallId.get(), rscName, rscUuid, alreadyInitialized);
         }
     }
 

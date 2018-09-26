@@ -34,7 +34,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         /*
          * Controller -> Satellite
          */
-        CtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid);
+        CtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid, boolean alreadyInitialized);
 
         CtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret);
 

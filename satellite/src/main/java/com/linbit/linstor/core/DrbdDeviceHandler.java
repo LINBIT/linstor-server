@@ -438,20 +438,17 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void sendRequestPrimaryResource(
-        final Peer ctrlPeer,
         final String rscName,
-        final String rscUuid
+        final String rscUuid,
+        boolean alreadyInitialized
     )
     {
         byte[] data = interComSerializer
             .onewayBuilder(InternalApiConsts.API_REQUEST_PRIMARY_RSC)
-            .primaryRequest(rscName, rscUuid)
+            .primaryRequest(rscName, rscUuid, alreadyInitialized)
             .build();
 
-        if (data != null)
-        {
-            ctrlPeer.sendMessage(data);
-        }
+        controllerPeerConnector.getControllerPeer().sendMessage(data);
     }
 
     private void evaluateDelDrbdResource(
@@ -1137,6 +1134,7 @@ class DrbdDeviceHandler implements DeviceHandler
                                 );
 
                                 boolean hasMdFlag = false;
+                                boolean newMdFlag = false;
                                 try
                                 {
                                     MdSuperblockBuffer mdBfr = new MdSuperblockBuffer();
@@ -1148,17 +1146,25 @@ class DrbdDeviceHandler implements DeviceHandler
                                         hasMdFlag = drbdUtils.hasMetaData(
                                             vlmPath, vlmState.getMinorNr().value, "internal"
                                         );
+
+                                        if (hasMdFlag)
+                                        {
+                                            newMdFlag = mdBfr.isMetaDataNew();
+                                        }
                                     }
                                 }
                                 catch (IOException ignored)
                                 {
                                 }
                                 vlmState.setHasMetaData(hasMdFlag);
+                                vlmState.setMetaDataIsNew(newMdFlag);
 
-                                errLog.logTrace(
+                                errLog.logDebug(
                                     "%s",
                                     "Resource " + rscName.displayValue + " Volume " + vlmState.getVlmNr().value +
-                                        " meta data check result: hasMetaData = " + vlmState.hasMetaData()
+                                        " meta data check result:" +
+                                        " hasMetaData = " + vlmState.hasMetaData() + ";" +
+                                        " metaDataIsNew = " + vlmState.metaDataIsNew()
                                 );
                             }
                             catch (ExtCmdFailedException cmdExc)
@@ -1417,6 +1423,7 @@ class DrbdDeviceHandler implements DeviceHandler
                             vlmState.getVlmNr().value + " meta data"
                         );
                         createVolumeMetaData(rscDfn, rsc, vlmState);
+                        vlmState.setMetaDataIsNew(true);
                     }
                 }
                 catch (StorageException storExc)
@@ -1615,9 +1622,9 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
                 sendRequestPrimaryResource(
-                    localNode.getPeer(wrkCtx),
                     rscDfn.getName().getDisplayName(),
-                    rsc.getUuid().toString()
+                    rsc.getUuid().toString(),
+                    !allVlmsMetaDataNew(rscState)
                 );
             }
             else
@@ -1655,6 +1662,11 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private boolean allVlmsMetaDataNew(ResourceState rscState)
+    {
+        return rscState.getVolumes().stream().allMatch(VolumeState::metaDataIsNew);
     }
 
     private void setResourcePrimary(

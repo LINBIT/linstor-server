@@ -50,7 +50,8 @@ public class ControllerProtobuf extends ProtobufIO
 
     public void sendPrimaryRequest(
         final String rscName,
-        final String rscUuid
+        final String rscUuid,
+        final boolean alreadyInitialized
     )
         throws IOException
     {
@@ -59,7 +60,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_PRIMARY_RSC,
                 getNextApiCallId()
             )
-            .primaryRequest(rscName, rscUuid)
+            .primaryRequest(rscName, rscUuid, alreadyInitialized)
             .build()
         );
     }

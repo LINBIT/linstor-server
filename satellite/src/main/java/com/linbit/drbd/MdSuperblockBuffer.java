@@ -8,6 +8,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Buffer for analyzing DRBD meta data superblock contents
@@ -25,6 +26,9 @@ public class MdSuperblockBuffer
 
     // Bitwise AND mask for aligning to a 4k boundary
     private static final long ALIGN_4K_MASK = 0xFFFFFFFFFFFFF000L;
+
+    // Values for generation identifier that indicate new metadata; that is, no initial sync has been performed
+    private static final List<Long> INITIAL_GENERATION_OPTIONS = Arrays.asList(0x0L, 0x4L);
 
     private byte[] data;
     private ByteBuffer buffer;
@@ -104,6 +108,11 @@ public class MdSuperblockBuffer
     public boolean hasMetaData()
     {
         return mdMagic == DRBD_MAGIC_ID;
+    }
+
+    public boolean isMetaDataNew()
+    {
+        return INITIAL_GENERATION_OPTIONS.contains(mdCurrentGen);
     }
 
     public void clear()

@@ -36,7 +36,8 @@ public class RequestPrimaryResource implements ApiCall
         MsgIntPrimary msgReqPrimary = MsgIntPrimary.parseDelimitedFrom(msgDataIn);
         apiCallHandler.handlePrimaryResourceRequest(
             msgReqPrimary.getRscName(),
-            UUID.fromString(msgReqPrimary.getRscUuid())
+            UUID.fromString(msgReqPrimary.getRscUuid()),
+            msgReqPrimary.getAlreadyInitialized()
         );
     }
 }

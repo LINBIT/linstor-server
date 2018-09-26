@@ -462,7 +462,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
      * Satellite -> Controller
      */
     @Override
-    public ProtoCtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid)
+    public ProtoCtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid, boolean alreadyInitialized)
     {
         try
         {

@@ -28,6 +28,12 @@ public class VolumeState
     protected Boolean hasMetaData = true;
 
     /**
+     * Indicates whether the meta data present on the storage backend volume is
+     * new. That is, no initial sync has occurred.
+     */
+    private Boolean metaDataIsNew = false;
+
+    /**
      * Indicates whether a check for meta data should be performed
      */
     protected Boolean checkMetaData = true;
@@ -118,6 +124,11 @@ public class VolumeState
         return hasMetaData;
     }
 
+    public Boolean metaDataIsNew()
+    {
+        return metaDataIsNew;
+    }
+
     public Boolean isCheckMetaData()
     {
         return checkMetaData;
@@ -168,6 +179,11 @@ public class VolumeState
         hasMetaData = hasMetaDataRef;
     }
 
+    public void setMetaDataIsNew(Boolean metaDataIsNewRef)
+    {
+        metaDataIsNew = metaDataIsNewRef;
+    }
+
     public void setCheckMetaData(Boolean checkMetaDataRef)
     {
         checkMetaData = checkMetaDataRef;
@@ -202,6 +218,7 @@ public class VolumeState
         vlmStateString.append("        hasDisk       = ").append(hasDisk()).append("\n");
         vlmStateString.append("        diskFailed    = ").append(isDiskFailed()).append("\n");
         vlmStateString.append("        hasMetaData   = ").append(hasMetaData()).append("\n");
+        vlmStateString.append("        metaDataIsNew = ").append(metaDataIsNew()).append("\n");
         vlmStateString.append("        checkMetaData = ").append(isCheckMetaData()).append("\n");
         vlmStateString.append("        netSize       = ").append(getNetSize()).append(" kiB\n");
         vlmStateString.append("        grossSize     = ").append(getGrossSize()).append(" kiB\n");
