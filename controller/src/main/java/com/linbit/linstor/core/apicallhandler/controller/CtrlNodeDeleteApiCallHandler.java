@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
@@ -57,6 +58,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 {
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
+    private final Provider<CtrlSatelliteConnectionNotifier> ctrlSatelliteConnectionNotifier;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
@@ -70,6 +72,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     public CtrlNodeDeleteApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
+        Provider<CtrlSatelliteConnectionNotifier> ctrlSatelliteConnectionNotifierRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
@@ -82,6 +85,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     {
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
+        ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeRepository = nodeRepositoryRef;
@@ -278,10 +282,11 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
         else
         {
+            // store to avoid deleted data access
             Node node = rsc.getAssignedNode();
-            // store to avoid deleted node acess
             UUID nodeUuid = node.getUuid();
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
+            ResourceDefinition rscDfn = rsc.getDefinition();
 
             deletePriveleged(rsc);
 
@@ -294,7 +299,17 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
                 ApiCallRcImpl.ApiCallRcEntry response = disconnectNode(nodeUuid, nodeDescription, nodePeer);
 
-                responseFlux = Flux.just(ApiCallRcImpl.singletonApiCallRc(response));
+                // Some operations may have been waiting for API calls to the satellite to complete.
+                // They will receive notification that the node has been disconnected, but they may
+                // need to react to the deletion of the resource and hence we need to check whether
+                // they can continue. For instance, when a resource definition and node are being
+                // deleted at the same time.
+                Flux<?> operationContinuation =
+                    ctrlSatelliteConnectionNotifier.get().checkResourceDefinitionConnected(rscDfn);
+
+                responseFlux = Flux
+                    .<ApiCallRc>just(ApiCallRcImpl.singletonApiCallRc(response))
+                    .concatWith(operationContinuation.thenMany(Flux.<ApiCallRc>empty()));
             }
             else
             {
