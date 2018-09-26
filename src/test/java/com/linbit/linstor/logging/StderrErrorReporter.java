@@ -136,7 +136,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
             }
 
             // Error report header
-            reportHeader(output, reportNr);
+            reportHeader(output, reportNr, client);
 
             // Report the error and any nested errors
             int loopCtr = 0;
@@ -196,7 +196,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         if (descriptionMsg != null)
         {
             // Error report header
-            reportHeader(output, reportNr);
+            reportHeader(output, reportNr, client);
 
             // Error description/cause/correction/details report
             String causeMsg         = errorInfo.getCauseText();
